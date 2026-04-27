@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 if TYPE_CHECKING:
@@ -236,5 +237,5 @@ class TestPhaseStateEngineTransitions:
             branch="feature/50-test", issue_number=50, initial_phase=feature_phases[0]
         )
 
-        with pytest.raises(FileNotFoundError, match="Branch state"):
+        with pytest.raises(StateBranchMismatchError, match="Branch state"):
             phase_engine.get_state(branch="feature/99-unknown")
