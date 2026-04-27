@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.managers.state_repository import InMemoryStateRepository, BranchState, StateBranchMismatchError
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 
@@ -205,6 +205,39 @@ class TestTDDPhaseHooks:
         state = state_engine.get_state(branch)
         assert state.last_cycle == 2
         assert state.current_cycle is None
+
+
+class TestPhaseStateEngineCleanBreak:
+    """C_ENGINE_BREAK: get_state() propagates StateBranchMismatchError (issue #231)."""
+
+    class _FixedReader:
+        """Returns the configured state regardless of the requested branch."""
+
+        def __init__(self, state: "BranchState") -> None:
+            self._state = state
+
+        def load(self, _branch: str) -> "BranchState":
+            return self._state
+
+    def test_get_state_raises_mismatch_error_not_file_not_found(
+        self, tmp_path: Path
+    ) -> None:
+        """get_state() must raise StateBranchMismatchError on mismatch, not FileNotFoundError."""
+        fixed_state = BranchState(
+            branch="main",
+            issue_number=None,
+            workflow_name="feature",
+            current_phase="implementation",
+            current_cycle=None,
+            required_phases=["implementation"],
+            transitions=[],
+        )
+        engine = make_phase_state_engine(
+            workspace_root=tmp_path,
+            state_repository=self._FixedReader(fixed_state),
+        )
+        with pytest.raises(StateBranchMismatchError):
+            engine.get_state("feature/231-state-snapshot-cqrs")
 
 
 class TestTransitionHooksWiring:
