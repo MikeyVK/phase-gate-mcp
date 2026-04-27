@@ -1,4 +1,4 @@
-﻿"""Tests for PhaseStateEngine implementation-phase lifecycle hooks.
+"""Tests for PhaseStateEngine implementation-phase lifecycle hooks.
 
 Issue #146 Cycle 4: TDD phase lifecycle hooks.
 
@@ -516,5 +516,3 @@ class TestPhaseStateEngineMutatorRoutingC6:
         engine.on_exit_implementation_phase("feature/231-test")
 
         assert "feature/231-test" in mutator.apply_calls
-
-

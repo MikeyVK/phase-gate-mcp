@@ -49,6 +49,7 @@ from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.state_reconstructor import StateReconstructor
 from mcp_server.managers.state_repository import BranchValidatedStateReader, FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
+from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 from mcp_server.resources.github import GitHubIssuesResource
 
@@ -233,6 +234,10 @@ class MCPServer:
             project_manager=self.project_manager,
             scope_decoder=ScopeDecoder(workphases_config=workphases_config),
         )
+        self._workflow_state_mutator = WorkflowStateMutator(
+            state_repository=self._state_repository,
+            state_reconstructor=self.state_reconstructor,
+        )
         self.phase_state_engine = PhaseStateEngine(
             workspace_root=workspace_root,
             project_manager=self.project_manager,
@@ -243,6 +248,7 @@ class MCPServer:
             scope_decoder=ScopeDecoder(workphases_config=workphases_config),
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
+            workflow_state_mutator=self._workflow_state_mutator,
         )
         self.qa_manager = QAManager(
             workspace_root=workspace_root,

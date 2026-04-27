@@ -35,6 +35,7 @@ from mcp_server.core.interfaces import (
     IStateReconstructor,
     IStateRepository,
     IWorkflowGateRunner,
+    IWorkflowStateMutator,
 )
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.project_manager import ProjectManager
@@ -48,7 +49,7 @@ logger = logging.getLogger(__name__)
 class TransitionRecord:
     """Phase transition record for audit trail.
 
-    Field order: identifier → data → flags → optional
+    Field order: identifier â†’ data â†’ flags â†’ optional
     """
 
     # Core transition data
@@ -82,6 +83,7 @@ class PhaseStateEngine:
         scope_decoder: ScopeDecoder,
         workflow_gate_runner: IWorkflowGateRunner,
         state_reconstructor: IStateReconstructor,
+        workflow_state_mutator: IWorkflowStateMutator | None = None,
     ) -> None:
         """Initialize PhaseStateEngine."""
         workspace_path = Path(workspace_root)
@@ -95,6 +97,7 @@ class PhaseStateEngine:
         self._scope_decoder = scope_decoder
         self._workflow_gate_runner = workflow_gate_runner
         self._state_reconstructor = state_reconstructor
+        self._workflow_state_mutator = workflow_state_mutator
 
     def initialize_branch(
         self, branch: str, issue_number: int, initial_phase: str, parent_branch: str | None = None
@@ -144,7 +147,7 @@ class PhaseStateEngine:
             created_at=datetime.now(UTC).isoformat(),
             transitions=[],
         )
-        self._save_state(branch, state)
+        self._apply_state(branch, state)
 
         return {
             "success": True,
@@ -190,7 +193,7 @@ class PhaseStateEngine:
             current_phase=to_phase,
             transitions=[*state.transitions, self._transition_to_dict(transition)],
         )
-        self._save_state(branch, updated_state)
+        self._apply_state(branch, updated_state)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
             self.on_enter_implementation_phase(branch, issue_number)
@@ -256,7 +259,7 @@ class PhaseStateEngine:
             transitions=[*state.transitions, self._transition_to_dict(transition)],
             skip_reason=skip_reason,
         )
-        self._save_state(branch, updated_state)
+        self._apply_state(branch, updated_state)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
             self.on_enter_implementation_phase(branch, issue_number)
@@ -312,7 +315,7 @@ class PhaseStateEngine:
             current_cycle=to_cycle,
             cycle_history=[*state.cycle_history, history_entry],
         )
-        self._save_state(branch, updated_state)
+        self._apply_state(branch, updated_state)
 
         return {
             "success": True,
@@ -376,7 +379,7 @@ class PhaseStateEngine:
             current_cycle=to_cycle,
             cycle_history=[*state.cycle_history, history_entry],
         )
-        self._save_state(branch, updated_state)
+        self._apply_state(branch, updated_state)
 
         return {
             "success": True,
@@ -481,7 +484,7 @@ class PhaseStateEngine:
             logger.warning("Invalid or missing state.json, reconstructing", exc_info=True)
 
         reconstructed_state = self._state_reconstructor.reconstruct(branch)
-        self._save_state(branch, reconstructed_state)
+        self._apply_state(branch, reconstructed_state)
         return reconstructed_state
 
     def _require_issue_number(self, branch: str, state: BranchState) -> int:
@@ -623,6 +626,18 @@ class PhaseStateEngine:
         validated_state = state if state.branch == branch else state.with_updates(branch=branch)
         self._state_repository.save(validated_state)
 
+    def _apply_state(self, branch: str, state: BranchState) -> None:
+        """Persist branch state â€” through IWorkflowStateMutator when configured.
+
+        When a mutator is injected, routes the write through the coordinated
+        mutation boundary. Falls back to direct _save_state when no mutator is
+        configured (backward-compatible for tests without DI).
+        """
+        if self._workflow_state_mutator is not None:
+            self._workflow_state_mutator.apply(branch, lambda _s: state)
+        else:
+            self._save_state(branch, state)
+
     def _transition_to_dict(self, transition: TransitionRecord) -> dict[str, Any]:
         """Convert TransitionRecord to dict for JSON serialization.
 
@@ -649,7 +664,7 @@ class PhaseStateEngine:
         """Hook called when entering implementation phase.
 
         Auto-initializes TDD cycle 1 in branch state. Planning deliverables
-        are validated at planning exit (on_exit_planning_phase) — not here.
+        are validated at planning exit (on_exit_planning_phase) â€” not here.
 
         Args:
             branch: Branch name
@@ -663,7 +678,7 @@ class PhaseStateEngine:
                 last_cycle=0,
                 cycle_history=[*state.cycle_history],
             )
-            self._save_state(branch, updated_state)
+            self._apply_state(branch, updated_state)
 
         logger.info(f"Entered implementation phase for issue {issue_number} on branch {branch}")
 
@@ -682,4 +697,4 @@ class PhaseStateEngine:
         if current_cycle is not None:
             updated_state = state.with_updates(last_cycle=current_cycle, current_cycle=None)
             logger.info(f"Exited implementation phase at cycle {current_cycle} on branch {branch}")
-            self._save_state(branch, updated_state)
+            self._apply_state(branch, updated_state)

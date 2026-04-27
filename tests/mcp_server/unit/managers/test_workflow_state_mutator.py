@@ -17,7 +17,6 @@ Tests verify:
 from __future__ import annotations
 
 import inspect
-from pathlib import Path
 
 from mcp_server.managers.state_repository import BranchState, InMemoryStateRepository
 
@@ -39,9 +38,8 @@ class TestIWorkflowStateMutatorProtocol:
 
     def test_iworkflow_state_mutator_is_runtime_checkable(self) -> None:
         """IWorkflowStateMutator supports isinstance() checks."""
-        from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator  # noqa: PLC0415
-
         from mcp_server.core.interfaces import IWorkflowStateMutator  # noqa: PLC0415
+        from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator  # noqa: PLC0415
 
         repo = InMemoryStateRepository()
         mutator = WorkflowStateMutator(state_repository=repo)
@@ -149,6 +147,7 @@ class TestWorkflowStateMutatorApply:
     def test_apply_raises_on_branch_mismatch(self) -> None:
         """apply() raises StateMutationConflictError when mutate returns wrong branch."""
         import pytest  # noqa: PLC0415
+
         from mcp_server.managers.workflow_state_mutator import (  # noqa: PLC0415
             StateMutationConflictError,
             WorkflowStateMutator,
@@ -170,7 +169,7 @@ class TestWorkflowStateMutatorApply:
         with pytest.raises(StateMutationConflictError):
             mutator.apply("feature/x", bad_mutate)
 
-    def test_apply_supports_bootstrap_when_no_prior_state(self, tmp_path: Path) -> None:
+    def test_apply_supports_bootstrap_when_no_prior_state(self) -> None:
         """apply() succeeds on fresh branch (no prior state) for initialize_branch use case."""
         from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator  # noqa: PLC0415
 

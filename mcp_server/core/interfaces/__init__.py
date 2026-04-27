@@ -132,3 +132,25 @@ class IQualityStateRepository(Protocol):
     def apply(self, mutate: Callable[[QualityState], QualityState]) -> None:
         """Read current state, apply mutate, and persist atomically."""
         raise NotImplementedError
+
+
+@runtime_checkable
+class IWorkflowStateMutator(Protocol):
+    """Command-side seam for coordinated workflow state writes.
+
+    All workflow state mutations must route through this interface so that
+    concurrent write paths share one coordinated lock boundary.
+    """
+
+    def apply(
+        self,
+        branch: str,
+        mutate: Callable[[BranchState], BranchState],
+    ) -> None:
+        """Apply *mutate* to the current BranchState for *branch* atomically.
+
+        Raises:
+            StateMutationConflictError: on lock timeout, branch mismatch, or
+                unrecoverable state.
+        """
+        raise NotImplementedError
