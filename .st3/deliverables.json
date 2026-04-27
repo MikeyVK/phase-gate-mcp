@@ -262,6 +262,17 @@
                   "type": "file_exists",
                   "file": "tests/mcp_server/unit/managers/test_project_manager.py"
                 }
+              },
+              {
+                "artifact": "tests/mcp_server/unit/tools/test_project_tools.py",
+                "design_trace": "design.md \u00a73.12, \u00a73.13",
+                "expected_result": "Tests updated because GetProjectPlanTool stubs the manager response shape and ProjectManager gains a new required constructor argument.",
+                "id": "c4.project_tools_tests",
+                "title": "project_tools tests updated for resolver wiring",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_project_tools.py",
+                  "type": "file_exists"
+                }
               }
             ],
             "exit_criteria": "ProjectManager and GetWorkContextTool consume one shared resolver, duplicate local workflow-status assembly is removed, and server/test wiring provides the new dependencies through the composition root."

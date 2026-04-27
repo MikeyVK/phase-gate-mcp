@@ -70,7 +70,8 @@ C_READ_GUARD
   -> C_RESOLVER_CORE
   -> C_RESOLVER_ADOPTION
   -> C_QA_STATE_SPLIT
-  -> C_MUTATOR_CORE
+     -> C_ENGINE_BREAK
+     -> C_MUTATOR_CORE
   -> C_TOOL_CONFLICTS
   -> C_CLEANUP
 ```
@@ -82,7 +83,7 @@ C_READ_GUARD
 | C_RESOLVER_CORE | P0 | S | C_READ_GUARD | Introduces the new read-side building blocks without consumer churn |
 | C_RESOLVER_ADOPTION | P0 | S | C_RESOLVER_CORE, C_ENGINE_BREAK | Moves only the researched user-facing consumers to the resolver |
 | C_QA_STATE_SPLIT | P0 | M | C_READ_GUARD | Splits QA ownership out of workflow state before write coordination work |
-| C_MUTATOR_CORE | P0 | M | C_QA_STATE_SPLIT | Moves workflow writes and hook writes behind one coordination seam |
+| C_MUTATOR_CORE | P0 | M | C_QA_STATE_SPLIT, C_ENGINE_BREAK | Moves workflow writes and hook writes behind one coordination seam; engine clean break must exist so mutator can propagate StateBranchMismatchError cleanly |
 | C_TOOL_CONFLICTS | P1 | S | C_MUTATOR_CORE | Exposes mutation failures to operators through existing tool UX contracts |
 | C_CLEANUP | P0 | S | C_ENGINE_BREAK, C_RESOLVER_ADOPTION, C_QA_STATE_SPLIT, C_MUTATOR_CORE, C_TOOL_CONFLICTS | Removes every remaining legacy code/test remnant and verifies grep closure |
 
@@ -215,6 +216,7 @@ Rules for the first write:
 | `c4.get_work_context_adoption` | `mcp_server/tools/discovery_tools.py` | `GetWorkContextTool` uses the resolver and gates cycle enrichment on `current_cycle is not None` |
 | `c4.server_wiring` | `mcp_server/server.py`, `tests/mcp_server/test_support.py`, `tests/mcp_server/unit/test_server.py` | resolver and branch-validated state reader are injected consistently from the composition root |
 | `c4.consumer_tests` | `tests/mcp_server/unit/managers/test_project_manager.py`, `tests/mcp_server/unit/tools/test_discovery_tools.py` | user-facing consumer migration is fully covered |
+| `c4.project_tools_tests` | `tests/mcp_server/unit/tools/test_project_tools.py` | tests updated because `GetProjectPlanTool` stubs the manager response shape and `ProjectManager` gains a new required constructor argument |
 
 **Exit criteria:** `ProjectManager` and `GetWorkContextTool` consume one shared resolver, duplicate local workflow-status assembly is removed, and server/test wiring provides the new dependencies through the composition root.
 
@@ -252,7 +254,7 @@ Rules for the first write:
 
 **Goal:** Move workflow writes and hook writes behind one coordinated mutator boundary.
 
-**Depends On:** C_QA_STATE_SPLIT
+**Depends On:** C_QA_STATE_SPLIT, C_ENGINE_BREAK
 
 **Design trace:** [design.md](design.md) §3.8, §3.9, §3.12, §3.13, §3.15
 
