@@ -20,6 +20,7 @@ from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.config.settings import Settings
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import (
     GetWorkContextInput,
     GetWorkContextTool,
@@ -706,3 +707,98 @@ class TestTddCycleInfoStatusField:
         assert "in_progress" in text or "in progress" in text.lower(), (
             f"Expected 'in_progress' status in tdd_cycle_info output: {text}"
         )
+
+
+class TestGetWorkContextResolverAdoption:
+    """C4: WorkflowStatusResolver adoption in GetWorkContextTool.execute().
+
+    Issue #231: These tests FAIL (RED) until WorkflowStatusResolver is added as
+    a constructor parameter and used in execute() instead of local phase detection.
+    """
+
+    @pytest.mark.asyncio
+    async def test_execute_calls_resolver_when_injected(self) -> None:
+        """GetWorkContextTool calls resolver.resolve_current() when resolver is injected."""
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="design",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="commit-scope",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        settings = make_settings()
+        settings.github.token = None
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/99-test"
+
+        tool = GetWorkContextTool(
+            settings=settings,
+            git_manager=mock_git,
+            project_manager=MagicMock(),
+            state_engine=MagicMock(),
+            workflow_status_resolver=resolver,
+        )
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        resolver.resolve_current.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_execute_gates_cycle_enrichment_on_current_cycle_not_none(self) -> None:
+        """Cycle enrichment gated on current_cycle is not None, not phase string equality."""
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="implementation",
+            sub_phase="red",
+            current_cycle=None,  # Gate: no cycle → no enrichment
+            phase_source="commit-scope",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        settings = make_settings()
+        settings.github.token = None
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/99-test"
+
+        tool = GetWorkContextTool(
+            settings=settings,
+            git_manager=mock_git,
+            project_manager=MagicMock(),
+            state_engine=MagicMock(),
+            workflow_status_resolver=resolver,
+        )
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        assert "TDD Cycle" not in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_execute_shows_phase_from_resolver(self) -> None:
+        """GetWorkContextTool output reflects resolver-provided phase."""
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="research",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="state.json",
+            phase_confidence="medium",
+            phase_detection_error=None,
+        )
+        settings = make_settings()
+        settings.github.token = None
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/42-test"
+
+        tool = GetWorkContextTool(
+            settings=settings,
+            git_manager=mock_git,
+            project_manager=MagicMock(),
+            state_engine=MagicMock(),
+            workflow_status_resolver=resolver,
+        )
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        assert "research" in result.content[0]["text"].lower()
