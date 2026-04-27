@@ -15,18 +15,23 @@ Replaces hardcoded PHASE_TEMPLATES with dynamic workflow configuration.
     - Retrieve stored project plans
 """
 
+from __future__ import annotations
+
 # Standard library
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # Project modules
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.schemas import WorkflowConfig, WorkphasesConfig
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
+
+if TYPE_CHECKING:
+    from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 # Per-phase keys recognised in planning_deliverables (C8/GAP-15)
 _known_phase_keys: frozenset[str] = frozenset(
@@ -90,12 +95,14 @@ class ProjectManager:
         workflow_config: WorkflowConfig,
         git_manager: GitManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
+        workflow_status_resolver: WorkflowStatusResolver | None = None,
     ) -> None:
         """Initialize ProjectManager."""
         self.workspace_root = Path(workspace_root)
         self.workflow_config = workflow_config
         self._git_manager = git_manager
         self._workphases_config = workphases_config
+        self._workflow_status_resolver = workflow_status_resolver
         self.deliverables_file = self.workspace_root / ".st3" / "deliverables.json"
         self.atomic_json_writer = AtomicJsonWriter()
 
@@ -441,6 +448,17 @@ class ProjectManager:
 
         if plan is None:
             return None
+
+        # Issue #231 C4: Use WorkflowStatusResolver when injected (preferred path)
+        if self._workflow_status_resolver is not None:
+            status = self._workflow_status_resolver.resolve_current()
+            if status.sub_phase:
+                plan["current_phase"] = f"{status.current_phase}:{status.sub_phase}"
+            else:
+                plan["current_phase"] = status.current_phase
+            plan["phase_source"] = status.phase_source
+            plan["phase_detection_error"] = status.phase_detection_error
+            return plan
 
         # Detect current phase via ScopeDecoder (Issue #139)
         if self._git_manager is None:

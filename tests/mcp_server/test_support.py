@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock
 
 from mcp_server.config.loader import (
@@ -48,6 +48,9 @@ from mcp_server.schemas import (
 )
 from mcp_server.tools.git_tools import CreateBranchInput
 from mcp_server.tools.issue_tools import CreateIssueTool
+
+if TYPE_CHECKING:
+    from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 
 def _candidate_config_roots(workspace_root: Path | str | None = None) -> list[Path]:
@@ -154,6 +157,7 @@ def make_project_manager(
     workspace_root: Path | str,
     workflow_config: WorkflowConfig | None = None,
     git_manager: GitManager | None = None,
+    workflow_status_resolver: WorkflowStatusResolver | None = None,
 ) -> ProjectManager:
     """Build a ProjectManager with explicit workflow config injection."""
     resolved_workflow_config = workflow_config or load_workflow_config(workspace_root)
@@ -171,6 +175,7 @@ def make_project_manager(
         workflow_config=resolved_workflow_config,
         git_manager=resolved_git_manager,
         workphases_config=workphases_config,
+        workflow_status_resolver=workflow_status_resolver,
     )
 
 
