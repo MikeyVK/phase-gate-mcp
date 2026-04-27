@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.phase_detection import PhaseDetectionResult, ScopeDecoder
 
 if TYPE_CHECKING:
@@ -26,8 +27,6 @@ class CommitPhaseDetector:
         workphases_config: WorkphasesConfig | None = None,
     ) -> None:
         if workphases_config is None:
-            from mcp_server.config.loader import ConfigLoader
-
             config_loader = ConfigLoader(workspace_root / ".st3" / "config")
             try:
                 workphases_config = config_loader.load_workphases_config()
