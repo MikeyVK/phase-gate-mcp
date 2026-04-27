@@ -6,8 +6,24 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
+
 if TYPE_CHECKING:
     pass
+
+_TEST_WORKPHASES = WorkphasesConfig(
+    phases={
+        "research": PhaseDefinition(commit_type_hint="docs"),
+        "planning": PhaseDefinition(commit_type_hint="docs"),
+        "design": PhaseDefinition(commit_type_hint="docs"),
+        "implementation": PhaseDefinition(
+            commit_type_hint=None, subphases=["red", "green", "refactor"]
+        ),
+        "validation": PhaseDefinition(commit_type_hint="test"),
+        "documentation": PhaseDefinition(commit_type_hint="docs"),
+        "ready": PhaseDefinition(commit_type_hint="chore", terminal=True),
+    }
+)
 
 
 class TestWorkflowStatusDTO:
@@ -98,7 +114,7 @@ class TestCommitPhaseDetector:
     def test_detector_exists_and_detects_from_commit(self, tmp_path: pytest.TempPathFactory) -> None:
         from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 
-        detector = CommitPhaseDetector(workspace_root=tmp_path)
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("feat(P_IMPLEMENTATION_SP_C3_GREEN): add dto")
         assert result["workflow_phase"] == "implementation"
         assert result["source"] == "commit-scope"
@@ -112,7 +128,7 @@ class TestCommitPhaseDetector:
         (state_dir / "state.json").write_text(
             '{"branch": "main", "current_phase": "research", "workflow_name": "feature"}'
         )
-        detector = CommitPhaseDetector(workspace_root=tmp_path)
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("feat(P_IMPLEMENTATION_SP_C3_RED): add tests")
         # Must read commit-scope, NOT state.json
         assert result["source"] == "commit-scope"
@@ -123,7 +139,7 @@ class TestCommitPhaseDetector:
     ) -> None:
         from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 
-        detector = CommitPhaseDetector(workspace_root=tmp_path)
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("chore: bump version")
         assert result["workflow_phase"] == "unknown"
         assert result["source"] == "unknown"
@@ -133,7 +149,7 @@ class TestCommitPhaseDetector:
     ) -> None:
         from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 
-        detector = CommitPhaseDetector(workspace_root=tmp_path)
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit(None)
         assert result["workflow_phase"] == "unknown"
 
@@ -147,7 +163,6 @@ class TestWorkflowStatusResolver:
         commits: list[str] | None = None,
         state_phase: str = "implementation",
         state_cycle: int | None = 3,
-        state_sub_phase: str | None = None,
         *,
         tmp_path: object,
     ) -> object:
@@ -165,14 +180,13 @@ class TestWorkflowStatusResolver:
                 branch=branch,
                 current_phase=state_phase,
                 current_cycle=state_cycle,
-                sub_phase=state_sub_phase,
                 workflow_name="feature",
                 issue_number=50,
                 parent_branch="main",
             )
         )
 
-        detector = CommitPhaseDetector(workspace_root=tmp_path)  # type: ignore[arg-type]
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)  # type: ignore[arg-type]
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -246,7 +260,7 @@ class TestWorkflowStatusResolver:
             )
         )
 
-        detector = CommitPhaseDetector(workspace_root=tmp_path)  # type: ignore[arg-type]
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)  # type: ignore[arg-type]
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,

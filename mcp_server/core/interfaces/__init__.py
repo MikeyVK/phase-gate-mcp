@@ -106,3 +106,14 @@ class IWorkflowGateRunner(Protocol):
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
         raise NotImplementedError
+
+
+@runtime_checkable
+class IGitContextReader(Protocol):
+    """Read-only git context for the current branch."""
+
+    def get_current_branch(self) -> str:
+        raise NotImplementedError
+
+    def get_recent_commits(self, limit: int = 5) -> list[str]:
+        raise NotImplementedError
