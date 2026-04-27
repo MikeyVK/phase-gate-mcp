@@ -596,3 +596,50 @@ class TestGateStatusStamping:
         manager._update_summary_and_append_gate(results, gate_result)
 
         assert gate_result["status"] == "failed"
+
+
+class TestBaselineAdvanceSplitState:
+    """C5 (C_QA_STATE_SPLIT): QAManager delegates baseline writes to IQualityStateRepository."""
+
+    def test_qa_manager_accepts_quality_state_repository_kwarg(
+        self, tmp_path: Path
+    ) -> None:
+        """QAManager(quality_state_repository=...) must not raise TypeError.
+
+        RED: will fail until C5 GREEN adds the kwarg to QAManager.__init__.
+        """
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
+
+        mock_repo = MagicMock()
+        mock_repo.load.return_value = QualityState()
+        manager = QAManager(workspace_root=tmp_path, quality_state_repository=mock_repo)
+        assert manager is not None
+
+    def test_advance_baseline_calls_apply_on_repository(self, tmp_path: Path) -> None:
+        """_advance_baseline_on_all_pass() calls quality_state_repository.apply().
+
+        RED: will fail until C5 GREEN migrates QAManager to use the repository.
+        """
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
+
+        mock_repo = MagicMock()
+        mock_repo.load.return_value = QualityState()
+        manager = QAManager(workspace_root=tmp_path, quality_state_repository=mock_repo)
+        with patch.object(manager, "_get_head_sha", return_value="new_sha"):
+            manager._advance_baseline_on_all_pass()
+        mock_repo.apply.assert_called_once()
+
+    def test_accumulate_failed_files_calls_apply_on_repository(
+        self, tmp_path: Path
+    ) -> None:
+        """_accumulate_failed_files_on_failure() calls quality_state_repository.apply().
+
+        RED: will fail until C5 GREEN migrates QAManager to use the repository.
+        """
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
+
+        mock_repo = MagicMock()
+        mock_repo.load.return_value = QualityState(failed_files=[])
+        manager = QAManager(workspace_root=tmp_path, quality_state_repository=mock_repo)
+        manager._accumulate_failed_files_on_failure(["new_fail.py"])
+        mock_repo.apply.assert_called_once()

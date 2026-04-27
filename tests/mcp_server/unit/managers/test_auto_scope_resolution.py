@@ -248,3 +248,58 @@ class TestAutoScopeEdgeCases:
         manager = make_qa_manager()
         result = manager._resolve_scope("auto")
         assert result == [], f"Expected [] when workspace_root is None, got: {result!r}"
+
+
+class TestAutoScopeSplitState:
+    """C5 (C_QA_STATE_SPLIT): _resolve_auto_scope reads from IQualityStateRepository."""
+
+    def test_resolve_auto_scope_reads_from_repository(self, tmp_path: Path) -> None:
+        """When quality_state_repository is injected, _resolve_auto_scope calls load().
+
+        RED: will fail until C5 GREEN migrates _resolve_auto_scope to use the repository.
+        """
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
+        from tests.mcp_server.test_support import make_qa_manager  # noqa: PLC0415
+
+        mock_repo = MagicMock()
+        mock_repo.load.return_value = QualityState(
+            baseline_sha="repo_sha",
+            failed_files=["repo_fail.py"],
+        )
+        manager = make_qa_manager(tmp_path, quality_state_repository=mock_repo)
+
+        with patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")):
+            result = manager._resolve_scope("auto")
+
+        mock_repo.load.assert_called()
+        assert "repo_fail.py" in result
+
+    def test_resolve_auto_scope_ignores_state_json_when_repo_injected(
+        self, tmp_path: Path
+    ) -> None:
+        """When repository is injected, state.json quality_gates section is ignored.
+
+        RED: will fail until C5 GREEN migrates _resolve_auto_scope to use the repository.
+        """
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
+        from tests.mcp_server.test_support import make_qa_manager  # noqa: PLC0415
+
+        state_path = tmp_path / ".st3" / "state.json"
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(
+            '{"quality_gates": {"baseline_sha": "stale_sha", "failed_files": ["stale.py"]}}',
+            encoding="utf-8",
+        )
+
+        mock_repo = MagicMock()
+        mock_repo.load.return_value = QualityState(
+            baseline_sha="repo_sha",
+            failed_files=["repo_fail.py"],
+        )
+        manager = make_qa_manager(tmp_path, quality_state_repository=mock_repo)
+
+        with patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")):
+            result = manager._resolve_scope("auto")
+
+        assert "repo_fail.py" in result
+        assert "stale.py" not in result
