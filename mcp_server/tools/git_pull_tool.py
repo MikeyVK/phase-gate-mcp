@@ -26,6 +26,7 @@ from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.tools.base import BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -107,7 +108,7 @@ class GitPullTool(BranchMutatingTool):
         try:
             current_branch = self.manager.get_current_branch()
             await anyio.to_thread.run_sync(self._get_state_engine().get_state, current_branch)
-        except (MCPError, ValueError, OSError) as exc:
+        except (MCPError, ValueError, OSError, StateBranchMismatchError) as exc:
             logger.warning(
                 "Phase state sync failed after pull",
                 extra={"props": {"error": str(exc)}},

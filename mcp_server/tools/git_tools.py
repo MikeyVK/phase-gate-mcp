@@ -15,6 +15,7 @@ from mcp_server.core.operation_notes import CommitNote, NoteContext
 from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas import GitConfig
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
@@ -318,7 +319,7 @@ class GitCommitTool(BranchMutatingTool):
                 raise ValueError("PhaseStateEngine must be injected for auto-detection")
             try:
                 workflow_phase = self._state_engine.get_current_phase(branch=current_branch)
-            except FileNotFoundError:
+            except (FileNotFoundError, StateBranchMismatchError):
                 return ToolResult.error(
                     f"No state.json found for branch '{current_branch}'. "
                     "Provide workflow_phase explicitly: "
@@ -459,7 +460,7 @@ class GitCheckoutTool(BaseTool):
             state = await anyio.to_thread.run_sync(state_engine.get_state, params.branch)
             current_phase = state.current_phase or "unknown"
             parent_branch = state.parent_branch
-        except (MCPError, ValueError, OSError) as exc:
+        except (MCPError, ValueError, OSError, StateBranchMismatchError) as exc:
             logger.warning(
                 "Phase state sync failed after checkout",
                 extra={"props": {"branch": params.branch, "error": str(exc)}},

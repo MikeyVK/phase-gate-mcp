@@ -10,6 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mcp_server.core.interfaces import IStateReader
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 
@@ -89,12 +90,12 @@ class BranchValidatedStateReader:
     loaded state's branch field does not match the requested branch.
     """
 
-    def __init__(self, inner: object) -> None:
+    def __init__(self, inner: IStateReader) -> None:
         self._inner = inner
 
     def load(self, branch: str) -> BranchState:
         """Load state and validate branch identity."""
-        state: BranchState = self._inner.load(branch)  # type: ignore[attr-defined]
+        state: BranchState = self._inner.load(branch)
         if state.branch != branch:
             raise StateBranchMismatchError(
                 f"Loaded state branch '{state.branch}' does not match requested branch '{branch}'"

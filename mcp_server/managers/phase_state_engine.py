@@ -38,7 +38,7 @@ from mcp_server.core.interfaces import (
 )
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.state_repository import BranchState
+from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
 from mcp_server.schemas import GitConfig, WorkflowConfig, WorkphasesConfig
 
 logger = logging.getLogger(__name__)
@@ -470,7 +470,7 @@ class PhaseStateEngine:
         loaded_state = self._state_repository.load(branch)
         if loaded_state.branch != branch:
             msg = f"Branch state for '{branch}' not found"
-            raise FileNotFoundError(msg)
+            raise StateBranchMismatchError(msg)
         return loaded_state
 
     def _load_state_or_reconstruct(self, branch: str) -> BranchState:
