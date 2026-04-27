@@ -5,6 +5,8 @@ merge_policy:
       reason: "MCP workflow state — branch-local, must never reach main"
     - path: .st3/deliverables.json
       reason: "MCP workflow deliverables — branch-local, must never reach main"
+    - path: .st3/quality_state.json
+      reason: "QA baseline state — branch-local, must never reach main"
 
 workflows:
   feature:

@@ -6,12 +6,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Callable, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from mcp_server.config.schemas.phase_contracts_config import CheckSpec
     from mcp_server.managers.pytest_runner import PytestResult
     from mcp_server.managers.state_repository import BranchState
+    from mcp_server.state.quality_state import QualityState
+
 
 
 class PRStatus(Enum):
@@ -116,4 +118,17 @@ class IGitContextReader(Protocol):
         raise NotImplementedError
 
     def get_recent_commits(self, limit: int = 5) -> list[str]:
+        raise NotImplementedError
+
+
+@runtime_checkable
+class IQualityStateRepository(Protocol):
+    """Read/apply access to persisted quality-gate baseline state."""
+
+    def load(self) -> QualityState:
+        """Return current QualityState; default-construct when absent."""
+        raise NotImplementedError
+
+    def apply(self, mutate: Callable[[QualityState], QualityState]) -> None:
+        """Read current state, apply mutate, and persist atomically."""
         raise NotImplementedError

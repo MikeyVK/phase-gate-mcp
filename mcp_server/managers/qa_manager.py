@@ -13,7 +13,10 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from mcp_server.core.interfaces import IQualityStateRepository
 
 from mcp_server.schemas import (
     JsonViolationsParsing,
@@ -70,15 +73,17 @@ class QAManager:
         self,
         workspace_root: Path | None = None,
         quality_config: QualityConfig | None = None,
+        quality_state_repository: IQualityStateRepository | None = None,
     ) -> None:
         """Initialize QA Manager with injected quality configuration."""
         # Runtime configuration (lowercase for instance mutability)
         self.qa_log_dir = self.QA_LOG_DIR
         self.qa_log_enabled = self.QA_LOG_ENABLED
         self.qa_log_max_files = self.QA_LOG_MAX_FILES
-        # Optional workspace root: used for baseline state persistence in .st3/state.json
+        # Optional workspace root: used for baseline state persistence
         self.workspace_root = workspace_root
         self._quality_config = quality_config
+        self._quality_state_repository = quality_state_repository
 
     def run_quality_gates(
         self,
@@ -290,9 +295,21 @@ class QAManager:
     def _advance_baseline_on_all_pass(self) -> None:
         """Persist current HEAD as baseline_sha and reset failed_files on all-pass run.
 
-        Only executed when workspace_root is set. Reads/writes .st3/state.json in-place,
-        touching only the quality_gates sub-key to avoid overwriting workflow phase data.
+        Uses IQualityStateRepository when injected; falls back to state.json for
+        backward compatibility with callers that don't inject a repository.
         """
+        if self._quality_state_repository is not None:
+            head_sha = self._get_head_sha()
+            if head_sha is None:
+                return
+            from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
+
+            self._quality_state_repository.apply(
+                lambda _s: QualityState(baseline_sha=head_sha, failed_files=[])
+            )
+            return
+
+        # Legacy path: direct state.json writes (no repository injected)
         if self.workspace_root is None:
             return
 
@@ -311,9 +328,20 @@ class QAManager:
     def _accumulate_failed_files_on_failure(self, newly_failed: list[str]) -> None:
         """Union newly-failed files with persisted failed_files; leave baseline_sha unchanged.
 
-        Only executed when workspace_root is set and at least one gate failed.
-        Ensures deterministic sort and no duplicates in the persisted list.
+        Uses IQualityStateRepository when injected; falls back to state.json for
+        backward compatibility with callers that don't inject a repository.
         """
+        if self._quality_state_repository is not None:
+            from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
+
+            def _union(s: QualityState) -> QualityState:
+                merged = sorted(set(s.failed_files) | set(newly_failed))
+                return QualityState(baseline_sha=s.baseline_sha, failed_files=merged)
+
+            self._quality_state_repository.apply(_union)
+            return
+
+        # Legacy path: direct state.json writes (no repository injected)
         if self.workspace_root is None:
             return
 
@@ -416,24 +444,34 @@ class QAManager:
     def _resolve_auto_scope(self) -> list[str]:
         """Return union of git diff (``baseline_sha..HEAD``) and persisted ``failed_files``.
 
-        Reads ``quality_gates.baseline_sha`` and ``quality_gates.failed_files``
-        from ``.st3/state.json``.
+        Uses IQualityStateRepository when injected; falls back to reading
+        ``quality_gates`` from ``.st3/state.json`` for backward compatibility.
 
         Returns:
             Sorted, deduplicated list of ``.py`` paths. Returns ``[]`` when
             workspace_root is absent or no ``baseline_sha`` is recorded (C24
             handles the no-baseline fallback).
         """
+        if self._quality_state_repository is not None:
+            state = self._quality_state_repository.load()
+            baseline_sha = state.baseline_sha
+            if not baseline_sha:
+                return self._resolve_project_scope()
+            diff_files = set(self._git_diff_py_files(baseline_sha))
+            failed_files = set(state.failed_files)
+            return sorted(diff_files | failed_files)
+
+        # Legacy path: read quality_gates from state.json
         if self.workspace_root is None:
             return []
 
         state = self._load_state_json(self.workspace_root / ".st3" / "state.json")
         quality_gates: dict[str, Any] = state.get("quality_gates", {})
-        baseline_sha: str | None = quality_gates.get("baseline_sha") or None
-        if not baseline_sha:
+        baseline_sha_raw: str | None = quality_gates.get("baseline_sha") or None
+        if not baseline_sha_raw:
             return self._resolve_project_scope()
 
-        diff_files = set(self._git_diff_py_files(baseline_sha))
+        diff_files = set(self._git_diff_py_files(baseline_sha_raw))
         failed_files = set(quality_gates.get("failed_files", []))
         union = diff_files | failed_files
         return sorted(union)

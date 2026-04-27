@@ -50,6 +50,7 @@ from mcp_server.tools.git_tools import CreateBranchInput
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
+    from mcp_server.core.interfaces import IQualityStateRepository
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 
@@ -388,6 +389,7 @@ def make_metadata_parser(
 def make_qa_manager(
     workspace_root: Path | str | None = None,
     quality_config: QualityConfig | None = None,
+    quality_state_repository: IQualityStateRepository | None = None,
 ) -> QAManager:
     """Build a QAManager with explicit quality config injection."""
     resolved_quality = quality_config or cast(
@@ -399,7 +401,11 @@ def make_qa_manager(
         ),
     )
     resolved_workspace = Path(workspace_root) if workspace_root is not None else None
-    return QAManager(workspace_root=resolved_workspace, quality_config=resolved_quality)
+    return QAManager(
+        workspace_root=resolved_workspace,
+        quality_config=resolved_quality,
+        quality_state_repository=quality_state_repository,
+    )
 
 
 def make_artifact_manager(workspace_root: Path | str) -> ArtifactManager:
