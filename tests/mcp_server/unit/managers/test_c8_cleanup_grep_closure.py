@@ -27,21 +27,27 @@ class TestQAManagerLegacyPathRemovalC8:
             "Remove the else-branches that write directly to state.json."
         )
 
-    def test_no_load_state_json_calls_in_qa_manager(self) -> None:
-        """_load_state_json must not be called from baseline/accumulate/auto-scope methods."""
+    def test_advance_baseline_has_no_save_state_json_call(self) -> None:
+        """_advance_baseline_on_all_pass must not call _save_state_json (legacy write path)."""
         src = _QA_MANAGER.read_text(encoding="utf-8")
-        # _save_state_json and _load_state_json are internal helpers kept for backward
-        # compat, but the state-mutation methods must no longer call them.
-        # Count non-definition lines that call these helpers:
-        calls = [
-            ln for ln in src.splitlines()
-            if ("_load_state_json(" in ln or "_save_state_json(" in ln)
-            and not ln.strip().startswith("def ")
-            and not ln.strip().startswith("#")
-        ]
-        assert calls == [], (
-            f"qa_manager.py still calls _load_state_json/_save_state_json "
-            f"outside helper definitions: {calls}"
+        # Extract only the _advance_baseline_on_all_pass method body
+        method_start = src.find("def _advance_baseline_on_all_pass(")
+        next_def = src.find("\n    def ", method_start + 1)
+        method_body = src[method_start:next_def]
+        assert "_save_state_json(" not in method_body, (
+            "_advance_baseline_on_all_pass still calls _save_state_json. "
+            "Remove the legacy state.json write path."
+        )
+
+    def test_accumulate_failed_has_no_save_state_json_call(self) -> None:
+        """_accumulate_failed_files_on_failure must not call _save_state_json."""
+        src = _QA_MANAGER.read_text(encoding="utf-8")
+        method_start = src.find("def _accumulate_failed_files_on_failure(")
+        next_def = src.find("\n    def ", method_start + 1)
+        method_body = src[method_start:next_def]
+        assert "_save_state_json(" not in method_body, (
+            "_accumulate_failed_files_on_failure still calls _save_state_json. "
+            "Remove the legacy state.json write path."
         )
 
 

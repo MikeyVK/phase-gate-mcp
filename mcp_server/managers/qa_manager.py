@@ -293,68 +293,29 @@ class QAManager:
     # ------------------------------------------------------------------
 
     def _advance_baseline_on_all_pass(self) -> None:
-        """Persist current HEAD as baseline_sha and reset failed_files on all-pass run.
-
-        Uses IQualityStateRepository when injected; falls back to state.json for
-        backward compatibility with callers that don't inject a repository.
-        """
-        if self._quality_state_repository is not None:
-            head_sha = self._get_head_sha()
-            if head_sha is None:
-                return
-            from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
-
-            self._quality_state_repository.apply(
-                lambda _s: QualityState(baseline_sha=head_sha, failed_files=[])
-            )
+        """Persist current HEAD as baseline_sha and reset failed_files on all-pass run."""
+        if self._quality_state_repository is None:
             return
-
-        # Legacy path: direct state.json writes (no repository injected)
-        if self.workspace_root is None:
-            return
-
         head_sha = self._get_head_sha()
         if head_sha is None:
             return
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
 
-        state_path = self.workspace_root / ".st3" / "state.json"
-        state_data = self._load_state_json(state_path)
-        state_data["quality_gates"] = {
-            "baseline_sha": head_sha,
-            "failed_files": [],
-        }
-        self._save_state_json(state_path, state_data)
+        self._quality_state_repository.apply(
+            lambda _s: QualityState(baseline_sha=head_sha, failed_files=[])
+        )
 
     def _accumulate_failed_files_on_failure(self, newly_failed: list[str]) -> None:
-        """Union newly-failed files with persisted failed_files; leave baseline_sha unchanged.
-
-        Uses IQualityStateRepository when injected; falls back to state.json for
-        backward compatibility with callers that don't inject a repository.
-        """
-        if self._quality_state_repository is not None:
-            from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
-
-            def _union(s: QualityState) -> QualityState:
-                merged = sorted(set(s.failed_files) | set(newly_failed))
-                return QualityState(baseline_sha=s.baseline_sha, failed_files=merged)
-
-            self._quality_state_repository.apply(_union)
+        """Union newly-failed files with persisted failed_files; leave baseline_sha unchanged."""
+        if self._quality_state_repository is None:
             return
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
 
-        # Legacy path: direct state.json writes (no repository injected)
-        if self.workspace_root is None:
-            return
+        def _union(s: QualityState) -> QualityState:
+            merged = sorted(set(s.failed_files) | set(newly_failed))
+            return QualityState(baseline_sha=s.baseline_sha, failed_files=merged)
 
-        state_path = self.workspace_root / ".st3" / "state.json"
-        state_data = self._load_state_json(state_path)
-
-        quality_gates: dict[str, Any] = state_data.get("quality_gates", {})
-        existing = set(quality_gates.get("failed_files", []))
-        merged = sorted(existing | set(newly_failed))
-
-        quality_gates["failed_files"] = merged
-        state_data["quality_gates"] = quality_gates
-        self._save_state_json(state_path, state_data)
+        self._quality_state_repository.apply(_union)
 
     def _get_head_sha(self) -> str | None:
         """Return the current git HEAD commit SHA, or None on error."""
@@ -444,37 +405,19 @@ class QAManager:
     def _resolve_auto_scope(self) -> list[str]:
         """Return union of git diff (``baseline_sha..HEAD``) and persisted ``failed_files``.
 
-        Uses IQualityStateRepository when injected; falls back to reading
-        ``quality_gates`` from ``.st3/state.json`` for backward compatibility.
-
         Returns:
-            Sorted, deduplicated list of ``.py`` paths. Returns ``[]`` when
-            workspace_root is absent or no ``baseline_sha`` is recorded (C24
-            handles the no-baseline fallback).
+            Sorted, deduplicated list of ``.py`` paths. Returns project scope when
+            no ``baseline_sha`` is recorded (C24 handles the no-baseline fallback).
         """
-        if self._quality_state_repository is not None:
-            state = self._quality_state_repository.load()
-            baseline_sha = state.baseline_sha
-            if not baseline_sha:
-                return self._resolve_project_scope()
-            diff_files = set(self._git_diff_py_files(baseline_sha))
-            failed_files = set(state.failed_files)
-            return sorted(diff_files | failed_files)
-
-        # Legacy path: read quality_gates from state.json
-        if self.workspace_root is None:
-            return []
-
-        state_dict = self._load_state_json(self.workspace_root / ".st3" / "state.json")
-        quality_gates: dict[str, Any] = state_dict.get("quality_gates", {})
-        baseline_sha_raw: str | None = quality_gates.get("baseline_sha") or None
-        if not baseline_sha_raw:
+        if self._quality_state_repository is None:
             return self._resolve_project_scope()
-
-        diff_files = set(self._git_diff_py_files(baseline_sha_raw))
-        failed_files = set(quality_gates.get("failed_files", []))
-        union = diff_files | failed_files
-        return sorted(union)
+        state = self._quality_state_repository.load()
+        baseline_sha = state.baseline_sha
+        if not baseline_sha:
+            return self._resolve_project_scope()
+        diff_files = set(self._git_diff_py_files(baseline_sha))
+        failed_files = set(state.failed_files)
+        return sorted(diff_files | failed_files)
 
     def _git_diff_py_files(self, base_ref: str, *, use_merge_base: bool = False) -> list[str]:
         """Run git diff and return changed ``.py`` files.

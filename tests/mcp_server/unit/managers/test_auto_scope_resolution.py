@@ -18,6 +18,8 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from mcp_server.managers.quality_state_repository import FileQualityStateRepository
+from mcp_server.state.quality_state import QualityState
 from tests.mcp_server.test_support import make_qa_manager
 
 
@@ -35,6 +37,24 @@ def _write_state(tmp_path: Path, baseline_sha: str, failed_files: list[str]) -> 
     state_path.write_text(json.dumps(state), encoding="utf-8")
 
 
+def _make_quality_repo(
+    tmp_path: Path,
+    baseline_sha: str = "abc123",
+    failed_files: list[str] | None = None,
+) -> FileQualityStateRepository:
+    """Create a FileQualityStateRepository seeded with the given state."""
+    st3_dir = tmp_path / ".st3"
+    st3_dir.mkdir(exist_ok=True)
+    repo = FileQualityStateRepository(backing_file=st3_dir / "quality_state.json")
+    repo.apply(
+        lambda _: QualityState(
+            baseline_sha=baseline_sha,
+            failed_files=list(failed_files) if failed_files else [],
+        )
+    )
+    return repo
+
+
 def _fake_diff(py_files: list[str]) -> MagicMock:
     """Return a subprocess.CompletedProcess mock with the given .py files as stdout."""
     result = MagicMock(spec=subprocess.CompletedProcess)
@@ -48,8 +68,8 @@ class TestAutoScopeHappyPath:
 
     def test_auto_scope_returns_failed_files_when_diff_empty(self, tmp_path: Path) -> None:
         """Test A: failed_files present, diff empty → auto-scope returns failed_files."""
-        _write_state(tmp_path, baseline_sha="abc123", failed_files=["old_fail.py"])
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="abc123", failed_files=["old_fail.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff([])):
             result = manager._resolve_scope("auto")
@@ -61,8 +81,8 @@ class TestAutoScopeHappyPath:
 
     def test_auto_scope_returns_diff_files_when_no_failed_files(self, tmp_path: Path) -> None:
         """Test B: diff has files, failed_files empty → auto-scope returns diff files."""
-        _write_state(tmp_path, baseline_sha="abc123", failed_files=[])
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="abc123", failed_files=[])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["changed.py"])):
             result = manager._resolve_scope("auto")
@@ -74,12 +94,12 @@ class TestAutoScopeHappyPath:
 
     def test_auto_scope_returns_union_of_diff_and_failed_files(self, tmp_path: Path) -> None:
         """Test C: both diff and failed_files present → result is the union of both."""
-        _write_state(
+        repo = _make_quality_repo(
             tmp_path,
             baseline_sha="abc123",
             failed_files=["old_fail.py", "another_fail.py"],
         )
-        manager = make_qa_manager(tmp_path)
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["changed.py", "old_fail.py"])):
             result = manager._resolve_scope("auto")
@@ -90,12 +110,8 @@ class TestAutoScopeHappyPath:
 
     def test_auto_scope_result_is_sorted(self, tmp_path: Path) -> None:
         """Result list is sorted (deterministic)."""
-        _write_state(
-            tmp_path,
-            baseline_sha="abc123",
-            failed_files=["z_fail.py"],
-        )
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="abc123", failed_files=["z_fail.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["a_changed.py", "m_changed.py"])):
             result = manager._resolve_scope("auto")
@@ -104,12 +120,8 @@ class TestAutoScopeHappyPath:
 
     def test_auto_scope_no_duplicates_when_overlap(self, tmp_path: Path) -> None:
         """Overlap between diff and failed_files produces no duplicates."""
-        _write_state(
-            tmp_path,
-            baseline_sha="abc123",
-            failed_files=["shared.py"],
-        )
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="abc123", failed_files=["shared.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["shared.py"])):
             result = manager._resolve_scope("auto")
@@ -118,14 +130,14 @@ class TestAutoScopeHappyPath:
 
     def test_auto_scope_uses_baseline_sha_not_parent_branch(self, tmp_path: Path) -> None:
         """Git diff uses baseline_sha..HEAD, not workflow.parent_branch..HEAD."""
-        _write_state(tmp_path, baseline_sha="deadbeef", failed_files=[])
+        repo = _make_quality_repo(tmp_path, baseline_sha="deadbeef", failed_files=[])
         # Also write a workflow.parent_branch to ensure it is NOT used
         state_path = tmp_path / ".st3" / "state.json"
-        state = json.loads(state_path.read_text(encoding="utf-8"))
-        state["workflow"] = {"parent_branch": "main"}
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state = {"branch": "feature/test", "workflow": {"parent_branch": "main"}}
         state_path.write_text(json.dumps(state), encoding="utf-8")
 
-        manager = make_qa_manager(tmp_path)
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         captured: list[list[str]] = []
 
         def fake_git(cmd: list[str], **_kw: object) -> MagicMock:
@@ -146,8 +158,8 @@ class TestAutoScopeHappyPath:
 
     def test_auto_scope_excludes_non_py_files_from_diff(self, tmp_path: Path) -> None:
         """Non-.py files in git diff output are excluded from the result."""
-        _write_state(tmp_path, baseline_sha="abc123", failed_files=[])
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="abc123", failed_files=[])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         raw_result = MagicMock(spec=subprocess.CompletedProcess)
         raw_result.returncode = 0

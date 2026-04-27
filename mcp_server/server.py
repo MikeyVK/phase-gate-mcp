@@ -46,6 +46,7 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.pytest_runner import PytestRunner
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_reconstructor import StateReconstructor
 from mcp_server.managers.state_repository import BranchValidatedStateReader, FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
@@ -250,9 +251,13 @@ class MCPServer:
             state_reconstructor=self.state_reconstructor,
             workflow_state_mutator=self._workflow_state_mutator,
         )
+        _quality_state_repository = FileQualityStateRepository(
+            backing_file=workspace_root / ".st3" / "quality_state.json"
+        )
         self.qa_manager = QAManager(
             workspace_root=workspace_root,
             quality_config=quality_config,
+            quality_state_repository=_quality_state_repository,
         )
         self.github_manager = GitHubManager(
             issue_config=issue_config,

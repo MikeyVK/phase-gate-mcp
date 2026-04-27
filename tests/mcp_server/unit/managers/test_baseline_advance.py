@@ -15,7 +15,28 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.managers.quality_state_repository import FileQualityStateRepository
+from mcp_server.state.quality_state import QualityState
 from tests.mcp_server.test_support import make_qa_manager
+
+
+def _make_quality_repo(
+    tmp_path: Path,
+    baseline_sha: str = "old_sha",
+    failed_files: list[str] | None = None,
+) -> FileQualityStateRepository:
+    """Create a FileQualityStateRepository backed by quality_state.json in tmp_path."""
+    st3_dir = tmp_path / ".st3"
+    st3_dir.mkdir(exist_ok=True)
+    backing_file = st3_dir / "quality_state.json"
+    repo = FileQualityStateRepository(backing_file=backing_file)
+    repo.apply(
+        lambda _: QualityState(
+            baseline_sha=baseline_sha,
+            failed_files=list(failed_files) if failed_files else [],
+        )
+    )
+    return repo
 
 
 def _state_with_quality_gates(
@@ -71,37 +92,25 @@ class TestBaselineAdvanceOnAllPass:
         assert manager.workspace_root == tmp_path
 
     def test_advance_baseline_writes_new_sha(self, tmp_path: Path) -> None:
-        """_advance_baseline_on_all_pass writes HEAD sha to quality_gates.baseline_sha."""
-        state_file = _state_with_quality_gates(
-            tmp_path,
-            baseline_sha="old_sha_abc",
-            failed_files=["mcp_server/old_failure.py"],
-        )
-
-        manager = make_qa_manager(tmp_path)
+        """_advance_baseline_on_all_pass writes HEAD sha to quality state baseline_sha."""
+        repo = _make_quality_repo(tmp_path, baseline_sha="old_sha_abc", failed_files=["mcp_server/old_failure.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         fake_sha = "newsha1234567890"
 
         with patch.object(manager, "_get_head_sha", return_value=fake_sha):
             manager._advance_baseline_on_all_pass()
 
-        state = json.loads(state_file.read_text())
-        assert state["quality_gates"]["baseline_sha"] == fake_sha
+        assert repo.load().baseline_sha == fake_sha
 
     def test_advance_baseline_clears_failed_files(self, tmp_path: Path) -> None:
-        """_advance_baseline_on_all_pass resets quality_gates.failed_files to []."""
-        state_file = _state_with_quality_gates(
-            tmp_path,
-            baseline_sha="old_sha",
-            failed_files=["mcp_server/foo.py", "mcp_server/bar.py"],
-        )
-
-        manager = make_qa_manager(tmp_path)
+        """_advance_baseline_on_all_pass resets failed_files to [] on all-pass."""
+        repo = _make_quality_repo(tmp_path, baseline_sha="old_sha", failed_files=["mcp_server/foo.py", "mcp_server/bar.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch.object(manager, "_get_head_sha", return_value="cleansha000"):
             manager._advance_baseline_on_all_pass()
 
-        state = json.loads(state_file.read_text())
-        assert state["quality_gates"]["failed_files"] == []
+        assert repo.load().failed_files == []
 
     def test_advance_baseline_preserves_other_state_keys(self, tmp_path: Path) -> None:
         """State update must not overwrite branch/issue_number or other top-level keys."""
@@ -117,22 +126,23 @@ class TestBaselineAdvanceOnAllPass:
         assert state["issue_number"] == 251
 
     def test_advance_baseline_creates_state_file_if_absent(self, tmp_path: Path) -> None:
-        """When state.json is absent, _advance_baseline_on_all_pass creates it."""
+        """When quality_state.json is absent, _advance_baseline_on_all_pass creates it."""
         st3_dir = tmp_path / ".st3"
         st3_dir.mkdir()
-        state_file = st3_dir / "state.json"
-        assert not state_file.exists()  # precondition
+        quality_state_file = st3_dir / "quality_state.json"
+        assert not quality_state_file.exists()  # precondition
 
-        manager = make_qa_manager(tmp_path)
+        repo = FileQualityStateRepository(backing_file=quality_state_file)
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         fake_sha = "fresh_sha_999"
 
         with patch.object(manager, "_get_head_sha", return_value=fake_sha):
             manager._advance_baseline_on_all_pass()
 
-        assert state_file.exists()
-        state = json.loads(state_file.read_text())
-        assert state["quality_gates"]["baseline_sha"] == fake_sha
-        assert state["quality_gates"]["failed_files"] == []
+        assert quality_state_file.exists()
+        state = repo.load()
+        assert state.baseline_sha == fake_sha
+        assert state.failed_files == []
 
     def test_run_quality_gates_calls_advance_on_all_pass(self, tmp_path: Path) -> None:
         """run_quality_gates invokes _advance_baseline_on_all_pass when overall_pass=True."""
@@ -171,35 +181,22 @@ class TestFailureAccumulation:
 
     def test_accumulate_uses_set_union(self, tmp_path: Path) -> None:
         """New failures are merged with existing failed_files (not overwritten)."""
-        state_file = _state_with_quality_gates(
-            tmp_path,
-            baseline_sha="sha_preserved",
-            failed_files=["mcp_server/old_fail.py"],
-        )
-
-        manager = make_qa_manager(tmp_path)
-        # RED: _accumulate_failed_files_on_failure does not exist yet → AttributeError
+        repo = _make_quality_repo(tmp_path, baseline_sha="sha_preserved", failed_files=["mcp_server/old_fail.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         manager._accumulate_failed_files_on_failure(["mcp_server/new_fail.py"])
 
-        state = json.loads(state_file.read_text())
-        assert set(state["quality_gates"]["failed_files"]) == {
+        assert set(repo.load().failed_files) == {
             "mcp_server/old_fail.py",
             "mcp_server/new_fail.py",
         }
 
     def test_accumulate_sorted_deterministic(self, tmp_path: Path) -> None:
         """failed_files list is deterministically sorted after union."""
-        state_file = _state_with_quality_gates(
-            tmp_path,
-            baseline_sha="sha_preserved",
-            failed_files=["mcp_server/z_last.py", "mcp_server/a_first.py"],
-        )
-
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="sha_preserved", failed_files=["mcp_server/z_last.py", "mcp_server/a_first.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         manager._accumulate_failed_files_on_failure(["mcp_server/m_middle.py"])
 
-        state = json.loads(state_file.read_text())
-        failed = state["quality_gates"]["failed_files"]
+        failed = repo.load().failed_files
         assert failed == sorted(failed)
 
     def test_accumulate_no_duplicates(self, tmp_path: Path) -> None:
@@ -380,12 +377,8 @@ class TestScopeSwitchInvariantsC44:
         files_pass.write_text("print('files pass')\n", encoding="utf-8")
         auto_pass.write_text("print('auto pass')\n", encoding="utf-8")
 
-        state_file = _state_with_quality_gates(
-            tmp_path,
-            baseline_sha="baseline_old",
-            failed_files=["seed.py"],
-        )
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="baseline_old", failed_files=["seed.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         manager._quality_config = _stub_single_gate_config()
 
         with (
@@ -425,29 +418,29 @@ class TestScopeSwitchInvariantsC44:
             ),
         ):
             fail_result = manager.run_quality_gates([str(auto_fail)], effective_scope="auto")
-            mid_state = json.loads(state_file.read_text())
+            mid_state = repo.load()
 
             files_result = manager.run_quality_gates([str(files_pass)], effective_scope="files")
-            state_after_files = json.loads(state_file.read_text())
+            state_after_files = repo.load()
 
             pass_result = manager.run_quality_gates([str(auto_pass)], effective_scope="auto")
-            final_state = json.loads(state_file.read_text())
+            final_state = repo.load()
 
         assert fail_result["overall_pass"] is False
         assert files_result["overall_pass"] is True
         assert pass_result["overall_pass"] is True
 
-        assert mid_state["quality_gates"]["baseline_sha"] == "baseline_old"
-        assert set(mid_state["quality_gates"]["failed_files"]) == {"seed.py", str(auto_fail)}
+        assert mid_state.baseline_sha == "baseline_old"
+        assert set(mid_state.failed_files) == {"seed.py", str(auto_fail)}
 
-        assert state_after_files["quality_gates"]["baseline_sha"] == "baseline_old"
-        assert set(state_after_files["quality_gates"]["failed_files"]) == {
+        assert state_after_files.baseline_sha == "baseline_old"
+        assert set(state_after_files.failed_files) == {
             "seed.py",
             str(auto_fail),
         }
 
-        assert final_state["quality_gates"]["baseline_sha"] == "baseline_new"
-        assert final_state["quality_gates"]["failed_files"] == []
+        assert final_state.baseline_sha == "baseline_new"
+        assert final_state.failed_files == []
 
     def test_branch_files_branch_has_no_auto_lifecycle_side_effects(self, tmp_path: Path) -> None:
         """Invariant: branch→files→branch must not touch auto baseline lifecycle fields."""
@@ -523,12 +516,8 @@ class TestScopeSwitchInvariantsC44:
         project_pass.write_text("print('project pass')\n", encoding="utf-8")
         auto_fail.write_text("print('auto fail')\n", encoding="utf-8")
 
-        state_file = _state_with_quality_gates(
-            tmp_path,
-            baseline_sha="baseline_old",
-            failed_files=["seed.py"],
-        )
-        manager = make_qa_manager(tmp_path)
+        repo = _make_quality_repo(tmp_path, baseline_sha="baseline_old", failed_files=["seed.py"])
+        manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         manager._quality_config = _stub_single_gate_config()
 
         with (
@@ -558,16 +547,16 @@ class TestScopeSwitchInvariantsC44:
             ),
         ):
             manager.run_quality_gates([str(project_pass)], effective_scope="project")
-            state_after_project = json.loads(state_file.read_text())
+            state_after_project = repo.load()
 
             manager.run_quality_gates([str(auto_fail)], effective_scope="auto")
-            final_state = json.loads(state_file.read_text())
+            final_state = repo.load()
 
-        assert state_after_project["quality_gates"]["baseline_sha"] == "baseline_old"
-        assert state_after_project["quality_gates"]["failed_files"] == ["seed.py"]
+        assert state_after_project.baseline_sha == "baseline_old"
+        assert state_after_project.failed_files == ["seed.py"]
 
-        assert final_state["quality_gates"]["baseline_sha"] == "baseline_old"
-        assert set(final_state["quality_gates"]["failed_files"]) == {"seed.py", str(auto_fail)}
+        assert final_state.baseline_sha == "baseline_old"
+        assert set(final_state.failed_files) == {"seed.py", str(auto_fail)}
 
 
 class TestGateStatusStamping:
