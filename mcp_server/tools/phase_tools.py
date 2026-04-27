@@ -21,11 +21,12 @@ from typing import Any
 import anyio
 from pydantic import BaseModel, Field, field_validator
 
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 
 # Project modules
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.tools.base import BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -111,7 +112,6 @@ class TransitionPhaseTool(_BaseTransitionTool):
         Returns:
             ToolResult with success or error message
         """
-        del context  # Not used
         engine = self._create_engine()
 
         def do_transition() -> dict[str, Any]:
@@ -127,6 +127,9 @@ class TransitionPhaseTool(_BaseTransitionTool):
                 f"from {result['from_phase']} → {result['to_phase']}"
             )
 
+        except StateMutationConflictError as e:
+            context.produce(RecoveryNote(message=e.recovery))
+            return ToolResult.error(e.diagnostic)
         except ValueError as e:
             return ToolResult.error(f"❌ Transition failed: {e}")
 
@@ -156,7 +159,6 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
         Returns:
             ToolResult with success or error message
         """
-        del context  # Not used
         engine = self._create_engine()
 
         def do_force_transition() -> dict[str, Any]:
@@ -195,5 +197,8 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
 
             return ToolResult.text("\n".join(lines))
 
+        except StateMutationConflictError as e:
+            context.produce(RecoveryNote(message=e.recovery))
+            return ToolResult.error(e.diagnostic)
         except ValueError as e:
             return ToolResult.error(f"❌ Force transition failed: {e}")

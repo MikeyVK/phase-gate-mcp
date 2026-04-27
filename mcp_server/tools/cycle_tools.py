@@ -17,10 +17,11 @@ import anyio
 from pydantic import BaseModel, Field
 
 from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.tools.phase_tools import (
     _BaseTransitionTool as BaseTransitionTool,  # pyright: ignore[reportPrivateUsage]  # Shared transition base pending tool consolidation.
 )
@@ -69,7 +70,6 @@ class TransitionCycleTool(BaseTransitionTool):
 
     async def execute(self, params: TransitionCycleInput, context: NoteContext) -> ToolResult:
         """Execute cycle transition through the shared orchestration path."""
-        del context  # Orchestration tool — context unused
         branch = self._get_current_branch()
         issue_number = params.issue_number or self._extract_issue_number(branch)
         if issue_number is None:
@@ -90,6 +90,9 @@ class TransitionCycleTool(BaseTransitionTool):
                 f"✅ Transitioned to TDD Cycle {result['to_cycle']}/{result['total_cycles']}: "
                 f"{result['cycle_name']}"
             )
+        except StateMutationConflictError as e:
+            context.produce(RecoveryNote(message=e.recovery))
+            return ToolResult.error(e.diagnostic)
         except (GateViolation, OSError, ValueError, RuntimeError, KeyError) as exc:
             return ToolResult.error(f"Transition failed: {exc}")
 
@@ -174,7 +177,6 @@ class ForceCycleTransitionTool(BaseTransitionTool):
 
     async def execute(self, params: ForceCycleTransitionInput, context: NoteContext) -> ToolResult:
         """Execute forced cycle transition through the shared inspection path."""
-        del context  # Orchestration tool — context unused
         branch = self._get_current_branch()
         issue_number = params.issue_number or self._extract_issue_number(branch)
         if issue_number is None:
@@ -218,6 +220,9 @@ class ForceCycleTransitionTool(BaseTransitionTool):
                 lines.append(f"ℹ️ Gates that would have passed: {', '.join(passing)}")
 
             return ToolResult.text("\n".join(lines))
+        except StateMutationConflictError as e:
+            context.produce(RecoveryNote(message=e.recovery))
+            return ToolResult.error(e.diagnostic)
         except (GateViolation, OSError, ValueError, RuntimeError, KeyError) as exc:
             return ToolResult.error(f"Forced transition failed: {exc}")
 

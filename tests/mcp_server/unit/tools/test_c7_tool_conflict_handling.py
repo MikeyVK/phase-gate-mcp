@@ -21,16 +21,13 @@ Affected tools:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
-from mcp_server.managers.workflow_state_mutator import (
-    StateMutationConflictError,
-    WorkflowStateMutator,
-)
+from mcp_server.managers.phase_state_engine import PhaseStateEngine
+from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionInput,
@@ -39,7 +36,6 @@ from mcp_server.tools.phase_tools import (
     TransitionPhaseTool,
 )
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -51,7 +47,7 @@ def _make_conflict_engine(
     *,
     diagnostic: str = "Lock timeout on branch 'feature/42'.",
     recovery: str = "Retry after the current operation completes.",
-) -> Any:
+) -> PhaseStateEngine:
     """Return a PhaseStateEngine whose FIRST state-mutating call raises a conflict."""
     engine = make_phase_state_engine(workspace_root)
     conflict = StateMutationConflictError(diagnostic, recovery)
@@ -96,7 +92,7 @@ class TestTransitionPhaseToolConflict:
         result = await conflict_tool.execute(params, context)
 
         assert result.is_error
-        assert "Lock timeout on branch 'feature/42'" in result.text
+        assert "Lock timeout on branch 'feature/42'" in result.content[0]["text"]
 
     @pytest.mark.asyncio
     async def test_transition_phase_emits_recovery_note_on_conflict(
@@ -152,7 +148,7 @@ class TestForcePhaseTransitionToolConflict:
         result = await conflict_tool.execute(params, context)
 
         assert result.is_error
-        assert "Mutation conflict on 'feature/42'" in result.text
+        assert "Mutation conflict on 'feature/42'" in result.content[0]["text"]
 
     @pytest.mark.asyncio
     async def test_force_transition_emits_recovery_note_on_conflict(
@@ -185,8 +181,6 @@ class TestTransitionCycleToolConflict:
     @pytest.fixture
     def conflict_tool(self, tmp_path: Path) -> TransitionCycleTool:
         """TransitionCycleTool with engine that raises StateMutationConflictError."""
-        from mcp_server.tools.cycle_tools import TransitionCycleInput  # noqa: PLC0415
-
         pm = make_project_manager(tmp_path)
         engine = _make_conflict_engine(
             tmp_path,
@@ -202,9 +196,7 @@ class TestTransitionCycleToolConflict:
         # Write a minimal state.json so branch detection does not fall through
         state_dir = tmp_path / ".st3"
         state_dir.mkdir(parents=True, exist_ok=True)
-        (state_dir / "state.json").write_text(
-            '{"branch": "feature/42-test"}', encoding="utf-8"
-        )
+        (state_dir / "state.json").write_text('{"branch": "feature/42-test"}', encoding="utf-8")
 
         return TransitionCycleTool(
             workspace_root=tmp_path,
@@ -226,7 +218,7 @@ class TestTransitionCycleToolConflict:
         result = await conflict_tool.execute(params, context)
 
         assert result.is_error
-        assert "Lock timeout" in result.text
+        assert "Lock timeout" in result.content[0]["text"]
 
     @pytest.mark.asyncio
     async def test_transition_cycle_emits_recovery_note_on_conflict(
@@ -270,9 +262,7 @@ class TestForceCycleTransitionToolConflict:
 
         state_dir = tmp_path / ".st3"
         state_dir.mkdir(parents=True, exist_ok=True)
-        (state_dir / "state.json").write_text(
-            '{"branch": "feature/42-test"}', encoding="utf-8"
-        )
+        (state_dir / "state.json").write_text('{"branch": "feature/42-test"}', encoding="utf-8")
 
         return ForceCycleTransitionTool(
             workspace_root=tmp_path,
@@ -298,7 +288,7 @@ class TestForceCycleTransitionToolConflict:
         result = await conflict_tool.execute(params, context)
 
         assert result.is_error
-        assert "Lock timeout" in result.text
+        assert "Lock timeout" in result.content[0]["text"]
 
     @pytest.mark.asyncio
     async def test_force_cycle_transition_emits_recovery_note_on_conflict(
