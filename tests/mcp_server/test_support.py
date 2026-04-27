@@ -31,6 +31,7 @@ from mcp_server.managers.phase_contract_resolver import (
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_reconstructor import StateReconstructor
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
@@ -50,7 +51,7 @@ from mcp_server.tools.git_tools import CreateBranchInput
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
-    from mcp_server.core.interfaces import IQualityStateRepository
+    from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 
@@ -171,6 +172,21 @@ def make_project_manager(
         WorkphasesConfig,
         _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
     )
+    if workflow_status_resolver is None:
+        from mcp_server.core.commit_phase_detector import CommitPhaseDetector  # noqa: PLC0415
+        from mcp_server.managers.workflow_status_resolver import (  # noqa: PLC0415
+            WorkflowStatusResolver,
+        )
+
+        workspace_path = Path(workspace_root)
+        _git_reader = resolved_git_manager or make_git_manager(workspace_root)
+        _state_reader = FileStateRepository(state_file=workspace_path / ".st3" / "state.json")
+        _detector = CommitPhaseDetector(workspace_root=workspace_path)
+        workflow_status_resolver = WorkflowStatusResolver(
+            git_context_reader=_git_reader,
+            state_reader=_state_reader,
+            commit_phase_detector=_detector,
+        )
     return ProjectManager(
         workspace_root=workspace_root,
         workflow_config=resolved_workflow_config,
@@ -267,6 +283,13 @@ def make_phase_state_engine(
         git_config=git_config,
         scope_decoder=resolved_scope_decoder,
     )
+    if workflow_state_mutator is None:
+        from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator  # noqa: PLC0415
+
+        workflow_state_mutator = WorkflowStateMutator(
+            state_repository=resolved_state_repository,
+            state_reconstructor=resolved_state_reconstructor,
+        )
     return PhaseStateEngine(
         workspace_root=workspace_root,
         project_manager=manager,
@@ -392,6 +415,8 @@ def make_qa_manager(
     workspace_root: Path | str | None = None,
     quality_config: QualityConfig | None = None,
     quality_state_repository: IQualityStateRepository | None = None,
+    git_context_reader: IGitContextReader | None = None,
+    state_reader: IStateReader | None = None,
 ) -> QAManager:
     """Build a QAManager with explicit quality config injection."""
     resolved_quality = quality_config or cast(
@@ -403,10 +428,24 @@ def make_qa_manager(
         ),
     )
     resolved_workspace = Path(workspace_root) if workspace_root is not None else None
+    resolved_quality_state_repo: IQualityStateRepository = quality_state_repository or (
+        FileQualityStateRepository(backing_file=resolved_workspace / ".st3" / "quality_state.json")
+        if resolved_workspace is not None
+        else MagicMock()
+    )
+    resolved_git_context_reader: IGitContextReader = git_context_reader or MagicMock()
+    if state_reader is not None:
+        resolved_state_reader: IStateReader = state_reader
+    else:
+        _default_sr = MagicMock()
+        _default_sr.load.side_effect = FileNotFoundError
+        resolved_state_reader = _default_sr
     return QAManager(
         workspace_root=resolved_workspace,
         quality_config=resolved_quality,
-        quality_state_repository=quality_state_repository,
+        quality_state_repository=resolved_quality_state_repo,
+        git_context_reader=resolved_git_context_reader,
+        state_reader=resolved_state_reader,
     )
 
 

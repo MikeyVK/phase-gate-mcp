@@ -10,7 +10,6 @@ C22: Resolve scope=branch using git diff parent...HEAD (merge-base semantics).
 
 from __future__ import annotations
 
-import json
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -128,13 +127,17 @@ class TestScopeResolutionBranch:
         assert result == []
 
     def test_branch_scope_uses_parent_from_state_json(self, tmp_path: Path) -> None:
-        """When state.json contains top-level parent_branch, that branch is used as diff base."""
-        state = {"parent_branch": "feature/parent-branch"}
-        state_path = tmp_path / ".st3" / "state.json"
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(json.dumps(state))
+        """_resolve_branch_scope uses parent_branch from BranchState via IStateReader."""
+        from mcp_server.managers.state_repository import BranchState  # noqa: PLC0415
 
-        manager = make_qa_manager(tmp_path)
+        mock_state_reader = MagicMock()
+        mock_state_reader.load.return_value = BranchState(
+            branch="feature/test",
+            workflow_name="feature",
+            current_phase="implementation",
+            parent_branch="feature/parent-branch",
+        )
+        manager = make_qa_manager(tmp_path, state_reader=mock_state_reader)
         captured_cmd: list[list[str]] = []
 
         def fake_git(_cmd: list[str], **_kw: object) -> MagicMock:
@@ -151,13 +154,17 @@ class TestScopeResolutionBranch:
         assert "feature/parent-branch...HEAD" in captured_cmd[0]
 
     def test_branch_scope_reads_top_level_parent_branch(self, tmp_path: Path) -> None:
-        """parent_branch lives at top level in state.json, not nested under workflow."""
-        state = {"parent_branch": "epic/76-quality-gates"}
-        state_path = tmp_path / ".st3" / "state.json"
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(json.dumps(state))
+        """_resolve_branch_scope uses parent_branch from BranchState (IStateReader path)."""
+        from mcp_server.managers.state_repository import BranchState  # noqa: PLC0415
 
-        manager = make_qa_manager(tmp_path)
+        mock_state_reader = MagicMock()
+        mock_state_reader.load.return_value = BranchState(
+            branch="feature/test",
+            workflow_name="feature",
+            current_phase="implementation",
+            parent_branch="epic/76-quality-gates",
+        )
+        manager = make_qa_manager(tmp_path, state_reader=mock_state_reader)
         captured_cmd: list[list[str]] = []
 
         def fake_git(_cmd: list[str], **_kw: object) -> MagicMock:

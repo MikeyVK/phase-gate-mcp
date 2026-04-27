@@ -83,7 +83,7 @@ class PhaseStateEngine:
         scope_decoder: ScopeDecoder,
         workflow_gate_runner: IWorkflowGateRunner,
         state_reconstructor: IStateReconstructor,
-        workflow_state_mutator: IWorkflowStateMutator | None = None,
+        workflow_state_mutator: IWorkflowStateMutator,
     ) -> None:
         """Initialize PhaseStateEngine."""
         workspace_path = Path(workspace_root)
@@ -627,16 +627,11 @@ class PhaseStateEngine:
         self._state_repository.save(validated_state)
 
     def _apply_state(self, branch: str, state: BranchState) -> None:
-        """Persist branch state â€” through IWorkflowStateMutator when configured.
+        """Persist branch state through IWorkflowStateMutator.
 
-        When a mutator is injected, routes the write through the coordinated
-        mutation boundary. Falls back to direct _save_state when no mutator is
-        configured (backward-compatible for tests without DI).
+        Routes the write through the coordinated mutation boundary.
         """
-        if self._workflow_state_mutator is not None:
-            self._workflow_state_mutator.apply(branch, lambda _s: state)
-        else:
-            self._save_state(branch, state)
+        self._workflow_state_mutator.apply(branch, lambda _s: state)
 
     def _transition_to_dict(self, transition: TransitionRecord) -> dict[str, Any]:
         """Convert TransitionRecord to dict for JSON serialization.

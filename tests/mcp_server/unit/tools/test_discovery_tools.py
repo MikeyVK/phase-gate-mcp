@@ -50,6 +50,7 @@ def make_work_context_tool(
         state_engine=MagicMock(),
         github_manager=MagicMock(),
         workphases_config=load_workphases_config(),
+        workflow_status_resolver=MagicMock(),
     )
 
 
@@ -222,6 +223,14 @@ class TestGetWorkContextTool:
         self, tool: GetWorkContextTool
     ) -> None:
         """Should detect workflow phase from commit-scope and display it correctly."""
+        tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="implementation",
+            sub_phase="red",
+            current_cycle=None,
+            phase_source="commit-scope",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
         with (
             patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
             patch("mcp_server.tools.discovery_tools.ScopeDecoder") as mock_decoder_class,
@@ -462,6 +471,16 @@ class TestGetWorkContextTddCycleInfo:
             }
             mock_decoder_class.return_value = mock_decoder
 
+            # Configure resolver to match expected phase/cycle for TDD info visibility
+            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+                current_phase="implementation",
+                sub_phase="green",
+                current_cycle=2,
+                phase_source="commit-scope",
+                phase_confidence="high",
+                phase_detection_error=None,
+            )
+
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         # Assert - tdd_cycle_info should be present
@@ -698,6 +717,16 @@ class TestTddCycleInfoStatusField:
                 "raw_scope": None,
             }
             mock_decoder_class.return_value = mock_decoder
+
+            # Configure resolver to provide implementation phase with cycle 1
+            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+                current_phase="implementation",
+                sub_phase="red",
+                current_cycle=1,
+                phase_source="state.json",
+                phase_confidence="high",
+                phase_detection_error=None,
+            )
 
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 

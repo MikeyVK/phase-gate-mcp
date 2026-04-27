@@ -615,7 +615,7 @@ class TestBaselineAdvanceSplitState:
 
         mock_repo = MagicMock()
         mock_repo.load.return_value = QualityState()
-        manager = QAManager(workspace_root=tmp_path, quality_state_repository=mock_repo)
+        manager = make_qa_manager(tmp_path, quality_state_repository=mock_repo)
         assert manager is not None
 
     def test_advance_baseline_calls_apply_on_repository(self, tmp_path: Path) -> None:
@@ -627,7 +627,7 @@ class TestBaselineAdvanceSplitState:
 
         mock_repo = MagicMock()
         mock_repo.load.return_value = QualityState()
-        manager = QAManager(workspace_root=tmp_path, quality_state_repository=mock_repo)
+        manager = make_qa_manager(tmp_path, quality_state_repository=mock_repo)
         with patch.object(manager, "_get_head_sha", return_value="new_sha"):
             manager._advance_baseline_on_all_pass()
         mock_repo.apply.assert_called_once()
@@ -641,6 +641,6 @@ class TestBaselineAdvanceSplitState:
 
         mock_repo = MagicMock()
         mock_repo.load.return_value = QualityState(failed_files=[])
-        manager = QAManager(workspace_root=tmp_path, quality_state_repository=mock_repo)
+        manager = make_qa_manager(tmp_path, quality_state_repository=mock_repo)
         manager._accumulate_failed_files_on_failure(["new_fail.py"])
         mock_repo.apply.assert_called_once()

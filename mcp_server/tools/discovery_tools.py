@@ -120,7 +120,8 @@ class GetWorkContextTool(BaseTool):
         state_engine: PhaseStateEngine,
         github_manager: GitHubManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
-        workflow_status_resolver: WorkflowStatusResolver | None = None,
+        *,
+        workflow_status_resolver: WorkflowStatusResolver,
     ) -> None:
         super().__init__()
         self._settings = settings
@@ -146,102 +147,49 @@ class GetWorkContextTool(BaseTool):
 
         current_cycle: int | None = None
 
-        if self._workflow_status_resolver is not None:
-            # Issue #231 C4: Use resolver for phase detection (preferred path)
+        # Use resolver for phase detection (Issue #231 C4)
+        try:
+            status = self._workflow_status_resolver.resolve_current()
+            ctx["workflow_phase"] = status.current_phase
+            ctx["sub_phase"] = status.sub_phase
+            ctx["phase_source"] = status.phase_source
+            ctx["phase_confidence"] = status.phase_confidence
+            ctx["phase_error_message"] = status.phase_detection_error
+            ctx["recent_commits"] = self._git_manager.get_recent_commits(limit=5)
+            current_cycle = status.current_cycle
+        except (OSError, ValueError, RuntimeError):
+            ctx["workflow_phase"] = "unknown"
+            ctx["sub_phase"] = None
+            ctx["phase_source"] = "unknown"
+            ctx["phase_confidence"] = "unknown"
+            ctx["phase_error_message"] = None
+            ctx["recent_commits"] = []
+
+        # Gate: current_cycle is not None (no hardcoded phase-name check)
+        if current_cycle is not None and issue_number:
             try:
-                status = self._workflow_status_resolver.resolve_current()
-                ctx["workflow_phase"] = status.current_phase
-                ctx["sub_phase"] = status.sub_phase
-                ctx["phase_source"] = status.phase_source
-                ctx["phase_confidence"] = status.phase_confidence
-                ctx["phase_error_message"] = status.phase_detection_error
-                ctx["recent_commits"] = self._git_manager.get_recent_commits(limit=5)
-                current_cycle = status.current_cycle
-            except (OSError, ValueError, RuntimeError):
-                ctx["workflow_phase"] = "unknown"
-                ctx["sub_phase"] = None
-                ctx["phase_source"] = "unknown"
-                ctx["phase_confidence"] = "unknown"
-                ctx["phase_error_message"] = None
-                ctx["recent_commits"] = []
-
-            # Gate: current_cycle is not None (no hardcoded phase-name check)
-            if current_cycle is not None and issue_number:
-                try:
-                    project_plan = self._project_manager.get_project_plan(issue_number)
-                    if project_plan is None:
-                        raise ValueError("Project plan not found")
-                    planning_deliverables = project_plan.get("planning_deliverables")
-                    if planning_deliverables:
-                        tdd_cycles = planning_deliverables.get("tdd_cycles", {})
-                        cycles = tdd_cycles.get("cycles", [])
-                        total = tdd_cycles.get("total", 0)
-                        cycle_details = next(
-                            (c for c in cycles if c.get("cycle_number") == current_cycle), None
-                        )
-                        if cycle_details:
-                            ctx["tdd_cycle_info"] = {
-                                "current": current_cycle,
-                                "total": total,
-                                "name": cycle_details.get("name"),
-                                "deliverables": cycle_details.get("deliverables", []),
-                                "exit_criteria": cycle_details.get("exit_criteria"),
-                                "status": "in_progress",
-                            }
-                except (OSError, ValueError, RuntimeError, KeyError):
-                    pass  # Graceful degradation if cycle info unavailable
-        else:
-            # Legacy path: local phase detection via ScopeDecoder
-            try:
-                recent_commits = self._git_manager.get_recent_commits(limit=5)
-                phase_result = self._detect_workflow_phase(recent_commits)
-                ctx["workflow_phase"] = phase_result["workflow_phase"]
-                ctx["sub_phase"] = phase_result.get("sub_phase")
-                ctx["phase_source"] = phase_result["source"]
-                ctx["phase_confidence"] = phase_result["confidence"]
-                ctx["phase_error_message"] = phase_result.get("error_message")
-                ctx["recent_commits"] = recent_commits
-            except (OSError, ValueError, RuntimeError):
-                ctx["workflow_phase"] = "unknown"
-                ctx["sub_phase"] = None
-                ctx["phase_source"] = "unknown"
-                ctx["phase_confidence"] = "unknown"
-                ctx["phase_error_message"] = None
-                ctx["recent_commits"] = []
-
-            # Issue #146 Cycle 3: TDD Cycle Info (conditional visibility)
-            if ctx.get("workflow_phase") == "implementation" and issue_number:
-                try:
-                    state = self._state_engine.get_state(branch)
-                    current_cycle = state.current_cycle
-
-                    # Get planning deliverables
-                    project_plan = self._project_manager.get_project_plan(issue_number)
-                    if project_plan is None:
-                        raise ValueError("Project plan not found")
-                    planning_deliverables = project_plan.get("planning_deliverables")
-                    if planning_deliverables and current_cycle:
-                        tdd_cycles = planning_deliverables.get("tdd_cycles", {})
-                        cycles = tdd_cycles.get("cycles", [])
-                        total = tdd_cycles.get("total", 0)
-
-                        # Find current cycle details
-                        cycle_details = next(
-                            (c for c in cycles if c.get("cycle_number") == current_cycle), None
-                        )
-
-                        if cycle_details:
-                            ctx["tdd_cycle_info"] = {
-                                "current": current_cycle,
-                                "total": total,
-                                "name": cycle_details.get("name"),
-                                "deliverables": cycle_details.get("deliverables", []),
-                                "exit_criteria": cycle_details.get("exit_criteria"),
-                                # Always in_progress when cycle is active
-                                "status": "in_progress",
-                            }
-                except (OSError, ValueError, RuntimeError, KeyError):
-                    pass  # Graceful degradation if cycle info unavailable
+                project_plan = self._project_manager.get_project_plan(issue_number)
+                if project_plan is None:
+                    raise ValueError("Project plan not found")
+                planning_deliverables = project_plan.get("planning_deliverables")
+                if planning_deliverables:
+                    tdd_cycles = planning_deliverables.get("tdd_cycles", {})
+                    cycles = tdd_cycles.get("cycles", [])
+                    total = tdd_cycles.get("total", 0)
+                    cycle_details = next(
+                        (c for c in cycles if c.get("cycle_number") == current_cycle), None
+                    )
+                    if cycle_details:
+                        ctx["tdd_cycle_info"] = {
+                            "current": current_cycle,
+                            "total": total,
+                            "name": cycle_details.get("name"),
+                            "deliverables": cycle_details.get("deliverables", []),
+                            "exit_criteria": cycle_details.get("exit_criteria"),
+                            "status": "in_progress",
+                        }
+            except (OSError, ValueError, RuntimeError, KeyError):
+                pass  # Graceful degradation if cycle info unavailable
 
         # Get GitHub issue details if configured
         if self._settings.github.token:

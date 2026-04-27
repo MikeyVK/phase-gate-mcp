@@ -21,6 +21,7 @@ from mcp_server.managers.phase_contract_resolver import (
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.schemas import CheckSpec
+from tests.mcp_server.test_support import make_project_manager
 
 
 class FakeGateRunner:
@@ -110,7 +111,7 @@ def workspace_loader(workspace_root: Path) -> ConfigLoader:
 @pytest.fixture
 def project_manager(workspace_root: Path, repo_loader: ConfigLoader) -> ProjectManager:
     """ProjectManager bound to the temp workspace."""
-    return ProjectManager(
+    return make_project_manager(
         workspace_root=workspace_root,
         workflow_config=repo_loader.load_workflow_config(),
     )

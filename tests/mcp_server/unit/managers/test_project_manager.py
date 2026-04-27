@@ -331,9 +331,7 @@ phases:
     ) -> None:
         """Test get_project_plan returns unknown phase when no commits exist."""
         # Mock GitManager.get_recent_commits to return empty list
-        monkeypatch.setattr(
-            git_manager.GitManager, "get_recent_commits", lambda _self, _limit=10: []
-        )
+        monkeypatch.setattr(git_manager.GitManager, "get_recent_commits", lambda _self, **_: [])
 
         # Initialize project
         manager.initialize_project(

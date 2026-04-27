@@ -258,6 +258,8 @@ class MCPServer:
             workspace_root=workspace_root,
             quality_config=quality_config,
             quality_state_repository=_quality_state_repository,
+            git_context_reader=self.git_manager,
+            state_reader=_branch_validated_reader,
         )
         self.github_manager = GitHubManager(
             issue_config=issue_config,

@@ -25,7 +25,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 # Project modules
-from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.schemas import WorkflowConfig, WorkphasesConfig
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
@@ -95,7 +94,8 @@ class ProjectManager:
         workflow_config: WorkflowConfig,
         git_manager: GitManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
-        workflow_status_resolver: WorkflowStatusResolver | None = None,
+        *,
+        workflow_status_resolver: WorkflowStatusResolver,
     ) -> None:
         """Initialize ProjectManager."""
         self.workspace_root = Path(workspace_root)
@@ -449,54 +449,14 @@ class ProjectManager:
         if plan is None:
             return None
 
-        # Issue #231 C4: Use WorkflowStatusResolver when injected (preferred path)
-        if self._workflow_status_resolver is not None:
-            status = self._workflow_status_resolver.resolve_current()
-            if status.sub_phase:
-                plan["current_phase"] = f"{status.current_phase}:{status.sub_phase}"
-            else:
-                plan["current_phase"] = status.current_phase
-            plan["phase_source"] = status.phase_source
-            plan["phase_detection_error"] = status.phase_detection_error
-            return plan
-
-        # Detect current phase via ScopeDecoder (Issue #139)
-        if self._git_manager is None:
-            recent_commits = []
+        # Use WorkflowStatusResolver to detect current phase (Issue #231 C4)
+        status = self._workflow_status_resolver.resolve_current()
+        if status.sub_phase:
+            plan["current_phase"] = f"{status.current_phase}:{status.sub_phase}"
         else:
-            try:
-                recent_commits = self._git_manager.get_recent_commits(limit=1)
-            except Exception:
-                # If git fails (e.g., no repo), return unknown
-                recent_commits = []
-
-        if not recent_commits:
-            # No commits → unknown phase
-            plan["current_phase"] = "unknown"
-            plan["phase_source"] = "unknown"
-            plan["phase_detection_error"] = "No commits found in repository"
-        elif self._workphases_config is None:
-            plan["current_phase"] = "unknown"
-            plan["phase_source"] = "unknown"
-            plan["phase_detection_error"] = "WorkphasesConfig not injected"
-        else:
-            # Detect phase from commit
-            decoder = ScopeDecoder(self._workphases_config)
-            result = decoder.detect_phase(commit_message=recent_commits[0], fallback_to_state=True)
-
-            # Add phase detection results to plan
-            phase = result["workflow_phase"]
-            sub_phase = result["sub_phase"]
-
-            # Format: "tdd:red" or "research" (with or without subphase)
-            if sub_phase:
-                plan["current_phase"] = f"{phase}:{sub_phase}"
-            else:
-                plan["current_phase"] = phase
-
-            plan["phase_source"] = result["source"]
-            plan["phase_detection_error"] = result.get("error_message")
-
+            plan["current_phase"] = status.current_phase
+        plan["phase_source"] = status.phase_source
+        plan["phase_detection_error"] = status.phase_detection_error
         return plan
 
     def _write_deliverables(self, projects: dict[str, Any]) -> None:

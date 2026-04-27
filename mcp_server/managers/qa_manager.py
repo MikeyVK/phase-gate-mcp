@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from mcp_server.core.interfaces import IQualityStateRepository
-
+    from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas import (
     JsonViolationsParsing,
     QualityConfig,
@@ -73,7 +73,10 @@ class QAManager:
         self,
         workspace_root: Path | None = None,
         quality_config: QualityConfig | None = None,
-        quality_state_repository: IQualityStateRepository | None = None,
+        *,
+        quality_state_repository: IQualityStateRepository,
+        git_context_reader: IGitContextReader,
+        state_reader: IStateReader,
     ) -> None:
         """Initialize QA Manager with injected quality configuration."""
         # Runtime configuration (lowercase for instance mutability)
@@ -84,6 +87,8 @@ class QAManager:
         self.workspace_root = workspace_root
         self._quality_config = quality_config
         self._quality_state_repository = quality_state_repository
+        self._git_context_reader = git_context_reader
+        self._state_reader = state_reader
 
     def run_quality_gates(
         self,
@@ -294,8 +299,6 @@ class QAManager:
 
     def _advance_baseline_on_all_pass(self) -> None:
         """Persist current HEAD as baseline_sha and reset failed_files on all-pass run."""
-        if self._quality_state_repository is None:
-            return
         head_sha = self._get_head_sha()
         if head_sha is None:
             return
@@ -307,8 +310,6 @@ class QAManager:
 
     def _accumulate_failed_files_on_failure(self, newly_failed: list[str]) -> None:
         """Union newly-failed files with persisted failed_files; leave baseline_sha unchanged."""
-        if self._quality_state_repository is None:
-            return
         from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
 
         def _union(s: QualityState) -> QualityState:
@@ -332,22 +333,6 @@ class QAManager:
         except OSError:
             pass
         return None
-
-    @staticmethod
-    def _load_state_json(state_path: Path) -> dict[str, Any]:
-        """Read state.json from disk, returning empty dict when absent or malformed."""
-        if not state_path.exists():
-            return {}
-        try:
-            return dict(json.loads(state_path.read_text(encoding="utf-8")))
-        except (json.JSONDecodeError, OSError):
-            return {}
-
-    @staticmethod
-    def _save_state_json(state_path: Path, data: dict[str, Any]) -> None:
-        """Atomically write data to state.json (creates parent dirs if needed)."""
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     # ------------------------------------------------------------------
     # Scope resolution
@@ -386,8 +371,9 @@ class QAManager:
     def _resolve_branch_scope(self) -> list[str]:
         """Return Python files changed on this branch since merge-base with parent.
 
-        The parent branch is read from top-level ``parent_branch`` in
-        ``.st3/state.json`` and falls back to ``"main"``.
+        The parent branch is read from ``parent_branch`` in the persisted
+        ``BranchState`` loaded via ``IStateReader``. Falls back to ``"main"``
+        when state is absent or the field is unset.
 
         Uses merge-base semantics (``parent...HEAD``) to isolate branch-introduced
         changes and avoid noise from parent tip drift.
@@ -396,10 +382,13 @@ class QAManager:
             Sorted list of ``.py`` file paths (relative POSIX). Empty list on error
             or when the diff is empty.
         """
+        branch = self._git_context_reader.get_current_branch()
         parent = "main"
-        if self.workspace_root is not None:
-            state = self._load_state_json(self.workspace_root / ".st3" / "state.json")
-            parent = state.get("parent_branch") or "main"
+        try:
+            state = self._state_reader.load(branch)
+            parent = state.parent_branch or "main"
+        except (KeyError, FileNotFoundError, StateBranchMismatchError, OSError):
+            pass
         return self._git_diff_py_files(parent, use_merge_base=True)
 
     def _resolve_auto_scope(self) -> list[str]:
@@ -409,8 +398,6 @@ class QAManager:
             Sorted, deduplicated list of ``.py`` paths. Returns project scope when
             no ``baseline_sha`` is recorded (C24 handles the no-baseline fallback).
         """
-        if self._quality_state_repository is None:
-            return self._resolve_project_scope()
         state = self._quality_state_repository.load()
         baseline_sha = state.baseline_sha
         if not baseline_sha:
