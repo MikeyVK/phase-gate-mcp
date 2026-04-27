@@ -100,7 +100,7 @@ class TestGitCheckoutStateSync:
 
     @pytest.mark.asyncio
     async def test_checkout_handles_state_branch_mismatch_gracefully(self) -> None:
-        """StateBranchMismatchError during state sync must be handled, not propagated (C_ENGINE_BREAK)."""
+        """Checkout handles StateBranchMismatchError gracefully (C_ENGINE_BREAK)."""
         mock_manager = Mock()
         tool = GitCheckoutTool(manager=mock_manager)
 
@@ -109,7 +109,8 @@ class TestGitCheckoutStateSync:
 
         mock_engine = Mock()
         mock_engine.get_state.side_effect = StateBranchMismatchError(
-            "Loaded state branch 'main' does not match requested branch 'feature/231-state-snapshot-cqrs'"
+            "Loaded state branch 'main' does not match "
+            "requested branch 'feature/231-state-snapshot-cqrs'"
         )
         tool._state_engine = mock_engine
 

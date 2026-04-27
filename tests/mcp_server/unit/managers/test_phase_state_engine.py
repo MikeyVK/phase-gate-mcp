@@ -12,7 +12,11 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.managers.state_repository import InMemoryStateRepository, BranchState, StateBranchMismatchError
+from mcp_server.managers.state_repository import (
+    BranchState,
+    InMemoryStateRepository,
+    StateBranchMismatchError,
+)
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 
@@ -213,15 +217,13 @@ class TestPhaseStateEngineCleanBreak:
     class _FixedReader:
         """Returns the configured state regardless of the requested branch."""
 
-        def __init__(self, state: "BranchState") -> None:
+        def __init__(self, state: BranchState) -> None:
             self._state = state
 
-        def load(self, _branch: str) -> "BranchState":
+        def load(self, _branch: str) -> BranchState:
             return self._state
 
-    def test_get_state_raises_mismatch_error_not_file_not_found(
-        self, tmp_path: Path
-    ) -> None:
+    def test_get_state_raises_mismatch_error_not_file_not_found(self, tmp_path: Path) -> None:
         """get_state() must raise StateBranchMismatchError on mismatch, not FileNotFoundError."""
         fixed_state = BranchState(
             branch="main",
