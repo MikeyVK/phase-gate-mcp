@@ -465,8 +465,8 @@ class QAManager:
         if self.workspace_root is None:
             return []
 
-        state = self._load_state_json(self.workspace_root / ".st3" / "state.json")
-        quality_gates: dict[str, Any] = state.get("quality_gates", {})
+        state_dict = self._load_state_json(self.workspace_root / ".st3" / "state.json")
+        quality_gates: dict[str, Any] = state_dict.get("quality_gates", {})
         baseline_sha_raw: str | None = quality_gates.get("baseline_sha") or None
         if not baseline_sha_raw:
             return self._resolve_project_scope()

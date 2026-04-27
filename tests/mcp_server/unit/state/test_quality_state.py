@@ -16,6 +16,7 @@ Tests verify:
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 # RED: will fail with ModuleNotFoundError until C5 GREEN creates quality_state.py
 from mcp_server.state.quality_state import QualityState
@@ -51,13 +52,11 @@ class TestQualityStateModel:
     def test_model_is_frozen(self) -> None:
         """QualityState is immutable — assignments after construction raise."""
         state = QualityState(baseline_sha="sha1")
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             state.baseline_sha = "sha2"  # type: ignore[misc]
 
     def test_extra_fields_are_forbidden(self) -> None:
         """extra='forbid' enforced — unknown fields raise ValidationError."""
-        from pydantic import ValidationError
-
         with pytest.raises(ValidationError):
             QualityState(unknown_field="oops")  # type: ignore[call-arg]
 

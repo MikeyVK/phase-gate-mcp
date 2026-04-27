@@ -10,15 +10,16 @@ Tests verify:
 - FileQualityStateRepository satisfies IQualityStateRepository protocol
 
 @layer: Tests (Unit)
-@dependencies: pytest, pathlib, mcp_server.core.interfaces, mcp_server.managers.quality_state_repository
+@dependencies: pathlib, mcp_server.core.interfaces, mcp_server.managers.quality_state_repository
 """
 # pyright: reportPrivateUsage=false
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
-import pytest
+import mcp_server.managers.quality_state_repository as _qsr_module
 
 # RED: will fail with ImportError until C5 GREEN adds IQualityStateRepository
 from mcp_server.core.interfaces import IQualityStateRepository
@@ -47,9 +48,7 @@ class TestIQualityStateRepositoryProtocol:
 
     def test_concrete_class_satisfies_protocol(self, tmp_path: Path) -> None:
         """FileQualityStateRepository satisfies IQualityStateRepository runtime check."""
-        repo = FileQualityStateRepository(
-            backing_file=tmp_path / ".st3" / "quality_state.json"
-        )
+        repo = FileQualityStateRepository(backing_file=tmp_path / ".st3" / "quality_state.json")
         assert isinstance(repo, IQualityStateRepository)
 
 
@@ -58,9 +57,7 @@ class TestFileQualityStateRepositoryLoad:
 
     def test_load_returns_empty_state_when_file_absent(self, tmp_path: Path) -> None:
         """load() returns QualityState() (all defaults) when backing file does not exist."""
-        repo = FileQualityStateRepository(
-            backing_file=tmp_path / ".st3" / "quality_state.json"
-        )
+        repo = FileQualityStateRepository(backing_file=tmp_path / ".st3" / "quality_state.json")
         state = repo.load()
         assert state == QualityState()
 
@@ -106,7 +103,7 @@ class TestFileQualityStateRepositoryApply:
         backing = tmp_path / ".st3" / "quality_state.json"
         repo = FileQualityStateRepository(backing_file=backing)
 
-        repo.apply(lambda s: QualityState(baseline_sha="new_sha", failed_files=[]))
+        repo.apply(lambda _s: QualityState(baseline_sha="new_sha", failed_files=[]))
 
         state = repo.load()
         assert state.baseline_sha == "new_sha"
@@ -155,16 +152,12 @@ class TestFileQualityStateRepositoryApply:
         """apply() creates parent directories if they don't exist."""
         backing = tmp_path / "deep" / "nested" / "quality_state.json"
         repo = FileQualityStateRepository(backing_file=backing)
-        repo.apply(lambda s: QualityState(baseline_sha="sha1"))
+        repo.apply(lambda _s: QualityState(baseline_sha="sha1"))
         assert backing.exists()
 
-    def test_apply_is_atomic_via_atomic_json_writer(self, tmp_path: Path) -> None:
+    def test_apply_is_atomic_via_atomic_json_writer(self) -> None:
         """FileQualityStateRepository uses AtomicJsonWriter for writes (source check)."""
-        import inspect
-
-        import mcp_server.managers.quality_state_repository as module
-
-        source = inspect.getsource(module)
+        source = inspect.getsource(_qsr_module)
         assert "AtomicJsonWriter" in source, (
             "FileQualityStateRepository must use AtomicJsonWriter for atomic writes"
         )

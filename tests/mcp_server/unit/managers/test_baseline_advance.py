@@ -601,9 +601,7 @@ class TestGateStatusStamping:
 class TestBaselineAdvanceSplitState:
     """C5 (C_QA_STATE_SPLIT): QAManager delegates baseline writes to IQualityStateRepository."""
 
-    def test_qa_manager_accepts_quality_state_repository_kwarg(
-        self, tmp_path: Path
-    ) -> None:
+    def test_qa_manager_accepts_quality_state_repository_kwarg(self, tmp_path: Path) -> None:
         """QAManager(quality_state_repository=...) must not raise TypeError.
 
         RED: will fail until C5 GREEN adds the kwarg to QAManager.__init__.
@@ -629,9 +627,7 @@ class TestBaselineAdvanceSplitState:
             manager._advance_baseline_on_all_pass()
         mock_repo.apply.assert_called_once()
 
-    def test_accumulate_failed_files_calls_apply_on_repository(
-        self, tmp_path: Path
-    ) -> None:
+    def test_accumulate_failed_files_calls_apply_on_repository(self, tmp_path: Path) -> None:
         """_accumulate_failed_files_on_failure() calls quality_state_repository.apply().
 
         RED: will fail until C5 GREEN migrates QAManager to use the repository.

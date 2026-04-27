@@ -274,9 +274,7 @@ class TestAutoScopeSplitState:
         mock_repo.load.assert_called()
         assert "repo_fail.py" in result
 
-    def test_resolve_auto_scope_ignores_state_json_when_repo_injected(
-        self, tmp_path: Path
-    ) -> None:
+    def test_resolve_auto_scope_ignores_state_json_when_repo_injected(self, tmp_path: Path) -> None:
         """When repository is injected, state.json quality_gates section is ignored.
 
         RED: will fail until C5 GREEN migrates _resolve_auto_scope to use the repository.

@@ -6,14 +6,11 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
 
 from mcp_server.state.quality_state import QualityState
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 

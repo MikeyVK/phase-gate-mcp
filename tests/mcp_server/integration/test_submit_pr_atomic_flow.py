@@ -299,14 +299,9 @@ class TestSubmitPRNeutralizesQualityState:
         import yaml as _yaml  # noqa: PLC0415
 
         workspace_root = Path(__file__).parents[3]
-        contracts_path = (
-            workspace_root / ".st3" / "config" / "phase_contracts.yaml"
-        )
+        contracts_path = workspace_root / ".st3" / "config" / "phase_contracts.yaml"
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
-        artifact_paths = [
-            a["path"]
-            for a in contracts["merge_policy"]["branch_local_artifacts"]
-        ]
+        artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
         assert ".st3/quality_state.json" in artifact_paths, (
             "phase_contracts.yaml must register .st3/quality_state.json as a "
             "branch-local artifact so SubmitPRTool neutralizes it before pushing."
@@ -320,16 +315,11 @@ class TestSubmitPRNeutralizesQualityState:
         RED: will fail until C5 GREEN wires quality_state.json into server.py composition.
         """
         workspace_root = Path(__file__).parents[3]
-        contracts_path = (
-            workspace_root / ".st3" / "config" / "phase_contracts.yaml"
-        )
+        contracts_path = workspace_root / ".st3" / "config" / "phase_contracts.yaml"
         import yaml as _yaml  # noqa: PLC0415
 
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
-        artifact_paths = [
-            a["path"]
-            for a in contracts["merge_policy"]["branch_local_artifacts"]
-        ]
+        artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
         assert ".st3/quality_state.json" in artifact_paths, (
             "quality_state.json must appear in phase_contracts.yaml so server.py wires "
             "it into MergeReadinessContext and SubmitPRTool neutralizes it."
