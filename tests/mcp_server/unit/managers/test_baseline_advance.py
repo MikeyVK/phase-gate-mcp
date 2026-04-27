@@ -93,7 +93,11 @@ class TestBaselineAdvanceOnAllPass:
 
     def test_advance_baseline_writes_new_sha(self, tmp_path: Path) -> None:
         """_advance_baseline_on_all_pass writes HEAD sha to quality state baseline_sha."""
-        repo = _make_quality_repo(tmp_path, baseline_sha="old_sha_abc", failed_files=["mcp_server/old_failure.py"])
+        repo = _make_quality_repo(
+            tmp_path,
+            baseline_sha="old_sha_abc",
+            failed_files=["mcp_server/old_failure.py"],
+        )
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         fake_sha = "newsha1234567890"
 
@@ -104,7 +108,11 @@ class TestBaselineAdvanceOnAllPass:
 
     def test_advance_baseline_clears_failed_files(self, tmp_path: Path) -> None:
         """_advance_baseline_on_all_pass resets failed_files to [] on all-pass."""
-        repo = _make_quality_repo(tmp_path, baseline_sha="old_sha", failed_files=["mcp_server/foo.py", "mcp_server/bar.py"])
+        repo = _make_quality_repo(
+            tmp_path,
+            baseline_sha="old_sha",
+            failed_files=["mcp_server/foo.py", "mcp_server/bar.py"],
+        )
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch.object(manager, "_get_head_sha", return_value="cleansha000"):
@@ -181,7 +189,11 @@ class TestFailureAccumulation:
 
     def test_accumulate_uses_set_union(self, tmp_path: Path) -> None:
         """New failures are merged with existing failed_files (not overwritten)."""
-        repo = _make_quality_repo(tmp_path, baseline_sha="sha_preserved", failed_files=["mcp_server/old_fail.py"])
+        repo = _make_quality_repo(
+            tmp_path,
+            baseline_sha="sha_preserved",
+            failed_files=["mcp_server/old_fail.py"],
+        )
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         manager._accumulate_failed_files_on_failure(["mcp_server/new_fail.py"])
 
@@ -192,7 +204,11 @@ class TestFailureAccumulation:
 
     def test_accumulate_sorted_deterministic(self, tmp_path: Path) -> None:
         """failed_files list is deterministically sorted after union."""
-        repo = _make_quality_repo(tmp_path, baseline_sha="sha_preserved", failed_files=["mcp_server/z_last.py", "mcp_server/a_first.py"])
+        repo = _make_quality_repo(
+            tmp_path,
+            baseline_sha="sha_preserved",
+            failed_files=["mcp_server/z_last.py", "mcp_server/a_first.py"],
+        )
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
         manager._accumulate_failed_files_on_failure(["mcp_server/m_middle.py"])
 

@@ -101,7 +101,11 @@ class RunQualityGatesTool(BaseTool):
                 effective_scope=effective_scope,
             )
         except OSError as e:
-            context.produce(RecoveryNote(message=f"Quality state write failed — retry the quality gates run: {e}"))
+            context.produce(
+                RecoveryNote(
+                    message=f"Quality state write failed — retry the quality gates run: {e}"
+                )
+            )
             return ToolResult.error(str(e))
 
         summary_line = QAManager._format_summary_line(  # pyright: ignore[reportPrivateUsage]

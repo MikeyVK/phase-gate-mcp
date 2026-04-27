@@ -4,11 +4,9 @@
 Verifies that legacy fallback paths (state.json direct writes) and constructor
 fallback compatibility layers have been removed from the slice touched by this branch.
 """
+
 # Standard library
 from pathlib import Path
-
-# Third-party
-import pytest
 
 # Constants
 _MANAGERS = Path("mcp_server/managers")
