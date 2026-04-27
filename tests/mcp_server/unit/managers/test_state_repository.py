@@ -238,14 +238,20 @@ class TestBranchValidatedStateReader:
             transitions=[],
         )
 
+    class _FixedReader:
+        """Stub reader that always returns the same state object."""
+
+        def __init__(self, state: BranchState) -> None:
+            self._state = state
+
+        def load(self, _branch: str) -> BranchState:
+            return self._state
+
     def test_accepts_matching_branch(self) -> None:
         from mcp_server.managers.state_repository import BranchValidatedStateReader
 
-        inner = InMemoryStateRepository()
         state = self._make_state("feature/231-test")
-        inner.save(state)
-
-        reader = BranchValidatedStateReader(inner)
+        reader = BranchValidatedStateReader(self._FixedReader(state))
         loaded = reader.load("feature/231-test")
         assert loaded.branch == "feature/231-test"
 
@@ -255,11 +261,8 @@ class TestBranchValidatedStateReader:
             StateBranchMismatchError,
         )
 
-        inner = InMemoryStateRepository()
         state = self._make_state("main")
-        inner.save(state)
-
-        reader = BranchValidatedStateReader(inner)
+        reader = BranchValidatedStateReader(self._FixedReader(state))
         with pytest.raises(StateBranchMismatchError):
             reader.load("feature/231-test")
 
@@ -269,10 +272,8 @@ class TestBranchValidatedStateReader:
             StateBranchMismatchError,
         )
 
-        inner = InMemoryStateRepository()
-        inner.save(self._make_state("wrong-branch"))
-
-        reader = BranchValidatedStateReader(inner)
+        state = self._make_state("wrong-branch")
+        reader = BranchValidatedStateReader(self._FixedReader(state))
         with pytest.raises(StateBranchMismatchError):
             reader.load("feature/231-test")
 

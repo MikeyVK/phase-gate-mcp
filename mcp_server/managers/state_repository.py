@@ -13,6 +13,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 
+class StateBranchMismatchError(Exception):
+    """Raised when loaded branch state does not match the requested branch."""
+
+
 class BranchState(BaseModel):
     """Validated immutable branch state."""
 
@@ -76,3 +80,23 @@ class InMemoryStateRepository:
     def save(self, state: BranchState) -> None:
         """Save state in memory."""
         self._states[state.branch] = state
+
+
+class BranchValidatedStateReader:
+    """Read-only adapter that enforces branch identity on every load.
+
+    Wraps any IStateReader and raises StateBranchMismatchError when the
+    loaded state's branch field does not match the requested branch.
+    """
+
+    def __init__(self, inner: object) -> None:
+        self._inner = inner
+
+    def load(self, branch: str) -> BranchState:
+        """Load state and validate branch identity."""
+        state: BranchState = self._inner.load(branch)  # type: ignore[attr-defined]
+        if state.branch != branch:
+            raise StateBranchMismatchError(
+                f"Loaded state branch '{state.branch}' does not match requested branch '{branch}'"
+            )
+        return state
