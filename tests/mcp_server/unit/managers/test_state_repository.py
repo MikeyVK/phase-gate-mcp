@@ -197,3 +197,88 @@ class TestStateRepositoryProtocols:
         assert hasattr(reader, "load")
         assert hasattr(writable, "load")
         assert hasattr(writable, "save")
+
+
+# ---------------------------------------------------------------------------
+# C1 RED — StateBranchMismatchError + BranchValidatedStateReader (issue #231)
+# ---------------------------------------------------------------------------
+
+
+class TestStateBranchMismatchError:
+    """StateBranchMismatchError is the single branch-mismatch contract for reads."""
+
+    def test_is_exception(self) -> None:
+        from mcp_server.managers.state_repository import StateBranchMismatchError
+
+        exc = StateBranchMismatchError("branch mismatch")
+        assert isinstance(exc, Exception)
+
+    def test_carries_message(self) -> None:
+        from mcp_server.managers.state_repository import StateBranchMismatchError
+
+        exc = StateBranchMismatchError("loaded='main', requested='feature/1'")
+        assert "main" in str(exc)
+        assert "feature/1" in str(exc)
+
+    def test_is_not_file_not_found_error(self) -> None:
+        from mcp_server.managers.state_repository import StateBranchMismatchError
+
+        exc = StateBranchMismatchError("mismatch")
+        assert not isinstance(exc, FileNotFoundError)
+
+
+class TestBranchValidatedStateReader:
+    """BranchValidatedStateReader rejects mismatched branch loads."""
+
+    def _make_state(self, branch: str) -> BranchState:
+        return BranchState(
+            branch=branch,
+            workflow_name="feature",
+            current_phase="implementation",
+            transitions=[],
+        )
+
+    def test_accepts_matching_branch(self) -> None:
+        from mcp_server.managers.state_repository import BranchValidatedStateReader
+
+        inner = InMemoryStateRepository()
+        state = self._make_state("feature/231-test")
+        inner.save(state)
+
+        reader = BranchValidatedStateReader(inner)
+        loaded = reader.load("feature/231-test")
+        assert loaded.branch == "feature/231-test"
+
+    def test_raises_on_mismatched_branch(self) -> None:
+        from mcp_server.managers.state_repository import (
+            BranchValidatedStateReader,
+            StateBranchMismatchError,
+        )
+
+        inner = InMemoryStateRepository()
+        state = self._make_state("main")
+        inner.save(state)
+
+        reader = BranchValidatedStateReader(inner)
+        with pytest.raises(StateBranchMismatchError):
+            reader.load("feature/231-test")
+
+    def test_raises_not_file_not_found_error(self) -> None:
+        from mcp_server.managers.state_repository import (
+            BranchValidatedStateReader,
+            StateBranchMismatchError,
+        )
+
+        inner = InMemoryStateRepository()
+        inner.save(self._make_state("wrong-branch"))
+
+        reader = BranchValidatedStateReader(inner)
+        with pytest.raises(StateBranchMismatchError):
+            reader.load("feature/231-test")
+
+    def test_reader_protocol_satisfied(self) -> None:
+        from mcp_server.managers.state_repository import BranchValidatedStateReader
+
+        inner = InMemoryStateRepository()
+        reader = BranchValidatedStateReader(inner)
+        assert hasattr(reader, "load")
