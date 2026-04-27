@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
@@ -92,14 +92,18 @@ class RunQualityGatesTool(BaseTool):
         Returns:
             ToolResult with content[0]=text summary, content[1]=compact JSON payload.
         """
-        del context  # Not used
         effective_scope = self._effective_scope(params)
         resolved_files = self.manager._resolve_scope(effective_scope, files=params.files)  # pyright: ignore[reportPrivateUsage]
 
-        result = self.manager.run_quality_gates(
-            resolved_files,
-            effective_scope=effective_scope,
-        )
+        try:
+            result = self.manager.run_quality_gates(
+                resolved_files,
+                effective_scope=effective_scope,
+            )
+        except OSError as e:
+            context.produce(RecoveryNote(message=f"Quality state write failed — retry the quality gates run: {e}"))
+            return ToolResult.error(str(e))
+
         summary_line = QAManager._format_summary_line(  # pyright: ignore[reportPrivateUsage]
             result,
             scope=effective_scope,

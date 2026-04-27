@@ -654,3 +654,43 @@ class TestScopeSwitchInvariantsC43:
         assert mock_manager.run_quality_gates.call_args_list[0].kwargs["effective_scope"] == "auto"
         assert mock_manager.run_quality_gates.call_args_list[1].kwargs["effective_scope"] == "files"
         assert mock_manager.run_quality_gates.call_args_list[2].kwargs["effective_scope"] == "auto"
+
+
+class TestRunQualityGatesToolConflictC8:
+    """C8: RunQualityGatesTool surfaces quality-state write failures explicitly.
+
+    When a quality-state mutation fails (e.g., OSError from AtomicJsonWriter),
+    the tool must return ToolResult.error with an actionable message and emit a
+    RecoveryNote through the provided NoteContext.
+    """
+
+    @pytest.mark.asyncio
+    async def test_run_quality_gates_returns_error_on_os_error(self) -> None:
+        """RunQualityGatesTool returns ToolResult.error when manager raises OSError."""
+        mock_manager = MagicMock()
+        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.run_quality_gates.side_effect = OSError("Quality state write failed")
+
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        result = await tool.execute(RunQualityGatesInput(scope="auto"), context)
+
+        assert result.is_error
+        assert "Quality state write failed" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_run_quality_gates_emits_recovery_note_on_os_error(self) -> None:
+        """RunQualityGatesTool emits RecoveryNote through NoteContext on quality-state failure."""
+        from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
+
+        mock_manager = MagicMock()
+        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.run_quality_gates.side_effect = OSError("Quality state write failed")
+
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        await tool.execute(RunQualityGatesInput(scope="auto"), context)
+
+        notes = context.of_type(RecoveryNote)
+        assert len(notes) == 1
+        assert "quality" in notes[0].message.lower() or "retry" in notes[0].message.lower()
