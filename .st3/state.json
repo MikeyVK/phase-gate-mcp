@@ -59,7 +59,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "QA NOGO: 3 blocking issues (BLOCK-1 compat-shims, BLOCK-2/3 QAManager missing IStateReader+IGitContextReader, _resolve_branch_scope raw JSON). Fix required before re-entering validation.",
+  "skip_reason": "QA returned BLOCK-4 violations (I001 + reportPrivateUsage) on C4 tests; must apply implementation fix before re-transitioning to validation",
   "issue_title": "State reconciliation for get_state: cycle/subphase awareness + typed snapshot API",
   "parent_branch": "epic/290-workflow-intelligence-agent-ux",
   "created_at": "2026-04-26T13:26:37.230739+00:00",
@@ -103,6 +103,22 @@
       "human_approval": "QA verifier: NOGO verdict with explicit fix requirements, 2026-04-27",
       "forced": true,
       "skip_reason": "QA NOGO: 3 blocking issues (BLOCK-1 compat-shims, BLOCK-2/3 QAManager missing IStateReader+IGitContextReader, _resolve_branch_scope raw JSON). Fix required before re-entering validation."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-04-27T09:35:55.440593+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-04-27T09:47:14.025935+00:00",
+      "human_approval": "User approved: QA BLOCK-4 findings require implementation fix before re-entering validation",
+      "forced": true,
+      "skip_reason": "QA returned BLOCK-4 violations (I001 + reportPrivateUsage) on C4 tests; must apply implementation fix before re-transitioning to validation"
     }
   ],
   "reconstructed": false
