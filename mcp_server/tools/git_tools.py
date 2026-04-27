@@ -34,7 +34,10 @@ def build_commit_type_resolver(
     """Build a resolver that derives commit types from injected phase contracts."""
 
     def resolve_commit_type(branch: str, workflow_phase: str, sub_phase: str | None) -> str | None:
-        state = state_engine.get_state(branch)
+        try:
+            state = state_engine.get_state(branch)
+        except StateBranchMismatchError:
+            return None
         return resolver.resolve_commit_type(state.workflow_name, workflow_phase, sub_phase)
 
     return resolve_commit_type
@@ -703,5 +706,10 @@ class GetParentBranchTool(BaseTool):
             if parent:
                 return ToolResult.text(f"Branch: {branch}\nParent branch: {parent}")
             return ToolResult.text(f"Branch: {branch}\nParent branch: (not set)")
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        except (
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+            OSError,
+            StateBranchMismatchError,
+        ) as exc:
             return ToolResult.error(f"Failed to get parent branch: {exc}")

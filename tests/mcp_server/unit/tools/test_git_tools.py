@@ -876,3 +876,47 @@ class TestGitCommitBranchMismatch:
 
         assert result.is_error
         assert "workflow_phase" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_commit_type_resolver_returns_none_on_branch_mismatch(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """build_commit_type_resolver returns None (no type) on StateBranchMismatchError."""
+        mock_state_engine = MagicMock()
+        mock_state_engine.get_state.side_effect = StateBranchMismatchError(
+            "Loaded state branch 'main' does not match requested branch 'feature/231-test'"
+        )
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/231-test"
+        mock_git_manager.commit_with_scope.return_value = "abc1234"
+
+        resolver_fn = MagicMock(return_value=None)
+        tool = GitCommitTool(manager=mock_git_manager, commit_type_resolver=resolver_fn)
+        params = GitCommitInput(
+            message="refactor cleanup",
+            workflow_phase="implementation",
+            sub_phase="refactor",
+            cycle_number=2,
+        )
+
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error
+        assert "Committed: abc1234" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_get_parent_branch_handles_branch_mismatch(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """GetParentBranchTool.execute() returns error on StateBranchMismatchError."""
+        mock_state_engine = MagicMock()
+        mock_state_engine.get_state.side_effect = StateBranchMismatchError(
+            "Loaded state branch 'main' does not match requested branch 'feature/231-test'"
+        )
+        mock_git_manager.get_current_branch.return_value = "feature/231-test"
+
+        tool = GetParentBranchTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GetParentBranchInput()
+
+        result = await tool.execute(params, NoteContext())
+
+        assert result.is_error
