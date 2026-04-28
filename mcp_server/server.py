@@ -27,6 +27,7 @@ from pydantic import AnyUrl, BaseModel, ValidationError
 from mcp_server.config.loader import ConfigLoader, resolve_config_root
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
+from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.operation_notes import NoteContext
@@ -45,9 +46,12 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.pytest_runner import PytestRunner
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_reconstructor import StateReconstructor
-from mcp_server.managers.state_repository import FileStateRepository
+from mcp_server.managers.state_repository import BranchValidatedStateReader, FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
+from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
+from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 from mcp_server.resources.github import GitHubIssuesResource
 
 # Resources
@@ -191,11 +195,29 @@ class MCPServer:
         )
 
         self.git_manager = GitManager(git_config=git_config, workphases_config=workphases_config)
+
+        # Build shared state repository (used by resolver and PhaseStateEngine)
+        self._state_repository = FileStateRepository(
+            state_file=workspace_root / ".st3" / "state.json"
+        )
+        # Build WorkflowStatusResolver (Issue #231 C4)
+        _branch_validated_reader = BranchValidatedStateReader(inner=self._state_repository)
+        _commit_phase_detector = CommitPhaseDetector(
+            workspace_root=workspace_root,
+            workphases_config=workphases_config,
+        )
+        self.workflow_status_resolver = WorkflowStatusResolver(
+            git_context_reader=self.git_manager,
+            state_reader=_branch_validated_reader,
+            commit_phase_detector=_commit_phase_detector,
+        )
+
         self.project_manager = ProjectManager(
             workspace_root=workspace_root,
             workflow_config=workflow_config,
             git_manager=self.git_manager,
             workphases_config=workphases_config,
+            workflow_status_resolver=self.workflow_status_resolver,
         )
         self.phase_contract_resolver = PhaseContractResolver(
             PhaseConfigContext(
@@ -213,20 +235,31 @@ class MCPServer:
             project_manager=self.project_manager,
             scope_decoder=ScopeDecoder(workphases_config=workphases_config),
         )
+        self._workflow_state_mutator = WorkflowStateMutator(
+            state_repository=self._state_repository,
+            state_reconstructor=self.state_reconstructor,
+        )
         self.phase_state_engine = PhaseStateEngine(
             workspace_root=workspace_root,
             project_manager=self.project_manager,
             git_config=git_config,
             workflow_config=workflow_config,
             workphases_config=workphases_config,
-            state_repository=FileStateRepository(state_file=workspace_root / ".st3" / "state.json"),
+            state_repository=self._state_repository,
             scope_decoder=ScopeDecoder(workphases_config=workphases_config),
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
+            workflow_state_mutator=self._workflow_state_mutator,
+        )
+        _quality_state_repository = FileQualityStateRepository(
+            backing_file=workspace_root / ".st3" / "quality_state.json"
         )
         self.qa_manager = QAManager(
             workspace_root=workspace_root,
             quality_config=quality_config,
+            quality_state_repository=_quality_state_repository,
+            git_context_reader=self.git_manager,
+            state_reader=_branch_validated_reader,
         )
         self.github_manager = GitHubManager(
             issue_config=issue_config,
@@ -349,6 +382,7 @@ class MCPServer:
                 state_engine=self.phase_state_engine,
                 github_manager=self.github_manager,
                 workphases_config=workphases_config,
+                workflow_status_resolver=self.workflow_status_resolver,
             ),
         ]
 

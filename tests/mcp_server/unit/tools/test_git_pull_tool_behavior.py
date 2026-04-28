@@ -13,6 +13,7 @@ import pytest
 
 from mcp_server.core.exceptions import PreflightError
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool, _input_schema
 
 
@@ -116,3 +117,30 @@ async def test_git_pull_runtime_error_returns_tool_error() -> None:
 
     assert result.is_error is True
     assert "Pull failed: boom" in str(result)
+
+
+@pytest.mark.asyncio
+async def test_git_pull_branch_mismatch_is_non_fatal() -> None:
+    """StateBranchMismatchError during phase sync must be non-fatal (C_ENGINE_BREAK)."""
+    manager = Mock()
+    manager.get_current_branch.return_value = "feature/231-state-snapshot-cqrs"
+
+    mock_engine = Mock()
+    tool = GitPullTool(manager=manager, state_engine=mock_engine)
+
+    run_sync = AsyncMock(
+        side_effect=[
+            "Pulled from origin",
+            StateBranchMismatchError(
+                "Loaded state branch 'main' does not match 'feature/231-state-snapshot-cqrs'"
+            ),
+        ]
+    )
+
+    with (
+        patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync),
+    ):
+        result = await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
+
+    assert result.is_error is False
+    assert "Pulled" in str(result)

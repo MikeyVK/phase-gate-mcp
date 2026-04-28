@@ -13,8 +13,11 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas import (
     JsonViolationsParsing,
     QualityConfig,
@@ -70,15 +73,22 @@ class QAManager:
         self,
         workspace_root: Path | None = None,
         quality_config: QualityConfig | None = None,
+        *,
+        quality_state_repository: IQualityStateRepository,
+        git_context_reader: IGitContextReader,
+        state_reader: IStateReader,
     ) -> None:
         """Initialize QA Manager with injected quality configuration."""
         # Runtime configuration (lowercase for instance mutability)
         self.qa_log_dir = self.QA_LOG_DIR
         self.qa_log_enabled = self.QA_LOG_ENABLED
         self.qa_log_max_files = self.QA_LOG_MAX_FILES
-        # Optional workspace root: used for baseline state persistence in .st3/state.json
+        # Optional workspace root: used for baseline state persistence
         self.workspace_root = workspace_root
         self._quality_config = quality_config
+        self._quality_state_repository = quality_state_repository
+        self._git_context_reader = git_context_reader
+        self._state_reader = state_reader
 
     def run_quality_gates(
         self,
@@ -288,45 +298,25 @@ class QAManager:
     # ------------------------------------------------------------------
 
     def _advance_baseline_on_all_pass(self) -> None:
-        """Persist current HEAD as baseline_sha and reset failed_files on all-pass run.
-
-        Only executed when workspace_root is set. Reads/writes .st3/state.json in-place,
-        touching only the quality_gates sub-key to avoid overwriting workflow phase data.
-        """
-        if self.workspace_root is None:
-            return
-
+        """Persist current HEAD as baseline_sha and reset failed_files on all-pass run."""
         head_sha = self._get_head_sha()
         if head_sha is None:
             return
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
 
-        state_path = self.workspace_root / ".st3" / "state.json"
-        state_data = self._load_state_json(state_path)
-        state_data["quality_gates"] = {
-            "baseline_sha": head_sha,
-            "failed_files": [],
-        }
-        self._save_state_json(state_path, state_data)
+        self._quality_state_repository.apply(
+            lambda _s: QualityState(baseline_sha=head_sha, failed_files=[])
+        )
 
     def _accumulate_failed_files_on_failure(self, newly_failed: list[str]) -> None:
-        """Union newly-failed files with persisted failed_files; leave baseline_sha unchanged.
+        """Union newly-failed files with persisted failed_files; leave baseline_sha unchanged."""
+        from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
 
-        Only executed when workspace_root is set and at least one gate failed.
-        Ensures deterministic sort and no duplicates in the persisted list.
-        """
-        if self.workspace_root is None:
-            return
+        def _union(s: QualityState) -> QualityState:
+            merged = sorted(set(s.failed_files) | set(newly_failed))
+            return QualityState(baseline_sha=s.baseline_sha, failed_files=merged)
 
-        state_path = self.workspace_root / ".st3" / "state.json"
-        state_data = self._load_state_json(state_path)
-
-        quality_gates: dict[str, Any] = state_data.get("quality_gates", {})
-        existing = set(quality_gates.get("failed_files", []))
-        merged = sorted(existing | set(newly_failed))
-
-        quality_gates["failed_files"] = merged
-        state_data["quality_gates"] = quality_gates
-        self._save_state_json(state_path, state_data)
+        self._quality_state_repository.apply(_union)
 
     def _get_head_sha(self) -> str | None:
         """Return the current git HEAD commit SHA, or None on error."""
@@ -343,22 +333,6 @@ class QAManager:
         except OSError:
             pass
         return None
-
-    @staticmethod
-    def _load_state_json(state_path: Path) -> dict[str, Any]:
-        """Read state.json from disk, returning empty dict when absent or malformed."""
-        if not state_path.exists():
-            return {}
-        try:
-            return dict(json.loads(state_path.read_text(encoding="utf-8")))
-        except (json.JSONDecodeError, OSError):
-            return {}
-
-    @staticmethod
-    def _save_state_json(state_path: Path, data: dict[str, Any]) -> None:
-        """Atomically write data to state.json (creates parent dirs if needed)."""
-        state_path.parent.mkdir(parents=True, exist_ok=True)
-        state_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     # ------------------------------------------------------------------
     # Scope resolution
@@ -397,8 +371,9 @@ class QAManager:
     def _resolve_branch_scope(self) -> list[str]:
         """Return Python files changed on this branch since merge-base with parent.
 
-        The parent branch is read from top-level ``parent_branch`` in
-        ``.st3/state.json`` and falls back to ``"main"``.
+        The parent branch is read from ``parent_branch`` in the persisted
+        ``BranchState`` loaded via ``IStateReader``. Falls back to ``"main"``
+        when state is absent or the field is unset.
 
         Uses merge-base semantics (``parent...HEAD``) to isolate branch-introduced
         changes and avoid noise from parent tip drift.
@@ -407,36 +382,29 @@ class QAManager:
             Sorted list of ``.py`` file paths (relative POSIX). Empty list on error
             or when the diff is empty.
         """
+        branch = self._git_context_reader.get_current_branch()
         parent = "main"
-        if self.workspace_root is not None:
-            state = self._load_state_json(self.workspace_root / ".st3" / "state.json")
-            parent = state.get("parent_branch") or "main"
+        try:
+            state = self._state_reader.load(branch)
+            parent = state.parent_branch or "main"
+        except (KeyError, FileNotFoundError, StateBranchMismatchError, OSError):
+            pass
         return self._git_diff_py_files(parent, use_merge_base=True)
 
     def _resolve_auto_scope(self) -> list[str]:
         """Return union of git diff (``baseline_sha..HEAD``) and persisted ``failed_files``.
 
-        Reads ``quality_gates.baseline_sha`` and ``quality_gates.failed_files``
-        from ``.st3/state.json``.
-
         Returns:
-            Sorted, deduplicated list of ``.py`` paths. Returns ``[]`` when
-            workspace_root is absent or no ``baseline_sha`` is recorded (C24
-            handles the no-baseline fallback).
+            Sorted, deduplicated list of ``.py`` paths. Returns project scope when
+            no ``baseline_sha`` is recorded (C24 handles the no-baseline fallback).
         """
-        if self.workspace_root is None:
-            return []
-
-        state = self._load_state_json(self.workspace_root / ".st3" / "state.json")
-        quality_gates: dict[str, Any] = state.get("quality_gates", {})
-        baseline_sha: str | None = quality_gates.get("baseline_sha") or None
+        state = self._quality_state_repository.load()
+        baseline_sha = state.baseline_sha
         if not baseline_sha:
             return self._resolve_project_scope()
-
         diff_files = set(self._git_diff_py_files(baseline_sha))
-        failed_files = set(quality_gates.get("failed_files", []))
-        union = diff_files | failed_files
-        return sorted(union)
+        failed_files = set(state.failed_files)
+        return sorted(diff_files | failed_files)
 
     def _git_diff_py_files(self, base_ref: str, *, use_merge_base: bool = False) -> list[str]:
         """Run git diff and return changed ``.py`` files.

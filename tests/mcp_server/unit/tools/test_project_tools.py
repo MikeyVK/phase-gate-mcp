@@ -950,3 +950,115 @@ class TestUpdatePlanningDeliverablesPerPhase:
         assert len(cycles) == 2  # original C1 + new C2 appended
         assert cycles[0]["cycle_number"] == 1  # original C1 untouched
         assert cycles[1]["cycle_number"] == 2  # C2 appended
+
+
+class TestProjectManagerWorkflowStatusResolverC4:
+    """C4 coverage: ProjectManager.workflow_status_resolver parameter (Issue #231 C4)."""
+
+    def test_project_manager_accepts_workflow_status_resolver_kwarg(self, tmp_path: Path) -> None:
+        """ProjectManager constructed with workflow_status_resolver calls it on get_project_plan."""
+        from unittest.mock import MagicMock  # noqa: PLC0415
+
+        from mcp_server.state.workflow_status import WorkflowStatusDTO  # noqa: PLC0415
+
+        mock_resolver = MagicMock()
+        mock_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="research",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="state.json",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager.initialize_project(
+            issue_number=231,
+            issue_title="State Snapshot CQRS",
+            workflow_name="feature",
+        )
+        plan = manager.get_project_plan(231)
+        assert plan is not None
+        mock_resolver.resolve_current.assert_called_once()
+
+    def test_get_project_plan_uses_resolver_resolve_current(self, tmp_path: Path) -> None:
+        """get_project_plan delegates phase detection to resolver.resolve_current()."""
+        from unittest.mock import MagicMock  # noqa: PLC0415
+
+        from mcp_server.state.workflow_status import WorkflowStatusDTO  # noqa: PLC0415
+
+        mock_resolver = MagicMock()
+        mock_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="implementation",
+            sub_phase="red",
+            current_cycle=3,
+            phase_source="state.json",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager.initialize_project(
+            issue_number=231,
+            issue_title="State Snapshot CQRS",
+            workflow_name="feature",
+        )
+
+        plan = manager.get_project_plan(231)
+
+        assert plan is not None
+        mock_resolver.resolve_current.assert_called_once()
+        assert plan["current_phase"] == "implementation:red"
+
+    def test_get_project_plan_includes_phase_source(self, tmp_path: Path) -> None:
+        """get_project_plan includes phase_source from resolver in returned plan."""
+        from unittest.mock import MagicMock  # noqa: PLC0415
+
+        from mcp_server.state.workflow_status import WorkflowStatusDTO  # noqa: PLC0415
+
+        mock_resolver = MagicMock()
+        mock_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="validation",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="commit-scope",
+            phase_confidence="medium",
+            phase_detection_error=None,
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager.initialize_project(
+            issue_number=231,
+            issue_title="State Snapshot CQRS",
+            workflow_name="feature",
+        )
+
+        plan = manager.get_project_plan(231)
+
+        assert plan is not None
+        assert plan["phase_source"] == "commit-scope"
+        assert plan["current_phase"] == "validation"
+
+    def test_get_project_plan_includes_phase_detection_error(self, tmp_path: Path) -> None:
+        """get_project_plan includes phase_detection_error from resolver."""
+        from unittest.mock import MagicMock  # noqa: PLC0415
+
+        from mcp_server.state.workflow_status import WorkflowStatusDTO  # noqa: PLC0415
+
+        mock_resolver = MagicMock()
+        mock_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="unknown",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="unknown",
+            phase_confidence="unknown",
+            phase_detection_error="No commits found",
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
+        manager.initialize_project(
+            issue_number=231,
+            issue_title="State Snapshot CQRS",
+            workflow_name="feature",
+        )
+
+        plan = manager.get_project_plan(231)
+
+        assert plan is not None
+        assert plan["phase_detection_error"] == "No commits found"

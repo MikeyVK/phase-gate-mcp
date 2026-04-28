@@ -12,11 +12,13 @@ Issue #50: Tests migrated from PHASE_TEMPLATES to workflows.yaml.
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
 from mcp_server.managers import git_manager
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
+from mcp_server.state.workflow_status import WorkflowStatusDTO
 from tests.mcp_server.test_support import load_workflow_config, make_project_manager
 
 
@@ -329,9 +331,7 @@ phases:
     ) -> None:
         """Test get_project_plan returns unknown phase when no commits exist."""
         # Mock GitManager.get_recent_commits to return empty list
-        monkeypatch.setattr(
-            git_manager.GitManager, "get_recent_commits", lambda _self, _limit=10: []
-        )
+        monkeypatch.setattr(git_manager.GitManager, "get_recent_commits", lambda _self, **_: [])
 
         # Initialize project
         manager.initialize_project(
@@ -707,3 +707,70 @@ class TestIssue257Cycle7Contracts:
         gitignore = Path(".gitignore").read_text(encoding="utf-8")
 
         assert ".st3/state.json" not in gitignore
+
+
+class TestProjectManagerResolverAdoption:
+    """C4: WorkflowStatusResolver adoption in ProjectManager.get_project_plan().
+
+    Issue #231: These tests FAIL (RED) until WorkflowStatusResolver is injected
+    into ProjectManager and used in get_project_plan().
+    """
+
+    def test_get_project_plan_uses_resolver_phase(self, tmp_path: Path) -> None:
+        """get_project_plan uses WorkflowStatusResolver.resolve_current() when injected."""
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="research",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="commit-scope",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager.initialize_project(99, "Test resolver adoption", "feature")
+
+        plan = manager.get_project_plan(99)
+
+        assert plan is not None
+        assert plan["current_phase"] == "research"
+        assert plan["phase_source"] == "commit-scope"
+        resolver.resolve_current.assert_called_once()
+
+    def test_get_project_plan_formats_phase_colon_sub_phase(self, tmp_path: Path) -> None:
+        """get_project_plan formats 'phase:sub_phase' when resolver returns sub_phase."""
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="implementation",
+            sub_phase="red",
+            current_cycle=1,
+            phase_source="commit-scope",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager.initialize_project(100, "Test sub-phase format", "feature")
+
+        plan = manager.get_project_plan(100)
+
+        assert plan is not None
+        assert plan["current_phase"] == "implementation:red"
+
+    def test_get_project_plan_passes_resolver_error_to_plan(self, tmp_path: Path) -> None:
+        """get_project_plan propagates phase_detection_error from resolver."""
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="unknown",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="unknown",
+            phase_confidence="unknown",
+            phase_detection_error="Phase detection failed: no state file",
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+        manager.initialize_project(101, "Test error propagation", "feature")
+
+        plan = manager.get_project_plan(101)
+
+        assert plan is not None
+        assert plan["phase_detection_error"] == "Phase detection failed: no state file"

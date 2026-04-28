@@ -10,7 +10,7 @@ from unittest.mock import Mock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.state_repository import BranchState
+from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
 from mcp_server.tools.git_tools import GitCheckoutTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -97,3 +97,26 @@ class TestGitCheckoutStateSync:
         assert result.is_error is False
         assert "main" in str(result)
         assert "unknown" in str(result)
+
+    @pytest.mark.asyncio
+    async def test_checkout_handles_state_branch_mismatch_gracefully(self) -> None:
+        """Checkout handles StateBranchMismatchError gracefully (C_ENGINE_BREAK)."""
+        mock_manager = Mock()
+        tool = GitCheckoutTool(manager=mock_manager)
+
+        params = Mock()
+        params.branch = "feature/231-state-snapshot-cqrs"
+
+        mock_engine = Mock()
+        mock_engine.get_state.side_effect = StateBranchMismatchError(
+            "Loaded state branch 'main' does not match "
+            "requested branch 'feature/231-state-snapshot-cqrs'"
+        )
+        tool._state_engine = mock_engine
+
+        result = await tool.execute(params, NoteContext())
+
+        mock_manager.checkout.assert_called_once_with("feature/231-state-snapshot-cqrs")
+        assert isinstance(result, ToolResult)
+        assert result.is_error is False
+        assert "feature/231-state-snapshot-cqrs" in str(result)

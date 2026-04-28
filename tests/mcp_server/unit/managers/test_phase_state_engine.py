@@ -12,7 +12,11 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.managers.state_repository import (
+    BranchState,
+    InMemoryStateRepository,
+    StateBranchMismatchError,
+)
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 
@@ -138,7 +142,7 @@ class TestTDDPhaseHooks:
             branch=branch, issue_number=issue_number, initial_phase="design"
         )
 
-        # Act & Assert — must NOT raise; gate lives at planning exit now
+        # Act & Assert â€” must NOT raise; gate lives at planning exit now
         state_engine.on_enter_implementation_phase(branch, issue_number)
         state = state_engine.get_state(branch)
         assert state.current_cycle == 1
@@ -205,6 +209,37 @@ class TestTDDPhaseHooks:
         state = state_engine.get_state(branch)
         assert state.last_cycle == 2
         assert state.current_cycle is None
+
+
+class TestPhaseStateEngineCleanBreak:
+    """C_ENGINE_BREAK: get_state() propagates StateBranchMismatchError (issue #231)."""
+
+    class _FixedReader:
+        """Returns the configured state regardless of the requested branch."""
+
+        def __init__(self, state: BranchState) -> None:
+            self._state = state
+
+        def load(self, _branch: str) -> BranchState:
+            return self._state
+
+    def test_get_state_raises_mismatch_error_not_file_not_found(self, tmp_path: Path) -> None:
+        """get_state() must raise StateBranchMismatchError on mismatch, not FileNotFoundError."""
+        fixed_state = BranchState(
+            branch="main",
+            issue_number=None,
+            workflow_name="feature",
+            current_phase="implementation",
+            current_cycle=None,
+            required_phases=["implementation"],
+            transitions=[],
+        )
+        engine = make_phase_state_engine(
+            workspace_root=tmp_path,
+            state_repository=self._FixedReader(fixed_state),
+        )
+        with pytest.raises(StateBranchMismatchError):
+            engine.get_state("feature/231-state-snapshot-cqrs")
 
 
 class TestTransitionHooksWiring:
@@ -320,3 +355,164 @@ class TestTransitionHooksWiring:
             "last_cycle should be 2 after exiting TDD phase"
         )
         assert state.current_cycle is None, "current_cycle should be None after exiting TDD phase"
+
+
+class TestPhaseStateEngineMutatorRoutingC6:
+    """C6 (C_MUTATOR_CORE): PhaseStateEngine routes writes through IWorkflowStateMutator."""
+
+    class _TrackingMutator:
+        """Spy mutator that records apply() calls and delegates to real repository."""
+
+        def __init__(self, repo: InMemoryStateRepository) -> None:
+            self._repo = repo
+            self.apply_calls: list[str] = []
+
+        def apply(self, branch: str, mutate: object) -> None:
+            self.apply_calls.append(branch)
+            try:
+                state = self._repo.load(branch)
+            except KeyError:
+                state = BranchState(
+                    branch=branch,
+                    workflow_name="",
+                    current_phase="",
+                )
+            new_state = mutate(state)  # type: ignore[operator]
+            self._repo.save(new_state)
+
+    def test_phase_state_engine_accepts_workflow_state_mutator_kwarg(self, tmp_path: Path) -> None:
+        """PhaseStateEngine accepts workflow_state_mutator kwarg.
+
+        RED: make_phase_state_engine does not have this param -> TypeError.
+        """
+        repo = InMemoryStateRepository()
+        mutator = self._TrackingMutator(repo)
+        engine = make_phase_state_engine(
+            tmp_path,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+        assert engine is not None
+
+    def test_initialize_branch_routes_through_mutator(self, tmp_path: Path) -> None:
+        """initialize_branch() calls workflow_state_mutator.apply().
+
+        RED: fails until GREEN routes initialize_branch through mutator.
+        """
+        project_manager = make_project_manager(tmp_path)
+        project_manager.initialize_project(
+            issue_number=231,
+            issue_title="State Split",
+            workflow_name="feature",
+        )
+        repo = InMemoryStateRepository()
+        mutator = self._TrackingMutator(repo)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=project_manager,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+        engine.initialize_branch(
+            branch="feature/231-test",
+            issue_number=231,
+            initial_phase="research",
+        )
+        assert mutator.apply_calls == ["feature/231-test"]
+
+    def test_transition_routes_through_mutator(self, tmp_path: Path) -> None:
+        """transition() calls workflow_state_mutator.apply().
+
+        RED: fails until GREEN routes transition() through mutator.
+        """
+        project_manager = make_project_manager(tmp_path)
+        project_manager.initialize_project(
+            issue_number=231,
+            issue_title="State Split",
+            workflow_name="feature",
+        )
+        repo = InMemoryStateRepository()
+        mutator = self._TrackingMutator(repo)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=project_manager,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+        seed = BranchState(
+            branch="feature/231-test",
+            issue_number=231,
+            workflow_name="feature",
+            current_phase="research",
+        )
+        repo.save(seed)
+        mutator.apply_calls.clear()
+
+        engine.transition(branch="feature/231-test", to_phase="design")
+
+        assert "feature/231-test" in mutator.apply_calls
+
+    def test_on_enter_implementation_phase_routes_through_mutator(self, tmp_path: Path) -> None:
+        """on_enter_implementation_phase() calls mutator.apply().
+
+        RED: fails until GREEN routes implementation hooks through mutator.
+        """
+        project_manager = make_project_manager(tmp_path)
+        project_manager.initialize_project(
+            issue_number=231,
+            issue_title="State Split",
+            workflow_name="feature",
+        )
+        repo = InMemoryStateRepository()
+        mutator = self._TrackingMutator(repo)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=project_manager,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+        seed = BranchState(
+            branch="feature/231-test",
+            issue_number=231,
+            workflow_name="feature",
+            current_phase="implementation",
+        )
+        repo.save(seed)
+        mutator.apply_calls.clear()
+
+        engine.on_enter_implementation_phase("feature/231-test", 231)
+
+        assert "feature/231-test" in mutator.apply_calls
+
+    def test_on_exit_implementation_phase_routes_through_mutator(self, tmp_path: Path) -> None:
+        """on_exit_implementation_phase() calls mutator.apply().
+
+        RED: fails until GREEN routes implementation hooks through mutator.
+        """
+        project_manager = make_project_manager(tmp_path)
+        project_manager.initialize_project(
+            issue_number=231,
+            issue_title="State Split",
+            workflow_name="feature",
+        )
+        repo = InMemoryStateRepository()
+        mutator = self._TrackingMutator(repo)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=project_manager,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+        seed = BranchState(
+            branch="feature/231-test",
+            issue_number=231,
+            workflow_name="feature",
+            current_phase="implementation",
+            current_cycle=1,
+        )
+        repo.save(seed)
+        mutator.apply_calls.clear()
+
+        engine.on_exit_implementation_phase("feature/231-test")
+
+        assert "feature/231-test" in mutator.apply_calls

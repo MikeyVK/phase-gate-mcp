@@ -1,0 +1,19 @@
+# mcp_server/state/quality_state.py
+# template=generic version=f35abd82 created=2026-03-18T00:00Z updated=
+"""Immutable quality-gate baseline state DTO."""
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class QualityState(BaseModel):
+    """Immutable snapshot of quality-gate baseline tracking state.
+
+    Stored in ``.st3/quality_state.json`` (separate from workflow state.json).
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    baseline_sha: str | None = None
+    failed_files: list[str] = Field(default_factory=list)

@@ -1,9 +1,11 @@
 """Discovery tools for AI self-orientation."""
 
 # pyright: reportIncompatibleMethodOverride=false
+from __future__ import annotations
+
 import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +22,9 @@ from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
+
+if TYPE_CHECKING:
+    from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 
 class SearchDocumentationInput(BaseModel):
@@ -115,6 +120,8 @@ class GetWorkContextTool(BaseTool):
         state_engine: PhaseStateEngine,
         github_manager: GitHubManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
+        *,
+        workflow_status_resolver: WorkflowStatusResolver,
     ) -> None:
         super().__init__()
         self._settings = settings
@@ -123,6 +130,7 @@ class GetWorkContextTool(BaseTool):
         self._state_engine = state_engine
         self._github_manager = github_manager
         self._workphases_config = workphases_config
+        self._workflow_status_resolver = workflow_status_resolver
 
     async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:
         """Execute work context aggregation."""
@@ -137,16 +145,18 @@ class GetWorkContextTool(BaseTool):
         issue_number = self._extract_issue_number(branch)
         ctx["linked_issue_number"] = issue_number
 
-        # Detect workflow phase deterministically from commit-scope + state.json
+        current_cycle: int | None = None
+
+        # Use resolver for phase detection (Issue #231 C4)
         try:
-            recent_commits = self._git_manager.get_recent_commits(limit=5)
-            phase_result = self._detect_workflow_phase(recent_commits)
-            ctx["workflow_phase"] = phase_result["workflow_phase"]
-            ctx["sub_phase"] = phase_result.get("sub_phase")
-            ctx["phase_source"] = phase_result["source"]
-            ctx["phase_confidence"] = phase_result["confidence"]
-            ctx["phase_error_message"] = phase_result.get("error_message")
-            ctx["recent_commits"] = recent_commits
+            status = self._workflow_status_resolver.resolve_current()
+            ctx["workflow_phase"] = status.current_phase
+            ctx["sub_phase"] = status.sub_phase
+            ctx["phase_source"] = status.phase_source
+            ctx["phase_confidence"] = status.phase_confidence
+            ctx["phase_error_message"] = status.phase_detection_error
+            ctx["recent_commits"] = self._git_manager.get_recent_commits(limit=5)
+            current_cycle = status.current_cycle
         except (OSError, ValueError, RuntimeError):
             ctx["workflow_phase"] = "unknown"
             ctx["sub_phase"] = None
@@ -155,27 +165,20 @@ class GetWorkContextTool(BaseTool):
             ctx["phase_error_message"] = None
             ctx["recent_commits"] = []
 
-        # Issue #146 Cycle 3: TDD Cycle Info (conditional visibility)
-        if ctx.get("workflow_phase") == "implementation" and issue_number:
+        # Gate: current_cycle is not None (no hardcoded phase-name check)
+        if current_cycle is not None and issue_number:
             try:
-                state = self._state_engine.get_state(branch)
-                current_cycle = state.current_cycle
-
-                # Get planning deliverables
                 project_plan = self._project_manager.get_project_plan(issue_number)
                 if project_plan is None:
                     raise ValueError("Project plan not found")
                 planning_deliverables = project_plan.get("planning_deliverables")
-                if planning_deliverables and current_cycle:
+                if planning_deliverables:
                     tdd_cycles = planning_deliverables.get("tdd_cycles", {})
                     cycles = tdd_cycles.get("cycles", [])
                     total = tdd_cycles.get("total", 0)
-
-                    # Find current cycle details
                     cycle_details = next(
                         (c for c in cycles if c.get("cycle_number") == current_cycle), None
                     )
-
                     if cycle_details:
                         ctx["tdd_cycle_info"] = {
                             "current": current_cycle,
@@ -183,7 +186,6 @@ class GetWorkContextTool(BaseTool):
                             "name": cycle_details.get("name"),
                             "deliverables": cycle_details.get("deliverables", []),
                             "exit_criteria": cycle_details.get("exit_criteria"),
-                            # Always in_progress when cycle is active (Issue #146, design.md:375)
                             "status": "in_progress",
                         }
             except (OSError, ValueError, RuntimeError, KeyError):

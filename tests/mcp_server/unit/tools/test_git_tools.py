@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.tools.git_tools import (
     CommitPhaseMismatchError,
     CreateBranchInput,
@@ -852,3 +853,70 @@ async def test_git_commit_no_state_json_returns_error(mock_git_manager: MagicMoc
     error_text = result.content[0]["text"]
     assert "workflow_phase" in error_text
     assert "main" in error_text
+
+
+class TestGitCommitBranchMismatch:
+    """C_ENGINE_BREAK: GitCommitTool handles StateBranchMismatchError (issue #231, cycle 2)."""
+
+    @pytest.mark.asyncio
+    async def test_commit_auto_detect_handles_branch_mismatch(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """Auto-detect path must catch StateBranchMismatchError and return ToolResult.error."""
+        mock_state_engine = MagicMock()
+        mock_state_engine.get_current_phase.side_effect = StateBranchMismatchError(
+            "Loaded state branch 'main' does not match requested branch 'feature/231-test'"
+        )
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/231-test"
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(message="chore: cleanup")
+
+        result = await tool.execute(params, NoteContext())
+
+        assert result.is_error
+        assert "workflow_phase" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_commit_type_resolver_returns_none_on_branch_mismatch(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """build_commit_type_resolver returns None (no type) on StateBranchMismatchError."""
+        mock_state_engine = MagicMock()
+        mock_state_engine.get_state.side_effect = StateBranchMismatchError(
+            "Loaded state branch 'main' does not match requested branch 'feature/231-test'"
+        )
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/231-test"
+        mock_git_manager.commit_with_scope.return_value = "abc1234"
+
+        resolver_fn = MagicMock(return_value=None)
+        tool = GitCommitTool(manager=mock_git_manager, commit_type_resolver=resolver_fn)
+        params = GitCommitInput(
+            message="refactor cleanup",
+            workflow_phase="implementation",
+            sub_phase="refactor",
+            cycle_number=2,
+        )
+
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error
+        assert "Committed: abc1234" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_get_parent_branch_handles_branch_mismatch(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """GetParentBranchTool.execute() returns error on StateBranchMismatchError."""
+        mock_state_engine = MagicMock()
+        mock_state_engine.get_state.side_effect = StateBranchMismatchError(
+            "Loaded state branch 'main' does not match requested branch 'feature/231-test'"
+        )
+        mock_git_manager.get_current_branch.return_value = "feature/231-test"
+
+        tool = GetParentBranchTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GetParentBranchInput()
+
+        result = await tool.execute(params, NoteContext())
+
+        assert result.is_error

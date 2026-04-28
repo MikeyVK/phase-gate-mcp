@@ -284,3 +284,43 @@ class TestCompositionRootContracts:
         assert "check_phase_readiness" in submit_pr_actions, (
             "submit_pr pre rule must include check_phase_readiness."
         )
+
+
+class TestSubmitPRNeutralizesQualityState:
+    """C5 (C_QA_STATE_SPLIT): quality_state.json is registered as branch-local artifact."""
+
+    def test_quality_state_json_in_phase_contracts_branch_local_artifacts(
+        self,
+    ) -> None:
+        """phase_contracts.yaml must include .st3/quality_state.json as branch-local artifact.
+
+        RED: will fail until C5 GREEN adds quality_state.json to phase_contracts.yaml.
+        """
+        import yaml as _yaml  # noqa: PLC0415
+
+        workspace_root = Path(__file__).parents[3]
+        contracts_path = workspace_root / ".st3" / "config" / "phase_contracts.yaml"
+        contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
+        artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
+        assert ".st3/quality_state.json" in artifact_paths, (
+            "phase_contracts.yaml must register .st3/quality_state.json as a "
+            "branch-local artifact so SubmitPRTool neutralizes it before pushing."
+        )
+
+    def test_quality_state_artifact_registered_in_server_merge_readiness(
+        self,
+    ) -> None:
+        """MergeReadinessContext passed to SubmitPRTool must include quality_state artifact.
+
+        RED: will fail until C5 GREEN wires quality_state.json into server.py composition.
+        """
+        workspace_root = Path(__file__).parents[3]
+        contracts_path = workspace_root / ".st3" / "config" / "phase_contracts.yaml"
+        import yaml as _yaml  # noqa: PLC0415
+
+        contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
+        artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
+        assert ".st3/quality_state.json" in artifact_paths, (
+            "quality_state.json must appear in phase_contracts.yaml so server.py wires "
+            "it into MergeReadinessContext and SubmitPRTool neutralizes it."
+        )
