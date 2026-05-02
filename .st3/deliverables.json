@@ -21,19 +21,19 @@
             "cycle_number": 1,
             "deliverables": [
               {
-                "count": 15,
                 "id": "C1-tests",
+                "type": "test_count",
                 "required": true,
-                "type": "test_count"
+                "count": 15
               },
               {
                 "id": "C1-quality",
+                "type": "quality_gate",
                 "required": true,
-                "scope": "contracts_config.py",
-                "type": "quality_gate"
+                "scope": "contracts_config.py, config/schemas/__init__.py, schemas/__init__.py"
               }
             ],
-            "exit_criteria": "Alle 15 nieuwe tests slagen; mypy/ruff clean op contracts_config.py; ContractsConfig importeerbaar via mcp_server.config.schemas en mcp_server.schemas",
+            "exit_criteria": "Alle 15 nieuwe tests slagen; mypy/ruff clean op contracts_config.py + config/schemas/__init__.py + schemas/__init__.py; ContractsConfig importeerbaar via beide re-export paden",
             "files": [
               "mcp_server/config/schemas/phase_contracts_config.py",
               "mcp_server/config/schemas/__init__.py",
@@ -47,19 +47,31 @@
             "cycle_number": 2,
             "deliverables": [
               {
-                "count": 8,
                 "id": "C2-tests",
+                "type": "test_count",
                 "required": true,
-                "type": "test_count"
+                "count": 13
               },
               {
                 "id": "C2-yaml",
                 "path": ".st3/config/contracts.yaml",
                 "required": true,
                 "type": "file_exists"
+              },
+              {
+                "id": "C2-roundtrip",
+                "type": "test_count",
+                "required": true,
+                "count": 6
+              },
+              {
+                "id": "C2-quality",
+                "type": "quality_gate",
+                "required": true,
+                "scope": "loader.py"
               }
             ],
-            "exit_criteria": "Alle 8 loader-tests slagen; contracts.yaml parsed clean; geen _inject_terminal_phase-calls meer in codebase; mypy/ruff clean op loader.py",
+            "exit_criteria": "Alle 13 tests slagen (7 loader + 6 workflow roundtrips); geen _inject_terminal_phase-calls in codebase (grep 0 hits); mypy/ruff clean op loader.py",
             "files": [
               "mcp_server/config/loader.py",
               ".st3/config/phase_contracts.yaml",
@@ -72,13 +84,19 @@
             "cycle_number": 3,
             "deliverables": [
               {
-                "count": 4,
                 "id": "C3-tests",
+                "type": "test_count",
                 "required": true,
-                "type": "test_count"
+                "count": 4
+              },
+              {
+                "id": "C3-quality",
+                "type": "quality_gate",
+                "required": true,
+                "scope": "phase_contract_resolver.py"
               }
             ],
-            "exit_criteria": "Alle 4 resolver-tests slagen; geen verwijzingen naar PhaseConfigContext.phase_contracts meer in productiecode; mypy/ruff clean op phase_contract_resolver.py",
+            "exit_criteria": "Alle 4 resolver-tests slagen; geen verwijzingen naar PhaseConfigContext.phase_contracts in productiecode; mypy/ruff clean op phase_contract_resolver.py",
             "files": [
               "mcp_server/managers/phase_contract_resolver.py",
               "tests/mcp_server/unit/managers/test_phase_contract_resolver.py"
@@ -90,13 +108,19 @@
             "cycle_number": 4,
             "deliverables": [
               {
-                "count": 8,
                 "id": "C4-tests",
+                "type": "test_count",
                 "required": true,
-                "type": "test_count"
+                "count": 10
+              },
+              {
+                "id": "C4-quality",
+                "type": "quality_gate",
+                "required": true,
+                "scope": "phase_state_engine.py, project_manager.py, issue_tools.py"
               }
             ],
-            "exit_criteria": "Alle 8 consumer-tests slagen; geen workflow_config-parameternaam in de drie consumerfiles; mypy/ruff clean op phase_state_engine.py + project_manager.py + issue_tools.py",
+            "exit_criteria": "Alle 10 consumer-tests slagen (gedragsverificatie incl. foutpropagatie + required_phases persistentie); geen workflow_config-parameternaam in productiecode; mypy/ruff clean op alle drie consumerfiles",
             "files": [
               "mcp_server/managers/phase_state_engine.py",
               "mcp_server/managers/project_manager.py",
@@ -140,9 +164,42 @@
             ],
             "id": "C5",
             "name": "Validator inversie + WorkflowTemplate cleanup + composition root"
+          },
+          {
+            "cycle_number": 6,
+            "id": "C5a",
+            "name": "Blast-radius testfile updates",
+            "files": [
+              "tests/mcp_server/unit/config/test_workflow_config.py",
+              "tests/mcp_server/fixtures/workflow_fixtures.py",
+              "tests/mcp_server/test_support.py",
+              "tests/mcp_server/unit/config/test_phase_contracts_schema.py",
+              "tests/mcp_server/unit/config/test_label_startup.py",
+              "tests/mcp_server/unit/config/test_validator_c3.py",
+              "tests/mcp_server/integration/test_submit_pr_atomic_flow.py",
+              "tests/unit/config/test_c_loader_structural.py",
+              "tests/mcp_server/unit/managers/test_phase_state_engine_c1.py",
+              "tests/mcp_server/unit/managers/test_phase_state_engine_c2.py",
+              "tests/mcp_server/unit/managers/test_phase_state_engine_c4_issue257.py"
+            ],
+            "exit_criteria": "Alle 11 blast-radius testbestanden slagen na bijwerken; grep 0 hits op 'phase_contracts.yaml' in de 11 bestanden; geen PhaseContractsConfig of load_phase_contracts_config imports; mypy/ruff clean op alle bijgewerkte testbestanden",
+            "deliverables": [
+              {
+                "id": "C5a-files",
+                "type": "test_count",
+                "required": true,
+                "count": 11
+              },
+              {
+                "id": "C5a-quality",
+                "type": "quality_gate",
+                "required": true,
+                "scope": "alle 11 blast-radius testbestanden"
+              }
+            ]
           }
         ],
-        "total": 5
+        "total": 6
       }
     }
   }

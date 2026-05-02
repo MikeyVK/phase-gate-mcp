@@ -1,21 +1,21 @@
 <!-- docs\development\issue271\planning.md -->
-<!-- template=planning version=130ac5ea created=2026-05-02T08:47Z updated= -->
+<!-- template=planning version=130ac5ea created=2026-05-02T09:03Z updated= -->
 # contracts.yaml as SSOT for workflow-phase membership — Implementation Planning
 
 **Status:** DRAFT  
-**Version:** 1.1  
+**Version:** 2.0  
 **Last Updated:** 2026-05-02
 
 ---
 
 ## Purpose
 
-Break down de 12 migratiestappen uit design.md §3.5 in 5 sequentiële TDD-cycli. Elke cyclus richt zich op een coherente laag van de stack, zodat tests groen zijn vóórdat de volgende laag wordt aangeraakt.
+Break down de 12 migratiestappen uit design.md §3.5 in 6 sequentiële TDD-cycli. Elke cyclus richt zich op een coherente laag van de stack. C5a isoleert de 11 blast-radius testbestanden met verouderde API-verwijzingen, zodat C5 uitvoerbaar blijft als nette TDD-cyclus.
 
 ## Scope
 
 **In Scope:**
-Schema-klassen in contracts_config.py (rename + nieuwe klassen + PhaseContractPhase frozen); Loader: load_contracts_config + contracts.yaml YAML-restructuur; Resolver: PhaseConfigContext + PhaseContractResolver; Runtime consumers: PhaseStateEngine, ProjectManager, CreateIssueTool; Validator-inversie + WorkflowTemplate.phases-verwijdering + server.py composition root
+Schema-klassen in contracts_config.py (rename + nieuwe klassen + PhaseContractPhase frozen); Loader: load_contracts_config + contracts.yaml YAML-restructuur (alle 6 workflows); Resolver: PhaseConfigContext + PhaseContractResolver; Runtime consumers: PhaseStateEngine, ProjectManager, CreateIssueTool; Blast-radius testfile updates (11 bestanden in C5a); Validator-inversie + WorkflowTemplate.phases-verwijdering + server.py composition root
 
 **Out of Scope:**
 Geen compat-shims of dual-read paths; geen wijzigingen in workphases.yaml-inhoud of schema; geen wijzigingen in enforcement.yaml buiten §3.2-beslissingen; geen frontend- of CLI-wijzigingen
@@ -30,16 +30,18 @@ Read these first:
 
 ## Summary
 
-Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contracts.yaml) naar één SSOT (contracts.yaml). De migratie verloopt in 5 TDD-cycli, strict afhankelijk geordend. Geen shims; clean break in één PR. Blast radius: 13 productiefiles (inclusief YAML-rename), 17 testfiles.
+Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contracts.yaml) naar één SSOT (contracts.yaml). De migratie verloopt in 6 TDD-cycli, strict afhankelijk geordend. Geen shims; clean break in één PR. Blast radius: 13 productiefiles (inclusief YAML-rename), 17 testfiles (verdeeld over C1 t/m C5a).
 
 ---
 
 ## Dependencies
 
 - C1 moet compleet zijn vóór elke andere cyclus
+- C2 hangt af van C1
 - C3 hangt af van C1 + C2
 - C4 hangt af van C1 + C3
-- C5 hangt af van C1 + C2 + C3 + C4
+- C5a hangt af van C1 + C2 + C3 + C4 — alle productie-API’s zijn stabiel vóór testfile-update
+- C5 hangt af van C1 + C2 + C3 + C4 + C5a
 
 ---
 
@@ -70,14 +72,14 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 **Success Criteria:**
 - Alle 15 nieuwe tests slagen
 - Bestaande tests voor BranchLocalArtifact, MergePolicy, CheckSpec nog steeds groen (geen regressie)
-- mypy/ruff clean op contracts_config.py
+- mypy/ruff clean op contracts_config.py, config/schemas/__init__.py en schemas/__init__.py
 - ContractsConfig, WorkflowEntry, WorkflowPhaseEntry importeerbaar via mcp_server.config.schemas en mcp_server.schemas
 
 
 
 ### Cycle 2: C2 — Loader + YAML: load_contracts_config + contracts.yaml restructuur
 
-**Goal:** Hernoem load_phase_contracts_config → load_contracts_config in loader.py; update bestandsnaamconstante naar contracts.yaml; verwijder _inject_terminal_phase volledig; hernoem .st3/config/phase_contracts.yaml → contracts.yaml en herstructureer naar list-of-objects conform design.md §3.3.
+**Goal:** Hernoem load_phase_contracts_config → load_contracts_config in loader.py; update bestandsnaamconstante naar contracts.yaml; verwijder _inject_terminal_phase volledig; hernoem .st3/config/phase_contracts.yaml → contracts.yaml en herstructureer naar list-of-objects conform design.md §3.3. Roundtrip-verificatie voor alle 6 productie-workflows.
 
 **Tests:**
 - load_contracts_config: laadt contracts.yaml succesvol en retourneert ContractsConfig
@@ -87,12 +89,17 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 - load_contracts_config: geladen object passeert ContractsConfig.model_validator
 - _inject_terminal_phase: functie bestaat niet meer in loader-module
 - load_phase_contracts_config: functie bestaat niet meer in loader-module (verwijderd, niet hernoemd)
-- ContractsConfig roundtrip: parsed object matches handcrafted expected-object field-for-field (all workflow phases, all phase fields)
+- ContractsConfig roundtrip feature-workflow: parsed object matches handcrafted expected-object field-for-field
+- ContractsConfig roundtrip bug-workflow: parsed object matches handcrafted expected-object field-for-field
+- ContractsConfig roundtrip hotfix-workflow: parsed object matches handcrafted expected-object field-for-field
+- ContractsConfig roundtrip refactor-workflow: parsed object matches handcrafted expected-object field-for-field
+- ContractsConfig roundtrip docs-workflow: parsed object matches handcrafted expected-object field-for-field
+- ContractsConfig roundtrip epic-workflow: parsed object matches handcrafted expected-object field-for-field
 
 **Success Criteria:**
-- Alle 8 nieuwe/bijgewerkte loader-tests slagen
-- contracts.yaml parsed clean; alle bestaande workflow-fasesequenties behouden
-- Geen _inject_terminal_phase-calls meer in codebase (grep-verificatie)
+- Alle 13 loader/YAML-tests slagen
+- contracts.yaml parsed clean; alle 6 workflow-fasesequenties volledig behouden
+- Geen _inject_terminal_phase-calls meer in codebase (grep-verificatie: 0 hits)
 - mypy/ruff clean op loader.py
 
 **Dependencies:** C1
@@ -109,7 +116,7 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 - PhaseContractResolver: display-pad-constante gelijk aan '.st3/config/contracts.yaml'
 
 **Success Criteria:**
-- Alle 4 nieuwe/bijgewerkte resolver-tests slagen
+- Alle 4 resolver-tests slagen
 - Geen verwijzingen naar PhaseConfigContext.phase_contracts meer in productiecode
 - mypy/ruff clean op phase_contract_resolver.py
 
@@ -118,20 +125,22 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 
 ### Cycle 4: C4 — Runtime consumers: PhaseStateEngine, ProjectManager, CreateIssueTool
 
-**Goal:** Vervang workflow_config: WorkflowConfig door contracts_config: ContractsConfig in __init__ van PhaseStateEngine (param 4/11), ProjectManager (param 2/6), CreateIssueTool (param 4/4). Update interne usages van oude parameternaam en WorkflowConfig-API-methoden naar equivalente ContractsConfig-API. Volledige signaturen in design.md §3.7.
+**Goal:** Vervang workflow_config: WorkflowConfig door contracts_config: ContractsConfig in __init__ van PhaseStateEngine (param 4/11), ProjectManager (param 2/6), CreateIssueTool (param 4/4). Tests verificiëren niet alleen constructor-signaturen maar ook eindgedrag: correcte retourwaarden, foutpropagatie en persistentie van required_phases.
 
 **Tests:**
 - PhaseStateEngine: accepteert contracts_config: ContractsConfig in constructor; workflow_config kwarg raises TypeError
-- PhaseStateEngine: validate_transition delegeert naar contracts_config.validate_transition
+- PhaseStateEngine: validate_transition retourneert None voor geldige transitie (research → design, feature-workflow)
+- PhaseStateEngine: ValueError van contracts_config.validate_transition propagates ongewijzigd naar aanroeper
 - ProjectManager: accepteert contracts_config: ContractsConfig in constructor; workflow_config kwarg raises TypeError
-- ProjectManager: get_first_phase delegeert naar contracts_config.get_first_phase
-- ProjectManager: get_phases delegeert naar contracts_config.get_phases
+- ProjectManager: get_first_phase retourneert 'research' voor feature-workflow via contracts_config.get_first_phase
+- ProjectManager: get_phases retourneert volledig geordende fasesequentie voor feature-workflow via contracts_config.get_phases
+- ProjectManager: create_project_plan() slaat required_phases op conform contracts_config.get_phases() resultaat
 - CreateIssueTool: accepteert contracts_config: ContractsConfig in constructor; workflow_config kwarg raises TypeError
-- CreateIssueTool: issue-aanmaak gebruikt contracts_config.get_first_phase voor eerste-fase-afleiding
+- CreateIssueTool: issue-aanmaak leidt correcte eerste fase af via contracts_config.get_first_phase (retourwaarde geverifieerd, niet alleen delegatie)
 - Mock DI fixture: manually assemble ContractsConfig into all three consumers — no server.py import (server.py wiring verified in C5)
 
 **Success Criteria:**
-- Alle 8 nieuwe/bijgewerkte consumer-tests slagen
+- Alle 10 consumer-tests slagen
 - Geen verwijzingen naar workflow_config-parameternaam in de drie consumerfiles
 - Geen aanroepen van WorkflowConfig.get_first_phase of validate_transition in productiecode
 - mypy/ruff clean op phase_state_engine.py, project_manager.py, issue_tools.py
@@ -139,7 +148,33 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 **Dependencies:** C1, C3
 
 
-### Cycle 5: C5 — Validator inversie + WorkflowTemplate cleanup + composition root
+### Cycle 5: C5a — Blast-radius testfile updates
+
+**Goal:** Update alle 11 blast-radius testbestanden die verwijzen naar verouderde API (phase_contracts.yaml pad, PhaseContractsConfig, load_phase_contracts_config, workflow_config, PhaseConfigContext.phase_contracts). Alle bestanden moeten slagen met de nieuwe productie-API. Geen functionele wijzigingen aan productiecode in deze cyclus.
+
+**Tests:**
+- test_workflow_config.py: get_first_phase + validate_transition tests verwijderd of geadapteerd; WorkflowTemplate.phases-test verwijderd
+- workflow_fixtures.py: helper-functies bijgewerkt naar ContractsConfig; geen PhaseContractsConfig-verwijzingen meer
+- test_support.py: phase_contracts.yaml pad vervangen door contracts.yaml; load_phase_contracts_config vervangen; PhaseContractsConfig vervangen door ContractsConfig
+- test_phase_contracts_schema.py: imports bijgewerkt; PhaseContractsConfig-constructie vervangen door ContractsConfig
+- test_label_startup.py: 7+ fixture-methoden bijgewerkt; ContractsConfig gebruikt in plaats van PhaseContractsConfig
+- test_validator_c3.py: PhaseContractsConfig import vervangen; instanties herbouwd als ContractsConfig
+- test_submit_pr_atomic_flow.py: 4 hardcoded 'phase_contracts.yaml' paden vervangen door 'contracts.yaml'
+- test_c_loader_structural.py: 'phase_contracts.yaml' pad vervangen; load_phase_contracts_config vervangen; PhaseContractsConfig vervangen
+- test_phase_state_engine_c1.py: temp 'phase_contracts.yaml' fixture vervangen door contracts.yaml
+- test_phase_state_engine_c2.py: temp 'phase_contracts.yaml' fixture vervangen door contracts.yaml
+- test_phase_state_engine_c4_issue257.py: temp 'phase_contracts.yaml' fixture vervangen door contracts.yaml
+
+**Success Criteria:**
+- Alle 11 blast-radius testbestanden slagen na bijwerken
+- Geen string-verwijzingen naar 'phase_contracts.yaml' in de 11 bestanden (grep: 0 hits)
+- Geen imports van PhaseContractsConfig of load_phase_contracts_config in de 11 bestanden
+- mypy/ruff clean op alle bijgewerkte testbestanden
+
+**Dependencies:** C1, C2, C3, C4
+
+
+### Cycle 6: C5 — Validator inversie + WorkflowTemplate cleanup + composition root
 
 **Goal:** Inverteer startup-validator: validator.py controleert nu dat fases in contracts.yaml bestaan in workphases.yaml-catalogus. Verwijder WorkflowTemplate.phases-veld en WorkflowConfig.get_first_phase / validate_transition uit workflows.py. Update .st3/config/workflows.yaml (verwijder phases:-lijsten). Update server.py composition root. Update agent.md documentatieverwijzing.
 
@@ -154,32 +189,33 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 - Integratie: fase-transitie end-to-end (initialize → transition → validate) gebruikt ContractsConfig door de hele stack
 
 **Success Criteria:**
-- Alle 8 nieuwe/bijgewerkte tests slagen inclusief 2 integratietests
+- Alle 6 unit-tests + 2 integratietests slagen
 - Geen phases:-sleutel in .st3/config/workflows.yaml
 - Geen WorkflowTemplate.phases of WorkflowConfig.get_first_phase / validate_transition in productiecode
-- Volledige testsuite groen (alle 17 blast-radius testfiles bijgewerkt en slagend)
+- Volledige testsuite groen (C5a reeds afgerond: geen blast-radius schuld in deze cyclus)
 - mypy/ruff clean op validator.py, workflows.py, server.py
 - agent.md documentatieverwijzing bijgewerkt naar contracts.yaml
 
-**Dependencies:** C1, C2, C3, C4
+**Dependencies:** C1, C2, C3, C4, C5a
 
 ---
 
 ## Risks & Mitigation
 
 - **Risk:** PhaseContractPhase frozen=True kan bestaande tests breken die PhaseContractPhase construeren met post-init mutatie
-  - **Mitigation:** Audit bestaande PhaseContractPhase-testfixtures in C1 RED-fase; vervang mutatiepatterness door nieuwe modelinstantie
-- **Risk:** contracts.yaml YAML-restructuur (list-of-objects) moet alle fase-contracten exact bewaren; eventuele omissie breekt runtime-validatie pas bij fase-gebruik
-  - **Mitigation:** C2 RED bevat een roundtrip-test: geparsed ContractsConfig moet veld-voor-veld overeenkomen met een handcrafted expected-object
-- **Risk:** 17 testfiles in blast radius; sommige kunnen indirecte afhankelijkheden hebben die niet in de 5 cycli zijn ondervangen
-  - **Mitigation:** Run volledige testsuite aan het einde van elke cyclus (niet alleen gerichte tests); fix regressies vóór volgende cyclus
+  - **Mitigation:** Audit bestaande PhaseContractPhase-testfixtures in C1 RED-fase; vervang mutatiepatronen door nieuwe modelinstantie
+- **Risk:** contracts.yaml YAML-restructuur (list-of-objects) moet alle fase-contracten exact bewaren voor alle 6 workflows; een omissie breekt runtime-validatie pas bij fase-gebruik
+  - **Mitigation:** C2 bevat 6 afzonderlijke roundtrip-tests (één per workflow): geparsed ContractsConfig moet veld-voor-veld overeenkomen met een handcrafted expected-object
+- **Risk:** C4 gedragstests gebruiken een mock ContractsConfig; een te permissieve mock maskeert een productie-bug totdat C5 integratietests falen
+  - **Mitigation:** Gebruik dezelfde YAML-structuur als in de C2-roundtrip-tests als basis voor C4-fixtures; geen hand-gemaakte stub-workflows die afwijken van productie-contracts.yaml
 
 ---
 
 ## Milestones
 
 - C1 GREEN: ContractsConfig importeerbaar en volledig getypeerd — blokkeert alle downstream cycli
-- C2 GREEN: contracts.yaml laadt end-to-end — blokkeert resolver en integratietests
+- C2 GREEN: contracts.yaml laadt end-to-end voor alle 6 workflows — blokkeert resolver en integratietests
+- C5a GREEN: alle 11 blast-radius testbestanden bijgewerkt en slagend — blokkeert C5
 - C5 GREEN + volledige suite groen: PR-ready state
 
 ## Related Documentation
