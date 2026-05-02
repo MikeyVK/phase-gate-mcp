@@ -10,12 +10,12 @@
 
 ## Purpose
 
-Break down de 12 migratiestappen uit design.md §3.5 in 6 sequentiële TDD-cycli. Elke cyclus richt zich op een coherente laag van de stack. C5a isoleert de 11 blast-radius testbestanden met verouderde API-verwijzingen, zodat C5 uitvoerbaar blijft als nette TDD-cyclus.
+Break down de 12 migratiestappen uit design.md §3.5 in 6 sequentiële TDD-cycli. Elke cyclus richt zich op een coherente laag van de stack. C5a isoleert de 12 blast-radius testbestanden met verouderde API-verwijzingen, zodat C5 uitvoerbaar blijft als nette TDD-cyclus.
 
 ## Scope
 
 **In Scope:**
-Schema-klassen in contracts_config.py (rename + nieuwe klassen + PhaseContractPhase frozen); Loader: load_contracts_config + contracts.yaml YAML-restructuur (alle 6 workflows); Resolver: PhaseConfigContext + PhaseContractResolver; Runtime consumers: PhaseStateEngine, ProjectManager, CreateIssueTool; Blast-radius testfile updates (11 bestanden in C5a); Validator-inversie + WorkflowTemplate.phases-verwijdering + server.py composition root
+Schema-klassen in contracts_config.py (rename + nieuwe klassen + PhaseContractPhase frozen); Loader: load_contracts_config + contracts.yaml YAML-restructuur (alle 6 workflows); Resolver: PhaseConfigContext + PhaseContractResolver; Runtime consumers: PhaseStateEngine, ProjectManager, CreateIssueTool; Blast-radius testfile updates (12 bestanden in C5a); Validator-inversie + WorkflowTemplate.phases-verwijdering + server.py composition root
 
 **Out of Scope:**
 Geen compat-shims of dual-read paths; geen wijzigingen in workphases.yaml-inhoud of schema; geen wijzigingen in enforcement.yaml buiten §3.2-beslissingen; geen frontend- of CLI-wijzigingen
@@ -150,7 +150,7 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 
 ### Cycle 5: C5a — Blast-radius testfile updates
 
-**Goal:** Update alle 11 blast-radius testbestanden die verwijzen naar verouderde API (phase_contracts.yaml pad, PhaseContractsConfig, load_phase_contracts_config, workflow_config, PhaseConfigContext.phase_contracts). Alle bestanden moeten slagen met de nieuwe productie-API. Geen functionele wijzigingen aan productiecode in deze cyclus.
+**Goal:** Update alle 12 blast-radius testbestanden die verwijzen naar verouderde API (phase_contracts.yaml pad, PhaseContractsConfig, load_phase_contracts_config, workflow_config, PhaseConfigContext.phase_contracts). Alle bestanden moeten slagen met de nieuwe productie-API. Geen functionele wijzigingen aan productiecode in deze cyclus.
 
 **Tests:**
 - test_workflow_config.py: get_first_phase + validate_transition tests verwijderd of geadapteerd; WorkflowTemplate.phases-test verwijderd
@@ -164,11 +164,12 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 - test_phase_state_engine_c1.py: temp 'phase_contracts.yaml' fixture vervangen door contracts.yaml
 - test_phase_state_engine_c2.py: temp 'phase_contracts.yaml' fixture vervangen door contracts.yaml
 - test_phase_state_engine_c4_issue257.py: temp 'phase_contracts.yaml' fixture vervangen door contracts.yaml
+- test_cycle_tools_legacy.py: temp 'phase_contracts.yaml' fixture vervangen door contracts.yaml
 
 **Success Criteria:**
-- Alle 11 blast-radius testbestanden slagen na bijwerken
-- Geen string-verwijzingen naar 'phase_contracts.yaml' in de 11 bestanden (grep: 0 hits)
-- Geen imports van PhaseContractsConfig of load_phase_contracts_config in de 11 bestanden
+- Alle 12 blast-radius testbestanden slagen na bijwerken
+- Geen string-verwijzingen naar 'phase_contracts.yaml' in de 12 bestanden (grep: 0 hits)
+- Geen imports van PhaseContractsConfig of load_phase_contracts_config in de 12 bestanden
 - mypy/ruff clean op alle bijgewerkte testbestanden
 
 **Dependencies:** C1, C2, C3, C4
@@ -215,7 +216,7 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 
 - C1 GREEN: ContractsConfig importeerbaar en volledig getypeerd — blokkeert alle downstream cycli
 - C2 GREEN: contracts.yaml laadt end-to-end voor alle 6 workflows — blokkeert resolver en integratietests
-- C5a GREEN: alle 11 blast-radius testbestanden bijgewerkt en slagend — blokkeert C5
+- C5a GREEN: alle 12 blast-radius testbestanden bijgewerkt en slagend — blokkeert C5
 - C5 GREEN + volledige suite groen: PR-ready state
 
 ## Related Documentation
