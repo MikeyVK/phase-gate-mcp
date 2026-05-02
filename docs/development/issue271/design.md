@@ -3,7 +3,7 @@
 # contracts.yaml as SSOT for workflow-phase membership
 
 **Status:** DRAFT  
-**Version:** 2.2  
+**Version:** 2.3  
 **Last Updated:** 2026-05-02
 
 ---
@@ -51,6 +51,9 @@ Additionally, `phase_contracts.yaml` already carries `merge_policy` (branch-loca
 - [ ] The rename `phase_contracts.yaml` → `contracts.yaml` and `PhaseContractsConfig` → `ContractsConfig` is atomic (single PR)
 - [ ] YAML must remain human-readable; phase ordering must be explicit and unambiguous without relying on YAML key-insertion order
 - [ ] All 12 production files and 17 test files in the blast radius must be updated in the same PR
+- [ ] Every phase in every workflow may declare `cycle_based: true`, `subphases`, and `commit_type_map` via `contracts.yaml` — not only `implementation`; the schema layer is already generic via `WorkflowPhaseEntry` inheritance
+- [ ] A runtime consumer that acts on subphase or cycle_based logic must not hardcode the phase name `"implementation"` as a condition; `WorkflowPhaseEntry.cycle_based` is the only valid condition
+- [ ] `agent.md §2.3` is updated as part of this PR: the `implementation`-only subphase formulation is replaced by a config-driven formulation
 
 ### 1.3. Constraints
 
@@ -163,6 +166,7 @@ Each entry is a `WorkflowPhaseEntry` (`PhaseContractPhase` + `name: str`). The l
 | **D10 — Module rename: `phase_contracts_config.py` → `contracts_config.py`** | Atomic with the class rename; callers importing from the module path (e.g. `from mcp_server.config.schemas.phase_contracts_config import BranchLocalArtifact`) must update their import path; `BranchLocalArtifact`, `MergePolicy`, `CheckSpec`, and `PhaseContractPhase` remain in the renamed module |
 | **D11 — `frozen=True` applied to `PhaseContractPhase`, `ContractsConfig`, `WorkflowEntry`, `WorkflowPhaseEntry`** | Pydantic v2 staat `frozen=True` op een subklasse toe onafhankelijk van de parent-config. Het **semantische** probleem was: als `PhaseContractPhase` (parent) niet frozen is maar `WorkflowPhaseEntry` (child) wel, dan kan hetzelfde object gemuteerd worden wanneer het als `PhaseContractPhase` getyped is maar niet als `WorkflowPhaseEntry` — inconsistent runtime-gedrag afhankelijk van het static type (§5 CQS via indirectie). Oplossing: `model_config = ConfigDict(extra="forbid", frozen=True)` op `PhaseContractPhase` zelf. `PhaseContractPhase` is een config value object; frozen is correct. Dit lost §5 en §1.3 LSP (`extra`-tightening) in één regel op. `phase_contracts_config.py` staat al in stap 1 van de migratievolgorde — dit is geen extra file, maar een extra wijziging binnen een al-in-scope file |
 | **D12 — `WorkflowConfig` post-refactor API surface** | `WorkflowTemplate.phases` field removed; `get_first_phase()` and `validate_transition()` removed. `has_workflow(name)` and `get_workflow(name) -> WorkflowTemplate` remain — these serve the catalog role (metadata lookup by name). `get_workflow()` returns a `WorkflowTemplate` with only `name`, `description`, and `default_execution_mode` after `phases` is removed |
+| **D13 — Generic subphase semantics: schema is sufficient, no new API needed** | Research finding: no `if phase_name == "implementation"` exists in production Python. Dispatch is via `_is_cycle_based_phase()` (config-driven) in `phase_state_engine.py`; `scope_encoder.py` and `phase_detection.py` are already fully generic. The schema after this PR (`WorkflowPhaseEntry` inheriting `subphases`, `cycle_based`, `commit_type_map` from `PhaseContractPhase`) is sufficient for any phase to declare cycle-based behavior — no new `ContractsConfig` API method required. YAGNI (§9): no second cycle_based phase exists or is planned; adding `get_subphases(workflow, phase)` or `is_cycle_based(workflow, phase)` on `ContractsConfig` now would be speculative API. The resolver already exposes `is_cycle_based_phase()` — that layer remains the right abstraction. The only action in-scope for this PR: (a) rename `on_enter/exit_implementation_phase` hooks in `phase_state_engine.py` to `on_enter/exit_cycle_based_phase` (naming correctness — no logic change); (b) update `agent.md §2.3` to remove the false constraint |
 
 ### 3.2. Schema Specification
 
@@ -340,6 +344,19 @@ workflows:
           green: feat
           refactor: refactor
       - name: ready
+
+  # Example: non-implementation phase with cycle_based=true
+  # Demonstrates schema genericity — any phase may be cycle_based, not only implementation.
+  # This is illustrative; the actual production contracts.yaml only has implementation as cycle_based.
+  custom_research_workflow:
+    phases:
+      - name: research
+        cycle_based: true
+        subphases: [explore, consolidate]
+        commit_type_map:
+          explore: docs
+          consolidate: docs
+      - name: ready
 ```
 
 ### 3.4. API Method Error Contracts
@@ -364,7 +381,7 @@ workflows:
 | 9 — YAML file | `.st3/config/phase_contracts.yaml` → `.st3/config/contracts.yaml` | Rename + restructure content to list-of-objects |
 | 10 — Remove `phases` from `workflows.yaml` | `mcp_server/config/schemas/workflows.py`, `.st3/config/workflows.yaml` | Remove `WorkflowTemplate.phases` field; update YAML |
 | 11 — Tests | All 17 test files in blast radius | Update after all production code is green |
-| 12 — External references | `agent.md` r.370 | Update documentation string |
+| 12 — External references | `agent.md` r.370 (filename) + `agent.md §2.3` r.121, r.132, r.263 (subphase formulation) | Update filename reference + replace implementation-only formulation with cycle_based config-driven formulation |
 
 ### 3.7. Consumer Constructor Signatures
 
@@ -522,3 +539,4 @@ None — all open questions from research v3.1 are resolved by decisions D1–D9
 | 2.0 | 2026-05-02 | Agent | QA NOGO resolved: Section 2 filled with 3 options + trade-offs; Section 3.1 key decisions table (D1–D9); schema specs for `WorkflowPhaseEntry`, `WorkflowEntry`, `ContractsConfig`; YAML example; API error contracts; migration order; blast radius synced to research v3.1 (17 test files); architectural stance on API-on-VO; `PhaseConfigContext` field-rename in scope |
 | 2.1 | 2026-05-02 | Agent | QA CONDITIONAL GO resolved: D10 (module rename `contracts_config.py`); D11 (`frozen=True` deviation documented); D12 (`WorkflowConfig` post-refactor API); §3.7 consumer constructor signatures; §3.5 migration table updated with D10 reference; §3.6 blast radius updated; `WorkflowEntry` `extra="forbid"` confirmed present |
 | 2.2 | 2026-05-02 | Agent | QA ARCHITECTURE_PRINCIPLES.md check resolved: D8 rationale herschreven met §10 Cohesion + §1.5 DIP correct-scope; D11 herschreven met correcte Pydantic v2 redenering (semantisch probleem, niet technisch); `frozen=True` toegevoegd aan `PhaseContractPhase`, `WorkflowEntry`, `ContractsConfig`; §1.3 LSP `extra`-tightening opgelost via parent-fix; §3.2 schema spec bijgewerkt; blast radius stap 1 + productietabel bijgewerkt |
+| 2.3 | 2026-05-02 | Agent | Subphase formalization: D13 (generic subphase semantics, YAGNI); §1.2 functional requirements (+3 subphase); §3.3 YAML example uitgebreid met custom_research_workflow (non-implementation cycle_based); §3.5 stap 12 uitgebreid naar agent.md §2.3 r.121/r.132/r.263 |

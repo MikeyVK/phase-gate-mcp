@@ -3,7 +3,7 @@
 # Issue #271 Research: phase_contracts.yaml as SSOT for workflow-phase membership
 
 **Status:** COMPLETE  
-**Version:** 3.0  
+**Version:** 3.2  
 **Last Updated:** 2026-05-01
 
 ---
@@ -106,6 +106,44 @@ All test files that must change:
 
 ---
 
+### Subphase blast radius
+
+This section documents the implementation-only hardcoding of subphase/cycle_based logic, independent of the phase-contracts.yaml filename rename covered above.
+
+#### Runtime code — mostly config-driven already
+
+Scan of production code that could contain `if phase_name == "implementation"` or equivalent:
+
+| File | Finding |
+|---|---|
+| `mcp_server/managers/phase_contract_resolver.py` r.69–79 | `is_cycle_based_phase()` reads `phase_contract.cycle_based` flag from config — **generic, no fasename-check** |
+| `mcp_server/core/scope_encoder.py` r.80–115 | Reads `configured_subphases` from `WorkphasesConfig` for the given phase — **generic; `implementation` appears only in docstring examples** |
+| `mcp_server/core/phase_detection.py` r.36, r.272 | `implementation` appears only in docstring example and a validation error string — **no logic branch on fasename** |
+| `mcp_server/managers/phase_state_engine.py` r.658, r.680 | Methods named `on_enter_implementation_phase` and `on_exit_implementation_phase`; dispatch uses `_is_cycle_based_phase()` (config-driven) — **naming violation, not a logic violation**: if a second phase becomes `cycle_based`, the same implementation-named hooks are called, which is confusing but not functionally incorrect |
+| `mcp_server/managers/phase_state_engine.py` r.180, r.181, r.198, r.199, r.244, r.245, r.264, r.265 | All dispatch sites call `on_enter/exit_implementation_phase` after a `_is_cycle_based_phase()` check — the check is correct; only the called method names are implementation-specific |
+
+**Conclusion:** No `if phase_name == "implementation"` exists in production Python code. The dispatch is fully config-driven via `cycle_based` flag. The only violation is the naming of the hook methods in `phase_state_engine.py`.
+
+#### Documentation hardcoding
+
+| Location | Line | Text | Type |
+|---|---|---|---|
+| `agent.md` | r.121 | `"implementation" is de enige fase met subphases` | Explicit false constraint — violates §3 Config-First if taken as normative |
+| `agent.md` | r.132 | `Andere fasen (geen subphases behalve optioneel)` | Implicit false constraint |
+| `agent.md` | r.263 | `cycle_number (verplicht in implementation)` | False constraint — `cycle_number` is required whenever `cycle_based=true`, not only in `implementation` |
+
+These three statements in `agent.md` are normative (they are in the "how to use" section that agents read before every action). If any other phase becomes `cycle_based: true` in `contracts.yaml`, agent behavior will contradict the schema and break that phase's TDD workflow.
+
+#### Scope of change for generic subphase-support
+
+To make the schema fully generic at the documentation and tooling layer:
+
+1. **`agent.md` §2.3**: replace "implementation is de enige fase met subphases" with a config-driven formulation — no code change required
+2. **`phase_state_engine.py` hook names**: `on_enter_implementation_phase` → `on_enter_cycle_based_phase` / `on_exit_cycle_based_phase` — naming cleanup only, same logic
+3. **No changes needed** in `scope_encoder.py`, `phase_detection.py`, or `phase_contract_resolver.py` — these are already generic
+
+---
+
 ## Open Questions
 
 The following questions must be resolved in the design phase before implementation begins:
@@ -129,6 +167,12 @@ The following questions must be resolved in the design phase before implementati
   - Are there callers outside `mcp_server/` (e.g., scripts, CI, documentation strings) that reference `"phase_contracts.yaml"` as a literal string and would not be caught by a Python refactor? (Research finding: `agent.md` is one such caller.)
   - What is the removal policy for `_inject_terminal_phase`? Hard delete in the same PR, or deprecated first?
 
+- ❓ **Generic subphase semantics — runtime consumers:** `phase_state_engine.py` has methods named `on_enter_implementation_phase` (r.658) and `on_exit_implementation_phase` (r.680) that are called from config-driven dispatch. Should these be renamed to `on_enter_cycle_based_phase` / `on_exit_cycle_based_phase` in this PR? If yes, they are in the C4 blast radius. If no: document explicitly that the naming is a known inconsistency accepted until a dedicated follow-up.
+
+- ❓ **Generic subphase semantics — agent.md normativity:** Is `agent.md` an informative or normative source? If normative: `agent.md` r.121 ("implementation is de enige fase met subphases") is a Config-First violation as soon as any other phase declares `cycle_based: true`. The design must include an explicit decision: update `agent.md §2.3` in this PR (in-scope) or defer (out-of-scope, with documented rationale).
+
+- ❓ **Generic subphase semantics — ContractsConfig API:** Should `ContractsConfig` or `WorkflowEntry` expose a dedicated API for subphase resolution (`get_subphases(workflow, phase)`, `is_cycle_based(workflow, phase)`), or does direct field access via `WorkflowPhaseEntry.subphases` and `WorkflowPhaseEntry.cycle_based` suffice? The resolver already exposes `is_cycle_based_phase()` — is that the right layer for this query?
+
 ---
 
 ## Related Documentation
@@ -149,3 +193,4 @@ The following questions must be resolved in the design phase before implementati
 | 2.0 | 2026-05-01 | Agent | Design decisions D1–D6 added (QA: boundary violation) |
 | 3.0 | 2026-05-01 | Agent | QA NOGO resolved: D1–D6 removed; open questions reformulated; test blast radius expanded to 13 files; production blast radius expanded to 11 files; clean break enforcement questions added |
 | 3.1 | 2026-05-01 | Agent | QA CONDITIONAL GO resolved: `mcp_server/schemas/__init__.py` (public API layer) added to production blast radius |
+| 3.2 | 2026-05-02 | Agent | Added subphase blast radius section (runtime scan + documentation hardcoding); added three open questions for generic subphase semantics |
