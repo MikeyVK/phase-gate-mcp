@@ -11,6 +11,8 @@ PhaseContractPhase (frozen+extra='forbid'), and import path enforcement.
 
 from __future__ import annotations
 
+import importlib
+
 import pytest
 from pydantic import ValidationError
 
@@ -21,7 +23,6 @@ from mcp_server.config.schemas.contracts_config import (
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -195,13 +196,11 @@ class TestContractsConfigValidateTransition:
 
 
 class TestImportPaths:
-    def test_old_module_path_raises_import_error(self) -> None:
-        """Import from the old mcp_server.config.schemas.phase_contracts_config module
-        must still work for legacy symbols (BranchLocalArtifact, MergePolicy, CheckSpec,
-        PhaseContractPhase) until C5a updates callers — but the new symbols
-        (ContractsConfig, WorkflowEntry, WorkflowPhaseEntry) must NOT exist there."""
-        import importlib
-
+    def test_old_module_path_lacks_new_symbols(self) -> None:
+        """The old mcp_server.config.schemas.phase_contracts_config module must
+        still be importable during the migration (legacy callers are updated in C5a),
+        but the new symbols (ContractsConfig, WorkflowEntry, WorkflowPhaseEntry)
+        must NOT be defined there — they live exclusively in contracts_config."""
         old_mod = importlib.import_module("mcp_server.config.schemas.phase_contracts_config")
         assert not hasattr(old_mod, "ContractsConfig"), (
             "ContractsConfig must not exist in the old module path"
@@ -215,8 +214,6 @@ class TestImportPaths:
 
     def test_new_module_path_exports_all_public_symbols(self) -> None:
         """New module path must export all symbols needed by callers."""
-        import importlib
-
         mod = importlib.import_module("mcp_server.config.schemas.contracts_config")
         for symbol in [
             "BranchLocalArtifact",
