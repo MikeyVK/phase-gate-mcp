@@ -1,13 +1,13 @@
 # mcp_server/managers/phase_state_engine.py
 """
-Phase state engine - Workflow-based phase transition management.
+Phase state engine - ContractsConfig-driven phase transition management.
 
-Manages branch phase state with strict sequential validation via workflows.yaml.
+Manages branch phase state with strict sequential validation via contracts.yaml.
 Supports both standard sequential transitions and forced non-sequential transitions
 with audit trail.
 
 @layer: Platform
-@dependencies: [workflow_config, project_manager]
+@dependencies: [contracts_config, project_manager]
 @responsibilities:
     - Initialize branch state with workflow caching
     - Validate phase transitions against workflow definitions
@@ -69,7 +69,7 @@ class TransitionRecord:
 class PhaseStateEngine:
     """Phase state and transition manager with workflow validation.
 
-    Validates transitions against workflows.yaml definitions.
+    Validates transitions against contracts.yaml definitions.
     Supports standard sequential and forced non-sequential transitions.
     """
 

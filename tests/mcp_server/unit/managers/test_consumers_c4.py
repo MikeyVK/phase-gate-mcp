@@ -111,6 +111,7 @@ class TestPhaseStateEngineTransitionC4:
 
         mock_contracts = MagicMock(spec=ContractsConfig)
         mock_contracts.validate_transition.side_effect = ValueError("invalid transition")
+        # test-only: inject mock to verify validate_transition error propagation
         engine._contracts_config = mock_contracts  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
 
         state = MagicMock()
@@ -119,7 +120,9 @@ class TestPhaseStateEngineTransitionC4:
         state.workflow_name = "feature"
         state.issue_number = 1
         state.current_cycle = None
+        # test-only: configure state repository mock for transition path
         engine._state_repository.load.return_value = state  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+        # test-only: configure state reconstructor mock (fallback path)
         engine._state_reconstructor.reconstruct.return_value = state  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
 
         with pytest.raises(ValueError, match="invalid transition"):
@@ -220,5 +223,6 @@ class TestCreateIssueToolFirstPhaseC4:
         params.priority = "high"
         params.parent_issue = None
 
+        # test-only: verify protected method derives phase from contracts_config
         labels = tool._assemble_labels(params)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
         assert "phase:research" in labels

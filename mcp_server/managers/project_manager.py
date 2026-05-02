@@ -1,12 +1,12 @@
 # mcp_server/managers/project_manager.py
 """
-Project manager - Workflow-based project initialization.
+Project manager - ContractsConfig-driven project initialization.
 
-Manages project initialization with workflow selection from workflows.yaml.
-Replaces hardcoded PHASE_TEMPLATES with dynamic workflow configuration.
+Manages project initialization with workflow selection from contracts.yaml.
+Replaces hardcoded PHASE_TEMPLATES with dynamic ContractsConfig phase sequences.
 
 @layer: Platform
-@dependencies: [workflow_config]
+@dependencies: [contracts_config]
 @responsibilities:
     - Initialize projects with workflow selection
     - Validate workflow existence and execution mode
@@ -84,9 +84,9 @@ class ProjectPlan:
 
 
 class ProjectManager:
-    """Project initialization manager with workflow support.
+    """Project initialization manager with ContractsConfig support.
 
-    Uses workflows.yaml for workflow definitions and phase sequences.
+    Uses contracts.yaml for workflow phase definitions.
     """
 
     def __init__(
@@ -119,7 +119,7 @@ class ProjectManager:
         Args:
             issue_number: GitHub issue number
             issue_title: Issue title
-            workflow_name: Workflow from workflows.yaml (feature, bug, hotfix, etc.)
+            workflow_name: Workflow from contracts.yaml (feature, bug, hotfix, etc.)
             options: Optional parameters (execution_mode, custom_phases, skip_reason,
                     parent_branch)
 
