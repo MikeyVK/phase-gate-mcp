@@ -25,7 +25,7 @@ class PlanningContext(DocArtifactContext):
     """
 
     summary: str = Field(description="High-level summary of what is being planned")
-    tdd_cycles: list[dict] = Field(
+    tdd_cycles: list[dict[str, object]] = Field(
         description=(
             "TDD cycle breakdown. Each entry is a dict with keys: "
             "name (str), goal (str), tests (list[str]), "
@@ -41,11 +41,10 @@ class PlanningContext(DocArtifactContext):
     dependencies: list[str] = Field(
         default_factory=list, description="Dependencies between cycles or on external work"
     )
-    risks: list[dict] = Field(
+    risks: list[dict[str, object]] = Field(
         default_factory=list,
         description=(
-            "Identified risks. Each entry is a dict with keys: "
-            "description (str), mitigation (str)."
+            "Identified risks. Each entry is a dict with keys: description (str), mitigation (str)."
         ),
     )
     milestones: list[str] = Field(
