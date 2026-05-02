@@ -141,8 +141,8 @@ class TestPlanningV2Parity:
         "title": "V2 Planning: Cycle 6 Doc Schemas",
         "summary": "Implement Pydantic context schemas for 5 doc artifact types",
         "tdd_cycles": [
-            "Cycle 6: RED — 15 failing tests",
-            "Cycle 6: GREEN — 5 context + 5 render context schemas",
+            {"cycle": 6, "phase": "RED", "description": "15 failing tests"},
+            {"cycle": 6, "phase": "GREEN", "description": "5 context + 5 render context schemas"},
         ],
     }
 

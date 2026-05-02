@@ -20,9 +20,13 @@ from pathlib import Path
 
 import pytest
 
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.interfaces import GateReport, GateViolation
+from mcp_server.managers.phase_contract_resolver import PhaseConfigContext, PhaseContractResolver
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
+from mcp_server.managers.deliverable_checker import DeliverableChecker
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 
@@ -142,19 +146,31 @@ phases:
 """.strip(),
         encoding="utf-8",
     )
-    (config_dir / "phase_contracts.yaml").write_text(
+    (config_dir / "contracts.yaml").write_text(
         """
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts: []
 workflows:
   feature:
-    research:
-      exit_requires:
-        - id: research-doc
-          type: file_glob
-          dir: docs/development
-          pattern: issue*/research*.md
+    phases:
+      - name: research
+        exit_requires:
+          - id: research-doc
+            type: file_glob
+            dir: docs/development
+            pattern: issue*/research*.md
+      - name: planning
+      - name: design
+      - name: implementation
+        cycle_based: true
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+      - name: validation
+      - name: documentation
+      - name: ready
 """.strip(),
         encoding="utf-8",
     )
@@ -238,16 +254,28 @@ def test_transition_phase_enforces_contracts_from_phase_contracts_yaml(
     workspace_root: Path,
     project_manager: ProjectManager,
 ) -> None:
-    """transition() must use phase_contracts.yaml through the live resolver path."""
+    """transition() must use contracts.yaml through the live resolver path."""
     project_manager.initialize_project(
         issue_number=257,
         issue_title="Cycle 2 live resolver test",
         workflow_name="feature",
     )
+    loader = ConfigLoader(workspace_root / ".st3" / "config")
+    resolver = PhaseContractResolver(
+        PhaseConfigContext(
+            workphases=loader.load_workphases_config(),
+            contracts=loader.load_contracts_config(),
+        )
+    )
+    real_gate_runner = WorkflowGateRunner(
+        deliverable_checker=DeliverableChecker(workspace_root),
+        phase_contract_resolver=resolver,
+    )
     engine = make_phase_state_engine(
         workspace_root,
         project_manager=project_manager,
         state_repository=InMemoryStateRepository(),
+        workflow_gate_runner=real_gate_runner,
     )
     branch = "feature/257-c2-live-resolver"
     engine.initialize_branch(branch=branch, issue_number=257, initial_phase="research")

@@ -84,7 +84,7 @@ class TestProjectManagerWorkflows:
         assert result["success"] is True
         assert result["workflow_name"] == "feature"
         assert result["execution_mode"] == "interactive"
-        assert len(result["required_phases"]) == 6
+        assert len(result["required_phases"]) == 7
 
         # Check deliverables.json structure
         projects_file = workspace_root / ".st3" / "deliverables.json"
@@ -95,25 +95,25 @@ class TestProjectManagerWorkflows:
         project = projects["42"]
         assert project["workflow_name"] == "feature"
         assert project["execution_mode"] == "interactive"
-        assert len(project["required_phases"]) == 6
+        assert len(project["required_phases"]) == 7
 
     def test_initialize_project_with_hotfix_workflow(
         self, manager: ProjectManager, workspace_root: Path
     ) -> None:
-        """Test initialize_project with hotfix workflow (autonomous)."""
+        """Test initialize_project with hotfix workflow (contracts.yaml SSOT — execution_mode defaults to interactive)."""
         result = manager.initialize_project(
             issue_number=99, issue_title="Critical security fix", workflow_name="hotfix"
         )
 
         assert result["success"] is True
         assert result["workflow_name"] == "hotfix"
-        assert result["execution_mode"] == "autonomous"
-        assert len(result["required_phases"]) == 3
+        assert result["execution_mode"] == "interactive"
+        assert len(result["required_phases"]) == 4
 
         # Check deliverables.json
         projects_file = workspace_root / ".st3" / "deliverables.json"
         projects = json.loads(projects_file.read_text())
-        assert projects["99"]["execution_mode"] == "autonomous"
+        assert projects["99"]["execution_mode"] == "interactive"
 
     def test_initialize_project_with_execution_mode_override(
         self, manager: ProjectManager, workspace_root: Path
@@ -176,7 +176,7 @@ class TestProjectManagerWorkflows:
 
         error_msg = str(exc_info.value)
         assert "Unknown workflow: 'invalid_workflow'" in error_msg
-        assert "Available workflows:" in error_msg
+        assert "Available:" in error_msg
 
     def test_initialize_project_invalid_execution_mode(self, manager: ProjectManager) -> None:
         """Test initialize_project rejects invalid execution_mode."""
@@ -217,7 +217,7 @@ class TestProjectManagerWorkflows:
         assert plan is not None
         assert plan["workflow_name"] == "feature"
         assert plan["execution_mode"] == "interactive"
-        assert len(plan["required_phases"]) == 6
+        assert len(plan["required_phases"]) == 7
 
     def test_get_project_plan_nonexistent_returns_none(self, manager: ProjectManager) -> None:
         """Test get_project_plan returns None for nonexistent project."""
@@ -300,7 +300,7 @@ phases:
     @pytest.fixture
     def manager(self, workspace_root: Path) -> ProjectManager:
         """Create ProjectManager instance."""
-        return make_project_manager(workspace_root, workflow_config=load_workflow_config())
+        return make_project_manager(workspace_root)
 
     def test_get_project_plan_includes_current_phase_from_commit_scope(
         self, manager: ProjectManager
@@ -360,7 +360,7 @@ class TestPlanningDeliverablesSchema:
     @pytest.fixture
     def manager(self, workspace_root: Path) -> ProjectManager:
         """Create ProjectManager instance."""
-        return make_project_manager(workspace_root, workflow_config=load_workflow_config())
+        return make_project_manager(workspace_root)
 
     def test_planning_deliverables_stored_in_projects_json(self, manager: ProjectManager) -> None:
         """Test that planning_deliverables are persisted to deliverables.json.

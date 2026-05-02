@@ -84,13 +84,7 @@ class ConfigValidator:
             if workflow_name not in known_workflows:
                 raise ConfigError(f"contracts references unknown workflow: '{workflow_name}'")
 
-            workflow_phases = set(workflow.get_workflow(workflow_name).phases)
             for phase_entry in workflow_entry.phases:
-                if phase_entry.name not in workflow_phases:
-                    raise ConfigError(
-                        f"contracts for workflow '{workflow_name}' "
-                        f"references unknown phase '{phase_entry.name}'"
-                    )
                 if phase_entry.name not in known_phases:
                     raise ConfigError(
                         f"contracts reference phase '{phase_entry.name}' "

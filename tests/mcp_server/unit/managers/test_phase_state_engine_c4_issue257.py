@@ -236,22 +236,24 @@ def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
         ),
         encoding="utf-8",
     )
-    (config_dir / "phase_contracts.yaml").write_text(
+    (config_dir / "contracts.yaml").write_text(
         (
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"
             "workflows:\n"
             "  feature:\n"
-            "    planning: {}\n"
-            "    tdd:\n"
-            "      cycle_based: true\n"
-            "      subphases: [red, green, refactor]\n"
-            "      commit_type_map:\n"
-            "        red: test\n"
-            "        green: feat\n"
-            "        refactor: refactor\n"
-            "    documentation: {}\n"
+            "    phases:\n"
+            "      - name: planning\n"
+            "      - name: tdd\n"
+            "        cycle_based: true\n"
+            "        subphases: [red, green, refactor]\n"
+            "        commit_type_map:\n"
+            "          red: test\n"
+            "          green: feat\n"
+            "          refactor: refactor\n"
+            "      - name: documentation\n"
+            "      - name: ready\n"
         ),
         encoding="utf-8",
     )

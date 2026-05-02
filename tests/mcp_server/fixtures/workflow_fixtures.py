@@ -4,7 +4,8 @@
 @dependencies: pytest, mcp_server.config.loader
 @responsibilities:
   - Provide workflow-phase fixtures for tests
-  - Load phase lists from .st3/config/workflows.yaml via ConfigLoader
+  - Load phase lists from .st3/config/contracts.yaml via ConfigLoader (SSOT)
+  - workflows.yaml fixtures retained for backward compat with WorkflowConfig tests
 """
 
 from pathlib import Path
@@ -13,6 +14,7 @@ import pytest
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import WorkflowConfig
+from mcp_server.config.schemas.contracts_config import ContractsConfig
 
 
 def _make_loader() -> ConfigLoader:
@@ -23,6 +25,12 @@ def _make_loader() -> ConfigLoader:
 def workflow_config() -> WorkflowConfig:
     """Load workflow configuration from .st3/config/workflows.yaml."""
     return _make_loader().load_workflow_config()
+
+
+@pytest.fixture
+def contracts_config() -> ContractsConfig:
+    """Load ContractsConfig from .st3/config/contracts.yaml (SSOT)."""
+    return _make_loader().load_contracts_config()
 
 
 @pytest.fixture
@@ -40,30 +48,26 @@ def workflow_phases(workflow_config: WorkflowConfig) -> list[str]:
 
 
 @pytest.fixture
-def feature_phases(workflow_config: WorkflowConfig) -> list[str]:
+def feature_phases(contracts_config: ContractsConfig) -> list[str]:
     """
-    Phases for feature workflow.
+    Phases for feature workflow from contracts.yaml (SSOT).
 
-    Returns: ["research", "planning", "design", "tdd", "integration", "documentation"]
+    Returns: ["research", "planning", "design", "implementation", "validation", "documentation", "ready"]
     """
-    return workflow_config.workflows["feature"].phases
+    return contracts_config.get_phases("feature")
 
 
 @pytest.fixture
-def bug_phases(workflow_config: WorkflowConfig) -> list[str]:
+def bug_phases(contracts_config: ContractsConfig) -> list[str]:
     """
-    Phases for bug workflow.
-
-    Returns: ["research", "planning", "design", "tdd", "integration", "documentation"]
+    Phases for bug workflow from contracts.yaml (SSOT).
     """
-    return workflow_config.workflows["bug"].phases
+    return contracts_config.get_phases("bug")
 
 
 @pytest.fixture
-def hotfix_phases(workflow_config: WorkflowConfig) -> list[str]:
+def hotfix_phases(contracts_config: ContractsConfig) -> list[str]:
     """
-    Phases for hotfix workflow.
-
-    Returns: ["tdd", "integration", "documentation"]
+    Phases for hotfix workflow from contracts.yaml (SSOT).
     """
-    return workflow_config.workflows["hotfix"].phases
+    return contracts_config.get_phases("hotfix")

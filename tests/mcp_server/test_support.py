@@ -19,14 +19,13 @@ from mcp_server.config.loader import (
     resolve_config_root as resolve_runtime_config_root,
 )
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
+from mcp_server.core.interfaces import GateReport
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.core.policy_engine import PolicyEngine
 from mcp_server.managers.artifact_manager import ArtifactManager
-from mcp_server.managers.deliverable_checker import DeliverableChecker
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_contract_resolver import (
     PhaseConfigContext,
-    PhaseContractResolver,
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -34,7 +33,6 @@ from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_reconstructor import StateReconstructor
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.metadata import ScaffoldMetadataParser
 from mcp_server.schemas import (
@@ -53,6 +51,46 @@ from mcp_server.tools.issue_tools import CreateIssueTool
 if TYPE_CHECKING:
     from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+
+
+class _NopGateRunner:
+    """No-op gate runner for unit tests: all gates pass, correct cycle-based detection.
+
+    Uses ContractsConfig for is_cycle_based_phase so that PSE cycle-phase guards
+    work correctly without requiring real deliverable files on disk.
+    """
+
+    def __init__(self, contracts_config: ContractsConfig) -> None:
+        self._contracts_config = contracts_config
+
+    def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
+        wf = self._contracts_config.workflows.get(workflow_name)
+        if not wf:
+            return False
+        for p in wf.phases:
+            if p.name == phase:
+                return p.cycle_based
+        return False
+
+    def enforce(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+        checks: object = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number, checks
+        return GateReport()
+
+    def inspect(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+        checks: object = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number, checks
+        return GateReport()
 
 
 def _candidate_config_roots(workspace_root: Path | str | None = None) -> list[Path]:
@@ -120,6 +158,12 @@ def load_issue_tool_dependencies(workspace_root: Path | str | None = None) -> di
             "contributors.yaml",
             "load_contributor_config",
         ),
+        "contracts_config": _load_config(
+            workspace_root,
+            "contracts.yaml",
+            "load_contracts_config",
+        ),
+        # kept for legacy callers; new code should use contracts_config
         "workflow_config": _load_config(
             workspace_root,
             "workflows.yaml",
@@ -155,14 +199,22 @@ def load_workflow_config(workspace_root: Path | str | None = None) -> WorkflowCo
     )
 
 
+def load_contracts_config(workspace_root: Path | str | None = None) -> ContractsConfig:
+    """Load ContractsConfig through the shared ConfigLoader helper."""
+    return cast(
+        ContractsConfig,
+        _load_config(workspace_root, "contracts.yaml", "load_contracts_config"),
+    )
+
+
 def make_project_manager(
     workspace_root: Path | str,
-    workflow_config: WorkflowConfig | None = None,
+    contracts_config: ContractsConfig | None = None,
     git_manager: GitManager | None = None,
     workflow_status_resolver: WorkflowStatusResolver | None = None,
 ) -> ProjectManager:
-    """Build a ProjectManager with explicit workflow config injection."""
-    resolved_workflow_config = workflow_config or load_workflow_config(workspace_root)
+    """Build a ProjectManager with explicit contracts config injection."""
+    resolved_contracts_config = contracts_config or load_contracts_config(workspace_root)
     resolved_git_manager = git_manager
     if resolved_git_manager is None:
         git_roots = _candidate_config_roots(workspace_root)
@@ -189,7 +241,7 @@ def make_project_manager(
         )
     return ProjectManager(
         workspace_root=workspace_root,
-        workflow_config=resolved_workflow_config,
+        contracts_config=resolved_contracts_config,
         git_manager=resolved_git_manager,
         workphases_config=workphases_config,
         workflow_status_resolver=workflow_status_resolver,
@@ -235,37 +287,14 @@ def make_phase_state_engine(
     workspace_path = Path(workspace_root)
     manager = project_manager or make_project_manager(workspace_root)
     git_config = cast(GitConfig, _load_config(workspace_root, "git.yaml", "load_git_config"))
-    workflow_config = cast(
-        WorkflowConfig,
-        _load_config(workspace_root, "workflows.yaml", "load_workflow_config"),
-    )
     workphases_config = _load_config(
         workspace_root,
         "workphases.yaml",
         "load_workphases_config",
     )
-    contracts_path = workspace_path / ".st3" / "config" / "contracts.yaml"
-    if contracts_path.exists():
-        contracts_config = cast(
-            ContractsConfig,
-            _load_config(
-                workspace_root,
-                "contracts.yaml",
-                "load_contracts_config",
-            ),
-        )
-    else:
-        contracts_config = ContractsConfig.model_validate(
-            {
-                "workflows": {},
-                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            }
-        )
-    resolver = PhaseContractResolver(
-        PhaseConfigContext(
-            workphases=workphases_config,
-            contracts=contracts_config,
-        )
+    contracts_config = cast(
+        ContractsConfig,
+        _load_config(workspace_root, "contracts.yaml", "load_contracts_config"),
     )
     resolved_state_repository = state_repository or FileStateRepository(
         state_file=workspace_path / ".st3" / "state.json"
@@ -273,10 +302,7 @@ def make_phase_state_engine(
     resolved_scope_decoder = scope_decoder or ScopeDecoder(
         workphases_config=cast(WorkphasesConfig, workphases_config)
     )
-    resolved_workflow_gate_runner = workflow_gate_runner or WorkflowGateRunner(
-        deliverable_checker=DeliverableChecker(workspace_path),
-        phase_contract_resolver=resolver,
-    )
+    resolved_workflow_gate_runner = workflow_gate_runner or _NopGateRunner(contracts_config)
     resolved_state_reconstructor = state_reconstructor or make_state_reconstructor(
         workspace_root=workspace_root,
         project_manager=manager,
@@ -294,7 +320,7 @@ def make_phase_state_engine(
         workspace_root=workspace_root,
         project_manager=manager,
         git_config=git_config,
-        workflow_config=workflow_config,
+        contracts_config=contracts_config,
         workphases_config=workphases_config,
         state_repository=resolved_state_repository,
         scope_decoder=resolved_scope_decoder,
@@ -485,5 +511,5 @@ def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
         manager=manager or MagicMock(),
         issue_config=dependencies["issue_config"],
         milestone_config=dependencies["milestone_config"],
-        workflow_config=dependencies["workflow_config"],
+        contracts_config=dependencies["contracts_config"],
     )

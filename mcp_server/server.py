@@ -167,9 +167,6 @@ class MCPServer:
         git_config = config_loader.load_git_config()
         workflow_config = config_loader.load_workflow_config()
         workphases_config = config_loader.load_workphases_config()
-        workflow_config = ConfigLoader._inject_terminal_phase(  # pyright: ignore[reportPrivateUsage]
-            workflow_config, workphases_config
-        )
         quality_config = config_loader.load_quality_config()
         label_config = config_loader.load_label_config()
         issue_config = config_loader.load_issue_config()
@@ -214,7 +211,7 @@ class MCPServer:
 
         self.project_manager = ProjectManager(
             workspace_root=workspace_root,
-            workflow_config=workflow_config,
+            contracts_config=contracts_config,
             git_manager=self.git_manager,
             workphases_config=workphases_config,
             workflow_status_resolver=self.workflow_status_resolver,
@@ -243,7 +240,7 @@ class MCPServer:
             workspace_root=workspace_root,
             project_manager=self.project_manager,
             git_config=git_config,
-            workflow_config=workflow_config,
+            contracts_config=contracts_config,
             workphases_config=workphases_config,
             state_repository=self._state_repository,
             scope_decoder=ScopeDecoder(workphases_config=workphases_config),
@@ -395,7 +392,7 @@ class MCPServer:
                         manager=self.github_manager,
                         issue_config=issue_config,
                         milestone_config=milestone_config,
-                        workflow_config=workflow_config,
+                        contracts_config=contracts_config,
                     ),
                     ListIssuesTool(manager=self.github_manager),
                     GetIssueTool(manager=self.github_manager),
@@ -433,7 +430,7 @@ class MCPServer:
                         manager=self.github_manager,
                         issue_config=issue_config,
                         milestone_config=milestone_config,
-                        workflow_config=workflow_config,
+                        contracts_config=contracts_config,
                     ),
                     ListIssuesTool(manager=self.github_manager),
                     GetIssueTool(manager=self.github_manager),

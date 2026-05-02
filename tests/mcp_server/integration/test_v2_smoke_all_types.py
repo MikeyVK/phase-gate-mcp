@@ -148,7 +148,11 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Planning",
             "summary": "Validate V2 pipeline for planning type",
-            "tdd_cycles": ["RED: write failing test", "GREEN: implement", "REFACTOR: clean up"],
+            "tdd_cycles": [
+                {"cycle": 1, "phase": "RED", "description": "write failing test"},
+                {"cycle": 1, "phase": "GREEN", "description": "implement"},
+                {"cycle": 1, "phase": "REFACTOR", "description": "clean up"},
+            ],
         },
         False,
         ".md",

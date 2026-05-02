@@ -70,26 +70,28 @@ phases:
 """.strip(),
         encoding="utf-8",
     )
-    (config_dir / "phase_contracts.yaml").write_text(
+    (config_dir / "contracts.yaml").write_text(
         """
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts: []
 workflows:
   feature:
-    implementation:
-      cycle_based: true
-      subphases: [red, green, refactor]
-      commit_type_map:
-        red: test
-        green: feat
-        refactor: refactor
-      cycle_exit_requires:
-        1:
-          - id: cycle-docs
-            type: file_glob
-            dir: docs/development
-            pattern: issue*/research_*.md
+    phases:
+      - name: implementation
+        cycle_based: true
+        subphases: [red, green, refactor]
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+        cycle_exit_requires:
+          1:
+            - id: cycle-docs
+              type: file_glob
+              dir: docs/development
+              pattern: issue*/research_*.md
+      - name: ready
 """.strip(),
         encoding="utf-8",
     )
@@ -113,16 +115,15 @@ def project_manager(workspace_root: Path, repo_loader: ConfigLoader) -> ProjectM
     """ProjectManager bound to the temp workspace."""
     return make_project_manager(
         workspace_root=workspace_root,
-        workflow_config=repo_loader.load_workflow_config(),
     )
 
 
 def _make_runner(workspace_root: Path, workspace_loader: ConfigLoader) -> WorkflowGateRunner:
-    """Create a real WorkflowGateRunner backed by local phase_contracts.yaml."""
+    """Create a real WorkflowGateRunner backed by local contracts.yaml."""
     resolver = PhaseContractResolver(
         PhaseConfigContext(
             workphases=workspace_loader.load_workphases_config(),
-            phase_contracts=workspace_loader.load_phase_contracts_config(),
+            contracts=workspace_loader.load_contracts_config(),
         )
     )
     return WorkflowGateRunner(

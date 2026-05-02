@@ -94,9 +94,9 @@ class TestTDDPhaseHooks:
             state_repository=InMemoryStateRepository(),
         )
 
-        # Initialize branch in planning phase
+        # Initialize branch in design phase (one step before implementation)
         state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="planning"
+            branch=branch, issue_number=issue_number, initial_phase="design"
         )
 
         # Verify no TDD cycle yet
@@ -306,9 +306,9 @@ class TestTransitionHooksWiring:
             state_repository=InMemoryStateRepository(),
         )
 
-        # Initialize branch in planning phase
+        # Initialize branch in design phase (one step before implementation)
         state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="planning"
+            branch=branch, issue_number=issue_number, initial_phase="design"
         )
 
         # Verify no TDD cycle before transition
@@ -448,7 +448,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
         repo.save(seed)
         mutator.apply_calls.clear()
 
-        engine.transition(branch="feature/231-test", to_phase="design")
+        engine.transition(branch="feature/231-test", to_phase="planning")
 
         assert "feature/231-test" in mutator.apply_calls
 
