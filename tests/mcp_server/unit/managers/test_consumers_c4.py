@@ -111,7 +111,7 @@ class TestPhaseStateEngineTransitionC4:
 
         mock_contracts = MagicMock(spec=ContractsConfig)
         mock_contracts.validate_transition.side_effect = ValueError("invalid transition")
-        engine._contracts_config = mock_contracts  # noqa: SLF001
+        engine._contracts_config = mock_contracts  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
 
         state = MagicMock()
         state.branch = "feature/1-test"
