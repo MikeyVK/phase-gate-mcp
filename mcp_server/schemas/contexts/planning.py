@@ -25,7 +25,13 @@ class PlanningContext(DocArtifactContext):
     """
 
     summary: str = Field(description="High-level summary of what is being planned")
-    tdd_cycles: list[str] = Field(description="TDD cycle breakdown (Red → Green → Refactor)")
+    tdd_cycles: list[dict] = Field(
+        description=(
+            "TDD cycle breakdown. Each entry is a dict with keys: "
+            "name (str), goal (str), tests (list[str]), "
+            "success_criteria (list[str] | str), dependencies (list[str], optional)."
+        )
+    )
     purpose: str | None = Field(default=None, description="Purpose of this planning document")
     scope_in: str | None = Field(default=None, description="What is in scope")
     scope_out: str | None = Field(default=None, description="What is out of scope")
@@ -35,8 +41,12 @@ class PlanningContext(DocArtifactContext):
     dependencies: list[str] = Field(
         default_factory=list, description="Dependencies between cycles or on external work"
     )
-    risks: list[str] = Field(
-        default_factory=list, description="Identified risks and mitigation strategies"
+    risks: list[dict] = Field(
+        default_factory=list,
+        description=(
+            "Identified risks. Each entry is a dict with keys: "
+            "description (str), mitigation (str)."
+        ),
     )
     milestones: list[str] = Field(
         default_factory=list, description="Key milestones and checkpoints"
