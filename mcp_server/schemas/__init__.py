@@ -12,6 +12,12 @@ Infrastructure:
 """
 
 from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
+from mcp_server.config.schemas.contracts_config import (
+    ContractsConfig,
+    MergePolicy,
+    WorkflowEntry,
+    WorkflowPhaseEntry,
+)
 from mcp_server.config.schemas.contributor_config import ContributorConfig, ContributorEntry
 from mcp_server.config.schemas.enforcement_config import (
     EnforcementAction,
@@ -127,6 +133,7 @@ __all__ = [
     "BranchLocalArtifact",
     "CheckSpec",
     "CommentPattern",
+    "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
     "EnforcementAction",
@@ -136,6 +143,7 @@ __all__ = [
     "IssueConfig",
     "JsonViolationsParsing",
     "LabelConfig",
+    "MergePolicy",
     "MetadataField",
     "MilestoneConfig",
     "OperationPoliciesConfig",
@@ -148,5 +156,7 @@ __all__ = [
     "TextViolationsParsing",
     "ViolationDTO",
     "WorkflowConfig",
+    "WorkflowEntry",
+    "WorkflowPhaseEntry",
     "WorkphasesConfig",
 ]

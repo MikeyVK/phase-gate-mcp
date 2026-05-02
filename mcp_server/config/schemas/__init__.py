@@ -7,6 +7,13 @@ from mcp_server.config.schemas.artifact_registry_config import (
     StateMachine,
     StateMachineTransition,
 )
+from mcp_server.config.schemas.contracts_config import (
+    BranchLocalArtifact,
+    ContractsConfig,
+    MergePolicy,
+    WorkflowEntry,
+    WorkflowPhaseEntry,
+)
 from mcp_server.config.schemas.contributor_config import ContributorConfig, ContributorEntry
 from mcp_server.config.schemas.enforcement_config import (
     EnforcementAction,
@@ -56,9 +63,11 @@ __all__ = [
     "ArtifactLoggingConfig",
     "ArtifactRegistryConfig",
     "ArtifactType",
+    "BranchLocalArtifact",
     "CapabilitiesMetadata",
     "CheckSpec",
     "CommentPattern",
+    "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
     "DirectoryPolicy",
@@ -75,6 +84,7 @@ __all__ = [
     "LabelConfig",
     "LabelPattern",
     "MetadataField",
+    "MergePolicy",
     "MilestoneConfig",
     "MilestoneEntry",
     "OperationPoliciesConfig",
@@ -93,6 +103,8 @@ __all__ = [
     "TextViolationsParsing",
     "ViolationDTO",
     "WorkflowConfig",
+    "WorkflowEntry",
+    "WorkflowPhaseEntry",
     "WorkflowTemplate",
     "WorkphasesConfig",
 ]

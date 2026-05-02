@@ -178,7 +178,6 @@ class ContractsConfig(BaseModel):
         if workflow_name not in self.workflows:
             available = ", ".join(sorted(self.workflows.keys()))
             raise ValueError(
-                f"Unknown workflow: '{workflow_name}'\n"
-                f"Available workflows: {available}"
+                f"Unknown workflow: '{workflow_name}'\nAvailable workflows: {available}"
             )
         return self.workflows[workflow_name]
