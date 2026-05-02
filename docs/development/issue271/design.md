@@ -3,7 +3,7 @@
 # contracts.yaml as SSOT for workflow-phase membership
 
 **Status:** DRAFT  
-**Version:** 2.1  
+**Version:** 2.2  
 **Last Updated:** 2026-05-02
 
 ---
@@ -158,13 +158,25 @@ Each entry is a `WorkflowPhaseEntry` (`PhaseContractPhase` + `name: str`). The l
 | **D5 — Explicit `ready` in every workflow's phase list; `_inject_terminal_phase` removed** | Terminal phase visible in YAML without reading source code; DRY justified: the *knowledge* lives once in `merge_policy.pr_allowed_phase`, the presence in each list is *data* enforced by `model_validator` |
 | **D6 — `model_validator` on `ContractsConfig` enforces last-phase = `merge_policy.pr_allowed_phase`** | Parse-time enforcement; no runtime surprise; single rule written once |
 | **D7 — Validator inversion: startup validator checks phase names against `workphases.yaml` catalog, not the reverse** | `contracts.yaml` is authoritative; catalogs are validated *against* it, not the other way around |
-| **D8 — Runtime API on `ContractsConfig` directly, no separate interface** | Consistent with existing `WorkflowConfig` pattern; `PhaseStateEngine` and other consumers get equivalent API on the new type; no interface introduced because no alternative implementation exists or is planned |
+| **D8 — Runtime API on `ContractsConfig` directly, no separate interface** | §10 Cohesion: transitie-validatielogica heeft uitsluitend kennis van de geordende fase-lijst, die in `ContractsConfig` woont; de methode hoort bij de klasse die het domein modelleert. §1.5 DIP vereist interfaces voor *externe systemen* (file, git, external API); `ContractsConfig` is een frozen config value object — geen extern systeem — en valt buiten de DIP-scope. YAGNI: geen alternatieve implementatie bestaat of is gepland |
 | **D9 — `PhaseConfigContext.phase_contracts: PhaseContractsConfig` → `contracts: ContractsConfig`** | Field rename follows the class rename; frozen dataclass updated atomically in the same PR |
 | **D10 — Module rename: `phase_contracts_config.py` → `contracts_config.py`** | Atomic with the class rename; callers importing from the module path (e.g. `from mcp_server.config.schemas.phase_contracts_config import BranchLocalArtifact`) must update their import path; `BranchLocalArtifact`, `MergePolicy`, `CheckSpec`, and `PhaseContractPhase` remain in the renamed module |
-| **D11 — `frozen=True` not applied to `ContractsConfig`, `WorkflowEntry`, `WorkflowPhaseEntry`** | Pydantic v2 does not support `frozen=True` on a model that inherits from a non-frozen model (`WorkflowPhaseEntry` inherits from `PhaseContractPhase` which is not frozen). Applying `frozen` only on the leaf would silently break the inheritance chain. Deviation from §5 CQS is accepted here; the config object is constructed once at startup and injected read-only by convention. `extra="forbid"` is applied on all three models to provide the next-best parse-time safety |
+| **D11 — `frozen=True` applied to `PhaseContractPhase`, `ContractsConfig`, `WorkflowEntry`, `WorkflowPhaseEntry`** | Pydantic v2 staat `frozen=True` op een subklasse toe onafhankelijk van de parent-config. Het **semantische** probleem was: als `PhaseContractPhase` (parent) niet frozen is maar `WorkflowPhaseEntry` (child) wel, dan kan hetzelfde object gemuteerd worden wanneer het als `PhaseContractPhase` getyped is maar niet als `WorkflowPhaseEntry` — inconsistent runtime-gedrag afhankelijk van het static type (§5 CQS via indirectie). Oplossing: `model_config = ConfigDict(extra="forbid", frozen=True)` op `PhaseContractPhase` zelf. `PhaseContractPhase` is een config value object; frozen is correct. Dit lost §5 en §1.3 LSP (`extra`-tightening) in één regel op. `phase_contracts_config.py` staat al in stap 1 van de migratievolgorde — dit is geen extra file, maar een extra wijziging binnen een al-in-scope file |
 | **D12 — `WorkflowConfig` post-refactor API surface** | `WorkflowTemplate.phases` field removed; `get_first_phase()` and `validate_transition()` removed. `has_workflow(name)` and `get_workflow(name) -> WorkflowTemplate` remain — these serve the catalog role (metadata lookup by name). `get_workflow()` returns a `WorkflowTemplate` with only `name`, `description`, and `default_execution_mode` after `phases` is removed |
 
 ### 3.2. Schema Specification
+
+**`PhaseContractPhase`** (existing class — one additional line in step 1):
+
+```python
+class PhaseContractPhase(BaseModel):
+    """Phase contract definition. Frozen config value object (§5 CQS)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)  # ← added in step 1
+
+    # existing fields unchanged: subphases, commit_type_map, cycle_based,
+    # exit_requires, cycle_exit_requires, and existing model_validator
+```
 
 **`WorkflowPhaseEntry`** (extends `PhaseContractPhase`):
 
@@ -172,7 +184,7 @@ Each entry is a `WorkflowPhaseEntry` (`PhaseContractPhase` + `name: str`). The l
 class WorkflowPhaseEntry(PhaseContractPhase):
     """Single phase entry in a workflow's ordered phase list."""
 
-    model_config = ConfigDict(extra="forbid")
+    # inherits model_config = ConfigDict(extra="forbid", frozen=True) from PhaseContractPhase
 
     name: str = Field(..., description="Phase name; must exist in workphases.yaml catalog")
     # Inherits from PhaseContractPhase:
@@ -188,9 +200,9 @@ class WorkflowPhaseEntry(PhaseContractPhase):
 
 ```python
 class WorkflowEntry(BaseModel):
-    """Single workflow definition in contracts.yaml."""
+    """Single workflow definition in contracts.yaml. Frozen config value object (§5 CQS)."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     phases: list[WorkflowPhaseEntry] = Field(..., min_length=1)
 
@@ -208,9 +220,9 @@ class WorkflowEntry(BaseModel):
 
 ```python
 class ContractsConfig(BaseModel):
-    """Typed root object for contracts.yaml."""
+    """Typed root object for contracts.yaml. Frozen config value object (§5 CQS)."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     merge_policy: MergePolicy
     workflows: dict[str, WorkflowEntry] = Field(default_factory=dict)
@@ -341,7 +353,7 @@ workflows:
 
 | Step | Files | Rationale |
 |---|---|---|
-| 1 — New schema | `mcp_server/config/schemas/phase_contracts_config.py` → `contracts_config.py` (D10) + `WorkflowPhaseEntry`, `WorkflowEntry`, `ContractsConfig` | Foundation; all consumers depend on this |
+| 1 — New schema | `mcp_server/config/schemas/phase_contracts_config.py` → `contracts_config.py` (D10) + add `ConfigDict(extra="forbid", frozen=True)` to `PhaseContractPhase` (D11) + add `WorkflowPhaseEntry`, `WorkflowEntry`, `ContractsConfig` | Foundation; all consumers depend on this |
 | 2 — Internal re-export | `mcp_server/config/schemas/__init__.py` | Updates symbol names for downstream |
 | 3 — Public API re-export | `mcp_server/schemas/__init__.py` | Updates public-facing symbol names |
 | 4 — Loader | `mcp_server/config/loader.py` | Remove `_inject_terminal_phase`; rename `load_phase_contracts_config` → `load_contracts_config`; update filename to `contracts.yaml` |
@@ -447,7 +459,7 @@ def __init__(
 
 | File | Change |
 |---|---|
-| `mcp_server/config/schemas/phase_contracts_config.py` → `contracts_config.py` | Add `WorkflowPhaseEntry`, `WorkflowEntry`, `ContractsConfig`; keep `PhaseContractPhase`, `MergePolicy`, `BranchLocalArtifact`, `CheckSpec` unchanged; module renamed (D10) |
+| `mcp_server/config/schemas/phase_contracts_config.py` → `contracts_config.py` | Add `ConfigDict(extra="forbid", frozen=True)` to `PhaseContractPhase` (D11); add `WorkflowPhaseEntry`, `WorkflowEntry`, `ContractsConfig`; keep `MergePolicy`, `BranchLocalArtifact`, `CheckSpec` unchanged; module renamed (D10) |
 | `mcp_server/config/schemas/__init__.py` | Replace `PhaseContractsConfig` with `ContractsConfig` in imports and `__all__` |
 | `mcp_server/schemas/__init__.py` | Replace `PhaseContractsConfig` with `ContractsConfig` in imports and `__all__` |
 | `mcp_server/config/schemas/workflows.py` | Remove `WorkflowTemplate.phases` field; remove `get_first_phase()`, `validate_transition()` from `WorkflowConfig` |
@@ -509,3 +521,4 @@ None — all open questions from research v3.1 are resolved by decisions D1–D9
 | 1.0 | 2026-05-01 | Agent | Initial scaffold — sections 2 and 3.1 empty (QA: NOGO) |
 | 2.0 | 2026-05-02 | Agent | QA NOGO resolved: Section 2 filled with 3 options + trade-offs; Section 3.1 key decisions table (D1–D9); schema specs for `WorkflowPhaseEntry`, `WorkflowEntry`, `ContractsConfig`; YAML example; API error contracts; migration order; blast radius synced to research v3.1 (17 test files); architectural stance on API-on-VO; `PhaseConfigContext` field-rename in scope |
 | 2.1 | 2026-05-02 | Agent | QA CONDITIONAL GO resolved: D10 (module rename `contracts_config.py`); D11 (`frozen=True` deviation documented); D12 (`WorkflowConfig` post-refactor API); §3.7 consumer constructor signatures; §3.5 migration table updated with D10 reference; §3.6 blast radius updated; `WorkflowEntry` `extra="forbid"` confirmed present |
+| 2.2 | 2026-05-02 | Agent | QA ARCHITECTURE_PRINCIPLES.md check resolved: D8 rationale herschreven met §10 Cohesion + §1.5 DIP correct-scope; D11 herschreven met correcte Pydantic v2 redenering (semantisch probleem, niet technisch); `frozen=True` toegevoegd aan `PhaseContractPhase`, `WorkflowEntry`, `ContractsConfig`; §1.3 LSP `extra`-tightening opgelost via parent-fix; §3.2 schema spec bijgewerkt; blast radius stap 1 + productietabel bijgewerkt |
