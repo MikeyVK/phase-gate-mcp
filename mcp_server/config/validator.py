@@ -75,7 +75,7 @@ class ConfigValidator:
 
     def _validate_phase_contracts(
         self,
-        workflow: WorkflowConfig,
+        workflow: WorkflowConfig,  # noqa: ARG002
         contracts: ContractsConfig,
         known_workflows: set[str],
         known_phases: set[str],

@@ -113,22 +113,24 @@ class TestConfigValidator:
 
     @pytest.fixture
     def phase_contracts(self) -> ContractsConfig:
-        return ContractsConfig.model_validate({
-            "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            "workflows": {
-                "feature": {
-                    "phases": [
-                        {
-                            "name": "implementation",
-                            "cycle_based": True,
-                            "subphases": ["red", "green"],
-                            "commit_type_map": {"red": "test", "green": "feat"},
-                        },
-                        {"name": "ready"},
-                    ]
-                }
-            },
-        })
+        return ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "feature": {
+                        "phases": [
+                            {
+                                "name": "implementation",
+                                "cycle_based": True,
+                                "subphases": ["red", "green"],
+                                "commit_type_map": {"red": "test", "green": "feat"},
+                            },
+                            {"name": "ready"},
+                        ]
+                    }
+                },
+            }
+        )
 
     def test_label_startup_deleted(self) -> None:
         assert importlib.util.find_spec("mcp_server.config.label_startup") is None
@@ -174,10 +176,12 @@ class TestConfigValidator:
                 }
             },
         )
-        contracts = ContractsConfig.model_validate({
-            "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            "workflows": {},
-        })
+        contracts = ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {},
+            }
+        )
 
         with pytest.raises(ConfigError, match="Workflow 'feature' references unknown phases"):
             validator.validate_startup(
@@ -198,21 +202,23 @@ class TestConfigValidator:
         artifact_registry: ArtifactRegistryConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
-        contracts = ContractsConfig.model_validate({
-            "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            "workflows": {
-                "bug": {
-                    "phases": [
-                        {
-                            "name": "implementation",
-                            "cycle_based": True,
-                            "commit_type_map": {"red": "test"},
-                        },
-                        {"name": "ready"},
-                    ]
-                }
-            },
-        })
+        contracts = ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "bug": {
+                        "phases": [
+                            {
+                                "name": "implementation",
+                                "cycle_based": True,
+                                "commit_type_map": {"red": "test"},
+                            },
+                            {"name": "ready"},
+                        ]
+                    }
+                },
+            }
+        )
 
         with pytest.raises(ConfigError, match="unknown workflow"):
             validator.validate_startup(
@@ -233,21 +239,23 @@ class TestConfigValidator:
         artifact_registry: ArtifactRegistryConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
-        contracts = ContractsConfig.model_validate({
-            "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            "workflows": {
-                "feature": {
-                    "phases": [
-                        {
-                            "name": "validation",
-                            "cycle_based": True,
-                            "commit_type_map": {"red": "test"},
-                        },
-                        {"name": "ready"},
-                    ]
-                }
-            },
-        })
+        contracts = ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "feature": {
+                        "phases": [
+                            {
+                                "name": "validation",
+                                "cycle_based": True,
+                                "commit_type_map": {"red": "test"},
+                            },
+                            {"name": "ready"},
+                        ]
+                    }
+                },
+            }
+        )
 
         with pytest.raises(ConfigError, match="missing from workphases"):
             validator.validate_startup(
@@ -277,21 +285,23 @@ class TestConfigValidator:
                 }
             },
         )
-        contracts = ContractsConfig.model_validate({
-            "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            "workflows": {
-                "feature": {
-                    "phases": [
-                        {
-                            "name": "validation",
-                            "cycle_based": True,
-                            "commit_type_map": {"red": "test"},
-                        },
-                        {"name": "ready"},
-                    ]
-                }
-            },
-        })
+        contracts = ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "feature": {
+                        "phases": [
+                            {
+                                "name": "validation",
+                                "cycle_based": True,
+                                "commit_type_map": {"red": "test"},
+                            },
+                            {"name": "ready"},
+                        ]
+                    }
+                },
+            }
+        )
         workphases_config = WorkphasesConfig(
             version="1.0",
             phases={

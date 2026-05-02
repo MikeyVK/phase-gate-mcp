@@ -22,11 +22,11 @@ import pytest
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.interfaces import GateReport, GateViolation
+from mcp_server.managers.deliverable_checker import DeliverableChecker
 from mcp_server.managers.phase_contract_resolver import PhaseConfigContext, PhaseContractResolver
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
-from mcp_server.managers.deliverable_checker import DeliverableChecker
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 

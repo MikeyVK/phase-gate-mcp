@@ -52,7 +52,8 @@ def feature_phases(contracts_config: ContractsConfig) -> list[str]:
     """
     Phases for feature workflow from contracts.yaml (SSOT).
 
-    Returns: ["research", "planning", "design", "implementation", "validation", "documentation", "ready"]
+    Returns: ["research", "planning", "design", "implementation", "validation",
+              "documentation", "ready"]
     """
     return contracts_config.get_phases("feature")
 

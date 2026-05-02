@@ -100,7 +100,10 @@ class TestProjectManagerWorkflows:
     def test_initialize_project_with_hotfix_workflow(
         self, manager: ProjectManager, workspace_root: Path
     ) -> None:
-        """Test initialize_project with hotfix workflow (contracts.yaml SSOT — execution_mode defaults to interactive)."""
+        """Test initialize_project with hotfix workflow.
+
+        contracts.yaml SSOT — execution_mode defaults to interactive.
+        """
         result = manager.initialize_project(
             issue_number=99, issue_title="Critical security fix", workflow_name="hotfix"
         )

@@ -69,7 +69,7 @@ def _run_v2(manager: ArtifactManager, artifact_type: str, context: dict) -> str:
 def _spy_v2_routed(manager: ArtifactManager) -> list[bool]:
     """Spy whether _enrich_context_v2 is called (V2 pipeline active, not V1 fallback)."""
     v2_calls: list[bool] = []
-    original = manager._enrich_context_v2
+    original = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]
 
     def spy(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
         v2_calls.append(True)

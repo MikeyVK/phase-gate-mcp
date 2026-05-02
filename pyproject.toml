@@ -104,8 +104,6 @@ select = [
     "PLC", # pylint-convention - includes PLC0415 (import-outside-top-level) for Gate 2
 ]
 ignore = [
-    "ANN101", # IDE only - self annotations noisy
-    "ANN102", # IDE only - cls annotations noisy
     "ANN401", # IDE only - allow Any for **kwargs patterns
     "ARG002", # IDE only - allow unused method args for interface compliance
 ]
