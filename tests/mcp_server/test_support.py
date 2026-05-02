@@ -39,8 +39,8 @@ from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.metadata import ScaffoldMetadataParser
 from mcp_server.schemas import (
     ArtifactRegistryConfig,
+    ContractsConfig,
     GitConfig,
-    PhaseContractsConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScaffoldMetadataConfig,
@@ -244,18 +244,18 @@ def make_phase_state_engine(
         "workphases.yaml",
         "load_workphases_config",
     )
-    phase_contracts_path = workspace_path / ".st3" / "config" / "phase_contracts.yaml"
-    if phase_contracts_path.exists():
-        phase_contracts_config = cast(
-            PhaseContractsConfig,
+    contracts_path = workspace_path / ".st3" / "config" / "contracts.yaml"
+    if contracts_path.exists():
+        contracts_config = cast(
+            ContractsConfig,
             _load_config(
                 workspace_root,
-                "phase_contracts.yaml",
-                "load_phase_contracts_config",
+                "contracts.yaml",
+                "load_contracts_config",
             ),
         )
     else:
-        phase_contracts_config = PhaseContractsConfig.model_validate(
+        contracts_config = ContractsConfig.model_validate(
             {
                 "workflows": {},
                 "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
@@ -264,7 +264,7 @@ def make_phase_state_engine(
     resolver = PhaseContractResolver(
         PhaseConfigContext(
             workphases=workphases_config,
-            phase_contracts=phase_contracts_config,
+            contracts=contracts_config,
         )
     )
     resolved_state_repository = state_repository or FileStateRepository(
@@ -324,10 +324,13 @@ def make_phase_config_context(
             "workphases.yaml",
             "load_workphases_config",
         ),
-        phase_contracts=_load_config(
-            workspace_root,
-            "phase_contracts.yaml",
-            "load_phase_contracts_config",
+        contracts=cast(
+            ContractsConfig,
+            _load_config(
+                workspace_root,
+                "contracts.yaml",
+                "load_contracts_config",
+            ),
         ),
         planning_deliverables=planning_deliverables,
     )

@@ -184,13 +184,13 @@ class MCPServer:
             workflow_config=workflow_config
         )
         enforcement_config = config_loader.load_enforcement_config()
-        phase_contracts_config = config_loader.load_phase_contracts_config()
+        contracts_config = config_loader.load_contracts_config()
         ConfigValidator().validate_startup(
             policies=operation_policies_config,
             workflow=workflow_config,
             structure=project_structure_config,
             artifact=artifact_registry,
-            phase_contracts=phase_contracts_config,
+            contracts=contracts_config,
             workphases=workphases_config,
         )
 
@@ -222,7 +222,7 @@ class MCPServer:
         self.phase_contract_resolver = PhaseContractResolver(
             PhaseConfigContext(
                 workphases=workphases_config,
-                phase_contracts=phase_contracts_config,
+                contracts=contracts_config,
             )
         )
         self.workflow_gate_runner = WorkflowGateRunner(
@@ -277,10 +277,8 @@ class MCPServer:
         )
         _merge_readiness_context = MergeReadinessContext(
             terminal_phase=workphases_config.get_terminal_phase(),
-            pr_allowed_phase=phase_contracts_config.get_pr_allowed_phase(),
-            branch_local_artifacts=tuple(
-                phase_contracts_config.merge_policy.branch_local_artifacts
-            ),
+            pr_allowed_phase=contracts_config.get_pr_allowed_phase(),
+            branch_local_artifacts=tuple(contracts_config.merge_policy.branch_local_artifacts),
         )
         self.pr_status_cache = PRStatusCache(github_manager=self.github_manager)
         self.enforcement_runner = EnforcementRunner(

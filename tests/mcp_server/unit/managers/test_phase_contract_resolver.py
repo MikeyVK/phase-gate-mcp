@@ -45,50 +45,54 @@ phases:
         encoding="utf-8",
     )
 
-    (config_dir / "phase_contracts.yaml").write_text(
+    (config_dir / "contracts.yaml").write_text(
         """
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts: []
 workflows:
   feature:
-    planning:
-      exit_requires:
-        - id: planning-doc
-          type: heading_present
-          required: true
-          file: docs/development/issue257/planning.md
-          heading: "## Goal"
-    implementation:
-      cycle_based: true
-      subphases: [red, green, refactor]
-      commit_type_map:
-        red: test
-        green: feat
-        refactor: refactor
-      exit_requires:
-        - id: required-design-doc
-          type: file_exists
-          required: true
-          file: docs/development/issue257/design.md
-        - id: design-doc
-          type: file_exists
-          required: false
-          file: docs/development/issue257/design-original.md
-      cycle_exit_requires:
-        "1":
-          - id: c1-red-test
-            type: file_glob
+    phases:
+      - name: planning
+        exit_requires:
+          - id: planning-doc
+            type: heading_present
             required: true
-            dir: tests/mcp_server/unit/managers
-            pattern: test_phase_contract_resolver.py
+            file: docs/development/issue257/planning.md
+            heading: "## Goal"
+      - name: implementation
+        cycle_based: true
+        subphases: [red, green, refactor]
+        commit_type_map:
+          red: test
+          green: feat
+          refactor: refactor
+        exit_requires:
+          - id: required-design-doc
+            type: file_exists
+            required: true
+            file: docs/development/issue257/design.md
+          - id: design-doc
+            type: file_exists
+            required: false
+            file: docs/development/issue257/design-original.md
+        cycle_exit_requires:
+          1:
+            - id: c1-red-test
+              type: file_glob
+              required: true
+              dir: tests/mcp_server/unit/managers
+              pattern: test_phase_contract_resolver.py
+      - name: ready
   docs:
-    documentation:
-      exit_requires:
-        - id: docs-readme
-          type: file_exists
-          required: true
-          file: docs/mcp_server/README.md
+    phases:
+      - name: documentation
+        exit_requires:
+          - id: docs-readme
+            type: file_exists
+            required: true
+            file: docs/mcp_server/README.md
+      - name: ready
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -159,17 +163,16 @@ class TestPhaseConfigContext:
             "    terminal: true\n",
             encoding="utf-8",
         )
-        (config_dir / "phase_contracts.yaml").write_text(
-            """
-merge_policy:
-  pr_allowed_phase: ready
-  branch_local_artifacts: []
-workflows:
-  feature:
-    implementation:
-      cycle_based: true
-""".strip()
-            + "\n",
+        (config_dir / "contracts.yaml").write_text(
+            "merge_policy:\n"
+            "  pr_allowed_phase: ready\n"
+            "  branch_local_artifacts: []\n"
+            "workflows:\n"
+            "  feature:\n"
+            "    phases:\n"
+            "      - name: implementation\n"
+            "        cycle_based: true\n"
+            "      - name: ready\n",
             encoding="utf-8",
         )
 
@@ -177,9 +180,7 @@ workflows:
             make_phase_config_context(tmp_path)
 
         assert exc_info.value.file_path is not None
-        assert exc_info.value.file_path.replace("\\", "/").endswith(
-            "/.st3/config/phase_contracts.yaml"
-        )
+        assert exc_info.value.file_path.replace("\\", "/").endswith("/.st3/config/contracts.yaml")
 
     def test_loader_applies_defaults_for_optional_phase_fields(self, tmp_path: Path) -> None:
         """Missing optional fields should resolve to empty collections and false."""
@@ -196,21 +197,20 @@ workflows:
             "    terminal: true\n",
             encoding="utf-8",
         )
-        (config_dir / "phase_contracts.yaml").write_text(
-            """
-merge_policy:
-  pr_allowed_phase: ready
-  branch_local_artifacts: []
-workflows:
-  feature:
-    planning: {}
-""".strip()
-            + "\n",
+        (config_dir / "contracts.yaml").write_text(
+            "merge_policy:\n"
+            "  pr_allowed_phase: ready\n"
+            "  branch_local_artifacts: []\n"
+            "workflows:\n"
+            "  feature:\n"
+            "    phases:\n"
+            "      - name: planning\n"
+            "      - name: ready\n",
             encoding="utf-8",
         )
 
         context = make_phase_config_context(tmp_path)
-        planning_phase = context.phase_contracts.workflows["feature"]["planning"]
+        planning_phase = context.contracts.workflows["feature"].get_phase("planning")
 
         assert planning_phase.subphases == []
         assert planning_phase.commit_type_map == {}
@@ -225,8 +225,8 @@ workflows:
         context = make_phase_config_context(workspace_root, issue_number=257)
 
         assert context.workphases.get_entry_expects("implementation") == []
-        assert "feature" in context.phase_contracts.workflows
-        assert "implementation" in context.phase_contracts.workflows["feature"]
+        assert "feature" in context.contracts.workflows
+        assert "implementation" in context.contracts.workflows["feature"].get_phase_names()
         assert context.planning_deliverables is not None
 
     def test_context_uses_refactor_commit_mapping_in_fixture(self, workspace_root: Path) -> None:
@@ -234,9 +234,9 @@ workflows:
         context = make_phase_config_context(workspace_root)
 
         assert (
-            context.phase_contracts.workflows["feature"]["implementation"].commit_type_map[
-                "refactor"
-            ]
+            context.contracts.workflows["feature"]
+            .get_phase("implementation")
+            .commit_type_map["refactor"]
             == "refactor"
         )
 
