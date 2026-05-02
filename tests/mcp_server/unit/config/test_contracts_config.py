@@ -196,21 +196,11 @@ class TestContractsConfigValidateTransition:
 
 
 class TestImportPaths:
-    def test_old_module_path_lacks_new_symbols(self) -> None:
-        """The old mcp_server.config.schemas.phase_contracts_config module must
-        still be importable during the migration (legacy callers are updated in C5a),
-        but the new symbols (ContractsConfig, WorkflowEntry, WorkflowPhaseEntry)
-        must NOT be defined there — they live exclusively in contracts_config."""
-        old_mod = importlib.import_module("mcp_server.config.schemas.phase_contracts_config")
-        assert not hasattr(old_mod, "ContractsConfig"), (
-            "ContractsConfig must not exist in the old module path"
-        )
-        assert not hasattr(old_mod, "WorkflowEntry"), (
-            "WorkflowEntry must not exist in the old module path"
-        )
-        assert not hasattr(old_mod, "WorkflowPhaseEntry"), (
-            "WorkflowPhaseEntry must not exist in the old module path"
-        )
+    def test_14_old_import_path_raises_import_error(self) -> None:
+        """The old mcp_server.config.schemas.phase_contracts_config module must no
+        longer exist — any import attempt must raise ImportError (C1 clean-break)."""
+        with pytest.raises(ImportError):
+            importlib.import_module("mcp_server.config.schemas.phase_contracts_config")
 
     def test_new_module_path_exports_all_public_symbols(self) -> None:
         """New module path must export all symbols needed by callers."""

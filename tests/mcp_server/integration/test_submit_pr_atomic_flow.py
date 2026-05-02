@@ -40,7 +40,7 @@ from unittest.mock import MagicMock
 import yaml
 
 import mcp_server.server as server_module
-from mcp_server.config.schemas.phase_contracts_config import BranchLocalArtifact
+from mcp_server.config.schemas.contracts_config import BranchLocalArtifact
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote

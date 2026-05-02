@@ -30,7 +30,6 @@ from typing import Any
 # Project modules
 from pydantic import ValidationError
 
-from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.core.interfaces import (
     GateReport,
     IStateReconstructor,
@@ -41,7 +40,7 @@ from mcp_server.core.interfaces import (
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
-from mcp_server.schemas import GitConfig, WorkphasesConfig
+from mcp_server.schemas import ContractsConfig, GitConfig, WorkphasesConfig
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +178,7 @@ class PhaseStateEngine:
         )
 
         if self._is_cycle_based_phase(workflow_name, from_phase):
-            self.on_exit_implementation_phase(branch)
+            self.on_exit_cycle_based_phase(branch)
             state = self._load_state_or_reconstruct(branch)
 
         transition = TransitionRecord(
@@ -197,7 +196,7 @@ class PhaseStateEngine:
         self._apply_state(branch, updated_state)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
-            self.on_enter_implementation_phase(branch, issue_number)
+            self.on_enter_cycle_based_phase(branch, issue_number)
 
         return {"success": True, "from_phase": from_phase, "to_phase": to_phase}
 
@@ -243,7 +242,7 @@ class PhaseStateEngine:
             )
 
         if self._is_cycle_based_phase(workflow_name, from_phase):
-            self.on_exit_implementation_phase(branch)
+            self.on_exit_cycle_based_phase(branch)
             state = self.get_state(branch)
 
         transition = TransitionRecord(
@@ -263,7 +262,7 @@ class PhaseStateEngine:
         self._apply_state(branch, updated_state)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
-            self.on_enter_implementation_phase(branch, issue_number)
+            self.on_enter_cycle_based_phase(branch, issue_number)
 
         return {
             "success": True,
@@ -656,7 +655,7 @@ class PhaseStateEngine:
         """Return the workspace root derived from the tracked state file location."""
         return self.state_file.parent.parent
 
-    def on_enter_implementation_phase(self, branch: str, issue_number: int) -> None:
+    def on_enter_cycle_based_phase(self, branch: str, issue_number: int) -> None:
         """Hook called when entering implementation phase.
 
         Auto-initializes TDD cycle 1 in branch state. Planning deliverables
@@ -678,7 +677,7 @@ class PhaseStateEngine:
 
         logger.info(f"Entered implementation phase for issue {issue_number} on branch {branch}")
 
-    def on_exit_implementation_phase(self, branch: str) -> None:
+    def on_exit_cycle_based_phase(self, branch: str) -> None:
         """Hook called when exiting implementation phase.
 
         Preserves last_cycle and clears current_cycle.

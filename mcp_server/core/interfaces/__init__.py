@@ -10,7 +10,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from mcp_server.config.schemas.phase_contracts_config import CheckSpec
+    from mcp_server.config.schemas.contracts_config import CheckSpec
     from mcp_server.managers.pytest_runner import PytestResult
     from mcp_server.managers.state_repository import BranchState
     from mcp_server.state.quality_state import QualityState

@@ -25,9 +25,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 # Project modules
-from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.managers.git_manager import GitManager
-from mcp_server.schemas import WorkphasesConfig
+from mcp_server.schemas import ContractsConfig, WorkphasesConfig
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 if TYPE_CHECKING:

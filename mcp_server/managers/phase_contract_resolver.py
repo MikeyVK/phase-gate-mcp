@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from mcp_server.config.schemas.contracts_config import CheckSpec, ContractsConfig
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
     BranchLocalArtifact,
+    CheckSpec,
+    ContractsConfig,
     WorkphasesConfig,
 )
 

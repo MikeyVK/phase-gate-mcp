@@ -9,8 +9,10 @@ from mcp_server.config.schemas.artifact_registry_config import (
 )
 from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
+    CheckSpec,
     ContractsConfig,
     MergePolicy,
+    PhaseContractPhase,
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
@@ -27,11 +29,6 @@ from mcp_server.config.schemas.milestone_config import MilestoneConfig, Mileston
 from mcp_server.config.schemas.operation_policies_config import (
     OperationPoliciesConfig,
     OperationPolicy,
-)
-from mcp_server.config.schemas.phase_contracts_config import (
-    CheckSpec,
-    PhaseContractPhase,
-    PhaseContractsConfig,
 )
 from mcp_server.config.schemas.project_structure_config import (
     DirectoryPolicy,
@@ -90,7 +87,6 @@ __all__ = [
     "OperationPoliciesConfig",
     "OperationPolicy",
     "PhaseContractPhase",
-    "PhaseContractsConfig",
     "PhaseDefinition",
     "ProjectStructureConfig",
     "QualityConfig",

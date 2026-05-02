@@ -201,7 +201,7 @@ def _create_cycle_engine(
         issue_number=issue_number,
         initial_phase="implementation",
     )
-    engine.on_enter_implementation_phase(branch, issue_number)
+    engine.on_enter_cycle_based_phase(branch, issue_number)
     return engine, branch
 
 
