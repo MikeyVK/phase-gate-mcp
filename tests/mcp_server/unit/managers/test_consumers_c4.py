@@ -114,6 +114,7 @@ class TestPhaseStateEngineTransitionC4:
         engine._contracts_config = mock_contracts  # noqa: SLF001
 
         state = MagicMock()
+        state.branch = "feature/1-test"
         state.current_phase = "research"
         state.workflow_name = "feature"
         state.issue_number = 1
@@ -174,8 +175,7 @@ class TestProjectManagerPhaseDelegationC4:
         deliverables_file = tmp_path / ".st3" / "deliverables.json"
         assert deliverables_file.exists()
         data = json.loads(deliverables_file.read_text(encoding="utf-8"))
-        plan = data["1"]["project_plan"]
-        assert plan["required_phases"] == ["research", "design", "ready"]
+        assert data["1"]["required_phases"] == ["research", "design", "ready"]
 
 
 # ---------------------------------------------------------------------------

@@ -30,6 +30,7 @@ from typing import Any
 # Project modules
 from pydantic import ValidationError
 
+from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.core.interfaces import (
     GateReport,
     IStateReconstructor,
@@ -40,7 +41,7 @@ from mcp_server.core.interfaces import (
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
-from mcp_server.schemas import GitConfig, WorkflowConfig, WorkphasesConfig
+from mcp_server.schemas import GitConfig, WorkphasesConfig
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ class PhaseStateEngine:
         workspace_root: Path | str,
         project_manager: ProjectManager,
         git_config: GitConfig,
-        workflow_config: WorkflowConfig,
+        contracts_config: ContractsConfig,
         workphases_config: WorkphasesConfig,
         state_repository: IStateRepository,
         scope_decoder: ScopeDecoder,
@@ -90,7 +91,7 @@ class PhaseStateEngine:
         self.state_file = workspace_path / ".st3" / "state.json"
         self.project_manager = project_manager
 
-        self._workflow_config = workflow_config
+        self._contracts_config = contracts_config
         self._git_config = git_config
         self._workphases_config = workphases_config
         self._state_repository = state_repository
@@ -165,7 +166,7 @@ class PhaseStateEngine:
         from_phase = state.current_phase
         workflow_name = state.workflow_name
 
-        self._workflow_config.validate_transition(workflow_name, from_phase, to_phase)
+        self._contracts_config.validate_transition(workflow_name, from_phase, to_phase)
 
         issue_number = state.issue_number
         if issue_number is None:
