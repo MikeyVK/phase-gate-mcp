@@ -515,7 +515,14 @@ def __init__(
 
 ## 4. Open Questions
 
-None — all open questions from research v3.1 are resolved by decisions D1–D9 above.
+All open questions from research v3.2 are resolved by decisions D1–D13:
+
+- Research open question "YAML structure for phase ordering" → **D6** (ordered list-of-objects)
+- Research open question "File and class rename" → **D10** (module rename `contracts_config.py`) and YAML rename in step 9 of §3.5
+- Research open question "WorkflowConfig API" → **D12** (remove `phases`, keep catalog methods)
+- Research open question "Generic subphase semantics — runtime consumers" → **D13** (naming issue deferred; dispatch is already config-driven; rename of `on_enter/exit_implementation_phase` in C4 scope)
+- Research open question "Generic subphase semantics — agent.md normativity" → **D13** (normative — update in-scope, C5 cycle; agent.md §2.3 r.121/r.132/r.263 explicitly listed in §3.5 step 12)
+- Research open question "Generic subphase semantics — ContractsConfig API" → **D13** (no new API: YAGNI; resolver's `is_cycle_based_phase()` is the correct layer)
 
 ---
 

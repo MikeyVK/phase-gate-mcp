@@ -23,9 +23,9 @@ Geen compat-shims of dual-read paths; geen wijzigingen in workphases.yaml-inhoud
 ## Prerequisites
 
 Read these first:
-1. design.md v2.2 QA GO (architectuurprincipes-check doorstaan)
+1. design.md v2.3 QA GO (subphase formalisering doorstaan)
 2. Branch refactor/271-phase-contracts-ssot-workflow-membership actief
-3. research.md v3.1 committed (blast radius 12 prod + 17 testfiles)
+3. research.md v3.2 committed (blast radius 12 prod + 17 testfiles; subphase scan)
 ---
 
 ## Summary
@@ -238,4 +238,7 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 |  | Agent | Initial draft |
+| 1.0 | 2026-05-02 | Agent | Initial scaffold (QA NOGO: 5 cycli onvoldoende, C5a ontbrak, blast-radius onvolledig) |
+| 2.0 | 2026-05-02 | Agent | QA NOGO resolved: 6 cycli (C1–C5+C5a); 12 blast-radius testbestanden in C5a; milestone-sectie toegevoegd |
+| 2.1 | 2026-05-02 | Agent | QA Hercheck N-1/N-2/N-3 resolved: C5a.files → 12 bestanden incl. test_cycle_tools_legacy.py; C5a cycle_number=5 / C5 cycle_number=6 (deliverables.json was omgewisseld) |
+| 2.2 | 2026-05-02 | Agent | Subphase formalisering: C1 test 16 (schema-genericiteit name='research'); success criteria 15→16; C5 goal + success criteria uitgebreid naar agent.md §2.3 r.121/r.132/r.263; risk-entry voor subphase-dispatch hardcoding |
