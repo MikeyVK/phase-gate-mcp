@@ -3,7 +3,7 @@
 # contracts.yaml as SSOT for workflow-phase membership — Implementation Planning
 
 **Status:** DRAFT  
-**Version:** 2.0  
+**Version:** 2.2  
 **Last Updated:** 2026-05-02
 
 ---
@@ -68,9 +68,10 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 - ContractsConfig.validate_transition: onbekende fase gooit ValueError met beschikbare lijst
 - Import van oud pad mcp_server.config.schemas.phase_contracts_config gooit ImportError
 - Import van nieuw pad mcp_server.config.schemas.contracts_config werkt voor alle publieke symbolen
+- WorkflowPhaseEntry: name='research' met cycle_based=true en subphases=['explore', 'consolidate'] is geldig — schema bevat geen fasename-checks op 'implementation'
 
 **Success Criteria:**
-- Alle 15 nieuwe tests slagen
+- Alle 16 nieuwe tests slagen
 - Bestaande tests voor BranchLocalArtifact, MergePolicy, CheckSpec nog steeds groen (geen regressie)
 - mypy/ruff clean op contracts_config.py, config/schemas/__init__.py en schemas/__init__.py
 - ContractsConfig, WorkflowEntry, WorkflowPhaseEntry importeerbaar via mcp_server.config.schemas en mcp_server.schemas
@@ -177,7 +178,7 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 
 ### Cycle 6: C5 — Validator inversie + WorkflowTemplate cleanup + composition root
 
-**Goal:** Inverteer startup-validator: validator.py controleert nu dat fases in contracts.yaml bestaan in workphases.yaml-catalogus. Verwijder WorkflowTemplate.phases-veld en WorkflowConfig.get_first_phase / validate_transition uit workflows.py. Update .st3/config/workflows.yaml (verwijder phases:-lijsten). Update server.py composition root. Update agent.md documentatieverwijzing.
+**Goal:** Inverteer startup-validator: validator.py controleert nu dat fases in contracts.yaml bestaan in workphases.yaml-catalogus. Verwijder WorkflowTemplate.phases-veld en WorkflowConfig.get_first_phase / validate_transition uit workflows.py. Update .st3/config/workflows.yaml (verwijder phases:-lijsten). Update server.py composition root. Update agent.md: bestandsnaamverwijzing (r.370) bijwerken naar contracts.yaml én §2.3 implementation-only subphase-formulering (r.121, r.132, r.263) vervangen door cycle_based-config-gedreven formulering.
 
 **Tests:**
 - Validator: fasenaam in contracts.yaml die ontbreekt in workphases.yaml gooit ConfigError bij startup
@@ -195,7 +196,8 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
 - Geen WorkflowTemplate.phases of WorkflowConfig.get_first_phase / validate_transition in productiecode
 - Volledige testsuite groen (C5a reeds afgerond: geen blast-radius schuld in deze cyclus)
 - mypy/ruff clean op validator.py, workflows.py, server.py
-- agent.md documentatieverwijzing bijgewerkt naar contracts.yaml
+- agent.md documentatieverwijzing bijgewerkt naar contracts.yaml én §2.3 implementation-only subphase-formulering (r.121, r.132, r.263) vervangen door cycle_based-config-gedreven formulering
+- Geen `if phase_name == "implementation"` of equivalent fasename-hardcoding voor subphase-dispatch in productiecode
 
 **Dependencies:** C1, C2, C3, C4, C5a
 
@@ -209,6 +211,8 @@ Refactor voor issue #271: migratie van twee-SSOT (workflows.yaml + phase_contrac
   - **Mitigation:** C2 bevat 6 afzonderlijke roundtrip-tests (één per workflow): geparsed ContractsConfig moet veld-voor-veld overeenkomen met een handcrafted expected-object
 - **Risk:** C4 gedragstests gebruiken een mock ContractsConfig; een te permissieve mock maskeert een productie-bug totdat C5 integratietests falen
   - **Mitigation:** Gebruik dezelfde YAML-structuur als in de C2-roundtrip-tests als basis voor C4-fixtures; geen hand-gemaakte stub-workflows die afwijken van productie-contracts.yaml
+- **Risk:** Runtime-consumers (`scope_encoder.py`, `phase_state_engine.py`) bevatten mogelijk fasename-specifieke conditionals die §3 Config-First schenden en pas zichtbaar worden bij het toevoegen van een tweede `cycle_based`-fase
+  - **Mitigation:** Verifieer aan het begin van C1 RED dat geen `if phase_name == "implementation"`-equivalent bestaat in de subphase-dispatch-paden (scan: `phase_contract_resolver.py`, `scope_encoder.py`, `phase_detection.py`, `phase_state_engine.py`). Huidige scan: `scope_encoder` en `phase_detection` zijn clean; `phase_state_engine` heeft een naming-issue (`on_enter_implementation_phase`) maar geen logische fasename-check — geen C1-blocker, scope in C4 (rename hooks).
 
 ---
 

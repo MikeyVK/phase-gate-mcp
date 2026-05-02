@@ -28,13 +28,13 @@
               "mcp_server/schemas/__init__.py",
               "tests/mcp_server/unit/config/test_contracts_config.py"
             ],
-            "exit_criteria": "Alle 15 nieuwe tests slagen; mypy/ruff clean op contracts_config.py + config/schemas/__init__.py + schemas/__init__.py; ContractsConfig importeerbaar via beide re-export paden",
+            "exit_criteria": "Alle 16 nieuwe tests slagen; mypy/ruff clean op contracts_config.py + config/schemas/__init__.py + schemas/__init__.py; ContractsConfig importeerbaar via beide re-export paden; geen fasename-check op 'implementation' in PhaseContractPhase of WorkflowPhaseEntry validators",
             "deliverables": [
               {
                 "id": "C1-tests",
                 "type": "test_count",
                 "required": true,
-                "count": 15
+                "count": 16
               },
               {
                 "id": "C1-quality",
@@ -166,7 +166,7 @@
               "mcp_server/server.py",
               "agent.md"
             ],
-            "exit_criteria": "Alle 6 unit-tests + 2 integratietests slagen; geen phases:-sleutel in workflows.yaml; volledige testsuite groen (C5a reeds afgerond); mypy/ruff clean op validator.py + workflows.py + server.py; agent.md bijgewerkt naar contracts.yaml",
+            "exit_criteria": "Alle 6 unit-tests + 2 integratietests slagen; geen phases:-sleutel in workflows.yaml; volledige testsuite groen (C5a reeds afgerond); mypy/ruff clean op validator.py + workflows.py + server.py; agent.md bijgewerkt naar contracts.yaml; agent.md §2.3 formulering bijgewerkt (r.121, r.132, r.263); geen fasename-hardcoding voor subphase-dispatch in productiecode",
             "deliverables": [
               {
                 "id": "C5-tests",
