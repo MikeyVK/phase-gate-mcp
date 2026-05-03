@@ -235,44 +235,56 @@ class TestPytestRunnerRun:
 
 
 class TestC1ExitCodePolicyAndPytestResultContract:
-    """C1: ExitCodePolicy.outcome three-value Literal + PytestResult.is_error + PytestResult.stderr."""
+    """C1: three-value Literal in ExitCodePolicy + PytestResult.is_error + PytestResult.stderr."""
 
-    def test_c1_parse_output_exit2_sets_is_error_true(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c1_parse_output_exit2_sets_is_error_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Exit 2 (INTERRUPTED) → result.is_error=True, result.should_raise=False."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2)
 
         assert result.is_error is True
         assert result.should_raise is False
 
-    def test_c1_parse_output_exit3_sets_is_error_true(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c1_parse_output_exit3_sets_is_error_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Exit 3 (INTERNAL_ERROR) → result.is_error=True."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=3)
 
         assert result.is_error is True
         assert result.should_raise is False
 
-    def test_c1_parse_output_exit4_sets_is_error_true(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c1_parse_output_exit4_sets_is_error_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Exit 4 (USAGE_ERROR) → result.is_error=True."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=4)
 
         assert result.is_error is True
         assert result.should_raise is False
 
-    def test_c1_parse_output_exit0_sets_is_error_false(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c1_parse_output_exit0_sets_is_error_false(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Exit 0 (ALL_PASSED) → result.is_error=False."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
 
         assert result.is_error is False
         assert result.should_raise is False
 
-    def test_c1_parse_output_exit99_should_raise_unchanged(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c1_parse_output_exit99_should_raise_unchanged(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Exit 99 (unknown) → result.should_raise=True, result.is_error=False — RNF-5 gate."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=99)
 
         assert result.should_raise is True
         assert result.is_error is False
 
-    def test_c1_pytest_result_default_stderr_is_empty_string(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c1_pytest_result_default_stderr_is_empty_string(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """PytestResult constructed without explicit stderr kwarg → result.stderr == ''."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
 
