@@ -217,7 +217,8 @@ class TestPytestRunnerRun:
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2)
 
         assert result.summary_line != ""
-        assert result.should_raise is True
+        assert result.should_raise is False
+        assert result.is_error is True
 
     def test_exit_code_5_no_tests_collected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Scenario 8: exit code 5 path → summary_line == 'no tests collected'."""
