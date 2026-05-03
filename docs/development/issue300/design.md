@@ -3,7 +3,7 @@
 # run_tests: Expose Actionable Failure Details in Tool Response
 
 **Status:** DRAFT  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-05-03
 
 ---
@@ -118,6 +118,8 @@ pattern = re.compile(
 ```
 The `(?:\[gw\d+\]\s+)?` group is non-capturing and optional — matches `[gw0]`, `[gw12]`, etc., with trailing whitespace, or matches nothing when xdist is not active.
 
+Tests for this fix go via `run()` + monkeypatch on `_execute` with crafted stdout containing `[gw0] ___ test_name ___` headers — consistent with the existing `_run()` pattern in test_pytest_runner.py; no direct call to `_extract_traceback` (§14 prohibition on private method access in tests).
+
 ---
 
 ## 3. Chosen Design
@@ -136,6 +138,71 @@ The `(?:\[gw\d+\]\s+)?` group is non-capturing and optional — matches `[gw0]`,
 | `content[0]` for exit codes 2/3/4: summary_line + first non-empty stderr line (120 char cap) | Signals the nature of the failure in the primary text block without dumping raw stderr. The full stderr tail lives in `content[1].stderr` for callers that need it. |
 | Stderr tail-trim: last 50 lines, joined as single string in `content[1].stderr` | Pytest error messages (INTERNALERROR, usage errors) concentrate at the end of stderr output. Top-trimming preserves the most diagnostic content. 50 lines is sufficient for all observed INTERNALERROR patterns while keeping payload size bounded. |
 | xdist regex fix: add `(?:\[gw\d+\]\s+)?` prefix to `_extract_traceback` pattern | One-line change; non-breaking for non-xdist runs (group is optional). Fixes the silent empty-traceback regression on every project run (xdist is default in `pyproject.toml`). |
+| Rename `PytestResult.should_raise` → `is_error`; update `ExitCodePolicy.outcome` Literal `"raise"\|"return"` → `"error"\|"ok"` | `should_raise=True` after the change describes a field that never raises — semantically false and §8-violating. `is_error` names the intent (`ToolResult.is_error` is the downstream consumer). `ExitCodePolicy.outcome="raise"` becomes `"error"` to match. All four reads of `result.should_raise` in test_test_tools.py (r.131, r.152, r.175, r.220) update to `result.is_error`. |
+| `PytestResult.stderr: str = ""` with empty-string default | Additive field on a frozen dataclass. Default `""` ensures all existing `PytestResult(...)` constructor calls remain valid without change. `_make_pytest_result()` in test_test_tools.py gains `stderr=""` as an explicit kwarg; tests that do not care about stderr need no change; tests for exit 2/3/4 pass a non-empty string. |
+
+### 3.2. `_to_tool_result()` Routing Logic
+
+The function reads `result.is_error` (from the renamed `PytestResult` field) to split into two paths. No signature change is required — the routing information lives in `PytestResult` itself.
+
+```python
+def _to_tool_result(result: PytestResult) -> ToolResult:
+    stderr_tail = "\n".join(result.stderr.splitlines()[-50:]) if result.stderr else ""
+    payload = {
+        "exit_code": result.exit_code,
+        "summary": {"passed": result.passed, "failed": result.failed,
+                    "skipped": result.skipped, "errors": result.errors},
+        "summary_line": result.summary_line,
+        "failures": [asdict(f) for f in result.failures],
+        "coverage_pct": result.coverage_pct,
+        "lf_cache_was_empty": result.lf_cache_was_empty,
+        "stderr": stderr_tail,
+    }
+    if result.is_error:                                    # exit 2 / 3 / 4
+        first_stderr = next(
+            (ln for ln in result.stderr.splitlines() if ln.strip()), ""
+        )[:120]
+        text = result.summary_line
+        if first_stderr:
+            text += f"\nstderr: {first_stderr}"
+        return ToolResult(is_error=True, content=[
+            {"type": "text", "text": text},
+            {"type": "json", "json": payload},
+        ])
+    else:                                                  # exit 0 / 1 / 5
+        failure_lines = "\n".join(
+            f"FAILED {f.test_id} \u2014 {f.short_reason}" for f in result.failures
+        )
+        text = result.summary_line
+        if failure_lines:
+            text += "\n" + failure_lines
+        return ToolResult(is_error=False, content=[
+            {"type": "text", "text": text},
+            {"type": "json", "json": payload},
+        ])
+```
+
+**Note:** `execute()` in test_tools.py removes the `if result.should_raise: raise ExecutionError(...)` branch entirely. After the rename to `is_error`, the error routing is fully handled inside `_to_tool_result()`.
+
+---
+
+### 3.3. Blast Radius
+
+| File | Location | Change type | Notes |
+|------|----------|-------------|-------|
+| `mcp_server/managers/pytest_runner.py` | `PytestResult` dataclass | Add field `stderr: str = ""` | Additive; frozen dataclass with default — no existing constructors break |
+| `mcp_server/managers/pytest_runner.py` | `PytestResult.should_raise` field | Rename → `is_error` | `_parse_output()` assignment becomes `is_error=policy.outcome == "error"` |
+| `mcp_server/managers/pytest_runner.py` | `ExitCodePolicy.outcome` Literal | `"raise"\|"return"` → `"error"\|"ok"` | Update all 6 `ExitCodePolicy(...)` entries in `_EXIT_CODE_POLICY` + `_UNKNOWN_CODE_POLICY` |
+| `mcp_server/managers/pytest_runner.py` | `PytestRunner.run()` + `_parse_output()` | Pass `execution.stderr` through | `_parse_output(stdout, stderr, returncode)` — adds `stderr` parameter |
+| `mcp_server/tools/test_tools.py` | `_to_tool_result()` | Routing split on `result.is_error` | See §3.2 — no signature change |
+| `mcp_server/tools/test_tools.py` | `execute()` | Remove `if result.should_raise: raise ExecutionError(...)` | Block deleted entirely; clean break |
+| `tests/mcp_server/unit/tools/test_test_tools.py` | `_make_pytest_result()` helper | Add `stderr: str = ""` kwarg | Explicit default; all existing calls unaffected |
+| `tests/mcp_server/unit/tools/test_test_tools.py` | r.131, r.152, r.175, r.220 | `result.should_raise` → `result.is_error` | Four read sites updated |
+| `tests/mcp_server/unit/tools/test_test_tools.py` | r.124, r.145, r.168 | Rewrite: `pytest.raises(ExecutionError)` → assert `is_error=True` + structured content | Clean break per research.md |
+| `tests/mcp_server/unit/managers/test_pytest_runner.py` | `_run()` monkeypatch helper | Extend mock to return `_PytestExecution(stdout=..., stderr=..., returncode=...)` | Required to feed stderr into `_parse_output()` |
+| `tests/mcp_server/unit/managers/test_pytest_runner.py` | New tests (OQ4) | xdist-prefix FAILURES header for `_extract_traceback` | Via `run()` + monkeypatch on `_execute`; no direct call to private method (§14) |
+
+---
 
 ## Related Documentation
 - **[docs/development/issue300/research.md][related-1]**
@@ -157,3 +224,4 @@ The `(?:\[gw\d+\]\s+)?` group is non-capturing and optional — matches `[gw0]`,
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-05-03 | Agent | Initial draft |
+| 1.1 | 2026-05-03 | Agent | QA v1.0 feedback: F-1 `should_raise`→`is_error` rename + `ExitCodePolicy.outcome` update (§3.1); F-2 `_to_tool_result()` routing logic added (§3.2); F-3 OQ4 test pattern specified (§2 OQ4); F-4 blast radius table added (§3.3) with `_make_pytest_result()` + `PytestResult.stderr` default |
