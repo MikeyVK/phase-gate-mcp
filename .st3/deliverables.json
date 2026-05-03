@@ -280,6 +280,18 @@
                   "text": "test_c1_parse_output_exit99_should_raise_unchanged",
                   "type": "contains_text"
                 }
+              },
+              {
+                "criterion": "mypy + ruff clean on pytest_runner.py after Literal + field changes",
+                "description": "Static type and lint check passes on pytest_runner.py",
+                "id": "C1.D7",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "is_error: bool",
+                  "type": "contains_text"
+                },
+                "type": "quality_gate",
+                "scope": "mcp_server/managers/pytest_runner.py"
               }
             ],
             "exit_criteria": "All 6 new tests green; all pre-existing test_pytest_runner.py tests still green; C1.D1-D4 all pass; mypy clean on pytest_runner.py",
@@ -317,6 +329,18 @@
                   "text": "test_c2_run_populates_result_stderr",
                   "type": "contains_text"
                 }
+              },
+              {
+                "criterion": "mypy + ruff clean on pytest_runner.py after _parse_output signature change",
+                "description": "Static type and lint check passes on pytest_runner.py after stderr param added",
+                "id": "C2.D4",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "def _parse_output(self, stdout: str, stderr: str, returncode: int)",
+                  "type": "contains_text"
+                },
+                "type": "quality_gate",
+                "scope": "mcp_server/managers/pytest_runner.py"
               }
             ],
             "exit_criteria": "All 3 new tests green; all pre-existing tests still green; C2.D1-D3 all pass; _run() helper extended with stderr='' default",
@@ -374,6 +398,48 @@
                   "text": "test_c3_to_tool_result_exit1_content0_includes_failure_lines",
                   "type": "contains_text"
                 }
+              },
+              {
+                "criterion": "mypy + ruff clean on test_tools.py after routing split",
+                "description": "Static type and lint check passes on test_tools.py",
+                "id": "C3.D6",
+                "validates": {
+                  "file": "mcp_server/tools/test_tools.py",
+                  "text": "result.is_error",
+                  "type": "contains_text"
+                },
+                "type": "quality_gate",
+                "scope": "mcp_server/tools/test_tools.py"
+              },
+              {
+                "criterion": "Old interrupted ExecutionError test removed from test_test_tools.py",
+                "description": "pytest.raises(ExecutionError) match for returncode 2 absent",
+                "id": "C3.D7",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_test_tools.py",
+                  "text": "pytest.raises(ExecutionError, match=\"pytest exited with returncode 2\")",
+                  "type": "absent_text"
+                }
+              },
+              {
+                "criterion": "Old internal_error ExecutionError test removed from test_test_tools.py",
+                "description": "pytest.raises(ExecutionError) match for returncode 3 absent",
+                "id": "C3.D8",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_test_tools.py",
+                  "text": "pytest.raises(ExecutionError, match=\"pytest exited with returncode 3\")",
+                  "type": "absent_text"
+                }
+              },
+              {
+                "criterion": "Old usage_error ExecutionError test removed from test_test_tools.py",
+                "description": "pytest.raises(ExecutionError) match for returncode 4 absent",
+                "id": "C3.D9",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_test_tools.py",
+                  "text": "pytest.raises(ExecutionError, match=\"pytest exited with returncode 4\")",
+                  "type": "absent_text"
+                }
               }
             ],
             "exit_criteria": "All new and rewritten tests green; exit-99 test still raises ExecutionError; C3.D1-D5 all pass; run_tests on test_test_tools.py fully green",
@@ -383,12 +449,12 @@
             "cycle_number": 4,
             "deliverables": [
               {
-                "criterion": "One-line change per design.md OQ4; optional group so backward-compatible",
-                "description": "xdist optional prefix group in _extract_traceback pattern",
+                "criterion": "xdist prefix anchor present in pattern (whitespace-independent check)",
+                "description": "xdist optional prefix group in _extract_traceback pattern \u2014 anchor only",
                 "id": "C4.D1",
                 "validates": {
                   "file": "mcp_server/managers/pytest_runner.py",
-                  "text": "(?:\\[gw\\d+\\]\\s+)?",
+                  "text": "[gw\\d+]",
                   "type": "contains_text"
                 }
               },
@@ -411,6 +477,28 @@
                   "text": "test_c4_extract_traceback_with_xdist_prefix_gw12",
                   "type": "contains_text"
                 }
+              },
+              {
+                "criterion": "xdist regression guard test absent_text check for direct _extract_traceback call",
+                "description": "Regression guard test exists (no direct _extract_traceback call)",
+                "id": "C4.D4",
+                "validates": {
+                  "file": "tests/mcp_server/unit/managers/test_pytest_runner.py",
+                  "text": "test_c4_extract_traceback_without_prefix_unchanged",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "mypy + ruff clean on pytest_runner.py after regex pattern change",
+                "description": "Static type and lint check passes on pytest_runner.py",
+                "id": "C4.D5",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "(?:\\[gw\\d+\\]\\s+)?",
+                  "type": "contains_text"
+                },
+                "type": "quality_gate",
+                "scope": "mcp_server/managers/pytest_runner.py"
               }
             ],
             "exit_criteria": "All 3 new tests green; all pre-existing traceback tests green; C4.D1-D3 all pass; full test_pytest_runner.py suite green",
