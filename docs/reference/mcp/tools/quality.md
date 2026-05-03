@@ -108,7 +108,7 @@ Baseline mutation is allowed only for effective `scope="auto"` runs.
 | 0 | All tests passed | `summary_line` only |
 | 1 | Test failures | `summary_line` + `\nFAILED test_id — short_reason` per failure |
 | 5 | No tests collected | `summary_line` only |
-| 2 / 3 / 4 | Pytest error / collection error / usage error | `summary_line` + optional `\nstderr: {first_nonempty_line[:120]}` |
+| 2 / 3 / 4 | Pytest interrupted / internal error / usage error | `summary_line` + optional `\nstderr: {first_nonempty_line[:120]}` |
 
 For exits 2/3/4 the `ToolResult` has `is_error=True`. For exits 0/1/5 it has `is_error=False`.
 
@@ -124,7 +124,7 @@ Exits 99 (timeout), OSError, and unrecoverable errors raise `ExecutionError` (ne
   "failures": [
     {
       "test_id": "tests/unit/test_foo.py::TestFoo::test_bar",
-      "location": "tests/unit/test_foo.py:42",
+      "location": "tests/unit/test_foo.py",
       "short_reason": "AssertionError: assert 1 == 2",
       "traceback": "..."
     }
@@ -188,7 +188,7 @@ Payload keys:
 ### run_tests — last-failed only
 
 ```json
-{"last_failed_only": true}
+{"path": "tests/", "last_failed_only": true}
 ```
 
 ---
