@@ -98,9 +98,7 @@ def _to_tool_result(result: PytestResult) -> ToolResult:
         "stderr": stderr_tail,
     }
     if result.is_error:  # exit 2 / 3 / 4
-        first_stderr = next(
-            (ln for ln in result.stderr.splitlines() if ln.strip()), ""
-        )[:120]
+        first_stderr = next((ln for ln in result.stderr.splitlines() if ln.strip()), "")[:120]
         text = result.summary_line
         if first_stderr:
             text += f"\nstderr: {first_stderr}"
@@ -111,20 +109,20 @@ def _to_tool_result(result: PytestResult) -> ToolResult:
                 {"type": "json", "json": payload},
             ],
         )
-    else:  # exit 0 / 1 / 5
-        failure_lines = "\n".join(
-            f"FAILED {f.test_id} \u2014 {f.short_reason}" for f in result.failures
-        )
-        text = result.summary_line
-        if failure_lines:
-            text += "\n" + failure_lines
-        return ToolResult(
-            is_error=False,
-            content=[
-                {"type": "text", "text": text},
-                {"type": "json", "json": payload},
-            ],
-        )
+    # exit 0 / 1 / 5
+    failure_lines = "\n".join(
+        f"FAILED {f.test_id} \u2014 {f.short_reason}" for f in result.failures
+    )
+    text = result.summary_line
+    if failure_lines:
+        text += "\n" + failure_lines
+    return ToolResult(
+        is_error=False,
+        content=[
+            {"type": "text", "text": text},
+            {"type": "json", "json": payload},
+        ],
+    )
 
 
 class RunTestsTool(BaseTool):
