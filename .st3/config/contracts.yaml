@@ -18,13 +18,6 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/research*.md
-      - name: planning
-        exit_requires:
-          - id: planning-doc
-            type: file_glob
-            required: true
-            dir: docs/development
-            pattern: issue*/planning*.md
       - name: design
         exit_requires:
           - id: design-doc
@@ -32,6 +25,13 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/design*.md
+      - name: planning
+        exit_requires:
+          - id: planning-doc
+            type: file_glob
+            required: true
+            dir: docs/development
+            pattern: issue*/planning*.md
       - name: implementation
         cycle_based: true
         subphases: [red, green, refactor]
@@ -70,13 +70,6 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/research*.md
-      - name: planning
-        exit_requires:
-          - id: planning-doc
-            type: file_glob
-            required: true
-            dir: docs/development
-            pattern: issue*/planning*.md
       - name: design
         exit_requires:
           - id: design-doc
@@ -84,6 +77,13 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/design*.md
+      - name: planning
+        exit_requires:
+          - id: planning-doc
+            type: file_glob
+            required: true
+            dir: docs/development
+            pattern: issue*/planning*.md
       - name: implementation
         cycle_based: true
         subphases: [red, green, refactor]
