@@ -289,3 +289,37 @@ class TestC1ExitCodePolicyAndPytestResultContract:
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
 
         assert result.stderr == ""
+
+
+# ---------------------------------------------------------------------------
+# C2 — stderr pipeline: run() → _parse_output() → PytestResult.stderr
+# ---------------------------------------------------------------------------
+
+
+class TestC2StderrPipeline:
+    """C2: execution.stderr is wired through run() → _parse_output() → PytestResult.stderr."""
+
+    def test_c2_run_passes_stderr_to_result(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Non-empty stderr from subprocess → result.stderr carries the value."""
+        result = _run(monkeypatch, _PASSED_STDOUT, returncode=0, stderr="some error text")
+
+        assert result.stderr == "some error text"
+
+    def test_c2_run_empty_stderr_gives_empty_string(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Empty stderr from subprocess → result.stderr == ''."""
+        result = _run(monkeypatch, _PASSED_STDOUT, returncode=0, stderr="")
+
+        assert result.stderr == ""
+
+    def test_c2_stderr_multiline_preserved_in_result(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Multi-line stderr → result.stderr contains all lines joined by newlines."""
+        multiline = "line one\nline two\nline three"
+        result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2, stderr=multiline)
+
+        assert result.stderr == multiline
