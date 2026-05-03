@@ -214,6 +214,211 @@
     ],
     "skip_reason": null,
     "parent_branch": null,
-    "created_at": "2026-05-03T15:13:17.193503+00:00"
+    "created_at": "2026-05-03T15:13:17.193503+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "deliverables": [
+              {
+                "criterion": "Old two-value Literal[\"return\",\"raise\"] replaced by three-value version",
+                "description": "ExitCodePolicy.outcome Literal expanded to three values",
+                "id": "C1.D1",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "Literal[\"ok\", \"error\", \"raise\"]",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "No remaining references to old outcome Literal",
+                "description": "Old two-value Literal absent from pytest_runner.py",
+                "id": "C1.D2",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "Literal[\"return\", \"raise\"]",
+                  "type": "absent_text"
+                }
+              },
+              {
+                "criterion": "Field declaration present in PytestResult dataclass",
+                "description": "PytestResult gains is_error: bool field",
+                "id": "C1.D3",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "is_error: bool",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "Additive field with default; existing constructors unaffected",
+                "description": "PytestResult gains stderr: str with empty default",
+                "id": "C1.D4",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "stderr: str = \"\"",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "RED tests written before GREEN implementation",
+                "description": "is_error tests for exit codes 2/3/4 exist in test file",
+                "id": "C1.D5",
+                "validates": {
+                  "file": "tests/mcp_server/unit/managers/test_pytest_runner.py",
+                  "text": "test_c1_parse_output_exit2_sets_is_error_true",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "RNF-5 gate: exit 99 produces should_raise=True, is_error=False",
+                "description": "exit 99 should_raise-unchanged test exists",
+                "id": "C1.D6",
+                "validates": {
+                  "file": "tests/mcp_server/unit/managers/test_pytest_runner.py",
+                  "text": "test_c1_parse_output_exit99_should_raise_unchanged",
+                  "type": "contains_text"
+                }
+              }
+            ],
+            "exit_criteria": "All 6 new tests green; all pre-existing test_pytest_runner.py tests still green; C1.D1-D4 all pass; mypy clean on pytest_runner.py",
+            "name": "ExitCodePolicy + PytestResult contract"
+          },
+          {
+            "cycle_number": 2,
+            "deliverables": [
+              {
+                "criterion": "Signature updated; mypy enforces all call sites pass stderr",
+                "description": "_parse_output signature gains stderr parameter",
+                "id": "C2.D1",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "def _parse_output(self, stdout: str, stderr: str, returncode: int)",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "stderr not silently dropped at run() boundary (closes research.md F3)",
+                "description": "run() passes execution.stderr through",
+                "id": "C2.D2",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "execution.stderr",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "RED-GREEN cycle complete for stderr pipeline",
+                "description": "Stderr pipeline population test exists",
+                "id": "C2.D3",
+                "validates": {
+                  "file": "tests/mcp_server/unit/managers/test_pytest_runner.py",
+                  "text": "test_c2_run_populates_result_stderr",
+                  "type": "contains_text"
+                }
+              }
+            ],
+            "exit_criteria": "All 3 new tests green; all pre-existing tests still green; C2.D1-D3 all pass; _run() helper extended with stderr='' default",
+            "name": "Stderr pipeline: run() -> _parse_output() -> PytestResult"
+          },
+          {
+            "cycle_number": 3,
+            "deliverables": [
+              {
+                "criterion": "Routing split implemented per design.md \u00a73.2",
+                "description": "_to_tool_result() routing on result.is_error",
+                "id": "C3.D1",
+                "validates": {
+                  "file": "mcp_server/tools/test_tools.py",
+                  "text": "result.is_error",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "RNF-5: exit 99 still raises ExecutionError",
+                "description": "execute() raise-branch retained",
+                "id": "C3.D2",
+                "validates": {
+                  "file": "mcp_server/tools/test_tools.py",
+                  "text": "result.should_raise",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "Helper backward-compatible; existing call sites unaffected",
+                "description": "_make_pytest_result() updated with is_error kwarg",
+                "id": "C3.D3",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_test_tools.py",
+                  "text": "is_error: bool = False",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "Covers is_error=True branch of _to_tool_result()",
+                "description": "Exit 2/3/4 routing tests exist",
+                "id": "C3.D4",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_test_tools.py",
+                  "text": "test_c3_to_tool_result_exit2_returns_tool_result_is_error_true",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "Covers exit 1 content[0] per-FailureDetail lines",
+                "description": "Exit 1 failure lines test exists",
+                "id": "C3.D5",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_test_tools.py",
+                  "text": "test_c3_to_tool_result_exit1_content0_includes_failure_lines",
+                  "type": "contains_text"
+                }
+              }
+            ],
+            "exit_criteria": "All new and rewritten tests green; exit-99 test still raises ExecutionError; C3.D1-D5 all pass; run_tests on test_test_tools.py fully green",
+            "name": "_to_tool_result() routing + test_test_tools rewrites"
+          },
+          {
+            "cycle_number": 4,
+            "deliverables": [
+              {
+                "criterion": "One-line change per design.md OQ4; optional group so backward-compatible",
+                "description": "xdist optional prefix group in _extract_traceback pattern",
+                "id": "C4.D1",
+                "validates": {
+                  "file": "mcp_server/managers/pytest_runner.py",
+                  "text": "(?:\\[gw\\d+\\]\\s+)?",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "Test via run() + monkeypatch; no direct _extract_traceback call",
+                "description": "xdist prefix test for single-digit worker exists",
+                "id": "C4.D2",
+                "validates": {
+                  "file": "tests/mcp_server/unit/managers/test_pytest_runner.py",
+                  "text": "test_c4_extract_traceback_with_xdist_prefix_gw0",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "criterion": "Covers double-digit worker ID",
+                "description": "xdist prefix test for double-digit worker exists",
+                "id": "C4.D3",
+                "validates": {
+                  "file": "tests/mcp_server/unit/managers/test_pytest_runner.py",
+                  "text": "test_c4_extract_traceback_with_xdist_prefix_gw12",
+                  "type": "contains_text"
+                }
+              }
+            ],
+            "exit_criteria": "All 3 new tests green; all pre-existing traceback tests green; C4.D1-D3 all pass; full test_pytest_runner.py suite green",
+            "name": "xdist _extract_traceback() regex fix"
+          }
+        ],
+        "total": 4
+      }
+    }
   }
 }
