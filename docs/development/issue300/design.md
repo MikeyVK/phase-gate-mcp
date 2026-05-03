@@ -3,7 +3,7 @@
 # run_tests: Expose Actionable Failure Details in Tool Response
 
 **Status:** DRAFT  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-05-03
 
 ---
@@ -138,7 +138,7 @@ Tests for this fix go via `run()` + monkeypatch on `_execute` with crafted stdou
 | `content[0]` for exit codes 2/3/4: summary_line + first non-empty stderr line (120 char cap) | Signals the nature of the failure in the primary text block without dumping raw stderr. The full stderr tail lives in `content[1].stderr` for callers that need it. |
 | Stderr tail-trim: last 50 lines, joined as single string in `content[1].stderr` | Pytest error messages (INTERNALERROR, usage errors) concentrate at the end of stderr output. Top-trimming preserves the most diagnostic content. 50 lines is sufficient for all observed INTERNALERROR patterns while keeping payload size bounded. |
 | xdist regex fix: add `(?:\[gw\d+\]\s+)?` prefix to `_extract_traceback` pattern | One-line change; non-breaking for non-xdist runs (group is optional). Fixes the silent empty-traceback regression on every project run (xdist is default in `pyproject.toml`). |
-| Rename `PytestResult.should_raise` → `is_error`; update `ExitCodePolicy.outcome` Literal `"raise"\|"return"` → `"error"\|"ok"` | `should_raise=True` after the change describes a field that never raises — semantically false and §8-violating. `is_error` names the intent (`ToolResult.is_error` is the downstream consumer). `ExitCodePolicy.outcome="raise"` becomes `"error"` to match. All four reads of `result.should_raise` in test_test_tools.py (r.131, r.152, r.175, r.220) update to `result.is_error`. |
+| `PytestResult` gains `is_error: bool`; `should_raise: bool` RETAINED | `is_error = policy.outcome == "error"` — True only for exit 2/3/4. `should_raise = policy.outcome == "raise"` — True only for exit 99; semantics unchanged. Both fields coexist. `execute()` still checks `if result.should_raise: raise ExecutionError(...)` first; only then calls `_to_tool_result()` (which reads `result.is_error`). Blast radius: r.220 and test r.213 UNCHANGED — `result.should_raise` read sites in the exit-99 test remain valid. |
 | `PytestResult.stderr: str = ""` with empty-string default | Additive field on a frozen dataclass. Default `""` ensures all existing `PytestResult(...)` constructor calls remain valid without change. `_make_pytest_result()` in test_test_tools.py gains `stderr=""` as an explicit kwarg; tests that do not care about stderr need no change; tests for exit 2/3/4 pass a non-empty string. |
 
 ### 3.2. `_to_tool_result()` Routing Logic
@@ -182,7 +182,7 @@ def _to_tool_result(result: PytestResult) -> ToolResult:
         ])
 ```
 
-**Note:** `execute()` in test_tools.py removes the `if result.should_raise: raise ExecutionError(...)` branch entirely. After the rename to `is_error`, the error routing is fully handled inside `_to_tool_result()`.
+**Note:** `execute()` in test_tools.py RETAINS the `if result.should_raise: raise ExecutionError(...)` check — this guards exit 99 (unknown exit code) per RNF-5. Only after that check passes does `_to_tool_result()` run. Exit 2/3/4 have `should_raise=False` (outcome `"error"`) and `is_error=True`, so they flow through to `_to_tool_result()` which returns `ToolResult(is_error=True, ...)`.
 
 ---
 
@@ -191,14 +191,15 @@ def _to_tool_result(result: PytestResult) -> ToolResult:
 | File | Location | Change type | Notes |
 |------|----------|-------------|-------|
 | `mcp_server/managers/pytest_runner.py` | `PytestResult` dataclass | Add field `stderr: str = ""` | Additive; frozen dataclass with default — no existing constructors break |
-| `mcp_server/managers/pytest_runner.py` | `PytestResult.should_raise` field | Rename → `is_error` | `_parse_output()` assignment becomes `is_error=policy.outcome == "error"` |
-| `mcp_server/managers/pytest_runner.py` | `ExitCodePolicy.outcome` Literal | `"raise"\|"return"` → `"error"\|"ok"` | Update all 6 `ExitCodePolicy(...)` entries in `_EXIT_CODE_POLICY` + `_UNKNOWN_CODE_POLICY` |
+| `mcp_server/managers/pytest_runner.py` | `PytestResult.should_raise` field | ADD new `is_error: bool` field alongside retained `should_raise` | `_parse_output()` adds `is_error=policy.outcome == "error"`. `should_raise=policy.outcome == "raise"` logic unchanged. |
+| `mcp_server/managers/pytest_runner.py` | `ExitCodePolicy.outcome` Literal expanded to three values: `"ok" \| "error" \| "raise"` | `"ok"` = exit 0/1/5 (pytest ran normally). `"error"` = exit 2/3/4 (pytest could not run — structured ToolResult path). `"raise"` = exit 99 (unknown exit code — ExecutionError path, unchanged). Only the five entries for exits 2/3/4 change from `"raise"` to `"error"`. `_UNKNOWN_CODE_POLICY` stays `"raise"` — NOT updated. |
 | `mcp_server/managers/pytest_runner.py` | `PytestRunner.run()` + `_parse_output()` | Pass `execution.stderr` through | `_parse_output(stdout, stderr, returncode)` — adds `stderr` parameter |
 | `mcp_server/tools/test_tools.py` | `_to_tool_result()` | Routing split on `result.is_error` | See §3.2 — no signature change |
-| `mcp_server/tools/test_tools.py` | `execute()` | Remove `if result.should_raise: raise ExecutionError(...)` | Block deleted entirely; clean break |
-| `tests/mcp_server/unit/tools/test_test_tools.py` | `_make_pytest_result()` helper | Add `stderr: str = ""` kwarg | Explicit default; all existing calls unaffected |
-| `tests/mcp_server/unit/tools/test_test_tools.py` | r.131, r.152, r.175, r.220 | `result.should_raise` → `result.is_error` | Four read sites updated |
-| `tests/mcp_server/unit/tools/test_test_tools.py` | r.124, r.145, r.168 | Rewrite: `pytest.raises(ExecutionError)` → assert `is_error=True` + structured content | Clean break per research.md |
+| `mcp_server/tools/test_tools.py` | `execute()` | UNCHANGED — `if result.should_raise: raise ExecutionError(...)` RETAINED | Guards exit 99 per RNF-5; exit 2/3/4 have `should_raise=False` so they pass through to `_to_tool_result()` |
+| `tests/mcp_server/unit/tools/test_test_tools.py` | `_make_pytest_result()` helper | Add `is_error: bool = False` and `stderr: str = ""` kwargs | Both have defaults; all existing calls unaffected |
+| `tests/mcp_server/unit/tools/test_test_tools.py` | r.131, r.152, r.175 (inside REWRITTEN tests r.124, r.145, r.168) | `should_raise=True` → `is_error=True` in `_make_pytest_result()` call | These are inside the exit-2/3/4 tests being REWRITTEN; line numbers will shift |
+| `tests/mcp_server/unit/tools/test_test_tools.py` | r.220 (inside UNCHANGED test r.213) | UNCHANGED — `result.should_raise` still True for exit 99 | `should_raise` field retained on `PytestResult`; no edit needed |
+| `tests/mcp_server/unit/tools/test_test_tools.py` | r.124, r.145, r.168 | Rewrite: `pytest.raises(ExecutionError)` → assert `ToolResult(is_error=True)` + structured content | Clean break per research.md |
 | `tests/mcp_server/unit/managers/test_pytest_runner.py` | `_run()` monkeypatch helper | Extend mock to return `_PytestExecution(stdout=..., stderr=..., returncode=...)` | Required to feed stderr into `_parse_output()` |
 | `tests/mcp_server/unit/managers/test_pytest_runner.py` | New tests (OQ4) | xdist-prefix FAILURES header for `_extract_traceback` | Via `run()` + monkeypatch on `_execute`; no direct call to private method (§14) |
 
@@ -225,3 +226,4 @@ def _to_tool_result(result: PytestResult) -> ToolResult:
 |---------|------|--------|---------|
 | 1.0 | 2026-05-03 | Agent | Initial draft |
 | 1.1 | 2026-05-03 | Agent | QA v1.0 feedback: F-1 `should_raise`→`is_error` rename + `ExitCodePolicy.outcome` update (§3.1); F-2 `_to_tool_result()` routing logic added (§3.2); F-3 OQ4 test pattern specified (§2 OQ4); F-4 blast radius table added (§3.3) with `_make_pytest_result()` + `PytestResult.stderr` default |
+| 1.2 | 2026-05-03 | Agent | QA v1.1 F-5 fix: `ExitCodePolicy.outcome` expanded to three-value Literal (`"ok"\|"error"\|"raise"`); `should_raise` RETAINED alongside new `is_error`; `execute()` raise-branch RETAINED for exit 99; blast radius corrected (r.220 + test r.213 UNCHANGED; `_UNKNOWN_CODE_POLICY` NOT updated) |
