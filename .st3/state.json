@@ -1,45 +1,44 @@
 {
-  "branch": "feature/300-run-tests-failure-details",
-  "issue_number": 300,
-  "workflow_name": "feature",
-  "current_phase": "documentation",
-  "current_cycle": null,
-  "last_cycle": 4,
+  "branch": "refactor/271-phase-contracts-ssot-workflow-membership",
+  "issue_number": 271,
+  "workflow_name": "refactor",
+  "current_phase": "implementation",
+  "current_cycle": 6,
+  "last_cycle": 5,
   "cycle_history": [
     {
       "cycle_number": 2,
-      "name": "Stderr pipeline: run() -> _parse_output() -> PytestResult",
+      "name": "Loader + YAML: load_contracts_config + contracts.yaml restructuur",
       "forced": false,
-      "entered": "2026-05-03T18:01:27.799645+00:00"
+      "entered": "2026-05-02T17:56:46.676366+00:00"
     },
     {
       "cycle_number": 3,
-      "name": "_to_tool_result() routing + test_test_tools rewrites",
+      "name": "Resolver: PhaseConfigContext + PhaseContractResolver",
       "forced": false,
-      "entered": "2026-05-03T18:08:26.436320+00:00"
+      "entered": "2026-05-02T18:35:07.708592+00:00"
     },
     {
       "cycle_number": 4,
-      "name": "xdist _extract_traceback() regex fix",
+      "name": "Runtime consumers: PhaseStateEngine, ProjectManager, CreateIssueTool",
       "forced": false,
-      "entered": "2026-05-03T18:19:06.747448+00:00"
+      "entered": "2026-05-02T19:02:49.201886+00:00"
     },
     {
-      "cycle_number": 4,
-      "name": "xdist _extract_traceback() regex fix",
-      "entered": "2026-05-03T18:58:13.131347+00:00",
-      "forced": true,
-      "skip_reason": "Phase force-transitioned back to implementation after QA NOGO. C4 is the correct cycle. Cycles 2 and 3 were completed in a previous session context.",
-      "human_approval": "User approved via QA NOGO force transition back to implementation phase",
-      "skipped_cycles": [
-        2,
-        3
-      ]
+      "cycle_number": 5,
+      "name": "Blast-radius testfile updates",
+      "forced": false,
+      "entered": "2026-05-02T19:26:47.473314+00:00"
+    },
+    {
+      "cycle_number": 6,
+      "name": "Validator inversie + WorkflowTemplate cleanup + composition root",
+      "forced": false,
+      "entered": "2026-05-03T06:24:21.503978+00:00"
     }
   ],
   "required_phases": [
     "research",
-    "design",
     "planning",
     "implementation",
     "validation",
@@ -47,63 +46,15 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "QA NOGO on documentation \u2014 reverting from ready to documentation to apply corrections identified by doc-reviewer subagent",
-  "issue_title": "run_tests: expose actionable failure details in tool response",
-  "parent_branch": "refactor/271-phase-contracts-ssot-workflow-membership",
-  "created_at": "2026-05-03T15:13:17.468265+00:00",
+  "skip_reason": null,
+  "issue_title": "Make phase_contracts.yaml SSOT for workflow-phase membership",
+  "parent_branch": null,
+  "created_at": "2026-04-28T14:06:52.028859+00:00",
   "transitions": [
     {
       "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-03T15:14:12.572903+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "research",
-      "timestamp": "2026-05-03T16:07:41.629752+00:00",
-      "human_approval": "User approved on 2026-05-03: reset to research to demonstrate phase transition enforcement on corrected contracts.yaml.",
-      "forced": true,
-      "skip_reason": "Reset to research for live demo of transition enforcement \u2014 we are in design but need to start the sequence from research."
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-03T16:07:48.017673+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "research",
-      "timestamp": "2026-05-03T16:07:51.757229+00:00",
-      "human_approval": "User approved on 2026-05-03: demo sequence \u2014 force back to research before forcing through planning.",
-      "forced": true,
-      "skip_reason": "Demo sequence: force back to research to then demonstrate force-jump to planning and design."
-    },
-    {
-      "from_phase": "research",
       "to_phase": "planning",
-      "timestamp": "2026-05-03T16:07:55.279870+00:00",
-      "human_approval": "User approved on 2026-05-03: demo force-jump to planning (skipping design).",
-      "forced": true,
-      "skip_reason": "Demo: force-jump to planning to show non-sequential transition is possible with explicit approval. design phase skipped intentionally for demo purposes."
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "design",
-      "timestamp": "2026-05-03T16:07:58.541122+00:00",
-      "human_approval": "User approved on 2026-05-03: demo complete \u2014 force to design to start actual design work.",
-      "forced": true,
-      "skip_reason": "Demo sequence complete. Force to design phase to begin actual design.md scaffolding for issue #300."
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-05-03T17:23:16.723715+00:00",
+      "timestamp": "2026-05-01T20:00:11.828198+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
@@ -111,58 +62,10 @@
     {
       "from_phase": "planning",
       "to_phase": "implementation",
-      "timestamp": "2026-05-03T17:51:39.177982+00:00",
+      "timestamp": "2026-05-02T08:51:16.903095+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-05-03T18:42:13.336044+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-03T18:54:54.610516+00:00",
-      "human_approval": "QA sub-agent NOGO verdict 2026-05-03",
-      "forced": true,
-      "skip_reason": "QA NOGO: C4 volledig niet ge\u00efmplementeerd (C4.D1-D5 falen) + C2.D3/C3.D4/C3.D5 testnaamafwijkingen van deliverables.json gates"
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-05-03T18:59:06.189756+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-03T20:17:15.864795+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-05-03T20:31:48.794252+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "ready",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-03T20:42:45.172219+00:00",
-      "human_approval": "User approved: \"Nee, eerst documentation afronden\" on 2026-05-03",
-      "forced": true,
-      "skip_reason": "QA NOGO on documentation \u2014 reverting from ready to documentation to apply corrections identified by doc-reviewer subagent"
     }
   ],
   "reconstructed": false
