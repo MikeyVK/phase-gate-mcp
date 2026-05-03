@@ -3,8 +3,8 @@
   "issue_number": 271,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 5,
-  "last_cycle": 4,
+  "current_cycle": 6,
+  "last_cycle": 5,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -29,6 +29,12 @@
       "name": "Blast-radius testfile updates",
       "forced": false,
       "entered": "2026-05-02T19:26:47.473314+00:00"
+    },
+    {
+      "cycle_number": 6,
+      "name": "Validator inversie + WorkflowTemplate cleanup + composition root",
+      "forced": false,
+      "entered": "2026-05-03T06:24:21.503978+00:00"
     }
   ],
   "required_phases": [
