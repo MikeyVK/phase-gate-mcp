@@ -2,7 +2,7 @@
   "branch": "feature/300-run-tests-failure-details",
   "issue_number": 300,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,10 +16,59 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Demo sequence complete. Force to design phase to begin actual design.md scaffolding for issue #300.",
   "issue_title": "run_tests: expose actionable failure details in tool response",
   "parent_branch": "refactor/271-phase-contracts-ssot-workflow-membership",
   "created_at": "2026-05-03T15:13:17.468265+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-03T15:14:12.572903+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-05-03T16:07:41.629752+00:00",
+      "human_approval": "User approved on 2026-05-03: reset to research to demonstrate phase transition enforcement on corrected contracts.yaml.",
+      "forced": true,
+      "skip_reason": "Reset to research for live demo of transition enforcement \u2014 we are in design but need to start the sequence from research."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-03T16:07:48.017673+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-05-03T16:07:51.757229+00:00",
+      "human_approval": "User approved on 2026-05-03: demo sequence \u2014 force back to research before forcing through planning.",
+      "forced": true,
+      "skip_reason": "Demo sequence: force back to research to then demonstrate force-jump to planning and design."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-05-03T16:07:55.279870+00:00",
+      "human_approval": "User approved on 2026-05-03: demo force-jump to planning (skipping design).",
+      "forced": true,
+      "skip_reason": "Demo: force-jump to planning to show non-sequential transition is possible with explicit approval. design phase skipped intentionally for demo purposes."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "design",
+      "timestamp": "2026-05-03T16:07:58.541122+00:00",
+      "human_approval": "User approved on 2026-05-03: demo complete \u2014 force to design to start actual design work.",
+      "forced": true,
+      "skip_reason": "Demo sequence complete. Force to design phase to begin actual design.md scaffolding for issue #300."
+    }
+  ],
   "reconstructed": false
 }
