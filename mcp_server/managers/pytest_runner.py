@@ -207,7 +207,9 @@ class PytestRunner:
         """Extract the traceback block for a given test_id from the FAILURES section."""
         _, _, test_name = test_id.rpartition("::")
         pattern = re.compile(
-            r"_{3,}\s+" + re.escape(test_name) + r"\s+_{3,}\n(.*?)(?=\n_{3,}|\n={3,}|\Z)",
+            r"(?:\[gw\d+\]\s+)?_{3,}\s+"
+            + re.escape(test_name)
+            + r"\s+_{3,}\n(.*?)(?=\n_{3,}|\n={3,}|\Z)",
             re.DOTALL,
         )
         match = pattern.search(stdout)

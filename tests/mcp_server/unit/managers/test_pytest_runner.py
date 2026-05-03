@@ -299,7 +299,7 @@ class TestC1ExitCodePolicyAndPytestResultContract:
 class TestC2StderrPipeline:
     """C2: execution.stderr is wired through run() → _parse_output() → PytestResult.stderr."""
 
-    def test_c2_run_passes_stderr_to_result(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c2_run_populates_result_stderr(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Non-empty stderr from subprocess → result.stderr carries the value."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0, stderr="some error text")
 
@@ -317,3 +317,84 @@ class TestC2StderrPipeline:
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2, stderr=multiline)
 
         assert result.stderr == multiline
+
+
+# ---------------------------------------------------------------------------
+# C4 xdist fixtures — FAILURES header has [gwN] prefix before underscores
+# ---------------------------------------------------------------------------
+
+_XDIST_FAILED_STDOUT_GW0 = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw0] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad - AssertionError: assert 1 == 2
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+_XDIST_FAILED_STDOUT_GW12 = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw12] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad - AssertionError: assert 1 == 2
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+
+# ---------------------------------------------------------------------------
+# C4 — xdist _extract_traceback() regex fix: optional [gwN] prefix
+# ---------------------------------------------------------------------------
+
+
+class TestC4XdistTracebackExtraction:
+    """C4: _extract_traceback handles optional [gwN] worker prefix in FAILURES header."""
+
+    def test_c4_extract_traceback_with_xdist_prefix_gw0(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist stdout with [gw0] prefix on FAILURES header → traceback non-empty."""
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW0, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback != ""
+
+    def test_c4_extract_traceback_with_xdist_prefix_gw12(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist stdout with double-digit [gw12] prefix → traceback non-empty."""
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW12, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback != ""
+
+    def test_c4_extract_traceback_without_prefix_unchanged(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Standard (non-xdist) FAILURES header → traceback still extracted (regression guard)."""
+        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback != ""

@@ -409,7 +409,7 @@ class TestC3ToToolResultRouting:
         assert result.is_error is False
 
     @pytest.mark.asyncio
-    async def test_c3_to_tool_result_exit1_text_contains_failure_lines(
+    async def test_c3_to_tool_result_exit1_content0_includes_failure_lines(
         self, injected_settings: Settings
     ) -> None:
         """Exit 1 + failure → content[0] text contains FAILED ... — ... line."""
@@ -436,7 +436,9 @@ class TestC3ToToolResultRouting:
         assert "AssertionError: nope" in result.content[0]["text"]
 
     @pytest.mark.asyncio
-    async def test_c3_to_tool_result_exit2_is_error_true(self, injected_settings: Settings) -> None:
+    async def test_c3_to_tool_result_exit2_returns_tool_result_is_error_true(
+        self, injected_settings: Settings
+    ) -> None:
         """Exit 2 (is_error=True) → ToolResult(is_error=True), not ExecutionError."""
         runner = FakePytestRunner(
             result=_make_pytest_result(
