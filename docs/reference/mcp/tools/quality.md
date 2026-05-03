@@ -74,7 +74,80 @@ Baseline mutation is allowed only for effective `scope="auto"` runs.
 
 ---
 
+---
+
+## run_tests (authoritative contract)
+
+### Input
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `path` | `string \| null` | No | `null` | Space-separated pytest paths/files. **Mutually exclusive with `scope`** |
+| `scope` | `"full" \| null` | No | `null` | Pass `"full"` to run the full test suite. Mutually exclusive with `path` |
+| `markers` | `string \| null` | No | `null` | Pytest `-m` expression (e.g. `"unit and not slow"`) |
+| `last_failed_only` | `bool` | No | `false` | Re-run only last-failed tests (`--lf`). Skipped if lf-cache is empty |
+| `timeout` | `int` | No | `300` | Hard kill timeout in seconds |
+| `coverage` | `bool` | No | `false` | Enable pytest-cov coverage reporting (`--cov`) |
+
+### Validation rules
+
+- `path` and `scope` are mutually exclusive. Providing both → validation error.
+- `coverage=true` requires `pytest-cov` installed; otherwise pytest exits with an error (exit code 3).
+
+### Output contract
+
+`run_tests` returns `ToolResult.content` with exactly two items:
+
+1. `content[0]`: `{"type":"text","text":"..."}` — human-readable summary
+2. `content[1]`: `{"type":"json","json": {...}}` — structured payload
+
+#### content[0] text semantics by exit code
+
+| Exit code | Meaning | content[0] text shape |
+|-----------|---------|----------------------|
+| 0 | All tests passed | `summary_line` only |
+| 1 | Test failures | `summary_line` + `\nFAILED test_id — short_reason` per failure |
+| 5 | No tests collected | `summary_line` only |
+| 2 / 3 / 4 | Pytest error / collection error / usage error | `summary_line` + optional `\nstderr: {first_nonempty_line[:120]}` |
+
+For exits 2/3/4 the `ToolResult` has `is_error=True`. For exits 0/1/5 it has `is_error=False`.
+
+Exits 99 (timeout), OSError, and unrecoverable errors raise `ExecutionError` (never returned as a result).
+
+#### content[1] JSON payload (always present)
+
+```json
+{
+  "exit_code": 1,
+  "summary": {"passed": 10, "failed": 2, "skipped": 0, "errors": 0},
+  "summary_line": "2 failed, 10 passed in 1.23s",
+  "failures": [
+    {
+      "test_id": "tests/unit/test_foo.py::TestFoo::test_bar",
+      "location": "tests/unit/test_foo.py:42",
+      "short_reason": "AssertionError: assert 1 == 2",
+      "traceback": "..."
+    }
+  ],
+  "coverage_pct": 87.4,
+  "lf_cache_was_empty": false,
+  "stderr": ""
+}
+```
+
+Payload keys:
+- `exit_code`: raw pytest exit code
+- `summary`: counts `{passed, failed, skipped, errors}`
+- `summary_line`: human-readable one-liner from pytest output
+- `failures`: list of failure objects (empty `[]` when no failures)
+- `coverage_pct`: `float` when `coverage=true` and coverage data available; `null` otherwise
+- `lf_cache_was_empty`: `true` when `last_failed_only=true` but no lf-cache existed (full run was performed)
+- `stderr`: full pytest stderr (last 50 lines). Always present; empty string `""` when no stderr
+
+---
+
 ## Agent Call Patterns (copy/paste)
+
 
 ### Minimal changed-files check during TDD refactor
 
@@ -100,6 +173,24 @@ Baseline mutation is allowed only for effective `scope="auto"` runs.
 {"scope": "project"}
 ```
 
+### run_tests — targeted file/folder
+
+```json
+{"path": "tests/mcp_server/unit/managers/test_pytest_runner.py"}
+```
+
+### run_tests — full suite with coverage
+
+```json
+{"scope": "full", "coverage": true}
+```
+
+### run_tests — last-failed only
+
+```json
+{"last_failed_only": true}
+```
+
 ---
 
 ## Execution order for reliable agent runs
@@ -117,6 +208,10 @@ Baseline mutation is allowed only for effective `scope="auto"` runs.
 - Do **not** use `scope="project"` with a `files` payload.
 - Do **not** treat `run_quality_gates` as test runner replacement; use `run_tests` for pytest execution.
 - Do **not** infer compact payload from legacy `json_data` examples; use `content[0]/content[1]` contract.
+- Do **not** use `path` and `scope` together in `run_tests`; they are mutually exclusive.
+- Do **not** assume `is_error=False` means all tests passed; exits 0 and 5 both produce `is_error=False`.
+- Do **not** parse `content[0]` text for structured data; use `content[1]` JSON payload instead.
+- Do **not** omit checking `lf_cache_was_empty` when using `last_failed_only`; if `true`, a full run was performed.
 
 ---
 

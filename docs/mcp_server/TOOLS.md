@@ -135,7 +135,7 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `run_quality_gates` | Run quality gates | `scope`, `files` |
-| `run_tests` | Run pytest | `path`, `scope`, `markers`, `timeout`, `last_failed_only` |
+| `run_tests` | Run pytest | `path`, `scope`, `markers`, `timeout`, `last_failed_only`, `coverage` |
 | `validate_architecture` | Validate architecture rules | `scope` |
 | `validate_dto` | Validate DTO definitions | `file_path` |
 | `validate_template` | Validate template/file structure | `path`, `template_type` |

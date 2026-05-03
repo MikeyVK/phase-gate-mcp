@@ -2,9 +2,9 @@
   "branch": "feature/300-run-tests-failure-details",
   "issue_number": 300,
   "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 4,
-  "last_cycle": 1,
+  "current_phase": "documentation",
+  "current_cycle": null,
+  "last_cycle": 4,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -131,6 +131,22 @@
       "human_approval": "QA sub-agent NOGO verdict 2026-05-03",
       "forced": true,
       "skip_reason": "QA NOGO: C4 volledig niet ge\u00efmplementeerd (C4.D1-D5 falen) + C2.D3/C3.D4/C3.D5 testnaamafwijkingen van deliverables.json gates"
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-03T18:59:06.189756+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-03T20:17:15.864795+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false
