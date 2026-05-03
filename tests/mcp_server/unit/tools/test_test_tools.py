@@ -41,6 +41,8 @@ def _make_pytest_result(
     lf_cache_was_empty: bool = False,
     should_raise: bool = False,
     note: RecoveryNote | SuggestionNote | InfoNote | None = None,
+    is_error: bool = False,
+    stderr: str = "",
 ) -> PytestResult:
     return PytestResult(
         exit_code=exit_code,
@@ -54,6 +56,8 @@ def _make_pytest_result(
         lf_cache_was_empty=lf_cache_was_empty,
         should_raise=should_raise,
         note=note,
+        is_error=is_error,
+        stderr=stderr,
     )
 
 
@@ -128,16 +132,16 @@ async def test_c4_run_tests_interrupted_raises_execution_error(
         result=_make_pytest_result(
             exit_code=2,
             summary_line="pytest interrupted (exit 2)",
-            should_raise=True,
+            is_error=True,
             note=RecoveryNote("Pytest was interrupted; check for hung tests or external SIGINT."),
         )
     )
     tool = RunTestsTool(runner=runner, settings=injected_settings)
     context = NoteContext()
 
-    with pytest.raises(ExecutionError, match="pytest exited with returncode 2"):
-        await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
+    result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
+    assert result.is_error is True
     assert len(context.of_type(RecoveryNote)) == 1
 
 
@@ -149,7 +153,7 @@ async def test_c4_run_tests_internal_error_raises_execution_error(
         result=_make_pytest_result(
             exit_code=3,
             summary_line="pytest internal error (exit 3)",
-            should_raise=True,
+            is_error=True,
             note=RecoveryNote(
                 "Pytest reported an internal error; inspect stderr and pytest plugins."
             ),
@@ -158,9 +162,9 @@ async def test_c4_run_tests_internal_error_raises_execution_error(
     tool = RunTestsTool(runner=runner, settings=injected_settings)
     context = NoteContext()
 
-    with pytest.raises(ExecutionError, match="pytest exited with returncode 3"):
-        await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
+    result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
+    assert result.is_error is True
     assert len(context.of_type(RecoveryNote)) == 1
 
 
@@ -172,7 +176,7 @@ async def test_c4_run_tests_usage_error_raises_execution_error(
         result=_make_pytest_result(
             exit_code=4,
             summary_line="pytest usage error (exit 4)",
-            should_raise=True,
+            is_error=True,
             note=RecoveryNote(
                 "Pytest could not start. Verify the path exists and the CLI options are valid."
             ),
@@ -181,9 +185,9 @@ async def test_c4_run_tests_usage_error_raises_execution_error(
     tool = RunTestsTool(runner=runner, settings=injected_settings)
     context = NoteContext()
 
-    with pytest.raises(ExecutionError, match="pytest exited with returncode 4"):
-        await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
+    result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
+    assert result.is_error is True
     assert len(context.of_type(RecoveryNote)) == 1
 
 
