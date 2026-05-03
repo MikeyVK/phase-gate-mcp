@@ -120,7 +120,7 @@ class PytestRunner:
     def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
         """Execute pytest, parse output, classify exit code, return typed result."""
         execution = self._execute(cmd, cwd, timeout)
-        return self._parse_output(execution.stdout, execution.returncode)
+        return self._parse_output(execution.stdout, execution.stderr, execution.returncode)
 
     def _execute(self, cmd: list[str], cwd: str, timeout: int) -> _PytestExecution:
         """Run pytest with safe subprocess defaults for the MCP server environment."""
@@ -150,7 +150,7 @@ class PytestRunner:
             returncode=proc.returncode,
         )
 
-    def _parse_output(self, stdout: str, returncode: int) -> PytestResult:
+    def _parse_output(self, stdout: str, stderr: str, returncode: int) -> PytestResult:
         """Parse raw pytest stdout and return a fully typed PytestResult."""
         policy = _EXIT_CODE_POLICY.get(returncode, _UNKNOWN_CODE_POLICY)
 
@@ -173,6 +173,7 @@ class PytestRunner:
             should_raise=policy.outcome == "raise",
             note=policy.note_factory(returncode) if policy.note_factory else None,
             is_error=policy.outcome == "error",
+            stderr=stderr,
         )
 
     def _parse_counts(self, stdout: str) -> tuple[int, int, int, int]:
