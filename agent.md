@@ -367,7 +367,7 @@ scaffold_artifact(
 | Workflow state | `.st3/state.json` | Branch-local — mag nooit naar main |
 | Deliverables | `.st3/deliverables.json` | Branch-local — mag nooit naar main |
 
-Configuratie: `.st3/config/enforcement.yaml` + `.st3/config/phase_contracts.yaml`
+Configuratie: `.st3/config/enforcement.yaml` + `.st3/config/contracts.yaml`
 
 ```
 submit_pr          → pre: check_phase_readiness(policy=ready)   → geblokkeerd als phase != "ready"
