@@ -173,7 +173,7 @@
               "mcp_server/server.py",
               "agent.md"
             ],
-            "exit_criteria": "Alle 6 unit-tests + 2 integratietests slagen; geen phases:-sleutel in workflows.yaml; volledige testsuite groen (C5a reeds afgerond); mypy/ruff clean op validator.py + workflows.py + server.py; agent.md bijgewerkt naar contracts.yaml; agent.md §2.3 formulering bijgewerkt (r.121, r.132, r.263); geen fasename-hardcoding voor subphase-dispatch in productiecode",
+            "exit_criteria": "Alle 6 unit-tests + 2 integratietests slagen; geen phases:-sleutel in workflows.yaml; volledige testsuite groen (C5a reeds afgerond); mypy/ruff clean op validator.py + workflows.py + server.py; agent.md bijgewerkt naar contracts.yaml; agent.md \u00a72.3 formulering bijgewerkt (r.121, r.132, r.263); geen fasename-hardcoding voor subphase-dispatch in productiecode",
             "deliverables": [
               {
                 "id": "C5-tests",
@@ -198,5 +198,22 @@
         ]
       }
     }
+  },
+  "300": {
+    "issue_title": "run_tests: expose actionable failure details in tool response",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": null,
+    "created_at": "2026-05-03T15:13:17.193503+00:00"
   }
 }

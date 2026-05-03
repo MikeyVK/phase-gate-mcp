@@ -1,44 +1,14 @@
 {
-  "branch": "refactor/271-phase-contracts-ssot-workflow-membership",
-  "issue_number": 271,
-  "workflow_name": "refactor",
-  "current_phase": "implementation",
-  "current_cycle": 6,
-  "last_cycle": 5,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "Loader + YAML: load_contracts_config + contracts.yaml restructuur",
-      "forced": false,
-      "entered": "2026-05-02T17:56:46.676366+00:00"
-    },
-    {
-      "cycle_number": 3,
-      "name": "Resolver: PhaseConfigContext + PhaseContractResolver",
-      "forced": false,
-      "entered": "2026-05-02T18:35:07.708592+00:00"
-    },
-    {
-      "cycle_number": 4,
-      "name": "Runtime consumers: PhaseStateEngine, ProjectManager, CreateIssueTool",
-      "forced": false,
-      "entered": "2026-05-02T19:02:49.201886+00:00"
-    },
-    {
-      "cycle_number": 5,
-      "name": "Blast-radius testfile updates",
-      "forced": false,
-      "entered": "2026-05-02T19:26:47.473314+00:00"
-    },
-    {
-      "cycle_number": 6,
-      "name": "Validator inversie + WorkflowTemplate cleanup + composition root",
-      "forced": false,
-      "entered": "2026-05-03T06:24:21.503978+00:00"
-    }
-  ],
+  "branch": "feature/300-run-tests-failure-details",
+  "issue_number": 300,
+  "workflow_name": "feature",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
+    "design",
     "planning",
     "implementation",
     "validation",
@@ -47,26 +17,9 @@
   ],
   "execution_mode": "interactive",
   "skip_reason": null,
-  "issue_title": "Make phase_contracts.yaml SSOT for workflow-phase membership",
-  "parent_branch": null,
-  "created_at": "2026-04-28T14:06:52.028859+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-05-01T20:00:11.828198+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-02T08:51:16.903095+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "issue_title": "run_tests: expose actionable failure details in tool response",
+  "parent_branch": "refactor/271-phase-contracts-ssot-workflow-membership",
+  "created_at": "2026-05-03T15:13:17.468265+00:00",
+  "transitions": [],
   "reconstructed": false
 }
