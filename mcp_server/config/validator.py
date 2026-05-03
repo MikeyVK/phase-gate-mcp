@@ -8,8 +8,7 @@ before the MCP server starts accepting requests.
 @layer: Backend (Config)
 @dependencies: [mcp_server.core.exceptions, mcp_server.schemas]
 @responsibilities:
-    - Validate workflow phases against workphases metadata
-    - Validate phase contracts against workflow and workphase definitions
+    - Validate contracts.yaml phase references against workphases catalog
     - Validate policy and project-structure references across config objects
 """
 
@@ -49,7 +48,6 @@ class ConfigValidator:
             known_workflows=known_workflows,
             known_phases=known_phases,
         )
-        self._validate_workflow_phases(workflow=workflow, known_phases=known_phases)
         self._validate_operation_policies(policies=policies, known_phases=known_phases)
         self._validate_project_structure(
             structure=structure,
@@ -59,19 +57,6 @@ class ConfigValidator:
             contracts=contracts,
             known_phases=known_phases,
         )
-
-    def _validate_workflow_phases(
-        self,
-        workflow: WorkflowConfig,
-        known_phases: set[str],
-    ) -> None:
-        for workflow_name, workflow_template in workflow.workflows.items():
-            unknown_workflow_phases = set(workflow_template.phases) - known_phases
-            if unknown_workflow_phases:
-                raise ConfigError(
-                    f"Workflow '{workflow_name}' references unknown phases: "
-                    f"{sorted(unknown_workflow_phases)}"
-                )
 
     def _validate_phase_contracts(
         self,

@@ -33,7 +33,6 @@ from mcp_server.tools.project_tools import (
     UpdatePlanningDeliverablesTool,
 )
 from tests.mcp_server.test_support import (
-    make_config_loader,
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
@@ -68,7 +67,6 @@ class TestInitializeProjectToolParentBranch:
         manager = make_project_manager(workspace_root)
         return InitializeProjectTool(
             workspace_root=workspace_root,
-            workflow_config=make_config_loader(workspace_root).load_workflow_config(),
             manager=manager,
             git_manager=make_git_manager(workspace_root),
             state_engine=make_phase_state_engine(workspace_root, project_manager=manager),

@@ -194,8 +194,6 @@ class ConfigLoader:
             },
         }
         config = self._validate_schema(OperationPoliciesConfig, payload, resolved_path)
-        effective_workflow_config = workflow_config or self.load_workflow_config()
-        self._validate_operation_policy_phases(config, effective_workflow_config, resolved_path)
         return config
 
     def load_project_structure_config(
@@ -262,26 +260,6 @@ class ConfigLoader:
             config_path=config_path,
         )
         return self._validate_schema(ContractsConfig, data, resolved_path)
-
-    def _validate_operation_policy_phases(
-        self,
-        config: OperationPoliciesConfig,
-        workflow_config: WorkflowConfig,
-        resolved_path: Path,
-    ) -> None:
-        valid_phases: set[str] = set()
-        for workflow in workflow_config.workflows.values():
-            valid_phases.update(workflow.phases)
-
-        for operation_id, policy in config.operations.items():
-            invalid_phases = set(policy.allowed_phases) - valid_phases
-            if invalid_phases:
-                raise ConfigError(
-                    f"Operation '{operation_id}' references unknown phases: "
-                    f"{sorted(invalid_phases)}. Valid phases from workflow config: "
-                    f"{sorted(valid_phases)}",
-                    file_path=str(resolved_path),
-                )
 
     def _validate_project_structure_artifact_types(
         self,

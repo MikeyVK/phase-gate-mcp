@@ -31,7 +31,6 @@ def _minimal_workflow_config() -> WorkflowConfig:
         workflows={
             "feature": {
                 "name": "feature",
-                "phases": ["planning", "implementation"],
                 "default_execution_mode": "interactive",
                 "description": "Feature workflow",
             }
@@ -150,7 +149,6 @@ version: "1.0"
 workflows:
   feature:
     name: "feature"
-    phases: ["planning", "implementation"]
     default_execution_mode: "interactive"
     description: "Feature workflow"
 """.strip()
@@ -185,31 +183,6 @@ def test_load_operation_policies_requires_operations_key(tmp_path: Path) -> None
 
     with pytest.raises(ConfigError, match="Missing 'operations' key"):
         loader.load_operation_policies_config(config_path=policies_path)
-
-
-def test_load_operation_policies_rejects_unknown_phase_reference(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
-    policies_path = _write_yaml(
-        config_root / "policies.yaml",
-        """
-operations:
-  commit:
-    description: "Commit changes"
-    allowed_phases: ["unknown"]
-    blocked_patterns: []
-    allowed_extensions: []
-    require_tdd_prefix: false
-    allowed_prefixes: []
-""".strip()
-        + "\n",
-    )
-    loader = ConfigLoader(config_root)
-
-    with pytest.raises(ConfigError, match="references unknown phases"):
-        loader.load_operation_policies_config(
-            config_path=policies_path,
-            workflow_config=_minimal_workflow_config(),
-        )
 
 
 def test_load_project_structure_uses_registry_loader_fallback(tmp_path: Path) -> None:

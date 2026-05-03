@@ -19,7 +19,7 @@ import pytest
 from mcp_server.managers import git_manager
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.state.workflow_status import WorkflowStatusDTO
-from tests.mcp_server.test_support import load_workflow_config, make_project_manager
+from tests.mcp_server.test_support import load_contracts_config, load_workflow_config, make_project_manager
 
 
 class TestProjectManagerWorkflows:
@@ -52,26 +52,33 @@ class TestProjectManagerWorkflows:
         assert "docs" in workflow_config.workflows
 
     def test_feature_workflow_has_6_phases(self) -> None:
-        """Test feature workflow from workflows.yaml."""
-        workflow = load_workflow_config().get_workflow("feature")
-        assert len(workflow.phases) == 6
+        """Test feature workflow phase count from contracts.yaml (C6+: SSOT).
+
+        Feature workflow has 7 phases including 'ready' terminal phase.
+        """
+        phases = load_contracts_config().get_phases("feature")
+        assert len(phases) == 7
         expected = [
             "research",
-            "design",
             "planning",
+            "design",
             "implementation",
             "validation",
             "documentation",
+            "ready",
         ]
-        assert workflow.phases == expected
-        assert workflow.default_execution_mode == "interactive"
+        assert phases == expected
+        assert load_workflow_config().get_workflow("feature").default_execution_mode == "interactive"
 
     def test_hotfix_workflow_has_3_phases_autonomous(self) -> None:
-        """Test hotfix workflow from workflows.yaml."""
-        workflow = load_workflow_config().get_workflow("hotfix")
-        assert len(workflow.phases) == 3
-        assert workflow.phases == ["implementation", "validation", "documentation"]
-        assert workflow.default_execution_mode == "autonomous"
+        """Test hotfix workflow from contracts.yaml (C6+: SSOT).
+
+        Hotfix workflow has 4 phases including 'ready' terminal phase.
+        """
+        phases = load_contracts_config().get_phases("hotfix")
+        assert len(phases) == 4
+        assert phases == ["implementation", "validation", "documentation", "ready"]
+        assert load_workflow_config().get_workflow("hotfix").default_execution_mode == "autonomous"
 
     def test_initialize_project_with_feature_workflow(
         self, manager: ProjectManager, workspace_root: Path

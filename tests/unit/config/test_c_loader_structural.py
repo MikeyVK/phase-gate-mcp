@@ -86,7 +86,6 @@ def config_root(tmp_path: Path) -> Path:
             "workflows": {
                 "feature": {
                     "name": "feature",
-                    "phases": ["research", "planning", "implementation"],
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }

@@ -332,7 +332,6 @@ class MCPServer:
             # Project tools (Phase 0.5)
             InitializeProjectTool(
                 workspace_root=Path(settings.server.workspace_root),
-                workflow_config=workflow_config,
                 manager=self.project_manager,
                 git_manager=self.git_manager,
                 state_engine=self.phase_state_engine,

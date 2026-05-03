@@ -55,7 +55,6 @@ class TestConfigValidator:
             workflows={
                 "feature": {
                     "name": "feature",
-                    "phases": ["research", "planning", "implementation"],
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }
@@ -157,42 +156,6 @@ class TestConfigValidator:
             workphases=workphases_config,
         )
 
-    def test_validate_startup_raises_on_unknown_workflow_phase(
-        self,
-        validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
-        workphases_config: WorkphasesConfig,
-    ) -> None:
-        workflow_config = WorkflowConfig(
-            version="1.0",
-            workflows={
-                "feature": {
-                    "name": "feature",
-                    "phases": ["research", "validation"],
-                    "default_execution_mode": "interactive",
-                    "description": "Feature workflow",
-                }
-            },
-        )
-        contracts = ContractsConfig.model_validate(
-            {
-                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-                "workflows": {},
-            }
-        )
-
-        with pytest.raises(ConfigError, match="Workflow 'feature' references unknown phases"):
-            validator.validate_startup(
-                policies=operation_policies,
-                workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
-                contracts=contracts,
-                workphases=workphases_config,
-            )
-
     def test_validate_startup_raises_on_unknown_phase_contract_workflow(
         self,
         validator: ConfigValidator,
@@ -279,7 +242,6 @@ class TestConfigValidator:
             workflows={
                 "feature": {
                     "name": "feature",
-                    "phases": ["research", "validation"],
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }

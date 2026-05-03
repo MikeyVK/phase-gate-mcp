@@ -14,30 +14,33 @@ from pathlib import Path
 from mcp_server.config.loader import ConfigLoader
 
 
-def _workflow_yaml(phases: list[str]) -> str:
-    phases_str = ", ".join(phases)
+def _workflow_yaml_without_phases() -> str:
+    """Minimal valid workflows.yaml fixture (C6+: no phases field)."""
     return (
         "version: '1.0'\n"
         "workflows:\n"
         "  feature:\n"
         "    name: feature\n"
-        f"    phases: [{phases_str}]\n"
         "    default_execution_mode: interactive\n"
         "    description: Feature workflow\n"
     )
 
 
 class TestLoadWorkflowConfig:
-    def test_load_workflow_config_does_not_inject(self, tmp_path: Path) -> None:
-        """load_workflow_config() result must NOT contain terminal phase injection."""
+    def test_load_workflow_config_catalog_only(self, tmp_path: Path) -> None:
+        """load_workflow_config() returns catalog metadata without phase ordering (C6+)."""
         config_dir = tmp_path / ".st3" / "config"
         config_dir.mkdir(parents=True)
         (config_dir / "workflows.yaml").write_text(
-            _workflow_yaml(["planning", "implementation"]),
+            _workflow_yaml_without_phases(),
             encoding="utf-8",
         )
         loader = ConfigLoader(config_root=tmp_path)
 
         result = loader.load_workflow_config()
 
-        assert "ready" not in result.workflows["feature"].phases
+        wt = result.workflows["feature"]
+        assert wt.name == "feature"
+        assert wt.description == "Feature workflow"
+        assert wt.default_execution_mode == "interactive"
+        assert not hasattr(wt, "phases")
