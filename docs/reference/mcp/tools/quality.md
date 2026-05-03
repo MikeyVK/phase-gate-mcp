@@ -92,6 +92,7 @@ Baseline mutation is allowed only for effective `scope="auto"` runs.
 ### Validation rules
 
 - `path` and `scope` are mutually exclusive. Providing both → validation error.
+- Providing neither `path` nor `scope` → validation error.
 - `coverage=true` requires `pytest-cov` installed; otherwise pytest exits with an error (exit code 3).
 
 ### Output contract
