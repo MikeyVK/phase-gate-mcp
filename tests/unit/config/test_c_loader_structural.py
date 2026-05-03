@@ -22,6 +22,7 @@ import mcp_server.config.schemas.scaffold_metadata_config as scaffold_schema
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
+    ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
     GitConfig,
@@ -29,7 +30,6 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
-    ContractsConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScaffoldMetadataConfig,
