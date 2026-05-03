@@ -320,7 +320,7 @@ def test_loader_loads_all_fifteen_migrated_schema_instances(config_root: Path) -
     assert isinstance(loader.load_issue_config(), IssueConfig)
     assert isinstance(loader.load_milestone_config(), MilestoneConfig)
     assert isinstance(
-        loader.load_operation_policies_config(workflow_config=workflow_config),
+        loader.load_operation_policies_config(),
         OperationPoliciesConfig,
     )
     assert isinstance(

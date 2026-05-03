@@ -19,7 +19,11 @@ import pytest
 from mcp_server.managers import git_manager
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.state.workflow_status import WorkflowStatusDTO
-from tests.mcp_server.test_support import load_contracts_config, load_workflow_config, make_project_manager
+from tests.mcp_server.test_support import (
+    load_contracts_config,
+    load_workflow_config,
+    make_project_manager,
+)
 
 
 class TestProjectManagerWorkflows:
@@ -68,7 +72,8 @@ class TestProjectManagerWorkflows:
             "ready",
         ]
         assert phases == expected
-        assert load_workflow_config().get_workflow("feature").default_execution_mode == "interactive"
+        wf = load_workflow_config().get_workflow("feature")
+        assert wf.default_execution_mode == "interactive"
 
     def test_hotfix_workflow_has_3_phases_autonomous(self) -> None:
         """Test hotfix workflow from contracts.yaml (C6+: SSOT).

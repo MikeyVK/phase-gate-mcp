@@ -176,7 +176,6 @@ class ConfigLoader:
     def load_operation_policies_config(
         self,
         config_path: Path | None = None,
-        workflow_config: WorkflowConfig | None = None,
     ) -> OperationPoliciesConfig:
         data, resolved_path = self._load_yaml("policies.yaml", config_path=config_path)
         operations = data.get("operations")
@@ -193,8 +192,7 @@ class ConfigLoader:
                 for operation_id, operation_data in operations.items()
             },
         }
-        config = self._validate_schema(OperationPoliciesConfig, payload, resolved_path)
-        return config
+        return self._validate_schema(OperationPoliciesConfig, payload, resolved_path)
 
     def load_project_structure_config(
         self,

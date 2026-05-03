@@ -177,9 +177,7 @@ class MCPServer:
         project_structure_config = config_loader.load_project_structure_config(
             artifact_registry=artifact_registry
         )
-        operation_policies_config = config_loader.load_operation_policies_config(
-            workflow_config=workflow_config
-        )
+        operation_policies_config = config_loader.load_operation_policies_config()
         enforcement_config = config_loader.load_enforcement_config()
         contracts_config = config_loader.load_contracts_config()
         ConfigValidator().validate_startup(

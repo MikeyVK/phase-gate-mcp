@@ -27,10 +27,10 @@ from mcp_server.config.schemas.contracts_config import (
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
+from mcp_server.config.schemas.workflows import WorkflowTemplate
 from mcp_server.config.schemas.workphases import PhaseDefinition
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.config.schemas.workflows import WorkflowTemplate
 from mcp_server.schemas import (
     ArtifactRegistryConfig,
     OperationPoliciesConfig,
@@ -38,7 +38,6 @@ from mcp_server.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

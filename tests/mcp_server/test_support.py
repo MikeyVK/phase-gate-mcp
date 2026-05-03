@@ -371,10 +371,9 @@ def make_policy_engine(workspace_root: Path | str | None = None) -> PolicyEngine
     loader = ConfigLoader(config_root)
     artifact_registry = loader.load_artifact_registry_config()
     project_structure = loader.load_project_structure_config(artifact_registry=artifact_registry)
-    workflow_config = loader.load_workflow_config()
     return PolicyEngine(
         config_root=config_root,
-        operation_config=loader.load_operation_policies_config(workflow_config=workflow_config),
+        operation_config=loader.load_operation_policies_config(),
         git_config=loader.load_git_config(),
         project_structure_config=project_structure,
     )
