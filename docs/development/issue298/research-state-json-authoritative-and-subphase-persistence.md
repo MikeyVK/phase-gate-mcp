@@ -3,7 +3,7 @@
 # State.json Authoritative Status + Sub-phase Persistence
 
 **Status:** DRAFT  
-**Version:** 1.5  
+**Version:** 1.6  
 **Last Updated:** 2026-05-04
 
 ---
@@ -107,9 +107,8 @@ return ToolResult.error(f"No workflow state for branch '{branch}': {e}")
 
 *Case B — Manager layer (`project_manager.get_project_plan()`, line 460):* manager returns `dict | None` — no `NoteContext`, no `ToolResult`. This call is **informational phase-enrichment only** — the caller (`initialize_branch()`, line 122 of `phase_state_engine.py`) calls `get_project_plan()` **before** `state.json` is created. Making this a hard raise would break `InitializeProjectTool`. Must use **graceful degradation**:
 1. Wrap `resolve_current()` in `try/except (StateNotFoundError, StateBranchMismatchError, OSError)`.
-2. On exception, skip the phase-enrichment block (do not set `current_phase`, `phase_source`, `phase_detection_error` in `plan`).
-3. Return `plan` without phase fields (or set `plan["phase_source"] = "unavailable"`).
-4. Also fix the stale docstring: `"Uses commit-scope precedence: commit-scope > state.json > unknown"` must be rewritten to reflect the new contract.
+2. On exception, skip the phase-enrichment block — return `plan` without phase fields (`current_phase`, `phase_source`, `phase_detection_error` are absent from the returned dict).
+3. Also fix the stale docstring: `"Uses commit-scope precedence: commit-scope > state.json > unknown"` must be rewritten to reflect the new contract.
 
 **Recovery hint architecture:** `RecoveryNote` already exists in `mcp_server/core/operation_notes.py` and is used by `phase_tools.py` (via `StateMutationConflictError.recovery`) and `pr_tools.py`. The same pattern applies to `discovery_tools.py`.
 
@@ -214,7 +213,7 @@ Files with **no required changes**:
 | File | Test(s) | Change needed |
 |---|---|---|
 | `tests/mcp_server/unit/managers/test_workflow_status_resolver.py` | `test_resolve_uses_commit_scope_when_high_confidence` — asserts `phase_source="commit-scope"` | Rewrite: when state present, expect `phase_source="state.json"` |
-| `tests/mcp_server/unit/managers/test_workflow_status_resolver.py` | `test_resolve_current_returns_dto` — asserts `phase_source="commit-scope"` | Rewrite similarly |
+| `tests/mcp_server/unit/managers/test_workflow_status_resolver.py` | `test_resolve_current_returns_dto` — asserts only `isinstance(result, WorkflowStatusDTO)`; no phase_source assertion | **No change needed** |
 | `tests/mcp_server/unit/managers/test_workflow_status_resolver.py` | `test_resolve_handles_branch_mismatch_gracefully` (line 231) — asserts `phase_source in ("unknown", "state.json")`; after #298, mismatch raises rather than returning `"unknown"` | Rewrite: expect `StateBranchMismatchError` |
 | `tests/mcp_server/unit/tools/test_discovery_tools.py` | Multiple `phase_source="commit-scope"` assertions (lines 230, 479, 756, 785) | Update to `"state.json"` where state is the expected source |
 | `tests/mcp_server/unit/tools/test_project_tools.py` | `phase_source="commit-scope"` (lines 1020, 1034) | Update |
@@ -315,3 +314,4 @@ This is a pre-existing limitation of the current state model. Fixing it requires
 | 1.3 | 2026-05-04 | imp | Fixed QA annotations NEW-A–NEW-C: NEW-A correct test contract for project_manager (dict not ToolResult); NEW-B add "remove del context" to discovery_tools blast radius; NEW-C §9 §8 principle note for Case B bootstrapping exception |
 | 1.4 | 2026-05-04 | imp | Fixed QA annotation A-FINAL-1: §7 discovery_tools.py entry now specifies separate catch clause (above existing OSError block), not extension of existing catch |
 | 1.5 | 2026-05-04 | imp | Fixed external QA F-1–F-3: F-1 workflow_status.py added to blast radius (phase_source Literal narrowed); F-2 phase_confidence="high" decision documented in §2 + §7 + §8 + §10; F-3 import-gap for project_manager.py added to §7 |
+| 1.6 | 2026-05-04 | imp | Minor post-QA corrections: §8 test_resolve_current_returns_dto no-change (isinstance only); §2 Case B simplified to single option (skip phase-enrichment, no "unavailable" alternative) |
