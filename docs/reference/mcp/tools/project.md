@@ -435,12 +435,11 @@ workflows:
 
   epic:
     name: epic
-    description: "Epic workflow for large initiatives (research → design → planning → coordination → docs)"
+    description: "Epic workflow for large initiatives (research → design → planning → coordination → documentation)"
     default_execution_mode: interactive
 
-  custom:
-    # User-defined phases via custom_phases parameter
 ```
+
 
 For the phase sequences per workflow, see `.st3/config/contracts.yaml`.
 
