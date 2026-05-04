@@ -415,7 +415,7 @@ never reach `main`:
 | Workflow state | `.st3/state.json` | Branch-local TDD phase tracking |
 | Deliverables | `.st3/deliverables.json` | Branch-local planning deliverables |
 
-Configured in `.st3/config/phase_contracts.yaml` → `branch_local_artifacts`.
+Configured in `.st3/config/contracts.yaml` → `branch_local_artifacts`.
 
 #### Enforcement Guards
 

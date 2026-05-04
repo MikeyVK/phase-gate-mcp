@@ -271,11 +271,13 @@ docs/
 **Configuration Files**:
 ```yaml
 .st3/
-├── workflows.yaml           # 6 workflows (feature, bug, hotfix, etc.)
+├── workflows.yaml           # Workflow metadata: name, description, execution_mode (no phases — see contracts.yaml)
+├── contracts.yaml           # SSOT for workflow-phase membership, ordering, and exit gates (Issue #271)
 ├── workphases.yaml          # Phase/sub-phase definitions for commits
 ├── validation.yaml          # Template validation rules
 ├── artifacts.yaml           # Unified artifact registry (code + docs)
 ├── policies.yaml            # Operation policies (scaffold/create_file/commit)
+├── enforcement.yaml         # Pre-execution enforcement rules for MCP tools
 ├── project_structure.yaml   # 15 directory definitions
 ├── quality.yaml             # Quality gate definitions
 ├── git.yaml                 # Git conventions (branches, commits, TDD)
@@ -381,18 +383,15 @@ if workflow_type == "feature":
 
 **After** (Config):
 ```yaml
-# workflows.yaml
+# workflows.yaml (post-Issue #271 — phases removed, contracts.yaml is SSOT)
 workflows:
   feature:
-    phases:
-      - research
-      - planning
-      - design
-      - tdd
-      - integration
-      - documentation
+    name: feature
+    description: "Full development workflow (research → design → planning → implementation → validation → docs)"
+    default_execution_mode: interactive
 ```
 
+**Note**: Before Issue #271, `workflows.yaml` contained a `phases:` list per workflow. That list has been removed. Phase membership and ordering are now exclusively defined in `contracts.yaml`. See `contracts.yaml` for the authoritative phase sequence per workflow.
 **Impact**: Add new workflow = edit YAML, zero code changes
 
 #### Issue #52: Template Validation
@@ -627,7 +626,6 @@ class WorkflowConfig:
 - Testing simplified (one scaffolding path)
 
 **Implication**: Seek unification opportunities in future work
-
 ### Learning 5: MCP SDK Limitations Exist
 
 **Discovery**: Claude Desktop caches MCP tool schemas
@@ -638,6 +636,8 @@ class WorkflowConfig:
 **Limitation**: MCP protocol doesn't have "schema changed" notification
 
 **Implication**: Config changes require client restart
+
+**Known server-side limitation (Issue #271 — F-271-B)**: All `.st3/config/` files are loaded **once at server startup** and cached in memory. Any change to `contracts.yaml`, `workflows.yaml`, or any other config file has **no effect until the server is restarted**. Use `restart_server()` after editing config files. This applies to phase order, exit gates, enforcement rules, and all other config-driven behaviour.
 
 ---
 
