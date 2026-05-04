@@ -1,6 +1,6 @@
 # Research — Issue #301: Use MCP `structuredContent` for Tool JSON Payloads
 
-**Status:** Research complete — QA approved (Round 4)  
+**Status:** Research complete — design questions resolved; implementation deferred (low priority, 2026-05-04)
 **Branch:** `feature/301-use-mcp-structured-content-for-tool-json-payloads`  
 **Phase:** research  
 **Date:** 2026-05-04
@@ -264,23 +264,51 @@ independent and both should be populated — the text summary in `content[0]` fo
 ---
 
 ## 7. Open Design Questions
+These questions were resolved during extended research (2026-05-04). No design phase needed before
+implementation can begin; the answers below are sufficient to start a TDD cycle directly.
 
-These questions must be resolved in the design phase. No implementation detail is given here.
-
-### 7.1 Where is the boundary between ToolResult and structuredContent?
+### 7.1 Where is the boundary between ToolResult and structuredContent? ✅ Resolved
 
 `ToolResult` is the *internal* result type (tool layer → server layer). `CallToolResult` is the
-*protocol* type (server layer → MCP client). Two design options exist:
+*protocol* type (server layer → MCP client).
 
-**Option A — Extract at server layer:** Keep `{"type": "json"}` items in `ToolResult.content`;
-server extracts them and promotes to `structuredContent`. Tools are unaware of the wire format
-change.
+**Resolution: Option A (extract at server layer) + dedicated `ToolResultConverter` class.**
 
-**Option B — New ToolResult field:** Add a `structured_content` field (or similar) to
-`ToolResult` itself; tools populate it directly; server maps it 1:1 to `CallToolResult.structuredContent`.
-The `{"type": "json"}` internal type disappears entirely.
+Git history confirms commits C27 (860b34d) and C29 (26a2a86) were SRP violations: both
+`quality_tools.py` and `test_tools.py` were modified purely to control `content[]` item ordering
+so the server's `_convert_tool_result_to_content()` would produce a better model-facing wire
+format. Tools took on MCP wire format responsibility — a violation of ARCHITECTURE_PRINCIPLES §1.1
+(SRP) and §10 (Cohesion).
 
-Which option better satisfies SOLID/SRP and the architecture principles?
+The correct architecture has three distinct boundaries:
+
+1. **Tool layer** → `ToolResult.json_data(payload, text=summary_line)` — tool provides domain
+   data + human-readable summary. The `text` parameter is required (not optional) so tools cannot
+   accidentally produce a bare `json.dumps()` fallback. Content ordering is an internal detail of
+   the factory, invisible to the tool.
+2. **`ToolResultConverter`** (new class, not inline in server) — sole responsibility: convert
+   `ToolResult` to `CallToolResult`. Extracts `{"type": "json"}` items → `structuredContent`;
+   passes text items through to `content[]`. Server receives a converter via constructor injection
+   and delegates to it. This satisfies §1.1 (server keeps its orchestration role) and §10
+   (conversion is a question about MCP protocol, not about dispatch).
+3. **Server** → orchestrates: dispatches tools, delegates conversion, handles errors. No inline
+   wire format logic.
+
+**`json_data()` requires a `text` parameter** in its updated signature:
+```python
+@classmethod
+def json_data(cls, data: dict[str, Any], text: str) -> ToolResult:
+    """Create a structured result. text is the human-readable summary for content[0]."""
+    return cls(content=[
+        {"type": "json", "json": data},
+        {"type": "text", "text": text},
+    ])
+```
+The current `json.dumps(data)` fallback is removed: it conflates domain data with transport
+formatting, and its json-first ordering is inconsistent with the text-first order both tools
+currently produce manually.
+
+**Scope note:** Only 2 tools use `{"type": "json"}` today (`RunTestsTool`, `RunQualityGatesTool`).
 
 ### 7.2 `outputSchema` — shape and placement
 
@@ -291,14 +319,17 @@ Which option better satisfies SOLID/SRP and the architecture principles?
 2. JSON Schema shape for `RunTestsTool` and `RunQualityGatesTool` payloads.
 3. Server-side pass-through in the `tools/list` response.
 
-### 7.3 `test_tool_result_contract.py` — delete or rewrite?
+### 7.3 `test_tool_result_contract.py` — delete or rewrite? ✅ Resolved
 
-This file tests the current `content[0]=text, content[1]=json` contract explicitly. After the
-change, the contract it tests no longer exists. Options:
-- Delete and replace with a new contract test for the new server-level behavior.
-- Rewrite in place.
+**Resolution: rewrite in place.**
 
-The answer flows from the design decision in §7.1.
+The file tests the internal `ToolResult` contract. After the change the contract changes (json-first
+instead of text-first), but a contract still exists and must be tested. Deleting the file would
+leave the new `json_data(data, text)` factory untested at the unit level.
+
+Additionally, the `ToolResultConverter` class requires its own new test file (§4.3 stands).
+That file cannot be a rewrite of `test_tool_result_contract.py` — it tests different behaviour
+at a different layer. Both files must exist after implementation.
 
 ---
 
@@ -400,3 +431,48 @@ produce `structuredContent=None`. No unintended scope creep.
 | `docs/architecture/VSCODE_AGENT_ORCHESTRATION.md` line 1474 | `json_data()` documented as standard return method |
 | `docs/development/archive/issue103/planning.md` line 66 | `json_data()` was the planned canonical pattern from the start |
 | `docs/development/archive/issue251/research.md` Investigation 3 (lines 149–174) | Double-output bug attributed to server mishandling json-first content; prescribed the run_tests json-first pattern as the fix — identical ordering to what `json_data()` produces |
+
+---
+
+## 10. Deferral Decision (2026-05-04)
+
+### 10.1 Production value assessment
+
+The primary motivation for this issue was reducing redundant data in the model's tool-call
+context. After investigation:
+
+- **Token reduction for the model: zero.** Per VS Code MCP team intent (§6.1), when
+  `structuredContent` is present VS Code sends `JSON.stringify(structuredContent)` to the model
+  *instead of* `content[].text`. The text summary in `content[0]` is the correct and intended
+  model input. Moving the JSON payload from a second `TextContent` block to `structuredContent`
+  does not reduce model tokens — it removes the right field (the JSON dump in `content[1]`)
+  while the summary text stays as model input. The benefit is cleaner separation, not token
+  savings.
+- **Practical impact today:** `run_tests` and `run_quality_gates` each send ~500 tokens of JSON
+  dump to the model per call (via the `content[1]` text conversion in the server). This is the
+  *actual* redundancy — but eliminating it does not shorten the model's useful context, because
+  the JSON dump is currently the only structured data the model receives for these tools.
+  `structuredContent` is consumed by the MCP client layer, not the model.
+
+### 10.2 Scope of violation
+
+Only 2 of ~22 tools are affected (`RunTestsTool`, `RunQualityGatesTool`). All other tools
+return text-only `ToolResult` and are fully conformant. The architectural debt is real but
+well-contained and causes no runtime errors.
+
+### 10.3 Decision
+
+**Implementation deferred.** The refactoring is architecturally correct but has no immediate
+production impact. The MCP server is being put to work for other development tasks where its
+value is higher. #301 stays open on `priority:low`.
+
+**Trigger for re-opening:** When a third tool needs structured output, or when `outputSchema`
+support becomes necessary for MCP Apps UI / programmatic tool call (PTC) use cases.
+
+### 10.4 Git history notes (source material for §7.1 resolution)
+
+| Commit | File | Finding |
+|---|---|---|
+| `860b34d` (C27) | `quality_tools.py` | Switched from `ToolResult.json_data(result)` back to manual construction with text-first ordering — workaround for server's json→text conversion |
+| `26a2a86` (C29) | `test_tools.py` | Inverted content order from json-first to text-first — same workaround, SRP violation |
+| `1ea8474` | `tool_result.py` | Introduced `json_data()` with json-first + `json.dumps()` fallback; `quality_tools.py` briefly used it before C27 reverted |
