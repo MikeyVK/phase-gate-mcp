@@ -7,6 +7,15 @@ from mcp_server.config.schemas.artifact_registry_config import (
     StateMachine,
     StateMachineTransition,
 )
+from mcp_server.config.schemas.contracts_config import (
+    BranchLocalArtifact,
+    CheckSpec,
+    ContractsConfig,
+    MergePolicy,
+    PhaseContractPhase,
+    WorkflowEntry,
+    WorkflowPhaseEntry,
+)
 from mcp_server.config.schemas.contributor_config import ContributorConfig, ContributorEntry
 from mcp_server.config.schemas.enforcement_config import (
     EnforcementAction,
@@ -20,11 +29,6 @@ from mcp_server.config.schemas.milestone_config import MilestoneConfig, Mileston
 from mcp_server.config.schemas.operation_policies_config import (
     OperationPoliciesConfig,
     OperationPolicy,
-)
-from mcp_server.config.schemas.phase_contracts_config import (
-    CheckSpec,
-    PhaseContractPhase,
-    PhaseContractsConfig,
 )
 from mcp_server.config.schemas.project_structure_config import (
     DirectoryPolicy,
@@ -56,9 +60,11 @@ __all__ = [
     "ArtifactLoggingConfig",
     "ArtifactRegistryConfig",
     "ArtifactType",
+    "BranchLocalArtifact",
     "CapabilitiesMetadata",
     "CheckSpec",
     "CommentPattern",
+    "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
     "DirectoryPolicy",
@@ -75,12 +81,12 @@ __all__ = [
     "LabelConfig",
     "LabelPattern",
     "MetadataField",
+    "MergePolicy",
     "MilestoneConfig",
     "MilestoneEntry",
     "OperationPoliciesConfig",
     "OperationPolicy",
     "PhaseContractPhase",
-    "PhaseContractsConfig",
     "PhaseDefinition",
     "ProjectStructureConfig",
     "QualityConfig",
@@ -93,6 +99,8 @@ __all__ = [
     "TextViolationsParsing",
     "ViolationDTO",
     "WorkflowConfig",
+    "WorkflowEntry",
+    "WorkflowPhaseEntry",
     "WorkflowTemplate",
     "WorkphasesConfig",
 ]

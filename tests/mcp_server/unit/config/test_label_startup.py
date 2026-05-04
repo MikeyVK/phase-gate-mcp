@@ -19,8 +19,8 @@ from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
     ArtifactRegistryConfig,
+    ContractsConfig,
     OperationPoliciesConfig,
-    PhaseContractsConfig,
     ProjectStructureConfig,
     WorkflowConfig,
     WorkphasesConfig,
@@ -55,7 +55,6 @@ class TestConfigValidator:
             workflows={
                 "feature": {
                     "name": "feature",
-                    "phases": ["research", "planning", "implementation"],
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }
@@ -112,20 +111,24 @@ class TestConfigValidator:
         )
 
     @pytest.fixture
-    def phase_contracts(self) -> PhaseContractsConfig:
-        return PhaseContractsConfig(
-            merge_policy={"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            workflows={
-                "feature": {
-                    "implementation": {
-                        "subphases": ["red", "green"],
-                        "commit_type_map": {"red": "test", "green": "feat"},
-                        "cycle_based": True,
-                        "exit_requires": [],
-                        "cycle_exit_requires": {},
+    def phase_contracts(self) -> ContractsConfig:
+        return ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "feature": {
+                        "phases": [
+                            {
+                                "name": "implementation",
+                                "cycle_based": True,
+                                "subphases": ["red", "green"],
+                                "commit_type_map": {"red": "test", "green": "feat"},
+                            },
+                            {"name": "ready"},
+                        ]
                     }
-                }
-            },
+                },
+            }
         )
 
     def test_label_startup_deleted(self) -> None:
@@ -141,7 +144,7 @@ class TestConfigValidator:
         workflow_config: WorkflowConfig,
         project_structure: ProjectStructureConfig,
         artifact_registry: ArtifactRegistryConfig,
-        phase_contracts: PhaseContractsConfig,
+        phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         validator.validate_startup(
@@ -149,43 +152,9 @@ class TestConfigValidator:
             workflow=workflow_config,
             structure=project_structure,
             artifact=artifact_registry,
-            phase_contracts=phase_contracts,
+            contracts=phase_contracts,
             workphases=workphases_config,
         )
-
-    def test_validate_startup_raises_on_unknown_workflow_phase(
-        self,
-        validator: ConfigValidator,
-        operation_policies: OperationPoliciesConfig,
-        project_structure: ProjectStructureConfig,
-        artifact_registry: ArtifactRegistryConfig,
-        workphases_config: WorkphasesConfig,
-    ) -> None:
-        workflow_config = WorkflowConfig(
-            version="1.0",
-            workflows={
-                "feature": {
-                    "name": "feature",
-                    "phases": ["research", "validation"],
-                    "default_execution_mode": "interactive",
-                    "description": "Feature workflow",
-                }
-            },
-        )
-        phase_contracts = PhaseContractsConfig(
-            merge_policy={"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            workflows={},
-        )
-
-        with pytest.raises(ConfigError, match="Workflow 'feature' references unknown phases"):
-            validator.validate_startup(
-                policies=operation_policies,
-                workflow=workflow_config,
-                structure=project_structure,
-                artifact=artifact_registry,
-                phase_contracts=phase_contracts,
-                workphases=workphases_config,
-            )
 
     def test_validate_startup_raises_on_unknown_phase_contract_workflow(
         self,
@@ -196,19 +165,22 @@ class TestConfigValidator:
         artifact_registry: ArtifactRegistryConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
-        phase_contracts = PhaseContractsConfig(
-            merge_policy={"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            workflows={
-                "bug": {
-                    "implementation": {
-                        "subphases": ["red"],
-                        "commit_type_map": {"red": "test"},
-                        "cycle_based": True,
-                        "exit_requires": [],
-                        "cycle_exit_requires": {},
+        contracts = ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "bug": {
+                        "phases": [
+                            {
+                                "name": "implementation",
+                                "cycle_based": True,
+                                "commit_type_map": {"red": "test"},
+                            },
+                            {"name": "ready"},
+                        ]
                     }
-                }
-            },
+                },
+            }
         )
 
         with pytest.raises(ConfigError, match="unknown workflow"):
@@ -217,7 +189,7 @@ class TestConfigValidator:
                 workflow=workflow_config,
                 structure=project_structure,
                 artifact=artifact_registry,
-                phase_contracts=phase_contracts,
+                contracts=contracts,
                 workphases=workphases_config,
             )
 
@@ -230,28 +202,31 @@ class TestConfigValidator:
         artifact_registry: ArtifactRegistryConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
-        phase_contracts = PhaseContractsConfig(
-            merge_policy={"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            workflows={
-                "feature": {
-                    "validation": {
-                        "subphases": ["red"],
-                        "commit_type_map": {"red": "test"},
-                        "cycle_based": True,
-                        "exit_requires": [],
-                        "cycle_exit_requires": {},
+        contracts = ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "feature": {
+                        "phases": [
+                            {
+                                "name": "validation",
+                                "cycle_based": True,
+                                "commit_type_map": {"red": "test"},
+                            },
+                            {"name": "ready"},
+                        ]
                     }
-                }
-            },
+                },
+            }
         )
 
-        with pytest.raises(ConfigError, match="unknown phases"):
+        with pytest.raises(ConfigError, match="missing from workphases"):
             validator.validate_startup(
                 policies=operation_policies,
                 workflow=workflow_config,
                 structure=project_structure,
                 artifact=artifact_registry,
-                phase_contracts=phase_contracts,
+                contracts=contracts,
                 workphases=workphases_config,
             )
 
@@ -267,25 +242,27 @@ class TestConfigValidator:
             workflows={
                 "feature": {
                     "name": "feature",
-                    "phases": ["research", "validation"],
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }
             },
         )
-        phase_contracts = PhaseContractsConfig(
-            merge_policy={"pr_allowed_phase": "ready", "branch_local_artifacts": []},
-            workflows={
-                "feature": {
-                    "validation": {
-                        "subphases": ["red"],
-                        "commit_type_map": {"red": "test"},
-                        "cycle_based": True,
-                        "exit_requires": [],
-                        "cycle_exit_requires": {},
+        contracts = ContractsConfig.model_validate(
+            {
+                "merge_policy": {"pr_allowed_phase": "ready", "branch_local_artifacts": []},
+                "workflows": {
+                    "feature": {
+                        "phases": [
+                            {
+                                "name": "validation",
+                                "cycle_based": True,
+                                "commit_type_map": {"red": "test"},
+                            },
+                            {"name": "ready"},
+                        ]
                     }
-                }
-            },
+                },
+            }
         )
         workphases_config = WorkphasesConfig(
             version="1.0",
@@ -301,7 +278,7 @@ class TestConfigValidator:
                 workflow=workflow_config,
                 structure=project_structure,
                 artifact=artifact_registry,
-                phase_contracts=phase_contracts,
+                contracts=contracts,
                 workphases=workphases_config,
             )
 
@@ -311,7 +288,7 @@ class TestConfigValidator:
         workflow_config: WorkflowConfig,
         project_structure: ProjectStructureConfig,
         artifact_registry: ArtifactRegistryConfig,
-        phase_contracts: PhaseContractsConfig,
+        phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         operation_policies = OperationPoliciesConfig(
@@ -334,7 +311,7 @@ class TestConfigValidator:
                 workflow=workflow_config,
                 structure=project_structure,
                 artifact=artifact_registry,
-                phase_contracts=phase_contracts,
+                contracts=phase_contracts,
                 workphases=workphases_config,
             )
 
@@ -344,7 +321,7 @@ class TestConfigValidator:
         operation_policies: OperationPoliciesConfig,
         workflow_config: WorkflowConfig,
         artifact_registry: ArtifactRegistryConfig,
-        phase_contracts: PhaseContractsConfig,
+        phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         project_structure = ProjectStructureConfig(
@@ -366,7 +343,7 @@ class TestConfigValidator:
                 workflow=workflow_config,
                 structure=project_structure,
                 artifact=artifact_registry,
-                phase_contracts=phase_contracts,
+                contracts=phase_contracts,
                 workphases=workphases_config,
             )
 
@@ -377,7 +354,7 @@ class TestConfigValidator:
         workflow_config: WorkflowConfig,
         project_structure: ProjectStructureConfig,
         artifact_registry: ArtifactRegistryConfig,
-        phase_contracts: PhaseContractsConfig,
+        phase_contracts: ContractsConfig,
         workphases_config: WorkphasesConfig,
     ) -> None:
         project_structure.directories["tests"] = project_structure.directories["src"].model_copy(
@@ -390,6 +367,6 @@ class TestConfigValidator:
                 workflow=workflow_config,
                 structure=project_structure,
                 artifact=artifact_registry,
-                phase_contracts=phase_contracts,
+                contracts=phase_contracts,
                 workphases=workphases_config,
             )

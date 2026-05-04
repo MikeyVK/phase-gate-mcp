@@ -167,9 +167,6 @@ class MCPServer:
         git_config = config_loader.load_git_config()
         workflow_config = config_loader.load_workflow_config()
         workphases_config = config_loader.load_workphases_config()
-        workflow_config = ConfigLoader._inject_terminal_phase(  # pyright: ignore[reportPrivateUsage]
-            workflow_config, workphases_config
-        )
         quality_config = config_loader.load_quality_config()
         label_config = config_loader.load_label_config()
         issue_config = config_loader.load_issue_config()
@@ -180,17 +177,15 @@ class MCPServer:
         project_structure_config = config_loader.load_project_structure_config(
             artifact_registry=artifact_registry
         )
-        operation_policies_config = config_loader.load_operation_policies_config(
-            workflow_config=workflow_config
-        )
+        operation_policies_config = config_loader.load_operation_policies_config()
         enforcement_config = config_loader.load_enforcement_config()
-        phase_contracts_config = config_loader.load_phase_contracts_config()
+        contracts_config = config_loader.load_contracts_config()
         ConfigValidator().validate_startup(
             policies=operation_policies_config,
             workflow=workflow_config,
             structure=project_structure_config,
             artifact=artifact_registry,
-            phase_contracts=phase_contracts_config,
+            contracts=contracts_config,
             workphases=workphases_config,
         )
 
@@ -214,7 +209,7 @@ class MCPServer:
 
         self.project_manager = ProjectManager(
             workspace_root=workspace_root,
-            workflow_config=workflow_config,
+            contracts_config=contracts_config,
             git_manager=self.git_manager,
             workphases_config=workphases_config,
             workflow_status_resolver=self.workflow_status_resolver,
@@ -222,7 +217,7 @@ class MCPServer:
         self.phase_contract_resolver = PhaseContractResolver(
             PhaseConfigContext(
                 workphases=workphases_config,
-                phase_contracts=phase_contracts_config,
+                contracts=contracts_config,
             )
         )
         self.workflow_gate_runner = WorkflowGateRunner(
@@ -243,7 +238,7 @@ class MCPServer:
             workspace_root=workspace_root,
             project_manager=self.project_manager,
             git_config=git_config,
-            workflow_config=workflow_config,
+            contracts_config=contracts_config,
             workphases_config=workphases_config,
             state_repository=self._state_repository,
             scope_decoder=ScopeDecoder(workphases_config=workphases_config),
@@ -277,10 +272,8 @@ class MCPServer:
         )
         _merge_readiness_context = MergeReadinessContext(
             terminal_phase=workphases_config.get_terminal_phase(),
-            pr_allowed_phase=phase_contracts_config.get_pr_allowed_phase(),
-            branch_local_artifacts=tuple(
-                phase_contracts_config.merge_policy.branch_local_artifacts
-            ),
+            pr_allowed_phase=contracts_config.get_pr_allowed_phase(),
+            branch_local_artifacts=tuple(contracts_config.merge_policy.branch_local_artifacts),
         )
         self.pr_status_cache = PRStatusCache(github_manager=self.github_manager)
         self.enforcement_runner = EnforcementRunner(
@@ -337,7 +330,6 @@ class MCPServer:
             # Project tools (Phase 0.5)
             InitializeProjectTool(
                 workspace_root=Path(settings.server.workspace_root),
-                workflow_config=workflow_config,
                 manager=self.project_manager,
                 git_manager=self.git_manager,
                 state_engine=self.phase_state_engine,
@@ -397,7 +389,7 @@ class MCPServer:
                         manager=self.github_manager,
                         issue_config=issue_config,
                         milestone_config=milestone_config,
-                        workflow_config=workflow_config,
+                        contracts_config=contracts_config,
                     ),
                     ListIssuesTool(manager=self.github_manager),
                     GetIssueTool(manager=self.github_manager),
@@ -435,7 +427,7 @@ class MCPServer:
                         manager=self.github_manager,
                         issue_config=issue_config,
                         milestone_config=milestone_config,
-                        workflow_config=workflow_config,
+                        contracts_config=contracts_config,
                     ),
                     ListIssuesTool(manager=self.github_manager),
                     GetIssueTool(manager=self.github_manager),

@@ -217,7 +217,8 @@ class TestPytestRunnerRun:
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2)
 
         assert result.summary_line != ""
-        assert result.should_raise is True
+        assert result.should_raise is False
+        assert result.is_error is True
 
     def test_exit_code_5_no_tests_collected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Scenario 8: exit code 5 path → summary_line == 'no tests collected'."""
@@ -226,3 +227,174 @@ class TestPytestRunnerRun:
         assert result.summary_line == "no tests collected"
         assert result.should_raise is False
         assert isinstance(result.note, SuggestionNote)
+
+
+# ---------------------------------------------------------------------------
+# C1 — ExitCodePolicy + PytestResult contract
+# ---------------------------------------------------------------------------
+
+
+class TestC1ExitCodePolicyAndPytestResultContract:
+    """C1: three-value Literal in ExitCodePolicy + PytestResult.is_error + PytestResult.stderr."""
+
+    def test_c1_parse_output_exit2_sets_is_error_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Exit 2 (INTERRUPTED) → result.is_error=True, result.should_raise=False."""
+        result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2)
+
+        assert result.is_error is True
+        assert result.should_raise is False
+
+    def test_c1_parse_output_exit3_sets_is_error_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Exit 3 (INTERNAL_ERROR) → result.is_error=True."""
+        result = _run(monkeypatch, _EMPTY_STDOUT, returncode=3)
+
+        assert result.is_error is True
+        assert result.should_raise is False
+
+    def test_c1_parse_output_exit4_sets_is_error_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Exit 4 (USAGE_ERROR) → result.is_error=True."""
+        result = _run(monkeypatch, _EMPTY_STDOUT, returncode=4)
+
+        assert result.is_error is True
+        assert result.should_raise is False
+
+    def test_c1_parse_output_exit0_sets_is_error_false(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Exit 0 (ALL_PASSED) → result.is_error=False."""
+        result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
+
+        assert result.is_error is False
+        assert result.should_raise is False
+
+    def test_c1_parse_output_exit99_should_raise_unchanged(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Exit 99 (unknown) → result.should_raise=True, result.is_error=False — RNF-5 gate."""
+        result = _run(monkeypatch, _EMPTY_STDOUT, returncode=99)
+
+        assert result.should_raise is True
+        assert result.is_error is False
+
+    def test_c1_pytest_result_default_stderr_is_empty_string(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """PytestResult constructed without explicit stderr kwarg → result.stderr == ''."""
+        result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
+
+        assert result.stderr == ""
+
+
+# ---------------------------------------------------------------------------
+# C2 — stderr pipeline: run() → _parse_output() → PytestResult.stderr
+# ---------------------------------------------------------------------------
+
+
+class TestC2StderrPipeline:
+    """C2: execution.stderr is wired through run() → _parse_output() → PytestResult.stderr."""
+
+    def test_c2_run_populates_result_stderr(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Non-empty stderr from subprocess → result.stderr carries the value."""
+        result = _run(monkeypatch, _PASSED_STDOUT, returncode=0, stderr="some error text")
+
+        assert result.stderr == "some error text"
+
+    def test_c2_run_empty_stderr_gives_empty_string(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Empty stderr from subprocess → result.stderr == ''."""
+        result = _run(monkeypatch, _PASSED_STDOUT, returncode=0, stderr="")
+
+        assert result.stderr == ""
+
+    def test_c2_stderr_multiline_preserved_in_result(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Multi-line stderr → result.stderr contains all lines joined by newlines."""
+        multiline = "line one\nline two\nline three"
+        result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2, stderr=multiline)
+
+        assert result.stderr == multiline
+
+
+# ---------------------------------------------------------------------------
+# C4 xdist fixtures — FAILURES header has [gwN] prefix before underscores
+# ---------------------------------------------------------------------------
+
+_XDIST_FAILED_STDOUT_GW0 = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw0] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad - AssertionError: assert 1 == 2
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+_XDIST_FAILED_STDOUT_GW12 = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw12] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad - AssertionError: assert 1 == 2
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+
+# ---------------------------------------------------------------------------
+# C4 — xdist _extract_traceback() regex fix: optional [gwN] prefix
+# ---------------------------------------------------------------------------
+
+
+class TestC4XdistTracebackExtraction:
+    """C4: _extract_traceback handles optional [gwN] worker prefix in FAILURES header."""
+
+    def test_c4_extract_traceback_with_xdist_prefix_gw0(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist stdout with [gw0] prefix on FAILURES header → traceback non-empty."""
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW0, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback != ""
+
+    def test_c4_extract_traceback_with_xdist_prefix_gw12(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist stdout with double-digit [gw12] prefix → traceback non-empty."""
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW12, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback != ""
+
+    def test_c4_extract_traceback_without_prefix_unchanged(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Standard (non-xdist) FAILURES header → traceback still extracted (regression guard)."""
+        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback != ""

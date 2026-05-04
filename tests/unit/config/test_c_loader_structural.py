@@ -22,6 +22,7 @@ import mcp_server.config.schemas.scaffold_metadata_config as scaffold_schema
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
+    ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
     GitConfig,
@@ -29,7 +30,6 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
-    PhaseContractsConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScaffoldMetadataConfig,
@@ -86,7 +86,6 @@ def config_root(tmp_path: Path) -> Path:
             "workflows": {
                 "feature": {
                     "name": "feature",
-                    "phases": ["research", "planning", "implementation"],
                     "default_execution_mode": "interactive",
                     "description": "Feature workflow",
                 }
@@ -239,7 +238,7 @@ def config_root(tmp_path: Path) -> Path:
     )
     write_yaml("enforcement.yaml", {"enforcement": []})
     write_yaml(
-        "phase_contracts.yaml",
+        "contracts.yaml",
         {
             "merge_policy": {
                 "pr_allowed_phase": "ready",
@@ -247,17 +246,21 @@ def config_root(tmp_path: Path) -> Path:
             },
             "workflows": {
                 "feature": {
-                    "implementation": {
-                        "subphases": ["red", "green", "refactor"],
-                        "commit_type_map": {
-                            "red": "test",
-                            "green": "feat",
-                            "refactor": "refactor",
+                    "phases": [
+                        {
+                            "name": "implementation",
+                            "subphases": ["red", "green", "refactor"],
+                            "commit_type_map": {
+                                "red": "test",
+                                "green": "feat",
+                                "refactor": "refactor",
+                            },
+                            "cycle_based": True,
+                            "exit_requires": [],
+                            "cycle_exit_requires": {},
                         },
-                        "cycle_based": True,
-                        "exit_requires": [],
-                        "cycle_exit_requires": {},
-                    }
+                        {"name": "ready"},
+                    ]
                 }
             },
         },
@@ -296,7 +299,7 @@ def test_loader_exposes_all_fifteen_schema_methods() -> None:
         "load_quality_config",
         "load_scaffold_metadata_config",
         "load_enforcement_config",
-        "load_phase_contracts_config",
+        "load_contracts_config",
     ):
         assert hasattr(ConfigLoader, method_name), f"Missing ConfigLoader.{method_name}()"
 
@@ -317,7 +320,7 @@ def test_loader_loads_all_fifteen_migrated_schema_instances(config_root: Path) -
     assert isinstance(loader.load_issue_config(), IssueConfig)
     assert isinstance(loader.load_milestone_config(), MilestoneConfig)
     assert isinstance(
-        loader.load_operation_policies_config(workflow_config=workflow_config),
+        loader.load_operation_policies_config(),
         OperationPoliciesConfig,
     )
     assert isinstance(
@@ -327,7 +330,7 @@ def test_loader_loads_all_fifteen_migrated_schema_instances(config_root: Path) -
     assert isinstance(loader.load_quality_config(), QualityConfig)
     assert isinstance(loader.load_scaffold_metadata_config(), ScaffoldMetadataConfig)
     assert isinstance(loader.load_enforcement_config(), EnforcementConfig)
-    assert isinstance(loader.load_phase_contracts_config(), PhaseContractsConfig)
+    assert isinstance(loader.load_contracts_config(), ContractsConfig)
 
 
 def _assert_no_self_loading_methods() -> None:
@@ -346,7 +349,7 @@ def _assert_no_self_loading_methods() -> None:
         QualityConfig,
         ScaffoldMetadataConfig,
         EnforcementConfig,
-        PhaseContractsConfig,
+        ContractsConfig,
     ):
         for forbidden in ("from_file", "load", "reset_instance", "reset"):
             assert not hasattr(schema_cls, forbidden), (

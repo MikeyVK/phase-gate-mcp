@@ -400,54 +400,48 @@ Workflow definition and planning deliverables (branch-local artifact):
 
 ### .st3/workflows.yaml
 
+> **Note (Issue #271):** Phase membership and ordering are no longer defined in `workflows.yaml`. The file now contains only workflow metadata (name, description, execution mode). Phase sequences are exclusively defined in `.st3/config/contracts.yaml`.
+
 ```yaml
+# .st3/config/workflows.yaml
+version: "1.0"
+phase_source: ".st3/config/workphases.yaml"
+
 workflows:
   feature:
-    phases:
-      - planning
-      - research
-      - red
-      - green
-      - refactor
-      - documentation
-      - merge-prep
-  
+    name: feature
+    description: "Full development workflow (research → design → planning → implementation → validation → docs)"
+    default_execution_mode: interactive
+
   bug:
-    phases:
-      - investigation
-      - red
-      - green
-      - refactor
-      - documentation
-      - merge-prep
-  
-  docs:
-    phases:
-      - planning
-      - documentation
-  
-  refactor:
-    phases:
-      - planning
-      - research
-      - refactor
-      - documentation
-      - merge-prep
-  
+    name: bug
+    description: "Bug fix workflow (research → design → planning → implementation → validation → docs)"
+    default_execution_mode: interactive
+
   hotfix:
-    phases:
-      - red
-      - green
-      - merge-prep
-  
+    name: hotfix
+    description: "Emergency fix workflow (implementation → validation → docs only)"
+    default_execution_mode: autonomous
+
+  refactor:
+    name: refactor
+    description: "Code refactoring workflow (research → planning → implementation → validation → docs)"
+    default_execution_mode: interactive
+
+  docs:
+    name: docs
+    description: "Documentation-only workflow (planning → docs)"
+    default_execution_mode: interactive
+
   epic:
-    phases:
-      - planning
-      - tracking
-  
-  custom:
-    # User-defined phases via custom_phases parameter
+    name: epic
+    description: "Epic workflow for large initiatives (research → design → planning → coordination → documentation)"
+    default_execution_mode: interactive
+
 ```
+
+
+For the phase sequences per workflow, see `.st3/config/contracts.yaml`.
 
 ---
 

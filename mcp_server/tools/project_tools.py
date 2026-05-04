@@ -23,7 +23,6 @@ from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
-from mcp_server.schemas import WorkflowConfig
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -74,7 +73,6 @@ class InitializeProjectTool(BranchMutatingTool):
     def __init__(
         self,
         workspace_root: Path | str,
-        workflow_config: WorkflowConfig,
         manager: ProjectManager,
         git_manager: GitManager,
         state_engine: PhaseStateEngine,
@@ -83,7 +81,6 @@ class InitializeProjectTool(BranchMutatingTool):
         super().__init__()
         self.workspace_root = Path(workspace_root)
         self.manager = manager
-        self.workflow_config = workflow_config
         self.git_manager = git_manager
         self.state_engine = state_engine
 
@@ -136,6 +133,7 @@ class InitializeProjectTool(BranchMutatingTool):
             with subprocess.Popen(
                 cmd,
                 cwd=str(self.workspace_root),
+                stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -280,11 +278,6 @@ class InitializeProjectTool(BranchMutatingTool):
                     ".st3/state.json (branch state)",
                 ],
             }
-
-            # Add template info if not custom
-            if params.workflow_name != "custom":
-                workflow = self.workflow_config.get_workflow(params.workflow_name)
-                success_message["description"] = workflow.description
 
             return ToolResult.text(json.dumps(success_message, indent=2))
 

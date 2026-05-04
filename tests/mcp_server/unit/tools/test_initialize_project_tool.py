@@ -20,18 +20,13 @@ from unittest.mock import patch
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.schemas import WorkflowConfig
 from mcp_server.tools.project_tools import InitializeProjectInput, InitializeProjectTool
 from tests.mcp_server.test_support import (
-    make_config_loader,
+    load_contracts_config,
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
 )
-
-
-def _load_workflow_config() -> WorkflowConfig:
-    return make_config_loader().load_workflow_config()
 
 
 class TestInitializeProjectToolMode1:
@@ -48,7 +43,6 @@ class TestInitializeProjectToolMode1:
         manager = make_project_manager(workspace_root)
         return InitializeProjectTool(
             workspace_root=workspace_root,
-            workflow_config=make_config_loader(workspace_root).load_workflow_config(),
             manager=manager,
             git_manager=make_git_manager(workspace_root),
             state_engine=make_phase_state_engine(workspace_root, project_manager=manager),
@@ -95,9 +89,8 @@ class TestInitializeProjectToolMode1:
             assert state["branch"] == "fix/39-initialize-project-tool"
             assert state["issue_number"] == 39
             assert state["workflow_name"] == "bug"
-            # First phase from workflows.yaml (SSOT)
-            bug_workflow = _load_workflow_config().get_workflow("bug")
-            expected_first_phase = bug_workflow.phases[0]
+            # First phase from contracts.yaml (SSOT)
+            expected_first_phase = load_contracts_config().get_first_phase("bug")
             assert state["current_phase"] == expected_first_phase
             assert state["transitions"] == []
             assert "created_at" in state
@@ -145,9 +138,8 @@ class TestInitializeProjectToolMode1:
             state_file = workspace_root / ".st3" / "state.json"
             state = json.loads(state_file.read_text())
 
-            # First phase from workflows.yaml (SSOT)
-            hotfix_workflow = _load_workflow_config().get_workflow("hotfix")
-            expected_first_phase = hotfix_workflow.phases[0]
+            # First phase from contracts.yaml (SSOT)
+            expected_first_phase = load_contracts_config().get_first_phase("hotfix")
             assert state["current_phase"] == expected_first_phase
 
     @pytest.mark.asyncio
@@ -161,9 +153,8 @@ class TestInitializeProjectToolMode1:
         workflows_to_test = ["feature", "bug", "docs", "refactor", "hotfix"]
 
         for workflow_name in workflows_to_test:
-            # Get expected first phase from workflows.yaml (SSOT)
-            workflow = _load_workflow_config().get_workflow(workflow_name)
-            expected_first_phase = workflow.phases[0]
+            # Get expected first phase from contracts.yaml (SSOT)
+            expected_first_phase = load_contracts_config().get_first_phase(workflow_name)
 
             # Determine branch prefix from workflow name
             branch_prefix_map = {

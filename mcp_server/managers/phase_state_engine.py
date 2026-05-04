@@ -1,13 +1,13 @@
 # mcp_server/managers/phase_state_engine.py
 """
-Phase state engine - Workflow-based phase transition management.
+Phase state engine - ContractsConfig-driven phase transition management.
 
-Manages branch phase state with strict sequential validation via workflows.yaml.
+Manages branch phase state with strict sequential validation via contracts.yaml.
 Supports both standard sequential transitions and forced non-sequential transitions
 with audit trail.
 
 @layer: Platform
-@dependencies: [workflow_config, project_manager]
+@dependencies: [contracts_config, project_manager]
 @responsibilities:
     - Initialize branch state with workflow caching
     - Validate phase transitions against workflow definitions
@@ -40,7 +40,7 @@ from mcp_server.core.interfaces import (
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
-from mcp_server.schemas import GitConfig, WorkflowConfig, WorkphasesConfig
+from mcp_server.schemas import ContractsConfig, GitConfig, WorkphasesConfig
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class TransitionRecord:
 class PhaseStateEngine:
     """Phase state and transition manager with workflow validation.
 
-    Validates transitions against workflows.yaml definitions.
+    Validates transitions against contracts.yaml definitions.
     Supports standard sequential and forced non-sequential transitions.
     """
 
@@ -77,7 +77,7 @@ class PhaseStateEngine:
         workspace_root: Path | str,
         project_manager: ProjectManager,
         git_config: GitConfig,
-        workflow_config: WorkflowConfig,
+        contracts_config: ContractsConfig,
         workphases_config: WorkphasesConfig,
         state_repository: IStateRepository,
         scope_decoder: ScopeDecoder,
@@ -90,7 +90,7 @@ class PhaseStateEngine:
         self.state_file = workspace_path / ".st3" / "state.json"
         self.project_manager = project_manager
 
-        self._workflow_config = workflow_config
+        self._contracts_config = contracts_config
         self._git_config = git_config
         self._workphases_config = workphases_config
         self._state_repository = state_repository
@@ -165,7 +165,7 @@ class PhaseStateEngine:
         from_phase = state.current_phase
         workflow_name = state.workflow_name
 
-        self._workflow_config.validate_transition(workflow_name, from_phase, to_phase)
+        self._contracts_config.validate_transition(workflow_name, from_phase, to_phase)
 
         issue_number = state.issue_number
         if issue_number is None:
@@ -178,7 +178,7 @@ class PhaseStateEngine:
         )
 
         if self._is_cycle_based_phase(workflow_name, from_phase):
-            self.on_exit_implementation_phase(branch)
+            self.on_exit_cycle_based_phase(branch)
             state = self._load_state_or_reconstruct(branch)
 
         transition = TransitionRecord(
@@ -196,7 +196,7 @@ class PhaseStateEngine:
         self._apply_state(branch, updated_state)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
-            self.on_enter_implementation_phase(branch, issue_number)
+            self.on_enter_cycle_based_phase(branch, issue_number)
 
         return {"success": True, "from_phase": from_phase, "to_phase": to_phase}
 
@@ -242,7 +242,7 @@ class PhaseStateEngine:
             )
 
         if self._is_cycle_based_phase(workflow_name, from_phase):
-            self.on_exit_implementation_phase(branch)
+            self.on_exit_cycle_based_phase(branch)
             state = self.get_state(branch)
 
         transition = TransitionRecord(
@@ -262,7 +262,7 @@ class PhaseStateEngine:
         self._apply_state(branch, updated_state)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
-            self.on_enter_implementation_phase(branch, issue_number)
+            self.on_enter_cycle_based_phase(branch, issue_number)
 
         return {
             "success": True,
@@ -655,7 +655,7 @@ class PhaseStateEngine:
         """Return the workspace root derived from the tracked state file location."""
         return self.state_file.parent.parent
 
-    def on_enter_implementation_phase(self, branch: str, issue_number: int) -> None:
+    def on_enter_cycle_based_phase(self, branch: str, issue_number: int) -> None:
         """Hook called when entering implementation phase.
 
         Auto-initializes TDD cycle 1 in branch state. Planning deliverables
@@ -677,7 +677,7 @@ class PhaseStateEngine:
 
         logger.info(f"Entered implementation phase for issue {issue_number} on branch {branch}")
 
-    def on_exit_implementation_phase(self, branch: str) -> None:
+    def on_exit_cycle_based_phase(self, branch: str) -> None:
         """Hook called when exiting implementation phase.
 
         Preserves last_cycle and clears current_cycle.

@@ -1,0 +1,416 @@
+# tests\mcp_server\unit\config\test_contracts_loader.py
+# template=unit_test version=3d15d309 created=2026-05-02T18:00Z updated=
+"""
+Unit tests for mcp_server.config.loader.
+
+Unit tests for load_contracts_config (issue #271 C2)
+
+@layer: Tests (Unit)
+@dependencies: [pytest, mcp_server.config.loader, mcp_server.config.schemas.contracts_config]
+@responsibilities:
+    - Test load_contracts_config happy path, error paths, removed methods, 6-workflow roundtrip
+    - Verify ContractsConfig roundtrip equality for all 6 production workflows
+    - Verify _inject_terminal_phase and load_phase_contracts_config are removed
+"""
+
+# Standard library
+from pathlib import Path
+
+# Third-party
+import pytest
+import yaml
+
+# Project modules
+from mcp_server.config.loader import ConfigLoader
+from mcp_server.config.schemas.contracts_config import (
+    BranchLocalArtifact,
+    ContractsConfig,
+    MergePolicy,
+    WorkflowEntry,
+    WorkflowPhaseEntry,
+)
+from mcp_server.core.exceptions import ConfigError
+
+# ---------------------------------------------------------------------------
+# Fixtures / helpers
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def config_dir(tmp_path: Path) -> Path:
+    """Return a tmp .st3/config directory."""
+    d = tmp_path / ".st3" / "config"
+    d.mkdir(parents=True)
+    return d
+
+
+def _write_contracts(config_dir: Path, content: str) -> None:
+    (config_dir / "contracts.yaml").write_text(content, encoding="utf-8")
+
+
+_MINIMAL_YAML = """\
+merge_policy:
+  pr_allowed_phase: ready
+  branch_local_artifacts: []
+workflows:
+  feature:
+    phases:
+      - name: research
+      - name: ready
+"""
+
+
+def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) -> ConfigLoader:
+    content = yaml.dump(
+        {
+            "merge_policy": {
+                "pr_allowed_phase": "ready",
+                "branch_local_artifacts": [
+                    {"path": ".st3/state.json", "reason": "branch-local"},
+                ],
+            },
+            "workflows": workflows,
+        },
+        default_flow_style=False,
+        allow_unicode=True,
+    )
+    _write_contracts(config_dir, content)
+    return ConfigLoader(config_dir)
+
+
+def _policy() -> MergePolicy:
+    return MergePolicy(
+        pr_allowed_phase="ready",
+        branch_local_artifacts=[BranchLocalArtifact(path=".st3/state.json", reason="branch-local")],
+    )
+
+
+def _wpe(name: str, **kwargs: object) -> WorkflowPhaseEntry:
+    return WorkflowPhaseEntry(name=name, **kwargs)  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# load_contracts_config — happy path
+# ---------------------------------------------------------------------------
+
+
+class TestLoadContractsConfig:
+    """Test load_contracts_config returns ContractsConfig on valid input."""
+
+    def test_returns_contracts_config_instance(self, config_dir: Path) -> None:
+        """load_contracts_config must return a ContractsConfig instance."""
+        _write_contracts(config_dir, _MINIMAL_YAML)
+        loader = ConfigLoader(config_dir)
+        result = loader.load_contracts_config()
+        assert isinstance(result, ContractsConfig)
+
+    def test_feature_workflow_research_first_ready_last(self) -> None:
+        """Real contracts.yaml: feature workflow has research first and ready last."""
+        real = Path(__file__).parents[4] / ".st3" / "config" / "contracts.yaml"
+        if not real.exists():
+            pytest.skip("contracts.yaml not yet created — passes after C2 GREEN")
+        result = ConfigLoader(real.parent).load_contracts_config()
+        phases = result.get_phases("feature")
+        assert phases[0] == "research"
+        assert phases[-1] == "ready"
+
+    def test_loaded_object_passes_model_validator(self, config_dir: Path) -> None:
+        """Loaded object must satisfy the model_validator (last phase == pr_allowed_phase)."""
+        _write_contracts(config_dir, _MINIMAL_YAML)
+        result = ConfigLoader(config_dir).load_contracts_config()
+        assert result.merge_policy.pr_allowed_phase == "ready"
+        assert result.get_phases("feature")[-1] == "ready"
+
+
+# ---------------------------------------------------------------------------
+# load_contracts_config — error paths
+# ---------------------------------------------------------------------------
+
+
+class TestLoadContractsConfigErrors:
+    def test_missing_file_raises_config_error(self, config_dir: Path) -> None:
+        """ConfigError (not FileNotFoundError) must be raised when contracts.yaml absent."""
+        with pytest.raises(ConfigError):
+            ConfigLoader(config_dir).load_contracts_config()
+
+    def test_yaml_parse_error_raises_config_error(self, config_dir: Path) -> None:
+        """ConfigError must be raised on YAML parse error."""
+        _write_contracts(config_dir, "merge_policy: [\ninvalid yaml")
+        with pytest.raises(ConfigError):
+            ConfigLoader(config_dir).load_contracts_config()
+
+
+# ---------------------------------------------------------------------------
+# Removed methods
+# ---------------------------------------------------------------------------
+
+
+class TestRemovedLoaderMethods:
+    def test_inject_terminal_phase_does_not_exist(self) -> None:
+        """_inject_terminal_phase must be removed from ConfigLoader."""
+        assert not hasattr(ConfigLoader, "_inject_terminal_phase")
+
+    def test_load_phase_contracts_config_does_not_exist(self) -> None:
+        """load_phase_contracts_config must be removed from ConfigLoader."""
+        assert not hasattr(ConfigLoader, "load_phase_contracts_config")
+
+
+# ---------------------------------------------------------------------------
+# Roundtrip tests — all 6 workflows
+# ---------------------------------------------------------------------------
+
+
+class TestContractsConfigRoundtrip:
+    """YAML → ContractsConfig → hand-crafted object equality for all 6 workflows."""
+
+    def test_feature_workflow_roundtrip(self, config_dir: Path) -> None:
+        impl = {
+            "name": "implementation",
+            "cycle_based": True,
+            "subphases": ["red", "green", "refactor"],
+            "commit_type_map": {"red": "test", "green": "feat", "refactor": "refactor"},
+        }
+        loader = _make_loader_with_workflows(
+            config_dir,
+            {
+                "feature": {
+                    "phases": [
+                        {"name": "research"},
+                        {"name": "planning"},
+                        {"name": "design"},
+                        impl,
+                        {"name": "validation"},
+                        {"name": "documentation"},
+                        {"name": "ready"},
+                    ]
+                }
+            },
+        )
+        expected = ContractsConfig(
+            merge_policy=_policy(),
+            workflows={
+                "feature": WorkflowEntry(
+                    phases=[
+                        _wpe("research"),
+                        _wpe("planning"),
+                        _wpe("design"),
+                        _wpe(
+                            "implementation",
+                            cycle_based=True,
+                            subphases=["red", "green", "refactor"],
+                            commit_type_map={
+                                "red": "test",
+                                "green": "feat",
+                                "refactor": "refactor",
+                            },
+                        ),
+                        _wpe("validation"),
+                        _wpe("documentation"),
+                        _wpe("ready"),
+                    ]
+                )
+            },
+        )
+        assert loader.load_contracts_config() == expected
+
+    def test_bug_workflow_roundtrip(self, config_dir: Path) -> None:
+        impl = {
+            "name": "implementation",
+            "cycle_based": True,
+            "subphases": ["red", "green", "refactor"],
+            "commit_type_map": {"red": "test", "green": "feat", "refactor": "refactor"},
+        }
+        loader = _make_loader_with_workflows(
+            config_dir,
+            {
+                "bug": {
+                    "phases": [
+                        {"name": "research"},
+                        {"name": "planning"},
+                        {"name": "design"},
+                        impl,
+                        {"name": "validation"},
+                        {"name": "documentation"},
+                        {"name": "ready"},
+                    ]
+                }
+            },
+        )
+        expected = ContractsConfig(
+            merge_policy=_policy(),
+            workflows={
+                "bug": WorkflowEntry(
+                    phases=[
+                        _wpe("research"),
+                        _wpe("planning"),
+                        _wpe("design"),
+                        _wpe(
+                            "implementation",
+                            cycle_based=True,
+                            subphases=["red", "green", "refactor"],
+                            commit_type_map={
+                                "red": "test",
+                                "green": "feat",
+                                "refactor": "refactor",
+                            },
+                        ),
+                        _wpe("validation"),
+                        _wpe("documentation"),
+                        _wpe("ready"),
+                    ]
+                )
+            },
+        )
+        assert loader.load_contracts_config() == expected
+
+    def test_hotfix_workflow_roundtrip(self, config_dir: Path) -> None:
+        impl = {
+            "name": "implementation",
+            "cycle_based": True,
+            "subphases": ["red", "green", "refactor"],
+            "commit_type_map": {"red": "test", "green": "feat", "refactor": "refactor"},
+        }
+        loader = _make_loader_with_workflows(
+            config_dir,
+            {
+                "hotfix": {
+                    "phases": [
+                        impl,
+                        {"name": "validation"},
+                        {"name": "documentation"},
+                        {"name": "ready"},
+                    ]
+                }
+            },
+        )
+        expected = ContractsConfig(
+            merge_policy=_policy(),
+            workflows={
+                "hotfix": WorkflowEntry(
+                    phases=[
+                        _wpe(
+                            "implementation",
+                            cycle_based=True,
+                            subphases=["red", "green", "refactor"],
+                            commit_type_map={
+                                "red": "test",
+                                "green": "feat",
+                                "refactor": "refactor",
+                            },
+                        ),
+                        _wpe("validation"),
+                        _wpe("documentation"),
+                        _wpe("ready"),
+                    ]
+                )
+            },
+        )
+        assert loader.load_contracts_config() == expected
+
+    def test_refactor_workflow_roundtrip(self, config_dir: Path) -> None:
+        impl = {
+            "name": "implementation",
+            "cycle_based": True,
+            "subphases": ["red", "green", "refactor"],
+            "commit_type_map": {"red": "test", "green": "feat", "refactor": "refactor"},
+        }
+        loader = _make_loader_with_workflows(
+            config_dir,
+            {
+                "refactor": {
+                    "phases": [
+                        {"name": "research"},
+                        {"name": "planning"},
+                        impl,
+                        {"name": "validation"},
+                        {"name": "documentation"},
+                        {"name": "ready"},
+                    ]
+                }
+            },
+        )
+        expected = ContractsConfig(
+            merge_policy=_policy(),
+            workflows={
+                "refactor": WorkflowEntry(
+                    phases=[
+                        _wpe("research"),
+                        _wpe("planning"),
+                        _wpe(
+                            "implementation",
+                            cycle_based=True,
+                            subphases=["red", "green", "refactor"],
+                            commit_type_map={
+                                "red": "test",
+                                "green": "feat",
+                                "refactor": "refactor",
+                            },
+                        ),
+                        _wpe("validation"),
+                        _wpe("documentation"),
+                        _wpe("ready"),
+                    ]
+                )
+            },
+        )
+        assert loader.load_contracts_config() == expected
+
+    def test_docs_workflow_roundtrip(self, config_dir: Path) -> None:
+        loader = _make_loader_with_workflows(
+            config_dir,
+            {
+                "docs": {
+                    "phases": [
+                        {"name": "planning"},
+                        {"name": "documentation"},
+                        {"name": "ready"},
+                    ]
+                }
+            },
+        )
+        expected = ContractsConfig(
+            merge_policy=_policy(),
+            workflows={
+                "docs": WorkflowEntry(
+                    phases=[
+                        _wpe("planning"),
+                        _wpe("documentation"),
+                        _wpe("ready"),
+                    ]
+                )
+            },
+        )
+        assert loader.load_contracts_config() == expected
+
+    def test_epic_workflow_roundtrip(self, config_dir: Path) -> None:
+        loader = _make_loader_with_workflows(
+            config_dir,
+            {
+                "epic": {
+                    "phases": [
+                        {"name": "research"},
+                        {"name": "planning"},
+                        {"name": "design"},
+                        {"name": "coordination"},
+                        {"name": "documentation"},
+                        {"name": "ready"},
+                    ]
+                }
+            },
+        )
+        expected = ContractsConfig(
+            merge_policy=_policy(),
+            workflows={
+                "epic": WorkflowEntry(
+                    phases=[
+                        _wpe("research"),
+                        _wpe("planning"),
+                        _wpe("design"),
+                        _wpe("coordination"),
+                        _wpe("documentation"),
+                        _wpe("ready"),
+                    ]
+                )
+            },
+        )
+        assert loader.load_contracts_config() == expected

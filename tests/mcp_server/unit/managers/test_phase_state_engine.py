@@ -94,9 +94,9 @@ class TestTDDPhaseHooks:
             state_repository=InMemoryStateRepository(),
         )
 
-        # Initialize branch in planning phase
+        # Initialize branch in design phase (one step before implementation)
         state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="planning"
+            branch=branch, issue_number=issue_number, initial_phase="design"
         )
 
         # Verify no TDD cycle yet
@@ -104,7 +104,7 @@ class TestTDDPhaseHooks:
         assert state.current_cycle is None
 
         # Act
-        state_engine.on_enter_implementation_phase(branch, issue_number)
+        state_engine.on_enter_cycle_based_phase(branch, issue_number)
 
         # Assert
         state = state_engine.get_state(branch)
@@ -143,7 +143,7 @@ class TestTDDPhaseHooks:
         )
 
         # Act & Assert â€” must NOT raise; gate lives at planning exit now
-        state_engine.on_enter_implementation_phase(branch, issue_number)
+        state_engine.on_enter_cycle_based_phase(branch, issue_number)
         state = state_engine.get_state(branch)
         assert state.current_cycle == 1
 
@@ -171,7 +171,7 @@ class TestTDDPhaseHooks:
         state_repository.save(state.with_updates(current_cycle=3))
 
         # Act
-        state_engine.on_exit_implementation_phase(branch)
+        state_engine.on_exit_cycle_based_phase(branch)
 
         # Assert
         state = state_engine.get_state(branch)
@@ -203,7 +203,7 @@ class TestTDDPhaseHooks:
 
         # Act
         # Design decision: Allow exit with warning (logs but doesn't block)
-        state_engine.on_exit_implementation_phase(branch)
+        state_engine.on_exit_cycle_based_phase(branch)
 
         # Assert
         state = state_engine.get_state(branch)
@@ -252,20 +252,24 @@ class TestTransitionHooksWiring:
         issue_number = 999
         config_dir = workspace_root / ".st3" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
-        (config_dir / "phase_contracts.yaml").write_text(
+        (config_dir / "contracts.yaml").write_text(
             (
                 "merge_policy:\n"
                 "  pr_allowed_phase: ready\n"
                 "  branch_local_artifacts: []\n"
                 "workflows:\n"
                 "  feature:\n"
-                "    implementation:\n"
-                "      cycle_based: true\n"
-                "      subphases: [red, green, refactor]\n"
-                "      commit_type_map:\n"
-                "        red: test\n"
-                "        green: feat\n"
-                "        refactor: refactor\n"
+                "    phases:\n"
+                "      - name: design\n"
+                "      - name: implementation\n"
+                "        cycle_based: true\n"
+                "        subphases: [red, green, refactor]\n"
+                "        commit_type_map:\n"
+                "          red: test\n"
+                "          green: feat\n"
+                "          refactor: refactor\n"
+                "      - name: validation\n"
+                "      - name: ready\n"
             ),
             encoding="utf-8",
         )
@@ -306,9 +310,9 @@ class TestTransitionHooksWiring:
             state_repository=InMemoryStateRepository(),
         )
 
-        # Initialize branch in planning phase
+        # Initialize branch in design phase (one step before implementation)
         state_engine.initialize_branch(
-            branch=branch, issue_number=issue_number, initial_phase="planning"
+            branch=branch, issue_number=issue_number, initial_phase="design"
         )
 
         # Verify no TDD cycle before transition
@@ -448,7 +452,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
         repo.save(seed)
         mutator.apply_calls.clear()
 
-        engine.transition(branch="feature/231-test", to_phase="design")
+        engine.transition(branch="feature/231-test", to_phase="planning")
 
         assert "feature/231-test" in mutator.apply_calls
 
@@ -480,7 +484,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
         repo.save(seed)
         mutator.apply_calls.clear()
 
-        engine.on_enter_implementation_phase("feature/231-test", 231)
+        engine.on_enter_cycle_based_phase("feature/231-test", 231)
 
         assert "feature/231-test" in mutator.apply_calls
 
@@ -513,6 +517,6 @@ class TestPhaseStateEngineMutatorRoutingC6:
         repo.save(seed)
         mutator.apply_calls.clear()
 
-        engine.on_exit_implementation_phase("feature/231-test")
+        engine.on_exit_cycle_based_phase("feature/231-test")
 
         assert "feature/231-test" in mutator.apply_calls

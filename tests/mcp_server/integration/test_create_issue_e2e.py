@@ -51,7 +51,7 @@ def make_validating_tool(
         manager=manager,
         issue_config=dependencies["issue_config"],
         milestone_config=milestone_config or dependencies["milestone_config"],
-        workflow_config=dependencies["workflow_config"],
+        contracts_config=dependencies["contracts_config"],
     )
     return tool, adapter
 
@@ -172,7 +172,7 @@ async def test_milestone_accepted_when_milestones_yaml_is_empty() -> None:
         manager=manager,
         issue_config=dependencies["issue_config"],
         milestone_config=empty_milestones,
-        workflow_config=dependencies["workflow_config"],
+        contracts_config=dependencies["contracts_config"],
     )
     issue_mock = MagicMock(number=11, title="Milestone ok", html_url="http://x")
     adapter.create_issue.return_value = issue_mock

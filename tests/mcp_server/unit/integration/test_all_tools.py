@@ -188,14 +188,14 @@ def make_create_issue_tool(manager: MagicMock) -> CreateIssueTool:
     contributor_config = MagicMock()
     contributor_config.validate_assignee.return_value = True
 
-    workflow_config = MagicMock()
-    workflow_config.get_first_phase.return_value = "research"
+    contracts_config = MagicMock()
+    contracts_config.get_first_phase.return_value = "research"
 
     return CreateIssueTool(
         manager=manager,
         issue_config=issue_config,
         milestone_config=milestone_config,
-        workflow_config=workflow_config,
+        contracts_config=contracts_config,
     )
 
 

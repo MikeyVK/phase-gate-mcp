@@ -124,7 +124,7 @@ Run quality gates, tests, and code validation.
 | **RunQualityGatesTool** | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required + non-empty only when `scope="files"`) | `content[0]=text` summary line, `content[1]=json` compact payload `{overall_pass,gates}` |
 | **ValidationTool** | Generic code validation | `scope` (all/dtos/workers/platform) | Validation report |
 | **ValidateDTOTool** | Validate DTO schema | `file_path` | DTO structure validation |
-| **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout` | JSON: `summary`, `summary_line`, `failures[]` with traceback |
+| **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` | `content[0]=text` (summary line + per-failure `FAILED test_id — reason` for exit 1; summary + stderr hint for exit 2/3/4), `content[1]=json` `{exit_code, summary, summary_line, failures[], coverage_pct, lf_cache_was_empty, stderr}` |
 | **HealthCheckTool** | Server health status | None | OK/ERROR |
 
 **Quality Gates Standard (`.st3/quality.yaml`):**

@@ -1,12 +1,12 @@
 # mcp_server/managers/project_manager.py
 """
-Project manager - Workflow-based project initialization.
+Project manager - ContractsConfig-driven project initialization.
 
-Manages project initialization with workflow selection from workflows.yaml.
-Replaces hardcoded PHASE_TEMPLATES with dynamic workflow configuration.
+Manages project initialization with workflow selection from contracts.yaml.
+Replaces hardcoded PHASE_TEMPLATES with dynamic ContractsConfig phase sequences.
 
 @layer: Platform
-@dependencies: [workflow_config]
+@dependencies: [contracts_config]
 @responsibilities:
     - Initialize projects with workflow selection
     - Validate workflow existence and execution mode
@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any
 
 # Project modules
 from mcp_server.managers.git_manager import GitManager
-from mcp_server.schemas import WorkflowConfig, WorkphasesConfig
+from mcp_server.schemas import ContractsConfig, WorkphasesConfig
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 if TYPE_CHECKING:
@@ -83,15 +83,15 @@ class ProjectPlan:
 
 
 class ProjectManager:
-    """Project initialization manager with workflow support.
+    """Project initialization manager with ContractsConfig support.
 
-    Uses workflows.yaml for workflow definitions and phase sequences.
+    Uses contracts.yaml for workflow phase definitions.
     """
 
     def __init__(
         self,
         workspace_root: Path | str,
-        workflow_config: WorkflowConfig,
+        contracts_config: ContractsConfig,
         git_manager: GitManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
         *,
@@ -99,7 +99,7 @@ class ProjectManager:
     ) -> None:
         """Initialize ProjectManager."""
         self.workspace_root = Path(workspace_root)
-        self.workflow_config = workflow_config
+        self._contracts_config = contracts_config
         self._git_manager = git_manager
         self._workphases_config = workphases_config
         self._workflow_status_resolver = workflow_status_resolver
@@ -118,7 +118,7 @@ class ProjectManager:
         Args:
             issue_number: GitHub issue number
             issue_title: Issue title
-            workflow_name: Workflow from workflows.yaml (feature, bug, hotfix, etc.)
+            workflow_name: Workflow from contracts.yaml (feature, bug, hotfix, etc.)
             options: Optional parameters (execution_mode, custom_phases, skip_reason,
                     parent_branch)
 
@@ -135,14 +135,13 @@ class ProjectManager:
         parent_branch = opts.parent_branch
 
         # Validate workflow exists
-        try:
-            workflow = self.workflow_config.get_workflow(workflow_name)
-        except ValueError as e:
-            # Re-raise with workflow config error (includes available workflows)
-            raise ValueError(str(e)) from e
+        if workflow_name not in self._contracts_config.workflows:
+            available = list(self._contracts_config.workflows.keys())
+            msg = f"Unknown workflow: '{workflow_name}'. Available: {available}"
+            raise ValueError(msg)
 
-        # Determine execution mode (override or workflow default)
-        exec_mode = opts.execution_mode or workflow.default_execution_mode
+        # Determine execution mode (default: interactive; no longer from workflow config)
+        exec_mode = opts.execution_mode or "interactive"
 
         # Validate execution mode
         if exec_mode not in ("interactive", "autonomous"):
@@ -151,14 +150,14 @@ class ProjectManager:
             )
             raise ValueError(msg)
 
-        # Determine phases (custom override or workflow default)
+        # Determine phases (custom override or contracts default)
         if opts.custom_phases:
             if not opts.skip_reason:
                 msg = "skip_reason required when custom_phases provided"
                 raise ValueError(msg)
             required_phases = opts.custom_phases
         else:
-            required_phases = tuple(workflow.phases)
+            required_phases = tuple(self._contracts_config.get_phases(workflow_name))
 
         # Create project plan
         plan = ProjectPlan(
@@ -184,6 +183,14 @@ class ProjectManager:
             "skip_reason": plan.skip_reason,
             "parent_branch": plan.parent_branch,
         }
+
+    def get_first_phase(self, workflow_name: str) -> str:
+        """Return the first phase name for the given workflow."""
+        return self._contracts_config.get_first_phase(workflow_name)
+
+    def get_phases(self, workflow_name: str) -> list[str]:
+        """Return all phase names for the given workflow in order."""
+        return self._contracts_config.get_phases(workflow_name)
 
     def save_planning_deliverables(
         self, issue_number: int, planning_deliverables: dict[str, Any]

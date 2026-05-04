@@ -8,6 +8,7 @@ from typing import Any, Literal, cast
 import jinja2
 from pydantic import BaseModel, Field, field_validator
 
+from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
@@ -17,7 +18,6 @@ from mcp_server.scaffolding.version_hash import compute_version_hash
 from mcp_server.schemas import (
     IssueConfig,
     MilestoneConfig,
-    WorkflowConfig,
 )
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
@@ -181,12 +181,12 @@ class CreateIssueTool(BaseTool):
         manager: GitHubManager,
         issue_config: IssueConfig,
         milestone_config: MilestoneConfig,
-        workflow_config: WorkflowConfig,
+        contracts_config: ContractsConfig,
     ) -> None:
         self.manager = manager
         self._issue_config = issue_config
         self._milestone_config = milestone_config
-        self._workflow_config = workflow_config
+        self._contracts_config = contracts_config
         self._renderer = JinjaRenderer(template_dir=get_template_root())
 
     @property
@@ -222,7 +222,7 @@ class CreateIssueTool(BaseTool):
     def _assemble_labels(self, params: CreateIssueInput) -> list[str]:
         """Assemble the full label list from structured input fields."""
         issue_cfg = self._issue_config
-        workflow_cfg = self._workflow_config
+        workflow_cfg = self._contracts_config
 
         type_label = "type:epic" if params.is_epic else issue_cfg.get_label(params.issue_type)
         workflow_name = issue_cfg.get_workflow(params.issue_type)

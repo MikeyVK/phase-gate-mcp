@@ -118,7 +118,7 @@ force_phase_transition(
 
 ### 2.3 Implementation Cycle Within Phase
 
-**RED → GREEN → REFACTOR loop, elke cyclus genummerd. `implementation` is de enige fase met subphases.**
+**RED → GREEN → REFACTOR loop, elke cyclus genummerd. Subphases (red/green/refactor) gelden alleen voor fasen met `cycle_based: true` in `contracts.yaml` (standaard: `implementation`).**
 
 | Sub-phase | Commit | Scope format |
 |-----------|--------|--------------|
@@ -126,7 +126,7 @@ force_phase_transition(
 | green | `feat(P_IMPLEMENTATION_SP_C1_GREEN): ...` | `git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="...")` |
 | refactor | `refactor(P_IMPLEMENTATION_SP_C1_REFACTOR): ...` | `git_add_or_commit(workflow_phase="implementation", sub_phase="refactor", cycle_number=1, message="...")` |
 
-> `cycle_number` is verplicht in `implementation`. Volgende cyclus: `transition_cycle(to_cycle=2)`.
+> `cycle_number` is verplicht voor `cycle_based`-fasen (zie `contracts.yaml`). Volgende cyclus: `transition_cycle(to_cycle=2)`.
 > `workflow_phase` mag worden weggelaten — auto-detect via `state.json`.
 
 **Andere fasen (geen subphases behalve optioneel):**
@@ -260,7 +260,7 @@ transition_phase(to_phase="validation")
 | Restore files | `git_restore(files, source)` | `run_in_terminal("git restore")` |
 | Diff statistics | `git_diff_stat(source_branch, target_branch)` | `run_in_terminal("git diff --stat")` |
 
-**`git_add_or_commit` vereiste parameters:** `workflow_phase` (auto-detect via state.json indien weggelaten), `cycle_number` (verplicht in `implementation`), `sub_phase` (optioneel). Gebruik `commit_type` alleen als override. De `phase` parameter bestaat **niet** — crasht met `extra='forbid'`.
+**`git_add_or_commit` vereiste parameters:** `workflow_phase` (auto-detect via state.json indien weggelaten), `cycle_number` (verplicht in `cycle_based`-fasen), `sub_phase` (optioneel). Gebruik `commit_type` alleen als override. De `phase` parameter bestaat **niet** — crasht met `extra='forbid'`.
 
 ### GitHub Issues
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -331,7 +331,7 @@ scaffold_artifact(
 ### Quality & Testing
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Run tests | `run_tests(path, markers, last_failed_only, scope, timeout)` | `run_in_terminal("pytest")` |
+| Run tests | `run_tests(path, markers, last_failed_only, scope, timeout, coverage)` | `run_in_terminal("pytest")` |
 | Quality gates | `run_quality_gates(scope, files?)` | `run_in_terminal("ruff/mypy/pylint")` |
 | Validate template | `validate_template(path, template_type)` | Manual validation |
 | Validate architecture | `validate_architecture(scope)` | Manual review |
@@ -367,7 +367,7 @@ scaffold_artifact(
 | Workflow state | `.st3/state.json` | Branch-local — mag nooit naar main |
 | Deliverables | `.st3/deliverables.json` | Branch-local — mag nooit naar main |
 
-Configuratie: `.st3/config/enforcement.yaml` + `.st3/config/phase_contracts.yaml`
+Configuratie: `.st3/config/enforcement.yaml` + `.st3/config/contracts.yaml`
 
 ```
 submit_pr          → pre: check_phase_readiness(policy=ready)   → geblokkeerd als phase != "ready"

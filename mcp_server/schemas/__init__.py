@@ -12,6 +12,14 @@ Infrastructure:
 """
 
 from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
+from mcp_server.config.schemas.contracts_config import (
+    BranchLocalArtifact,
+    CheckSpec,
+    ContractsConfig,
+    MergePolicy,
+    WorkflowEntry,
+    WorkflowPhaseEntry,
+)
 from mcp_server.config.schemas.contributor_config import ContributorConfig, ContributorEntry
 from mcp_server.config.schemas.enforcement_config import (
     EnforcementAction,
@@ -23,11 +31,6 @@ from mcp_server.config.schemas.issue_config import IssueConfig
 from mcp_server.config.schemas.label_config import LabelConfig
 from mcp_server.config.schemas.milestone_config import MilestoneConfig
 from mcp_server.config.schemas.operation_policies_config import OperationPoliciesConfig
-from mcp_server.config.schemas.phase_contracts_config import (
-    BranchLocalArtifact,
-    CheckSpec,
-    PhaseContractsConfig,
-)
 from mcp_server.config.schemas.project_structure_config import ProjectStructureConfig
 from mcp_server.config.schemas.quality_config import (
     JsonViolationsParsing,
@@ -127,6 +130,7 @@ __all__ = [
     "BranchLocalArtifact",
     "CheckSpec",
     "CommentPattern",
+    "ContractsConfig",
     "ContributorConfig",
     "ContributorEntry",
     "EnforcementAction",
@@ -136,10 +140,10 @@ __all__ = [
     "IssueConfig",
     "JsonViolationsParsing",
     "LabelConfig",
+    "MergePolicy",
     "MetadataField",
     "MilestoneConfig",
     "OperationPoliciesConfig",
-    "PhaseContractsConfig",
     "ProjectStructureConfig",
     "QualityConfig",
     "QualityGate",
@@ -148,5 +152,7 @@ __all__ = [
     "TextViolationsParsing",
     "ViolationDTO",
     "WorkflowConfig",
+    "WorkflowEntry",
+    "WorkflowPhaseEntry",
     "WorkphasesConfig",
 ]

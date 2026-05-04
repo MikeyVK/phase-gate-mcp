@@ -33,20 +33,22 @@ def cycle_based_phase_contracts(tmp_path: Path) -> None:
     """Provide minimal phase contracts so implementation remains cycle_based in temp workspaces."""
     config_dir = tmp_path / ".st3" / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
-    (config_dir / "phase_contracts.yaml").write_text(
+    (config_dir / "contracts.yaml").write_text(
         (
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"
             "workflows:\n"
             "  feature:\n"
-            "    implementation:\n"
-            "      cycle_based: true\n"
-            "      subphases: [red, green, refactor]\n"
-            "      commit_type_map:\n"
-            "        red: test\n"
-            "        green: feat\n"
-            "        refactor: refactor\n"
+            "    phases:\n"
+            "      - name: implementation\n"
+            "        cycle_based: true\n"
+            "        subphases: [red, green, refactor]\n"
+            "        commit_type_map:\n"
+            "          red: test\n"
+            "          green: feat\n"
+            "          refactor: refactor\n"
+            "      - name: ready\n"
         ),
         encoding="utf-8",
     )

@@ -52,13 +52,15 @@ class PytestResult:
     lf_cache_was_empty: bool
     should_raise: bool
     note: NoteEntry | None
+    is_error: bool
+    stderr: str = ""
 
 
 @dataclass(frozen=True)
 class ExitCodePolicy:
     """Dispatch policy for a single pytest exit code."""
 
-    outcome: Literal["return", "raise"]
+    outcome: Literal["ok", "error", "raise"]
     note_factory: Callable[[int], NoteEntry] | None
     summary_line_when_no_parse: str
 
@@ -73,29 +75,29 @@ class _PytestExecution:
 
 
 _EXIT_CODE_POLICY: dict[int, ExitCodePolicy] = {
-    PytestExitCode.ALL_PASSED: ExitCodePolicy("return", None, ""),
-    PytestExitCode.TESTS_FAILED: ExitCodePolicy("return", None, ""),
+    PytestExitCode.ALL_PASSED: ExitCodePolicy("ok", None, ""),
+    PytestExitCode.TESTS_FAILED: ExitCodePolicy("ok", None, ""),
     PytestExitCode.INTERRUPTED: ExitCodePolicy(
-        "raise",
+        "error",
         lambda _: RecoveryNote("Pytest was interrupted; check for hung tests or external SIGINT."),
         "pytest interrupted (exit 2)",
     ),
     PytestExitCode.INTERNAL_ERROR: ExitCodePolicy(
-        "raise",
+        "error",
         lambda _: RecoveryNote(
             "Pytest reported an internal error; inspect stderr and pytest plugins."
         ),
         "pytest internal error (exit 3)",
     ),
     PytestExitCode.USAGE_ERROR: ExitCodePolicy(
-        "raise",
+        "error",
         lambda _: RecoveryNote(
             "Pytest could not start. Verify the path exists and the CLI options are valid."
         ),
         "pytest usage error (exit 4)",
     ),
     PytestExitCode.NO_TESTS_COLLECTED: ExitCodePolicy(
-        "return",
+        "ok",
         lambda _: SuggestionNote("No tests matched the filter. Check markers and path."),
         "no tests collected",
     ),
@@ -118,7 +120,7 @@ class PytestRunner:
     def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
         """Execute pytest, parse output, classify exit code, return typed result."""
         execution = self._execute(cmd, cwd, timeout)
-        return self._parse_output(execution.stdout, execution.returncode)
+        return self._parse_output(execution.stdout, execution.stderr, execution.returncode)
 
     def _execute(self, cmd: list[str], cwd: str, timeout: int) -> _PytestExecution:
         """Run pytest with safe subprocess defaults for the MCP server environment."""
@@ -148,7 +150,7 @@ class PytestRunner:
             returncode=proc.returncode,
         )
 
-    def _parse_output(self, stdout: str, returncode: int) -> PytestResult:
+    def _parse_output(self, stdout: str, stderr: str, returncode: int) -> PytestResult:
         """Parse raw pytest stdout and return a fully typed PytestResult."""
         policy = _EXIT_CODE_POLICY.get(returncode, _UNKNOWN_CODE_POLICY)
 
@@ -170,6 +172,8 @@ class PytestRunner:
             lf_cache_was_empty=lf_cache_was_empty,
             should_raise=policy.outcome == "raise",
             note=policy.note_factory(returncode) if policy.note_factory else None,
+            is_error=policy.outcome == "error",
+            stderr=stderr,
         )
 
     def _parse_counts(self, stdout: str) -> tuple[int, int, int, int]:
@@ -203,7 +207,9 @@ class PytestRunner:
         """Extract the traceback block for a given test_id from the FAILURES section."""
         _, _, test_name = test_id.rpartition("::")
         pattern = re.compile(
-            r"_{3,}\s+" + re.escape(test_name) + r"\s+_{3,}\n(.*?)(?=\n_{3,}|\n={3,}|\Z)",
+            r"(?:\[gw\d+\]\s+)?_{3,}\s+"
+            + re.escape(test_name)
+            + r"\s+_{3,}\n(.*?)(?=\n_{3,}|\n={3,}|\Z)",
             re.DOTALL,
         )
         match = pattern.search(stdout)

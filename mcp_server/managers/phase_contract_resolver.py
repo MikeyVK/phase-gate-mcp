@@ -11,11 +11,11 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.schemas import (
     BranchLocalArtifact,
     CheckSpec,
-    PhaseContractsConfig,
+    ContractsConfig,
     WorkphasesConfig,
 )
 
-_PHASE_CONTRACTS_DISPLAY_PATH = ".st3/config/phase_contracts.yaml"
+_PHASE_CONTRACTS_DISPLAY_PATH = ".st3/config/contracts.yaml"
 _WORKPHASES_DISPLAY_PATH = ".st3/config/workphases.yaml"
 _DELIVERABLES_DISPLAY_PATH = ".st3/deliverables.json"
 
@@ -29,8 +29,8 @@ class MergeReadinessContext:
     """
 
     terminal_phase: str  # from WorkphasesConfig.get_terminal_phase()
-    pr_allowed_phase: str  # from PhaseContractsConfig.get_pr_allowed_phase()
-    branch_local_artifacts: tuple[BranchLocalArtifact, ...]  # from PhaseContractsConfig
+    pr_allowed_phase: str  # from ContractsConfig.get_pr_allowed_phase()
+    branch_local_artifacts: tuple[BranchLocalArtifact, ...]  # from ContractsConfig
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,7 @@ class PhaseConfigContext:
     """Facade bundling workphase, phase contract, and issue deliverable context."""
 
     workphases: WorkphasesConfig
-    phase_contracts: PhaseContractsConfig
+    contracts: ContractsConfig
     planning_deliverables: dict[str, Any] | None = None
 
     @staticmethod
@@ -68,15 +68,16 @@ class PhaseContractResolver:
 
     def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
         """Report whether one workflow phase is marked cycle_based in config."""
-        workflow_contracts = self._config.phase_contracts.workflows.get(workflow_name)
-        if workflow_contracts is None:
+        workflow_entry = self._config.contracts.workflows.get(workflow_name)
+        if workflow_entry is None:
             return False
 
-        phase_contract = workflow_contracts.get(phase)
-        if phase_contract is None:
+        try:
+            phase_entry = workflow_entry.get_phase(phase)
+        except ValueError:
             return False
 
-        return phase_contract.cycle_based
+        return phase_entry.cycle_based
 
     def resolve_commit_type(
         self,
@@ -85,15 +86,19 @@ class PhaseContractResolver:
         sub_phase: str | None,
     ) -> str | None:
         """Resolve commit type from phase contracts for one workflow phase."""
-        workflow_contracts = self._config.phase_contracts.workflows.get(workflow_name)
-        if workflow_contracts is None:
+        workflow_entry = self._config.contracts.workflows.get(workflow_name)
+        if workflow_entry is None:
             return None
 
-        phase_contract = workflow_contracts.get(phase)
-        if phase_contract is None or sub_phase is None:
+        try:
+            phase_entry = workflow_entry.get_phase(phase)
+        except ValueError:
             return None
 
-        if sub_phase not in phase_contract.commit_type_map:
+        if sub_phase is None:
+            return None
+
+        if sub_phase not in phase_entry.commit_type_map:
             raise ConfigError(
                 (
                     f"Missing commit_type_map entry for sub_phase '{sub_phase}' "
@@ -102,7 +107,7 @@ class PhaseContractResolver:
                 file_path=_PHASE_CONTRACTS_DISPLAY_PATH,
             )
 
-        return phase_contract.commit_type_map[sub_phase]
+        return phase_entry.commit_type_map[sub_phase]
 
     def resolve(
         self,
@@ -117,17 +122,18 @@ class PhaseContractResolver:
         - issue-specific gates may override recommended config gates by matching id
         - issue-specific gates may extend the resolved set with new recommended checks
         """
-        workflow_contracts = self._config.phase_contracts.workflows.get(workflow_name)
-        if workflow_contracts is None:
+        workflow_entry = self._config.contracts.workflows.get(workflow_name)
+        if workflow_entry is None:
             return []
 
-        phase_contract = workflow_contracts.get(phase)
-        if phase_contract is None:
+        try:
+            phase_entry = workflow_entry.get_phase(phase)
+        except ValueError:
             return []
 
-        config_checks = [*phase_contract.exit_requires]
+        config_checks = [*phase_entry.exit_requires]
         if cycle_number is not None:
-            config_checks.extend(phase_contract.cycle_exit_requires.get(cycle_number, []))
+            config_checks.extend(phase_entry.cycle_exit_requires.get(cycle_number, []))
 
         issue_checks = self._resolve_issue_checks(
             workflow_name=workflow_name,
