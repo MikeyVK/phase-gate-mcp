@@ -2,7 +2,7 @@
   "branch": "feature/298-make-state-json-authoritative-after-runtime-contract-closure",
   "issue_number": 298,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,10 +16,19 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Research en design gecombineerd in \u00e9\u00e9n document per \u00a71 beslissing (scope bounded, architecture contracts #231/#271/#292 reeds vastgesteld); QA approved GO v1.6",
   "issue_title": "Make state.json authoritative after runtime contract closure",
   "parent_branch": "main",
   "created_at": "2026-05-04T19:50:36.107875+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-05-04T20:50:36.777164+00:00",
+      "human_approval": "MVerkaik approved on 2026-05-04",
+      "forced": true,
+      "skip_reason": "Research en design gecombineerd in \u00e9\u00e9n document per \u00a71 beslissing (scope bounded, architecture contracts #231/#271/#292 reeds vastgesteld); QA approved GO v1.6"
+    }
+  ],
   "reconstructed": false
 }
