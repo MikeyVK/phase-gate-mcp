@@ -156,7 +156,7 @@ Automated quality gates, test execution, and architectural validation.
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `run_quality_gates` | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required only with `scope="files"`) |
-| `run_tests` | Run pytest — structured JSON output with traceback per failure | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout` |
+| `run_tests` | Run pytest — structured output: per-failure lines in `content[0]` text + full JSON payload in `content[1]` | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` |
 | `validate_architecture` | Validate code against patterns | `scope` (all/dtos/workers/platform) |
 | `validate_dto` | Validate DTO definition | `file_path` |
 | `validate_template` | Validate file structure vs template | `path`, `template_type` |

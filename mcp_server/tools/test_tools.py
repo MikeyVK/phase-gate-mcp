@@ -82,6 +82,7 @@ def _find_timeout_expired(exc: BaseException) -> subprocess.TimeoutExpired | Non
 
 def _to_tool_result(result: PytestResult) -> ToolResult:
     """Convert the typed runner result into the MCP ToolResult payload."""
+    stderr_tail = "\n".join(result.stderr.splitlines()[-50:]) if result.stderr else ""
     payload = {
         "exit_code": result.exit_code,
         "summary": {
@@ -94,12 +95,33 @@ def _to_tool_result(result: PytestResult) -> ToolResult:
         "failures": [asdict(failure) for failure in result.failures],
         "coverage_pct": result.coverage_pct,
         "lf_cache_was_empty": result.lf_cache_was_empty,
+        "stderr": stderr_tail,
     }
+    if result.is_error:  # exit 2 / 3 / 4
+        first_stderr = next((ln for ln in result.stderr.splitlines() if ln.strip()), "")[:120]
+        text = result.summary_line
+        if first_stderr:
+            text += f"\nstderr: {first_stderr}"
+        return ToolResult(
+            is_error=True,
+            content=[
+                {"type": "text", "text": text},
+                {"type": "json", "json": payload},
+            ],
+        )
+    # exit 0 / 1 / 5
+    failure_lines = "\n".join(
+        f"FAILED {f.test_id} \u2014 {f.short_reason}" for f in result.failures
+    )
+    text = result.summary_line
+    if failure_lines:
+        text += "\n" + failure_lines
     return ToolResult(
+        is_error=False,
         content=[
-            {"type": "text", "text": result.summary_line},
+            {"type": "text", "text": text},
             {"type": "json", "json": payload},
-        ]
+        ],
     )
 
 

@@ -331,7 +331,7 @@ scaffold_artifact(
 ### Quality & Testing
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Run tests | `run_tests(path, markers, last_failed_only, scope, timeout)` | `run_in_terminal("pytest")` |
+| Run tests | `run_tests(path, markers, last_failed_only, scope, timeout, coverage)` | `run_in_terminal("pytest")` |
 | Quality gates | `run_quality_gates(scope, files?)` | `run_in_terminal("ruff/mypy/pylint")` |
 | Validate template | `validate_template(path, template_type)` | Manual validation |
 | Validate architecture | `validate_architecture(scope)` | Manual review |

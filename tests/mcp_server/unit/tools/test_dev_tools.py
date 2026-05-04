@@ -34,6 +34,7 @@ async def test_run_tests_tool(tmp_path: Path) -> None:
             lf_cache_was_empty=False,
             should_raise=False,
             note=None,
+            is_error=False,
         )
     )
     tool = RunTestsTool(runner=runner, settings=Settings(server={"workspace_root": str(tmp_path)}))

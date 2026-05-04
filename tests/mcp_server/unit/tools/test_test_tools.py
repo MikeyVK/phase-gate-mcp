@@ -41,6 +41,8 @@ def _make_pytest_result(
     lf_cache_was_empty: bool = False,
     should_raise: bool = False,
     note: RecoveryNote | SuggestionNote | InfoNote | None = None,
+    is_error: bool = False,
+    stderr: str = "",
 ) -> PytestResult:
     return PytestResult(
         exit_code=exit_code,
@@ -54,6 +56,8 @@ def _make_pytest_result(
         lf_cache_was_empty=lf_cache_was_empty,
         should_raise=should_raise,
         note=note,
+        is_error=is_error,
+        stderr=stderr,
     )
 
 
@@ -128,16 +132,16 @@ async def test_c4_run_tests_interrupted_raises_execution_error(
         result=_make_pytest_result(
             exit_code=2,
             summary_line="pytest interrupted (exit 2)",
-            should_raise=True,
+            is_error=True,
             note=RecoveryNote("Pytest was interrupted; check for hung tests or external SIGINT."),
         )
     )
     tool = RunTestsTool(runner=runner, settings=injected_settings)
     context = NoteContext()
 
-    with pytest.raises(ExecutionError, match="pytest exited with returncode 2"):
-        await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
+    result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
+    assert result.is_error is True
     assert len(context.of_type(RecoveryNote)) == 1
 
 
@@ -149,7 +153,7 @@ async def test_c4_run_tests_internal_error_raises_execution_error(
         result=_make_pytest_result(
             exit_code=3,
             summary_line="pytest internal error (exit 3)",
-            should_raise=True,
+            is_error=True,
             note=RecoveryNote(
                 "Pytest reported an internal error; inspect stderr and pytest plugins."
             ),
@@ -158,9 +162,9 @@ async def test_c4_run_tests_internal_error_raises_execution_error(
     tool = RunTestsTool(runner=runner, settings=injected_settings)
     context = NoteContext()
 
-    with pytest.raises(ExecutionError, match="pytest exited with returncode 3"):
-        await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
+    result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
+    assert result.is_error is True
     assert len(context.of_type(RecoveryNote)) == 1
 
 
@@ -172,7 +176,7 @@ async def test_c4_run_tests_usage_error_raises_execution_error(
         result=_make_pytest_result(
             exit_code=4,
             summary_line="pytest usage error (exit 4)",
-            should_raise=True,
+            is_error=True,
             note=RecoveryNote(
                 "Pytest could not start. Verify the path exists and the CLI options are valid."
             ),
@@ -181,9 +185,9 @@ async def test_c4_run_tests_usage_error_raises_execution_error(
     tool = RunTestsTool(runner=runner, settings=injected_settings)
     context = NoteContext()
 
-    with pytest.raises(ExecutionError, match="pytest exited with returncode 4"):
-        await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
+    result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
+    assert result.is_error is True
     assert len(context.of_type(RecoveryNote)) == 1
 
 
@@ -368,3 +372,143 @@ async def test_c4_run_tests_build_cmd_omits_coverage_flags_when_disabled(
 
     assert runner.captured_cmd is not None
     assert not any(part.startswith("--cov") for part in runner.captured_cmd)
+
+
+# ---------------------------------------------------------------------------
+# C3 — _to_tool_result() routing split on result.is_error
+# ---------------------------------------------------------------------------
+
+
+class TestC3ToToolResultRouting:
+    """C3: _to_tool_result() routes on result.is_error; exit 2/3/4 → ToolResult(is_error=True)."""
+
+    @pytest.mark.asyncio
+    async def test_c3_to_tool_result_exit1_is_error_false(
+        self, injected_settings: Settings
+    ) -> None:
+        """Exit 1 (tests failed) → ToolResult(is_error=False)."""
+        failure = FailureDetail(
+            test_id="tests/unit/test_foo.py::test_bad",
+            location="tests/unit/test_foo.py",
+            short_reason="AssertionError: nope",
+            traceback="",
+        )
+        runner = FakePytestRunner(
+            result=_make_pytest_result(
+                exit_code=1,
+                summary_line="1 failed in 0.10s",
+                failed=1,
+                failures=(failure,),
+                is_error=False,
+            )
+        )
+        tool = RunTestsTool(runner=runner, settings=injected_settings)
+
+        result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
+
+        assert result.is_error is False
+
+    @pytest.mark.asyncio
+    async def test_c3_to_tool_result_exit1_content0_includes_failure_lines(
+        self, injected_settings: Settings
+    ) -> None:
+        """Exit 1 + failure → content[0] text contains FAILED ... — ... line."""
+        failure = FailureDetail(
+            test_id="tests/unit/test_foo.py::test_bad",
+            location="tests/unit/test_foo.py",
+            short_reason="AssertionError: nope",
+            traceback="",
+        )
+        runner = FakePytestRunner(
+            result=_make_pytest_result(
+                exit_code=1,
+                summary_line="1 failed in 0.10s",
+                failed=1,
+                failures=(failure,),
+                is_error=False,
+            )
+        )
+        tool = RunTestsTool(runner=runner, settings=injected_settings)
+
+        result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
+
+        assert "FAILED tests/unit/test_foo.py::test_bad" in result.content[0]["text"]
+        assert "AssertionError: nope" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_c3_to_tool_result_exit2_returns_tool_result_is_error_true(
+        self, injected_settings: Settings
+    ) -> None:
+        """Exit 2 (is_error=True) → ToolResult(is_error=True), not ExecutionError."""
+        runner = FakePytestRunner(
+            result=_make_pytest_result(
+                exit_code=2,
+                summary_line="pytest interrupted (exit 2)",
+                is_error=True,
+                note=RecoveryNote(
+                    "Pytest was interrupted; check for hung tests or external SIGINT."
+                ),
+            )
+        )
+        tool = RunTestsTool(runner=runner, settings=injected_settings)
+
+        result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
+
+        assert result.is_error is True
+
+    @pytest.mark.asyncio
+    async def test_c3_to_tool_result_exit2_text_includes_summary_line(
+        self, injected_settings: Settings
+    ) -> None:
+        """Exit 2 + non-empty stderr → content[0] text starts with summary_line."""
+        runner = FakePytestRunner(
+            result=_make_pytest_result(
+                exit_code=2,
+                summary_line="pytest interrupted (exit 2)",
+                is_error=True,
+                stderr="INTERNALERROR> some traceback\nmore lines",
+            )
+        )
+        tool = RunTestsTool(runner=runner, settings=injected_settings)
+
+        result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
+
+        assert result.content[0]["text"].startswith("pytest interrupted (exit 2)")
+        assert "INTERNALERROR" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_c3_to_tool_result_payload_includes_stderr_tail(
+        self, injected_settings: Settings
+    ) -> None:
+        """content[1] JSON payload always contains 'stderr' key."""
+        runner = FakePytestRunner(
+            result=_make_pytest_result(
+                exit_code=0,
+                summary_line="1 passed in 0.10s",
+                stderr="",
+            )
+        )
+        tool = RunTestsTool(runner=runner, settings=injected_settings)
+
+        result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
+
+        assert "stderr" in result.content[1]["json"]
+
+    @pytest.mark.asyncio
+    async def test_c3_to_tool_result_exit0_no_failures_text_is_summary_line(
+        self, injected_settings: Settings
+    ) -> None:
+        """Exit 0, no failures → content[0] text == summary_line exactly."""
+        runner = FakePytestRunner(
+            result=_make_pytest_result(
+                exit_code=0,
+                summary_line="3 passed in 0.30s",
+                passed=3,
+                is_error=False,
+            )
+        )
+        tool = RunTestsTool(runner=runner, settings=injected_settings)
+
+        result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
+
+        assert result.content[0]["text"] == "3 passed in 0.30s"
