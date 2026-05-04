@@ -3,7 +3,7 @@
 # State.json Authoritative Status + Sub-phase Persistence
 
 **Status:** DRAFT  
-**Version:** 1.4  
+**Version:** 1.5  
 **Last Updated:** 2026-05-04
 
 ---
@@ -115,6 +115,8 @@ return ToolResult.error(f"No workflow state for branch '{branch}': {e}")
 
 **Impact on `WorkflowStatusDTO.phase_source` field:** the value `"state.json"` becomes the only non-error code path. `"commit-scope"` and `"unknown"` are removed from the resolver output — the resolver either returns a state-backed DTO or raises. No schema changes needed.
 
+**Impact on `WorkflowStatusDTO.phase_confidence` field:** the state-fallback currently returns `phase_confidence="medium"` (signalling "best guess"). After inversion, state.json is the *authoritative* source — there is no ambiguity. The correct value for the state-primary path is `"high"`. The values `"medium"` and `"unknown"` are permanently dead code on the normal path. `WorkflowStatusDTO.phase_confidence` is narrowed to `Literal["high"]` (see §7). This is a **design decision**: `"high"` is chosen because state.json is written by the workflow engine itself — it is not a heuristic, it is the ground truth.
+
 ---
 
 ### §3 — current_sub_phase Field in BranchState
@@ -193,12 +195,12 @@ Files requiring changes:
 | `mcp_server/managers/workflow_status_resolver.py` | Invert resolve logic: state primary, raise `StateNotFoundError` / `StateBranchMismatchError` when state absent or mismatched | **Logic inversion + strict error** |
 | `mcp_server/managers/phase_state_engine.py` | Add `record_sub_phase()` method; add `current_sub_phase=None` to `transition()`, `force_transition()`, `transition_cycle()` | **New seam + clearing** |
 | `mcp_server/tools/git_tools.py` (`GitCommitTool.execute()`) | Call `self._state_engine.record_sub_phase(branch, params.sub_phase)` after successful commit | **New call** |
-| `mcp_server/managers/project_manager.py` (line 460) | Wrap `resolve_current()` call in `try/except (StateNotFoundError, StateBranchMismatchError, OSError)` → skip phase-enrichment block on error (graceful degradation, not hard error — called by `initialize_branch()` before state.json exists). Fix stale docstring. | **Graceful degradation** |
+| `mcp_server/managers/project_manager.py` (line 460) | Wrap `resolve_current()` call in `try/except (StateNotFoundError, StateBranchMismatchError, OSError)` → skip phase-enrichment block on error (graceful degradation, not hard error — called by `initialize_branch()` before state.json exists). Fix stale docstring. **Add imports:** `from mcp_server.managers.state_repository import StateNotFoundError, StateBranchMismatchError`. | **Graceful degradation + import** |
 | `mcp_server/tools/discovery_tools.py` (line 152) | **Remove `del context` (line 137)**; add a separate `except (StateNotFoundError, StateBranchMismatchError)` clause above the existing `except (OSError, ValueError, RuntimeError)` block; produce `RecoveryNote` + return `ToolResult.error`. The existing graceful I/O error path is retained unchanged. | **Error handling + RecoveryNote** |
+| `mcp_server/state/workflow_status.py` | Narrow `phase_source: Literal["commit-scope", "state.json", "unknown"]` → `Literal["state.json"]`. Narrow `phase_confidence: Literal["high", "medium", "unknown"]` → `Literal["high"]`. Both `"commit-scope"`, `"unknown"` (phase_source) and `"medium"`, `"unknown"` (phase_confidence) are permanently dead code on the normal path after inversion. See §2 for rationale on `"high"`. | **Type narrowing — clean break** |
 
 Files with **no required changes**:
 
-- `mcp_server/state/workflow_status.py` (`WorkflowStatusDTO`) — schema unchanged; `sub_phase` field already exists
 - `mcp_server/managers/workflow_state_mutator.py` — no new seam needed here; `record_sub_phase()` uses existing `apply()`
 - `mcp_server/managers/git_manager.py` — `commit_with_scope()` signature unchanged
 - `mcp_server/core/phase_detection.py` / `scope_encoder.py` — unchanged
@@ -237,8 +239,11 @@ Files with **no required changes**:
 | `GitCommitTool.execute()` | After commit with `sub_phase="red"`, engine.record_sub_phase called with `"red"` |
 | `GitCommitTool.execute()` | After commit with `sub_phase=None`, engine.record_sub_phase called with `None` (always-write semantics) |
 | `WorkflowStatusResolver.resolve_current()` | State present → returns `phase_source="state.json"` even when high-confidence commit exists |
+| `WorkflowStatusResolver.resolve_current()` | State present → returns `phase_confidence="high"` (not `"medium"`) |
 | `WorkflowStatusResolver.resolve_current()` | State absent → raises `StateNotFoundError` |
 | `WorkflowStatusResolver.resolve_current()` | State present but branch mismatch → raises `StateBranchMismatchError` |
+| `WorkflowStatusDTO` | `phase_source="commit-scope"` rejected at construction (Literal narrowed to `"state.json"`) |
+| `WorkflowStatusDTO` | `phase_confidence="medium"` rejected at construction (Literal narrowed to `"high"`) |
 | `project_manager.get_project_plan()` | State absent → returns plan `dict` without phase-enrichment fields (`current_phase` / `phase_source` / `phase_detection_error` absent, or `phase_source="unavailable"`) |
 | `discovery_tools.get_work_context()` | State absent → returns `ToolResult.error` with `RecoveryNote` in context |
 
@@ -266,6 +271,8 @@ Files with **no required changes**:
 
 1. `WorkflowStatusResolver` will no longer return `phase_source="commit-scope"` when state.json is present and branch matches. Tests that assert this are **rewritten**, not guarded behind a flag.
 2. `WorkflowStatusResolver` will no longer silently return `phase_source="unknown"` when state is absent — it will raise. No `ignore_missing_state=False` parameter. One contract, one code path.
+3. `WorkflowStatusDTO.phase_source` is narrowed from `Literal["commit-scope", "state.json", "unknown"]` to `Literal["state.json"]`. Mypy will reject any remaining uses of the dead values — including tests that are being rewritten.
+4. `WorkflowStatusDTO.phase_confidence` is narrowed from `Literal["high", "medium", "unknown"]` to `Literal["high"]`. State.json is authoritative; `"medium"` (fallback heuristic) and `"unknown"` are permanently gone.
 
 **Backward-compatible changes (no migration needed):**
 
@@ -307,3 +314,4 @@ This is a pre-existing limitation of the current state model. Fixing it requires
 | 1.2 | 2026-05-04 | imp | Fixed QA annotations A6–A8: A6 project_manager graceful degradation (not ToolResult.error — called before state.json exists in initialize_branch); A7 named all affected tests in blast radius table; A8 removed redundant resolver case 4 |
 | 1.3 | 2026-05-04 | imp | Fixed QA annotations NEW-A–NEW-C: NEW-A correct test contract for project_manager (dict not ToolResult); NEW-B add "remove del context" to discovery_tools blast radius; NEW-C §9 §8 principle note for Case B bootstrapping exception |
 | 1.4 | 2026-05-04 | imp | Fixed QA annotation A-FINAL-1: §7 discovery_tools.py entry now specifies separate catch clause (above existing OSError block), not extension of existing catch |
+| 1.5 | 2026-05-04 | imp | Fixed external QA F-1–F-3: F-1 workflow_status.py added to blast radius (phase_source Literal narrowed); F-2 phase_confidence="high" decision documented in §2 + §7 + §8 + §10; F-3 import-gap for project_manager.py added to §7 |
