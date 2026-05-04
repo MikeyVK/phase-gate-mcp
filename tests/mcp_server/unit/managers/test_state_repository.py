@@ -265,3 +265,108 @@ class TestBranchValidatedStateReader:
         inner = InMemoryStateRepository()
         reader = BranchValidatedStateReader(inner)
         assert hasattr(reader, "load")
+
+
+# ---------------------------------------------------------------------------
+# C1 RED — BranchState.current_sub_phase + StateNotFoundError (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestBranchStateCurrentSubPhase:
+    """BranchState.current_sub_phase is a new optional field persisted in state.json."""
+
+    def test_branch_state_current_sub_phase_defaults_to_none(self) -> None:
+        """BranchState constructed without current_sub_phase must deserialise to None."""
+        state = BranchState(
+            branch="feature/298-test",
+            workflow_name="feature",
+            current_phase="implementation",
+            transitions=[],
+        )
+        assert state.current_sub_phase is None
+
+    def test_branch_state_current_sub_phase_persists(
+        self, tmp_path: Path
+    ) -> None:
+        """FileStateRepository save+load must round-trip current_sub_phase='red'."""
+        state_file = tmp_path / ".st3" / "state.json"
+        repository = FileStateRepository(state_file=state_file)
+        state = BranchState(
+            branch="feature/298-test",
+            workflow_name="feature",
+            current_phase="implementation",
+            transitions=[],
+            current_sub_phase="red",
+        )
+
+        repository.save(state)
+        loaded = repository.load("feature/298-test")
+
+        assert loaded.current_sub_phase == "red"
+
+    def test_branch_state_current_sub_phase_none_round_trips(
+        self, tmp_path: Path
+    ) -> None:
+        """FileStateRepository save+load must round-trip current_sub_phase=None."""
+        state_file = tmp_path / ".st3" / "state.json"
+        repository = FileStateRepository(state_file=state_file)
+        state = BranchState(
+            branch="feature/298-test",
+            workflow_name="feature",
+            current_phase="implementation",
+            transitions=[],
+            current_sub_phase=None,
+        )
+
+        repository.save(state)
+        loaded = repository.load("feature/298-test")
+
+        assert loaded.current_sub_phase is None
+
+    def test_branch_state_existing_json_without_sub_phase_deserialises(
+        self, tmp_path: Path
+    ) -> None:
+        """Existing state.json files without current_sub_phase must not raise ValidationError."""
+        state_file = tmp_path / ".st3" / "state.json"
+        state_file.parent.mkdir(parents=True)
+        state_file.write_text(
+            json.dumps(
+                {
+                    "branch": "feature/298-test",
+                    "workflow_name": "feature",
+                    "current_phase": "implementation",
+                    "transitions": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        repository = FileStateRepository(state_file=state_file)
+        loaded = repository.load("feature/298-test")
+
+        assert loaded.current_sub_phase is None
+
+
+class TestStateNotFoundError:
+    """StateNotFoundError is a domain error distinct from FileNotFoundError."""
+
+    def test_state_not_found_error_is_exception(self) -> None:
+        """StateNotFoundError must be an Exception subclass."""
+        from mcp_server.managers.state_repository import StateNotFoundError
+
+        exc = StateNotFoundError("feature/298-test")
+        assert isinstance(exc, Exception)
+
+    def test_state_not_found_error_carries_branch(self) -> None:
+        """StateNotFoundError message must contain the branch name."""
+        from mcp_server.managers.state_repository import StateNotFoundError
+
+        exc = StateNotFoundError("feature/298-test")
+        assert "feature/298-test" in str(exc)
+
+    def test_state_not_found_error_is_not_file_not_found_error(self) -> None:
+        """StateNotFoundError must not be a FileNotFoundError (domain vs I/O error)."""
+        from mcp_server.managers.state_repository import StateNotFoundError
+
+        exc = StateNotFoundError("feature/298-test")
+        assert not isinstance(exc, FileNotFoundError)
