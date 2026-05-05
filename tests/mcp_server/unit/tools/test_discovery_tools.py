@@ -20,6 +20,7 @@ from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.config.settings import Settings
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import (
     GetWorkContextInput,
@@ -868,8 +869,6 @@ class TestGetWorkContextStateErrors:
         self, tmp_path: Path
     ) -> None:
         """StateNotFoundError from resolver → ToolResult.error + RecoveryNote produced."""
-        from mcp_server.managers.state_repository import StateNotFoundError
-
         tool = _make_work_context_tool(
             tmp_path, resolver_side_effect=StateNotFoundError("feature/298-test")
         )
@@ -885,8 +884,6 @@ class TestGetWorkContextStateErrors:
         self, tmp_path: Path
     ) -> None:
         """StateBranchMismatchError from resolver → ToolResult.error + RecoveryNote produced."""
-        from mcp_server.managers.state_repository import StateBranchMismatchError
-
         tool = _make_work_context_tool(
             tmp_path, resolver_side_effect=StateBranchMismatchError("branch mismatch")
         )
@@ -898,13 +895,9 @@ class TestGetWorkContextStateErrors:
         assert len(recovery_notes) >= 1
 
     @pytest.mark.asyncio
-    async def test_get_work_context_graceful_io_error_path_unchanged(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_get_work_context_graceful_io_error_path_unchanged(self, tmp_path: Path) -> None:
         """OSError in resolver still uses existing graceful fallback (not error result)."""
-        tool = _make_work_context_tool(
-            tmp_path, resolver_side_effect=OSError("disk error")
-        )
+        tool = _make_work_context_tool(tmp_path, resolver_side_effect=OSError("disk error"))
         ctx = NoteContext()
         result = await tool.execute(GetWorkContextInput(), ctx)
 

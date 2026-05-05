@@ -18,6 +18,7 @@ import pytest
 
 from mcp_server.managers import git_manager
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
+from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from tests.mcp_server.test_support import (
     load_contracts_config,
@@ -807,7 +808,7 @@ class TestGetProjectPlanGracefulDegradation:
         mock_resolver.resolve_current.side_effect = resolver_side_effect
 
         manager = make_project_manager(tmp_path)
-        manager._workflow_status_resolver = mock_resolver  # noqa: SLF001
+        manager._workflow_status_resolver = mock_resolver  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001 — inject test double: no public setter
 
         # Seed the project plan
         manager.initialize_project(
@@ -821,8 +822,6 @@ class TestGetProjectPlanGracefulDegradation:
         self, tmp_path: Path
     ) -> None:
         """StateNotFoundError from resolver must not propagate; plan returned without phase keys."""
-        from mcp_server.managers.state_repository import StateNotFoundError
-
         manager = self._make_manager_with_resolver(
             tmp_path,
             resolver_side_effect=StateNotFoundError("feature/298-test"),
@@ -837,8 +836,6 @@ class TestGetProjectPlanGracefulDegradation:
         self, tmp_path: Path
     ) -> None:
         """StateBranchMismatchError from resolver must not propagate; plan without phase keys."""
-        from mcp_server.managers.state_repository import StateBranchMismatchError
-
         manager = self._make_manager_with_resolver(
             tmp_path,
             resolver_side_effect=StateBranchMismatchError("branch mismatch"),
