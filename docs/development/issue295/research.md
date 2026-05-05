@@ -127,49 +127,57 @@ After push() succeeds but create_pr() fails:
 - state.json is in merge-base content (or absent) from the last commit  
 - A retry of submit_pr will find no artifacts to neutralize (has_net_diff_for_path returns False) — broken state
 
-Rollback strategy (two layers):
-- **Layer 1 (pre-flight)**: Before create_pr, call GitHub API to verify the base branch exists and no PR already exists for this head+base combination. If a duplicate would be created → produce `BlockerNote`, return error (no mutation needed at this point since push already happened — but prevents second round-trip failure).
-- **Layer 2 (post-push rollback)**: If create_pr() raises ExecutionError after successful push:
-  1. `git reset --soft HEAD~1` — undoes the neutralization commit, restores neutralized files to staged state
-  2. `git restore --staged <artifact_paths>` — unstage them to working tree (preserves current content)
-  3. `git push --force-with-lease` — force-push to overwrite remote with the rolled-back HEAD
-  4. Produce `RecoveryNote` explaining: push was rolled back, artifacts restored, PR creation failed with reason X, please retry after resolving
+Rollback strategy (single layer — Layer 2 only):
 
-The `--force-with-lease` is safe here because we own the commit we just pushed (it's the neutralization commit from this very execute() call).
+**Why Layer 1 (GitHub API pre-flight for duplicate PR check) is dropped:** The existing `check_pr_status` enforcement in `enforcement.yaml` already blocks `submit_pr` if an open PR exists on the current branch. Adding a redundant GitHub API round-trip would violate §9 YAGNI. The "does base exist?" check is also unnecessary — base is always `main` and always exists. Layer 2 rollback handles the edge case correctly.
 
-Implementation note: the pre-push artifact content does NOT need to be saved separately in memory. `git reset --soft HEAD~1` naturally restores the staged state. Then `git restore --staged` moves them from index to working tree.
+**Layer 2 (post-push rollback):** If create_pr() raises ExecutionError after successful push:
+  1. `git reset --soft HEAD~1` — undoes the neutralization commit; HEAD moves back one commit; staged index now holds the neutralization changes
+  2. `git reset --hard HEAD` — discards staged index entirely and restores working tree to the new HEAD state (pre-neutralization). This is safe because `is_clean()` was True before execute() started, so no in-flight user changes exist.
+  3. `git push --force-with-lease` — force-push to overwrite remote, reverting it to the pre-neutralization HEAD
+  4. Produce `RecoveryNote` explaining: "PR creation failed: {reason}. Remote branch rolled back to pre-submit state. Working tree is clean. Retry submit_pr once the API issue is resolved."
 
-## Finding 4: GitAdapter requires no new methods
+The combined `soft HEAD~1` + `hard HEAD` is equivalent to `git reset --hard HEAD~1` but more explicit about the two concerns it addresses (commit history vs. working tree). The design phase may simplify to `hard HEAD~1` if preferred.
 
-All three fixes can be implemented via:
-- New `GitManager.is_clean()` public method (wraps adapter.is_clean())
-- New `GitManager.has_upstream()` public method (wraps adapter.has_upstream())
-- New `GitManager.rollback_last_commit_and_force_push()` method (or similar) that wraps the reset + restore + force-push-with-lease sequence
+**Why NOT `git restore --staged <artifact_paths>`:** After soft-reset, the staged index contains artifact deletions/restorations. `git restore --staged` on specific paths would only unstage those paths to the HEAD state but leave the working tree in the merge-base artifact state (neutralize_to_base modified the working tree). `is_clean()` would return False post-rollback, causing Failure B on retry — the exact problem we are fixing.
 
-GitAdapter already has `is_clean()` and `has_upstream()`. No adapter changes needed.
+The `--force-with-lease` is safe: we own the commit we just pushed (neutralization commit from this execute() call). No concurrent pushes can occur because BranchMutatingTool blocks concurrent branch mutations.
+
+## Finding 4: API changes needed on GitManager and GitAdapter
+
+New public methods required on GitManager (tools must not access adapter directly per §7 LoD):
+- `is_clean() -> bool` (wraps adapter.is_clean())
+- `has_upstream() -> bool` (wraps adapter.has_upstream())
+- `rollback_neutralization(artifact_paths: frozenset[str]) -> None` (single method: soft-reset + hard-reset + force-push-with-lease; single manager method ensures the multi-step transaction is atomic from the caller's perspective — §1.1 SRP: manager owns the multi-step transaction, adapters own individual git operations)
+
+New methods needed on GitAdapter:
+- `soft_reset(steps: int = 1)` — `git reset --soft HEAD~N`
+- `hard_reset_to_head()` — `git reset --hard HEAD` (restores working tree to current HEAD after soft-reset)
+- `force_push_with_lease()` — `git push --force-with-lease`
+
+Note: `is_clean()` and `has_upstream()` already exist on GitAdapter. No adapter changes needed for those.
 
 ## Finding 5: Error transparency requirements
 
 All three failure paths must use the NoteContext pattern:
 - Failure A (no upstream): `BlockerNote('No upstream tracking branch configured. Run git_push(set_upstream=True) before submit_pr.')` + `PreflightError`
-- Failure B (dirty tree): `BlockerNote(f'Working tree is not clean. Uncommitted/untracked files: {files_list}. Commit all changes before submit_pr.')` + `PreflightError`  
-- Failure C rollback: `RecoveryNote(f'GitHub PR creation failed: {reason}. Branch rolled back to pre-submit state. Push has been undone. Retry after resolving: {suggestion}.')`
+- Failure B (dirty tree): `BlockerNote(f'Working tree is not clean. Uncommitted/untracked files prevent submit_pr. Commit all changes before submit_pr.')` + `PreflightError`
+- Failure C rollback: `RecoveryNote('GitHub PR creation failed: {reason}. Remote branch has been rolled back to pre-submit state. Working tree is clean. Retry submit_pr once the API issue is resolved.')`
 
-Note: Fix A and B are preflights (no mutation happened) → use `BlockerNote + PreflightError`. Fix C is a recovery (mutation was undone) → use `RecoveryNote`.
+Note: Fix A and B are preflights (no mutation occurred) → use `BlockerNote + PreflightError`. Fix C is post-push recovery (mutation was undone) → use `RecoveryNote + ToolResult.error()`.
 
 ## Expected Result (Design Contract)
 
 After all three fixes, the SubmitPRTool.execute() contract is:
-1. **[PREFLIGHT]** assert working tree is clean → BlockerNote + PreflightError if not
-2. **[PREFLIGHT]** assert upstream is configured → BlockerNote + PreflightError if not
+1. **[PREFLIGHT]** assert working tree is clean → `BlockerNote` + `PreflightError` if not
+2. **[PREFLIGHT]** assert upstream is configured → `BlockerNote` + `PreflightError` if not
 3. [NEUTRALIZE] detect + neutralize branch-local artifacts (unchanged)
 4. [COMMIT] commit_with_scope (unchanged)
-5. **[PREFLIGHT-2]** check GitHub: does base exist? does PR already exist? → BlockerNote + error if conflict
-6. [PUSH] push (unchanged)
-7. [CREATE PR] create_pr → if fails: **[ROLLBACK]** soft-reset + restore + force-push-with-lease + RecoveryNote + return error
-8. [STATUS] set_pr_status(OPEN) (unchanged)
+5. [PUSH] push (unchanged)
+6. **[CREATE PR]** create_pr → if fails: **[ROLLBACK]** `rollback_neutralization(artifact_paths)` on GitManager + `RecoveryNote` + `ToolResult.error()`
+7. [STATUS] set_pr_status(OPEN) (unchanged)
 
-Note: step 5 (GitHub pre-flight) is a DESIGN decision. The research recommends it for defense-in-depth but it is not strictly required if fix C rollback is implemented correctly. Design phase should evaluate cost vs. benefit.
+Layer 1 GitHub pre-flight (duplicate PR check / base existence) is **dropped** per §9 YAGNI: `check_pr_status` enforcement already blocks submit_pr if an open PR exists; base is always `main`. Layer 2 rollback is sufficient.
 
 ## Blast Radius
 
@@ -179,10 +187,11 @@ Note: step 5 (GitHub pre-flight) is a DESIGN decision. The research recommends i
 |------|--------|-------|
 | `mcp_server/managers/git_manager.py` | Add `is_clean() -> bool` public method (wraps adapter.is_clean()) | ~5 lines |
 | `mcp_server/managers/git_manager.py` | Add `has_upstream() -> bool` public method (wraps adapter.has_upstream()) | ~5 lines |
-| `mcp_server/managers/git_manager.py` | Add rollback method: soft-reset + unstage + force-push-with-lease (exact API shape is design decision) | ~20 lines |
+| `mcp_server/managers/git_manager.py` | Add `rollback_neutralization(artifact_paths: frozenset[str])` method: soft-reset + hard-reset-to-head + force-push-with-lease | ~20 lines |
 | `mcp_server/adapters/git_adapter.py` | Add `soft_reset(steps: int = 1)` for `git reset --soft HEAD~N` | ~5 lines |
-| `mcp_server/adapters/git_adapter.py` | Extend push() or add `force_push_with_lease()` for rollback step 3 | ~5 lines |
-| `mcp_server/tools/pr_tools.py` | `SubmitPRTool.execute()`: add 2 preflight guards at entry + rollback branch after push/create_pr failure | ~25 lines |
+| `mcp_server/adapters/git_adapter.py` | Add `hard_reset_to_head()` for `git reset --hard HEAD` (restore working tree after soft-reset) | ~5 lines |
+| `mcp_server/adapters/git_adapter.py` | Add `force_push_with_lease()` for `git push --force-with-lease` | ~5 lines |
+| `mcp_server/tools/pr_tools.py` | `SubmitPRTool.execute()`: add 2 preflight guards at entry + rollback branch after create_pr failure | ~25 lines |
 
 **Total production change estimate: ~65 lines across 3 files**
 
@@ -199,9 +208,10 @@ Note: step 5 (GitHub pre-flight) is a DESIGN decision. The research recommends i
 
 ## Open Questions
 
-- ❓ Should GitManager.rollback_last_commit_and_force_push() be a single method with a clear name, or should the rollback be split into reset + force_push separate calls? Single method is safer (atomic from caller perspective) but less reusable.
-- ❓ Layer 1 of Fix C (pre-flight GitHub check): is the extra GitHub API round-trip per submit_pr call acceptable? Or should we rely solely on Layer 2 rollback?
-- ❓ Should PreflightError be a new exception type or reuse an existing one? Check mcp_server/core/exceptions.py.
+- ❓ Should `GitManager.rollback_neutralization()` be a single atomic method (recommended per §1.1 SRP) or split into `soft_reset()` + `force_push_with_lease()` separate manager methods? Recommendation: single method — prevents half-rollback state exposure to caller.
+- ❓ What if `force_push_with_lease()` itself fails during rollback? This meta-failure is unaddressed. Design phase must specify failure semantics for the rollback method.
+- ❓ Does `GitManager` implement a formal `Protocol` or `ABC` in `backend/core/interfaces/`? If so, `is_clean()` and `has_upstream()` must be added to the interface before writing TDD tests.
+- ✅ `PreflightError` already exists in `mcp_server/core/exceptions.py` — no new exception type needed.
 
 
 ## Related Documentation
