@@ -875,6 +875,72 @@ class TestGitCommitBranchMismatch:
         result = await tool.execute(params, NoteContext())
 
         assert result.is_error
+
+
+# ---------------------------------------------------------------------------
+# C5 RED — GitCommitTool triggers record_sub_phase (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestGitCommitToolRecordSubPhase:
+    """C5 (issue #298): GitCommitTool.execute() calls record_sub_phase after every commit."""
+
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_calls_record_sub_phase_with_sub_phase(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """After a successful commit with sub_phase='red', record_sub_phase is called with 'red'."""
+        mock_state_engine = MagicMock()
+        mock_git_manager.commit_with_scope.return_value = "aabbccdd"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(
+            workflow_phase="implementation",
+            cycle_number=1,
+            sub_phase="red",
+            message="add failing test",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error
+        mock_state_engine.record_sub_phase.assert_called_once_with("feature/298-test", "red")
+
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_calls_record_sub_phase_with_none(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """After a successful commit with sub_phase=None, record_sub_phase is called with None."""
+        mock_state_engine = MagicMock()
+        mock_git_manager.commit_with_scope.return_value = "11223344"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(
+            workflow_phase="research",
+            message="initial research notes",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error
+        mock_state_engine.record_sub_phase.assert_called_once_with("feature/298-test", None)
+
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_does_not_call_record_sub_phase_when_engine_none(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """When state_engine is None, record_sub_phase must NOT be called (no AttributeError)."""
+        mock_git_manager.commit_with_scope.return_value = "deadbeef"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager)  # no state_engine
+        params = GitCommitInput(
+            workflow_phase="documentation",
+            message="update readme",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error  # must succeed without engine
         assert "workflow_phase" in result.content[0]["text"]
 
     @pytest.mark.asyncio
@@ -920,3 +986,69 @@ class TestGitCommitBranchMismatch:
         result = await tool.execute(params, NoteContext())
 
         assert result.is_error
+
+
+# ---------------------------------------------------------------------------
+# C5 RED — GitCommitTool triggers record_sub_phase (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestGitCommitToolRecordSubPhase:
+    """C5 (issue #298): GitCommitTool.execute() calls record_sub_phase after every commit."""
+
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_calls_record_sub_phase_with_sub_phase(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """After a successful commit with sub_phase='red', record_sub_phase is called with 'red'."""
+        mock_state_engine = MagicMock()
+        mock_git_manager.commit_with_scope.return_value = "aabbccdd"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(
+            workflow_phase="implementation",
+            cycle_number=1,
+            sub_phase="red",
+            message="add failing test",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error
+        mock_state_engine.record_sub_phase.assert_called_once_with("feature/298-test", "red")
+
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_calls_record_sub_phase_with_none(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """After a successful commit with sub_phase=None, record_sub_phase is called with None."""
+        mock_state_engine = MagicMock()
+        mock_git_manager.commit_with_scope.return_value = "11223344"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(
+            workflow_phase="research",
+            message="initial research notes",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error
+        mock_state_engine.record_sub_phase.assert_called_once_with("feature/298-test", None)
+
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_does_not_call_record_sub_phase_when_engine_none(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """When state_engine is None, record_sub_phase must NOT be called (no AttributeError)."""
+        mock_git_manager.commit_with_scope.return_value = "deadbeef"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager)  # no state_engine
+        params = GitCommitInput(
+            workflow_phase="documentation",
+            message="update readme",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert not result.is_error  # must succeed without engine
