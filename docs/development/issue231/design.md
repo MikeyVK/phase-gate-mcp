@@ -232,8 +232,8 @@ class WorkflowStatusDTO(BaseModel):
     current_phase: str
     sub_phase: str | None = None
     current_cycle: int | None = None
-    phase_source: Literal["commit-scope", "state.json", "unknown"]
-    phase_confidence: Literal["high", "medium", "unknown"]
+    phase_source: Literal["commit-scope", "state.json", "unknown"]  # narrowed to Literal["state.json"] by issue #298
+    phase_confidence: Literal["high", "medium", "unknown"]  # narrowed to Literal["high"] by issue #298
     phase_detection_error: str | None = None
 ```
 
@@ -274,7 +274,7 @@ class WorkflowStatusResolver:
 3. Read the latest HEAD commit message through `IGitContextReader.get_recent_commits(limit=1)`.
 4. Detect workflow phase through `CommitPhaseDetector.detect_from_commit(...)`.
 5. Fill `current_cycle` directly from loaded persisted state when present.
-6. If commit-derived phase data is unavailable or low-confidence, fall back to persisted workflow state for `current_phase` while preserving explicit `phase_source`, `phase_confidence`, and `phase_detection_error` semantics.
+6. ~~If commit-derived phase data is unavailable or low-confidence, fall back to persisted workflow state for `current_phase` while preserving explicit `phase_source`, `phase_confidence`, and `phase_detection_error` semantics.~~ **Superseded by issue #298:** state.json is now the sole authoritative source; the resolver raises `StateNotFoundError` when state is absent rather than falling back to commit-scope.
 7. Return one immutable `WorkflowStatusDTO`.
 
 **Important design boundaries:**
