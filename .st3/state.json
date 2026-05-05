@@ -2,7 +2,7 @@
   "branch": "fix/295-submit-pr-atomicity-upstream-dirty-tree-rollback",
   "issue_number": 295,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -20,7 +20,16 @@
   "issue_title": "submit_pr atomicity: upstream check, dirty-tree guard, and rollback on failure",
   "parent_branch": "main",
   "created_at": "2026-05-05T15:32:58.550047+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-05T16:00:26.131288+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }

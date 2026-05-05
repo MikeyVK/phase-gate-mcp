@@ -2,7 +2,7 @@
 <!-- template=research version=8b7bb3ab created=2026-05-05T15:52Z updated= -->
 # submit_pr Atomicity: Upstream Check, Dirty-Tree Guard, and Rollback on Failure
 
-**Status:** DRAFT  
+**Status:** FINAL  
 **Version:** 1.0  
 **Last Updated:** 2026-05-05
 
