@@ -13,6 +13,7 @@ from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.interfaces import IGitContextReader
 from mcp_server.managers.state_repository import (
     BranchState,
+    BranchValidatedStateReader,
     InMemoryStateRepository,
     StateBranchMismatchError,
     StateNotFoundError,
@@ -376,20 +377,21 @@ class TestWorkflowStatusResolverInversion:
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = "feature/298-other"
         git_reader.get_recent_commits.return_value = []
-        state_repo = InMemoryStateRepository()
-        state_repo.save(
-            BranchState(
-                branch="feature/298-test",  # mismatch
-                current_phase="research",
-                workflow_name="feature",
-                issue_number=298,
-                parent_branch="main",
-            )
+        inner_repo = InMemoryStateRepository()
+        # Store state under the key "feature/298-other" but with branch field = "feature/298-test"
+        # BranchValidatedStateReader will detect the mismatch and raise StateBranchMismatchError
+        inner_repo._states["feature/298-other"] = BranchState(  # noqa: SLF001
+            branch="feature/298-test",  # mismatch: stored key vs branch field
+            current_phase="research",
+            workflow_name="feature",
+            issue_number=298,
+            parent_branch="main",
         )
+        validated_reader = BranchValidatedStateReader(inner_repo)
         detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
-            state_reader=state_repo,
+            state_reader=validated_reader,
             commit_phase_detector=detector,
         )
         with pytest.raises(StateBranchMismatchError):

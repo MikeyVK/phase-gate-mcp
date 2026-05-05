@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from mcp_server.managers.state_repository import StateBranchMismatchError
+from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 
 if TYPE_CHECKING:
@@ -16,11 +16,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_HIGH_CONFIDENCE: frozenset[str] = frozenset({"high"})
-
 
 class WorkflowStatusResolver:
-    """Resolve current-branch workflow status from git context and persisted state."""
+    """Resolve current-branch workflow status from persisted state.
+
+    state.json is the primary and only source of truth. If state.json is absent,
+    StateNotFoundError is raised. If state.json exists but belongs to a different
+    branch, StateBranchMismatchError is raised (propagated from BranchValidatedStateReader).
+    """
 
     def __init__(
         self,
@@ -33,48 +36,30 @@ class WorkflowStatusResolver:
         self._detector = commit_phase_detector
 
     def resolve_current(self) -> WorkflowStatusDTO:
-        """Resolve workflow status for the current branch."""
+        """Resolve workflow status for the current branch from state.json.
+
+        Raises:
+            StateNotFoundError: state.json does not exist for this branch.
+            StateBranchMismatchError: state.json exists but belongs to a different branch.
+        """
         branch = self._git.get_current_branch()
 
-        # Load persisted state (may fail gracefully)
-        persisted_cycle: int | None = None
-        persisted_phase: str | None = None
         try:
             branch_state = self._state.load(branch)
-            persisted_cycle = branch_state.current_cycle
-            persisted_phase = branch_state.current_phase
-        except (KeyError, StateBranchMismatchError, FileNotFoundError, OSError) as exc:
-            logger.debug("Could not load branch state for '%s': %s", branch, exc)
+        except (KeyError, FileNotFoundError):
+            raise StateNotFoundError(branch)
 
-        # Detect phase from latest commit
+        # StateBranchMismatchError propagates unchanged from BranchValidatedStateReader
+
+        # Detect sub_phase from latest commit (informational only — does not affect source)
         commits = self._git.get_recent_commits(limit=1)
         commit_message = commits[0] if commits else None
         detection = self._detector.detect_from_commit(commit_message)
 
-        if detection["confidence"] in _HIGH_CONFIDENCE:
-            return WorkflowStatusDTO(
-                current_phase=detection["workflow_phase"],
-                sub_phase=detection["sub_phase"],
-                current_cycle=persisted_cycle,
-                phase_source="commit-scope",
-                phase_confidence="high",
-                phase_detection_error=detection.get("error_message"),
-            )
-
-        # Fall back to persisted state
-        if persisted_phase is not None:
-            return WorkflowStatusDTO(
-                current_phase=persisted_phase,
-                current_cycle=persisted_cycle,
-                phase_source="state.json",
-                phase_confidence="medium",
-                phase_detection_error=detection.get("error_message"),
-            )
-
         return WorkflowStatusDTO(
-            current_phase="unknown",
-            current_cycle=persisted_cycle,
-            phase_source="unknown",
-            phase_confidence="unknown",
-            phase_detection_error=detection.get("error_message"),
+            current_phase=branch_state.current_phase,
+            sub_phase=detection.get("sub_phase"),
+            current_cycle=branch_state.current_cycle,
+            phase_source="state.json",
+            phase_confidence="high",
         )
