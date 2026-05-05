@@ -520,3 +520,135 @@ class TestPhaseStateEngineMutatorRoutingC6:
         engine.on_exit_cycle_based_phase("feature/231-test")
 
         assert "feature/231-test" in mutator.apply_calls
+
+
+# ---------------------------------------------------------------------------
+# C4 RED — PhaseStateEngine.record_sub_phase() + clearing (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestPhaseStateEngineRecordSubPhase:
+    """C4 (issue #298): record_sub_phase() persists sub_phase; transitions clear it."""
+
+    def _make_engine_and_state(
+        self, tmp_path: Path, *, sub_phase: str | None = None
+    ) -> tuple[object, InMemoryStateRepository, str]:
+        """Return (engine, repo, branch) with seeded state."""
+        branch = "feature/298-test"
+        project_manager = make_project_manager(tmp_path)
+        project_manager.initialize_project(
+            issue_number=298,
+            issue_title="Sub-phase persistence",
+            workflow_name="feature",
+        )
+        repo = InMemoryStateRepository()
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=project_manager,
+            state_repository=repo,
+        )
+        seed = BranchState(
+            branch=branch,
+            issue_number=298,
+            workflow_name="feature",
+            current_phase="implementation",
+            current_cycle=1,
+            current_sub_phase=sub_phase,
+        )
+        repo.save(seed)
+        return engine, repo, branch
+
+    def test_record_sub_phase_writes_to_state(self, tmp_path: Path) -> None:
+        """record_sub_phase(branch, 'red') must persist current_sub_phase='red'."""
+        engine, repo, branch = self._make_engine_and_state(tmp_path)
+        engine.record_sub_phase(branch, "red")
+        assert repo.load(branch).current_sub_phase == "red"
+
+    def test_record_sub_phase_none_clears_state(self, tmp_path: Path) -> None:
+        """record_sub_phase(branch, None) must set current_sub_phase=None."""
+        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="red")
+        engine.record_sub_phase(branch, None)
+        assert repo.load(branch).current_sub_phase is None
+
+    def test_transition_clears_sub_phase(self, tmp_path: Path) -> None:
+        """transition() must clear current_sub_phase (set to None) on state write."""
+        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="green")
+        # transition from research so no gate enforcement needed; seed directly
+        repo.save(
+            repo.load(branch).with_updates(current_phase="research", current_cycle=None)
+        )
+        project_manager = make_project_manager(tmp_path)
+        engine2 = make_phase_state_engine(
+            tmp_path, project_manager=project_manager, state_repository=repo
+        )
+        engine2.transition(branch=branch, to_phase="planning")
+        assert repo.load(branch).current_sub_phase is None
+
+    def test_force_transition_clears_sub_phase(self, tmp_path: Path) -> None:
+        """force_transition() must clear current_sub_phase on state write."""
+        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="red")
+        repo.save(
+            repo.load(branch).with_updates(current_phase="research", current_cycle=None)
+        )
+        engine.force_transition(
+            branch=branch,
+            to_phase="planning",
+            skip_reason="QA approved skip",
+            human_approval="MVerkaik approved on 2026-05-05",
+        )
+        assert repo.load(branch).current_sub_phase is None
+
+    def test_transition_cycle_clears_sub_phase(self, tmp_path: Path) -> None:
+        """transition_cycle() must clear current_sub_phase on state write."""
+        project_manager = make_project_manager(tmp_path)
+        project_manager.initialize_project(
+            issue_number=298,
+            issue_title="Sub-phase persistence",
+            workflow_name="feature",
+        )
+        project_manager.save_planning_deliverables(
+            issue_number=298,
+            planning_deliverables={
+                "tdd_cycles": {
+                    "total": 2,
+                    "cycles": [
+                        {
+                            "cycle_number": 1,
+                            "title": "C1",
+                            "deliverables": [],
+                            "exit_criteria": "pass",
+                        },
+                        {
+                            "cycle_number": 2,
+                            "title": "C2",
+                            "deliverables": [],
+                            "exit_criteria": "pass",
+                        },
+                    ],
+                }
+            },
+        )
+        repo = InMemoryStateRepository()
+        engine = make_phase_state_engine(
+            tmp_path, project_manager=project_manager, state_repository=repo
+        )
+        branch = "feature/298-test"
+        repo.save(
+            BranchState(
+                branch=branch,
+                issue_number=298,
+                workflow_name="feature",
+                current_phase="implementation",
+                current_cycle=1,
+                current_sub_phase="refactor",
+            )
+        )
+        engine.transition_cycle(branch=branch, to_cycle=2)
+        assert repo.load(branch).current_sub_phase is None
+
+    def test_on_exit_cycle_based_phase_does_not_touch_sub_phase(self, tmp_path: Path) -> None:
+        """on_exit_cycle_based_phase() must not modify current_sub_phase."""
+        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="green")
+        engine.on_exit_cycle_based_phase(branch)
+        # sub_phase must remain unchanged (hook owns only cycle tracking)
+        assert repo.load(branch).current_sub_phase == "green"
