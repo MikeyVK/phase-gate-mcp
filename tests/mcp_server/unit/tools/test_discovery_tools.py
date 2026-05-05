@@ -19,7 +19,7 @@ from mcp_server.config.schemas import GitConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.config.settings import Settings
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import (
     GetWorkContextInput,
@@ -877,7 +877,7 @@ class TestGetWorkContextStateErrors:
         result = await tool.execute(GetWorkContextInput(), ctx)
 
         assert result.is_error
-        recovery_notes = [n for n in ctx.notes if n.kind == "recovery"]
+        recovery_notes = ctx.of_type(RecoveryNote)
         assert len(recovery_notes) >= 1
 
     @pytest.mark.asyncio
@@ -894,7 +894,7 @@ class TestGetWorkContextStateErrors:
         result = await tool.execute(GetWorkContextInput(), ctx)
 
         assert result.is_error
-        recovery_notes = [n for n in ctx.notes if n.kind == "recovery"]
+        recovery_notes = ctx.of_type(RecoveryNote)
         assert len(recovery_notes) >= 1
 
     @pytest.mark.asyncio
