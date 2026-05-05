@@ -49,10 +49,6 @@ quality_report.json
 
 # Workspace-root temporary outputs
 .st3_tmp_*
-
-# Branch-local workflow state (never commit to shared branches)
-.st3/state.json
-.st3/deliverables.json
 .temp_*
 swot_scan_results.txt
 deep_report_output.md
