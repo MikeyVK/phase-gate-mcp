@@ -2,7 +2,7 @@
   "branch": "fix/295-submit-pr-atomicity-upstream-dirty-tree-rollback",
   "issue_number": 295,
   "workflow_name": "bug",
-  "current_phase": "design",
+  "current_phase": "research",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "QA design review revealed architectural debt: SubmitPRTool.execute() violates SRP (\u00a71.1) and LoD (\u00a77) \u2014 git transaction orchestration belongs in GitManager.prepare_submission(), not in the tool. Design doc is invalid. Research must be extended with Findings 6-9 before redesign can proceed.",
   "issue_title": "submit_pr atomicity: upstream check, dirty-tree guard, and rollback on failure",
   "parent_branch": "main",
   "created_at": "2026-05-05T15:32:58.550047+00:00",
@@ -28,6 +28,14 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-05-05T17:22:46.034132+00:00",
+      "human_approval": "User approved via session instruction: Force transfer naar research \u2014 2026-05-05",
+      "forced": true,
+      "skip_reason": "QA design review revealed architectural debt: SubmitPRTool.execute() violates SRP (\u00a71.1) and LoD (\u00a77) \u2014 git transaction orchestration belongs in GitManager.prepare_submission(), not in the tool. Design doc is invalid. Research must be extended with Findings 6-9 before redesign can proceed."
     }
   ],
   "reconstructed": false,

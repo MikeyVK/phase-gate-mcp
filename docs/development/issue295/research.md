@@ -2,7 +2,7 @@
 <!-- template=research version=8b7bb3ab created=2026-05-05T15:52Z updated= -->
 # submit_pr Atomicity: Upstream Check, Dirty-Tree Guard, and Rollback on Failure
 
-**Status:** FINAL  
+**Status:** DRAFT (v2 — revised after QA design review)  
 **Version:** 1.0  
 **Last Updated:** 2026-05-05
 
@@ -143,75 +143,154 @@ The combined `soft HEAD~1` + `hard HEAD` is equivalent to `git reset --hard HEAD
 
 The `--force-with-lease` is safe: we own the commit we just pushed (neutralization commit from this execute() call). No concurrent pushes can occur because BranchMutatingTool blocks concurrent branch mutations.
 
-## Finding 4: API changes needed on GitManager and GitAdapter
+## Finding 4: API changes needed on GitManager and GitAdapter *(superseded by Findings 6-10)*
+
+> **Note:** This finding reflects the v1 design direction. Findings 6-10 (QA design review) supersede the specific API choices below. The correct API shape is in the v2 Expected Result. Preserved for audit trail.
 
 New public methods required on GitManager (tools must not access adapter directly per §7 LoD):
-- `is_clean() -> bool` (wraps adapter.is_clean())
-- `has_upstream() -> bool` (wraps adapter.has_upstream())
-- `rollback_neutralization(artifact_paths: frozenset[str]) -> None` (single method: soft-reset + hard-reset + force-push-with-lease; single manager method ensures the multi-step transaction is atomic from the caller's perspective — §1.1 SRP: manager owns the multi-step transaction, adapters own individual git operations)
+- `is_clean() -> bool` (wraps adapter.is_clean()) — *moved inside prepare_submission() in v2*
+- `has_upstream() -> bool` (wraps adapter.has_upstream()) — *moved inside prepare_submission() in v2*
+- `rollback_neutralization(artifact_paths: frozenset[str]) -> None` — *split into prepare_submission() + rollback_push() in v2*
 
 New methods needed on GitAdapter:
-- `soft_reset(steps: int = 1)` — `git reset --soft HEAD~N`
-- `hard_reset_to_head()` — `git reset --hard HEAD` (restores working tree to current HEAD after soft-reset)
-- `force_push_with_lease()` — `git push --force-with-lease`
+- `soft_reset(steps: int = 1)` — `git reset --soft HEAD~N` — *dropped in v2; hard_reset(ref) covers it*
+- `hard_reset_to_head()` — `git reset --hard HEAD` — *dropped in v2; merged into hard_reset(ref)*
+- `force_push_with_lease()` — `git push --force-with-lease` — *retained in v2*
 
 Note: `is_clean()` and `has_upstream()` already exist on GitAdapter. No adapter changes needed for those.
 
 ## Finding 5: Error transparency requirements
 
-All three failure paths must use the NoteContext pattern:
+All failure paths must use the NoteContext pattern:
 - Failure A (no upstream): `BlockerNote('No upstream tracking branch configured. Run git_push(set_upstream=True) before submit_pr.')` + `PreflightError`
 - Failure B (dirty tree): `BlockerNote(f'Working tree is not clean. Uncommitted/untracked files prevent submit_pr. Commit all changes before submit_pr.')` + `PreflightError`
 - Failure C rollback: `RecoveryNote('GitHub PR creation failed: {reason}. Remote branch has been rolled back to pre-submit state. Working tree is clean. Retry submit_pr once the API issue is resolved.')`
+- Failure D rollback: `RecoveryNote('Push failed: {reason}. Local neutralization commit rolled back. Working tree is clean. Retry submit_pr after resolving the remote issue.')`
+- Rollback-of-rollback failure: `RecoveryNote('CRITICAL: Rollback failed: {reason}. Branch may be in degraded state. Manual recovery: git reset --hard HEAD~1 && git push --force-with-lease. Do not commit until resolved.')`
 
-Note: Fix A and B are preflights (no mutation occurred) → use `BlockerNote + PreflightError`. Fix C is post-push recovery (mutation was undone) → use `RecoveryNote + ToolResult.error()`.
+Preflights (no mutation) → `BlockerNote + PreflightError`. Post-mutation recovery → `RecoveryNote + ToolResult.error()`.
 
-## Expected Result (Design Contract)
+---
 
-After all three fixes, the SubmitPRTool.execute() contract is:
-1. **[PREFLIGHT]** assert working tree is clean → `BlockerNote` + `PreflightError` if not
-2. **[PREFLIGHT]** assert upstream is configured → `BlockerNote` + `PreflightError` if not
-3. [NEUTRALIZE] detect + neutralize branch-local artifacts (unchanged)
-4. [COMMIT] commit_with_scope (unchanged)
-5. [PUSH] push (unchanged)
-6. **[CREATE PR]** create_pr → if fails: **[ROLLBACK]** `rollback_neutralization(artifact_paths)` on GitManager + `RecoveryNote` + `ToolResult.error()`
-7. [STATUS] set_pr_status(OPEN) (unchanged)
+## Finding 6: Bestaande SRP-schending in SubmitPRTool.execute() (QA design review)
 
-Layer 1 GitHub pre-flight (duplicate PR check / base existence) is **dropped** per §9 YAGNI: `check_pr_status` enforcement already blocks submit_pr if an open PR exists; base is always `main`. Layer 2 rollback is sufficient.
+`SubmitPRTool.execute()` heeft drie onafhankelijke verantwoordelijkheden in één methode:
 
-## Blast Radius
+1. **Git-transactie-orchestratie** — artifact-selectie (`has_net_diff_for_path`), neutralisatie (`neutralize_to_base`), commit (`commit_with_scope`), push (`push()`)
+2. **GitHub API-orkestratie** — `create_pr()`
+3. **Status-boekhouding** — `set_pr_status(OPEN)`
+
+Per §1.1 SRP verandert de methode op drie onafhankelijke assen. Dit is een God-method-patroon. De failure modes A, B, C en D zijn directe symptomen van verantwoordelijkheid 1 die niet bij de tool hoort.
+
+## Finding 7: Law of Demeter-schending — artifact-selectie in de tool
+
+```python
+# Huidige code in SubmitPRTool.execute()
+paths_to_neutralize = frozenset(
+    artifact.path
+    for artifact in self._merge_readiness_context.branch_local_artifacts
+    if self._git_manager.has_net_diff_for_path(artifact.path, base)
+)
+```
+
+De tool bereikt door `_merge_readiness_context` heen om `branch_local_artifacts` te itereren, en gebruikt die resultaten om `_git_manager` aan te sturen. De tool functioneert als bemiddelaar tussen twee objecten. Per §7 LoD: de beslissing *welke artifacts geneutraliseerd moeten worden* is git-domeinkennis die in `GitManager` thuishoort — die bezit al `has_net_diff_for_path` én `neutralize_to_base`.
+
+## Finding 8: Implicit ordering dependency — §8 Explicit over Implicit
+
+De verplichting dat `commit_with_scope` pas na `neutralize_to_base` mag worden aangeroepen is een impliciet caller-contract. Het is niet afdwingbaar via de type-handtekening en niet zichtbaar voor andere callers. Dit is de directe oorzaak van failure B: `git add .` in `commit_with_scope` consumeert untracked files omdat de caller (de tool) verantwoordelijk is voor een volgorde die de manager niet afdwingt.
+
+## Finding 9: SubmitPRTool doorbreekt het canonieke GitManager-patroon
+
+Alle bestaande GitManager-methoden die een multi-step git-transactie uitvoeren, encapsuleren hun preflights intern:
+
+| Methode | Preflight | Gedrag |
+|---------|-----------|--------|
+| `GitManager.pull()` | is_clean → has_upstream | volledig intern afgehandeld |
+| `GitManager.merge()` | is_clean | volledig intern afgehandeld |
+| `GitManager.create_branch()` | is_clean | volledig intern afgehandeld |
+| **`SubmitPRTool.execute()` (huidig)** | **geen** | **git-stappen in de tool** |
+
+`SubmitPRTool` is de enige caller die de git-transactie zelf orkestreert. De failures A t/m D zijn het gevolg van dit gebroken patroon: preflights ontbreken omdat de manager ze niet afdwingt, en volgordedependencies zijn impliciet omdat de tool de stappen zelf sequenceert.
+
+## Finding 10: Dependency-richting voor prepare_submission()
+
+`MergeReadinessContext` leeft in `managers/phase_contract_resolver.py` (zelfde layer als `GitManager`). Een same-layer import is technisch toegestaan, maar semantisch problematisch: `GitManager` zou dan fase-contract-kennis nodig hebben, wat §10 Cohesion schendt (een methode die uitsluitend `phase_contract` domeinkennis nodig heeft hoort bij de klasse die dat modeleert).
+
+**Aanbeveling:** `prepare_submission(artifact_paths: frozenset[str], base: str, note_context: NoteContext)` — de tool extraheert de paden uit zijn eigen config-injectie (`self._merge_readiness_context.branch_local_artifacts`) en geeft puur data mee. `GitManager` blijft git-gericht. De filterlogica (`has_net_diff_for_path` per pad) verhuist naar `prepare_submission()` intern — de tool geeft de volledige set te controleren paden mee, de manager beslist welke te neutraliseren.
+
+## Expected Result (Design Contract — v2)
+
+De root cause (Findings 6-9) bepaalt de designrichting. De correcte verantwoordelijkheidsverdeling:
+
+**`GitManager.prepare_submission(artifact_paths: frozenset[str], base: str, note_context: NoteContext)`**
+Bezit de volledige git-zijde van de submit-transactie. Intern:
+1. `is_clean()` → if False: `BlockerNote` + `PreflightError` (geen mutatie)
+2. `has_upstream()` → if False: `BlockerNote` + `PreflightError` (geen mutatie)
+3. Voor elk pad in `artifact_paths`: `has_net_diff_for_path(pad, base)` → verzamel te neutraliseren paden
+4. `neutralize_to_base(te_neutraliseren, base)` (indien niet leeg)
+5. `commit_with_scope(...)` → if fails: `hard_reset("HEAD")` + `RecoveryNote` (working tree hersteld)
+6. `push()` → if fails: `hard_reset("HEAD~1")` + `RecoveryNote` (commit ongedaan, nothing reached remote)
+
+**`GitManager.rollback_push(note_context: NoteContext)`**
+Bezit de remote rollback na een geslaagde push maar gefaalde `create_pr`:
+1. `hard_reset("HEAD~1")` lokaal
+2. `force_push_with_lease()` → if fails: `RecoveryNote` met manuele recovery-instructie + propageer `ExecutionError`
+
+**`SubmitPRTool.execute()`** — vereenvoudigd tot 3 high-level aanroepen:
+```
+1. [GIT]    artifact_paths = frozenset(a.path for a in self._merge_readiness_context.branch_local_artifacts)
+            self._git_manager.prepare_submission(artifact_paths, base, context)
+              → bij preflight-failure: BlockerNote + PreflightError → tool geeft ToolResult.error()
+              → bij commit/push-failure: RecoveryNote in context → tool geeft ToolResult.error()
+
+2. [GITHUB] pr = self._github_manager.create_pr(...)
+              → bij failure: self._git_manager.rollback_push(context)
+                             ToolResult.error(str(exc))
+
+3. [STATUS] self._pr_status_writer.set_pr_status(branch, PRStatus.OPEN)
+            return ToolResult.text(f"PR #{pr['number']} created: {pr['url']}")
+```
+
+De tool heeft geen kennis van artifact-selectie, commit-volgorde, of git-reset-mechanismen. `SubmitPRTool` heeft één reden om te veranderen: de orchestratie van Git + GitHub + status — niet de interne git-transactie-logica.
+
+**Vervallen t.o.v. v1 design:** publieke `is_clean()`, `has_upstream()`, `rollback_neutralization(remote: bool)` als aparte GitManager public methods — waren symptomen van het verkeerde patroon. De logica zit nu intern in `prepare_submission()` en `rollback_push()`.
+
+## Blast Radius (herzien — v2)
 
 ### Production Code
 
 | File | Change | Scope |
 |------|--------|-------|
-| `mcp_server/managers/git_manager.py` | Add `is_clean() -> bool` public method (wraps adapter.is_clean()) | ~5 lines |
-| `mcp_server/managers/git_manager.py` | Add `has_upstream() -> bool` public method (wraps adapter.has_upstream()) | ~5 lines |
-| `mcp_server/managers/git_manager.py` | Add `rollback_neutralization(artifact_paths: frozenset[str])` method: soft-reset + hard-reset-to-head + force-push-with-lease | ~20 lines |
-| `mcp_server/adapters/git_adapter.py` | Add `soft_reset(steps: int = 1)` for `git reset --soft HEAD~N` | ~5 lines |
-| `mcp_server/adapters/git_adapter.py` | Add `hard_reset_to_head()` for `git reset --hard HEAD` (restore working tree after soft-reset) | ~5 lines |
-| `mcp_server/adapters/git_adapter.py` | Add `force_push_with_lease()` for `git push --force-with-lease` | ~5 lines |
-| `mcp_server/tools/pr_tools.py` | `SubmitPRTool.execute()`: add 2 preflight guards at entry + rollback branch after create_pr failure | ~25 lines |
+| `mcp_server/managers/git_manager.py` | Add `prepare_submission(artifact_paths, base, note_context)` — encapsuleert preflight + neutralize + commit + push + lokale rollback | ~50 lines |
+| `mcp_server/managers/git_manager.py` | Add `rollback_push(note_context)` — hard reset HEAD~1 + force-push-with-lease | ~15 lines |
+| `mcp_server/adapters/git_adapter.py` | Add `hard_reset(ref: str)` — `git reset --hard {ref}` | ~5 lines |
+| `mcp_server/adapters/git_adapter.py` | Add `force_push_with_lease(remote: str = "origin")` — `git push --force-with-lease` | ~5 lines |
+| `mcp_server/tools/pr_tools.py` | `SubmitPRTool.execute()` vereenvoudigt: artifact-selectie + git-stappen verdwijnen uit de tool, vervangen door 2 manager-aanroepen | ~-30 lines netto |
 
-**Total production change estimate: ~65 lines across 3 files**
+**Vervallen adapter-methoden t.o.v. v1:** `soft_reset(steps)`, `hard_reset_to_head()` — niet meer nodig; `hard_reset(ref)` dekt beide gevallen.
+**Vervallen manager-methoden t.o.v. v1:** publieke `is_clean()`, `has_upstream()`, `rollback_neutralization(remote: bool)`.
+
+**Totale productie-delta: ~75 lines netto across 3 files**
 
 ### Test Code
 
 | File | Change |
 |------|--------|
-| `tests/mcp_server/integration/test_submit_pr_atomic_flow.py` | Add 3 test cases: Failure A (no upstream → BlockerNote + no mutation), Failure B (dirty tree → BlockerNote + no mutation), Failure C (API failure after push → rollback verified) |
-| `tests/mcp_server/unit/managers/test_git_manager.py` | Add tests for new public methods: `is_clean()`, `has_upstream()`, rollback method |
-| `tests/mcp_server/unit/adapters/test_git_adapter.py` | Add tests for `soft_reset()` and force-push-with-lease capability |
-| `tests/mcp_server/unit/tools/test_submit_pr_tool.py` | Minor updates if structural assertions change |
+| `tests/mcp_server/unit/managers/test_git_manager.py` | Nieuwe tests voor `prepare_submission()` (preflight A, B, artifact-selectie, commit-fail, push-fail) en `rollback_push()` (success + force-push-fail) |
+| `tests/mcp_server/unit/adapters/test_git_adapter.py` | Nieuwe tests voor `hard_reset(ref)` en `force_push_with_lease()` |
+| `tests/mcp_server/integration/test_submit_pr_atomic_flow.py` | Update bestaande tests (tool heeft nu minder mocks nodig); voeg integratietests toe voor Failure A, B, C, D via tool |
+| `tests/mcp_server/unit/tools/test_submit_pr_tool.py` | Update structurele tests; LoD-test blijft maar de assertion verifieert dat `prepare_submission` en `rollback_push` worden aangeroepen |
 
-**No changes needed to:** `enforcement.yaml`, `contracts.yaml`, `MergePRTool`, `GitCommitTool`, `test_ready_phase_enforcement.py`
+**Geen wijzigingen nodig in:** `enforcement.yaml`, `contracts.yaml`, `MergePRTool`, `GitCommitTool`, `test_ready_phase_enforcement.py`
 
-## Open Questions
+## Open Questions (herzien — v2)
 
-- ❓ Should `GitManager.rollback_neutralization()` be a single atomic method (recommended per §1.1 SRP) or split into `soft_reset()` + `force_push_with_lease()` separate manager methods? Recommendation: single method — prevents half-rollback state exposure to caller.
-- ❓ What if `force_push_with_lease()` itself fails during rollback? This meta-failure is unaddressed. Design phase must specify failure semantics for the rollback method.
-- ❓ Does `GitManager` implement a formal `Protocol` or `ABC` in `backend/core/interfaces/`? If so, `is_clean()` and `has_upstream()` must be added to the interface before writing TDD tests.
-- ✅ `PreflightError` already exists in `mcp_server/core/exceptions.py` — no new exception type needed.
+- ❓ **prepare_submission signature**: research raadt `frozenset[str]` aan (tool geeft pure paden, manager doet filterlogica). Design fase moet bevestigen dat dit §10 Cohesion correct toepast en dat de tool's verantwoordelijkheid (paden extraheren uit config) acceptabel is.
+- ❓ **rollback_push meta-failure**: wat als `force_push_with_lease()` zelf faalt (rejected, network)? Design moet specificeren: `RecoveryNote` met manuele recovery-instructie + propageer `ExecutionError` (nooit swallow).
+- ✅ **IGitManager Protocol/ABC**: bestaat niet in de codebase (QA bevestigd). Geen interface-update nodig.
+- ✅ **PreflightError**: bestaat al in `mcp_server/core/exceptions.py:112`. Geen nieuw exception type nodig.
+- ✅ **soft_reset / hard_reset_to_head**: VERVALLEN. Alleen `hard_reset(ref)` en `force_push_with_lease()` nodig op adapter-niveau.
+- ✅ **remote: bool flag op rollback**: VERVALLEN. Twee aparte methoden met duidelijke namen: `rollback_push()` (remote) intern in `prepare_submission()` impliciet (lokaal).
 
 
 ## Related Documentation
@@ -239,4 +318,5 @@ Layer 1 GitHub pre-flight (duplicate PR check / base existence) is **dropped** p
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 |  | Agent | Initial draft |
+| 1.0 | 2026-05-05 | Agent | Initial draft — Findings 1-5, v1 Expected Result |
+| 2.0 | 2026-05-05 | Agent | QA design review: added Findings 6-10, revised Expected Result v2 (prepare_submission pattern), revised Blast Radius and Open Questions. Force-transitioned back to research. |
