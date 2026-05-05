@@ -257,8 +257,10 @@ class GetWorkContextTool(BaseTool):
         """
         Detect workflow phase deterministically using ScopeDecoder.
 
-        Uses commit-scope precedence: commit-scope > state.json > unknown
-        NO type-heuristic guessing.
+        NOTE: This method is only called when the WorkflowStatusResolver is not
+        injected. When the resolver is present (standard path), phase comes from
+        state.json authoritatively (Issue #298). This fallback path is retained
+        for backward compatibility only.
 
         Args:
             commits: Recent commit messages

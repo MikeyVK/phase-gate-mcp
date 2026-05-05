@@ -437,8 +437,9 @@ class ProjectManager:
     def get_project_plan(self, issue_number: int) -> dict[str, Any] | None:
         """Get stored project plan with current phase detection.
 
-        Issue #139: Adds current_phase, phase_source, phase_detection_error via ScopeDecoder.
-        Uses commit-scope precedence: commit-scope > state.json > unknown.
+        Issue #298: state.json is the authoritative source. WorkflowStatusResolver
+        reads current_phase from state.json directly. Returns plan without phase
+        fields when state is absent or mismatched (graceful degradation).
 
         Args:
             issue_number: GitHub issue number
