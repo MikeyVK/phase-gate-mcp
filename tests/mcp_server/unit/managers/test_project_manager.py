@@ -789,3 +789,62 @@ class TestProjectManagerResolverAdoption:
 
         assert plan is not None
         assert plan["phase_detection_error"] == "Phase detection failed: no state file"
+
+
+# ---------------------------------------------------------------------------
+# C6 RED — project_manager get_project_plan graceful degradation (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestGetProjectPlanGracefulDegradation:
+    """C6 (issue #298): get_project_plan() skips phase-enrichment on resolver errors."""
+
+    def _make_manager_with_resolver(
+        self, tmp_path: Path, resolver_side_effect: Exception
+    ) -> ProjectManager:
+        """Return a ProjectManager whose resolver raises the given exception."""
+        mock_resolver = MagicMock()
+        mock_resolver.resolve_current.side_effect = resolver_side_effect
+
+        manager = make_project_manager(tmp_path)
+        manager._workflow_status_resolver = mock_resolver  # noqa: SLF001
+
+        # Seed the project plan
+        manager.initialize_project(
+            issue_number=298,
+            issue_title="Graceful degradation test",
+            workflow_name="feature",
+        )
+        return manager
+
+    def test_get_project_plan_returns_plan_without_phase_fields_when_state_absent(
+        self, tmp_path: Path
+    ) -> None:
+        """StateNotFoundError from resolver must not propagate; plan returned without phase keys."""
+        from mcp_server.managers.state_repository import StateNotFoundError
+
+        manager = self._make_manager_with_resolver(
+            tmp_path,
+            resolver_side_effect=StateNotFoundError("feature/298-test"),
+        )
+        plan = manager.get_project_plan(298)
+
+        assert plan is not None
+        assert "current_phase" not in plan
+        assert "phase_source" not in plan
+
+    def test_get_project_plan_returns_plan_without_phase_fields_on_mismatch(
+        self, tmp_path: Path
+    ) -> None:
+        """StateBranchMismatchError from resolver must not propagate; plan without phase keys."""
+        from mcp_server.managers.state_repository import StateBranchMismatchError
+
+        manager = self._make_manager_with_resolver(
+            tmp_path,
+            resolver_side_effect=StateBranchMismatchError("branch mismatch"),
+        )
+        plan = manager.get_project_plan(298)
+
+        assert plan is not None
+        assert "current_phase" not in plan
+        assert "phase_source" not in plan

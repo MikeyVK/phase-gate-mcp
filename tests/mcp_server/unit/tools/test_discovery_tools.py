@@ -831,3 +831,81 @@ class TestGetWorkContextResolverAdoption:
 
         assert not result.is_error
         assert "research" in result.content[0]["text"].lower()
+
+
+# ---------------------------------------------------------------------------
+# C6 RED — GetWorkContextTool StateNotFoundError / StateBranchMismatchError (issue #298)
+# ---------------------------------------------------------------------------
+
+
+def _make_work_context_tool(
+    tmp_path: Path,
+    resolver_side_effect: Exception,
+) -> GetWorkContextTool:
+    """Return a GetWorkContextTool whose resolver raises the given exception."""
+    mock_git = MagicMock()
+    mock_git.get_current_branch.return_value = "feature/298-test"
+
+    mock_resolver = MagicMock()
+    mock_resolver.resolve_current.side_effect = resolver_side_effect
+
+    settings = make_settings(tmp_path)
+
+    return GetWorkContextTool(
+        settings=settings,
+        git_manager=mock_git,
+        project_manager=MagicMock(),
+        state_engine=MagicMock(),
+        workflow_status_resolver=mock_resolver,
+    )
+
+
+class TestGetWorkContextStateErrors:
+    """C6 (issue #298): StateNotFoundError / StateBranchMismatchError → error + RecoveryNote."""
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_error_with_recovery_note_when_state_absent(
+        self, tmp_path: Path
+    ) -> None:
+        """StateNotFoundError from resolver → ToolResult.error + RecoveryNote produced."""
+        from mcp_server.managers.state_repository import StateNotFoundError
+
+        tool = _make_work_context_tool(
+            tmp_path, resolver_side_effect=StateNotFoundError("feature/298-test")
+        )
+        ctx = NoteContext()
+        result = await tool.execute(GetWorkContextInput(), ctx)
+
+        assert result.is_error
+        recovery_notes = [n for n in ctx.notes if n.kind == "recovery"]
+        assert len(recovery_notes) >= 1
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_error_with_recovery_note_on_mismatch(
+        self, tmp_path: Path
+    ) -> None:
+        """StateBranchMismatchError from resolver → ToolResult.error + RecoveryNote produced."""
+        from mcp_server.managers.state_repository import StateBranchMismatchError
+
+        tool = _make_work_context_tool(
+            tmp_path, resolver_side_effect=StateBranchMismatchError("branch mismatch")
+        )
+        ctx = NoteContext()
+        result = await tool.execute(GetWorkContextInput(), ctx)
+
+        assert result.is_error
+        recovery_notes = [n for n in ctx.notes if n.kind == "recovery"]
+        assert len(recovery_notes) >= 1
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_graceful_io_error_path_unchanged(
+        self, tmp_path: Path
+    ) -> None:
+        """OSError in resolver still uses existing graceful fallback (not error result)."""
+        tool = _make_work_context_tool(
+            tmp_path, resolver_side_effect=OSError("disk error")
+        )
+        ctx = NoteContext()
+        result = await tool.execute(GetWorkContextInput(), ctx)
+
+        assert not result.is_error  # OSError → graceful degradation, not hard error
