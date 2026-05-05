@@ -2,7 +2,7 @@
 <!-- template=research version=8b7bb3ab created=2026-05-05T15:52Z updated= -->
 # submit_pr Atomicity: Upstream Check, Dirty-Tree Guard, and Rollback on Failure
 
-**Status:** DRAFT (v3 — revised after QA phase-separation review)  
+**Status:** FINAL (v3.1 — residuals R-1/R-2 resolved)  
 **Version:** 1.0  
 **Last Updated:** 2026-05-05
 
@@ -139,11 +139,7 @@ Rollback strategy (single layer — Layer 2 only):
 2. Restore the working tree to the pre-submit state (artifacts back, `is_clean()` = True after rollback)
 3. Overwrite the remote with the restored HEAD so a retry finds a consistent, idempotent state
 
-A hard reset to the pre-submit HEAD followed by `git push --force-with-lease` satisfies all three. The `--force-with-lease` flag is appropriate because we own the last pushed commit. The exact reset sequence is a design decision.
-
-**Why NOT `git restore --staged <artifact_paths>`:** After soft-reset, the staged index contains artifact deletions/restorations. `git restore --staged` on specific paths would only unstage those paths to the HEAD state but leave the working tree in the merge-base artifact state (neutralize_to_base modified the working tree). `is_clean()` would return False post-rollback, causing Failure B on retry — the exact problem we are fixing.
-
-The `--force-with-lease` is safe: we own the commit we just pushed (neutralization commit from this execute() call). No concurrent pushes can occur because BranchMutatingTool blocks concurrent branch mutations.
+The `--force-with-lease` flag is appropriate because we own the last pushed commit. The exact reset sequence is a design decision.
 
 ## Finding 4: API changes needed on GitManager and GitAdapter *(superseded by Findings 6-10)*
 
@@ -282,7 +278,7 @@ De volgende constraints, afgeleid uit Findings 1-10, sturen de designbeslissinge
 ## Open Questions
 
 - ❓ **git-transactie data-interface**: Welk type geeft de tool door aan de nieuwe GitManager-methode voor de artifact-paden? Constraint: `MergeReadinessContext` mag de laaggrens niet oversteken (§10 Cohesion). Kandidaten: (a) `frozenset[str]` — puur data, GitManager blijft git-gericht; (b) een light DTO zonder fase-contract-kennis. Design bepaalt de keuze.
-- ❓ **rollback meta-failure semantics**: wat als de force-push-with-lease zelf faalt (network, rejected)? Design moet specificeren: `RecoveryNote` met manuele recovery-instructie + propageer `ExecutionError` (nooit swallow).
+- ✅ **rollback meta-failure semantics**: `RecoveryNote` met manuele recovery-instructie + propageer `ExecutionError` (nooit swallow) — vastgelegd in Design Constraints.
 - ✅ **IGitManager Protocol/ABC**: bestaat niet in de codebase (QA bevestigd). Geen interface-update nodig.
 - ✅ **PreflightError**: bestaat al in `mcp_server/core/exceptions.py:112`. Geen nieuw exception type nodig.
 - ✅ **soft_reset / hard_reset_to_head**: VERVALLEN. Alleen `hard_reset(ref)` en `force_push_with_lease()` nodig op adapter-niveau.
