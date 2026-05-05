@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any
 
 # Project modules
 from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.schemas import ContractsConfig, WorkphasesConfig
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
@@ -457,7 +458,10 @@ class ProjectManager:
             return None
 
         # Use WorkflowStatusResolver to detect current phase (Issue #231 C4)
-        status = self._workflow_status_resolver.resolve_current()
+        try:
+            status = self._workflow_status_resolver.resolve_current()
+        except (StateNotFoundError, StateBranchMismatchError, OSError):
+            return plan
         if status.sub_phase:
             plan["current_phase"] = f"{status.current_phase}:{status.sub_phase}"
         else:

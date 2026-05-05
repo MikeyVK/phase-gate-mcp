@@ -581,7 +581,7 @@ class TestPhaseStateEngineRecordSubPhase:
         engine2 = make_phase_state_engine(
             tmp_path, project_manager=project_manager, state_repository=repo
         )
-        engine2.transition(branch=branch, to_phase="planning")
+        engine2.transition(branch=branch, to_phase="design")
         assert repo.load(branch).current_sub_phase is None
 
     def test_force_transition_clears_sub_phase(self, tmp_path: Path) -> None:
@@ -592,7 +592,7 @@ class TestPhaseStateEngineRecordSubPhase:
         )
         engine.force_transition(
             branch=branch,
-            to_phase="planning",
+            to_phase="design",
             skip_reason="QA approved skip",
             human_approval="MVerkaik approved on 2026-05-05",
         )
@@ -614,14 +614,14 @@ class TestPhaseStateEngineRecordSubPhase:
                     "cycles": [
                         {
                             "cycle_number": 1,
-                            "title": "C1",
-                            "deliverables": [],
+                            "name": "C1",
+                            "deliverables": ["deliverable-a"],
                             "exit_criteria": "pass",
                         },
                         {
                             "cycle_number": 2,
-                            "title": "C2",
-                            "deliverables": [],
+                            "name": "C2",
+                            "deliverables": ["deliverable-b"],
                             "exit_criteria": "pass",
                         },
                     ],
