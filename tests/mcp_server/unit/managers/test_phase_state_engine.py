@@ -572,11 +572,9 @@ class TestPhaseStateEngineRecordSubPhase:
 
     def test_transition_clears_sub_phase(self, tmp_path: Path) -> None:
         """transition() must clear current_sub_phase (set to None) on state write."""
-        engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="green")
+        _, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="green")
         # transition from research so no gate enforcement needed; seed directly
-        repo.save(
-            repo.load(branch).with_updates(current_phase="research", current_cycle=None)
-        )
+        repo.save(repo.load(branch).with_updates(current_phase="research", current_cycle=None))
         project_manager = make_project_manager(tmp_path)
         engine2 = make_phase_state_engine(
             tmp_path, project_manager=project_manager, state_repository=repo
@@ -587,9 +585,7 @@ class TestPhaseStateEngineRecordSubPhase:
     def test_force_transition_clears_sub_phase(self, tmp_path: Path) -> None:
         """force_transition() must clear current_sub_phase on state write."""
         engine, repo, branch = self._make_engine_and_state(tmp_path, sub_phase="red")
-        repo.save(
-            repo.load(branch).with_updates(current_phase="research", current_cycle=None)
-        )
+        repo.save(repo.load(branch).with_updates(current_phase="research", current_cycle=None))
         engine.force_transition(
             branch=branch,
             to_phase="design",
