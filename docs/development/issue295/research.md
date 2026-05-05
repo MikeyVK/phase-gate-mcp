@@ -71,8 +71,8 @@ After push() succeeds, create_pr() may fail (e.g., 422 PR already exists, 403 in
 - `has_net_diff_for_path(path, base)` → delegates to adapter
 - `neutralize_to_base(paths, base)` → delegates to adapter
 - `commit_with_scope(...)` → delegates to adapter.commit() which does git add . when files=None
-- **MISSING**: `is_clean()` not exposed as public GitManager method
-- **MISSING**: `has_upstream()` not exposed as public GitManager method
+- **MISSING**: `is_clean()` not exposed as public GitManager method *(v2: methoden zijn intern in `prepare_submission()` — geen publieke exposure nodig — zie Findings 6-9)*
+- **MISSING**: `has_upstream()` not exposed as public GitManager method *(v2: idem)*
 
 ### SubmitPRTool.execute() current sequence (pr_tools.py ~L130)
 1. get_current_branch()
@@ -84,7 +84,7 @@ After push() succeeds, create_pr() may fail (e.g., 422 PR already exists, 403 in
 7. set_pr_status(OPEN)
 
 ### Law of Demeter constraint
-The existing test `test_submit_pr_tool_execute_has_no_adapter_calls` (test_submit_pr_atomic_flow.py:218) asserts that SubmitPRTool.execute() must NOT contain `_git_manager.adapter`. Any new preflight methods (is_clean, has_upstream) must be exposed via GitManager, not accessed from SubmitPRTool directly on the adapter.
+The existing test `test_submit_pr_tool_execute_has_no_adapter_calls` (test_submit_pr_atomic_flow.py:218) asserts that SubmitPRTool.execute() must NOT contain `_git_manager.adapter`. Any new preflight methods (is_clean, has_upstream) must be exposed via GitManager, not accessed from SubmitPRTool directly on the adapter. *(v2: de checks zitten intern in `prepare_submission()` — de tool roept ze niet aan; LoD-constraint geldt onverminderd maar de conclusie "exposed via GitManager" is v1-redenering — zie Findings 6-9)*
 
 ### GitManager.pull() as canonical preflight pattern
 ```python
@@ -110,7 +110,7 @@ GitManager already implements the canonical preflight pattern in pull() and merg
 1. **is_clean check**: `git_manager.is_clean()` — if False, produce `BlockerNote` listing dirty files, raise `PreflightError`. ANY uncommitted/untracked file that is not in the list of artifacts already being neutralized is a problem. But simpler and safer: require COMPLETELY clean tree before submit_pr starts. If state.json is untracked, the agent must commit it first. This makes the contract explicit and aligns with §8 Explicit over Implicit.
 2. **has_upstream check**: `git_manager.has_upstream()` — if False, produce `BlockerNote('Run git_push with --set-upstream before submit_pr')`, raise `PreflightError`. submit_pr must NOT auto-push or auto-set upstream. Responsibility belongs to initialize_project or the agent explicitly.
 
-Both checks require new public methods on GitManager. Current adapter-level methods cannot be called from SubmitPRTool (LoD constraint).
+Both checks require new public methods on GitManager. Current adapter-level methods cannot be called from SubmitPRTool (LoD constraint). *(v2: de checks zijn intern in `prepare_submission()` — géén aparte publieke methoden nodig op GitManager — zie Findings 6-9)*
 
 ## Finding 2: Dirty-tree guard semantics
 
@@ -137,7 +137,7 @@ Rollback strategy (single layer — Layer 2 only):
   3. `git push --force-with-lease` — force-push to overwrite remote, reverting it to the pre-neutralization HEAD
   4. Produce `RecoveryNote` explaining: "PR creation failed: {reason}. Remote branch rolled back to pre-submit state. Working tree is clean. Retry submit_pr once the API issue is resolved."
 
-The combined `soft HEAD~1` + `hard HEAD` is equivalent to `git reset --hard HEAD~1` but more explicit about the two concerns it addresses (commit history vs. working tree). The design phase may simplify to `hard HEAD~1` if preferred.
+The combined `soft HEAD~1` + `hard HEAD` is equivalent to `git reset --hard HEAD~1` but more explicit about the two concerns it addresses (commit history vs. working tree). The design phase may simplify to `hard HEAD~1` if preferred. *(v2: besloten — `hard_reset("HEAD~1")` is de implementatie)*
 
 **Why NOT `git restore --staged <artifact_paths>`:** After soft-reset, the staged index contains artifact deletions/restorations. `git restore --staged` on specific paths would only unstage those paths to the HEAD state but leave the working tree in the merge-base artifact state (neutralize_to_base modified the working tree). `is_clean()` would return False post-rollback, causing Failure B on retry — the exact problem we are fixing.
 
