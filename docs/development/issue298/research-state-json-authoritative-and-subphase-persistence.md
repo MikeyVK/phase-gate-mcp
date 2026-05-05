@@ -2,7 +2,7 @@
 <!-- template=research version=8b7bb3ab created=2026-05-04T19:52Z updated=2026-05-04 -->
 # State.json Authoritative Status + Sub-phase Persistence
 
-**Status:** DRAFT  
+**Status:** FINAL
 **Version:** 1.6  
 **Last Updated:** 2026-05-04
 
