@@ -3,7 +3,7 @@
 # submit_pr Atomicity: Upstream Check, Dirty-Tree Guard, and Rollback on Failure
 
 **Status:** FINAL (v3.1 — residuals R-1/R-2 resolved)  
-**Version:** 1.0  
+**Version:** 3.1  
 **Last Updated:** 2026-05-05
 
 ---
