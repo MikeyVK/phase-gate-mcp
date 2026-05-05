@@ -36,13 +36,13 @@ class TestWorkflowStatusDTO:
     def test_dto_has_required_fields(self) -> None:
         dto = WorkflowStatusDTO(
             current_phase="implementation",
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
         )
         assert dto.current_phase == "implementation"
         assert dto.sub_phase is None
         assert dto.current_cycle is None
-        assert dto.phase_source == "commit-scope"
+        assert dto.phase_source == "state.json"
         assert dto.phase_confidence == "high"
         assert dto.phase_detection_error is None
 
@@ -50,7 +50,7 @@ class TestWorkflowStatusDTO:
         dto = WorkflowStatusDTO(
             current_phase="research",
             phase_source="state.json",
-            phase_confidence="medium",
+            phase_confidence="high",
         )
         with pytest.raises(ValidationError):
             dto.current_phase = "other"  # type: ignore[misc]
@@ -69,7 +69,7 @@ class TestWorkflowStatusDTO:
             current_phase="implementation",
             sub_phase="red",
             current_cycle=2,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -230,3 +230,58 @@ class TestWorkflowStatusResolver:
         result = resolver.resolve_current()
         assert result.phase_source in ("unknown", "state.json")
         # Must not raise; graceful degradation
+
+
+# ---------------------------------------------------------------------------
+# C2 RED — WorkflowStatusDTO Literal narrowing (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestWorkflowStatusDTOLiteralNarrowing:
+    """WorkflowStatusDTO must reject dead Literal values after narrowing."""
+
+    def test_workflow_status_dto_rejects_commit_scope_phase_source(self) -> None:
+        """phase_source='commit-scope' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="commit-scope",  # type: ignore[arg-type]
+                phase_confidence="high",
+            )
+
+    def test_workflow_status_dto_rejects_unknown_phase_source(self) -> None:
+        """phase_source='unknown' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="unknown",  # type: ignore[arg-type]
+                phase_confidence="high",
+            )
+
+    def test_workflow_status_dto_rejects_medium_phase_confidence(self) -> None:
+        """phase_confidence='medium' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="state.json",
+                phase_confidence="medium",  # type: ignore[arg-type]
+            )
+
+    def test_workflow_status_dto_rejects_unknown_phase_confidence(self) -> None:
+        """phase_confidence='unknown' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="state.json",
+                phase_confidence="unknown",  # type: ignore[arg-type]
+            )
+
+    def test_workflow_status_dto_accepts_state_json_high(self) -> None:
+        """phase_source='state.json' + phase_confidence='high' must construct without error."""
+        dto = WorkflowStatusDTO(
+            current_phase="implementation",
+            phase_source="state.json",
+            phase_confidence="high",
+        )
+        assert dto.phase_source == "state.json"
+        assert dto.phase_confidence == "high"
