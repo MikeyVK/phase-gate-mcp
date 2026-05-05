@@ -370,24 +370,25 @@ class TestWorkflowStatusResolverInversion:
         with pytest.raises(StateNotFoundError):
             resolver.resolve_current()
 
-    def test_resolve_raises_branch_mismatch_when_present_wrong_branch(
-        self, tmp_path: Path
-    ) -> None:
-        """When state.json has a different branch, resolve_current() raises StateBranchMismatchError."""
+    def test_resolve_raises_branch_mismatch_when_present_wrong_branch(self, tmp_path: Path) -> None:
+        """State present with wrong branch raises StateBranchMismatchError."""
+
+        class _WrongBranchReader:
+            """Always returns state whose branch field does not match what was requested."""
+
+            def load(self, _branch: str) -> BranchState:
+                return BranchState(
+                    branch="feature/298-test",  # deliberately mismatched
+                    current_phase="research",
+                    workflow_name="feature",
+                    issue_number=298,
+                    parent_branch="main",
+                )
+
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = "feature/298-other"
         git_reader.get_recent_commits.return_value = []
-        inner_repo = InMemoryStateRepository()
-        # Store state under the key "feature/298-other" but with branch field = "feature/298-test"
-        # BranchValidatedStateReader will detect the mismatch and raise StateBranchMismatchError
-        inner_repo._states["feature/298-other"] = BranchState(  # noqa: SLF001
-            branch="feature/298-test",  # mismatch: stored key vs branch field
-            current_phase="research",
-            workflow_name="feature",
-            issue_number=298,
-            parent_branch="main",
-        )
-        validated_reader = BranchValidatedStateReader(inner_repo)
+        validated_reader = BranchValidatedStateReader(_WrongBranchReader())
         detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,

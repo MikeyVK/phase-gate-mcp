@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
+from mcp_server.managers.state_repository import StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 
 if TYPE_CHECKING:
@@ -46,8 +46,8 @@ class WorkflowStatusResolver:
 
         try:
             branch_state = self._state.load(branch)
-        except (KeyError, FileNotFoundError):
-            raise StateNotFoundError(branch)
+        except (KeyError, FileNotFoundError) as exc:
+            raise StateNotFoundError(branch) from exc
 
         # StateBranchMismatchError propagates unchanged from BranchValidatedStateReader
 
