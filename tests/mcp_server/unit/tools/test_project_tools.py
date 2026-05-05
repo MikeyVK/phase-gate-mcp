@@ -1017,8 +1017,8 @@ class TestProjectManagerWorkflowStatusResolverC4:
             current_phase="validation",
             sub_phase=None,
             current_cycle=None,
-            phase_source="commit-scope",
-            phase_confidence="medium",
+            phase_source="state.json",
+            phase_confidence="high",
             phase_detection_error=None,
         )
         manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)
@@ -1031,7 +1031,7 @@ class TestProjectManagerWorkflowStatusResolverC4:
         plan = manager.get_project_plan(231)
 
         assert plan is not None
-        assert plan["phase_source"] == "commit-scope"
+        assert plan["phase_source"] == "state.json"
         assert plan["current_phase"] == "validation"
 
     def test_get_project_plan_includes_phase_detection_error(self, tmp_path: Path) -> None:
@@ -1042,11 +1042,11 @@ class TestProjectManagerWorkflowStatusResolverC4:
 
         mock_resolver = MagicMock()
         mock_resolver.resolve_current.return_value = WorkflowStatusDTO(
-            current_phase="unknown",
+            current_phase="validation",
             sub_phase=None,
             current_cycle=None,
-            phase_source="unknown",
-            phase_confidence="unknown",
+            phase_source="state.json",
+            phase_confidence="high",
             phase_detection_error="No commits found",
         )
         manager = make_project_manager(tmp_path, workflow_status_resolver=mock_resolver)

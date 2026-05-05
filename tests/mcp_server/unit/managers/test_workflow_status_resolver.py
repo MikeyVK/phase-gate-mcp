@@ -180,13 +180,14 @@ class TestWorkflowStatusResolver:
         result = resolver.resolve_current()
         assert isinstance(result, WorkflowStatusDTO)
 
-    def test_resolve_uses_commit_scope_when_high_confidence(self, tmp_path: Path) -> None:
+    def test_resolve_uses_state_json_when_state_present(self, tmp_path: Path) -> None:
+        """After #298: resolver always uses state.json as source (phase_source='state.json')."""
         resolver = self._make_resolver(
             commits=["feat(P_IMPLEMENTATION_SP_C3_GREEN): add resolver"],
             tmp_path=tmp_path,
         )
         result = resolver.resolve_current()
-        assert result.phase_source == "commit-scope"
+        assert result.phase_source == "state.json"
         assert result.phase_confidence == "high"
         assert result.current_phase == "implementation"
 
@@ -210,8 +211,8 @@ class TestWorkflowStatusResolver:
         result = resolver.resolve_current()
         assert result.current_cycle == 3
 
-    def test_resolve_handles_branch_mismatch_gracefully(self, tmp_path: Path) -> None:
-        """When state.json has a different branch, resolver falls back to unknown."""
+    def test_resolve_raises_state_not_found_on_branch_mismatch(self, tmp_path: Path) -> None:
+        """After #298: resolver raises StateNotFoundError when no state for current branch."""
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = "feature/99-other"
         git_reader.get_recent_commits.return_value = []
@@ -219,7 +220,7 @@ class TestWorkflowStatusResolver:
         state_repo = InMemoryStateRepository()
         state_repo.save(
             BranchState(
-                branch="feature/50-test",  # mismatch
+                branch="feature/50-test",  # mismatch — different branch
                 current_phase="research",
                 workflow_name="feature",
                 issue_number=50,
@@ -233,9 +234,8 @@ class TestWorkflowStatusResolver:
             state_reader=state_repo,
             commit_phase_detector=detector,
         )
-        result = resolver.resolve_current()
-        assert result.phase_source in ("unknown", "state.json")
-        # Must not raise; graceful degradation
+        with pytest.raises(StateNotFoundError):
+            resolver.resolve_current()
 
 
 # ---------------------------------------------------------------------------

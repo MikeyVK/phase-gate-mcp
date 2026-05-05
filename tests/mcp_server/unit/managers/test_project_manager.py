@@ -16,7 +16,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_server.managers import git_manager
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
@@ -65,8 +64,8 @@ class TestProjectManagerWorkflows:
         assert len(phases) == 7
         expected = [
             "research",
-            "planning",
             "design",
+            "planning",
             "implementation",
             "validation",
             "documentation",
@@ -318,38 +317,43 @@ phases:
         """Create ProjectManager instance."""
         return make_project_manager(workspace_root)
 
-    def test_get_project_plan_includes_current_phase_from_commit_scope(
-        self, manager: ProjectManager
-    ) -> None:
-        """Test get_project_plan returns current_phase from commit-scope.
+    def test_get_project_plan_includes_current_phase_from_state_json(self, tmp_path: Path) -> None:
+        """After #298: current_phase comes from state.json via resolver when state present.
 
-        Issue #139: Phase detection via ScopeDecoder (commit-scope > state.json > unknown).
+        Issue #139: Phase detection is now state.json-authoritative (not commit-scope).
         """
-        # Initialize project
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase="implementation",
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="state.json",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
         manager.initialize_project(
             issue_number=139,
             issue_title="Add current_phase to get_project_plan",
             workflow_name="feature",
         )
 
-        # Mock a commit with scope
-        # Note: This test will fail (RED) until we integrate GitManager
         plan = manager.get_project_plan(issue_number=139)
 
-        # Assertions for Issue #139 fix
         assert plan is not None
         assert "current_phase" in plan
-        assert "phase_source" in plan
+        assert plan["phase_source"] == "state.json"
         assert "phase_detection_error" in plan
 
-    def test_get_project_plan_returns_unknown_when_no_commits(
-        self, manager: ProjectManager, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Test get_project_plan returns unknown phase when no commits exist."""
-        # Mock GitManager.get_recent_commits to return empty list
-        monkeypatch.setattr(git_manager.GitManager, "get_recent_commits", lambda _self, **_: [])
+    def test_get_project_plan_has_no_phase_fields_when_state_absent(self, tmp_path: Path) -> None:
+        """After #298: when resolver raises StateNotFoundError, plan has no phase fields.
 
-        # Initialize project
+        Issue #140: No state.json → plan returned without phase metadata.
+        """
+        resolver = MagicMock()
+        resolver.resolve_current.side_effect = StateNotFoundError("no-state-branch")
+        manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)
+
         manager.initialize_project(
             issue_number=140,
             issue_title="Test unknown phase",
@@ -358,11 +362,9 @@ phases:
 
         plan = manager.get_project_plan(issue_number=140)
 
-        # Should return unknown with error message
         assert plan is not None
-        assert plan["current_phase"] == "unknown"
-        assert plan["phase_source"] == "unknown"
-        assert plan["phase_detection_error"] is not None
+        assert "current_phase" not in plan
+        assert "phase_source" not in plan
 
 
 class TestPlanningDeliverablesSchema:
@@ -739,7 +741,7 @@ class TestProjectManagerResolverAdoption:
             current_phase="research",
             sub_phase=None,
             current_cycle=None,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -750,7 +752,7 @@ class TestProjectManagerResolverAdoption:
 
         assert plan is not None
         assert plan["current_phase"] == "research"
-        assert plan["phase_source"] == "commit-scope"
+        assert plan["phase_source"] == "state.json"
         resolver.resolve_current.assert_called_once()
 
     def test_get_project_plan_formats_phase_colon_sub_phase(self, tmp_path: Path) -> None:
@@ -760,7 +762,7 @@ class TestProjectManagerResolverAdoption:
             current_phase="implementation",
             sub_phase="red",
             current_cycle=1,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -776,11 +778,11 @@ class TestProjectManagerResolverAdoption:
         """get_project_plan propagates phase_detection_error from resolver."""
         resolver = MagicMock()
         resolver.resolve_current.return_value = WorkflowStatusDTO(
-            current_phase="unknown",
+            current_phase="implementation",
             sub_phase=None,
             current_cycle=None,
-            phase_source="unknown",
-            phase_confidence="unknown",
+            phase_source="state.json",
+            phase_confidence="high",
             phase_detection_error="Phase detection failed: no state file",
         )
         manager = make_project_manager(tmp_path, workflow_status_resolver=resolver)

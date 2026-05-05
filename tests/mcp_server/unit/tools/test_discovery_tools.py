@@ -223,12 +223,12 @@ class TestGetWorkContextTool:
     async def test_get_context_detects_workflow_phase_from_commit_scope(
         self, tool: GetWorkContextTool
     ) -> None:
-        """Should detect workflow phase from commit-scope and display it correctly."""
-        tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+        """Should detect workflow phase from state.json and display it correctly."""
+        tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(  # pyright: ignore[reportPrivateUsage]
             current_phase="implementation",
             sub_phase="red",
             current_cycle=None,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -242,13 +242,13 @@ class TestGetWorkContextTool:
                 "test(P_IMPLEMENTATION_SP_C1_RED): add failing test for DTO validation"
             ]
             mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
+            tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
 
             mock_decoder = MagicMock()
             mock_decoder.detect_phase.return_value = {
                 "workflow_phase": "implementation",
                 "sub_phase": "red",
-                "source": "commit-scope",
+                "source": "state.json",
                 "confidence": "high",
                 "raw_scope": "P_IMPLEMENTATION_SP_C1_RED",
                 "error_message": None,
@@ -260,10 +260,10 @@ class TestGetWorkContextTool:
 
         assert not result.is_error
         text = result.content[0]["text"].lower()
-        # Should identify implementation phase with red sub-phase from commit-scope
+        # Should identify implementation phase with red sub-phase from state.json
         assert "implementation" in text
         assert "red" in text or "🔴" in result.content[0]["text"]
-        assert "commit-scope" in text  # Source should be commit-scope
+        assert "state.json" in text  # Source should be state.json
 
     @pytest.mark.asyncio
     async def test_detect_workflow_phase_variations(self, tool: GetWorkContextTool) -> None:
@@ -473,11 +473,11 @@ class TestGetWorkContextTddCycleInfo:
             mock_decoder_class.return_value = mock_decoder
 
             # Configure resolver to match expected phase/cycle for TDD info visibility
-            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(  # pyright: ignore[reportPrivateUsage]
                 current_phase="implementation",
                 sub_phase="green",
                 current_cycle=2,
-                phase_source="commit-scope",
+                phase_source="state.json",
                 phase_confidence="high",
                 phase_detection_error=None,
             )
@@ -754,7 +754,7 @@ class TestGetWorkContextResolverAdoption:
             current_phase="design",
             sub_phase=None,
             current_cycle=None,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -783,7 +783,7 @@ class TestGetWorkContextResolverAdoption:
             current_phase="implementation",
             sub_phase="red",
             current_cycle=None,  # Gate: no cycle → no enrichment
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -813,7 +813,7 @@ class TestGetWorkContextResolverAdoption:
             sub_phase=None,
             current_cycle=None,
             phase_source="state.json",
-            phase_confidence="medium",
+            phase_confidence="high",
             phase_detection_error=None,
         )
         settings = make_settings()

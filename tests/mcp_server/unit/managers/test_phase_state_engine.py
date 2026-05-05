@@ -452,7 +452,7 @@ class TestPhaseStateEngineMutatorRoutingC6:
         repo.save(seed)
         mutator.apply_calls.clear()
 
-        engine.transition(branch="feature/231-test", to_phase="planning")
+        engine.transition(branch="feature/231-test", to_phase="design")
 
         assert "feature/231-test" in mutator.apply_calls
 
