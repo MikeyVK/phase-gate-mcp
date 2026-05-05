@@ -254,7 +254,7 @@ SubmitPRTool.execute()
   |    +-- adapter.has_upstream() -> True
   |    +-- for path: has_net_diff_for_path -> [".st3/state.json"]  (to_neutralize non-empty)
   |    +-- neutralize_to_base({".st3/state.json"}, "main")
-  |    +-- commit_with_scope(phase="ready", commit_type="chore") -> "abc1234"
+  |    +-- commit_with_scope(workflow_phase="ready", commit_type="chore") -> "abc1234"
   |    +-- push()
   |
   +-- github_manager.create_pr(...) -> {number: 42, url: "..."}
