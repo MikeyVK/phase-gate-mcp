@@ -26,6 +26,7 @@ from mcp_server.managers.state_repository import (
     FileStateRepository,
     InMemoryStateRepository,
     StateBranchMismatchError,
+    StateNotFoundError,
 )
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
@@ -285,9 +286,7 @@ class TestBranchStateCurrentSubPhase:
         )
         assert state.current_sub_phase is None
 
-    def test_branch_state_current_sub_phase_persists(
-        self, tmp_path: Path
-    ) -> None:
+    def test_branch_state_current_sub_phase_persists(self, tmp_path: Path) -> None:
         """FileStateRepository save+load must round-trip current_sub_phase='red'."""
         state_file = tmp_path / ".st3" / "state.json"
         repository = FileStateRepository(state_file=state_file)
@@ -304,9 +303,7 @@ class TestBranchStateCurrentSubPhase:
 
         assert loaded.current_sub_phase == "red"
 
-    def test_branch_state_current_sub_phase_none_round_trips(
-        self, tmp_path: Path
-    ) -> None:
+    def test_branch_state_current_sub_phase_none_round_trips(self, tmp_path: Path) -> None:
         """FileStateRepository save+load must round-trip current_sub_phase=None."""
         state_file = tmp_path / ".st3" / "state.json"
         repository = FileStateRepository(state_file=state_file)
@@ -352,21 +349,15 @@ class TestStateNotFoundError:
 
     def test_state_not_found_error_is_exception(self) -> None:
         """StateNotFoundError must be an Exception subclass."""
-        from mcp_server.managers.state_repository import StateNotFoundError
-
         exc = StateNotFoundError("feature/298-test")
         assert isinstance(exc, Exception)
 
     def test_state_not_found_error_carries_branch(self) -> None:
         """StateNotFoundError message must contain the branch name."""
-        from mcp_server.managers.state_repository import StateNotFoundError
-
         exc = StateNotFoundError("feature/298-test")
         assert "feature/298-test" in str(exc)
 
     def test_state_not_found_error_is_not_file_not_found_error(self) -> None:
         """StateNotFoundError must not be a FileNotFoundError (domain vs I/O error)."""
-        from mcp_server.managers.state_repository import StateNotFoundError
-
         exc = StateNotFoundError("feature/298-test")
         assert not isinstance(exc, FileNotFoundError)
