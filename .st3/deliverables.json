@@ -1,0 +1,19 @@
+{
+  "295": {
+    "issue_title": "submit_pr atomicity: upstream check, dirty-tree guard, and rollback on failure",
+    "workflow_name": "bug",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-05T15:32:58.536388+00:00"
+  }
+}
