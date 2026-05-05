@@ -18,6 +18,14 @@ class StateBranchMismatchError(Exception):
     """Raised when loaded branch state does not match the requested branch."""
 
 
+class StateNotFoundError(Exception):
+    """Raised when state.json is absent for the requested branch.
+
+    Distinct from FileNotFoundError — this is a domain event (no workflow
+    has been initialised for this branch), not an I/O error.
+    """
+
+
 class BranchState(BaseModel):
     """Validated immutable branch state."""
 
@@ -38,6 +46,7 @@ class BranchState(BaseModel):
     created_at: str | None = None
     transitions: list[dict[str, Any]] = Field(default_factory=list)
     reconstructed: bool = False
+    current_sub_phase: str | None = None
 
     def with_updates(self, **updates: object) -> BranchState:
         """Return a copy with updated fields."""

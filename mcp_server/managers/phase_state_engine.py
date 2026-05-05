@@ -192,6 +192,7 @@ class PhaseStateEngine:
         updated_state = state.with_updates(
             current_phase=to_phase,
             transitions=[*state.transitions, self._transition_to_dict(transition)],
+            current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
 
@@ -258,6 +259,7 @@ class PhaseStateEngine:
             current_phase=to_phase,
             transitions=[*state.transitions, self._transition_to_dict(transition)],
             skip_reason=skip_reason,
+            current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
 
@@ -314,6 +316,7 @@ class PhaseStateEngine:
             last_cycle=from_cycle,
             current_cycle=to_cycle,
             cycle_history=[*state.cycle_history, history_entry],
+            current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
 
@@ -378,6 +381,7 @@ class PhaseStateEngine:
             last_cycle=from_cycle,
             current_cycle=to_cycle,
             cycle_history=[*state.cycle_history, history_entry],
+            current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
 
@@ -620,6 +624,16 @@ class PhaseStateEngine:
         if not plan or "planning_deliverables" not in plan:
             msg = f"Planning deliverables not found for issue {issue_number}"
             raise ValueError(msg)
+
+    def record_sub_phase(self, branch: str, sub_phase: str | None) -> None:
+        """Persist the current TDD sub_phase (red/green/refactor/None) to state.
+
+        Called by GitCommitTool after every successful commit. Always-write:
+        even None is written explicitly to clear any previously stored value.
+        """
+        self._workflow_state_mutator.apply(
+            branch, lambda s: s.with_updates(current_sub_phase=sub_phase)
+        )
 
     def _save_state(self, branch: str, state: BranchState) -> None:
         """Save branch state to state.json through the configured repository."""

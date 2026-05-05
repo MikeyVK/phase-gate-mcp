@@ -2,7 +2,7 @@
 <!-- template=research version=custom created=2026-04-27T00:00Z updated=2026-04-28 -->
 # Issue #231: Revised Impact Assessment for State.json SSOT with Persistent Subphase
 **Status:** FINAL  
-**Version:** 2.1  
+**Status:** FINAL — **RESOLVED by issue #298** (2026-05-04)
 **Last Updated:** 2026-04-28
 
 ---

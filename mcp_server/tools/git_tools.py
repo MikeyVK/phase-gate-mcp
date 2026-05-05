@@ -364,6 +364,8 @@ class GitCommitTool(BranchMutatingTool):
             skip_paths=frozenset(),
         )
         ctx.produce(CommitNote(commit_hash=commit_hash))
+        if self._state_engine is not None:
+            self._state_engine.record_sub_phase(current_branch, params.sub_phase)
         return ToolResult.text(f"Committed: {commit_hash}")
 
 

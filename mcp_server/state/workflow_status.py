@@ -17,6 +17,6 @@ class WorkflowStatusDTO(BaseModel):
     current_phase: str
     sub_phase: str | None = None
     current_cycle: int | None = None
-    phase_source: Literal["commit-scope", "state.json", "unknown"]
-    phase_confidence: Literal["high", "medium", "unknown"]
+    phase_source: Literal["state.json"]
+    phase_confidence: Literal["high"]
     phase_detection_error: str | None = None

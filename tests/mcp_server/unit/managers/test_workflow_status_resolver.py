@@ -11,7 +11,13 @@ from pydantic import ValidationError
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.interfaces import IGitContextReader
-from mcp_server.managers.state_repository import BranchState, InMemoryStateRepository
+from mcp_server.managers.state_repository import (
+    BranchState,
+    BranchValidatedStateReader,
+    InMemoryStateRepository,
+    StateBranchMismatchError,
+    StateNotFoundError,
+)
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 
@@ -36,13 +42,13 @@ class TestWorkflowStatusDTO:
     def test_dto_has_required_fields(self) -> None:
         dto = WorkflowStatusDTO(
             current_phase="implementation",
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
         )
         assert dto.current_phase == "implementation"
         assert dto.sub_phase is None
         assert dto.current_cycle is None
-        assert dto.phase_source == "commit-scope"
+        assert dto.phase_source == "state.json"
         assert dto.phase_confidence == "high"
         assert dto.phase_detection_error is None
 
@@ -50,7 +56,7 @@ class TestWorkflowStatusDTO:
         dto = WorkflowStatusDTO(
             current_phase="research",
             phase_source="state.json",
-            phase_confidence="medium",
+            phase_confidence="high",
         )
         with pytest.raises(ValidationError):
             dto.current_phase = "other"  # type: ignore[misc]
@@ -69,7 +75,7 @@ class TestWorkflowStatusDTO:
             current_phase="implementation",
             sub_phase="red",
             current_cycle=2,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -174,13 +180,14 @@ class TestWorkflowStatusResolver:
         result = resolver.resolve_current()
         assert isinstance(result, WorkflowStatusDTO)
 
-    def test_resolve_uses_commit_scope_when_high_confidence(self, tmp_path: Path) -> None:
+    def test_resolve_uses_state_json_when_state_present(self, tmp_path: Path) -> None:
+        """After #298: resolver always uses state.json as source (phase_source='state.json')."""
         resolver = self._make_resolver(
             commits=["feat(P_IMPLEMENTATION_SP_C3_GREEN): add resolver"],
             tmp_path=tmp_path,
         )
         result = resolver.resolve_current()
-        assert result.phase_source == "commit-scope"
+        assert result.phase_source == "state.json"
         assert result.phase_confidence == "high"
         assert result.current_phase == "implementation"
 
@@ -204,8 +211,8 @@ class TestWorkflowStatusResolver:
         result = resolver.resolve_current()
         assert result.current_cycle == 3
 
-    def test_resolve_handles_branch_mismatch_gracefully(self, tmp_path: Path) -> None:
-        """When state.json has a different branch, resolver falls back to unknown."""
+    def test_resolve_raises_state_not_found_on_branch_mismatch(self, tmp_path: Path) -> None:
+        """After #298: resolver raises StateNotFoundError when no state for current branch."""
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = "feature/99-other"
         git_reader.get_recent_commits.return_value = []
@@ -213,7 +220,7 @@ class TestWorkflowStatusResolver:
         state_repo = InMemoryStateRepository()
         state_repo.save(
             BranchState(
-                branch="feature/50-test",  # mismatch
+                branch="feature/50-test",  # mismatch — different branch
                 current_phase="research",
                 workflow_name="feature",
                 issue_number=50,
@@ -227,6 +234,166 @@ class TestWorkflowStatusResolver:
             state_reader=state_repo,
             commit_phase_detector=detector,
         )
+        with pytest.raises(StateNotFoundError):
+            resolver.resolve_current()
+
+
+# ---------------------------------------------------------------------------
+# C2 RED — WorkflowStatusDTO Literal narrowing (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestWorkflowStatusDTOLiteralNarrowing:
+    """WorkflowStatusDTO must reject dead Literal values after narrowing."""
+
+    def test_workflow_status_dto_rejects_commit_scope_phase_source(self) -> None:
+        """phase_source='commit-scope' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="commit-scope",  # type: ignore[arg-type]
+                phase_confidence="high",
+            )
+
+    def test_workflow_status_dto_rejects_unknown_phase_source(self) -> None:
+        """phase_source='unknown' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="unknown",  # type: ignore[arg-type]
+                phase_confidence="high",
+            )
+
+    def test_workflow_status_dto_rejects_medium_phase_confidence(self) -> None:
+        """phase_confidence='medium' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="state.json",
+                phase_confidence="medium",  # type: ignore[arg-type]
+            )
+
+    def test_workflow_status_dto_rejects_unknown_phase_confidence(self) -> None:
+        """phase_confidence='unknown' must raise ValidationError after narrowing."""
+        with pytest.raises(ValidationError):
+            WorkflowStatusDTO(
+                current_phase="implementation",
+                phase_source="state.json",
+                phase_confidence="unknown",  # type: ignore[arg-type]
+            )
+
+    def test_workflow_status_dto_accepts_state_json_high(self) -> None:
+        """phase_source='state.json' + phase_confidence='high' must construct without error."""
+        dto = WorkflowStatusDTO(
+            current_phase="implementation",
+            phase_source="state.json",
+            phase_confidence="high",
+        )
+        assert dto.phase_source == "state.json"
+        assert dto.phase_confidence == "high"
+
+
+# ---------------------------------------------------------------------------
+# C3 RED — WorkflowStatusResolver inversion (issue #298)
+# ---------------------------------------------------------------------------
+
+
+class TestWorkflowStatusResolverInversion:
+    """After C3: resolver uses state.json as primary source, never commit-scope."""
+
+    def _make_resolver_with_state(
+        self,
+        *,
+        branch: str = "feature/298-test",
+        state_phase: str = "implementation",
+        state_cycle: int | None = 3,
+        commits: list[str] | None = None,
+        tmp_path: Path,
+    ) -> WorkflowStatusResolver:
+        git_reader = MagicMock()
+        git_reader.get_current_branch.return_value = branch
+        git_reader.get_recent_commits.return_value = commits or []
+        state_repo = InMemoryStateRepository()
+        state_repo.save(
+            BranchState(
+                branch=branch,
+                current_phase=state_phase,
+                current_cycle=state_cycle,
+                workflow_name="feature",
+                issue_number=298,
+                parent_branch="main",
+            )
+        )
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        return WorkflowStatusResolver(
+            git_context_reader=git_reader,
+            state_reader=state_repo,
+            commit_phase_detector=detector,
+        )
+
+    def _make_resolver_no_state(
+        self,
+        *,
+        branch: str = "feature/298-test",
+        commits: list[str] | None = None,
+        tmp_path: Path,
+    ) -> WorkflowStatusResolver:
+        git_reader = MagicMock()
+        git_reader.get_current_branch.return_value = branch
+        git_reader.get_recent_commits.return_value = commits or []
+        state_repo = InMemoryStateRepository()
+        # no save → state absent
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        return WorkflowStatusResolver(
+            git_context_reader=git_reader,
+            state_reader=state_repo,
+            commit_phase_detector=detector,
+        )
+
+    def test_resolve_uses_state_when_present_despite_high_confidence_commit(
+        self, tmp_path: Path
+    ) -> None:
+        """Even with a high-confidence commit-scope signal, state.json wins."""
+        resolver = self._make_resolver_with_state(
+            state_phase="research",
+            commits=["feat(P_IMPLEMENTATION_SP_C3_GREEN): will be ignored"],
+            tmp_path=tmp_path,
+        )
         result = resolver.resolve_current()
-        assert result.phase_source in ("unknown", "state.json")
-        # Must not raise; graceful degradation
+        assert result.phase_source == "state.json"
+        assert result.phase_confidence == "high"
+        assert result.current_phase == "research"
+
+    def test_resolve_raises_state_not_found_when_absent(self, tmp_path: Path) -> None:
+        """When state.json is absent, resolve_current() must raise StateNotFoundError."""
+        resolver = self._make_resolver_no_state(tmp_path=tmp_path)
+        with pytest.raises(StateNotFoundError):
+            resolver.resolve_current()
+
+    def test_resolve_raises_branch_mismatch_when_present_wrong_branch(self, tmp_path: Path) -> None:
+        """State present with wrong branch raises StateBranchMismatchError."""
+
+        class _WrongBranchReader:
+            """Always returns state whose branch field does not match what was requested."""
+
+            def load(self, _branch: str) -> BranchState:
+                return BranchState(
+                    branch="feature/298-test",  # deliberately mismatched
+                    current_phase="research",
+                    workflow_name="feature",
+                    issue_number=298,
+                    parent_branch="main",
+                )
+
+        git_reader = MagicMock()
+        git_reader.get_current_branch.return_value = "feature/298-other"
+        git_reader.get_recent_commits.return_value = []
+        validated_reader = BranchValidatedStateReader(_WrongBranchReader())
+        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        resolver = WorkflowStatusResolver(
+            git_context_reader=git_reader,
+            state_reader=validated_reader,
+            commit_phase_detector=detector,
+        )
+        with pytest.raises(StateBranchMismatchError):
+            resolver.resolve_current()

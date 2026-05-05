@@ -19,7 +19,8 @@ from mcp_server.config.schemas import GitConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.config.settings import Settings
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import (
     GetWorkContextInput,
@@ -222,12 +223,12 @@ class TestGetWorkContextTool:
     async def test_get_context_detects_workflow_phase_from_commit_scope(
         self, tool: GetWorkContextTool
     ) -> None:
-        """Should detect workflow phase from commit-scope and display it correctly."""
-        tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+        """Should detect workflow phase from state.json and display it correctly."""
+        tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(  # pyright: ignore[reportPrivateUsage]
             current_phase="implementation",
             sub_phase="red",
             current_cycle=None,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -241,13 +242,13 @@ class TestGetWorkContextTool:
                 "test(P_IMPLEMENTATION_SP_C1_RED): add failing test for DTO validation"
             ]
             mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
+            tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
 
             mock_decoder = MagicMock()
             mock_decoder.detect_phase.return_value = {
                 "workflow_phase": "implementation",
                 "sub_phase": "red",
-                "source": "commit-scope",
+                "source": "state.json",
                 "confidence": "high",
                 "raw_scope": "P_IMPLEMENTATION_SP_C1_RED",
                 "error_message": None,
@@ -259,10 +260,10 @@ class TestGetWorkContextTool:
 
         assert not result.is_error
         text = result.content[0]["text"].lower()
-        # Should identify implementation phase with red sub-phase from commit-scope
+        # Should identify implementation phase with red sub-phase from state.json
         assert "implementation" in text
         assert "red" in text or "🔴" in result.content[0]["text"]
-        assert "commit-scope" in text  # Source should be commit-scope
+        assert "state.json" in text  # Source should be state.json
 
     @pytest.mark.asyncio
     async def test_detect_workflow_phase_variations(self, tool: GetWorkContextTool) -> None:
@@ -472,11 +473,11 @@ class TestGetWorkContextTddCycleInfo:
             mock_decoder_class.return_value = mock_decoder
 
             # Configure resolver to match expected phase/cycle for TDD info visibility
-            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(  # pyright: ignore[reportPrivateUsage]
                 current_phase="implementation",
                 sub_phase="green",
                 current_cycle=2,
-                phase_source="commit-scope",
+                phase_source="state.json",
                 phase_confidence="high",
                 phase_detection_error=None,
             )
@@ -753,7 +754,7 @@ class TestGetWorkContextResolverAdoption:
             current_phase="design",
             sub_phase=None,
             current_cycle=None,
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -782,7 +783,7 @@ class TestGetWorkContextResolverAdoption:
             current_phase="implementation",
             sub_phase="red",
             current_cycle=None,  # Gate: no cycle → no enrichment
-            phase_source="commit-scope",
+            phase_source="state.json",
             phase_confidence="high",
             phase_detection_error=None,
         )
@@ -812,7 +813,7 @@ class TestGetWorkContextResolverAdoption:
             sub_phase=None,
             current_cycle=None,
             phase_source="state.json",
-            phase_confidence="medium",
+            phase_confidence="high",
             phase_detection_error=None,
         )
         settings = make_settings()
@@ -831,3 +832,73 @@ class TestGetWorkContextResolverAdoption:
 
         assert not result.is_error
         assert "research" in result.content[0]["text"].lower()
+
+
+# ---------------------------------------------------------------------------
+# C6 RED — GetWorkContextTool StateNotFoundError / StateBranchMismatchError (issue #298)
+# ---------------------------------------------------------------------------
+
+
+def _make_work_context_tool(
+    tmp_path: Path,
+    resolver_side_effect: Exception,
+) -> GetWorkContextTool:
+    """Return a GetWorkContextTool whose resolver raises the given exception."""
+    mock_git = MagicMock()
+    mock_git.get_current_branch.return_value = "feature/298-test"
+
+    mock_resolver = MagicMock()
+    mock_resolver.resolve_current.side_effect = resolver_side_effect
+
+    settings = make_settings(tmp_path)
+
+    return GetWorkContextTool(
+        settings=settings,
+        git_manager=mock_git,
+        project_manager=MagicMock(),
+        state_engine=MagicMock(),
+        workflow_status_resolver=mock_resolver,
+    )
+
+
+class TestGetWorkContextStateErrors:
+    """C6 (issue #298): StateNotFoundError / StateBranchMismatchError → error + RecoveryNote."""
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_error_with_recovery_note_when_state_absent(
+        self, tmp_path: Path
+    ) -> None:
+        """StateNotFoundError from resolver → ToolResult.error + RecoveryNote produced."""
+        tool = _make_work_context_tool(
+            tmp_path, resolver_side_effect=StateNotFoundError("feature/298-test")
+        )
+        ctx = NoteContext()
+        result = await tool.execute(GetWorkContextInput(), ctx)
+
+        assert result.is_error
+        recovery_notes = ctx.of_type(RecoveryNote)
+        assert len(recovery_notes) >= 1
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_error_with_recovery_note_on_mismatch(
+        self, tmp_path: Path
+    ) -> None:
+        """StateBranchMismatchError from resolver → ToolResult.error + RecoveryNote produced."""
+        tool = _make_work_context_tool(
+            tmp_path, resolver_side_effect=StateBranchMismatchError("branch mismatch")
+        )
+        ctx = NoteContext()
+        result = await tool.execute(GetWorkContextInput(), ctx)
+
+        assert result.is_error
+        recovery_notes = ctx.of_type(RecoveryNote)
+        assert len(recovery_notes) >= 1
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_graceful_io_error_path_unchanged(self, tmp_path: Path) -> None:
+        """OSError in resolver still uses existing graceful fallback (not error result)."""
+        tool = _make_work_context_tool(tmp_path, resolver_side_effect=OSError("disk error"))
+        ctx = NoteContext()
+        result = await tool.execute(GetWorkContextInput(), ctx)
+
+        assert not result.is_error  # OSError → graceful degradation, not hard error

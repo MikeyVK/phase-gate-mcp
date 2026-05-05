@@ -17,6 +17,7 @@ from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.schemas import WorkphasesConfig
 from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
@@ -134,7 +135,6 @@ class GetWorkContextTool(BaseTool):
 
     async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:
         """Execute work context aggregation."""
-        del context  # NoteContext not used by this read-only tool
         ctx: dict[str, Any] = {}
 
         # Get Git context
@@ -157,6 +157,20 @@ class GetWorkContextTool(BaseTool):
             ctx["phase_error_message"] = status.phase_detection_error
             ctx["recent_commits"] = self._git_manager.get_recent_commits(limit=5)
             current_cycle = status.current_cycle
+        except (StateNotFoundError, StateBranchMismatchError) as exc:
+            context.produce(
+                RecoveryNote(
+                    message=(
+                        f"State not available for this branch: {exc}. "
+                        "Run 'initialize_project' to create a workflow state, "
+                        "or check out the correct feature branch."
+                    )
+                )
+            )
+            return ToolResult.error(
+                f"Workflow state unavailable: {exc}. "
+                "Use 'initialize_project' to set up state for this branch."
+            )
         except (OSError, ValueError, RuntimeError):
             ctx["workflow_phase"] = "unknown"
             ctx["sub_phase"] = None
@@ -243,8 +257,10 @@ class GetWorkContextTool(BaseTool):
         """
         Detect workflow phase deterministically using ScopeDecoder.
 
-        Uses commit-scope precedence: commit-scope > state.json > unknown
-        NO type-heuristic guessing.
+        NOTE: This method is only called when the WorkflowStatusResolver is not
+        injected. When the resolver is present (standard path), phase comes from
+        state.json authoritatively (Issue #298). This fallback path is retained
+        for backward compatibility only.
 
         Args:
             commits: Recent commit messages
