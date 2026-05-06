@@ -465,3 +465,41 @@ class GitManager:
             raise
 
         return bool(to_neutralize)
+
+    def rollback_push(self, note_context: NoteContext) -> None:
+        """Roll back a pushed commit from the remote.
+
+        Performs a local hard_reset to HEAD~1 then force-pushes to the remote.
+        This is the recovery path for Failure C (GitHub API failure after push).
+
+        Args:
+            note_context: NoteContext for RecoveryNote production on meta-failure.
+
+        Raises:
+            ExecutionError: If hard_reset or force_push_with_lease fails.
+                            On hard_reset failure, force_push is NOT attempted.
+        """
+        try:
+            self.adapter.hard_reset("HEAD~1")
+        except Exception as exc:
+            note_context.produce(
+                RecoveryNote(
+                    message=f"CRITICAL: Local reset failed: {exc}. Remote is still at pushed commit. "
+                    "Manual recovery: git reset --hard HEAD~1, then git push --force-with-lease. "
+                    "Do not commit until resolved."
+                )
+            )
+            raise
+
+        try:
+            self.adapter.force_push_with_lease()
+        except Exception as exc:
+            note_context.produce(
+                RecoveryNote(
+                    message=f"CRITICAL: Remote rollback failed: {exc}. "
+                    "Local branch is in pre-submit state. "
+                    "Manual recovery for remote: git push --force-with-lease. "
+                    "Do not commit until resolved."
+                )
+            )
+            raise
