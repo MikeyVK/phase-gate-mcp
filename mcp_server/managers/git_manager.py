@@ -363,3 +363,67 @@ class GitManager:
             List of commit messages (most recent first).
         """
         return self.adapter.get_recent_commits(limit=limit)
+
+    def prepare_submission(
+        self,
+        artifact_paths: frozenset[str],
+        base: str,
+        note_context: NoteContext,
+    ) -> bool:
+        """Atomically execute the full git side of branch submission.
+
+        Steps (in order):
+            1. Preflight — is_clean(): if False -> BlockerNote + PreflightError (no mutation)
+            2. Preflight — has_upstream(): if False -> BlockerNote + PreflightError (no mutation)
+            3. Filter    — for each path in artifact_paths: has_net_diff_for_path(path, base)
+                           -> collect to_neutralize: frozenset[str]
+            4. Neutralize (only when to_neutralize is not empty)
+            5. Commit    (only when to_neutralize is not empty) [Cycle 3]
+            6. Push      — always [Cycle 3 adds rollbacks]
+
+        Args:
+            artifact_paths: Full set of candidate branch-local artifact paths to check.
+            base:           Base branch name (e.g. "main").
+            note_context:   NoteContext for BlockerNote / RecoveryNote production.
+
+        Returns:
+            True if a neutralization commit was made. False otherwise.
+
+        Raises:
+            PreflightError:  If working tree is not clean or no upstream is configured.
+            ExecutionError:  If commit or push fails (after rollback attempt).
+        """
+        # Step 1: dirty-tree preflight (root-cause fix for Failure B)
+        if not self.adapter.is_clean():
+            note_context.produce(
+                BlockerNote(
+                    message="Working tree is not clean. "
+                    "Commit or stash all changes before submit_pr."
+                )
+            )
+            raise PreflightError("Working directory is not clean")
+
+        # Step 2: upstream preflight (Failure A)
+        if not self.adapter.has_upstream():
+            note_context.produce(
+                BlockerNote(
+                    message="No upstream tracking branch configured. "
+                    "Run git_push(set_upstream=True) before submit_pr."
+                )
+            )
+            raise PreflightError("No upstream configured for current branch")
+
+        # Step 3: filter artifacts that have a net diff against base
+        to_neutralize = frozenset(
+            path
+            for path in artifact_paths
+            if self.adapter.has_net_diff_for_path(path, base)
+        )
+
+        # Step 4: conditional neutralize
+        if to_neutralize:
+            self.adapter.neutralize_to_base(to_neutralize, base)
+
+        # Steps 5-6 (commit + push + rollbacks): Cycle 3
+        self.adapter.push()
+        return False
