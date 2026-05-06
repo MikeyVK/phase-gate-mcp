@@ -608,4 +608,65 @@ class TestGitManagerPrepareSubmission:
         )
         mock_adapter.commit.assert_called_once()
         mock_adapter.push.assert_called_once()
-        mock_adapter.push.assert_called_once()
+
+
+class TestGitManagerRollbackPush:
+    """C4: Tests for GitManager.rollback_push — remote rollback for Failure C."""
+
+    @pytest.fixture()
+    def mock_adapter(self) -> MagicMock:
+        adapter = MagicMock(spec=GitAdapter)
+        adapter.is_clean.return_value = True
+        adapter.has_upstream.return_value = True
+        return adapter
+
+    @pytest.fixture()
+    def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
+        workphases = ConfigLoader(Path(".st3/config")).load_workphases_config()
+        return GitManager(
+            git_config=git_config,
+            adapter=mock_adapter,
+            workphases_config=workphases,
+        )
+
+    def test_rollback_push_hard_resets_and_force_pushes(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """Both hard_reset and force_push_with_lease succeed; called in order; no exception raised."""
+        context = NoteContext()
+
+        manager.rollback_push(note_context=context)
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
+        mock_adapter.force_push_with_lease.assert_called_once()
+        assert len(context.of_type(RecoveryNote)) == 0
+
+    def test_rollback_push_produces_recovery_note_and_raises_on_force_push_failure(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """hard_reset succeeds; force_push_with_lease raises -> RecoveryNote + ExecutionError."""
+        mock_adapter.force_push_with_lease.side_effect = ExecutionError("push rejected")
+        context = NoteContext()
+
+        with pytest.raises(ExecutionError):
+            manager.rollback_push(note_context=context)
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
+        mock_adapter.force_push_with_lease.assert_called_once()
+        assert len(context.of_type(RecoveryNote)) == 1
+        assert "CRITICAL: Remote rollback failed" in context.of_type(RecoveryNote)[0].message
+
+    def test_rollback_push_produces_recovery_note_and_raises_on_hard_reset_failure(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """hard_reset raises -> RecoveryNote + force_push_with_lease NOT called + ExecutionError."""
+        mock_adapter.hard_reset.side_effect = ExecutionError("reset failed")
+        context = NoteContext()
+
+        with pytest.raises(ExecutionError):
+            manager.rollback_push(note_context=context)
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
+        mock_adapter.force_push_with_lease.assert_not_called()
+        assert len(context.of_type(RecoveryNote)) == 1
+        assert "CRITICAL: Local reset failed" in context.of_type(RecoveryNote)[0].message
