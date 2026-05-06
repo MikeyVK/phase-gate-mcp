@@ -387,23 +387,33 @@ cache update in a single operation.
 `submit_pr` executes the following steps in order, stopping on the first failure:
 
 ```
-1. Detect branch-local artifacts with a net diff against base
-   └─ GitManager.has_net_diff_for_path(artifact.path, base)
-2. Neutralize dirty artifacts to the merge-base state
-   └─ GitManager.neutralize_to_base(paths, base)
-3. Commit the neutralization (workflow_phase="ready", commit_type="chore")
-   └─ GitManager.commit_with_scope(...)
-4. Push the branch to origin
-   └─ GitManager.push()
-5. Create the GitHub PR via API
+1. Preflight and prepare branch for submission
+   └─ GitManager.prepare_submission(artifact_paths, base, note_context) → bool
+      a. Preflight: assert clean working tree           (PreflightError if dirty)
+      b. Preflight: assert upstream exists              (PreflightError if missing)
+      c. Filter: identify branch-local artifacts with a net diff against base
+      d. Conditional: neutralize and commit (only if diffs detected)
+         └─ GitManager.neutralize_to_base(paths, base)
+         └─ GitManager.commit_with_scope(workflow_phase="ready", ...)
+         → on commit failure: hard_reset("HEAD") + RecoveryNote + raises
+      e. Push the branch to origin (always)
+         → on push failure: hard_reset("HEAD~1") if commit made + RecoveryNote + raises
+      Returns True if a neutralization commit was made, False otherwise
+2. Create the GitHub PR via API
    └─ GitHubManager.create_pr(...)
-6. Write PRStatus.OPEN to the session cache
+   → on failure + commit_made=True: rollback_push called automatically
+      └─ GitManager.rollback_push(note_context) — hard_reset("HEAD~1") + force-push
+      Produces a RecoveryNote; branch left in pre-submit state
+3. Write PRStatus.OPEN to the session cache
    └─ IPRStatusWriter.set_pr_status(branch, PRStatus.OPEN)
 ```
 
-If any step from 3 onwards raises `ExecutionError`, the tool returns an error result
-and produces a `RecoveryNote` explaining the partial state. The branch tip may have
-been modified; run `git status` to inspect.
+| Failure stage | Error type | Branch state after | Retry safe? |
+|---------------|-----------|-------------------|-------------|
+| Preflight (dirty tree / no upstream) | `PreflightError` | Unchanged | Yes |
+| Commit or push (inside `prepare_submission`) | `ExecutionError` | Rolled back internally; RecoveryNote produced | Yes |
+| GitHub API (`create_pr`) | `ExecutionError` | Auto-rolled back via `rollback_push`; RecoveryNote produced | Yes |
+
 
 #### Branch-Local Artifacts
 
@@ -419,12 +429,17 @@ Configured in `.st3/config/contracts.yaml` → `branch_local_artifacts`.
 
 #### Enforcement Guards
 
-`submit_pr` is subject to two pre-execution enforcement checks (`.st3/config/enforcement.yaml`):
+`submit_pr` is subject to enforcement checks and internal preflights:
 
+**Enforcement runner** (`.st3/config/enforcement.yaml`, runs before execution):
 1. **`check_phase_readiness`** — blocks unless `state.json` shows `current_phase == "ready"`.
    Produces a `SuggestionNote` with `transition_phase(to_phase="ready")`.
 2. **`check_pr_status`** (via `BranchMutatingTool`) — blocks if the branch already has
    `PRStatus.OPEN` in cache. Produces a `SuggestionNote` to call `merge_pr` first.
+
+**Internal preflights** (inside `GitManager.prepare_submission`, run before any mutation):
+3. **Dirty-tree check** — blocks with `PreflightError` if working tree is not clean.
+4. **Upstream check** — blocks with `PreflightError` if branch has no upstream configured.
 
 #### Returns
 
@@ -434,8 +449,8 @@ Created PR #45: https://github.com/owner/repo/pull/45
 
 Error result on failure:
 ```
-submit_pr failed after neutralize: <error details>.
-Branch tip may have been modified. Run git status to inspect.
+<error details from PreflightError or ExecutionError>
+(RecoveryNote in context describes rollback status and retry instructions.)
 ```
 
 #### Example Usage
