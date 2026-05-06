@@ -426,9 +426,7 @@ class GitManager:
         commit_made = False
         if to_neutralize:
             try:
-                self.adapter.commit(
-                    message=f"chore: neutralize branch-local artifacts to '{base}'"
-                )
+                self.adapter.commit(message=f"chore: neutralize branch-local artifacts to '{base}'")
                 commit_made = True
             except Exception as exc:
                 self.adapter.hard_reset("HEAD")

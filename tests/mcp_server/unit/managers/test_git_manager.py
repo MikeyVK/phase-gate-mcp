@@ -481,6 +481,7 @@ class TestGitManagerPrepareSubmission:
 
         assert len(context.of_type(BlockerNote)) == 1
         mock_adapter.neutralize_to_base.assert_not_called()
+        mock_adapter.push.assert_not_called()
 
     def test_prepare_submission_neutralizes_only_artifacts_with_net_diff(
         self, manager: GitManager, mock_adapter: MagicMock
@@ -524,13 +525,12 @@ class TestGitManagerPrepareSubmission:
         mock_adapter.neutralize_to_base.assert_not_called()
         mock_adapter.commit.assert_not_called()
 
-
     # --- Cycle 3: conditional commit + push + rollbacks ---
 
     def test_prepare_submission_hard_resets_head_on_commit_failure(
         self, manager: GitManager, mock_adapter: MagicMock
     ) -> None:
-        """Commit failure -> hard_reset('HEAD') + RecoveryNote produced + ExecutionError re-raised."""
+        """Commit failure -> hard_reset('HEAD') + RecoveryNote + ExecutionError re-raised."""
         mock_adapter.has_net_diff_for_path.return_value = True
         mock_adapter.commit.side_effect = ExecutionError("commit failed")
         context = NoteContext()
@@ -549,7 +549,7 @@ class TestGitManagerPrepareSubmission:
     def test_prepare_submission_hard_resets_head_minus_one_on_push_failure_after_commit(
         self, manager: GitManager, mock_adapter: MagicMock
     ) -> None:
-        """Commit succeeds, push fails -> hard_reset('HEAD~1') + RecoveryNote + ExecutionError re-raised."""
+        """Commit succeeds, push fails -> hard_reset('HEAD~1') + RecoveryNote + re-raised."""
         mock_adapter.has_net_diff_for_path.return_value = True
         mock_adapter.commit.return_value = "abc1234"
         mock_adapter.push.side_effect = ExecutionError("remote rejected")
@@ -568,7 +568,7 @@ class TestGitManagerPrepareSubmission:
     def test_prepare_submission_no_hard_reset_on_push_failure_when_no_commit(
         self, manager: GitManager, mock_adapter: MagicMock
     ) -> None:
-        """No artifacts (no commit made), push fails -> hard_reset NOT called; RecoveryNote + re-raise."""
+        """No diffs -> no commit; push fails -> hard_reset NOT called + RecoveryNote produced."""
         mock_adapter.has_net_diff_for_path.return_value = False
         mock_adapter.push.side_effect = ExecutionError("network error")
         context = NoteContext()
