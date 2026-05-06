@@ -426,14 +426,19 @@ class GitManager:
         commit_made = False
         if to_neutralize:
             try:
-                self.adapter.commit(message=f"chore: neutralize branch-local artifacts to '{base}'")
+                self.commit_with_scope(
+                    workflow_phase="ready",
+                    message=f"neutralize branch-local artifacts to '{base}'",
+                    note_context=note_context,
+                    commit_type="chore",
+                )
                 commit_made = True
             except Exception as exc:
                 self.adapter.hard_reset("HEAD")
                 note_context.produce(
                     RecoveryNote(
-                        message=f"Push failed: {exc}. Local neutralization commit rolled back. "
-                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                        message=f"Commit failed: {exc}. Local neutralization commit rolled back. "
+                        "Working tree is clean. Retry submit_pr after resolving the commit issue."
                     )
                 )
                 raise

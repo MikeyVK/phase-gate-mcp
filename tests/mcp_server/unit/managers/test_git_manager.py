@@ -544,6 +544,7 @@ class TestGitManagerPrepareSubmission:
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD")
         assert len(context.of_type(RecoveryNote)) == 1
+        assert "Commit failed" in context.of_type(RecoveryNote)[0].message
         mock_adapter.push.assert_not_called()
 
     def test_prepare_submission_hard_resets_head_minus_one_on_push_failure_after_commit(
@@ -564,6 +565,7 @@ class TestGitManagerPrepareSubmission:
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
         assert len(context.of_type(RecoveryNote)) == 1
+        assert "Push failed" in context.of_type(RecoveryNote)[0].message
 
     def test_prepare_submission_no_hard_reset_on_push_failure_when_no_commit(
         self, manager: GitManager, mock_adapter: MagicMock
