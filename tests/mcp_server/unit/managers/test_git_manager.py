@@ -13,11 +13,11 @@ from unittest.mock import MagicMock
 # Third-party
 import pytest
 
+from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 from mcp_server.core.exceptions import PreflightError, ValidationError
-from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.core.operation_notes import BlockerNote, NoteContext
 
 # Module under test
@@ -489,8 +489,8 @@ class TestGitManagerPrepareSubmission:
 
         neutralize_to_base must be called with only the path that has a net diff.
         """
-        mock_adapter.has_net_diff_for_path.side_effect = (
-            lambda path, _base: path == ".st3/state.json"
+        mock_adapter.has_net_diff_for_path.side_effect = lambda path, _base: (
+            path == ".st3/state.json"
         )
         context = NoteContext()
 

@@ -415,9 +415,7 @@ class GitManager:
 
         # Step 3: filter artifacts that have a net diff against base
         to_neutralize = frozenset(
-            path
-            for path in artifact_paths
-            if self.adapter.has_net_diff_for_path(path, base)
+            path for path in artifact_paths if self.adapter.has_net_diff_for_path(path, base)
         )
 
         # Step 4: conditional neutralize
