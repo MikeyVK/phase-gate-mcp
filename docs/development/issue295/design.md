@@ -3,8 +3,15 @@
 # submit_pr Atomicity: prepare_submission + rollback_push
 
 **Status:** DRAFT
-**Version:** 1.2
+**Version:** 1.3
 **Last Updated:** 2026-05-06
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-05-05 | Initial design (QA NOGO: skip_paths wrong, LoD test method, rollback meta-failure) |
+| 1.1 | 2026-05-05 | Fix BLOCKER-1/2/3: remove skip_paths, LoD via MagicMock+assert_not_called, inner try/except meta-failure |
+| 1.2 | 2026-05-06 | F-1 prepare_submission→bool+conditional rollback, F-2 hard_reset failure handling in rollback_push, F-3 fix spec/.adapter claim |
+| 1.3 | 2026-05-06 | F-1 success-path RecoveryNote in execute(), F-2 return-value assertions in §6.2, F-3 version history table |
 
 ---
 
@@ -231,6 +238,11 @@ async def execute(self, params: SubmitPRInput, context: NoteContext) -> ToolResu
         if commit_made:
             try:
                 self._git_manager.rollback_push(context)
+                context.produce(RecoveryNote(
+                    f"GitHub PR creation failed: {exc}. "
+                    "Remote branch has been rolled back to pre-submit state. "
+                    "Working tree is clean. Retry submit_pr once the API issue is resolved."
+                ))
             except ExecutionError:
                 # RecoveryNote already produced by rollback_push. Do not propagate.
                 pass
@@ -317,6 +329,7 @@ SubmitPRTool: catches ExecutionError (commit_made=True -> rollback eligible)
   +-- inner try: GitManager.rollback_push(ctx)
   |    +-- adapter.hard_reset("HEAD~1")   <- local commit undone
   |    +-- adapter.force_push_with_lease()  <- remote overwritten
+  +-- context.produce(RecoveryNote("GitHub PR creation failed: ... Remote branch has been rolled back..."))
   +-- ToolResult.error(str(exc))
 
 Branch is clean locally and remotely. Retryable.
@@ -427,11 +440,11 @@ All tests inject a `MagicMock(spec=GitAdapter)` via `GitManager(adapter=mock_ada
 | `test_prepare_submission_raises_preflight_error_when_dirty` | `adapter.is_clean()` returns `False` | `BlockerNote` produced; `PreflightError` raised; no further adapter calls |
 | `test_prepare_submission_raises_preflight_error_when_no_upstream` | `is_clean()=True`, `has_upstream()=False` | `BlockerNote` produced; `PreflightError` raised; `neutralize_to_base` not called |
 | `test_prepare_submission_neutralizes_only_artifacts_with_net_diff` | two artifacts: one with diff, one without | `neutralize_to_base` called with only the path that has diff |
-| `test_prepare_submission_skips_neutralize_and_commit_when_no_diffs` | `has_net_diff_for_path` returns `False` for all | `neutralize_to_base` not called; `commit` not called; `push` still called |
+| `test_prepare_submission_skips_neutralize_and_commit_when_no_diffs` | `has_net_diff_for_path` returns `False` for all | `neutralize_to_base` not called; `commit` not called; `push` still called; returns `False` |
 | `test_prepare_submission_hard_resets_head_on_commit_failure` | `adapter.commit` raises | `adapter.hard_reset("HEAD")` called; `RecoveryNote` produced; `ExecutionError` re-raised |
 | `test_prepare_submission_hard_resets_head_minus_one_on_push_failure_after_commit` | commit succeeds then `adapter.push` raises | `adapter.hard_reset("HEAD~1")` called; `RecoveryNote` produced; `ExecutionError` re-raised |
 | `test_prepare_submission_no_hard_reset_on_push_failure_when_no_commit` | no artifacts -> push raises | `adapter.hard_reset` NOT called; `RecoveryNote` produced; `ExecutionError` re-raised |
-| `test_prepare_submission_happy_path_calls_steps_in_order` | all succeeds, artifacts present | adapter calls in order: is_clean, has_upstream, has_net_diff_for_path, neutralize_to_base, commit_with_scope, push |
+| `test_prepare_submission_happy_path_calls_steps_in_order` | all succeeds, artifacts present | adapter calls in order: is_clean, has_upstream, has_net_diff_for_path, neutralize_to_base, commit_with_scope, push; returns `True` |
 
 ### 6.3 GitManager unit tests — rollback_push
 
@@ -453,7 +466,7 @@ Tests inject `MagicMock(spec=GitManager)` and `MagicMock(spec=GitHubManager)` vi
 |------|----------|-------------------|
 | `test_failure_a_no_upstream_blocked_before_mutation` | `prepare_submission` raises `PreflightError` | `result.is_error=True`; `create_pr` not called; `set_pr_status` not called |
 | `test_failure_b_dirty_tree_blocked_before_mutation` | `prepare_submission` raises `PreflightError` | `result.is_error=True`; `create_pr` not called; `set_pr_status` not called |
-| `test_failure_c_create_pr_failure_triggers_rollback_push` | `prepare_submission` returns `True` (commit made), `create_pr` raises | `rollback_push` called with `context`; `result.is_error=True`; `set_pr_status` not called |
+| `test_failure_c_create_pr_failure_triggers_rollback_push` | `prepare_submission` returns `True` (commit made), `create_pr` raises | `rollback_push` called with `context`; `RecoveryNote` produced with rollback-success text; `result.is_error=True`; `set_pr_status` not called |
 | `test_failure_c_no_rollback_when_no_neutralization_commit` | `prepare_submission` returns `False` (no commit), `create_pr` raises | `rollback_push` NOT called; `result.is_error=True`; `set_pr_status` not called |
 | `test_failure_c_meta_rollback_failure_surfaced_via_recovery_note` | `create_pr` raises, `rollback_push` raises | `result.is_error=True` (primary create_pr error message returned); `RecoveryNote` in context; `set_pr_status` not called |
 | `test_failure_d_push_fails_prepare_submission_raises_execution_error` | `prepare_submission` raises `ExecutionError` | `result.is_error=True`; `rollback_push` not called; `set_pr_status` not called |
