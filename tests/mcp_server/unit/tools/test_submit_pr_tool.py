@@ -8,11 +8,10 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from unittest.mock import MagicMock
 
-import pytest
-
-from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
+from mcp_server.core.interfaces import IPRStatusWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
@@ -106,8 +105,6 @@ class TestSubmitPRToolLoD:
         self,
     ) -> None:
         """execute() must not call self._git_manager.adapter directly."""
-        import inspect
-
         source = inspect.getsource(SubmitPRTool.execute)
         assert "_git_manager.adapter" not in source, (
             "SubmitPRTool.execute() must not access GitAdapter directly. "

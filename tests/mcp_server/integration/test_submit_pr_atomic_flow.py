@@ -169,7 +169,7 @@ class TestSubmitPRPartialFailure:
     """SubmitPRTool produces RecoveryNote on failure after neutralize."""
 
     def test_push_failure_produces_recovery_note(self) -> None:
-        """When prepare_submission raises ExecutionError (push failed), error returned; no status."""
+        """When prepare_submission raises ExecutionError (push failed), error returned."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.side_effect = ExecutionError("push failed: remote rejected")
@@ -411,7 +411,7 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer.set_pr_status.assert_not_called()
 
     def test_failure_d_push_fails_prepare_submission_raises_execution_error(self) -> None:
-        """prepare_submission raises ExecutionError (push fail) -> error; rollback_push NOT called."""
+        """prepare_submission raises ExecutionError (push fail) -> error, no rollback."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.side_effect = ExecutionError("push rejected")
