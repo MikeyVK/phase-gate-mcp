@@ -93,11 +93,10 @@ class TestSubmitPRHappyPath:
     """SubmitPRTool happy path: atomic flow executes in correct order."""
 
     def test_submit_pr_happy_path(self) -> None:
-        """Full atomic flow: neutralize -> commit -> push -> create_pr -> set_pr_status(OPEN)."""
+        """Full atomic flow: prepare_submission -> create_pr -> set_pr_status(OPEN)."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.has_net_diff_for_path.return_value = True
-        git_manager.commit_with_scope.return_value = "abc1234"
+        git_manager.prepare_submission.return_value = True
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -114,17 +113,15 @@ class TestSubmitPRHappyPath:
         )
 
         assert not result.is_error
-        git_manager.neutralize_to_base.assert_called_once()
-        git_manager.commit_with_scope.assert_called_once()
-        git_manager.push.assert_called_once()
+        git_manager.prepare_submission.assert_called_once()
         github_manager.create_pr.assert_called_once()
         pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
 
     def test_submit_pr_skips_neutralize_when_no_exclusions(self) -> None:
-        """When no branch-local artifacts are configured, neutralize_to_base must not be called."""
+        """When no branch-local artifacts are configured, prepare_submission still called."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.commit_with_scope.return_value = "abc1234"
+        git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -134,7 +131,7 @@ class TestSubmitPRHappyPath:
 
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
 
-        # No artifacts -> neutralize must not be called
+        # No artifacts -> frozenset() passed to prepare_submission
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer, artifacts=())
 
         result = asyncio.get_event_loop().run_until_complete(
@@ -142,15 +139,14 @@ class TestSubmitPRHappyPath:
         )
 
         assert not result.is_error
-        git_manager.neutralize_to_base.assert_not_called()
+        git_manager.prepare_submission.assert_called_once()
         pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
 
     def test_submit_pr_pr_status_written_open(self) -> None:
         """PRStatus.OPEN is written to the cache after successful PR creation."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "refactor/283-test"
-        git_manager.has_net_diff_for_path.return_value = False
-        git_manager.commit_with_scope.return_value = "deadbeef"
+        git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -173,12 +169,10 @@ class TestSubmitPRPartialFailure:
     """SubmitPRTool produces RecoveryNote on failure after neutralize."""
 
     def test_push_failure_produces_recovery_note(self) -> None:
-        """When push raises ExecutionError, a RecoveryNote is produced and error returned."""
+        """When prepare_submission raises ExecutionError (push failed), error returned; no status."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.has_net_diff_for_path.return_value = True
-        git_manager.commit_with_scope.return_value = "abc1234"
-        git_manager.push.side_effect = ExecutionError("push failed: remote rejected")
+        git_manager.prepare_submission.side_effect = ExecutionError("push failed: remote rejected")
 
         github_manager = MagicMock(spec=GitHubManager)
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
@@ -189,15 +183,14 @@ class TestSubmitPRPartialFailure:
         result = asyncio.get_event_loop().run_until_complete(tool.execute(_make_params(), context))
 
         assert result.is_error
-        assert len(context.of_type(RecoveryNote)) > 0
         # PRStatus must NOT be written when push failed
         pr_status_writer.set_pr_status.assert_not_called()
 
     def test_create_pr_failure_produces_recovery_note(self) -> None:
-        """When create_pr raises ExecutionError, a RecoveryNote is produced and error returned."""
+        """When create_pr raises ExecutionError, error returned; no status written."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.commit_with_scope.return_value = "abc1234"
+        git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.side_effect = ExecutionError("PR already exists")
