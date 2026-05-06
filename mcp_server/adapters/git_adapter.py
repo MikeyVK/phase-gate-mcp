@@ -413,3 +413,26 @@ class GitAdapter:
             return [str(commit.message).split("\n", maxsplit=1)[0] for commit in commits]
         except Exception as e:
             raise ExecutionError(f"Failed to get recent commits: {e}") from e
+
+    def hard_reset(self, ref: str) -> None:
+        """Perform a hard reset to the given ref.
+
+        Used by rollback operations to undo uncommitted or committed changes.
+        Raises ExecutionError on git failure.
+        """
+        try:
+            self.repo.git.reset("--hard", ref)
+        except Exception as e:
+            raise ExecutionError(f"Failed to hard reset to {ref}: {e}") from e
+
+    def force_push_with_lease(self, remote: str = "origin") -> None:
+        """Force-push the current branch using --force-with-lease.
+
+        Safer than --force: rejects push if the remote ref has advanced since
+        last fetch, protecting against overwriting others' work.
+        Raises ExecutionError on git failure.
+        """
+        try:
+            self.repo.git.push(remote, "--force-with-lease")
+        except Exception as e:
+            raise ExecutionError(f"Failed to force push with lease to {remote}: {e}") from e

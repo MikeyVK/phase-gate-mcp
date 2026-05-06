@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
-from mcp_server.core.exceptions import ExecutionError
+from mcp_server.core.exceptions import ExecutionError, PreflightError
 from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.github_manager import GitHubManager
@@ -159,28 +159,18 @@ class SubmitPRTool(BranchMutatingTool):
         return super().input_schema
 
     async def execute(self, params: SubmitPRInput, context: NoteContext) -> ToolResult:
-        """Atomic: neutralize → commit → push → create_pr → set_pr_status(OPEN)."""
         branch = self._git_manager.get_current_branch()
         base = params.base or self._git_manager.git_config.default_base_branch
-
-        # Step 1-3: neutralize branch-local artifacts that have a net diff against base
-        paths_to_neutralize = frozenset(
-            artifact.path
-            for artifact in self._merge_readiness_context.branch_local_artifacts
-            if self._git_manager.has_net_diff_for_path(artifact.path, base)
+        artifact_paths = frozenset(
+            a.path for a in self._merge_readiness_context.branch_local_artifacts
         )
-        if paths_to_neutralize:
-            self._git_manager.neutralize_to_base(paths_to_neutralize, base)
-
-        # Step 4-7: commit → push → create_pr → write OPEN status
+        # [GIT] Full git transaction
         try:
-            self._git_manager.commit_with_scope(
-                workflow_phase="ready",
-                message=f"neutralize branch-local artifacts to '{base}'",
-                note_context=context,
-                commit_type="chore",
-            )
-            self._git_manager.push()
+            commit_made = self._git_manager.prepare_submission(artifact_paths, base, context)
+        except (PreflightError, ExecutionError) as exc:
+            return ToolResult.error(str(exc))
+        # [GITHUB] Create PR — rollback push on failure
+        try:
             result = self._github_manager.create_pr(
                 title=params.title,
                 body=params.body or "",
@@ -189,13 +179,19 @@ class SubmitPRTool(BranchMutatingTool):
                 draft=params.draft,
             )
         except ExecutionError as exc:
-            context.produce(
-                RecoveryNote(
-                    message=f"submit_pr failed after neutralize: {exc}. "
-                    "Branch tip may have been modified. Run git status to inspect."
-                )
-            )
+            if commit_made:
+                try:
+                    self._git_manager.rollback_push(context)
+                    context.produce(
+                        RecoveryNote(
+                            f"GitHub PR creation failed: {exc}. "
+                            "Remote branch has been rolled back to pre-submit state. "
+                            "Working tree is clean. Retry submit_pr once the API issue is resolved."
+                        )
+                    )
+                except ExecutionError:
+                    pass  # RecoveryNote already produced by rollback_push
             return ToolResult.error(str(exc))
-
+        # [STATUS] Record PR as open
         self._pr_status_writer.set_pr_status(branch, PRStatus.OPEN)
         return ToolResult.text(f"Created PR #{result['number']}: {result['url']}")

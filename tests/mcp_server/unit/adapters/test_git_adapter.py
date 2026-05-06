@@ -568,3 +568,70 @@ class TestGitAdapterCreateBranch:
 
             # Should log the operation
             assert mock_log.debug.called or mock_log.info.called
+
+
+class TestGitAdapterHardResetAndForcePush:
+    """Tests for hard_reset and force_push_with_lease (Issue #295 — Cycle 1 RED).
+
+    Both methods are raw git primitives required by GitManager.prepare_submission
+    and GitManager.rollback_push.
+    """
+
+    def test_hard_reset_calls_git_reset_hard_with_ref(self) -> None:
+        """hard_reset('HEAD') must call repo.git.reset('--hard', 'HEAD')."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+            adapter.hard_reset("HEAD")
+
+            mock_repo.git.reset.assert_called_once_with("--hard", "HEAD")
+
+    def test_hard_reset_calls_git_reset_hard_with_parent(self) -> None:
+        """hard_reset('HEAD~1') must call repo.git.reset('--hard', 'HEAD~1')."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+            adapter.hard_reset("HEAD~1")
+
+            mock_repo.git.reset.assert_called_once_with("--hard", "HEAD~1")
+
+    def test_hard_reset_raises_execution_error_on_failure(self) -> None:
+        """hard_reset raises ExecutionError when git reset fails."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_repo.git.reset.side_effect = Exception("git error: ref not found")
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+
+            with pytest.raises(ExecutionError, match="Failed to hard reset"):
+                adapter.hard_reset("HEAD~1")
+
+    def test_force_push_with_lease_calls_git_push(self) -> None:
+        """force_push_with_lease must call repo.git.push with --force-with-lease."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_repo.active_branch.name = "fix/295-test"
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+            adapter.force_push_with_lease()
+
+            mock_repo.git.push.assert_called_once_with("origin", "--force-with-lease")
+
+    def test_force_push_with_lease_raises_execution_error_on_failure(self) -> None:
+        """force_push_with_lease raises ExecutionError when git push fails."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_repo.active_branch.name = "fix/295-test"
+            mock_repo.git.push.side_effect = Exception("rejected: stale info")
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+
+            with pytest.raises(ExecutionError, match="Failed to force push"):
+                adapter.force_push_with_lease()

@@ -70,9 +70,11 @@ Create, list, and merge PRs with merge strategy options.
 | **ListPRsTool** | List PRs with filters | `state` (open/closed/all), `base` (optional), `head` (optional) | Formatted list with numbers, titles, status |
 | **MergePRTool** | Merge PR | `pr_number`, `commit_message` (optional), `merge_method` (only `"merge"` is supported) | Merge result, SHA, message |
 
-> **Note:** `CreatePRTool` has been deleted (issue #283). Use `submit_pr` — it performs an atomic
-> flow: neutralizes branch-local artifacts, commits, pushes, calls the GitHub API, and writes
-> `PRStatus.OPEN` to cache. Blocked unless `current_phase == "ready"`.
+> **Note:** `CreatePRTool` has been deleted (issue #283). Use `submit_pr` — it performs an
+> atomically robust submission: preflights before any mutation (dirty-tree + upstream checks),
+> conditional artifact neutralization + commit, push, GitHub API call, and `PRStatus.OPEN`.
+> On any failure the branch is rolled back to a clean, retryable state (RecoveryNote produced).
+> Blocked unless `current_phase == "ready"`.
 
 **Usage Example:**
 ```

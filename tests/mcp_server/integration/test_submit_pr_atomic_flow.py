@@ -1,13 +1,12 @@
 # tests/mcp_server/integration/test_submit_pr_atomic_flow.py
-"""Integration tests for C3: SubmitPRTool atomic execution flow.
+"""Integration tests for submit_pr atomicity (issue #295).
 
 Tests verify the full atomic sequence:
-  1. branch-local artifact detection (net-diff check)
-  2. neutralize_to_base for tracked artifacts
-  3. commit_with_scope("ready", ...)
-  4. push to remote
-  5. GitHub PR creation
-  6. PRStatusCache write (OPEN)
+  1. Preflight (is_clean, has_upstream) via GitManager.prepare_submission
+  2. Branch-local artifact neutralization (encapsulated in prepare_submission)
+  3. Push (encapsulated in prepare_submission)
+  4. GitHub PR creation
+  5. PRStatusCache write (OPEN)
 
 Also verifies:
   - CreatePRTool is no longer instantiated as a public MCP tool in server composition root
@@ -41,7 +40,7 @@ import yaml
 
 import mcp_server.server as server_module
 from mcp_server.config.schemas.contracts_config import BranchLocalArtifact
-from mcp_server.core.exceptions import ExecutionError
+from mcp_server.core.exceptions import ExecutionError, PreflightError
 from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.git_manager import GitManager
@@ -93,11 +92,10 @@ class TestSubmitPRHappyPath:
     """SubmitPRTool happy path: atomic flow executes in correct order."""
 
     def test_submit_pr_happy_path(self) -> None:
-        """Full atomic flow: neutralize -> commit -> push -> create_pr -> set_pr_status(OPEN)."""
+        """Full atomic flow: prepare_submission -> create_pr -> set_pr_status(OPEN)."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.has_net_diff_for_path.return_value = True
-        git_manager.commit_with_scope.return_value = "abc1234"
+        git_manager.prepare_submission.return_value = True
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -109,22 +107,18 @@ class TestSubmitPRHappyPath:
 
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert not result.is_error
-        git_manager.neutralize_to_base.assert_called_once()
-        git_manager.commit_with_scope.assert_called_once()
-        git_manager.push.assert_called_once()
+        git_manager.prepare_submission.assert_called_once()
         github_manager.create_pr.assert_called_once()
         pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
 
     def test_submit_pr_skips_neutralize_when_no_exclusions(self) -> None:
-        """When no branch-local artifacts are configured, neutralize_to_base must not be called."""
+        """When no branch-local artifacts are configured, prepare_submission still called."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.commit_with_scope.return_value = "abc1234"
+        git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -134,23 +128,20 @@ class TestSubmitPRHappyPath:
 
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
 
-        # No artifacts -> neutralize must not be called
+        # No artifacts -> frozenset() passed to prepare_submission
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer, artifacts=())
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert not result.is_error
-        git_manager.neutralize_to_base.assert_not_called()
+        git_manager.prepare_submission.assert_called_once()
         pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
 
     def test_submit_pr_pr_status_written_open(self) -> None:
         """PRStatus.OPEN is written to the cache after successful PR creation."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "refactor/283-test"
-        git_manager.has_net_diff_for_path.return_value = False
-        git_manager.commit_with_scope.return_value = "deadbeef"
+        git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.return_value = {
@@ -162,9 +153,7 @@ class TestSubmitPRHappyPath:
 
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(head="refactor/283-test"), NoteContext())
-        )
+        asyncio.run(tool.execute(_make_params(head="refactor/283-test"), NoteContext()))
 
         pr_status_writer.set_pr_status.assert_called_once_with("refactor/283-test", PRStatus.OPEN)
 
@@ -173,12 +162,10 @@ class TestSubmitPRPartialFailure:
     """SubmitPRTool produces RecoveryNote on failure after neutralize."""
 
     def test_push_failure_produces_recovery_note(self) -> None:
-        """When push raises ExecutionError, a RecoveryNote is produced and error returned."""
+        """When prepare_submission raises ExecutionError (push failed), error returned."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.has_net_diff_for_path.return_value = True
-        git_manager.commit_with_scope.return_value = "abc1234"
-        git_manager.push.side_effect = ExecutionError("push failed: remote rejected")
+        git_manager.prepare_submission.side_effect = ExecutionError("push failed: remote rejected")
 
         github_manager = MagicMock(spec=GitHubManager)
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
@@ -186,18 +173,17 @@ class TestSubmitPRPartialFailure:
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
         context = NoteContext()
-        result = asyncio.get_event_loop().run_until_complete(tool.execute(_make_params(), context))
+        result = asyncio.run(tool.execute(_make_params(), context))
 
         assert result.is_error
-        assert len(context.of_type(RecoveryNote)) > 0
         # PRStatus must NOT be written when push failed
         pr_status_writer.set_pr_status.assert_not_called()
 
     def test_create_pr_failure_produces_recovery_note(self) -> None:
-        """When create_pr raises ExecutionError, a RecoveryNote is produced and error returned."""
+        """When create_pr raises ExecutionError, error returned; no status written."""
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
-        git_manager.commit_with_scope.return_value = "abc1234"
+        git_manager.prepare_submission.return_value = False
 
         github_manager = MagicMock(spec=GitHubManager)
         github_manager.create_pr.side_effect = ExecutionError("PR already exists")
@@ -206,9 +192,7 @@ class TestSubmitPRPartialFailure:
 
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert result.is_error
         pr_status_writer.set_pr_status.assert_not_called()
@@ -220,13 +204,13 @@ class TestSubmitPRNoAdapterBypass:
     def test_submit_pr_tool_execute_has_no_adapter_calls(self) -> None:
         """SubmitPRTool.execute() must not contain self._git_manager.adapter references.
 
-        Law of Demeter (ARCHITECTURE_PRINCIPLES §7): SubmitPRTool must only
+        Law of Demeter (ARCHITECTURE_PRINCIPLES Â§7): SubmitPRTool must only
         talk to GitManager, never to GitAdapter directly.
         """
         source = inspect.getsource(SubmitPRTool.execute)
         assert "_git_manager.adapter" not in source, (
             "SubmitPRTool.execute() must not access GitAdapter directly. "
-            "Use GitManager methods instead (Law of Demeter, §7)."
+            "Use GitManager methods instead (Law of Demeter, Â§7)."
         )
 
 
@@ -324,3 +308,147 @@ class TestSubmitPRNeutralizesQualityState:
             "quality_state.json must appear in contracts.yaml so server.py wires "
             "it into MergeReadinessContext and SubmitPRTool neutralizes it."
         )
+
+
+class TestSubmitPRAtomicRefactored:
+    """C5: SubmitPRTool delegates to prepare_submission + rollback_push (design Â§4.3)."""
+
+    def test_failure_a_no_upstream_blocked_before_mutation(self) -> None:
+        """prepare_submission raises PreflightError -> error; no create_pr; no status."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.side_effect = PreflightError("No upstream configured")
+        github_manager = MagicMock(spec=GitHubManager)
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
+
+        assert result.is_error
+        github_manager.create_pr.assert_not_called()
+        pr_status_writer.set_pr_status.assert_not_called()
+
+    def test_failure_b_dirty_tree_blocked_before_mutation(self) -> None:
+        """prepare_submission raises PreflightError (dirty) -> error; no create_pr; no status."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.side_effect = PreflightError("Working directory not clean")
+        github_manager = MagicMock(spec=GitHubManager)
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
+
+        assert result.is_error
+        github_manager.create_pr.assert_not_called()
+        pr_status_writer.set_pr_status.assert_not_called()
+
+    def test_failure_c_create_pr_failure_triggers_rollback_push(self) -> None:
+        """prepare_submission returns True; create_pr raises -> rollback_push + RecoveryNote."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = True
+        github_manager = MagicMock(spec=GitHubManager)
+        github_manager.create_pr.side_effect = ExecutionError("API 503")
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+        context = NoteContext()
+
+        result = asyncio.run(tool.execute(_make_params(), context))
+
+        assert result.is_error
+        git_manager.rollback_push.assert_called_once()
+        assert len(context.of_type(RecoveryNote)) == 1
+        assert "rolled back" in context.of_type(RecoveryNote)[0].message
+        pr_status_writer.set_pr_status.assert_not_called()
+
+    def test_failure_c_no_rollback_when_no_neutralization_commit(self) -> None:
+        """prepare_submission returns False (no commit); create_pr raises -> NO rollback_push."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = False
+        github_manager = MagicMock(spec=GitHubManager)
+        github_manager.create_pr.side_effect = ExecutionError("API 503")
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
+
+        assert result.is_error
+        git_manager.rollback_push.assert_not_called()
+        pr_status_writer.set_pr_status.assert_not_called()
+
+    def test_failure_c_meta_rollback_failure_surfaced_via_recovery_note(self) -> None:
+        """create_pr raises; rollback_push raises -> error returned; set_pr_status not called."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = True
+        git_manager.rollback_push.side_effect = ExecutionError("CRITICAL: reset failed")
+        github_manager = MagicMock(spec=GitHubManager)
+        github_manager.create_pr.side_effect = ExecutionError("API 503")
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+        context = NoteContext()
+
+        result = asyncio.run(tool.execute(_make_params(), context))
+
+        assert result.is_error
+        pr_status_writer.set_pr_status.assert_not_called()
+
+    def test_failure_d_push_fails_prepare_submission_raises_execution_error(self) -> None:
+        """prepare_submission raises ExecutionError (push fail) -> error, no rollback."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.side_effect = ExecutionError("push rejected")
+        github_manager = MagicMock(spec=GitHubManager)
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
+
+        assert result.is_error
+        git_manager.rollback_push.assert_not_called()
+        pr_status_writer.set_pr_status.assert_not_called()
+
+    def test_happy_path_prepare_submission_then_create_pr_then_status(self) -> None:
+        """All succeed: prepare_submission called once; set_pr_status(branch, OPEN) called."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = True
+        github_manager = MagicMock(spec=GitHubManager)
+        github_manager.create_pr.return_value = {
+            "number": 42,
+            "url": "https://github.com/x/y/pull/42",
+        }
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
+
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
+
+        assert not result.is_error
+        git_manager.prepare_submission.assert_called_once()
+        pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
+
+    def test_happy_path_artifact_paths_extracted_from_merge_readiness_context(self) -> None:
+        """prepare_submission called with frozenset of both artifact paths."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = False
+        github_manager = MagicMock(spec=GitHubManager)
+        github_manager.create_pr.return_value = {
+            "number": 1,
+            "url": "https://github.com/x/y/pull/1",
+        }
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_submit_pr_tool(
+            git_manager,
+            github_manager,
+            pr_status_writer,
+            artifacts=(_STATE_ARTIFACT, _DELIVERABLES_ARTIFACT),
+        )
+
+        asyncio.run(tool.execute(_make_params(), NoteContext()))
+
+        call_args = git_manager.prepare_submission.call_args
+        artifact_paths_arg = call_args[0][0] if call_args[0] else call_args[1]["artifact_paths"]
+        assert artifact_paths_arg == frozenset({".st3/state.json", ".st3/deliverables.json"})

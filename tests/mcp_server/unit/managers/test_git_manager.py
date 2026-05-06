@@ -13,11 +13,12 @@ from unittest.mock import MagicMock
 # Third-party
 import pytest
 
+from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
-from mcp_server.core.exceptions import PreflightError, ValidationError
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.exceptions import ExecutionError, PreflightError, ValidationError
+from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
 
 # Module under test
 from mcp_server.managers.git_manager import GitManager
@@ -414,3 +415,259 @@ class TestGitManagerCommitWithScope:
                 files=[],
                 note_context=NoteContext(),
             )
+
+
+class TestGitManagerPrepareSubmission:
+    """Tests for GitManager.prepare_submission — Issue #295 Cycles 2 & 3.
+
+    All tests inject MagicMock(spec=GitAdapter) via GitManager(adapter=...) and
+    call prepare_submission() through the public GitManager API (§14).
+    """
+
+    @pytest.fixture
+    def mock_adapter(self) -> MagicMock:
+        """Fixture for spec-constrained GitAdapter mock."""
+        adapter = MagicMock(spec=GitAdapter)
+        adapter.is_clean.return_value = True
+        adapter.has_upstream.return_value = True
+        adapter.has_net_diff_for_path.return_value = False
+        adapter.push.return_value = None
+        return adapter
+
+    @pytest.fixture
+    def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
+        """Fixture for GitManager with mocked adapter and real workphases config."""
+        workphases = ConfigLoader(Path(".st3/config")).load_workphases_config()
+        return GitManager(
+            git_config=git_config,
+            adapter=mock_adapter,
+            workphases_config=workphases,
+        )
+
+    # --- Cycle 2: preflights + artifact filter ---
+
+    def test_prepare_submission_raises_preflight_error_when_dirty(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """Dirty working tree -> BlockerNote produced + PreflightError raised; no mutation."""
+        mock_adapter.is_clean.return_value = False
+        context = NoteContext()
+
+        with pytest.raises(PreflightError, match="Working directory is not clean"):
+            manager.prepare_submission(
+                artifact_paths=frozenset({".st3/state.json"}),
+                base="main",
+                note_context=context,
+            )
+
+        assert len(context.of_type(BlockerNote)) == 1
+        mock_adapter.neutralize_to_base.assert_not_called()
+        mock_adapter.push.assert_not_called()
+
+    def test_prepare_submission_raises_preflight_error_when_no_upstream(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """No upstream -> BlockerNote produced + PreflightError raised; neutralize not called."""
+        mock_adapter.is_clean.return_value = True
+        mock_adapter.has_upstream.return_value = False
+        context = NoteContext()
+
+        with pytest.raises(PreflightError, match="No upstream configured for current branch"):
+            manager.prepare_submission(
+                artifact_paths=frozenset({".st3/state.json"}),
+                base="main",
+                note_context=context,
+            )
+
+        assert len(context.of_type(BlockerNote)) == 1
+        mock_adapter.neutralize_to_base.assert_not_called()
+        mock_adapter.push.assert_not_called()
+
+    def test_prepare_submission_neutralizes_only_artifacts_with_net_diff(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """Two artifacts: one with diff, one without.
+
+        neutralize_to_base must be called with only the path that has a net diff.
+        """
+        mock_adapter.has_net_diff_for_path.side_effect = lambda path, _base: (
+            path == ".st3/state.json"
+        )
+        context = NoteContext()
+
+        manager.prepare_submission(
+            artifact_paths=frozenset({".st3/state.json", ".st3/deliverables.json"}),
+            base="main",
+            note_context=context,
+        )
+
+        mock_adapter.neutralize_to_base.assert_called_once_with(
+            frozenset({".st3/state.json"}), "main"
+        )
+
+    def test_prepare_submission_skips_neutralize_and_commit_when_no_diffs(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """No artifacts with a net diff: neutralize + commit skipped; push still called.
+
+        Returns False (no neutralization commit was made).
+        """
+        mock_adapter.has_net_diff_for_path.return_value = False
+        context = NoteContext()
+
+        result = manager.prepare_submission(
+            artifact_paths=frozenset({".st3/state.json", ".st3/deliverables.json"}),
+            base="main",
+            note_context=context,
+        )
+
+        assert result is False
+        mock_adapter.neutralize_to_base.assert_not_called()
+        mock_adapter.commit.assert_not_called()
+        mock_adapter.push.assert_called_once()
+
+    # --- Cycle 3: conditional commit + push + rollbacks ---
+
+    def test_prepare_submission_hard_resets_head_on_commit_failure(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """Commit failure -> hard_reset('HEAD') + RecoveryNote + ExecutionError re-raised."""
+        mock_adapter.has_net_diff_for_path.return_value = True
+        mock_adapter.commit.side_effect = ExecutionError("commit failed")
+        context = NoteContext()
+
+        with pytest.raises(ExecutionError):
+            manager.prepare_submission(
+                artifact_paths=frozenset({".st3/state.json"}),
+                base="main",
+                note_context=context,
+            )
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD")
+        assert len(context.of_type(RecoveryNote)) == 1
+        assert "Commit failed" in context.of_type(RecoveryNote)[0].message
+        mock_adapter.push.assert_not_called()
+
+    def test_prepare_submission_hard_resets_head_minus_one_on_push_failure_after_commit(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """Commit succeeds, push fails -> hard_reset('HEAD~1') + RecoveryNote + re-raised."""
+        mock_adapter.has_net_diff_for_path.return_value = True
+        mock_adapter.commit.return_value = "abc1234"
+        mock_adapter.push.side_effect = ExecutionError("remote rejected")
+        context = NoteContext()
+
+        with pytest.raises(ExecutionError):
+            manager.prepare_submission(
+                artifact_paths=frozenset({".st3/state.json"}),
+                base="main",
+                note_context=context,
+            )
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
+        assert len(context.of_type(RecoveryNote)) == 1
+        assert "Push failed" in context.of_type(RecoveryNote)[0].message
+
+    def test_prepare_submission_no_hard_reset_on_push_failure_when_no_commit(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """No diffs -> no commit; push fails -> hard_reset NOT called + RecoveryNote produced."""
+        mock_adapter.has_net_diff_for_path.return_value = False
+        mock_adapter.push.side_effect = ExecutionError("network error")
+        context = NoteContext()
+
+        with pytest.raises(ExecutionError):
+            manager.prepare_submission(
+                artifact_paths=frozenset({".st3/state.json"}),
+                base="main",
+                note_context=context,
+            )
+
+        mock_adapter.hard_reset.assert_not_called()
+        assert len(context.of_type(RecoveryNote)) == 1
+
+    def test_prepare_submission_happy_path_calls_steps_in_order(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """All succeed with artifacts present: correct call order; returns True."""
+        mock_adapter.has_net_diff_for_path.return_value = True
+        mock_adapter.commit.return_value = "abc1234"
+        context = NoteContext()
+
+        result = manager.prepare_submission(
+            artifact_paths=frozenset({".st3/state.json"}),
+            base="main",
+            note_context=context,
+        )
+
+        assert result is True
+        mock_adapter.is_clean.assert_called_once()
+        mock_adapter.has_upstream.assert_called_once()
+        mock_adapter.has_net_diff_for_path.assert_called_once_with(".st3/state.json", "main")
+        mock_adapter.neutralize_to_base.assert_called_once_with(
+            frozenset({".st3/state.json"}), "main"
+        )
+        mock_adapter.commit.assert_called_once()
+        mock_adapter.push.assert_called_once()
+
+
+class TestGitManagerRollbackPush:
+    """C4: Tests for GitManager.rollback_push — remote rollback for Failure C."""
+
+    @pytest.fixture()
+    def mock_adapter(self) -> MagicMock:
+        adapter = MagicMock(spec=GitAdapter)
+        adapter.is_clean.return_value = True
+        adapter.has_upstream.return_value = True
+        return adapter
+
+    @pytest.fixture()
+    def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
+        workphases = ConfigLoader(Path(".st3/config")).load_workphases_config()
+        return GitManager(
+            git_config=git_config,
+            adapter=mock_adapter,
+            workphases_config=workphases,
+        )
+
+    def test_rollback_push_hard_resets_and_force_pushes(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """Both hard_reset and force_push_with_lease succeed; called in order; no exception."""
+        context = NoteContext()
+
+        manager.rollback_push(note_context=context)
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
+        mock_adapter.force_push_with_lease.assert_called_once()
+        assert len(context.of_type(RecoveryNote)) == 0
+
+    def test_rollback_push_produces_recovery_note_and_raises_on_force_push_failure(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """hard_reset succeeds; force_push_with_lease raises -> RecoveryNote + ExecutionError."""
+        mock_adapter.force_push_with_lease.side_effect = ExecutionError("push rejected")
+        context = NoteContext()
+
+        with pytest.raises(ExecutionError):
+            manager.rollback_push(note_context=context)
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
+        mock_adapter.force_push_with_lease.assert_called_once()
+        assert len(context.of_type(RecoveryNote)) == 1
+        assert "CRITICAL: Remote rollback failed" in context.of_type(RecoveryNote)[0].message
+
+    def test_rollback_push_produces_recovery_note_and_raises_on_hard_reset_failure(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """hard_reset raises -> RecoveryNote + force_push_with_lease NOT called + ExecutionError."""
+        mock_adapter.hard_reset.side_effect = ExecutionError("reset failed")
+        context = NoteContext()
+
+        with pytest.raises(ExecutionError):
+            manager.rollback_push(note_context=context)
+
+        mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
+        mock_adapter.force_push_with_lease.assert_not_called()
+        assert len(context.of_type(RecoveryNote)) == 1
+        assert "CRITICAL: Local reset failed" in context.of_type(RecoveryNote)[0].message

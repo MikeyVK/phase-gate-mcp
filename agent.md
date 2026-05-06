@@ -375,12 +375,13 @@ branch_mutating    → pre: check_pr_status                       → geblokkeer
 create_branch      → pre: check_branch_policy                   → geblokkeerd bij ongeldige base
 ```
 
-**`submit_pr` atomaire flow (self-contained):**
-1. Detecteer branch-local artifacts met netto diff t.o.v. base via `GitManager.has_net_diff_for_path`
-2. Neutraliseer ze met `GitManager.neutralize_to_base` (git restore naar merge-base)
-3. `commit_with_scope(workflow_phase="ready", ...)`
-4. `push()`
+**`submit_pr` atomaire flow (self-contained, via `GitManager.prepare_submission`):**
+1. Preflight: clean working tree + upstream aanwezig (`PreflightError` als niet)
+2. Filter: detecteer branch-local artifacts met netto diff t.o.v. base
+3. Conditioneel: neutraliseer + commit (overgeslagen als geen diffs)
+4. Push (altijd) — interne rollback + RecoveryNote bij fout
 5. `GitHubManager.create_pr(...)` → GitHub API
+   → bij fout + commit gemaakt: automatische `rollback_push(context)` + RecoveryNote
 6. Schrijf `PRStatus.OPEN` naar cache
 
 **`MergePRTool` is bewust uitgesloten van `BranchMutatingTool`** — het is de escape hatch die `PRStatus.OPEN` wist. Zou het er wel in zitten, ontstaat een deadlock.

@@ -20,9 +20,9 @@ and commit message formatting based on the active workflow state.
 from typing import Any
 
 from mcp_server.adapters.git_adapter import GitAdapter
-from mcp_server.core.exceptions import PreflightError, ValidationError
+from mcp_server.core.exceptions import ExecutionError, PreflightError, ValidationError
 from mcp_server.core.logging import get_logger
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, SuggestionNote
+from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote, SuggestionNote
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.schemas import GitConfig, WorkphasesConfig
 
@@ -363,3 +363,147 @@ class GitManager:
             List of commit messages (most recent first).
         """
         return self.adapter.get_recent_commits(limit=limit)
+
+    def prepare_submission(
+        self,
+        artifact_paths: frozenset[str],
+        base: str,
+        note_context: NoteContext,
+    ) -> bool:
+        """Atomically execute the full git side of branch submission.
+
+        Steps (in order):
+            1. Preflight — is_clean(): if False -> BlockerNote + PreflightError (no mutation)
+            2. Preflight — has_upstream(): if False -> BlockerNote + PreflightError (no mutation)
+            3. Filter    — for each path in artifact_paths: has_net_diff_for_path(path, base)
+                           -> collect to_neutralize: frozenset[str]
+            4. Neutralize (only when to_neutralize is not empty)
+            5. Commit    (only when to_neutralize is not empty) [Cycle 3]
+            6. Push      — always [Cycle 3 adds rollbacks]
+
+        Args:
+            artifact_paths: Full set of candidate branch-local artifact paths to check.
+            base:           Base branch name (e.g. "main").
+            note_context:   NoteContext for BlockerNote / RecoveryNote production.
+
+        Returns:
+            True if a neutralization commit was made. False otherwise.
+            # CQS note: returns bool to gate rollback_push eligibility in SubmitPRTool.
+
+        Raises:
+            PreflightError:  If working tree is not clean or no upstream is configured.
+            ExecutionError:  If commit or push fails (after rollback attempt).
+        """
+        # Step 1: dirty-tree preflight (root-cause fix for Failure B)
+        if not self.adapter.is_clean():
+            note_context.produce(
+                BlockerNote(
+                    message="Working tree is not clean. "
+                    "Commit or stash all changes before submit_pr."
+                )
+            )
+            raise PreflightError("Working directory is not clean")
+
+        # Step 2: upstream preflight (Failure A)
+        if not self.adapter.has_upstream():
+            note_context.produce(
+                BlockerNote(
+                    message="No upstream tracking branch configured. "
+                    "Run git_push(set_upstream=True) before submit_pr."
+                )
+            )
+            raise PreflightError("No upstream configured for current branch")
+
+        # Step 3: filter artifacts that have a net diff against base
+        to_neutralize = frozenset(
+            path for path in artifact_paths if self.adapter.has_net_diff_for_path(path, base)
+        )
+
+        # Step 4: conditional neutralize
+        if to_neutralize:
+            self.adapter.neutralize_to_base(to_neutralize, base)
+
+        # Step 5: conditional commit (only when artifacts were neutralized)
+        commit_made = False
+        if to_neutralize:
+            try:
+                self.commit_with_scope(
+                    workflow_phase="ready",
+                    message=f"neutralize branch-local artifacts to '{base}'",
+                    note_context=note_context,
+                    commit_type="chore",
+                )
+                commit_made = True
+            except ExecutionError as exc:
+                self.adapter.hard_reset("HEAD")
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Commit failed: {exc}. Local neutralization commit rolled back. "
+                        "Working tree is clean. Retry submit_pr after resolving the commit issue."
+                    )
+                )
+                raise
+
+        # Step 6: push (always); rollback depends on whether a commit was made
+        try:
+            self.adapter.push()
+        except ExecutionError as exc:
+            if commit_made:
+                self.adapter.hard_reset("HEAD~1")
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Push failed: {exc}. Local neutralization commit rolled back. "
+                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                    )
+                )
+            else:
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Push failed: {exc}. No local commit to roll back. "
+                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                    )
+                )
+            raise
+
+        return bool(to_neutralize)
+
+    def rollback_push(self, note_context: NoteContext) -> None:
+        """Roll back a pushed commit from the remote.
+
+        Performs a local hard_reset to HEAD~1 then force-pushes to the remote.
+        This is the recovery path for Failure C (GitHub API failure after push).
+
+        Args:
+            note_context: NoteContext for RecoveryNote production on meta-failure.
+
+        Raises:
+            ExecutionError: If hard_reset or force_push_with_lease fails.
+                            On hard_reset failure, force_push is NOT attempted.
+        """
+        try:
+            self.adapter.hard_reset("HEAD~1")
+        except ExecutionError as exc:
+            note_context.produce(
+                RecoveryNote(
+                    message=(
+                        f"CRITICAL: Local reset failed: {exc}. "
+                        "Remote is still at pushed commit. Manual recovery: "
+                        "git reset --hard HEAD~1, then git push --force-with-lease. "
+                        "Do not commit until resolved."
+                    )
+                )
+            )
+            raise
+
+        try:
+            self.adapter.force_push_with_lease()
+        except ExecutionError as exc:
+            note_context.produce(
+                RecoveryNote(
+                    message=f"CRITICAL: Remote rollback failed: {exc}. "
+                    "Local branch is in pre-submit state. "
+                    "Manual recovery for remote: git push --force-with-lease. "
+                    "Do not commit until resolved."
+                )
+            )
+            raise
