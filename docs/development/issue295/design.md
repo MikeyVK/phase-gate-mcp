@@ -2,7 +2,7 @@
 <!-- template=design version=5827e841 created=2026-05-05T20:28Z updated=2026-05-05 -->
 # submit_pr Atomicity: prepare_submission + rollback_push
 
-**Status:** DRAFT
+**Status:** FINAL
 **Version:** 1.3
 **Last Updated:** 2026-05-06
 
