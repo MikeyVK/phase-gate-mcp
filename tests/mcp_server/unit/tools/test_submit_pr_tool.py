@@ -93,7 +93,7 @@ class TestSubmitPRToolLoD:
         tool = _make_tool_for_lod(git_manager, github_manager, pr_status_writer)
         params = SubmitPRInput(head="feature/42-test", base="main", title="Test PR")
 
-        asyncio.get_event_loop().run_until_complete(tool.execute(params, NoteContext()))
+        asyncio.run(tool.execute(params, NoteContext()))
 
         # These methods must NOT be called directly by execute() (LoD violation)
         git_manager.neutralize_to_base.assert_not_called()

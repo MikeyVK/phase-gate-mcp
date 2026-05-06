@@ -524,6 +524,7 @@ class TestGitManagerPrepareSubmission:
         assert result is False
         mock_adapter.neutralize_to_base.assert_not_called()
         mock_adapter.commit.assert_not_called()
+        mock_adapter.push.assert_called_once()
 
     # --- Cycle 3: conditional commit + push + rollbacks ---
 

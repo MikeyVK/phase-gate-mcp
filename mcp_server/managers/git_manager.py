@@ -20,7 +20,7 @@ and commit message formatting based on the active workflow state.
 from typing import Any
 
 from mcp_server.adapters.git_adapter import GitAdapter
-from mcp_server.core.exceptions import PreflightError, ValidationError
+from mcp_server.core.exceptions import ExecutionError, PreflightError, ValidationError
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote, SuggestionNote
 from mcp_server.core.scope_encoder import ScopeEncoder
@@ -388,6 +388,7 @@ class GitManager:
 
         Returns:
             True if a neutralization commit was made. False otherwise.
+            # CQS note: returns bool to gate rollback_push eligibility in SubmitPRTool.
 
         Raises:
             PreflightError:  If working tree is not clean or no upstream is configured.
@@ -433,7 +434,7 @@ class GitManager:
                     commit_type="chore",
                 )
                 commit_made = True
-            except Exception as exc:
+            except ExecutionError as exc:
                 self.adapter.hard_reset("HEAD")
                 note_context.produce(
                     RecoveryNote(
@@ -446,7 +447,7 @@ class GitManager:
         # Step 6: push (always); rollback depends on whether a commit was made
         try:
             self.adapter.push()
-        except Exception as exc:
+        except ExecutionError as exc:
             if commit_made:
                 self.adapter.hard_reset("HEAD~1")
                 note_context.produce(
@@ -481,7 +482,7 @@ class GitManager:
         """
         try:
             self.adapter.hard_reset("HEAD~1")
-        except Exception as exc:
+        except ExecutionError as exc:
             note_context.produce(
                 RecoveryNote(
                     message=(
@@ -496,7 +497,7 @@ class GitManager:
 
         try:
             self.adapter.force_push_with_lease()
-        except Exception as exc:
+        except ExecutionError as exc:
             note_context.produce(
                 RecoveryNote(
                     message=f"CRITICAL: Remote rollback failed: {exc}. "

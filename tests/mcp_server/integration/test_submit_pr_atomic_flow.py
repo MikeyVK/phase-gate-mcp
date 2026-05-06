@@ -1,13 +1,12 @@
 # tests/mcp_server/integration/test_submit_pr_atomic_flow.py
-"""Integration tests for C3: SubmitPRTool atomic execution flow.
+"""Integration tests for submit_pr atomicity (issue #295).
 
 Tests verify the full atomic sequence:
-  1. branch-local artifact detection (net-diff check)
-  2. neutralize_to_base for tracked artifacts
-  3. commit_with_scope("ready", ...)
-  4. push to remote
-  5. GitHub PR creation
-  6. PRStatusCache write (OPEN)
+  1. Preflight (is_clean, has_upstream) via GitManager.prepare_submission
+  2. Branch-local artifact neutralization (encapsulated in prepare_submission)
+  3. Push (encapsulated in prepare_submission)
+  4. GitHub PR creation
+  5. PRStatusCache write (OPEN)
 
 Also verifies:
   - CreatePRTool is no longer instantiated as a public MCP tool in server composition root
@@ -108,9 +107,7 @@ class TestSubmitPRHappyPath:
 
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert not result.is_error
         git_manager.prepare_submission.assert_called_once()
@@ -134,9 +131,7 @@ class TestSubmitPRHappyPath:
         # No artifacts -> frozenset() passed to prepare_submission
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer, artifacts=())
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert not result.is_error
         git_manager.prepare_submission.assert_called_once()
@@ -158,9 +153,7 @@ class TestSubmitPRHappyPath:
 
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(head="refactor/283-test"), NoteContext())
-        )
+        asyncio.run(tool.execute(_make_params(head="refactor/283-test"), NoteContext()))
 
         pr_status_writer.set_pr_status.assert_called_once_with("refactor/283-test", PRStatus.OPEN)
 
@@ -180,7 +173,7 @@ class TestSubmitPRPartialFailure:
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
         context = NoteContext()
-        result = asyncio.get_event_loop().run_until_complete(tool.execute(_make_params(), context))
+        result = asyncio.run(tool.execute(_make_params(), context))
 
         assert result.is_error
         # PRStatus must NOT be written when push failed
@@ -199,9 +192,7 @@ class TestSubmitPRPartialFailure:
 
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert result.is_error
         pr_status_writer.set_pr_status.assert_not_called()
@@ -213,13 +204,13 @@ class TestSubmitPRNoAdapterBypass:
     def test_submit_pr_tool_execute_has_no_adapter_calls(self) -> None:
         """SubmitPRTool.execute() must not contain self._git_manager.adapter references.
 
-        Law of Demeter (ARCHITECTURE_PRINCIPLES §7): SubmitPRTool must only
+        Law of Demeter (ARCHITECTURE_PRINCIPLES Â§7): SubmitPRTool must only
         talk to GitManager, never to GitAdapter directly.
         """
         source = inspect.getsource(SubmitPRTool.execute)
         assert "_git_manager.adapter" not in source, (
             "SubmitPRTool.execute() must not access GitAdapter directly. "
-            "Use GitManager methods instead (Law of Demeter, §7)."
+            "Use GitManager methods instead (Law of Demeter, Â§7)."
         )
 
 
@@ -320,7 +311,7 @@ class TestSubmitPRNeutralizesQualityState:
 
 
 class TestSubmitPRAtomicRefactored:
-    """C5: SubmitPRTool delegates to prepare_submission + rollback_push (design §4.3)."""
+    """C5: SubmitPRTool delegates to prepare_submission + rollback_push (design Â§4.3)."""
 
     def test_failure_a_no_upstream_blocked_before_mutation(self) -> None:
         """prepare_submission raises PreflightError -> error; no create_pr; no status."""
@@ -331,9 +322,7 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert result.is_error
         github_manager.create_pr.assert_not_called()
@@ -348,9 +337,7 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert result.is_error
         github_manager.create_pr.assert_not_called()
@@ -367,7 +354,7 @@ class TestSubmitPRAtomicRefactored:
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
         context = NoteContext()
 
-        result = asyncio.get_event_loop().run_until_complete(tool.execute(_make_params(), context))
+        result = asyncio.run(tool.execute(_make_params(), context))
 
         assert result.is_error
         git_manager.rollback_push.assert_called_once()
@@ -385,9 +372,7 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert result.is_error
         git_manager.rollback_push.assert_not_called()
@@ -405,7 +390,7 @@ class TestSubmitPRAtomicRefactored:
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
         context = NoteContext()
 
-        result = asyncio.get_event_loop().run_until_complete(tool.execute(_make_params(), context))
+        result = asyncio.run(tool.execute(_make_params(), context))
 
         assert result.is_error
         pr_status_writer.set_pr_status.assert_not_called()
@@ -419,9 +404,7 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert result.is_error
         git_manager.rollback_push.assert_not_called()
@@ -440,9 +423,7 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.get_event_loop().run_until_complete(
-            tool.execute(_make_params(), NoteContext())
-        )
+        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         assert not result.is_error
         git_manager.prepare_submission.assert_called_once()
@@ -466,7 +447,7 @@ class TestSubmitPRAtomicRefactored:
             artifacts=(_STATE_ARTIFACT, _DELIVERABLES_ARTIFACT),
         )
 
-        asyncio.get_event_loop().run_until_complete(tool.execute(_make_params(), NoteContext()))
+        asyncio.run(tool.execute(_make_params(), NoteContext()))
 
         call_args = git_manager.prepare_submission.call_args
         artifact_paths_arg = call_args[0][0] if call_args[0] else call_args[1]["artifact_paths"]
