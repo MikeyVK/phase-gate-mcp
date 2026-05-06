@@ -2,9 +2,9 @@
   "branch": "fix/295-submit-pr-atomicity-upstream-dirty-tree-rollback",
   "issue_number": 295,
   "workflow_name": "bug",
-  "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
+  "current_phase": "ready",
+  "current_cycle": null,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "QA design review revealed architectural debt: SubmitPRTool.execute() violates SRP (\u00a71.1) and LoD (\u00a77) \u2014 git transaction orchestration belongs in GitManager.prepare_submission(), not in the tool. Design doc is invalid. Research must be extended with Findings 6-9 before redesign can proceed.",
+  "skip_reason": "validation already completed: 2580 tests pass, 6/6 quality gates pass \u2014 state.json commit was lost during smoke test session",
   "issue_title": "submit_pr atomicity: upstream check, dirty-tree guard, and rollback on failure",
   "parent_branch": "main",
   "created_at": "2026-05-05T15:32:58.550047+00:00",
@@ -60,8 +60,24 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-06T11:55:09.041876+00:00",
+      "human_approval": "true",
+      "forced": true,
+      "skip_reason": "validation already completed: 2580 tests pass, 6/6 quality gates pass \u2014 state.json commit was lost during smoke test session"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-06T12:22:27.570651+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
