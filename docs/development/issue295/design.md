@@ -3,8 +3,8 @@
 # submit_pr Atomicity: prepare_submission + rollback_push
 
 **Status:** DRAFT
-**Version:** 1.1
-**Last Updated:** 2026-05-05
+**Version:** 1.2
+**Last Updated:** 2026-05-06
 
 ---
 
@@ -82,7 +82,7 @@ Rationale: The extraction is one line (`frozenset(a.path for a in self._merge_re
 
 ## 3. Chosen Design
 
-**Decision:** Introduce `GitManager.prepare_submission(artifact_paths: frozenset[str], base: str, note_context: NoteContext) -> None` encapsulating the full git transaction with internal rollbacks, and `GitManager.rollback_push(note_context: NoteContext) -> None` for remote rollback. Add `GitAdapter.hard_reset(ref: str) -> None` and `GitAdapter.force_push_with_lease(remote: str = "origin") -> None` as new adapter primitives. `SubmitPRTool.execute()` delegates to these two manager methods.
+**Decision:** Introduce `GitManager.prepare_submission(artifact_paths: frozenset[str], base: str, note_context: NoteContext) -> bool` encapsulating the full git transaction with internal rollbacks, and `GitManager.rollback_push(note_context: NoteContext) -> None` for remote rollback. Add `GitAdapter.hard_reset(ref: str) -> None` and `GitAdapter.force_push_with_lease(remote: str = "origin") -> None` as new adapter primitives. `SubmitPRTool.execute()` delegates to these two manager methods.
 
 **Rationale:** Matches the canonical `GitManager.pull()`/`merge()`/`create_branch()` pattern — all encapsulate preflights internally. §1.1 SRP: tool has one axis of change (git+github+status orchestration). §7 LoD: tool does not reach into git internals. §10 Cohesion: GitManager stays git-focused.
 
@@ -93,7 +93,7 @@ Rationale: The extraction is one line (`frozenset(a.path for a in self._merge_re
 | Data interface for artifact paths | `frozenset[str]` | §10 Cohesion: GitManager must not import MergeReadinessContext. §9 YAGNI: no DTO needed. |
 | Local rollback on commit failure | `hard_reset("HEAD")` | Commit failed → HEAD did not advance; staged artifacts are undone; working tree restored |
 | Local rollback on push failure | `hard_reset("HEAD~1")` only when commit was made | Push failed → commit exists locally but not on remote; reset HEAD~1 undoes the commit. When no neutralization commit was made there is nothing to rollback. |
-| Remote rollback after API failure | `hard_reset("HEAD~1")` + `force_push_with_lease()` | Must undo the pushed commit from remote. `--force-with-lease` is safe: we own that commit (BranchMutatingTool prevents concurrent mutations) |
+| Remote rollback after API failure | `hard_reset("HEAD~1")` + `force_push_with_lease()`; only called by tool when `prepare_submission` returned `True` (commit was made) | Must undo the pushed commit from remote. When no commit was made, no remote commit exists to roll back. `--force-with-lease` is safe: we own that commit (BranchMutatingTool prevents concurrent mutations) |
 | Rollback meta-failure error boundary | `RecoveryNote` + `ExecutionError` caught silently by tool's inner try/except | Never swallow rollback errors; RecoveryNote gives operator manual instructions. Tool's primary error (PR creation) is returned; meta-failure surfaced via note. |
 | Commit conditional on to_neutralize | Skip commit when `to_neutralize` is empty; push still happens | §8 Explicit: do not make a pointless empty neutralization commit. Push always executes (may carry regular branch commits). |
 | Dirty-tree preflight as root-cause fix for Failure B | `is_clean()` preflight, NOT skip_paths | After a clean-tree preflight there are no untracked files; `git add .` in `commit_with_scope` cannot consume unexpected files. skip_paths is intentionally NOT used — it would incorrectly unstage the artifacts that `neutralize_to_base` staged. |
@@ -138,7 +138,7 @@ def prepare_submission(
     artifact_paths: frozenset[str],
     base: str,
     note_context: NoteContext,
-) -> None:
+) -> bool:
     """Atomically execute the full git side of branch submission.
 
     Steps (in order):
@@ -169,6 +169,10 @@ def prepare_submission(
         base:           Base branch name (e.g. "main").
         note_context:   NoteContext for BlockerNote / RecoveryNote production.
 
+    Returns:
+        True if a neutralization commit was made (push carried a new commit).
+        False if no commit was made (push carried regular branch commits only).
+
     Raises:
         PreflightError:  If working tree is not clean or no upstream is configured.
                          No mutation has occurred.
@@ -181,19 +185,19 @@ def rollback_push(self, note_context: NoteContext) -> None:
 
     Steps:
         1. hard_reset("HEAD~1") — undo neutralization commit locally
+           On failure -> RecoveryNote + re-raise ExecutionError (force_push not attempted)
         2. force_push_with_lease() — overwrite remote with pre-submit HEAD
-
-    On force_push_with_lease failure:
-        -> RecoveryNote: local branch is in pre-submit state; operator must manually
-          run `git push --force-with-lease` to restore remote.
-        -> re-raise ExecutionError (never swallow)
+           On failure -> RecoveryNote + re-raise ExecutionError
 
     Args:
         note_context: NoteContext for RecoveryNote production on meta-failure.
 
     Raises:
-        ExecutionError: If force_push_with_lease fails.
-                        Manual recovery: git push --force-with-lease (local is already reset).
+        ExecutionError: If hard_reset or force_push_with_lease fails.
+                        If hard_reset fails: local branch is still at pushed commit.
+                          Manual recovery: git reset --hard HEAD~1, then git push --force-with-lease.
+                        If force_push_with_lease fails: local branch is already reset.
+                          Manual recovery: git push --force-with-lease.
     """
 ```
 
@@ -210,7 +214,7 @@ async def execute(self, params: SubmitPRInput, context: NoteContext) -> ToolResu
 
     # [GIT] Full git transaction — preflights + neutralize + commit + push + local rollback
     try:
-        self._git_manager.prepare_submission(artifact_paths, base, context)
+        commit_made = self._git_manager.prepare_submission(artifact_paths, base, context)
     except (PreflightError, ExecutionError) as exc:
         return ToolResult.error(str(exc))
 
@@ -224,12 +228,12 @@ async def execute(self, params: SubmitPRInput, context: NoteContext) -> ToolResu
             draft=params.draft,
         )
     except ExecutionError as exc:
-        try:
-            self._git_manager.rollback_push(context)
-        except ExecutionError:
-            # RecoveryNote with manual recovery instructions already produced by rollback_push.
-            # Do not propagate the meta-failure separately — primary error (PR creation) is returned.
-            pass
+        if commit_made:
+            try:
+                self._git_manager.rollback_push(context)
+            except ExecutionError:
+                # RecoveryNote already produced by rollback_push. Do not propagate.
+                pass
         return ToolResult.error(str(exc))
 
     # [STATUS] Record PR as open
@@ -272,8 +276,9 @@ GitManager.prepare_submission(artifact_paths, base, ctx)
   +-- [neutralize skipped]
   +-- [commit skipped]
   +-- push()    <- push still happens (regular branch commits may be present)
+  +-- returns False (no commit made)
 
-SubmitPRTool: continues to create_pr + set_pr_status
+SubmitPRTool: commit_made=False; continues to create_pr + set_pr_status (rollback ineligible)
 ```
 
 ### 5.3 Failure A — No upstream (PreflightError before any mutation)
@@ -304,11 +309,11 @@ No mutation. Branch is clean. Retryable after committing all pending changes.
 ### 5.5 Failure C — GitHub API failure after successful push
 
 ```
-GitManager.prepare_submission(...) -> completes OK (neutralize + commit + push succeeded)
+GitManager.prepare_submission(...) -> returns True (commit_made; neutralize + commit + push succeeded)
 
 github_manager.create_pr(...) -> raises ExecutionError("422 PR already exists")
 
-SubmitPRTool: catches ExecutionError
+SubmitPRTool: catches ExecutionError (commit_made=True -> rollback eligible)
   +-- inner try: GitManager.rollback_push(ctx)
   |    +-- adapter.hard_reset("HEAD~1")   <- local commit undone
   |    +-- adapter.force_push_with_lease()  <- remote overwritten
@@ -373,6 +378,26 @@ Local branch is in pre-submit state. Remote is stuck at pushed commit.
 Operator manual recovery: git push --force-with-lease
 ```
 
+### 5.9 Failure C meta-failure — rollback_push fails on hard_reset
+
+```
+GitManager.rollback_push(ctx)
+  +-- adapter.hard_reset("HEAD~1") -> raises ExecutionError("disk error")
+  +-- note_context.produce(RecoveryNote(
+  |      "CRITICAL: Local reset failed: {reason}. "
+  |      "Remote is still at pushed commit. "
+  |      "Manual recovery: git reset --hard HEAD~1, then git push --force-with-lease. "
+  |      "Do not commit until resolved."
+  |  ))
+  +-- re-raise ExecutionError (force_push not attempted)
+
+SubmitPRTool inner except ExecutionError: ignores re-raise (RecoveryNote already produced)
+SubmitPRTool: returns ToolResult.error(str(create_pr_exc))
+
+Local branch and remote are both stuck at pushed commit.
+Operator manual recovery: git reset --hard HEAD~1, then git push --force-with-lease
+```
+
 ---
 
 ## 6. Test Design
@@ -416,6 +441,7 @@ All tests inject a `MagicMock(spec=GitAdapter)` via `GitManager(adapter=mock_ada
 |------|----------|-------------------|
 | `test_rollback_push_hard_resets_and_force_pushes` | both succeed | `adapter.hard_reset("HEAD~1")` then `adapter.force_push_with_lease()` called in order; no exception |
 | `test_rollback_push_produces_recovery_note_and_raises_on_force_push_failure` | `force_push_with_lease` raises | `adapter.hard_reset("HEAD~1")` still called first; `RecoveryNote` produced with manual recovery text (only `git push --force-with-lease`); `ExecutionError` re-raised |
+| `test_rollback_push_produces_recovery_note_and_raises_on_hard_reset_failure` | `hard_reset` raises | `RecoveryNote` produced with manual recovery text (`git reset --hard HEAD~1, then git push --force-with-lease`); `force_push_with_lease` NOT called; `ExecutionError` re-raised |
 
 ### 6.4 SubmitPRTool integration tests
 
@@ -427,7 +453,8 @@ Tests inject `MagicMock(spec=GitManager)` and `MagicMock(spec=GitHubManager)` vi
 |------|----------|-------------------|
 | `test_failure_a_no_upstream_blocked_before_mutation` | `prepare_submission` raises `PreflightError` | `result.is_error=True`; `create_pr` not called; `set_pr_status` not called |
 | `test_failure_b_dirty_tree_blocked_before_mutation` | `prepare_submission` raises `PreflightError` | `result.is_error=True`; `create_pr` not called; `set_pr_status` not called |
-| `test_failure_c_create_pr_failure_triggers_rollback_push` | `prepare_submission` succeeds, `create_pr` raises | `rollback_push` called with `context`; `result.is_error=True`; `set_pr_status` not called |
+| `test_failure_c_create_pr_failure_triggers_rollback_push` | `prepare_submission` returns `True` (commit made), `create_pr` raises | `rollback_push` called with `context`; `result.is_error=True`; `set_pr_status` not called |
+| `test_failure_c_no_rollback_when_no_neutralization_commit` | `prepare_submission` returns `False` (no commit), `create_pr` raises | `rollback_push` NOT called; `result.is_error=True`; `set_pr_status` not called |
 | `test_failure_c_meta_rollback_failure_surfaced_via_recovery_note` | `create_pr` raises, `rollback_push` raises | `result.is_error=True` (primary create_pr error message returned); `RecoveryNote` in context; `set_pr_status` not called |
 | `test_failure_d_push_fails_prepare_submission_raises_execution_error` | `prepare_submission` raises `ExecutionError` | `result.is_error=True`; `rollback_push` not called; `set_pr_status` not called |
 | `test_happy_path_prepare_submission_then_create_pr_then_status` | all succeed | `prepare_submission` called once; `set_pr_status(branch, OPEN)` called |
@@ -442,7 +469,7 @@ Tests call `tool.execute(params, context)` with a `MagicMock(spec=GitManager)`. 
 | Test | Setup | Assertion |
 |------|-------|-----------|
 | `test_submit_pr_execute_does_not_call_git_internals_directly` | `MagicMock(spec=GitManager)` with `prepare_submission` succeeding | After `execute()`, assert `git_manager.neutralize_to_base`, `git_manager.commit_with_scope`, `git_manager.push`, `git_manager.has_net_diff_for_path` are all `assert_not_called()` |
-| `test_submit_pr_execute_does_not_access_adapter` | `MagicMock(spec=GitManager)` | `execute()` completes without `AttributeError`; spec contract makes `.adapter` access on the mock raise `AttributeError` if attempted |
+| `test_submit_pr_execute_does_not_access_adapter` | `MagicMock(spec=GitManager)` | After `execute()`, verify no git-internal methods were called via `assert_not_called()`. Note: `GitManager.adapter` is a public attribute so `spec` does not restrict it; the `inspect.getsource` guardrail (retained) covers that boundary. This test is complementary behavioral coverage. |
 
 **Retained architectural guardrail:** The existing `test_submit_pr_tool_execute_has_no_adapter_calls` (using `inspect.getsource`) is kept. This is source-inspection for architectural enforcement, distinct from the §14 ban on private-method *calls* in tests.
 
@@ -462,6 +489,7 @@ Tests call `tool.execute(params, context)` with a `MagicMock(spec=GitManager)`. 
 | D — push failed, commit was made | `RecoveryNote` | "Push failed: {reason}. Local neutralization commit rolled back. Working tree is clean. Retry submit_pr after resolving the remote issue." |
 | D (variant) — push failed, no commit | `RecoveryNote` | "Push failed: {reason}. No local commit to roll back. Working tree is clean. Retry submit_pr after resolving the remote issue." |
 | Meta-failure — force_push_with_lease failed | `RecoveryNote` | "CRITICAL: Remote rollback failed: {reason}. Local branch is in pre-submit state. Manual recovery for remote: git push --force-with-lease. Do not commit until resolved." |
+| Meta-failure — hard_reset("HEAD~1") failed in rollback_push | `RecoveryNote` | "CRITICAL: Local reset failed: {reason}. Remote is still at pushed commit. Manual recovery: git reset --hard HEAD~1, then git push --force-with-lease. Do not commit until resolved." |
 
 ---
 
