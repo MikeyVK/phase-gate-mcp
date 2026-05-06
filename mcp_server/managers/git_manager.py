@@ -484,9 +484,12 @@ class GitManager:
         except Exception as exc:
             note_context.produce(
                 RecoveryNote(
-                    message=f"CRITICAL: Local reset failed: {exc}. Remote is still at pushed commit. "
-                    "Manual recovery: git reset --hard HEAD~1, then git push --force-with-lease. "
-                    "Do not commit until resolved."
+                    message=(
+                        f"CRITICAL: Local reset failed: {exc}. "
+                        "Remote is still at pushed commit. Manual recovery: "
+                        "git reset --hard HEAD~1, then git push --force-with-lease. "
+                        "Do not commit until resolved."
+                    )
                 )
             )
             raise

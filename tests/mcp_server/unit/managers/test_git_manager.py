@@ -632,7 +632,7 @@ class TestGitManagerRollbackPush:
     def test_rollback_push_hard_resets_and_force_pushes(
         self, manager: GitManager, mock_adapter: MagicMock
     ) -> None:
-        """Both hard_reset and force_push_with_lease succeed; called in order; no exception raised."""
+        """Both hard_reset and force_push_with_lease succeed; called in order; no exception."""
         context = NoteContext()
 
         manager.rollback_push(note_context=context)
