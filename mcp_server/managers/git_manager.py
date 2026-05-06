@@ -22,7 +22,7 @@ from typing import Any
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.core.exceptions import PreflightError, ValidationError
 from mcp_server.core.logging import get_logger
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, SuggestionNote
+from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote, SuggestionNote
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.schemas import GitConfig, WorkphasesConfig
 
@@ -422,6 +422,43 @@ class GitManager:
         if to_neutralize:
             self.adapter.neutralize_to_base(to_neutralize, base)
 
-        # Steps 5-6 (commit + push + rollbacks): Cycle 3
-        self.adapter.push()
-        return False
+        # Step 5: conditional commit (only when artifacts were neutralized)
+        commit_made = False
+        if to_neutralize:
+            try:
+                self.adapter.commit(
+                    message=f"chore: neutralize branch-local artifacts to '{base}'"
+                )
+                commit_made = True
+            except Exception as exc:
+                self.adapter.hard_reset("HEAD")
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Push failed: {exc}. Local neutralization commit rolled back. "
+                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                    )
+                )
+                raise
+
+        # Step 6: push (always); rollback depends on whether a commit was made
+        try:
+            self.adapter.push()
+        except Exception as exc:
+            if commit_made:
+                self.adapter.hard_reset("HEAD~1")
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Push failed: {exc}. Local neutralization commit rolled back. "
+                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                    )
+                )
+            else:
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Push failed: {exc}. No local commit to roll back. "
+                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                    )
+                )
+            raise
+
+        return bool(to_neutralize)
