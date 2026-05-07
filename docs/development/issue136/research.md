@@ -3,7 +3,7 @@
 # Error Taxonomy & Strict Input Validation - Research
 
 **Status:** COMPLETE  
-**Version:** 4.0  
+**Version:** 5.0  
 **Last Updated:** 2026-05-07  
 **Issues:** #136 (predictable error handling via NoteContext taxonomy) + #147 (strict tool input models, bundled deliverable)  
 **Epic:** #320 phase 0
@@ -433,16 +433,51 @@ This line applies across the other tools even though many still use generic inte
 The next phase should treat these as constraints:
 
 - Strict input validation requires a central server-side error response path.
-- That path must create/use `NoteContext` for argument-validation failures, or otherwise extend the current lifecycle so notes can be produced before returning.
-- The response must include a primary diagnostic and actionable note guidance.
-- The response must include the valid runtime input schema for the failed tool.
+- That path must not move `NoteContext` creation earlier. `_validate_tool_arguments` must return `ToolResult` (with `is_error=True` and a `schema://validation` EmbeddedResource) instead of a bare `list[TextContent]`. `NoteContext` remains created after argument validation, as today.
+- The response must include a primary diagnostic text and the valid runtime input schema as an embedded resource.
 - The schema must be generated from runtime tool schema data, not source inspection.
 - The schema response must preserve field descriptions because descriptions are the most compatible agent guidance channel.
-- The schema response must consider `$defs`/`$ref` compatibility for nested inputs, especially `SafeEditInput`.
-- If schema must literally be a note, NoteContext/NoteEntry rendering needs an extension beyond `to_message() -> str`.
-- If schema may be response content accompanying notes, existing `ToolResult` resource precedent can be reused while notes remain textual guidance.
-- `tool_error_handler` should remain context-agnostic unless planning explicitly revisits the issue #283 contract.
-- Scaffold predictable errors should use the NoteContext pattern rather than relying on internal error-code granularity alone.
+- `NoteContext`/`NoteEntry` must not be extended with structured resource rendering. Notes remain textual (`to_message() -> str`). Schema always goes via `ToolResult.content` resource, consistent with the `schema://validation` precedent.
+- `tool_error_handler` must remain context-agnostic (issue #283 contract unchanged).
+- Scaffold predictable errors are in scope: `del context` must be removed from `ScaffoldArtifactTool`, and `NoteContext` must be propagated through `ArtifactManager` and the full scaffold chain (TemplateScaffolder, JinjaRenderer, FilesystemAdapter), following the `GitManager` reference pattern.
+- Granular error codes for scaffold raise-sites are not in scope. Existing codes (`ERR_CONFIG`, `ERR_VALIDATION`, etc.) remain. Agent-facing improvement flows through typed notes and `ToolResult.content` text.
+- `$defs`/`$ref` in tool input schemas is a confirmed defect, not a hypothetical risk. VS Code / Copilot Chat cannot construct tool calls when `input_schema` contains `$ref` (confirmed in issue #99 C9, commit `5592979e`; fix applied only to `CreateIssueTool` via `_resolve_schema_refs()`). The `_resolve_schema_refs()` utility in `issue_tools.py` must be moved to a shared location and applied to all tools via `BaseTool.input_schema`. This is a pre-condition for safe `extra="forbid"` application to `SafeEditInput`.
+
+---
+
+## 13. Constraint Decisions From Design Preparation (2026-05-07)
+
+These five constraint decisions were established through architectural review against `ARCHITECTURE_PRINCIPLES.md` after research v4. They belong in research because they close design options, not open them.
+
+### C1 — Lifecycle gap: `_validate_tool_arguments` returns `ToolResult`
+
+**Decision:** Optie B. `_validate_tool_arguments` is changed to return `ToolResult` on failure (with `is_error=True`, error text, and `schema://validation` EmbeddedResource from `tool.input_schema`). `NoteContext` is not created earlier.
+
+**Rationale:** Moving `NoteContext` creation earlier would give `_validate_tool_arguments` a second responsibility (SRP §1.1) and introduce NoteContext as a dependency in the server dispatch layer where it does not belong (Law of Demeter §7, Cohesion §10). The schema resource in `ToolResult.content` is sufficient actionable guidance for argument validation failures (YAGNI §9). The `schema://validation` resource precedent from issue #120 applies directly.
+
+### C2 — Representation gap: NoteContext not extended
+
+**Decision:** `NoteContext`/`NoteEntry` are not extended with structured resource rendering. `to_message() -> str` remains the only rendering interface for notes.
+
+**Rationale:** Adding resource-type notes would give NoteContext two responsibilities — textual actionable guidance and structured machine-readable data (SRP §1.1). Schema belongs in `ToolResult.content` as a resource, which is the existing SSOT for structured response content (DRY §2). No concrete case in this issue requires schema-as-note (YAGNI §9).
+
+### C3 — Scaffold chain: in scope
+
+**Decision:** `del context` removed from `ScaffoldArtifactTool`. `NoteContext` propagated through `ArtifactManager` and the full scaffold chain (TemplateScaffolder, JinjaRenderer, FilesystemAdapter). Reference pattern: `GitManager`.
+
+**Rationale:** The error taxonomy established by this issue applies to the scaffold chain's 14 raise-sites. Leaving them outside scope makes the taxonomy a paper contract inconsistent with the codebase (DRY §2, Explicit §8). The `del context` comment documents a temporary non-use state, not an architectural decision.
+
+### C4 — Error codes: not in scope
+
+**Decision:** No new granular error codes for the scaffold chain or other tools. Existing codes remain.
+
+**Rationale:** `ToolResult.error_code` is not visible to the LLM client (research §2.1). Granular codes would serve only tests and logs, with no agent-facing benefit. No current consumer routes on specific codes (YAGNI §9).
+
+### C5 — SafeEditInput / schema normalization: in scope as DRY refactor
+
+**Decision:** `_resolve_schema_refs()` moved from `issue_tools.py` to a shared location and applied to all tools via `BaseTool.input_schema`. `SafeEditInput` receives `extra="forbid"` after this pre-condition is met.
+
+**Rationale:** The `$defs`/`$ref` defect is confirmed, not hypothetical: VS Code cannot construct tool calls with `$ref` in input schemas (issue #99 C9, commit `5592979e`, test `test_create_issue_schema.py`). `SafeEditInput` (`LineEdit`, `InsertLine`) still has this defect. The fix utility already exists; applying it broadly is a DRY refactor (§2), not new infrastructure (YAGNI §9 does not apply to fixing a confirmed defect).
 
 ---
 
@@ -465,6 +500,8 @@ The next phase should treat these as constraints:
 - `mcp_server/tools/scaffold_artifact.py` - current `del context` scaffold gap
 - `mcp_server/tools/safe_edit_tool.py` - nested input schema case (`LineEdit`, `InsertLine`)
 - `mcp_server/tools/base.py` - execute contract includes `context: NoteContext`
+- `mcp_server/tools/issue_tools.py` - `_resolve_schema_refs()` utility: inlines `$defs`/`$ref` in JSON Schema; currently module-local
+- `tests/mcp_server/unit/tools/test_create_issue_schema.py` - C9 contract: `input_schema` must not contain `$ref`/`$defs`; confirms the defect is real
 
 ---
 
@@ -476,3 +513,4 @@ The next phase should treat these as constraints:
 | 2.0 | 2026-05-07 | imp-agent | Rewritten around NoteContext end-to-end path, but still framed some settled behavior as open questions |
 | 3.0 | 2026-05-07 | imp-agent | Added docs/history rationale, strict-input central failure analysis, schema-resource precedent, and NoteContext representation/lifecycle gaps |
 | 4.0 | 2026-05-07 | imp-agent | Deepened reference/history evidence, strict-input agent experience, schema-as-note gap, MCP schema caching, description guidance, and nested schema compatibility |
+| 5.0 | 2026-05-07 | imp-agent | Added §12 updated planning inputs (5 closed constraints) and §13 constraint decisions C1–C5 from architectural review against ARCHITECTURE_PRINCIPLES.md |
