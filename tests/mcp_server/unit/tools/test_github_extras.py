@@ -55,7 +55,7 @@ labels:
 def test_add_labels_tool(mock_adapter: Mock, test_label_config: LabelConfig) -> None:
     """Test AddLabelsTool adds labels and returns confirmation."""
     manager = GitHubManager(adapter=mock_adapter)
-    tool = AddLabelsTool(manager=manager, label_config=test_label_config)
+    tool = AddLabelsTool(manager=manager, label_config=test_label_config, workphases_config=Mock())
 
     result = asyncio.run(
         tool.execute(

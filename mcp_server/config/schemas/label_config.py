@@ -11,13 +11,14 @@ Defines typed label and pattern metadata loaded by the configuration layer.
     - Validate label color and duplicate-name invariants
     - Provide lookup helpers used by label-aware tooling
 """
-
 import re
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from mcp_server.config.schemas.workphases import WorkphasesConfig
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
-
 
 class Label(BaseModel):
     """Immutable label definition from labels.yaml."""
@@ -166,3 +167,28 @@ class LabelConfig(BaseModel):
         if duplicates:
             raise ValueError(f"Duplicate label names: {set(duplicates)}")
         return labels
+
+
+def validate_phase_label(
+    label_name: str,
+    workphases_config: "WorkphasesConfig",
+) -> tuple[bool, str]:
+    """Validate a label against known workflow phases.
+
+    Returns (True, "") if the label is not a phase:* label, or if it names a
+    known non-terminal phase.  Returns (False, <reason>) otherwise.
+    """
+    if not label_name.startswith("phase:"):
+        return (True, "")
+
+    phase_slug = label_name.removeprefix("phase:")
+    known_phases = set(workphases_config.phases.keys())
+    if phase_slug in known_phases:
+        return (True, "")
+
+    valid_list = ", ".join(sorted(known_phases))
+    return (
+        False,
+        f"phase label 'phase:{phase_slug}' names an unknown workphase '{phase_slug}'. "
+        f"Valid phases: {valid_list}.",
+    )

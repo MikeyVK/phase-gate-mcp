@@ -61,7 +61,7 @@ labels:
 """
         label_config = _load_label_config(tmp_path, yaml_content)
 
-        tool = CreateLabelTool(manager=Mock(), label_config=label_config)
+        tool = CreateLabelTool(manager=Mock(), label_config=label_config, workphases_config=Mock())
         params = CreateLabelInput(name="invalid-name", color="FF0000")
 
         result = await tool.execute(params, NoteContext())
@@ -77,7 +77,7 @@ labels:
 """
         label_config = _load_label_config(tmp_path, yaml_content)
 
-        tool = CreateLabelTool(manager=Mock(), label_config=label_config)
+        tool = CreateLabelTool(manager=Mock(), label_config=label_config, workphases_config=Mock())
         params = CreateLabelInput(name="type:bug", color="#FF0000")
 
         result = await tool.execute(params, NoteContext())
@@ -98,7 +98,7 @@ labels:
         mock_manager = Mock()
         mock_manager.create_label = Mock(return_value=_MockLabel(name="type:bug", color="FF0000"))
 
-        tool = CreateLabelTool(manager=mock_manager, label_config=label_config)
+        tool = CreateLabelTool(manager=mock_manager, label_config=label_config, workphases_config=Mock())
         params = CreateLabelInput(name="type:bug", color="FF0000")
 
         result = await tool.execute(params, NoteContext())
@@ -122,7 +122,7 @@ labels:
             return_value=_MockLabel(name="good first issue", color="7057FF")
         )
 
-        tool = CreateLabelTool(manager=mock_manager, label_config=label_config)
+        tool = CreateLabelTool(manager=mock_manager, label_config=label_config, workphases_config=Mock())
         params = CreateLabelInput(name="good first issue", color="7057FF")
 
         result = await tool.execute(params, NoteContext())
@@ -142,7 +142,7 @@ labels:
 """
         label_config = _load_label_config(tmp_path, yaml_content)
 
-        tool = AddLabelsTool(manager=Mock(), label_config=label_config)
+        tool = AddLabelsTool(manager=Mock(), label_config=label_config, workphases_config=Mock())
         params = AddLabelsInput(issue_number=1, labels=["undefined-label"])
 
         result = await tool.execute(params, NoteContext())
@@ -163,7 +163,7 @@ labels:
         label_config = _load_label_config(tmp_path, yaml_content)
 
         mock_manager = Mock()
-        tool = AddLabelsTool(manager=mock_manager, label_config=label_config)
+        tool = AddLabelsTool(manager=mock_manager, label_config=label_config, workphases_config=Mock())
         params = AddLabelsInput(issue_number=1, labels=["type:feature", "priority:high"])
 
         result = await tool.execute(params, NoteContext())
@@ -181,7 +181,7 @@ labels:
         label_config = _load_label_config(tmp_path, yaml_content)
 
         mock_manager = Mock()
-        tool = AddLabelsTool(manager=mock_manager, label_config=label_config)
+        tool = AddLabelsTool(manager=mock_manager, label_config=label_config, workphases_config=Mock())
         params = AddLabelsInput(issue_number=1, labels=["type:feature", "undefined"])
 
         result = await tool.execute(params, NoteContext())
@@ -203,7 +203,7 @@ labels:
         label_config = _load_label_config(tmp_path, yaml_content)
 
         mock_manager = Mock()
-        tool = AddLabelsTool(manager=mock_manager, label_config=label_config)
+        tool = AddLabelsTool(manager=mock_manager, label_config=label_config, workphases_config=Mock())
         params = AddLabelsInput(issue_number=1, labels=["good first issue"])
 
         result = await tool.execute(params, NoteContext())
@@ -226,7 +226,7 @@ labels:
 """
         label_config = _load_label_config(tmp_path, yaml_content)
         mock_manager = Mock()
-        tool = AddLabelsTool(manager=mock_manager, label_config=label_config)
+        tool = AddLabelsTool(manager=mock_manager, label_config=label_config, workphases_config=Mock())
         params = AddLabelsInput(issue_number=1, labels=["parent:302"])
 
         result = await tool.execute(params, NoteContext())

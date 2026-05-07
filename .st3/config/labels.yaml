@@ -14,6 +14,10 @@ label_patterns:
     description: "Parent issue reference for child issues"
     color: "EDEDED"
     example: "parent:91"
+  - pattern: "^phase:[a-z][a-z0-9-]*$"
+    description: "Workflow phase label — value must be a known phase from workphases.yaml"
+    color: "C5DEF5"
+    example: "phase:research"
 
 labels:
   # TYPE - Issue Classification (7 labels)
@@ -68,45 +72,9 @@ labels:
     color: "EDEDED"
     description: "Needs prioritization"
   
-  # PHASE - Workflow State (9 labels)
-  # Which phase in the workflow (aligns with workflows.yaml)
-  # Note: phase:tdd for issues, phase:red/green/refactor for commits (granularity)
-  
-  - name: "phase:research"
-    color: "C5DEF5"
-    description: "Research/discovery phase"
-  
-  - name: "phase:planning"
-    color: "C5DEF5"
-    description: "Planning phase"
-  
-  - name: "phase:design"
-    color: "C5DEF5"
-    description: "Design phase"
-  
-  - name: "phase:tdd"
-    color: "0E8A16"
-    description: "TDD implementation phase (issue-level)"
-  
-  - name: "phase:red"
-    color: "D73A4A"
-    description: "TDD red phase - write failing tests (commit-level)"
-  
-  - name: "phase:green"
-    color: "0E8A16"
-    description: "TDD green phase - make tests pass (commit-level)"
-  
-  - name: "phase:refactor"
-    color: "FBCA04"
-    description: "TDD refactor phase - improve code (commit-level)"
-  
-  - name: "phase:integration"
-    color: "1D76DB"
-    description: "Integration testing phase"
-  
-  - name: "phase:documentation"
-    color: "0075CA"
-    description: "Documentation phase"
+  # PHASE - Workflow State (dynamic pattern — see label_patterns above)
+  # phase:* labels are validated against workphases.yaml at runtime
+  # Example: phase:research, phase:implementation, phase:ready
   
   # SCOPE - Impact Area (6 labels)
   # Which part of the system is affected

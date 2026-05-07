@@ -71,7 +71,7 @@ async def test_list_labels_tool(
 async def test_create_label_tool(
     mock_github_manager: MagicMock, test_label_config: LabelConfig
 ) -> None:
-    tool = CreateLabelTool(manager=mock_github_manager, label_config=test_label_config)
+    tool = CreateLabelTool(manager=mock_github_manager, label_config=test_label_config, workphases_config=MagicMock())
     label_mock = MagicMock()
     label_mock.name = "type:hotfix"
     mock_github_manager.create_label.return_value = label_mock
@@ -102,7 +102,7 @@ async def test_delete_label_tool(
 async def test_add_labels_tool(
     mock_github_manager: MagicMock, test_label_config: LabelConfig
 ) -> None:
-    tool = AddLabelsTool(manager=mock_github_manager, label_config=test_label_config)
+    tool = AddLabelsTool(manager=mock_github_manager, label_config=test_label_config, workphases_config=MagicMock())
 
     result = await tool.execute(
         AddLabelsInput(issue_number=10, labels=["bug", "p1"]), NoteContext()
