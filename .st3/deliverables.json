@@ -14,6 +14,180 @@
     ],
     "skip_reason": null,
     "parent_branch": "main",
-    "created_at": "2026-05-06T13:03:37.892059+00:00"
+    "created_at": "2026-05-06T13:03:37.892059+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "exit_criteria": "All TestAddLabelsToolValidation tests pass; validate_label_name() is sole validator; no label_exists() call remains",
+            "deliverables": [
+              {
+                "description": "test_add_labels_accepts_dynamic_pattern_label present in test file",
+                "id": "c302_1_new_test_exists",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_label_tools_integration.py",
+                  "text": "test_add_labels_accepts_dynamic_pattern_label",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "validate_label_name called in AddLabelsTool.execute()",
+                "id": "c302_1_method_replaced",
+                "validates": {
+                  "file": "mcp_server/tools/label_tools.py",
+                  "text": "validate_label_name",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "label_exists no longer called in AddLabelsTool.execute()",
+                "id": "c302_1_old_method_absent",
+                "validates": {
+                  "file": "mcp_server/tools/label_tools.py",
+                  "text": "label_exists",
+                  "type": "absent_text"
+                }
+              },
+              {
+                "description": "TestAddLabelsToolValidation class present in test file",
+                "id": "c302_1_tests_pass",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_label_tools_integration.py",
+                  "text": "TestAddLabelsToolValidation",
+                  "type": "contains_text"
+                }
+              }
+            ],
+            "id": "C_302.1",
+            "name": "AddLabelsTool accepts dynamic pattern labels"
+          },
+          {
+            "cycle_number": 2,
+            "exit_criteria": "All TestDetectLabelDriftTool tests pass; pattern-matching labels excluded from drift report",
+            "deliverables": [
+              {
+                "description": "test_drift_detection_pattern_labels_not_reported_as_drift present",
+                "id": "c302_2_new_test_exists",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_label_tools_integration.py",
+                  "text": "test_drift_detection_pattern_labels_not_reported_as_drift",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "validate_label_name used in github_only filter in DetectLabelDriftTool",
+                "id": "c302_2_filter_applied",
+                "validates": {
+                  "file": "mcp_server/tools/label_tools.py",
+                  "text": "validate_label_name",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "TestDetectLabelDriftTool class present in test file",
+                "id": "c302_2_tests_pass",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_label_tools_integration.py",
+                  "text": "TestDetectLabelDriftTool",
+                  "type": "contains_text"
+                }
+              }
+            ],
+            "id": "C_302.2",
+            "name": "DetectLabelDriftTool ignores pattern-matching labels"
+          },
+          {
+            "cycle_number": 3,
+            "exit_criteria": "validate_phase_label() exists; workphases_config required param in both tools; labels.yaml restructured; all 14 sites updated; quality gates pass",
+            "deliverables": [
+              {
+                "description": "def validate_phase_label present in label_config.py",
+                "id": "c302_3_function_exists",
+                "validates": {
+                  "file": "mcp_server/config/schemas/label_config.py",
+                  "text": "def validate_phase_label",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "workphases_config: WorkphasesConfig in tool __init__ signatures",
+                "id": "c302_3_param_required",
+                "validates": {
+                  "file": "mcp_server/tools/label_tools.py",
+                  "text": "workphases_config: WorkphasesConfig",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "No explicit phase:research entry in labels.yaml",
+                "id": "c302_3_labels_yaml_clean",
+                "validates": {
+                  "file": ".st3/config/labels.yaml",
+                  "text": "name: \"phase:research\"",
+                  "type": "absent_text"
+                }
+              },
+              {
+                "description": "phase:[a-z][a-z0-9-]*$ pattern present in labels.yaml",
+                "id": "c302_3_pattern_added",
+                "validates": {
+                  "file": ".st3/config/labels.yaml",
+                  "text": "phase:[a-z][a-z0-9-]*$",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "workphases_config=workphases_config present in server.py",
+                "id": "c302_3_server_updated",
+                "validates": {
+                  "file": "mcp_server/server.py",
+                  "text": "workphases_config=workphases_config",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "workphases_config= present in test_label_tools_integration.py",
+                "id": "c302_3_construction_sites_updated",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_label_tools_integration.py",
+                  "text": "workphases_config=",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "TestValidatePhaseLabelFunction class present in test file",
+                "id": "c302_3_new_tests_pass",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_label_tools_integration.py",
+                  "text": "TestValidatePhaseLabelFunction",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "label_config.py source file exists",
+                "id": "c302_3_quality_gates",
+                "validates": {
+                  "file": "mcp_server/config/schemas/label_config.py",
+                  "type": "file_exists"
+                }
+              },
+              {
+                "description": "phase:tdd absent from labels.yaml (stale label removed)",
+                "id": "c302_3_github_cleanup",
+                "validates": {
+                  "file": ".st3/config/labels.yaml",
+                  "text": "name: \"phase:tdd\"",
+                  "type": "absent_text"
+                }
+              }
+            ],
+            "id": "C_302.3",
+            "name": "validate_phase_label() + labels.yaml restructure + DI"
+          }
+        ],
+        "total": 3
+      }
+    }
   }
 }
