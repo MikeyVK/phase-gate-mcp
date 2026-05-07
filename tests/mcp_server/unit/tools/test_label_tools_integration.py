@@ -17,7 +17,9 @@ import pytest
 # Local
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import LabelConfig
+from mcp_server.config.schemas.workphases import PhaseDefinition
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas import WorkphasesConfig
 from mcp_server.tools.label_tools import (
     AddLabelsInput,
     AddLabelsTool,
@@ -26,6 +28,8 @@ from mcp_server.tools.label_tools import (
     DetectLabelDriftInput,
     DetectLabelDriftTool,
 )
+
+
 
 
 # Test Helper
@@ -450,3 +454,108 @@ labels:
 
         assert "parent:302" not in result_text
         assert "no drift detected" in result_text.lower()
+
+
+@pytest.fixture
+def workphases_config() -> WorkphasesConfig:
+    """Minimal WorkphasesConfig fixture with standard phases."""
+    return WorkphasesConfig(
+        version="1.0",
+        phases={
+            "research": PhaseDefinition(display_name="Research"),
+            "planning": PhaseDefinition(display_name="Planning"),
+            "implementation": PhaseDefinition(display_name="Implementation"),
+            "ready": PhaseDefinition(display_name="Ready", terminal=True),
+        },
+    )
+
+
+# ─── validate_phase_label() unit tests ─────────────────────────────────────────────
+
+class TestValidatePhaseLabelFunction:
+    """Unit tests for the validate_phase_label() free function."""
+
+    def test_non_phase_label_is_always_valid(self, workphases_config: WorkphasesConfig) -> None:
+        from mcp_server.config.schemas.label_config import validate_phase_label
+        is_valid, _ = validate_phase_label("type:feature", workphases_config)
+        assert is_valid
+
+    def test_known_phase_is_valid(self, workphases_config: WorkphasesConfig) -> None:
+        from mcp_server.config.schemas.label_config import validate_phase_label
+        is_valid, msg = validate_phase_label("phase:implementation", workphases_config)
+        assert is_valid
+        assert msg == ""
+
+    def test_unknown_phase_is_invalid(self, workphases_config: WorkphasesConfig) -> None:
+        from mcp_server.config.schemas.label_config import validate_phase_label
+        is_valid, msg = validate_phase_label("phase:unicorn", workphases_config)
+        assert not is_valid
+        assert "unicorn" in msg
+        assert "Valid phases" in msg
+
+    def test_subphase_is_invalid(self, workphases_config: WorkphasesConfig) -> None:
+        """Subphases like 'red', 'green', 'refactor' are not valid issue labels."""
+        from mcp_server.config.schemas.label_config import validate_phase_label
+        is_valid, msg = validate_phase_label("phase:red", workphases_config)
+        assert not is_valid
+        assert "red" in msg
+
+    def test_stale_integration_phase_is_invalid(self, workphases_config: WorkphasesConfig) -> None:
+        from mcp_server.config.schemas.label_config import validate_phase_label
+        is_valid, msg = validate_phase_label("phase:integration", workphases_config)
+        assert not is_valid
+
+
+# ─── AddLabelsTool phase:* semantic check ───────────────────────────────────────────────
+
+class TestAddLabelsToolPhaseValidation:
+    """AddLabelsTool rejects phase:* labels for unknown workphases."""
+
+    @pytest.mark.asyncio
+    async def test_add_labels_rejects_unknown_phase(
+        self, tmp_path: Path, workphases_config: WorkphasesConfig
+    ) -> None:
+        """AddLabelsTool rejects phase labels not in workphases.yaml."""
+        yaml_content = """version: "1.0"
+label_patterns:
+  - pattern: "^phase:[a-z][a-z0-9-]*$"
+    description: "Workflow phase label"
+    color: "C5DEF5"
+    example: "phase:research"
+labels: []
+"""
+        label_config = _load_label_config(tmp_path, yaml_content)
+        mock_manager = Mock()
+        tool = AddLabelsTool(
+            manager=mock_manager, label_config=label_config, workphases_config=workphases_config
+        )
+        params = AddLabelsInput(issue_number=1, labels=["phase:unicorn"])
+
+        result = await tool.execute(params, NoteContext())
+
+        assert "unknown workphase" in result.content[0]["text"]
+        mock_manager.add_labels.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_add_labels_accepts_known_phase(
+        self, tmp_path: Path, workphases_config: WorkphasesConfig
+    ) -> None:
+        """AddLabelsTool accepts phase:implementation as a valid phase label."""
+        yaml_content = """version: "1.0"
+label_patterns:
+  - pattern: "^phase:[a-z][a-z0-9-]*$"
+    description: "Workflow phase label"
+    color: "C5DEF5"
+    example: "phase:research"
+labels: []
+"""
+        label_config = _load_label_config(tmp_path, yaml_content)
+        mock_manager = Mock()
+        tool = AddLabelsTool(
+            manager=mock_manager, label_config=label_config, workphases_config=workphases_config
+        )
+        params = AddLabelsInput(issue_number=1, labels=["phase:implementation"])
+
+        result = await tool.execute(params, NoteContext())
+
+        assert "Added labels" in result.content[0]["text"]
