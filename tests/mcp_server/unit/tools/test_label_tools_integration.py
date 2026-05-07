@@ -418,3 +418,35 @@ labels:
 
         result = await tool.execute(params, NoteContext())
         assert "Error loading labels" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_drift_detection_pattern_labels_not_reported_as_drift(self, tmp_path: Path) -> None:
+        """DetectLabelDriftTool does NOT flag GitHub labels matching label_patterns as drift."""
+        yaml_content = """version: "1.0"
+label_patterns:
+  - pattern: "^parent:\\\\d+$"
+    description: "Parent issue reference"
+    color: "EDEDED"
+    example: "parent:91"
+labels:
+  - name: "type:feature"
+    color: "1D76DB"
+"""
+        label_config = _load_label_config(tmp_path, yaml_content)
+
+        mock_manager = Mock()
+        mock_manager.list_labels = Mock(
+            return_value=[
+                _MockLabel(name="type:feature", color="1D76DB", description=""),
+                _MockLabel(name="parent:302", color="EDEDED", description=""),
+            ]
+        )
+
+        tool = DetectLabelDriftTool(manager=mock_manager, label_config=label_config)
+        params = DetectLabelDriftInput()
+
+        result = await tool.execute(params, NoteContext())
+        result_text = result.content[0]["text"]
+
+        assert "parent:302" not in result_text
+        assert "no drift detected" in result_text.lower()
