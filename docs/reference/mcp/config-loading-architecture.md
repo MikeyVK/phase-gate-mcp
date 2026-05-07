@@ -14,14 +14,14 @@
 ## Overview
 
 The MCP server uses a layered, immutable configuration architecture. All YAML files under
-`.st3/config/` are loaded **once at startup** into typed Pydantic value objects. Those
+the resolved `config_root` are loaded **once at startup** into typed Pydantic value objects. Those
 objects are passed as constructor arguments (dependency injection) into managers and tools —
 no component re-reads YAML at runtime.
 
 ```mermaid
 flowchart TD
     ENV[Environment Variables\nSettings.from_env] --> S[Settings]
-    S --> |workspace_root| CR["resolve_config_root()\n.st3/config/"]
+    S --> |workspace_root| CR["resolve_config_root()\n→ config_root"]
     CR --> CL[ConfigLoader]
     CL --> |"load_*_config() × 14"| VO[Typed Value Objects\nPydantic BaseModel]
     VO --> CV["ConfigValidator\nvalidate_startup()"]
@@ -39,13 +39,15 @@ flowchart TD
 
 **Module:** `mcp_server/config/loader.py`
 
-Converts any path form to the canonical `.st3/config/` directory:
+A helper that normalises any path variant to its config subdirectory form using the
+**default `.st3/config` convention**. Not called when `ST3_CONFIG_ROOT` is set — in
+that case `resolve_config_root` uses the explicit path directly.
 
-| Input form | Output |
-|------------|--------|
-| `/workspace` | `/workspace/.st3/config` |
-| `/workspace/.st3` | `/workspace/.st3/config` |
-| `/workspace/.st3/config` | `/workspace/.st3/config` (unchanged) |
+| Input form | Output (default convention) |
+|------------|-----------------------------|
+| `<workspace>` | `<workspace>/.st3/config` |
+| `<workspace>/.st3` | `<workspace>/.st3/config` |
+| `<workspace>/.st3/config` | unchanged |
 
 ---
 
@@ -53,7 +55,7 @@ Converts any path form to the canonical `.st3/config/` directory:
 
 **Module:** `mcp_server/config/loader.py`
 
-Three-candidate lookup that resolves the canonical `.st3/config/` directory without
+Resolves the config root directory without
 legacy fallbacks. Raises `FileNotFoundError` when no candidate satisfies `required_files`.
 
 ```mermaid
@@ -275,7 +277,7 @@ AddLabelsTool(
 from mcp_server.config.loader import ConfigLoader
 from pathlib import Path
 
-workphases_config = ConfigLoader(Path(".st3/config")).load_workphases_config()
+workphases_config = ConfigLoader(resolve_config_root(Path.cwd())).load_workphases_config()
 ```
 
 ### Test Pattern 2 — Inline YAML via `tmp_path` (unit tests)
@@ -296,7 +298,7 @@ the primary isolation mechanism for unit tests with custom minimal configs.
 # Registered globally via tests/conftest.py
 @pytest.fixture
 def contracts_config() -> ContractsConfig:
-    return ConfigLoader(Path(".st3/config")).load_contracts_config()
+    return ConfigLoader(resolve_config_root(Path.cwd())).load_contracts_config()
 ```
 
 Available fixtures: `workflow_config`, `contracts_config`, `workflow_phases`,
@@ -333,7 +335,7 @@ Full config VO → consumer map (managers and tools):
 
 ```mermaid
 flowchart TD
-    subgraph DISK[".st3/config/ — YAML files"]
+    subgraph DISK["config_root — YAML files"]
         Y1[git.yaml]
         Y2[labels.yaml]
         Y3[workphases.yaml]
