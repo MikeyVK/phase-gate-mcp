@@ -267,7 +267,7 @@ Update any combination of issue fields: title, body, state, labels, milestone, a
     "url": "https://github.com/owner/repo/issues/123",
     "title": "Updated title",
     "state": "closed",
-    "labels": ["type:feature", "status:resolved"],
+    "labels": ["type:feature", "phase:documentation"],
     "milestone": 6,
     "assignees": ["newuser"]
   }
@@ -289,7 +289,7 @@ Update any combination of issue fields: title, body, state, labels, milestone, a
 ```json
 {
   "issue_number": 123,
-  "labels": ["type:feature", "status:resolved", "phase:done"]
+  "labels": ["type:feature", "phase:documentation"]
 }
 ```
 
@@ -790,7 +790,7 @@ Add labels to an issue or pull request. Validates label existence before applyin
 ```json
 {
   "issue_number": 123,
-  "labels": ["priority:high", "status:in-progress"]
+  "labels": ["priority:high", "phase:implementation"]
 }
 ```
 
@@ -823,7 +823,7 @@ Remove labels from an issue or pull request.
 {
   "success": true,
   "message": "Labels removed from issue #123",
-  "labels": ["status:in-progress"]
+  "labels": ["phase:implementation"]
 }
 ```
 
@@ -832,7 +832,7 @@ Remove labels from an issue or pull request.
 ```json
 {
   "issue_number": 123,
-  "labels": ["status:in-progress"]
+  "labels": ["phase:implementation"]
 }
 ```
 
@@ -1066,14 +1066,12 @@ All GitHub tools fully support Unicode content including emojis, non-ASCII chara
 Labels created via `create_label` are validated against patterns in [.st3/labels.yaml](../../../../.st3/labels.yaml):
 
 ```yaml
-label_config:
-  patterns:
-    - pattern: "type:(feature|bug|docs|refactor|test|chore)"
-      required: true
-    - pattern: "priority:(low|medium|high|critical)"
-      required: false
-    - pattern: "status:(backlog|in-progress|review|done)"
-      required: false
+# Labels are defined in .st3/config/labels.yaml
+# See the file for the full list — key categories:
+#
+# labels:              # Named labels (type:*, priority:*, scope:*)
+# label_patterns:      # Regex patterns for dynamic labels (parent:NNN, phase:SLUG)
+# freeform_exceptions: # Labels exempt from pattern validation
 ```
 
 **Freeform Exception:**
