@@ -20,12 +20,12 @@ no component re-reads YAML at runtime.
 
 ```mermaid
 flowchart TD
-    ENV[Environment Variables\nSettings.from_env] --> S[Settings]
-    S --> |workspace_root| CR["resolve_config_root()\n→ config_root"]
+    ENV["Environment Variables<br/>Settings.from_env"] --> S[Settings]
+    S --> |workspace_root| CR["resolve_config_root()<br/>→ config_root"]
     CR --> CL[ConfigLoader]
-    CL --> |"load_*_config() × 14"| VO[Typed Value Objects\nPydantic BaseModel]
-    VO --> CV["ConfigValidator\nvalidate_startup()"]
-    CV --> |validated| DI[Dependency Injection\nMCPServer.__init__]
+    CL --> |"load_*_config() × 14"| VO["Typed Value Objects<br/>Pydantic BaseModel"]
+    VO --> CV["ConfigValidator<br/>validate_startup()"]
+    CV --> |validated| DI["Dependency Injection<br/>MCPServer.__init__"]
     DI --> MGR[Managers]
     DI --> TOOLS[Tools]
     DI --> RES[Resources]
@@ -60,7 +60,7 @@ legacy fallbacks. Raises `FileNotFoundError` when no candidate satisfies `requir
 
 ```mermaid
 flowchart TD
-    A{explicit_root set?} -- Yes --> B{Exists + has\nrequired files?}
+    A{explicit_root set?} -- Yes --> B{"Exists + has<br/>required files?"}
     B -- Yes --> RETURN[Return explicit_root]
     B -- No --> ERR1[FileNotFoundError]
     A -- No --> C[Build candidate list]
@@ -68,7 +68,7 @@ flowchart TD
     C1 --> C2[normalize cwd]
     C2 --> C3["normalize loader.py/../../.."]
     C3 --> DEDUP[Deduplicate]
-    DEDUP --> SCAN{Each candidate exists\nand has required files?}
+    DEDUP --> SCAN{"Each candidate exists<br/>and has required files?"}
     SCAN -- First match --> RETURN
     SCAN -- None --> ERR2[FileNotFoundError]
 ```
@@ -153,10 +153,10 @@ flowchart LR
         PS[ProjectStructureConfig]
     end
     subgraph CHECKS["Cross-config checks"]
-        C1["_validate_phase_contracts()\ncontracts.workflows phases\n⊆ known_phases ∩ known_workflows"]
-        C2["_validate_operation_policies()\npolicies.allowed_phases\n⊆ known_phases"]
-        C3["_validate_project_structure()\nstructure.allowed_artifact_types\n⊆ known_artifact_types"]
-        C4["_validate_merge_policy_phase()\nmerge_policy.pr_allowed_phase\n∈ known_phases"]
+        C1["_validate_phase_contracts()<br/>contracts.workflows phases<br/>⊆ known_phases ∩ known_workflows"]
+        C2["_validate_operation_policies()<br/>policies.allowed_phases<br/>⊆ known_phases"]
+        C3["_validate_project_structure()<br/>structure.allowed_artifact_types<br/>⊆ known_artifact_types"]
+        C4["_validate_merge_policy_phase()<br/>merge_policy.pr_allowed_phase<br/>∈ known_phases"]
     end
     WP --> C1 & C2 & C4
     WF --> C1
@@ -343,8 +343,8 @@ flowchart TD
         Y5[contracts.yaml]
         Y6[policies.yaml]
         Y7[artifacts.yaml]
-        Y8["issues / milestones\nscopes / contributors"]
-        Y9["enforcement / quality\nproject_structure"]
+        Y8["issues / milestones<br/>scopes / contributors"]
+        Y9["enforcement / quality<br/>project_structure"]
     end
     subgraph LOAD["ConfigLoader — loaded once at startup"]
         L1[GitConfig]
@@ -354,8 +354,8 @@ flowchart TD
         L5[ContractsConfig]
         L6[OperationPoliciesConfig]
         L7[ArtifactRegistryConfig]
-        L8["IssueConfig / MilestoneConfig\nScopeConfig / ContributorConfig"]
-        L9["EnforcementConfig / QualityConfig\nProjectStructureConfig"]
+        L8["IssueConfig / MilestoneConfig<br/>ScopeConfig / ContributorConfig"]
+        L9["EnforcementConfig / QualityConfig<br/>ProjectStructureConfig"]
     end
     subgraph VALIDATE["ConfigValidator.validate_startup()"]
         V1[contracts ↔ workphases]
@@ -366,13 +366,13 @@ flowchart TD
     subgraph MANAGERS["Managers — DI"]
         M1[GitManager]
         M2[GitHubManager]
-        M3["ProjectManager\nPhaseStateEngine\nPhaseContractResolver"]
+        M3["ProjectManager<br/>PhaseStateEngine<br/>PhaseContractResolver"]
         M4[ArtifactManager]
-        M5["QAManager\nEnforcementRunner"]
+        M5["QAManager<br/>EnforcementRunner"]
     end
     subgraph TOOLS["Tools — DI"]
         T1["Git tools"]
-        T2["Label tools\n(+workphases_config #302)"]
+        T2["Label tools<br/>(+workphases_config #302)"]
         T3[Issue tools]
         T4[Phase tools]
         T5[Scaffold tools]
