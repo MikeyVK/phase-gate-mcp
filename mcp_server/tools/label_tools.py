@@ -183,7 +183,9 @@ class AddLabelsTool(BaseTool):
         del context  # Not used
         # Load label config for validation
         # Validate all labels exist
-        invalid = [label for label in params.labels if not self._label_config.validate_label_name(label)[0]]
+        invalid = [
+            label for label in params.labels if not self._label_config.validate_label_name(label)[0]
+        ]
         if invalid:
             return ToolResult.text(f"❌ Labels not valid per labels.yaml: {invalid}")
 
