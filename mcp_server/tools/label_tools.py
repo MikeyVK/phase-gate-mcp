@@ -232,9 +232,9 @@ class DetectLabelDriftTool(BaseTool):
 
         # Detect drift
         github_only = [
-            name for name in github_by_name
-            if name not in yaml_by_name
-            and not self._label_config.validate_label_name(name)[0]
+            name
+            for name in github_by_name
+            if name not in yaml_by_name and not self._label_config.validate_label_name(name)[0]
         ]
         yaml_only = [name for name in yaml_by_name if name not in github_by_name]
 
