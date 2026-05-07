@@ -1,9 +1,9 @@
 <!-- docs\development\issue136\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-05-07T15:54Z updated=2026-05-07T16:00Z -->
+<!-- template=research version=8b7bb3ab created=2026-05-07T15:54Z updated=2026-05-07T17:10Z -->
 # Error Taxonomy & Strict Input Validation — Research
 
 **Status:** COMPLETE  
-**Version:** 1.0  
+**Version:** 2.0  
 **Last Updated:** 2026-05-07  
 **Issues:** #136 (error taxonomy) + #147 (extra=forbid, bundled deliverable)  
 **Epic:** #320 fase 0
@@ -12,92 +12,255 @@
 
 ## Problem Statement
 
-Predictable errors in de `scaffold_artifact → ArtifactManager → TemplateScaffolder → JinjaRenderer` keten
-produceren generieke error codes (`ERR_CONFIG`, `ERR_VALIDATION`) die agents niet laten onderscheiden.
-Tegelijk missen ~50 tool Input-modellen `extra="forbid"`, waardoor typo-velden stilzwijgend genegeerd worden.
+Voorspelbare fouten in de `scaffold_artifact`-keten produceren generieke error codes
+(`ERR_CONFIG`, `ERR_VALIDATION`) die agents niet laten onderscheiden. Daarnaast missen
+~50 tool Input-modellen `extra="forbid"`, waardoor typo-velden stilzwijgend genegeerd worden.
 
 ---
 
 ## Research Goals
 
-1. Inventariseer alle voorspelbare foutpaden in de scaffold-keten
-2. Inventariseer alle tool Input-modellen zonder `extra="forbid"` (#147)
-3. Definieer fout-taxonomie: error_code → NoteEntry-subtype
-4. Documenteer boundary-regel (domein vs tool-grens)
-5. Maak lijst van te raken bestanden voor implementatie
+1. Inventariseer de NoteContext-infrastructuur end-to-end — hoe functioneert het mechanisme
+   dat al is gebouwd om context te geven bij fouten?
+2. Stel vast welke tools/managers het mechanisme al correct gebruiken en hoe
+3. Documenteer de exacte gap: waar ontbreekt note-gebruik in de scaffold-keten?
+4. Inventariseer alle tool Input-modellen zonder `extra="forbid"` (#147)
+5. Documenteer de agent-experience: wat ziet de LLM-client bij fouten?
 
 ---
 
-## 1. Foutpadanalyse: scaffold_artifact keten
+## 1. NoteContext mechanisme — hoe het werkt (feiten)
 
-### 1.1 Huidige exception-hiërarchie
+### 1.1 Levenscyclus (server.py, handle_call_tool)
 
 ```
-MCPError(code="ERR_INTERNAL")
-├─ ConfigError(code="ERR_CONFIG")       ← te breed
-├─ ValidationError(code="ERR_VALIDATION") ← te breed
-│   └─ MetadataParseError
-├─ PreflightError(code="ERR_PREFLIGHT") ← correct granulaat
-├─ ExecutionError(code="ERR_EXECUTION") ← te breed
-└─ MCPSystemError(code="ERR_SYSTEM")    ← correct granulaat
+1. note_context = NoteContext()             ← gecreëerd NA argument-validatie (L630)
+2. pre_result = _run_tool_enforcement(...)  ← enforcement mag notes produceren (L636)
+3. raw_result = await tool.execute(validated, note_context)  ← tool ontvangt context
+4. post_result = _run_tool_enforcement(...) ← alleen bij is_error=False (L645)
+5. result = note_context.render_to_response(raw_result)  ← ALTIJD, ook bij is_error=True (L653)
+6. response_content = _convert_tool_result_to_mcp_result(result)
 ```
 
-De `ConfigError` en `ValidationError` codes zijn te breed: beide worden hergebruikt voor
-meerdere niet-samenhangende condities.
+**Kritiek feit:** `render_to_response` wordt **onvoorwaardelijk** aangeroepen — ook als
+`raw_result.is_error == True`. Notes die vóór de exception zijn geproduceerd, worden
+altijd aan het antwoord toegevoegd.
 
-### 1.2 Alle raise-sites in de scaffold-keten
+### 1.2 render_to_response — wat het doet
 
-#### ScaffoldArtifactTool.execute() — `mcp_server/tools/scaffold_artifact.py`
-| # | Conditie | Huidige exception | Huidig code |
-|---|----------|-------------------|-------------|
-| S1 | `manager is None` | `ValueError` | – (bug: niet MCPError) |
+```python
+def render_to_response(self, base: ToolResult) -> ToolResult:
+    renderable = [n for n in self._entries if isinstance(n, Renderable)]
+    if not renderable:
+        return base  # geen wijziging
+    notes_text = "\n".join(n.to_message() for n in renderable)
+    augmented = list(base.content) + [{"type": "text", "text": notes_text}]
+    return base.model_copy(update={"content": augmented})
+```
 
-#### ArtifactManager.scaffold_artifact() — `mcp_server/managers/artifact_manager.py`
-| # | Conditie | Huidige exception | Huidig code |
-|---|----------|-------------------|-------------|
-| A1 | `artifact_type` onbekend in registry | `ConfigError` | `ERR_CONFIG` |
-| A2 | `output_type == "file"` maar geen `output_path` | `ValidationError` | `ERR_VALIDATION` |
-| A3 | `template_file is None` (template_path=null in YAML) | `ConfigError` | `ERR_CONFIG` |
-| A4 | V2 context schema validatie (`model_validate`) mislukt | `ValidationError` | `ERR_VALIDATION` |
-| A5 | `_enrich_context_v2`: `Context` klassenaam eindigt niet op "Context" | `ValidationError` | `ERR_VALIDATION` |
-| A6 | `_enrich_context_v2`: `RenderContext` klasse niet gevonden in schemas | `ValidationError` | `ERR_VALIDATION` |
-| A7 | Generic artifact zonder `output_path` in context | `ValidationError` | `ERR_VALIDATION` |
-| A8 | Generated code artifact faalt validatie | `ValidationError` | `ERR_VALIDATION` |
+Alleen `Renderable`-notes worden gerenderd. `CommitNote` implementeert `Renderable` niet (bewust).
 
-#### TemplateScaffolder.validate() — `mcp_server/scaffolders/template_scaffolder.py`
-| # | Conditie | Huidige exception | Huidig code |
-|---|----------|-------------------|-------------|
-| T1 | Geen template geconfigureerd voor type (v1 path) | `ValidationError` | `ERR_VALIDATION` |
-| T2 | Template loader niet geconfigureerd | `ValidationError` | `ERR_VALIDATION` (misclassified: moet MCPSystemError zijn) |
-| T3 | Vereiste velden ontbreken (introspectie) | `ValidationError` | `ERR_VALIDATION` |
-| T4 | Generic without `template_name` in context of `template_path` | `ValidationError` | `ERR_VALIDATION` |
+### 1.3 NoteEntry subtypen en Renderable status
 
-#### JinjaRenderer.get_template() — `mcp_server/scaffolding/renderer.py`
-| # | Conditie | Huidige exception | Huidig code |
-|---|----------|-------------------|-------------|
-| J1 | Jinja2 `TemplateNotFound` | `ExecutionError` | `ERR_EXECUTION` |
+| Subtype | Renderable | to_message() prefix |
+|---------|-----------|---------------------|
+| `ExclusionNote` | ja | `"Excluded from commit index: {file_path}"` |
+| `CommitNote` | **nee** | — (alleen voor test-assertions) |
+| `SuggestionNote` | ja | `"Suggestion: {message}"` (+ `" ({subject})"`) |
+| `BlockerNote` | ja | `"Blocker: {message}"` |
+| `RecoveryNote` | ja | `"Recovery: {message}"` |
+| `InfoNote` | ja | `"{message}"` |
 
-#### FilesystemAdapter — `mcp_server/adapters/filesystem.py`
-| # | Conditie | Huidige exception | Huidig code |
-|---|----------|-------------------|-------------|
-| F1 | Path buiten workspace (security boundary) | `ValidationError` | `ERR_VALIDATION` (misclassified: zou BlockerNote moeten triggeren) |
-| F2 | Schrijven mislukt (OS fout) | `MCPSystemError` | `ERR_SYSTEM` |
-| F3 | Lezen mislukt | `MCPSystemError` | `ERR_SYSTEM` |
+### 1.4 tool_error_handler — interactie met NoteContext
 
-#### ArtifactRegistryConfig.get_artifact() — `mcp_server/config/schemas/artifact_registry_config.py`
-| # | Conditie | Huidige exception | Huidig code |
-|---|----------|-------------------|-------------|
-| R1 | `type_id` niet in registry | `ConfigError` | `ERR_CONFIG` (= A1, zelfde raise-site) |
+`tool_error_handler` wraps `execute()`. Bij exception:
+- Produceert `ToolResult.error(message=..., error_code=exc.code, file_path=...)` en **returnt** dit
+- Heeft **geen toegang tot NoteContext** — `args` bevat `[self, params, context]`, maar de handler
+  leest `args[2]` niet en produceert geen notes
+- `error_code` wordt opgeslagen in `ToolResult.error_code` maar **niet doorgegeven** aan
+  `CallToolResult` (zie §1.5) — codes zijn daarmee onzichtbaar voor de LLM-client
+
+### 1.5 Wat de LLM-client werkelijk ziet
+
+`_convert_tool_result_to_mcp_result` produceert:
+```python
+CallToolResult(
+    content=self._convert_tool_result_to_content(result),
+    isError=result.is_error,
+)
+```
+`ToolResult.error_code` en `ToolResult.file_path` worden **niet** opgenomen in de
+`CallToolResult`. De MCP-spec kent geen error_code veld op `CallToolResult`.
+
+De agent ziet bij een fout dus:
+- `isError=True`
+- De fout-tekst als eerste `TextContent`
+- Eventuele `Renderable` notes als extra `TextContent`-blokken (als die er zijn)
+
+`error_code` is **uitsluitend zichtbaar voor test-assertions** via `ToolResult.error_code`.
 
 ---
 
-## 2. Input-modellen zonder `extra="forbid"` (#147)
+## 2. Bestaand correct gebruik van NoteContext (precedenten)
 
-Enige model met `extra="forbid"`: `GitCommitInput` (`mcp_server/tools/git_tools.py:231`)
+### 2.1 GitManager (mcp_server/managers/git_manager.py) — het referentie-patroon
 
-**Alle overige modellen (50) missen het:**
+`GitManager` accepteert `NoteContext` als parameter bij domein-methodes en produceert
+notes vlak voor het raisen:
 
-### git_tools.py
+```python
+# GitManager.create_branch(note_context, branch_type, name, base_branch)
+if not self._git_config.has_branch_type(branch_type):
+    note_context.produce(
+        SuggestionNote(message=f"Allowed types: {', '.join(self._git_config.branch_types)}")
+    )
+    raise ValidationError(f"Invalid branch type: {branch_type}")
+```
+
+Patroon: **`produce(note)` → `raise exception`** in de domeinlaag.
+Effect: note staat al in context vóór propagatie naar `tool_error_handler`.
+Server-side `render_to_response` voegt de note toe aan de `ToolResult.error()`.
+
+Geïdentificeerde note-producerende managers: `GitManager`.
+
+### 2.2 Tools die notes produceren in execute()
+
+| Tool | Bestand | Note-typen gebruikt |
+|------|---------|---------------------|
+| `RunTestsTool` | `test_tools.py` | `InfoNote`, `RecoveryNote` (inclusief via `PytestResult.note`) |
+| `RunQualityGatesTool` | `quality_tools.py` | `RecoveryNote` |
+| `SubmitPRTool` | `pr_tools.py` | `RecoveryNote` (rollback) |
+| `InitializeProjectTool` | `project_tools.py` | `SuggestionNote` |
+| `TransitionPhaseTool` | `phase_tools.py` | `RecoveryNote` (via `e.recovery`) |
+| `ForceCycleTransitionTool` | `cycle_tools.py` | `RecoveryNote` (via `e.recovery`) |
+| `GetWorkContextTool` | `discovery_tools.py` | `RecoveryNote` (meerdere) |
+| `GitCommitTool` | `git_tools.py` | `CommitNote` (niet-Renderable) |
+
+### 2.3 PytestRunner — factory-patroon voor notes (mcp_server/managers/pytest_runner.py)
+
+`PytestRunner.run()` returnt `PytestResult.note: NoteEntry | None`. De tool roept dan
+`context.produce(result.note)` aan. `PytestRunner` heeft geen directe dependency op NoteContext.
+
+---
+
+## 3. Gap-analyse: scaffold_artifact keten
+
+### 3.1 ScaffoldArtifactTool.execute()
+
+```python
+async def execute(self, params: ScaffoldArtifactInput, context: NoteContext) -> ToolResult:
+    del context  # ← NoteContext wordt weggegooid
+    ...
+    artifact_path = await self.manager.scaffold_artifact(params.artifact_type, **kwargs)
+```
+
+Gevolg: `ArtifactManager` kan geen notes produceren (heeft geen NoteContext).
+Wanneer een exception optreedt, is er dus nooit een note bij de foutmelding.
+
+### 3.2 ArtifactManager.scaffold_artifact()
+
+Heeft geen `NoteContext`-parameter. Alle raise-sites produceren alleen exception-tekst,
+geen begeleidende notes.
+
+### 3.3 TemplateScaffolder, JinjaRenderer, FilesystemAdapter
+
+Geen van deze klassen accepteert of gebruikt NoteContext.
+Ze zijn NoteContext-agnostisch.
+
+### 3.4 Contrast met GitManager
+
+`GitManager` laat zien dat managers NoteContext wél kunnen ontvangen. Voor de scaffold-keten
+is dat patroon **niet geïmplementeerd**.
+
+---
+
+## 4. Raise-sites in de scaffold-keten (feitelijke inventarisatie)
+
+### 4.1 ArtifactManager.scaffold_artifact() — mcp_server/managers/artifact_manager.py
+
+| Site | Conditie | Exception | Code | Heeft note? |
+|------|----------|-----------|------|-------------|
+| A1 | `artifact_type` onbekend (via `get_artifact()`) | `ConfigError` | `ERR_CONFIG` | nee |
+| A2 | `output_type=="file"` zonder `output_path` | `ValidationError` | `ERR_VALIDATION` | nee |
+| A3 | `template_file is None` (`template_path=null` in YAML) | `ConfigError` | `ERR_CONFIG` | nee |
+| A4 | V2 context `model_validate` mislukt | `ValidationError` | `ERR_VALIDATION` | nee |
+| A5 | `_enrich_context_v2`: Context-klasse eindigt niet op "Context" | `ValidationError` | `ERR_VALIDATION` | nee |
+| A6 | `_enrich_context_v2`: RenderContext-klasse niet gevonden in schemas | `ValidationError` | `ERR_VALIDATION` | nee |
+| A7 | Generic artifact zonder `output_path` in context | `ValidationError` | `ERR_VALIDATION` | nee |
+| A8 | Gegenereerde code-content faalt validatie | `ValidationError` | `ERR_VALIDATION` | nee |
+
+### 4.2 TemplateScaffolder.validate()/scaffold() — mcp_server/scaffolders/template_scaffolder.py
+
+| Site | Conditie | Exception | Code | Heeft note? |
+|------|----------|-----------|------|-------------|
+| T1 | Geen template geconfigureerd (geen `template_path`) | `ValidationError` | `ERR_VALIDATION` | nee |
+| T2 | Template loader niet geconfigureerd | `ValidationError` | `ERR_VALIDATION` | nee |
+| T3 | Vereiste velden ontbreken (introspectie, v1) | `ValidationError` | `ERR_VALIDATION` | **gedeeltelijk** — `schema` attached, niet als Note |
+| T4 | Generic zonder `template_name` én zonder `template_path` | `ValidationError` | `ERR_VALIDATION` | nee |
+
+Opmerking T3: bij `missing` velden wordt een `ValidationError` met `schema`-attribuut geraised.
+`tool_error_handler` vertaalt dit naar een EmbeddedResource (`schema://validation`) — het schema
+is dus al beschikbaar als machine-leesbare content, maar niet als `Renderable` note.
+
+### 4.3 JinjaRenderer — mcp_server/scaffolding/renderer.py
+
+| Site | Conditie | Exception | Code | Heeft note? |
+|------|----------|-----------|------|-------------|
+| J1 | `TemplateNotFound` (Jinja2) | `ExecutionError` | `ERR_EXECUTION` | nee |
+
+### 4.4 FilesystemAdapter — mcp_server/adapters/filesystem.py
+
+| Site | Conditie | Exception | Code | Heeft note? |
+|------|----------|-----------|------|-------------|
+| F1 | Path buiten workspace | `ValidationError` | `ERR_VALIDATION` | nee |
+| F2 | OS-fout bij schrijven | `MCPSystemError` | `ERR_SYSTEM` | nee |
+
+### 4.5 ArtifactRegistryConfig.get_artifact() — mcp_server/config/schemas/artifact_registry_config.py
+
+| Site | Conditie | Exception | Code | Heeft note? |
+|------|----------|-----------|------|-------------|
+| R1 | `type_id` niet gevonden in registry (= zelfde als A1) | `ConfigError` | `ERR_CONFIG` | nee |
+
+**Totaal: 14 raise-sites, 0 met notes.**
+
+---
+
+## 5. Input-modellen zonder `extra="forbid"` (#147)
+
+### 5.1 Hoe extra-veld-fouten door de server lopen
+
+`_validate_tool_arguments` wordt aangeroepen **vóór** `NoteContext()` wordt gecreëerd (L630).
+Bij Pydantic `extra="forbid"` triggert `model_cls(**(arguments or {}))` een `pydantic.ValidationError`.
+Deze wordt gevangen en teruggegeven als `[TextContent(type="text", text=f"Invalid input for {name}: {error_details}")]` — zonder NoteContext, zonder `error_code`.
+
+### 5.2 Huidig model met `extra="forbid"`
+
+Enige model: `GitCommitInput` (`mcp_server/tools/git_tools.py:231`)
+
+### 5.3 Modellen zonder `extra="forbid"` (50 stuks, per bestand)
+
+**mcp_server/tools/admin_tools.py**
+- `RestartServerInput` (L83)
+
+**mcp_server/tools/cycle_tools.py**
+- `TransitionCycleInput` (L38)
+- `ForceCycleTransitionInput` (L140)
+
+**mcp_server/tools/discovery_tools.py**
+- `SearchDocumentationInput` (L31)
+- `GetWorkContextInput` (L98)
+
+**mcp_server/tools/git_analysis_tools.py**
+- `GitListBranchesInput` (L13)
+- `GitDiffInput` (L42)
+
+**mcp_server/tools/git_fetch_tool.py**
+- `GitFetchInput` (L39)
+
+**mcp_server/tools/git_pull_tool.py**
+- `GitPullInput` (L42)
+
+**mcp_server/tools/git_tools.py** (9 modellen — `GitCommitInput` is al correct)
 - `CreateBranchInput` (L85)
 - `GitStatusInput` (L172)
 - `GitRestoreInput` (L372)
@@ -108,38 +271,17 @@ Enige model met `extra="forbid"`: `GitCommitInput` (`mcp_server/tools/git_tools.
 - `GitStashInput` (L599)
 - `GetParentBranchInput` (L660)
 
-### git_analysis_tools.py
-- `GitListBranchesInput` (L13)
-- `GitDiffInput` (L42)
-
-### git_fetch_tool.py
-- `GitFetchInput` (L39)
-
-### git_pull_tool.py
-- `GitPullInput` (L42)
-
-### admin_tools.py
-- `RestartServerInput` (L83)
-
-### cycle_tools.py
-- `TransitionCycleInput` (L38)
-- `ForceCycleTransitionInput` (L140)
-
-### discovery_tools.py
-- `SearchDocumentationInput` (L31)
-- `GetWorkContextInput` (L98)
-
-### health_tools.py
+**mcp_server/tools/health_tools.py**
 - `HealthCheckInput` (L12)
 
-### issue_tools.py
+**mcp_server/tools/issue_tools.py**
 - `CreateIssueInput` (L99)
 - `GetIssueInput` (L293)
 - `ListIssuesInput` (L335)
 - `UpdateIssueInput` (L372)
 - `CloseIssueInput` (L417)
 
-### label_tools.py
+**mcp_server/tools/label_tools.py**
 - `ListLabelsInput` (L16)
 - `CreateLabelInput` (L53)
 - `DeleteLabelInput` (L116)
@@ -147,234 +289,104 @@ Enige model met `extra="forbid"`: `GitCommitInput` (`mcp_server/tools/git_tools.
 - `AddLabelsInput` (L173)
 - `DetectLabelDriftInput` (L224)
 
-### milestone_tools.py
+**mcp_server/tools/milestone_tools.py**
 - `ListMilestonesInput` (L14)
 - `CreateMilestoneInput` (L57)
 - `CloseMilestoneInput` (L94)
 
-### phase_tools.py
+**mcp_server/tools/phase_tools.py**
 - `TransitionPhaseInput` (L34)
 - `ForcePhaseTransitionInput` (L42)
 
-### pr_tools.py
+**mcp_server/tools/pr_tools.py**
 - `ListPRsInput` (L22)
 - `MergePRInput` (L67)
 - `SubmitPRInput` (L120)
 
-### project_tools.py
+**mcp_server/tools/project_tools.py**
 - `InitializeProjectInput` (L32)
 - `GetProjectPlanInput` (L288)
 - `SavePlanningDeliverablesInput` (L377)
 - `UpdatePlanningDeliverablesInput` (L467)
 
-### quality_tools.py
+**mcp_server/tools/quality_tools.py**
 - `RunQualityGatesInput` (L13)
 
-### safe_edit_tool.py
-- `SafeEditInput` (L105) — bevat al complexe nested modellen; voorzichtigheid geboden
+**mcp_server/tools/safe_edit_tool.py**
+- `SafeEditInput` (L105) — bevat geneste modellen `LineEdit` (L?), `InsertLine` (L?)
 
-### scaffold_artifact.py
+**mcp_server/tools/scaffold_artifact.py**
 - `ScaffoldArtifactInput` (L27)
 
-### template_validation_tool.py
+**mcp_server/tools/template_validation_tool.py**
 - `TemplateValidationInput` (L13)
 
-### test_tools.py
+**mcp_server/tools/test_tools.py**
 - `RunTestsInput` (L26)
 
-### validation_tools.py
+**mcp_server/tools/validation_tools.py**
 - `ValidationInput` (L14)
 - `ValidateDTOInput` (L45)
 
-### code_tools.py
+**mcp_server/tools/code_tools.py**
 - `CreateFileInput` (L16)
 
 **Totaal: 50 modellen zonder `extra="forbid"`**
 
----
+### 5.4 Geneste modellen in SafeEditInput
 
-## 3. Fout-taxonomie
-
-### 3.1 Nieuwe error codes (als string-constanten in `mcp_server/core/exceptions.py`)
-
-```python
-# Artifact registry / config granulatie
-ERR_ARTIFACT_TYPE_NOT_FOUND = "ERR_ARTIFACT_TYPE_NOT_FOUND"  # A1, R1
-ERR_TEMPLATE_NOT_CONFIGURED = "ERR_TEMPLATE_NOT_CONFIGURED"  # A3, T1
-
-# Template rendering granulatie
-ERR_TEMPLATE_NOT_FOUND      = "ERR_TEMPLATE_NOT_FOUND"       # J1
-
-# Input-validatie granulatie
-ERR_MISSING_FIELD           = "ERR_MISSING_FIELD"            # T3, T4
-ERR_EXTRA_FIELD             = "ERR_EXTRA_FIELD"              # extra="forbid" violations (nieuw)
-ERR_MISSING_OUTPUT_PATH     = "ERR_MISSING_OUTPUT_PATH"      # A2, A7
-ERR_CONTEXT_VALIDATION      = "ERR_CONTEXT_VALIDATION"       # A4
-
-# Schema-resolutie granulatie (V2 pipeline)
-ERR_SCHEMA_RESOLUTION       = "ERR_SCHEMA_RESOLUTION"        # A5, A6
-
-# Gegenereerde-content validatie
-ERR_GENERATED_CONTENT_INVALID = "ERR_GENERATED_CONTENT_INVALID"  # A8
-
-# Security boundary
-ERR_PATH_OUTSIDE_WORKSPACE  = "ERR_PATH_OUTSIDE_WORKSPACE"   # F1
-```
-
-### 3.2 NoteEntry-subtype per error code
-
-| Error code | NoteEntry subtype | Semantiek |
-|------------|-------------------|-----------|
-| `ERR_ARTIFACT_TYPE_NOT_FOUND` | `SuggestionNote` | "Available types: dto, worker, …" |
-| `ERR_TEMPLATE_NOT_CONFIGURED` | `SuggestionNote` | "Add template_path to artifact definition in artifacts.yaml" |
-| `ERR_TEMPLATE_NOT_FOUND` | `SuggestionNote` | "Verify template file exists at path …" |
-| `ERR_MISSING_FIELD` | `SuggestionNote` | "Provide missing fields: {fields}" |
-| `ERR_EXTRA_FIELD` | `SuggestionNote` | "Remove unrecognized fields: {fields}" |
-| `ERR_MISSING_OUTPUT_PATH` | `SuggestionNote` | "Pass output_path explicitly for file artifacts" |
-| `ERR_CONTEXT_VALIDATION` | `SuggestionNote` | "Check context fields against schema for {artifact_type}" |
-| `ERR_SCHEMA_RESOLUTION` | `SuggestionNote` | "Verify RenderContext class exists in mcp_server.schemas" |
-| `ERR_GENERATED_CONTENT_INVALID` | `RecoveryNote` | "Check template for syntax errors; review generated content" |
-| `ERR_PATH_OUTSIDE_WORKSPACE` | `BlockerNote` | "Path escapes workspace root — security boundary" |
-
-### 3.3 Implementatie-strategie voor error codes
-
-`ConfigError` en `ValidationError` accepteren al het `code`-argument via `MCPError.__init__`.
-De subklassen override het met een vaste string. Oplossing:
-
-**Optie A (aanbevolen):** Voeg optionele `code`-parameter toe aan `ConfigError.__init__` en `ValidationError.__init__`.
-Bestaande call-sites ongewijzigd (code blijft `ERR_CONFIG` / `ERR_VALIDATION`).
-Nieuwe/gewijzigde call-sites sturen een specifieke code mee.
-
-```python
-class ConfigError(MCPError):
-    def __init__(self, message: str, file_path: str | None = None, code: str = "ERR_CONFIG") -> None:
-        formatted_message = message
-        if file_path:
-            formatted_message = f"{message}\nFile: {file_path}"
-        super().__init__(formatted_message, code=code)
-        self.file_path = file_path
-
-class ValidationError(MCPError):
-    def __init__(self, message: str, schema: Any = None, code: str = "ERR_VALIDATION") -> None:
-        super().__init__(message, code=code)
-        ...
-```
-
-**Optie B (niet aanbevolen):** Aparte subklassen per error code (TemplateNotFoundError, MissingFieldError, …).
-Meer boilerplate, complexere import-graph, minder backward-compatible.
+`SafeEditInput` bevat geneste Pydantic-modellen (`LineEdit`, `InsertLine`).
+Of `extra="forbid"` ook op de geneste modellen gezet moet worden is een open vraag
+voor de planningsfase.
 
 ---
 
-## 4. Boundary-regel
+## 6. Agent-experience: samenvatting van de huidige situatie
 
-```
-Domeinlaag (ArtifactManager, TemplateScaffolder, JinjaRenderer, FilesystemAdapter):
-  1. Schrijf SuggestionNote/BlockerNote/RecoveryNote op NoteContext VOOR het raisen
-  2. Raise typed MCPError subklasse met specifieke error_code
-  3. Geen ToolResult.error() — domein kent de tool-laag niet
-
-Tool-grens (ScaffoldArtifactTool.execute() via @tool_error_handler):
-  4. @tool_error_handler intercepteert MCPError, produceert ToolResult.error(code=exc.code)
-  5. NoteContext.render_to_response() voegt alle Renderable notes toe aan ToolResult
-  6. LLM-client ziet: foutbericht + actiegerichte suggesties als extra TextContent blokken
-```
-
-**Huidig probleem:** `scaffold_artifact.py` doet `del context` — NoteContext wordt niet doorgegeven.
-De domeinlaag heeft dus geen toegang tot de NoteContext.
-
-**Oplossing (minimale invasie):** 
-- Verwijder `del context` in `ScaffoldArtifactTool.execute()` 
-- Geef `context: NoteContext` door aan `ArtifactManager.scaffold_artifact(note_context=context)`
-- Laat ArtifactManager notes produceren op de context
-- Andere tools: NoteContext al aanwezig, maar domein-managers hoeven ze niet te kennen
-
-**Alternatief (nog minder invasie — aanbevolen voor fase 1):**
-- Tool-grens schrijft SuggestionNote ná het cachen van de exception (post-hoc)
-- `@tool_error_handler` detecteert error_code en produceert note vanuit handler
-- Domeinlaag blijft NoteContext-agnostisch
-- Nadeel: note wordt op tool-niveau geschreven, niet op oorsprong
-
-Voor issue #136 kiezen we **optie "alternatief"** als fase 1: toevoegen van codes en post-hoc notes in de handler. NoteContext-doorgifte naar domeinlaag is fase 2 (apart issue).
+| Scenario | Wat de agent ziet |
+|----------|------------------|
+| Scaffold-fout (A1–A8, T1–T4, J1, F1–F2) | `isError=True` + fout-tekst (generiek) + **geen notes** |
+| Git-fout met note (GitManager-patroon) | `isError=True` + fout-tekst + **SuggestionNote/BlockerNote als extra TextContent** |
+| Vereiste velden ontbreken (T3, schema beschikbaar) | `isError=True` + fout-tekst + EmbeddedResource met JSON-schema |
+| `extra="forbid"` schending (toekomst) | `isError=True` + Pydantic-fout-tekst (geen NoteContext) |
+| `ToolResult.error_code` | **Niet zichtbaar** voor agent — alleen voor test-assertions |
 
 ---
 
-## 5. Te raken bestanden per implementatie-stap
+## 7. Open vragen (niet beantwoord door research)
 
-### Stap A: Error code constanten + uitbreiden ConfigError/ValidationError (Cycle 1)
-- `mcp_server/core/exceptions.py` — voeg `code`-parameter + string-constanten toe
+1. **Scope codes vs notes:** Welk mechanisme is leidend voor agent-feedback bij domeinfouten —
+   specifieke error codes (niet zichtbaar in MCP), notes (zichtbaar), of beide? De huidige
+   architectuur laat zien dat notes de enige weg zijn naar de agent.
 
-### Stap B: Raise-sites aanpassen met specifieke codes (Cycle 2)
-- `mcp_server/config/schemas/artifact_registry_config.py` — A1/R1: `ERR_ARTIFACT_TYPE_NOT_FOUND`
-- `mcp_server/managers/artifact_manager.py` — A2: `ERR_MISSING_OUTPUT_PATH`, A3: `ERR_TEMPLATE_NOT_CONFIGURED`, A4: `ERR_CONTEXT_VALIDATION`, A5/A6: `ERR_SCHEMA_RESOLUTION`, A7: `ERR_MISSING_OUTPUT_PATH`, A8: `ERR_GENERATED_CONTENT_INVALID`
-- `mcp_server/scaffolders/template_scaffolder.py` — T1/T4: `ERR_TEMPLATE_NOT_CONFIGURED`, T2: fix naar `MCPSystemError`, T3: `ERR_MISSING_FIELD`
-- `mcp_server/scaffolding/renderer.py` — J1: `ERR_TEMPLATE_NOT_FOUND`
-- `mcp_server/adapters/filesystem.py` — F1: `ERR_PATH_OUTSIDE_WORKSPACE` (SecurityError subtype?)
+2. **Scope van NoteContext-doorgifte:** De scaffold-keten heeft geen NoteContext.
+   Het GitManager-patroon laat zien hoe dat eruit zou zien.
+   Is de scaffold-keten de enige keten die dit mist, of zijn er anderen?
 
-### Stap C: NoteEntry post-hoc in tool_error_handler (Cycle 3)
-- `mcp_server/core/error_handling.py` — detecteer specifieke codes, produceer SuggestionNote/BlockerNote
+3. **extra="forbid" en geneste modellen:** Moeten `LineEdit` en `InsertLine` in `SafeEditInput`
+   ook `extra="forbid"` krijgen?
 
-### Stap D: extra="forbid" op alle 50 Input-modellen (#147, Cycle 4)
-- `mcp_server/tools/admin_tools.py`
-- `mcp_server/tools/cycle_tools.py`
-- `mcp_server/tools/discovery_tools.py`
-- `mcp_server/tools/git_analysis_tools.py`
-- `mcp_server/tools/git_fetch_tool.py`
-- `mcp_server/tools/git_pull_tool.py`
-- `mcp_server/tools/git_tools.py` (9 modellen, GitCommitInput al correct)
-- `mcp_server/tools/health_tools.py`
-- `mcp_server/tools/issue_tools.py`
-- `mcp_server/tools/label_tools.py`
-- `mcp_server/tools/milestone_tools.py`
-- `mcp_server/tools/phase_tools.py`
-- `mcp_server/tools/pr_tools.py`
-- `mcp_server/tools/project_tools.py`
-- `mcp_server/tools/quality_tools.py`
-- `mcp_server/tools/safe_edit_tool.py`
-- `mcp_server/tools/scaffold_artifact.py`
-- `mcp_server/tools/template_validation_tool.py`
-- `mcp_server/tools/test_tools.py`
-- `mcp_server/tools/validation_tools.py`
-- `mcp_server/tools/code_tools.py`
+4. **Scope van #147:** Alle 50 modellen in één keer, of gefaseerd per domein?
 
-### Stap E: Tests (bij elke cycle)
-- `tests/mcp_server/tools/` — per tool: testen dat extra veld → ToolResult.error met `ERR_EXTRA_FIELD`
-- `tests/mcp_server/managers/` — per raise-site: testen dat error_code overeenkomt
-- `tests/mcp_server/core/` — error_handling: testen dat SuggestionNote verschijnt in render
-
----
-
-## Findings & Conclusies
-
-1. **50 Input-modellen** missen `extra="forbid"` (slechts 1 correct: `GitCommitInput`)
-2. **15 raise-sites** in de scaffold-keten produceren te brede codes
-3. **2 misclassificaties**: T2 (ValidationError → moet MCPSystemError zijn), F1 (ValidationError → moet security-specifieke code zijn)
-4. **NoteContext** wordt niet doorgegeven aan de domeinlaag; post-hoc benadering is de minst invasieve oplossing voor fase 1
-5. **Optie A** (optionele `code`-parameter op ConfigError/ValidationError) is backwards-compatibel en vereist minimale wijzigingen aan bestaande call-sites
-6. **Implementatie-volgorde**: exceptions.py → raise-sites → error_handler → Input-modellen
-
----
-
-## Open vragen
-
-- Moet `ERR_PATH_OUTSIDE_WORKSPACE` een aparte `SecurityError(MCPError)` subklasse krijgen, of volstaat `ValidationError(code=ERR_PATH_OUTSIDE_WORKSPACE)`?
-- `SafeEditInput` bevat nested Pydantic-modellen (`LineEdit`, `InsertLine`); `extra="forbid"` op de nested modellen ook meenemen?
-- Scope van Cycle 4: alle 50 tegelijk of per functioneel domein (git-tools apart, issue-tools apart)?
+5. **T2 classificatie:** `TemplateScaffolder` raise `ValidationError` als de template loader
+   niet geconfigureerd is. Dit is een infrastructuurfout, geen input-fout.
+   Is herclassificatie (naar `MCPSystemError`) onderdeel van deze scope?
 
 ---
 
 ## Related Documentation
 
-- `mcp_server/core/exceptions.py` — huidige exception-hiërarchie
-- `mcp_server/core/operation_notes.py` — NoteEntry types en NoteContext
-- `mcp_server/core/error_handling.py` — @tool_error_handler decorator
+- `mcp_server/core/operation_notes.py` — NoteEntry typen en NoteContext
+- `mcp_server/core/error_handling.py` — @tool_error_handler
+- `mcp_server/core/exceptions.py` — exception-hiërarchie
+- `mcp_server/server.py` — handle_call_tool (L602–L700): NoteContext-levenscyclus
+- `mcp_server/managers/git_manager.py` — referentie-patroon: NoteContext in domeinlaag
+- `mcp_server/managers/pytest_runner.py` — alternatief patroon: note als return-waarde
+- `mcp_server/tools/scaffold_artifact.py` — `del context` gap
+- `mcp_server/managers/artifact_manager.py` — scaffold-orchestratie
+- `mcp_server/scaffolders/template_scaffolder.py` — v1 validatie (T3: schema al als resource)
+- `mcp_server/adapters/filesystem.py` — F1 security boundary
 - `mcp_server/tools/base.py` — BaseTool + @tool_error_handler wiring
-- `mcp_server/tools/scaffold_artifact.py` — tool entry point
-- `mcp_server/managers/artifact_manager.py` — orchestratie-laag
-- `mcp_server/scaffolders/template_scaffolder.py` — v1 validatie + scaffolding
-- `mcp_server/scaffolding/renderer.py` — JinjaRenderer
-- `mcp_server/adapters/filesystem.py` — FilesystemAdapter
-- `mcp_server/config/schemas/artifact_registry_config.py` — ArtifactRegistryConfig.get_artifact()
-- `docs/development/issue136/` — deze map
 
 ---
 
@@ -382,4 +394,5 @@ Voor issue #136 kiezen we **optie "alternatief"** als fase 1: toevoegen van code
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-05-07 | imp-agent (researcher) | Initial research — volledig ingevuld |
+| 1.0 | 2026-05-07 | imp-agent | Initiële research — foutpaden + Input-inventarisatie + taxonomie-voorstel (te breed: bevatte ontwerpen) |
+| 2.0 | 2026-05-07 | imp-agent | Herschreven: NoteContext end-to-end onderzocht, gap-analyse, agent-experience, open vragen zonder ontwerp-beslissingen |
