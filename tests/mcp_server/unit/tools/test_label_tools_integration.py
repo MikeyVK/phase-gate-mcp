@@ -206,6 +206,30 @@ labels:
         assert "Added labels" in result.content[0]["text"]
 
 
+
+    @pytest.mark.asyncio
+    async def test_add_labels_accepts_dynamic_pattern_label(self, tmp_path: Path) -> None:
+        """AddLabelsTool accepts labels matching label_patterns (e.g. parent:302)."""
+        yaml_content = """version: "1.0"
+label_patterns:
+  - pattern: "^parent:\\\\d+$"
+    description: "Parent issue reference"
+    color: "EDEDED"
+    example: "parent:91"
+labels:
+  - name: "type:feature"
+    color: "1D76DB"
+"""
+        label_config = _load_label_config(tmp_path, yaml_content)
+        mock_manager = Mock()
+        tool = AddLabelsTool(manager=mock_manager, label_config=label_config)
+        params = AddLabelsInput(issue_number=1, labels=["parent:302"])
+
+        result = await tool.execute(params, NoteContext())
+
+        assert "Added labels" in result.content[0]["text"]
+        mock_manager.add_labels.assert_called_once_with(1, ["parent:302"])
+
 class TestDetectLabelDriftTool:
     """Tests for DetectLabelDriftTool (read-only drift detection)."""
 
