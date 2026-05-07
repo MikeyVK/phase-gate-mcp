@@ -119,7 +119,6 @@ class DeleteLabelInput(BaseModel):
     name: str = Field(..., description="Label name to delete")
 
 
-
 class DeleteLabelTool(BaseTool):
     """Tool to delete a label from the repository."""
 

@@ -11,6 +11,7 @@ Defines typed label and pattern metadata loaded by the configuration layer.
     - Validate label color and duplicate-name invariants
     - Provide lookup helpers used by label-aware tooling
 """
+
 import re
 from dataclasses import FrozenInstanceError
 from typing import TYPE_CHECKING, Any
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
     from mcp_server.config.schemas.workphases import WorkphasesConfig
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
+
 
 class Label(BaseModel):
     """Immutable label definition from labels.yaml."""
