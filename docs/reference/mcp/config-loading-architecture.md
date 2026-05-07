@@ -40,7 +40,7 @@ flowchart TD
 **Module:** `mcp_server/config/loader.py`
 
 A helper that normalises any path variant to its config subdirectory form using the
-**default `.st3/config` convention**. Not called when `ST3_CONFIG_ROOT` is set — in
+**default `.st3/config` convention**. Not called when `MCP_CONFIG_ROOT` is set — in
 that case `resolve_config_root` uses the explicit path directly.
 
 | Input form | Output (default convention) |
@@ -206,8 +206,8 @@ classDiagram
 | Environment variable | Maps to | Default |
 |----------------------|---------|---------|
 | `GITHUB_TOKEN` | `settings.github.token` | `None` — GitHub tools disabled |
-| `ST3_WORKSPACE_ROOT` | `settings.server.workspace_root` | `os.getcwd()` |
-| `ST3_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
+| `MCP_WORKSPACE_ROOT` | `settings.server.workspace_root` | `os.getcwd()` |
+| `MCP_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
 | `LOG_LEVEL` | `settings.logging.level` | `"INFO"` |
 
 ---
