@@ -113,16 +113,11 @@ Aligns with MCP Server `st3://status/phase` and `PHASE_WORKFLOWS.md`.
 - `phase:documentation`: Finalizing docs
 - `phase:done`: Completed
 
-### 4.4 Status (`#FBCA04` - Yellow)
-Automated bot triggers or blocked states.
 
-- `status:blocked`: Cannot proceed (needs `blocked-by` comment)
-- `status:needs-info`: Waiting on user input
-- `status:ready-for-review`: PR open and checks passed
-- `needs:discussion`: Requires team input
-- `scope:architecture`: Affects system design
-- `scope:component`: Affects single component
+### 4.4 Status
 
+Status tracking uses GitHub issue state (`open`/`closed`) combined with `phase:*` labels
+(see §4.3). There are no separate `status:*` labels — this category was removed in issue #149.
 ---
 
 ## 5. Milestone Strategy

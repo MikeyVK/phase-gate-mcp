@@ -200,7 +200,11 @@ def make_create_issue_tool(manager: MagicMock) -> CreateIssueTool:
 
 
 def make_add_labels_tool(manager: MagicMock) -> AddLabelsTool:
-    return AddLabelsTool(manager=manager, label_config=make_mock_label_config())
+    return AddLabelsTool(
+        manager=manager,
+        label_config=make_mock_label_config(),
+        workphases_config=MagicMock(),
+    )
 
 
 def make_core_tools() -> list[object]:

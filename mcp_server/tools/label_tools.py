@@ -5,9 +5,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from mcp_server.config.schemas.label_config import validate_phase_label
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
-from mcp_server.schemas import LabelConfig
+from mcp_server.schemas import LabelConfig, WorkphasesConfig
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -64,9 +65,15 @@ class CreateLabelTool(BaseTool):
     description = "Create a new label in the repository"
     args_model = CreateLabelInput
 
-    def __init__(self, manager: GitHubManager, label_config: LabelConfig) -> None:
+    def __init__(
+        self,
+        manager: GitHubManager,
+        label_config: LabelConfig,
+        workphases_config: WorkphasesConfig,
+    ) -> None:
         self.manager = manager
         self._label_config = label_config
+        self._workphases_config = workphases_config
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -74,11 +81,17 @@ class CreateLabelTool(BaseTool):
 
     async def execute(self, params: CreateLabelInput, context: NoteContext) -> ToolResult:
         del context  # Not used
-        # Load label config for validation
         # Validate label name pattern
         is_valid, error_msg = self._label_config.validate_label_name(params.name)
         if not is_valid:
             return ToolResult.text(f"❌ {error_msg}")
+
+        # Validate phase:* labels against known workphases
+        phase_valid, phase_reason = validate_phase_label(params.name, self._workphases_config)
+        if not phase_valid:
+            return ToolResult.text(
+                f"❌ Label '{params.name}' rejected: unknown workphase. {phase_reason}"
+            )
 
         # Validate color format (no # prefix)
         if params.color.startswith("#"):
@@ -171,9 +184,15 @@ class AddLabelsTool(BaseTool):
     description = "Add labels to an issue or PR"
     args_model = AddLabelsInput
 
-    def __init__(self, manager: GitHubManager, label_config: LabelConfig) -> None:
+    def __init__(
+        self,
+        manager: GitHubManager,
+        label_config: LabelConfig,
+        workphases_config: WorkphasesConfig,
+    ) -> None:
         self.manager = manager
         self._label_config = label_config
+        self._workphases_config = workphases_config
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -183,9 +202,17 @@ class AddLabelsTool(BaseTool):
         del context  # Not used
         # Load label config for validation
         # Validate all labels exist
-        undefined = [label for label in params.labels if not self._label_config.label_exists(label)]
-        if undefined:
-            return ToolResult.text(f"❌ Labels not defined in labels.yaml: {undefined}")
+        invalid = [
+            label for label in params.labels if not self._label_config.validate_label_name(label)[0]
+        ]
+        if invalid:
+            return ToolResult.text(f"❌ Labels not valid per labels.yaml: {invalid}")
+
+        # Validate phase:* labels against known workphases
+        for label in params.labels:
+            is_valid, reason = validate_phase_label(label, self._workphases_config)
+            if not is_valid:
+                return ToolResult.text(f"❌ Label '{label}' rejected: unknown workphase. {reason}")
 
         # Add labels
         self.manager.add_labels(params.issue_number, params.labels)
@@ -229,7 +256,11 @@ class DetectLabelDriftTool(BaseTool):
         github_by_name = {label.name: label for label in github_labels}
 
         # Detect drift
-        github_only = [name for name in github_by_name if name not in yaml_by_name]
+        github_only = [
+            name
+            for name in github_by_name
+            if name not in yaml_by_name and not self._label_config.validate_label_name(name)[0]
+        ]
         yaml_only = [name for name in yaml_by_name if name not in github_by_name]
 
         color_mismatch = []
