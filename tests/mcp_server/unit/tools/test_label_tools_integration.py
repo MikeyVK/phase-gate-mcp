@@ -143,7 +143,7 @@ labels:
 
         result = await tool.execute(params, NoteContext())
         result_text = result.content[0]["text"]
-        assert "not defined in labels.yaml" in result_text
+        assert "not valid per labels.yaml" in result_text
         assert "undefined-label" in result_text
 
     @pytest.mark.asyncio
@@ -181,7 +181,7 @@ labels:
         params = AddLabelsInput(issue_number=1, labels=["type:feature", "undefined"])
 
         result = await tool.execute(params, NoteContext())
-        assert "not defined in labels.yaml" in result.content[0]["text"]
+        assert "not valid per labels.yaml" in result.content[0]["text"]
         mock_manager.add_labels.assert_not_called()
 
     @pytest.mark.asyncio

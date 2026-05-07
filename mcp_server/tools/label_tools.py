@@ -183,9 +183,9 @@ class AddLabelsTool(BaseTool):
         del context  # Not used
         # Load label config for validation
         # Validate all labels exist
-        undefined = [label for label in params.labels if not self._label_config.label_exists(label)]
-        if undefined:
-            return ToolResult.text(f"❌ Labels not defined in labels.yaml: {undefined}")
+        invalid = [label for label in params.labels if not self._label_config.validate_label_name(label)[0]]
+        if invalid:
+            return ToolResult.text(f"❌ Labels not valid per labels.yaml: {invalid}")
 
         # Add labels
         self.manager.add_labels(params.issue_number, params.labels)
