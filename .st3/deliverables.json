@@ -79,7 +79,7 @@
                   "file": "mcp_server/tools/issue_tools.py",
                   "text": "def input_schema"
                 }
-              },
+              }
             ],
             "exit_criteria": "All D1.x validates gates pass; C9 test (test_create_issue_schema.py) remains green; full test suite green"
           },
