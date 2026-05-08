@@ -755,7 +755,10 @@ class ArtifactManager:
         v2_active = use_v2_pipeline and artifact_type in v2_supported_artifacts
         try:
             result = self.scaffolder.scaffold(
-                artifact_type, skip_validation=v2_active, **scaffold_kwargs
+                artifact_type,
+                skip_validation=v2_active,
+                note_context=note_context,
+                **scaffold_kwargs,
             )
         except ValidationError as exc:
             if note_context is not None:

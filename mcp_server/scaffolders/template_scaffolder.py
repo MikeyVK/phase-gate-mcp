@@ -128,6 +128,7 @@ class TemplateScaffolder(BaseScaffolder):
         self,
         artifact_type: str,
         skip_validation: bool = False,
+        note_context: NoteContext | None = None,
         **kwargs: Any,  # noqa: ANN401
     ) -> ScaffoldResult:
         """Scaffold artifact from template.
@@ -136,6 +137,7 @@ class TemplateScaffolder(BaseScaffolder):
             artifact_type: Artifact type_id from registry
             skip_validation: If True, skip introspection-based validation.
                 Used by V2 pipeline where Pydantic schemas already validated input.
+            note_context: Optional NoteContext for producing typed notes on error paths.
             **kwargs: Context for template rendering
 
         Returns:
@@ -147,7 +149,7 @@ class TemplateScaffolder(BaseScaffolder):
         # Validate via introspection (V1 pipeline only).
         # V2 pipeline uses Pydantic schemas for validation — skip introspection here.
         if not skip_validation:
-            self.validate(artifact_type, **kwargs)
+            self.validate(artifact_type, note_context=note_context, **kwargs)
 
         # Get artifact definition
         artifact = self.registry.get_artifact(artifact_type)
