@@ -29,7 +29,7 @@ The `schema://validation` EmbeddedResource in `_validate_tool_arguments`' failur
 
 **Why Cycle 3 (C) is last:**
 
-Cycle 3 is independent but placed last because: (1) it has the largest surface area (four files, 16 actionable raise-sites) and benefits from having the rest of the suite green as a baseline; (2) the `NoteContext` pattern it applies is validated end-to-end by Cycle 1 and 2 tests, giving the implementer higher confidence before touching the scaffold chain.
+Cycle 3 is independent but placed last because: (1) it has the largest surface area (three files, 16 actionable raise-sites) and benefits from having the rest of the suite green as a baseline; (2) the `NoteContext` pattern it applies is validated end-to-end by Cycle 1 and 2 tests, giving the implementer higher confidence before touching the scaffold chain.
 
 ---
 

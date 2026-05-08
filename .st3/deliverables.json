@@ -80,10 +80,6 @@
                   "text": "def input_schema"
                 }
               },
-              {
-                "id": "D1.8",
-                "description": "All 5 def input_schema overrides removed from issue_tools.py (gate duplicate of D1.7 for traceability)"
-              }
             ],
             "exit_criteria": "All D1.x validates gates pass; C9 test (test_create_issue_schema.py) remains green; full test suite green"
           },
