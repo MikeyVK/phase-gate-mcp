@@ -71,7 +71,6 @@ class ScaffoldArtifactTool(BranchMutatingTool):
         Returns:
             ToolResult with success message
         """
-        del context  # NoteContext not used by this tool
         # Prepare kwargs from template context
         template_ctx = params.context or {}
         kwargs = {"name": params.name, **template_ctx}
@@ -80,9 +79,10 @@ class ScaffoldArtifactTool(BranchMutatingTool):
         if params.output_path:
             kwargs["output_path"] = params.output_path
 
-        # Scaffold artifact via manager
-        # Exceptions (ValidationError, ConfigError, etc.) propagate to decorator
-        artifact_path = await self.manager.scaffold_artifact(params.artifact_type, **kwargs)
+        # Scaffold artifact via manager, forwarding NoteContext for note production
+        artifact_path = await self.manager.scaffold_artifact(
+            params.artifact_type, note_context=context, **kwargs
+        )
 
         # Success result
         return ToolResult.text(f"✅ Scaffolded {params.artifact_type}: {artifact_path}")

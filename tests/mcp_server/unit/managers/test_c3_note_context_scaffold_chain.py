@@ -10,22 +10,27 @@ Validates that:
 - SuggestionNote produced in template_scaffolder on validation errors
 
 @layer: Tests (Unit)
-@dependencies: [pytest, mcp_server.managers.artifact_manager, mcp_server.scaffolders.template_scaffolder,
+@dependencies: [pytest, mcp_server.managers.artifact_manager,
+               mcp_server.scaffolders.template_scaffolder,
                mcp_server.tools.scaffold_artifact, mcp_server.core.operation_notes]
 """
 
 from __future__ import annotations
 
 import inspect
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+import mcp_server.scaffolders.template_scaffolder as ts_scaffolder_mod
+from mcp_server.core.exceptions import ValidationError
 from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote, SuggestionNote
-from mcp_server.managers.artifact_manager import ArtifactManager
+from mcp_server.managers.artifact_manager import ArtifactManager, ArtifactManagerDependencies
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
+from mcp_server.scaffolding.template_introspector import TemplateSchema
+from mcp_server.schemas import ArtifactRegistryConfig
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
-
 
 # ---------------------------------------------------------------------------
 # D3.1 — ScaffoldArtifactTool.execute() must NOT discard NoteContext
@@ -109,10 +114,12 @@ class TestTemplateScaffolderNoteContextParam:
 def _make_manager_with_failing_scaffolder(
     error: Exception,
 ) -> tuple[ArtifactManager, NoteContext]:
-    """Return a manager whose scaffolder.validate() raises the given error."""
-    from mcp_server.core.exceptions import ValidationError
-    from mcp_server.managers.artifact_manager import ArtifactManagerDependencies
-    from mcp_server.schemas import ArtifactRegistryConfig
+    """Return a manager whose scaffolder.scaffold() raises the given error.
+
+    Caller must ensure PYDANTIC_SCAFFOLDING_ENABLED=false is set in the environment
+    (e.g. via the autouse ``_force_v1_pipeline`` fixture) so that scaffolder.scaffold()
+    is the first fallible call in scaffold_artifact().
+    """
 
     registry = MagicMock(spec=ArtifactRegistryConfig)
     artifact = MagicMock()
@@ -121,7 +128,7 @@ def _make_manager_with_failing_scaffolder(
     registry.get_artifact.return_value = artifact
 
     scaffolder = MagicMock(spec=TemplateScaffolder)
-    scaffolder.validate.side_effect = error
+    scaffolder.scaffold.side_effect = error
 
     deps = ArtifactManagerDependencies(
         registry=registry,
@@ -135,10 +142,14 @@ def _make_manager_with_failing_scaffolder(
 class TestArtifactManagerProducesNotes:
     """D3.4–D3.6: ArtifactManager produces BlockerNote / RecoveryNote on error paths."""
 
+    @pytest.fixture(autouse=True)
+    def _force_v1_pipeline(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Disable v2 Pydantic pipeline so scaffolder.scaffold() is reached directly."""
+        monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
+
     @pytest.mark.asyncio
     async def test_produces_blocker_note_on_validation_error(self) -> None:
         """On ValidationError from scaffolder.validate(), a BlockerNote must be produced."""
-        from mcp_server.core.exceptions import ValidationError
 
         error = ValidationError("Missing required field: name")
         manager, note_context = _make_manager_with_failing_scaffolder(error)
@@ -159,7 +170,6 @@ class TestArtifactManagerProducesNotes:
     @pytest.mark.asyncio
     async def test_blocker_note_message_contains_context(self) -> None:
         """BlockerNote message must contain diagnostic context."""
-        from mcp_server.core.exceptions import ValidationError
 
         error = ValidationError("Missing required field: name")
         manager, note_context = _make_manager_with_failing_scaffolder(error)
@@ -179,7 +189,6 @@ class TestArtifactManagerProducesNotes:
     @pytest.mark.asyncio
     async def test_produces_recovery_note_on_validation_error(self) -> None:
         """On ValidationError, a RecoveryNote with actionable hint must be produced."""
-        from mcp_server.core.exceptions import ValidationError
 
         error = ValidationError("Missing required field: name")
         manager, note_context = _make_manager_with_failing_scaffolder(error)
@@ -203,9 +212,8 @@ class TestArtifactManagerProducesNotes:
 # ---------------------------------------------------------------------------
 
 
-def _make_scaffolder_with_missing_field() -> tuple[TemplateScaffolder, NoteContext]:
+def _make_scaffolder_with_missing_field() -> tuple[TemplateScaffolder, NoteContext, Any, Any]:
     """Return a TemplateScaffolder configured to raise ValidationError for missing field."""
-    from mcp_server.schemas import ArtifactRegistryConfig
 
     registry = MagicMock(spec=ArtifactRegistryConfig)
     artifact = MagicMock()
@@ -221,18 +229,15 @@ def _make_scaffolder_with_missing_field() -> tuple[TemplateScaffolder, NoteConte
     scaffolder = TemplateScaffolder(registry=registry, renderer=renderer)
 
     # Patch introspect_template_with_inheritance to require 'name'
-    from mcp_server.validation.template_analyzer import Schema
 
-    mock_schema = MagicMock(spec=Schema)
+    mock_schema = MagicMock(spec=TemplateSchema)
     mock_schema.required = ["name", "description"]
 
-    import mcp_server.scaffolders.template_scaffolder as ts_mod
-
-    original = ts_mod.introspect_template_with_inheritance
-    ts_mod.introspect_template_with_inheritance = lambda *a, **k: mock_schema
+    original = ts_scaffolder_mod.introspect_template_with_inheritance
+    ts_scaffolder_mod.introspect_template_with_inheritance = lambda *_a, **_k: mock_schema
 
     note_context = NoteContext()
-    return scaffolder, note_context, original, ts_mod  # type: ignore[return-value]
+    return scaffolder, note_context, original, ts_scaffolder_mod
 
 
 class TestTemplateScaffolderProducesSuggestionNote:
@@ -240,7 +245,6 @@ class TestTemplateScaffolderProducesSuggestionNote:
 
     def test_produces_suggestion_note_on_missing_fields(self) -> None:
         """When required fields are missing, validate() must produce a SuggestionNote."""
-        from mcp_server.core.exceptions import ValidationError
 
         scaffolder, note_context, original_fn, ts_mod = _make_scaffolder_with_missing_field()
 
@@ -258,7 +262,6 @@ class TestTemplateScaffolderProducesSuggestionNote:
 
     def test_suggestion_note_message_is_actionable(self) -> None:
         """SuggestionNote message must be non-empty and actionable."""
-        from mcp_server.core.exceptions import ValidationError
 
         scaffolder, note_context, original_fn, ts_mod = _make_scaffolder_with_missing_field()
 

@@ -28,6 +28,7 @@ from typing import Any, cast
 from mcp_server.adapters.filesystem import FilesystemAdapter
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
+from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
@@ -588,6 +589,7 @@ class ArtifactManager:
         self,
         artifact_type: str,
         output_path: str | None = None,
+        note_context: NoteContext | None = None,
         **context: Any,  # noqa: ANN401
     ) -> str:
         """Scaffold artifact from template and write to file.
@@ -751,9 +753,19 @@ class ArtifactManager:
         # V1 pipeline: introspection validate() runs inside scaffold().
         scaffold_kwargs = {k: v for k, v in enriched_context.items() if k != "artifact_type"}
         v2_active = use_v2_pipeline and artifact_type in v2_supported_artifacts
-        result = self.scaffolder.scaffold(
-            artifact_type, skip_validation=v2_active, **scaffold_kwargs
-        )
+        try:
+            result = self.scaffolder.scaffold(
+                artifact_type, skip_validation=v2_active, **scaffold_kwargs
+            )
+        except ValidationError as exc:
+            if note_context is not None:
+                note_context.produce(BlockerNote(message=str(exc)))
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Provide all required fields for artifact type '{artifact_type}'"
+                    )
+                )
+            raise
 
         # Task 1.1c: Persist provenance to template registry
         self._persist_provenance(artifact_type, version_hash, template_file, tier_chain)
