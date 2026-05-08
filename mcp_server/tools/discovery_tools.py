@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError, MCPError
@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 
 class SearchDocumentationInput(BaseModel):
     """Input for SearchDocumentationTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     query: str = Field(
         ..., description="Search query (e.g., 'how to implement a worker', 'DTO validation rules')"
@@ -97,6 +99,8 @@ class SearchDocumentationTool(BaseTool):
 
 class GetWorkContextInput(BaseModel):
     """Input for GetWorkContextTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     include_closed_recent: bool = Field(
         default=False, description="Include recently closed issues (last 7 days) for context"

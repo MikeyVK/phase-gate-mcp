@@ -10,7 +10,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError
@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 class RunTestsInput(BaseModel):
     """Input for RunTestsTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     path: str | None = Field(
         default=None,

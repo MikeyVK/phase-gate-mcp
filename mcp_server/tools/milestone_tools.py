@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext
@@ -13,6 +13,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class ListMilestonesInput(BaseModel):
     """Input for ListMilestonesTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     state: str = Field(
         default="open", description="Filter milestones by state", pattern="^(open|closed|all)$"
@@ -57,6 +59,8 @@ class ListMilestonesTool(BaseTool):
 class CreateMilestoneInput(BaseModel):
     """Input for CreateMilestoneTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     title: str = Field(..., description="Milestone title")
     description: str | None = Field(default=None, description="Optional milestone description")
     due_on: str | None = Field(default=None, description="Optional due date (ISO 8601 string)")
@@ -93,6 +97,8 @@ class CreateMilestoneTool(BaseTool):
 
 class CloseMilestoneInput(BaseModel):
     """Input for CloseMilestoneTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     milestone_number: int = Field(..., description="Milestone number to close")
 

@@ -85,6 +85,8 @@ def _input_schema(args_model: type[BaseModel] | None) -> dict[str, Any]:
 class CreateBranchInput(BaseModel):
     """Input for CreateBranchTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str = Field(..., description="Branch name (kebab-case)")
     branch_type: str = Field(default="feature", description="Branch type")
     _git_config: ClassVar[GitConfig | None] = None
@@ -171,6 +173,7 @@ class CreateBranchTool(BranchMutatingTool):
 
 class GitStatusInput(BaseModel):
     """Input for GitStatusTool (empty)."""
+    model_config = ConfigDict(extra="forbid")
 
 
 class GitStatusTool(BaseTool):
@@ -372,6 +375,8 @@ class GitCommitTool(BranchMutatingTool):
 class GitRestoreInput(BaseModel):
     """Input for GitRestoreTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     files: list[str] = Field(
         ..., min_length=1, description="File paths to restore (discard local changes)"
     )
@@ -411,6 +416,8 @@ class GitRestoreTool(BranchMutatingTool):
 
 class GitCheckoutInput(BaseModel):
     """Input for GitCheckoutTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     branch: str = Field(..., description="Branch name to checkout")
 
@@ -481,6 +488,8 @@ class GitCheckoutTool(BaseTool):
 class GitPushInput(BaseModel):
     """Input for GitPushTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     set_upstream: bool = Field(
         default=False, description="Set upstream tracking (for new branches)"
     )
@@ -523,6 +532,8 @@ class GitPushTool(BranchMutatingTool):
 class GitMergeInput(BaseModel):
     """Input for GitMergeTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     branch: str = Field(..., description="Branch name to merge")
 
 
@@ -561,6 +572,8 @@ class GitMergeTool(BranchMutatingTool):
 class GitDeleteBranchInput(BaseModel):
     """Input for GitDeleteBranchTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     branch: str = Field(..., description="Branch name to delete")
     force: bool = Field(default=False, description="Force delete unmerged branch")
 
@@ -598,6 +611,8 @@ class GitDeleteBranchTool(BranchMutatingTool):
 
 class GitStashInput(BaseModel):
     """Input for GitStashTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     action: str = Field(
         ...,
@@ -659,6 +674,8 @@ class GitStashTool(BaseTool):
 
 class GetParentBranchInput(BaseModel):
     """Input for GetParentBranchTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     branch: str | None = Field(
         default=None, description="Branch name to inspect (default: current branch)"

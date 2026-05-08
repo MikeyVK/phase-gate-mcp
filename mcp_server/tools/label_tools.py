@@ -3,7 +3,7 @@
 import re
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.schemas.label_config import validate_phase_label
 from mcp_server.core.operation_notes import NoteContext
@@ -15,6 +15,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class ListLabelsInput(BaseModel):
     """Input for ListLabelsTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     # No input fields needed currently, but model required for consistency
 
@@ -52,6 +54,8 @@ class ListLabelsTool(BaseTool):
 
 class CreateLabelInput(BaseModel):
     """Input for CreateLabelTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., description="Label name (e.g., 'type:feature')")
     color: str = Field(..., description="Color hex code without # (e.g., '0e8a16')")
@@ -116,6 +120,8 @@ class CreateLabelTool(BaseTool):
 class DeleteLabelInput(BaseModel):
     """Input for DeleteLabelTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str = Field(..., description="Label name to delete")
 
 
@@ -142,6 +148,8 @@ class DeleteLabelTool(BaseTool):
 
 class RemoveLabelsInput(BaseModel):
     """Input for RemoveLabelsTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="Issue/PR number")
     labels: list[str] = Field(..., description="List of labels to remove")
@@ -172,6 +180,8 @@ class RemoveLabelsTool(BaseTool):
 
 class AddLabelsInput(BaseModel):
     """Input for AddLabelsTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="Issue/PR number")
     labels: list[str] = Field(..., description="List of labels to add")
@@ -223,6 +233,8 @@ class AddLabelsTool(BaseTool):
 
 class DetectLabelDriftInput(BaseModel):
     """Input for DetectLabelDriftTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     # No input fields needed - read-only detection
 

@@ -4,7 +4,7 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError, ValidationError
@@ -15,6 +15,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class CreateFileInput(BaseModel):
     """Input for CreateFileTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     path: str = Field(..., description="Relative path to file")
     content: str = Field(..., description="File content")

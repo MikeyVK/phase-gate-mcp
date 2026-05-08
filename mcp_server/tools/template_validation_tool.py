@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.base import BaseTool
@@ -12,6 +12,8 @@ from mcp_server.validation.template_validator import TemplateValidator
 
 class TemplateValidationInput(BaseModel):
     """Input for TemplateValidationTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     path: str = Field(..., description="Absolute path to the file")
     template_type: str = Field(

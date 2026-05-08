@@ -11,7 +11,7 @@ class SimpleNestedModel(BaseModel):
 
 
 class SimpleInputWithNested(BaseModel):
-    """Input with nested model (will generate $defs/$ref)."""
+    """Input with nested model that exercises schema normalization."""
     name: str
     nested: SimpleNestedModel
 

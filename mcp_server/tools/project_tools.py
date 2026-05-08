@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import anyio
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.git_manager import GitManager
@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 class InitializeProjectInput(BaseModel):
     """Input for initialize_project tool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="GitHub issue number")
     issue_title: str = Field(..., description="Issue title")
@@ -288,6 +290,8 @@ class InitializeProjectTool(BranchMutatingTool):
 class GetProjectPlanInput(BaseModel):
     """Input for get_project_plan tool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     issue_number: int = Field(..., description="GitHub issue number")
 
 
@@ -376,6 +380,8 @@ def validate_spec(deliverable_id: str, validates: dict[str, Any]) -> str | None:
 
 class SavePlanningDeliverablesInput(BaseModel):
     """Input for save_planning_deliverables tool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="GitHub issue number")
     planning_deliverables: dict[str, Any] = Field(
@@ -466,6 +472,8 @@ class SavePlanningDeliverablesTool(BranchMutatingTool):
 
 class UpdatePlanningDeliverablesInput(BaseModel):
     """Input for update_planning_deliverables tool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="GitHub issue number")
     planning_deliverables: dict[str, Any] = Field(
