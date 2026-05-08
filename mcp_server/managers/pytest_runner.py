@@ -109,7 +109,8 @@ _UNKNOWN_CODE_POLICY = ExitCodePolicy(
     "pytest exited with unexpected code",
 )
 
-_FAILED_LINE_RE = re.compile(r"^FAILED (.+?) - (.+)$", re.MULTILINE)
+_FAILED_LINE_RE = re.compile(r"^FAILED (.+?)(?:\s+-\s+(.+))?$", re.MULTILINE)
+_TRACEBACK_ERROR_RE = re.compile(r"^E\s+(.+)$", re.MULTILINE)
 _COVERAGE_RE = re.compile(r"^TOTAL\b(?:\s+\d+)+\s+(\d+(?:\.\d+)?)%$", re.MULTILINE)
 _LF_EMPTY_RE = re.compile(r"no previously failed tests,\s*not deselecting", re.IGNORECASE)
 
@@ -190,8 +191,11 @@ class PytestRunner:
         details: list[FailureDetail] = []
         for match in _FAILED_LINE_RE.finditer(stdout):
             test_id = match.group(1).strip()
-            short_reason = match.group(2).strip()
             traceback = self._extract_traceback(stdout, test_id)
+            inline_reason = match.group(2)
+            short_reason = (
+                inline_reason.strip() if inline_reason else self._extract_short_reason(traceback)
+            )
             location, _, _ = test_id.partition("::")
             details.append(
                 FailureDetail(
@@ -202,6 +206,11 @@ class PytestRunner:
                 )
             )
         return tuple(details)
+
+    def _extract_short_reason(self, traceback: str) -> str:
+        """Extract the first 'E  ...' assertion line from a traceback block."""
+        match = _TRACEBACK_ERROR_RE.search(traceback)
+        return match.group(1).strip() if match else ""
 
     def _extract_traceback(self, stdout: str, test_id: str) -> str:
         """Extract the traceback block for a given test_id from the FAILURES section."""

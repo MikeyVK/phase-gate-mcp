@@ -1,5 +1,5 @@
 # tests/mcp_server/unit/managers/test_pytest_runner.py
-"""Unit tests for PytestRunner — parser, exit-code classification, LF-cache detection.
+"""Unit tests for PytestRunner ÔÇö parser, exit-code classification, LF-cache detection.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, mcp_server.managers.pytest_runner]
@@ -104,7 +104,7 @@ collected 0 items
 
 
 # ---------------------------------------------------------------------------
-# Helper — exercise public PytestRunner.run() with a controlled subprocess seam
+# Helper ÔÇö exercise public PytestRunner.run() with a controlled subprocess seam
 # ---------------------------------------------------------------------------
 
 
@@ -151,15 +151,15 @@ def _run(
 
 
 # ---------------------------------------------------------------------------
-# Test cases (8 scenarios per design.md §3.10)
+# Test cases (8 scenarios per design.md ┬º3.10)
 # ---------------------------------------------------------------------------
 
 
 class TestPytestRunnerRun:
-    """Runner unit tests — exercise the public run() surface only."""
+    """Runner unit tests ÔÇö exercise the public run() surface only."""
 
     def test_all_passed(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 1: all-passed stdout → passed=N, failed=0, summary_line non-empty."""
+        """Scenario 1: all-passed stdout ÔåÆ passed=N, failed=0, summary_line non-empty."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
 
         assert result.passed == 3
@@ -172,7 +172,7 @@ class TestPytestRunnerRun:
         assert result.note is None
 
     def test_failing_tests(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 2: failing tests stdout → failures tuple populated with FailureDetail."""
+        """Scenario 2: failing tests stdout ÔåÆ failures tuple populated with FailureDetail."""
         result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
 
         assert result.failed == 1
@@ -185,7 +185,7 @@ class TestPytestRunnerRun:
         assert result.note is None
 
     def test_skipped_tests(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 3: skipped tests stdout → skipped=N."""
+        """Scenario 3: skipped tests stdout ÔåÆ skipped=N."""
         result = _run(monkeypatch, _SKIPPED_STDOUT, returncode=0)
 
         assert result.skipped == 1
@@ -193,13 +193,13 @@ class TestPytestRunnerRun:
         assert result.failed == 0
 
     def test_errors_during_collection(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 4: errors-during-collection stdout → errors=N."""
+        """Scenario 4: errors-during-collection stdout ÔåÆ errors=N."""
         result = _run(monkeypatch, _ERRORS_STDOUT, returncode=2)
 
         assert result.errors >= 1
 
     def test_coverage_pct_parsed(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 5: coverage report line present → coverage_pct parsed as float."""
+        """Scenario 5: coverage report line present ÔåÆ coverage_pct parsed as float."""
         result = _run(monkeypatch, _COVERAGE_STDOUT, returncode=0)
 
         assert result.coverage_pct is not None
@@ -207,13 +207,13 @@ class TestPytestRunnerRun:
         assert result.coverage_pct == pytest.approx(96.0)
 
     def test_lf_cache_was_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 6: LF empty fallback message in stdout → lf_cache_was_empty=True."""
+        """Scenario 6: LF empty fallback message in stdout ÔåÆ lf_cache_was_empty=True."""
         result = _run(monkeypatch, _LF_EMPTY_STDOUT, returncode=0)
 
         assert result.lf_cache_was_empty is True
 
     def test_empty_stdout_summary_line_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 7: empty/unparseable stdout → summary_line falls back to policy; never empty."""
+        # Scenario 7: empty/unparseable stdout -> summary_line falls back to policy; never empty.
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2)
 
         assert result.summary_line != ""
@@ -221,7 +221,7 @@ class TestPytestRunnerRun:
         assert result.is_error is True
 
     def test_exit_code_5_no_tests_collected(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Scenario 8: exit code 5 path → summary_line == 'no tests collected'."""
+        """Scenario 8: exit code 5 path ÔåÆ summary_line == 'no tests collected'."""
         result = _run(monkeypatch, _NO_TESTS_STDOUT, returncode=5)
 
         assert result.summary_line == "no tests collected"
@@ -230,7 +230,7 @@ class TestPytestRunnerRun:
 
 
 # ---------------------------------------------------------------------------
-# C1 — ExitCodePolicy + PytestResult contract
+# C1 ÔÇö ExitCodePolicy + PytestResult contract
 # ---------------------------------------------------------------------------
 
 
@@ -240,7 +240,7 @@ class TestC1ExitCodePolicyAndPytestResultContract:
     def test_c1_parse_output_exit2_sets_is_error_true(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Exit 2 (INTERRUPTED) → result.is_error=True, result.should_raise=False."""
+        """Exit 2 (INTERRUPTED) ÔåÆ result.is_error=True, result.should_raise=False."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2)
 
         assert result.is_error is True
@@ -249,7 +249,7 @@ class TestC1ExitCodePolicyAndPytestResultContract:
     def test_c1_parse_output_exit3_sets_is_error_true(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Exit 3 (INTERNAL_ERROR) → result.is_error=True."""
+        """Exit 3 (INTERNAL_ERROR) ÔåÆ result.is_error=True."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=3)
 
         assert result.is_error is True
@@ -258,7 +258,7 @@ class TestC1ExitCodePolicyAndPytestResultContract:
     def test_c1_parse_output_exit4_sets_is_error_true(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Exit 4 (USAGE_ERROR) → result.is_error=True."""
+        """Exit 4 (USAGE_ERROR) ÔåÆ result.is_error=True."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=4)
 
         assert result.is_error is True
@@ -267,7 +267,7 @@ class TestC1ExitCodePolicyAndPytestResultContract:
     def test_c1_parse_output_exit0_sets_is_error_false(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Exit 0 (ALL_PASSED) → result.is_error=False."""
+        """Exit 0 (ALL_PASSED) ÔåÆ result.is_error=False."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
 
         assert result.is_error is False
@@ -276,7 +276,7 @@ class TestC1ExitCodePolicyAndPytestResultContract:
     def test_c1_parse_output_exit99_should_raise_unchanged(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Exit 99 (unknown) → result.should_raise=True, result.is_error=False — RNF-5 gate."""
+        """Exit 99 (unknown) ÔåÆ result.should_raise=True, result.is_error=False ÔÇö RNF-5 gate."""
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=99)
 
         assert result.should_raise is True
@@ -285,34 +285,34 @@ class TestC1ExitCodePolicyAndPytestResultContract:
     def test_c1_pytest_result_default_stderr_is_empty_string(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """PytestResult constructed without explicit stderr kwarg → result.stderr == ''."""
+        """PytestResult constructed without explicit stderr kwarg ÔåÆ result.stderr == ''."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0)
 
         assert result.stderr == ""
 
 
 # ---------------------------------------------------------------------------
-# C2 — stderr pipeline: run() → _parse_output() → PytestResult.stderr
+# C2 ÔÇö stderr pipeline: run() ÔåÆ _parse_output() ÔåÆ PytestResult.stderr
 # ---------------------------------------------------------------------------
 
 
 class TestC2StderrPipeline:
-    """C2: execution.stderr is wired through run() → _parse_output() → PytestResult.stderr."""
+    """C2: execution.stderr is wired through run() ÔåÆ _parse_output() ÔåÆ PytestResult.stderr."""
 
     def test_c2_run_populates_result_stderr(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Non-empty stderr from subprocess → result.stderr carries the value."""
+        """Non-empty stderr from subprocess ÔåÆ result.stderr carries the value."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0, stderr="some error text")
 
         assert result.stderr == "some error text"
 
     def test_c2_run_empty_stderr_gives_empty_string(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Empty stderr from subprocess → result.stderr == ''."""
+        """Empty stderr from subprocess ÔåÆ result.stderr == ''."""
         result = _run(monkeypatch, _PASSED_STDOUT, returncode=0, stderr="")
 
         assert result.stderr == ""
 
     def test_c2_stderr_multiline_preserved_in_result(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Multi-line stderr → result.stderr contains all lines joined by newlines."""
+        """Multi-line stderr ÔåÆ result.stderr contains all lines joined by newlines."""
         multiline = "line one\nline two\nline three"
         result = _run(monkeypatch, _EMPTY_STDOUT, returncode=2, stderr=multiline)
 
@@ -320,7 +320,7 @@ class TestC2StderrPipeline:
 
 
 # ---------------------------------------------------------------------------
-# C4 xdist fixtures — FAILURES header has [gwN] prefix before underscores
+# C4 xdist fixtures ÔÇö FAILURES header has [gwN] prefix before underscores
 # ---------------------------------------------------------------------------
 
 _XDIST_FAILED_STDOUT_GW0 = """\
@@ -365,7 +365,7 @@ FAILED tests/test_foo.py::test_bad - AssertionError: assert 1 == 2
 
 
 # ---------------------------------------------------------------------------
-# C4 — xdist _extract_traceback() regex fix: optional [gwN] prefix
+# C4 ÔÇö xdist _extract_traceback() regex fix: optional [gwN] prefix
 # ---------------------------------------------------------------------------
 
 
@@ -375,7 +375,7 @@ class TestC4XdistTracebackExtraction:
     def test_c4_extract_traceback_with_xdist_prefix_gw0(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """xdist stdout with [gw0] prefix on FAILURES header → traceback non-empty."""
+        """xdist stdout with [gw0] prefix on FAILURES header ÔåÆ traceback non-empty."""
         result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW0, returncode=1)
 
         assert len(result.failures) == 1
@@ -384,7 +384,7 @@ class TestC4XdistTracebackExtraction:
     def test_c4_extract_traceback_with_xdist_prefix_gw12(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """xdist stdout with double-digit [gw12] prefix → traceback non-empty."""
+        """xdist stdout with double-digit [gw12] prefix ÔåÆ traceback non-empty."""
         result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW12, returncode=1)
 
         assert len(result.failures) == 1
@@ -393,8 +393,115 @@ class TestC4XdistTracebackExtraction:
     def test_c4_extract_traceback_without_prefix_unchanged(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Standard (non-xdist) FAILURES header → traceback still extracted (regression guard)."""
+        """Standard (non-xdist) FAILURES header ÔåÆ traceback still extracted (regression guard)."""
         result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
+
+
+# ---------------------------------------------------------------------------
+# Pytest 9 format: short summary has NO "- reason" suffix
+# ---------------------------------------------------------------------------
+
+_PYTEST9_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+________________________________ test_bad __________________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+_PYTEST9_XDIST_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw0] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+
+class TestPytest9FailedLineFormat:
+    """Regression tests for pytest 9 short-summary format (no '- reason' suffix).
+
+    In pytest 9, 'FAILED test_id - reason' became 'FAILED test_id'.
+    _parse_failures() must still return a populated FailureDetail with
+    a non-empty short_reason derived from the traceback.
+    """
+
+    def test_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """pytest 9 stdout: 'FAILED test_id' (no '- reason') -> failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, (
+            "failures must be populated even when short summary has no '- reason'"
+        )
+
+    def test_short_reason_non_empty_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """short_reason must be non-empty when extracted from traceback E-lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != "", (
+            "short_reason must not be empty - must be extracted from traceback"
+        )
+
+    def test_short_reason_contains_assertion_text(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """short_reason must contain the assertion text from traceback E-lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        reason = result.failures[0].short_reason
+        assert "AssertionError" in reason or "assert 1 == 2" in reason, (
+            f"short_reason must contain assertion text, got: {reason!r}"
+        )
+
+    def test_xdist_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist + pytest 9 stdout (no '- reason') -> failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, "xdist failures must also be populated in pytest 9 format"
+
+    def test_xdist_short_reason_non_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """xdist + pytest 9: short_reason extracted from traceback."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != ""
+
+    def test_test_id_correct_without_reason_suffix(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """test_id must be correctly parsed without the '- reason' suffix."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].test_id == "tests/test_foo.py::test_bad"
