@@ -381,6 +381,117 @@ class TestC4XdistTracebackExtraction:
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
 
+
+# ---------------------------------------------------------------------------
+# Pytest 9 format: short summary has NO "- reason" suffix
+# ---------------------------------------------------------------------------
+
+_PYTEST9_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+________________________________ test_bad __________________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+_PYTEST9_XDIST_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw0] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+
+class TestPytest9FailedLineFormat:
+    """Regression tests for pytest 9 short-summary format (no '- reason' suffix).
+
+    In pytest 9, 'FAILED test_id - reason' became 'FAILED test_id'.
+    _parse_failures() must still return a populated FailureDetail with
+    a non-empty short_reason derived from the traceback.
+    """
+
+    def test_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """pytest 9 stdout with 'FAILED test_id' (no '- reason') → failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, \
+            "failures must be populated even when short summary has no '- reason'"
+
+    def test_short_reason_non_empty_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """short_reason must be non-empty when extracted from traceback E-lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != "", \
+            "short_reason must not be empty — must be extracted from traceback"
+
+    def test_short_reason_contains_assertion_text(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """short_reason should contain the assertion error text from 'E  ' traceback lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert "AssertionError" in result.failures[0].short_reason or \
+               "assert 1 == 2" in result.failures[0].short_reason, \
+            f"short_reason must contain assertion text, got: {result.failures[0].short_reason!r}"
+
+    def test_xdist_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist + pytest 9 stdout (no '- reason') → failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, \
+            "xdist failures must also be populated in pytest 9 format"
+
+    def test_xdist_short_reason_non_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist + pytest 9: short_reason extracted from traceback."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != ""
+
+    def test_test_id_correct_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """test_id must be correctly parsed even without the '- reason' suffix."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].test_id == "tests/test_foo.py::test_bad"
+
     def test_c4_extract_traceback_with_xdist_prefix_gw12(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -390,6 +501,117 @@ class TestC4XdistTracebackExtraction:
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
 
+
+# ---------------------------------------------------------------------------
+# Pytest 9 format: short summary has NO "- reason" suffix
+# ---------------------------------------------------------------------------
+
+_PYTEST9_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+________________________________ test_bad __________________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+_PYTEST9_XDIST_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw0] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+
+class TestPytest9FailedLineFormat:
+    """Regression tests for pytest 9 short-summary format (no '- reason' suffix).
+
+    In pytest 9, 'FAILED test_id - reason' became 'FAILED test_id'.
+    _parse_failures() must still return a populated FailureDetail with
+    a non-empty short_reason derived from the traceback.
+    """
+
+    def test_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """pytest 9 stdout with 'FAILED test_id' (no '- reason') → failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, \
+            "failures must be populated even when short summary has no '- reason'"
+
+    def test_short_reason_non_empty_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """short_reason must be non-empty when extracted from traceback E-lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != "", \
+            "short_reason must not be empty — must be extracted from traceback"
+
+    def test_short_reason_contains_assertion_text(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """short_reason should contain the assertion error text from 'E  ' traceback lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert "AssertionError" in result.failures[0].short_reason or \
+               "assert 1 == 2" in result.failures[0].short_reason, \
+            f"short_reason must contain assertion text, got: {result.failures[0].short_reason!r}"
+
+    def test_xdist_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist + pytest 9 stdout (no '- reason') → failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, \
+            "xdist failures must also be populated in pytest 9 format"
+
+    def test_xdist_short_reason_non_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist + pytest 9: short_reason extracted from traceback."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != ""
+
+    def test_test_id_correct_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """test_id must be correctly parsed even without the '- reason' suffix."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].test_id == "tests/test_foo.py::test_bad"
+
     def test_c4_extract_traceback_without_prefix_unchanged(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -398,3 +620,114 @@ class TestC4XdistTracebackExtraction:
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
+
+
+# ---------------------------------------------------------------------------
+# Pytest 9 format: short summary has NO "- reason" suffix
+# ---------------------------------------------------------------------------
+
+_PYTEST9_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+________________________________ test_bad __________________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+_PYTEST9_XDIST_FAILED_STDOUT = """\
+============================= test session starts ==============================
+collected 2 items
+
+tests/test_foo.py::test_ok PASSED
+tests/test_foo.py::test_bad FAILED
+
+================================= FAILURES =================================
+[gw0] _________________________ test_bad __________________________
+
+    def test_bad():
+>       assert 1 == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:10: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_bad
+========================= 1 failed, 1 passed in 0.23s =========================
+"""
+
+
+class TestPytest9FailedLineFormat:
+    """Regression tests for pytest 9 short-summary format (no '- reason' suffix).
+
+    In pytest 9, 'FAILED test_id - reason' became 'FAILED test_id'.
+    _parse_failures() must still return a populated FailureDetail with
+    a non-empty short_reason derived from the traceback.
+    """
+
+    def test_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """pytest 9 stdout with 'FAILED test_id' (no '- reason') → failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, \
+            "failures must be populated even when short summary has no '- reason'"
+
+    def test_short_reason_non_empty_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """short_reason must be non-empty when extracted from traceback E-lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != "", \
+            "short_reason must not be empty — must be extracted from traceback"
+
+    def test_short_reason_contains_assertion_text(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """short_reason should contain the assertion error text from 'E  ' traceback lines."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert "AssertionError" in result.failures[0].short_reason or \
+               "assert 1 == 2" in result.failures[0].short_reason, \
+            f"short_reason must contain assertion text, got: {result.failures[0].short_reason!r}"
+
+    def test_xdist_failures_populated_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist + pytest 9 stdout (no '- reason') → failures non-empty."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1, \
+            "xdist failures must also be populated in pytest 9 format"
+
+    def test_xdist_short_reason_non_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """xdist + pytest 9: short_reason extracted from traceback."""
+        result = _run(monkeypatch, _PYTEST9_XDIST_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != ""
+
+    def test_test_id_correct_without_reason_suffix(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """test_id must be correctly parsed even without the '- reason' suffix."""
+        result = _run(monkeypatch, _PYTEST9_FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].test_id == "tests/test_foo.py::test_bad"
