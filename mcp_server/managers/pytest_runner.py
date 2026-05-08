@@ -194,9 +194,7 @@ class PytestRunner:
             traceback = self._extract_traceback(stdout, test_id)
             inline_reason = match.group(2)
             short_reason = (
-                inline_reason.strip()
-                if inline_reason
-                else self._extract_short_reason(traceback)
+                inline_reason.strip() if inline_reason else self._extract_short_reason(traceback)
             )
             location, _, _ = test_id.partition("::")
             details.append(

@@ -1,0 +1,16 @@
+{
+  "322": {
+    "issue_title": "pytest 9: _FAILED_LINE_RE never matches, failures always empty",
+    "workflow_name": "hotfix",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-08T11:37:32.308645+00:00"
+  }
+}
