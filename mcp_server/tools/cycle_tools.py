@@ -142,7 +142,6 @@ class TransitionCycleTool(BaseTransitionTool):
 class ForceCycleTransitionInput(BaseModel):
     """Input for force_cycle_transition tool."""
 
-
     model_config = ConfigDict(extra="forbid")
     to_cycle: int = Field(..., description="Target cycle number (any direction)")
     skip_reason: str = Field(..., description="Reason for forced transition (backward/skip)")

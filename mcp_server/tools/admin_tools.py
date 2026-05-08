@@ -83,7 +83,6 @@ def _parse_marker_file(marker_path: Path) -> dict[str, Any]:
 class RestartServerInput(BaseModel):
     """Input for RestartServerTool."""
 
-
     model_config = ConfigDict(extra="forbid")
 
     reason: str = Field(

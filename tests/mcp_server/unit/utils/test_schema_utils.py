@@ -1,6 +1,6 @@
 import json
 import pytest
-from mcp_server.utils.schema_utils import _resolve_schema_refs
+from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
 class TestResolveSchemaRefs:
@@ -28,7 +28,7 @@ class TestResolveSchemaRefs:
             }
         }
 
-        result = _resolve_schema_refs(schema)
+        result = resolve_schema_refs(schema)
 
         # Assert $defs is gone
         assert "$defs" not in result
@@ -66,7 +66,7 @@ class TestResolveSchemaRefs:
             }
         }
 
-        result = _resolve_schema_refs(schema)
+        result = resolve_schema_refs(schema)
 
         # Descriptions must survive
         assert result["properties"]["name"]["description"] == "The user's full name"
@@ -82,7 +82,7 @@ class TestResolveSchemaRefs:
             }
         }
 
-        result = _resolve_schema_refs(schema)
+        result = resolve_schema_refs(schema)
 
         # Should be identical (or at least equivalent)
         assert result == schema

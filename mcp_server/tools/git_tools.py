@@ -173,6 +173,7 @@ class CreateBranchTool(BranchMutatingTool):
 
 class GitStatusInput(BaseModel):
     """Input for GitStatusTool (empty)."""
+
     model_config = ConfigDict(extra="forbid")
 
 

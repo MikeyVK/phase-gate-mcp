@@ -2,7 +2,7 @@
 
 import json
 import unicodedata
-from typing import Any, Literal
+from typing import Literal
 
 import jinja2
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -69,7 +69,7 @@ class IssueBody(BaseModel):
                     "related_docs": ["docs/development/issue149/research.md"],
                 },
             ]
-        }
+        },
     )
 
 
@@ -143,7 +143,7 @@ class CreateIssueInput(BaseModel):
                     "assignees": ["alice"],
                 },
             ]
-        }
+        },
     )
 
 

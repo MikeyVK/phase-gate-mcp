@@ -6,9 +6,9 @@ from typing import Any
 from pydantic import BaseModel
 
 from mcp_server.core.error_handling import tool_error_handler
-from mcp_server.utils.schema_utils import _resolve_schema_refs
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.tool_result import ToolResult
+from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
 class BaseTool(ABC):
@@ -53,7 +53,7 @@ class BaseTool(ABC):
 
         # Retrieve schema from args_model if available
         if self.args_model:
-            return _resolve_schema_refs(self.args_model.model_json_schema())
+            return resolve_schema_refs(self.args_model.model_json_schema())
 
         return {
             "type": "object",

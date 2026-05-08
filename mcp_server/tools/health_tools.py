@@ -11,6 +11,7 @@ from mcp_server.tools.tool_result import ToolResult
 
 class HealthCheckInput(BaseModel):
     """Input for HealthCheckTool."""
+
     model_config = ConfigDict(extra="forbid")
 
 

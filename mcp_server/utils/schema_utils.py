@@ -4,7 +4,7 @@ import copy
 from typing import Any, cast
 
 
-def _resolve_schema_refs(schema: dict[str, Any]) -> dict[str, Any]:
+def resolve_schema_refs(schema: dict[str, Any]) -> dict[str, Any]:
     """Inline all $ref references in a JSON Schema.
 
     This ensures the schema can be transmitted to MCP clients that don't handle
