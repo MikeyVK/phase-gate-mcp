@@ -76,18 +76,9 @@ def tool_error_handler(func: Callable[..., Awaitable[T]]) -> Callable[..., Await
                 schema_dict = exc.schema.to_dict()
                 schema_text = json.dumps(schema_dict, indent=2)
                 # Two text items: error message + schema JSON (readable by agents)
-                # Plus resource item for rich display in IDEs
                 content: list[dict[str, Any]] = [
                     {"type": "text", "text": message},
                     {"type": "text", "text": f"Input schema:\n{schema_text}"},
-                    {
-                        "type": "resource",
-                        "resource": {
-                            "uri": "schema://validation",
-                            "mimeType": "application/json",
-                            "text": schema_text,
-                        },
-                    },
                 ]
                 result = cast(
                     T,
