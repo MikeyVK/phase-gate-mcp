@@ -69,30 +69,20 @@
               },
               {
                 "id": "D1.6",
-                "description": "extra=forbid on LineEdit nested model",
-                "validates": {
-                  "type": "contains_text",
-                  "file": "mcp_server/tools/safe_edit_tool.py",
-                  "text": "extra='forbid'"
-                }
+                "description": "LineEdit and InsertLine nested models have extra=forbid (validated by parametrized RED test)"
               },
               {
                 "id": "D1.7",
-                "description": "extra=forbid on InsertLine nested model",
-                "validates": {
-                  "type": "contains_text",
-                  "file": "mcp_server/tools/safe_edit_tool.py",
-                  "text": "extra='forbid'"
-                }
-              },
-              {
-                "id": "D1.8",
-                "description": "CreateIssueTool.input_schema override removed",
+                "description": "All 5 def input_schema overrides removed from issue_tools.py (CreateIssueTool L193 + UpdateIssueTool L310 + CloseIssueTool L353 + GetIssueTool L397 + ListIssuesTool L435)",
                 "validates": {
                   "type": "absent_text",
                   "file": "mcp_server/tools/issue_tools.py",
                   "text": "def input_schema"
                 }
+              },
+              {
+                "id": "D1.8",
+                "description": "All 5 def input_schema overrides removed from issue_tools.py (gate duplicate of D1.7 for traceability)"
               }
             ],
             "exit_criteria": "All D1.x validates gates pass; C9 test (test_create_issue_schema.py) remains green; full test suite green"
@@ -191,20 +181,29 @@
               },
               {
                 "id": "D3.5",
-                "description": "RecoveryNote imported and used in artifact_manager.py",
+                "description": "BlockerNote actively produced in artifact_manager.py (not just imported)",
                 "validates": {
                   "type": "contains_text",
                   "file": "mcp_server/managers/artifact_manager.py",
-                  "text": "RecoveryNote"
+                  "text": "note_context.produce(BlockerNote"
                 }
               },
               {
                 "id": "D3.6",
-                "description": "SuggestionNote imported and used in template_scaffolder.py",
+                "description": "RecoveryNote actively produced in artifact_manager.py (not just imported)",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "mcp_server/managers/artifact_manager.py",
+                  "text": "note_context.produce(RecoveryNote"
+                }
+              },
+              {
+                "id": "D3.7",
+                "description": "SuggestionNote actively produced in template_scaffolder.py (not just imported)",
                 "validates": {
                   "type": "contains_text",
                   "file": "mcp_server/scaffolders/template_scaffolder.py",
-                  "text": "SuggestionNote"
+                  "text": "note_context.produce(SuggestionNote"
                 }
               }
             ],
