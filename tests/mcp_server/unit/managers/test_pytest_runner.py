@@ -595,21 +595,15 @@ class TestC5MultilineEBlock:
             f"short_reason must contain diff lines, got: {reason!r}"
         )
 
-    def test_c5_short_reason_is_multiline_string(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_c5_short_reason_is_multiline_string(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Multi-line E-block: short_reason contains newlines between E-lines."""
         result = _run(monkeypatch, _MULTILINE_E_BLOCK_STDOUT, returncode=1)
 
         assert len(result.failures) == 1
         reason = result.failures[0].short_reason
-        assert "\n" in reason, (
-            f"short_reason must be multi-line, got single-line: {reason!r}"
-        )
+        assert "\n" in reason, f"short_reason must be multi-line, got single-line: {reason!r}"
 
-    def test_c5_xdist_multiline_diff_lines_included(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_c5_xdist_multiline_diff_lines_included(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """xdist + multi-line E-block: diff lines must be present in short_reason."""
         result = _run(monkeypatch, _XDIST_MULTILINE_E_BLOCK_STDOUT, returncode=1)
 
@@ -619,9 +613,7 @@ class TestC5MultilineEBlock:
             f"xdist short_reason must contain diff lines, got: {reason!r}"
         )
 
-    def test_c5_short_reason_capped_at_300_chars(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_c5_short_reason_capped_at_300_chars(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Long E-block: short_reason must be capped at 300 characters."""
         result = _run(monkeypatch, _LONG_E_BLOCK_STDOUT, returncode=1)
 
@@ -631,9 +623,7 @@ class TestC5MultilineEBlock:
             f"short_reason must be capped at 300 chars, got {len(reason)}: {reason!r}"
         )
 
-    def test_c5_single_e_line_still_works(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_c5_single_e_line_still_works(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Regression guard: single E-line traceback still produces non-empty short_reason."""
         result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
 
