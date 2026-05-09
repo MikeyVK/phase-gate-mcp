@@ -64,10 +64,10 @@ class TestArtifactsTypeField:
         code_type_ids = [
             "dto",
             "worker",
-            "adapter",
+            # "adapter",  # DISABLED (issue #325 - no V2 support)
             "tool",
-            "resource",
-            "interface",
+            # "resource",  # DISABLED (issue #325 - no V2 support)
+            # "interface",  # DISABLED (issue #325 - no V2 support)
             "schema",
             "service",
         ]
@@ -88,7 +88,7 @@ class TestArtifactsTypeField:
             "planning",
             "design",
             "architecture",
-            "tracking",
+            # "tracking",  # DISABLED (issue #325 - stale template, no V2 support)
             "reference",
         ]
         for type_id in doc_type_ids:

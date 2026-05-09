@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
@@ -82,6 +82,8 @@ def _parse_marker_file(marker_path: Path) -> dict[str, Any]:
 
 class RestartServerInput(BaseModel):
     """Input for RestartServerTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     reason: str = Field(
         default="code changes",

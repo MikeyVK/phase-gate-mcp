@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.qa_manager import QAManager
@@ -13,6 +13,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class ValidationInput(BaseModel):
     """Input for ValidationTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     scope: str = Field(
         default="all",
@@ -44,6 +46,8 @@ class ValidationTool(BaseTool):
 
 class ValidateDTOInput(BaseModel):
     """Input for ValidateDTOTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     file_path: str = Field(..., description="Path to file")
 

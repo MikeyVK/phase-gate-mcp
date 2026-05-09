@@ -2,7 +2,7 @@
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.qa_manager import QAManager
@@ -12,6 +12,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class RunQualityGatesInput(BaseModel):
     """Input for RunQualityGatesTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     scope: Literal["auto", "branch", "project", "files"] = Field(
         default="auto",

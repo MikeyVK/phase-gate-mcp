@@ -16,7 +16,7 @@ Handles all artifact types (code + documents) via ArtifactManager.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
@@ -26,6 +26,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class ScaffoldArtifactInput(BaseModel):
     """Input for scaffold_artifact tool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     artifact_type: str = Field(
         ..., description="Artifact type ID from registry (e.g., 'dto', 'design', 'worker')"
@@ -57,13 +59,6 @@ class ScaffoldArtifactTool(BranchMutatingTool):
             raise ValueError("ArtifactManager must be injected for scaffold_artifact")
         self.manager = manager
 
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        """Return JSON schema for input validation."""
-        if self.args_model is None:
-            return {}
-        return self.args_model.model_json_schema()
-
     async def execute(self, params: ScaffoldArtifactInput, context: NoteContext) -> ToolResult:
         """Execute artifact scaffolding.
 
@@ -76,7 +71,6 @@ class ScaffoldArtifactTool(BranchMutatingTool):
         Returns:
             ToolResult with success message
         """
-        del context  # NoteContext not used by this tool
         # Prepare kwargs from template context
         template_ctx = params.context or {}
         kwargs = {"name": params.name, **template_ctx}
@@ -85,9 +79,10 @@ class ScaffoldArtifactTool(BranchMutatingTool):
         if params.output_path:
             kwargs["output_path"] = params.output_path
 
-        # Scaffold artifact via manager
-        # Exceptions (ValidationError, ConfigError, etc.) propagate to decorator
-        artifact_path = await self.manager.scaffold_artifact(params.artifact_type, **kwargs)
+        # Scaffold artifact via manager, forwarding NoteContext for note production
+        artifact_path = await self.manager.scaffold_artifact(
+            params.artifact_type, note_context=context, **kwargs
+        )
 
         # Success result
         return ToolResult.text(f"✅ Scaffolded {params.artifact_type}: {artifact_path}")

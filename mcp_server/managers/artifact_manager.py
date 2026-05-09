@@ -28,7 +28,9 @@ from typing import Any, cast
 from mcp_server.adapters.filesystem import FilesystemAdapter
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
+from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
+from mcp_server.scaffolding.template_introspector import TemplateSchema
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
 from mcp_server.schemas import ArtifactRegistryConfig, ProjectStructureConfig
@@ -588,6 +590,7 @@ class ArtifactManager:
         self,
         artifact_type: str,
         output_path: str | None = None,
+        note_context: NoteContext | None = None,
         **context: Any,  # noqa: ANN401
     ) -> str:
         """Scaffold artifact from template and write to file.
@@ -665,76 +668,80 @@ class ArtifactManager:
             )
 
             if context_class is None:
-                # Fallback to v1 if schema not implemented (defensive)
-                logger.warning(
-                    "V2 pipeline enabled but %s schema not found in mcp_server.schemas, using v1",
-                    artifact_type,
+                raise ConfigError(
+                    f"V2 pipeline: no Context schema found for artifact type "
+                    f"'{artifact_type}' in mcp_server.schemas "
+                    f"(expected '{context_class_name}'). "
+                    f"See issue #325 for gap documentation."
                 )
-                use_v2_pipeline = False
+            # 1. Validate user input via Context schema
+            try:
+                # Strip routing/lifecycle fields before schema validation.
+                # - output_path: always stripped; handled via provided_output_path.
+                # - name: stripped only when the context schema does NOT declare it as
+                #   a field (e.g. DTOContext has extra="forbid" and no 'name' field).
+                #   Schemas that define 'name' (e.g. GenericContext, ServiceContext)
+                #   must receive it so Pydantic can validate it as a required field.
+                _always_strip: set[str] = {"output_path"}
+                _model_field_names = set(context_class.model_fields.keys())
+                _v2_strip_keys = _always_strip | (
+                    {"name"} if "name" not in _model_field_names else set()
+                )
+                v2_user_context = {k: v for k, v in context.items() if k not in _v2_strip_keys}
+                context_schema = context_class.model_validate(v2_user_context)
+            except Exception as e:
+                _required = [f for f, fi in context_class.model_fields.items() if fi.is_required()]
+                _optional = [
+                    f for f, fi in context_class.model_fields.items() if not fi.is_required()
+                ]
+                raise ValidationError(
+                    f"V2 pipeline: Failed to validate {artifact_type} context "
+                    f"via {context_class.__name__}",
+                    schema=TemplateSchema(required=_required, optional=_optional),
+                ) from e
+
+            # 2. Enrich to RenderContext (adds lifecycle fields)
+            render_context = self._enrich_context_v2(
+                context_schema, artifact_type, provided_output_path=output_path
+            )
+
+            # 3. Update version_hash in render_context
+            # CRITICAL: BaseRenderContext has version_hash from LifecycleMixin
+            # We must update it with computed version_hash
+            render_context_dict = render_context.model_dump()
+            render_context_dict["version_hash"] = version_hash
+
+            # Recreate with updated version_hash
+            render_context = type(render_context).model_validate(render_context_dict)
+
+            # 4. Check if v2 template exists (e.g., dto_v2.py.jinja2)
+            # If not, use v1 template (backward compatibility)
+            v2_template_file = template_file.replace(".py.jinja2", "_v2.py.jinja2")
+            template_root = self._get_template_root()
+            v2_template_path = template_root / v2_template_file
+            v2_template_exists = v2_template_path.exists()
+
+            if v2_template_exists:
+                template_file = v2_template_file
+                logger.info("V2 pipeline: Using v2 template %s", v2_template_file)
             else:
-                # 1. Validate user input via Context schema
-                try:
-                    # Strip routing/lifecycle fields before schema validation.
-                    # - output_path: always stripped; handled via provided_output_path.
-                    # - name: stripped only when the context schema does NOT declare it as
-                    #   a field (e.g. DTOContext has extra="forbid" and no 'name' field).
-                    #   Schemas that define 'name' (e.g. GenericContext, ServiceContext)
-                    #   must receive it so Pydantic can validate it as a required field.
-                    _always_strip: set[str] = {"output_path"}
-                    _model_field_names = set(context_class.model_fields.keys())
-                    _v2_strip_keys = _always_strip | (
-                        {"name"} if "name" not in _model_field_names else set()
-                    )
-                    v2_user_context = {k: v for k, v in context.items() if k not in _v2_strip_keys}
-                    context_schema = context_class.model_validate(v2_user_context)
-                except Exception as e:
-                    raise ValidationError(
-                        f"V2 pipeline: Failed to validate {artifact_type} context "
-                        f"via {context_class.__name__}",
-                    ) from e
-
-                # 2. Enrich to RenderContext (adds lifecycle fields)
-                render_context = self._enrich_context_v2(
-                    context_schema, artifact_type, provided_output_path=output_path
+                logger.info(
+                    "V2 pipeline: v2 template not found (%s), using v1 template %s",
+                    v2_template_file,
+                    template_file,
                 )
 
-                # 3. Update version_hash in render_context
-                # CRITICAL: BaseRenderContext has version_hash from LifecycleMixin
-                # We must update it with computed version_hash
-                render_context_dict = render_context.model_dump()
-                render_context_dict["version_hash"] = version_hash
+            # 5. Convert RenderContext to dict for scaffolder
+            enriched_context = render_context.model_dump()
 
-                # Recreate with updated version_hash
-                render_context = type(render_context).model_validate(render_context_dict)
+            # Restore 'name' for _resolve_output_path (stripped before V2 validation).
+            # Path resolution uses enriched_context.get("name") when no explicit output_path.
+            if "name" in context and "name" not in enriched_context:
+                enriched_context["name"] = context["name"]
 
-                # 4. Check if v2 template exists (e.g., dto_v2.py.jinja2)
-                # If not, use v1 template (backward compatibility)
-                v2_template_file = template_file.replace(".py.jinja2", "_v2.py.jinja2")
-                template_root = self._get_template_root()
-                v2_template_path = template_root / v2_template_file
-                v2_template_exists = v2_template_path.exists()
-
-                if v2_template_exists:
-                    template_file = v2_template_file
-                    logger.info("V2 pipeline: Using v2 template %s", v2_template_file)
-                else:
-                    logger.info(
-                        "V2 pipeline: v2 template not found (%s), using v1 template %s",
-                        v2_template_file,
-                        template_file,
-                    )
-
-                # 5. Convert RenderContext to dict for scaffolder
-                enriched_context = render_context.model_dump()
-
-                # Restore 'name' for _resolve_output_path (stripped before V2 validation).
-                # Path resolution uses enriched_context.get("name") when no explicit output_path.
-                if "name" in context and "name" not in enriched_context:
-                    enriched_context["name"] = context["name"]
-
-                # 6. Add template override for v2 template (if exists)
-                if v2_template_exists:
-                    enriched_context["template_name"] = v2_template_file
+            # 6. Add template override for v2 template (if exists)
+            if v2_template_exists:
+                enriched_context["template_name"] = v2_template_file
 
         if not (use_v2_pipeline and artifact_type in v2_supported_artifacts):
             # V1 PIPELINE (dict-based, backward compatible) - UNCHANGED
@@ -751,9 +758,22 @@ class ArtifactManager:
         # V1 pipeline: introspection validate() runs inside scaffold().
         scaffold_kwargs = {k: v for k, v in enriched_context.items() if k != "artifact_type"}
         v2_active = use_v2_pipeline and artifact_type in v2_supported_artifacts
-        result = self.scaffolder.scaffold(
-            artifact_type, skip_validation=v2_active, **scaffold_kwargs
-        )
+        try:
+            result = self.scaffolder.scaffold(
+                artifact_type,
+                skip_validation=v2_active,
+                note_context=note_context,
+                **scaffold_kwargs,
+            )
+        except ValidationError as exc:
+            if note_context is not None:
+                note_context.produce(BlockerNote(message=str(exc)))
+                note_context.produce(
+                    RecoveryNote(
+                        message=f"Provide all required fields for artifact type '{artifact_type}'"
+                    )
+                )
+            raise
 
         # Task 1.1c: Persist provenance to template registry
         self._persist_provenance(artifact_type, version_hash, template_file, tier_chain)

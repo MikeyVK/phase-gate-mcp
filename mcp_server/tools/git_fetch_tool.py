@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 import anyio
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
@@ -38,6 +38,8 @@ def _input_schema(args_model: type[BaseModel] | None) -> dict[str, Any]:
 
 class GitFetchInput(BaseModel):
     """Input for GitFetchTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     remote: str = Field(
         default="origin",

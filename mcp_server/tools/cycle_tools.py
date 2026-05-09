@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import anyio
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
@@ -37,6 +37,8 @@ __all__ = [
 
 class TransitionCycleInput(BaseModel):
     """Input for transition_cycle tool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     to_cycle: int = Field(..., description="Target cycle number (forward-only)")
     issue_number: int | None = Field(
@@ -140,6 +142,7 @@ class TransitionCycleTool(BaseTransitionTool):
 class ForceCycleTransitionInput(BaseModel):
     """Input for force_cycle_transition tool."""
 
+    model_config = ConfigDict(extra="forbid")
     to_cycle: int = Field(..., description="Target cycle number (any direction)")
     skip_reason: str = Field(..., description="Reason for forced transition (backward/skip)")
     human_approval: str = Field(

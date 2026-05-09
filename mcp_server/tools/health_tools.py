@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.base import BaseTool
@@ -11,6 +11,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class HealthCheckInput(BaseModel):
     """Input for HealthCheckTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class HealthCheckTool(BaseTool):

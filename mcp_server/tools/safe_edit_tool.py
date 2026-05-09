@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any
 
 # Third-party
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from mcp_server.core.operation_notes import NoteContext
 
@@ -63,6 +63,8 @@ class LineEdit(BaseModel):
     Without it, the next line will be appended to the edited line.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     start_line: int = Field(..., description="Starting line number (1-based, inclusive)")
     end_line: int = Field(..., description="Ending line number (1-based, inclusive)")
     new_content: str = Field(
@@ -89,6 +91,8 @@ class LineEdit(BaseModel):
 class InsertLine(BaseModel):
     """Represents a line insert operation."""
 
+    model_config = ConfigDict(extra="forbid")
+
     at_line: int = Field(
         ..., description="Insert before this line (1-based). Use file_lines+1 to append."
     )
@@ -104,6 +108,8 @@ class InsertLine(BaseModel):
 
 class SafeEditInput(BaseModel):
     """Input for SafeEditTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     path: str = Field(..., description="Absolute path to the file")
     content: str | None = Field(None, description="New content for the file (full rewrite)")

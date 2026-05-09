@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
@@ -12,6 +12,8 @@ from mcp_server.tools.tool_result import ToolResult
 
 class GitListBranchesInput(BaseModel):
     """Input for GitListBranchesTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     verbose: bool = Field(default=False, description="Include upstream/hash info (-vv)")
     remote: bool = Field(default=False, description="Include remote branches (-r)")
@@ -41,6 +43,8 @@ class GitListBranchesTool(BaseTool):
 
 class GitDiffInput(BaseModel):
     """Input for GitDiffTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     target_branch: str = Field(..., description="Target branch to compare against (e.g. main)")
     source_branch: str = Field(default="HEAD", description="Source branch (default: HEAD)")

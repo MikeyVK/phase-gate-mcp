@@ -19,7 +19,7 @@ from typing import Any
 
 # Third-party
 import anyio
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 
@@ -34,6 +34,8 @@ from mcp_server.tools.tool_result import ToolResult
 class TransitionPhaseInput(BaseModel):
     """Input model for TransitionPhaseTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     branch: str = Field(description="Branch name (e.g., 'feature/123-name')")
     to_phase: str = Field(description="Target phase to transition to")
     human_approval: str | None = Field(default=None, description="Optional human approval message")
@@ -44,6 +46,8 @@ class ForcePhaseTransitionInput(BaseModel):
 
     Requires both skip_reason and human_approval for audit trail.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     branch: str = Field(description="Branch name (e.g., 'feature/123-name')")
     to_phase: str = Field(description="Target phase (can skip phases)")

@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from mcp_server.core.exceptions import ValidationError
+from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.scaffolders.base_scaffolder import BaseScaffolder
 from mcp_server.scaffolders.scaffold_result import ScaffoldResult
 from mcp_server.scaffolding.renderer import JinjaRenderer
@@ -56,11 +57,17 @@ class TemplateScaffolder(BaseScaffolder):
             renderer = JinjaRenderer(template_dir=template_dir)
         self._renderer = renderer
 
-    def validate(self, artifact_type: str, **kwargs: Any) -> bool:  # noqa: ANN401
+    def validate(
+        self,
+        artifact_type: str,
+        note_context: NoteContext | None = None,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> bool:
         """Validate scaffolding arguments using template introspection.
 
         Args:
             artifact_type: Artifact type_id from registry
+            note_context: Optional NoteContext for producing SuggestionNotes
             **kwargs: Context for template rendering
 
         Returns:
@@ -106,6 +113,13 @@ class TemplateScaffolder(BaseScaffolder):
             # Track missing/provided for structured response
             error.missing = missing
             error.provided = list(provided)
+            if note_context is not None:
+                note_context.produce(
+                    SuggestionNote(
+                        message=f"Provide the missing fields: {', '.join(missing)}",
+                        subject=artifact_type,
+                    )
+                )
             raise error
 
         return True
@@ -114,6 +128,7 @@ class TemplateScaffolder(BaseScaffolder):
         self,
         artifact_type: str,
         skip_validation: bool = False,
+        note_context: NoteContext | None = None,
         **kwargs: Any,  # noqa: ANN401
     ) -> ScaffoldResult:
         """Scaffold artifact from template.
@@ -122,6 +137,7 @@ class TemplateScaffolder(BaseScaffolder):
             artifact_type: Artifact type_id from registry
             skip_validation: If True, skip introspection-based validation.
                 Used by V2 pipeline where Pydantic schemas already validated input.
+            note_context: Optional NoteContext for producing typed notes on error paths.
             **kwargs: Context for template rendering
 
         Returns:
@@ -133,7 +149,7 @@ class TemplateScaffolder(BaseScaffolder):
         # Validate via introspection (V1 pipeline only).
         # V2 pipeline uses Pydantic schemas for validation — skip introspection here.
         if not skip_validation:
-            self.validate(artifact_type, **kwargs)
+            self.validate(artifact_type, note_context=note_context, **kwargs)
 
         # Get artifact definition
         artifact = self.registry.get_artifact(artifact_type)

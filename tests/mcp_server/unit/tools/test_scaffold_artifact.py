@@ -4,6 +4,7 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.scaffold_artifact]
 """
 
+from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -63,7 +64,7 @@ class TestScaffoldArtifactTool:
 
         # Verify manager called
         mock_manager.scaffold_artifact.assert_called_once_with(
-            "dto", name="User", fields=[{"name": "id", "type": "int"}]
+            "dto", note_context=mock.ANY, name="User", fields=[{"name": "id", "type": "int"}]
         )
 
         # Verify result
@@ -89,6 +90,7 @@ class TestScaffoldArtifactTool:
         # Verify manager called
         mock_manager.scaffold_artifact.assert_called_once_with(
             "design",
+            note_context=mock.ANY,
             name="system-architecture",
             title="System Architecture",
             author="GitHub Copilot",
@@ -167,6 +169,7 @@ class TestScaffoldArtifactTool:
         # Verify all context items passed as kwargs
         mock_manager.scaffold_artifact.assert_called_once_with(
             "dto",
+            note_context=mock.ANY,
             name="User",
             fields=[{"name": "id", "type": "int"}],
             docstring="User data transfer object",

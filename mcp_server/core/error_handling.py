@@ -73,17 +73,12 @@ def tool_error_handler(func: Callable[..., Awaitable[T]]) -> Callable[..., Await
 
             # Special handling for ValidationError with schema
             if isinstance(exc, ValidationError) and hasattr(exc, "schema") and exc.schema:
-                # Create ToolResult with resource content containing schema
+                schema_dict = exc.schema.to_dict()
+                schema_text = json.dumps(schema_dict, indent=2)
+                # Two text items: error message + schema JSON (inline, readable by agents without extra tool call)
                 content: list[dict[str, Any]] = [
                     {"type": "text", "text": message},
-                    {
-                        "type": "resource",
-                        "resource": {
-                            "uri": "schema://validation",
-                            "mimeType": "application/json",
-                            "text": json.dumps(exc.schema.to_dict(), indent=2),
-                        },
-                    },
+                    {"type": "text", "text": schema_text},
                 ]
                 result = cast(
                     T,

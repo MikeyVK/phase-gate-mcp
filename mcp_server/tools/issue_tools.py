@@ -1,12 +1,11 @@
 """Issue management tools."""
 
-import copy
 import json
 import unicodedata
-from typing import Any, Literal, cast
+from typing import Literal
 
 import jinja2
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.core.exceptions import ExecutionError
@@ -40,29 +39,6 @@ def normalize_unicode(text: str) -> str:
     return unicodedata.normalize("NFC", normalized)
 
 
-def _resolve_schema_refs(schema: dict[str, Any]) -> dict[str, Any]:
-    """Inline all $ref references in a JSON Schema."""
-    schema = copy.deepcopy(schema)
-    defs: dict[str, Any] = schema.pop("$defs", {})
-
-    def _resolve(node: Any) -> Any:  # noqa: ANN401
-        if isinstance(node, dict):
-            if "$ref" in node:
-                ref_path: str = node["$ref"]
-                def_name = ref_path.rsplit("/", maxsplit=1)[-1]
-                resolved = copy.deepcopy(defs.get(def_name, {}))
-                for key, value in node.items():
-                    if key != "$ref":
-                        resolved[key] = value
-                return _resolve(resolved)
-            return {key: _resolve(value) for key, value in node.items()}
-        if isinstance(node, list):
-            return [_resolve(item) for item in node]
-        return node
-
-    return cast(dict[str, Any], _resolve(schema))
-
-
 class IssueBody(BaseModel):
     """Structured body for a GitHub issue, rendered via issue.md.jinja2."""
 
@@ -77,8 +53,9 @@ class IssueBody(BaseModel):
         default=None, description="List of related documentation paths or URLs"
     )
 
-    model_config = {
-        "json_schema_extra": {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "problem": "The create_issue tool does not validate issue_type.",
@@ -92,8 +69,8 @@ class IssueBody(BaseModel):
                     "related_docs": ["docs/development/issue149/research.md"],
                 },
             ]
-        }
-    }
+        },
+    )
 
 
 class CreateIssueInput(BaseModel):
@@ -136,8 +113,9 @@ class CreateIssueInput(BaseModel):
             return parsed
         return v
 
-    model_config = {
-        "json_schema_extra": {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "issue_type": "feature",
@@ -165,8 +143,8 @@ class CreateIssueInput(BaseModel):
                     "assignees": ["alice"],
                 },
             ]
-        }
-    }
+        },
+    )
 
 
 class CreateIssueTool(BaseTool):
@@ -188,11 +166,6 @@ class CreateIssueTool(BaseTool):
         self._milestone_config = milestone_config
         self._contracts_config = contracts_config
         self._renderer = JinjaRenderer(template_dir=get_template_root())
-
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        """Return inlined JSON Schema without $ref/$defs for VS Code compatibility."""
-        return _resolve_schema_refs(CreateIssueInput.model_json_schema())
 
     def _render_body(self, body: IssueBody, title: str = "") -> str:
         """Render an IssueBody to markdown via issue.md.jinja2."""
@@ -293,6 +266,8 @@ class CreateIssueTool(BaseTool):
 class GetIssueInput(BaseModel):
     """Input for GetIssueTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     issue_number: int = Field(..., description="The issue number to retrieve")
 
 
@@ -305,10 +280,6 @@ class GetIssueTool(BaseTool):
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
-
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
 
     async def execute(self, params: GetIssueInput, context: NoteContext) -> ToolResult:
         del context  # Not used
@@ -335,6 +306,8 @@ class GetIssueTool(BaseTool):
 class ListIssuesInput(BaseModel):
     """Input for ListIssuesTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     state: IssueState | None = Field(default=None, description="Filter by issue state")
     labels: list[str] | None = Field(default=None, description="Filter by labels")
 
@@ -348,10 +321,6 @@ class ListIssuesTool(BaseTool):
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
-
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
 
     async def execute(self, params: ListIssuesInput, context: NoteContext) -> ToolResult:
         del context  # Not used
@@ -371,6 +340,8 @@ class ListIssuesTool(BaseTool):
 
 class UpdateIssueInput(BaseModel):
     """Input for UpdateIssueTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="Issue number to update")
     title: str | None = Field(default=None, description="New title")
@@ -393,10 +364,6 @@ class UpdateIssueTool(BaseTool):
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
 
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
-
     async def execute(self, params: UpdateIssueInput, context: NoteContext) -> ToolResult:
         del context  # Not used
         try:
@@ -417,6 +384,8 @@ class UpdateIssueTool(BaseTool):
 class CloseIssueInput(BaseModel):
     """Input for CloseIssueTool."""
 
+    model_config = ConfigDict(extra="forbid")
+
     issue_number: int = Field(..., description="The issue number to close")
     comment: str | None = Field(default=None, description="Optional comment to add before closing")
 
@@ -430,10 +399,6 @@ class CloseIssueTool(BaseTool):
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
-
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
 
     async def execute(self, params: CloseIssueInput, context: NoteContext) -> ToolResult:
         del context  # Not used

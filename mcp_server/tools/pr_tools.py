@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError, PreflightError
 from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 class ListPRsInput(BaseModel):
     """Input for ListPRsTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     state: str = Field(
         default="open", description="Filter by PR state", pattern="^(open|closed|all)$"
@@ -66,6 +68,8 @@ class ListPRsTool(BaseTool):
 
 class MergePRInput(BaseModel):
     """Input for MergePRTool."""
+
+    model_config = ConfigDict(extra="forbid")
 
     pr_number: int = Field(..., description="Pull request number to merge")
     commit_message: str | None = Field(
@@ -119,6 +123,8 @@ class MergePRTool(BaseTool):
 
 class SubmitPRInput(BaseModel):
     """Input for SubmitPRTool — atomic branch submission."""
+
+    model_config = ConfigDict(extra="forbid")
 
     head: str = Field(..., description="Source branch name (e.g. feature/42-name)")
     title: str = Field(..., description="PR title")
