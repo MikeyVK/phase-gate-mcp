@@ -505,3 +505,127 @@ class TestPytest9FailedLineFormat:
 
         assert len(result.failures) == 1
         assert result.failures[0].test_id == "tests/test_foo.py::test_bad"
+
+
+# ---------------------------------------------------------------------------
+# C5 — _extract_short_reason collects all contiguous E-lines (issue #324)
+# ---------------------------------------------------------------------------
+
+_MULTILINE_E_BLOCK_STDOUT = """\
+============================= test session starts ==============================
+collected 1 item
+
+tests/test_foo.py::test_dict_diff FAILED
+
+================================= FAILURES =================================
+________________________________ test_dict_diff ____________________________
+
+    def test_dict_diff():
+>       assert {"status": "ok"} == {"status": "error"}
+E       AssertionError: assert {"status": "ok"} == {"status": "error"}
+E         Differing items:
+E         Left: {'status': 'ok'}
+E         Right: {'status': 'error'}
+
+tests/test_foo.py:5: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_dict_diff
+========================= 1 failed in 0.12s =========================
+"""
+
+_XDIST_MULTILINE_E_BLOCK_STDOUT = """\
+============================= test session starts ==============================
+collected 1 item
+
+tests/test_foo.py::test_dict_diff FAILED
+
+================================= FAILURES =================================
+[gw0] _________________________ test_dict_diff __________________________
+
+    def test_dict_diff():
+>       assert {"status": "ok"} == {"status": "error"}
+E       AssertionError: assert {"status": "ok"} == {"status": "error"}
+E         Differing items:
+E         Left: {'status': 'ok'}
+E         Right: {'status': 'error'}
+
+tests/test_foo.py:5: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_dict_diff
+========================= 1 failed in 0.12s =========================
+"""
+
+_LONG_E_BLOCK_STDOUT = """\
+============================= test session starts ==============================
+collected 1 item
+
+tests/test_foo.py::test_long FAILED
+
+================================= FAILURES =================================
+________________________________ test_long _________________________________
+
+    def test_long():
+>       assert long_value == other
+E       AssertionError: assert 'aaa' == 'bbb'
+E         line2 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+E         line3 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+E         line4 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+E         line5 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+E         line6 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+tests/test_foo.py:5: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_long
+========================= 1 failed in 0.12s =========================
+"""
+
+
+class TestC5MultilineEBlock:
+    """C5: _extract_short_reason collects all contiguous E-lines (issue #324)."""
+
+    def test_c5_multiline_diff_lines_included_in_short_reason(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Multi-line E-block: short_reason must contain diff lines, not just first E-line."""
+        result = _run(monkeypatch, _MULTILINE_E_BLOCK_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        reason = result.failures[0].short_reason
+        assert "Differing items" in reason or "Left" in reason or "Right" in reason, (
+            f"short_reason must contain diff lines, got: {reason!r}"
+        )
+
+    def test_c5_short_reason_is_multiline_string(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Multi-line E-block: short_reason contains newlines between E-lines."""
+        result = _run(monkeypatch, _MULTILINE_E_BLOCK_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        reason = result.failures[0].short_reason
+        assert "\n" in reason, f"short_reason must be multi-line, got single-line: {reason!r}"
+
+    def test_c5_xdist_multiline_diff_lines_included(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """xdist + multi-line E-block: diff lines must be present in short_reason."""
+        result = _run(monkeypatch, _XDIST_MULTILINE_E_BLOCK_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        reason = result.failures[0].short_reason
+        assert "Differing items" in reason or "Left" in reason or "Right" in reason, (
+            f"xdist short_reason must contain diff lines, got: {reason!r}"
+        )
+
+    def test_c5_short_reason_capped_at_300_chars(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Long E-block: short_reason must be capped at 300 characters."""
+        result = _run(monkeypatch, _LONG_E_BLOCK_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        reason = result.failures[0].short_reason
+        assert len(reason) <= 300, (
+            f"short_reason must be capped at 300 chars, got {len(reason)}: {reason!r}"
+        )
+
+    def test_c5_single_e_line_still_works(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Regression guard: single E-line traceback still produces non-empty short_reason."""
+        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
+
+        assert len(result.failures) == 1
+        assert result.failures[0].short_reason != ""

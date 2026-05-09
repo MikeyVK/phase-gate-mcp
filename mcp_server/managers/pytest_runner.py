@@ -208,9 +208,16 @@ class PytestRunner:
         return tuple(details)
 
     def _extract_short_reason(self, traceback: str) -> str:
-        """Extract the first 'E  ...' assertion line from a traceback block."""
-        match = _TRACEBACK_ERROR_RE.search(traceback)
-        return match.group(1).strip() if match else ""
+        """Extract all contiguous 'E  ...' assertion lines from a traceback block.
+
+        Collects every E-line, joins them with newlines, and caps the result at
+        300 characters so the response stays compact while preserving diff context.
+        """
+        lines = _TRACEBACK_ERROR_RE.findall(traceback)
+        if not lines:
+            return ""
+        reason = "\n".join(line.strip() for line in lines)
+        return reason[:300]
 
     def _extract_traceback(self, stdout: str, test_id: str) -> str:
         """Extract the traceback block for a given test_id from the FAILURES section."""
