@@ -1,0 +1,16 @@
+{
+  "324": {
+    "issue_title": "_extract_short_reason returns only first E-line \u2014 assertion diffs lost",
+    "workflow_name": "hotfix",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-09T17:09:39.959452+00:00"
+  }
+}

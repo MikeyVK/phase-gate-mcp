@@ -1,0 +1,23 @@
+{
+  "branch": "hotfix/324-extract-short-reason-multiline",
+  "issue_number": 324,
+  "workflow_name": "hotfix",
+  "current_phase": "implementation",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "_extract_short_reason returns only first E-line \u2014 assertion diffs lost",
+  "parent_branch": "main",
+  "created_at": "2026-05-09T17:09:39.969261+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
