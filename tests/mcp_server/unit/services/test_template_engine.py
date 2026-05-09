@@ -4,7 +4,7 @@ Tests TemplateEngine extracted from mcp_server/scaffolding/renderer.py
 to backend/services/template_engine.py for reusability.
 
 @layer: Tests (Unit)
-@dependencies: [pytest, pathlib, backend.services.template_engine]
+@dependencies: [pytest, pathlib, mcp_server.services.template_engine]
 """
 
 import tempfile
@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from jinja2 import TemplateNotFound, UndefinedError
 
-from backend.services.template_engine import TemplateEngine
+from mcp_server.services.template_engine import TemplateEngine
 
 
 class TestTemplateEngineInitialization:
