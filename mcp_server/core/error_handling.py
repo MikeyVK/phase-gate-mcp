@@ -75,10 +75,10 @@ def tool_error_handler(func: Callable[..., Awaitable[T]]) -> Callable[..., Await
             if isinstance(exc, ValidationError) and hasattr(exc, "schema") and exc.schema:
                 schema_dict = exc.schema.to_dict()
                 schema_text = json.dumps(schema_dict, indent=2)
-                # Two text items: error message + schema JSON (readable by agents)
+                # Two text items: error message + schema JSON (inline, readable by agents without extra tool call)
                 content: list[dict[str, Any]] = [
                     {"type": "text", "text": message},
-                    {"type": "text", "text": f"Input schema:\n{schema_text}"},
+                    {"type": "text", "text": schema_text},
                 ]
                 result = cast(
                     T,

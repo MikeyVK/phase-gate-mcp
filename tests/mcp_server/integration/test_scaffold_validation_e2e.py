@@ -5,8 +5,8 @@
 @dependencies: [pytest, mcp_server.tools.scaffold_artifact,
                 mcp_server.core.exceptions.ValidationError]
 @responsibilities:
-    - Test ValidationError.to_resource_dict() integration with ToolResult
-    - Verify schema returned on missing required fields
+    - Test ValidationError schema integration with ToolResult
+    - Verify schema returned on missing required fields (type:text for agent readability)
 """
 
 # Standard library
@@ -52,23 +52,19 @@ async def test_validation_error_returns_schema(
     # WHEN: Attempting to scaffold DTO artifact without required 'description' field
     result = await tool.execute(scaffold_input, NoteContext())
 
-    # THEN: Returns ToolResult with ValidationError resource containing schema JSON
+    # THEN: Returns ToolResult with ValidationError content containing schema JSON
     assert result.is_error, "Scaffold should fail with missing required field"
-    assert len(result.content) >= 2, "Should have error text and schema resource"
+    assert len(result.content) >= 2, "Should have error text and schema text"
 
     # First item is error text
     assert result.content[0]["type"] == "text", "First content should be error message"
 
-    # Second item is schema resource
+    # Second item is schema as inline text (type:text — readable by agents without extra tool call)
     schema_content = result.content[1]
-    assert schema_content["type"] == "resource", "Should return resource with schema"
-    assert "schema://validation" in schema_content["resource"]["uri"], (
-        "Schema URI should indicate validation"
-    )
-    assert "application/json" in schema_content["resource"]["mimeType"], "Schema should be JSON"
+    assert schema_content["type"] == "text", "Schema should be returned as inline text"
 
     # Verify schema contains expected structure
-    schema_json = json.loads(schema_content["resource"]["text"])
+    schema_json = json.loads(schema_content["text"])
     assert "required" in schema_json, "Schema should have required fields"
     assert "optional" in schema_json, "Schema should have optional fields"
     assert "description" in schema_json["required"], "description should be required"
@@ -123,13 +119,13 @@ async def test_system_fields_filtered_from_schema(
 
     # THEN: Schema only contains agent-input fields, system fields excluded
     assert result.is_error, "Should fail validation"
-    assert len(result.content) >= 2, "Should have error text and schema resource"
+    assert len(result.content) >= 2, "Should have error text and schema text"
 
     schema_content = result.content[1]
-    assert schema_content["type"] == "resource", "Error should include schema resource"
+    assert schema_content["type"] == "text", "Schema should be returned as inline text"
 
     # Verify system fields NOT in schema
-    schema_json = json.loads(schema_content["resource"]["text"])
+    schema_json = json.loads(schema_content["text"])
     system_fields = ["template_id", "template_version", "scaffold_created", "output_path"]
 
     for field in system_fields:
