@@ -1,0 +1,19 @@
+{
+  "260": {
+    "issue_title": "Remove st3 references from MCP server codebase",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-09T17:47:59.458421+00:00"
+  }
+}
