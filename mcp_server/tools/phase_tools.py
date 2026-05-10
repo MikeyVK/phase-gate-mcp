@@ -72,10 +72,12 @@ class _BaseTransitionTool(BranchMutatingTool):
         workspace_root: Path | str,
         project_manager: ProjectManager | None = None,
         state_engine: PhaseStateEngine | None = None,
+        state_root: Path | None = None,
     ) -> None:
         """Initialize tool with injected or legacy-created transition dependencies."""
         super().__init__()
         self.workspace_root = Path(workspace_root)
+        self.state_root = state_root if state_root is not None else self.workspace_root / ".st3"
         self._project_manager = project_manager
         self._state_engine = state_engine
 

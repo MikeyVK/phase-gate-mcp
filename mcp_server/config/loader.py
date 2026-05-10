@@ -32,12 +32,28 @@ SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
 
 def normalize_config_root(config_root: Path | str) -> Path:
-    """Return the canonical .st3/config directory for a workspace or config path."""
+    """Return the canonical config directory for a workspace or config path.
+
+    Accepts any of:
+    - A path ending in 'config' (already the config dir, any parent name)
+    - A path to a state root dir that has a 'config' subdirectory (disk-based check)
+    - A hidden directory (starts with '.') — treated as state root, appends 'config'
+    - A workspace root (falls back to conventional '.st3/config' bootstrap path)
+
+    The hidden-dir heuristic enables callers to pass an arbitrary state dir
+    (e.g. '.st3', '.phase-gate') without requiring it to already exist on disk.
+    """
     candidate = Path(config_root).resolve()
-    if candidate.name == "config" and candidate.parent.name == ".st3":
+    # Already points to a config directory (any parent name is fine)
+    if candidate.name == "config":
         return candidate
-    if candidate.name == ".st3":
+    # Disk-based: candidate is a state root with an existing config/ subdirectory
+    if (candidate / "config").is_dir():
         return candidate / "config"
+    # Heuristic: hidden directories are state roots (e.g. '.st3', '.phase-gate')
+    if candidate.name.startswith("."):
+        return candidate / "config"
+    # Workspace root fallback — conventional name for new-project bootstrap
     return candidate / ".st3" / "config"
 
 

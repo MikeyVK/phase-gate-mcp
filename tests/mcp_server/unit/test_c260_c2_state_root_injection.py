@@ -8,13 +8,30 @@ TDD: These tests FAIL before the GREEN implementation.
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
+import shutil
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from mcp_server.config.loader import normalize_config_root
+from mcp_server.managers.artifact_manager import ArtifactManager
+from mcp_server.managers.enforcement_runner import (
+    EnforcementRunner,
+    _read_current_phase,  # pyright: ignore[reportPrivateUsage]
+)
+from mcp_server.managers.phase_state_engine import PhaseStateEngine
+from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.scaffolding.template_registry import TemplateRegistry
+from mcp_server.tools.admin_tools import (
+    _get_restart_marker_path,  # pyright: ignore[reportPrivateUsage]
+)
+from mcp_server.tools.cycle_tools import TransitionCycleTool
+from mcp_server.tools.git_tools import build_phase_guard
+from mcp_server.utils import template_config
 
 # ---------------------------------------------------------------------------
 # F1 / normalize_config_root — dir-name-agnostic
@@ -26,8 +43,6 @@ class TestNormalizeConfigRootPhaseGate:
 
     def test_accepts_phase_gate_config_dir(self, tmp_path: Path) -> None:
         """normalize_config_root('/ws/.phase-gate/config') → same path."""
-        from mcp_server.config.loader import normalize_config_root
-
         config_dir = tmp_path / ".phase-gate" / "config"
         config_dir.mkdir(parents=True)
         result = normalize_config_root(config_dir)
@@ -35,8 +50,6 @@ class TestNormalizeConfigRootPhaseGate:
 
     def test_accepts_phase_gate_state_root(self, tmp_path: Path) -> None:
         """normalize_config_root('/ws/.phase-gate') → '/ws/.phase-gate/config'."""
-        from mcp_server.config.loader import normalize_config_root
-
         state_root = tmp_path / ".phase-gate"
         config_dir = state_root / "config"
         config_dir.mkdir(parents=True)
@@ -45,8 +58,6 @@ class TestNormalizeConfigRootPhaseGate:
 
     def test_st3_still_works(self, tmp_path: Path) -> None:
         """Backward compat: normalize_config_root still accepts .st3/config."""
-        from mcp_server.config.loader import normalize_config_root
-
         config_dir = tmp_path / ".st3" / "config"
         config_dir.mkdir(parents=True)
         result = normalize_config_root(config_dir)
@@ -54,8 +65,6 @@ class TestNormalizeConfigRootPhaseGate:
 
     def test_state_root_parent_gives_back_state_root(self, tmp_path: Path) -> None:
         """config_root.parent == state_root for any hidden dir name."""
-        from mcp_server.config.loader import normalize_config_root
-
         for state_dir_name in (".st3", ".phase-gate", ".myapp"):
             state_root = tmp_path / state_dir_name
             config_dir = state_root / "config"
@@ -65,7 +74,6 @@ class TestNormalizeConfigRootPhaseGate:
                 f"For {state_dir_name}: expected parent {state_root.resolve()}, got {result.parent}"
             )
             # Cleanup for next iteration
-            import shutil
             shutil.rmtree(state_root)
 
 
@@ -77,9 +85,7 @@ class TestNormalizeConfigRootPhaseGate:
 class TestPhaseStateEngineStateRoot:
     """PhaseStateEngine must use injected state_root for state.json path."""
 
-    def _make_engine(self, state_root: Path, workspace_root: Path) -> object:
-        from mcp_server.managers.phase_state_engine import PhaseStateEngine
-
+    def _make_engine(self, state_root: Path, workspace_root: Path) -> PhaseStateEngine:
         return PhaseStateEngine(
             workspace_root=workspace_root,
             state_root=state_root,
@@ -121,9 +127,7 @@ class TestPhaseStateEngineStateRoot:
 class TestProjectManagerStateRoot:
     """ProjectManager must use injected state_root for deliverables.json path."""
 
-    def _make_manager(self, state_root: Path, workspace_root: Path) -> object:
-        from mcp_server.managers.project_manager import ProjectManager
-
+    def _make_manager(self, state_root: Path, workspace_root: Path) -> ProjectManager:
         return ProjectManager(
             workspace_root=workspace_root,
             state_root=state_root,
@@ -158,8 +162,6 @@ class TestEnforcementRunnerStateRoot:
 
     def test_reads_from_state_root_not_workspace_dot_st3(self, tmp_path: Path) -> None:
         """_read_current_phase reads state.json from state_root, not workspace/.st3."""
-        from mcp_server.managers.enforcement_runner import _read_current_phase  # pyright: ignore[reportPrivateUsage]
-
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir(parents=True)
         state_file = state_root / "state.json"
@@ -171,8 +173,6 @@ class TestEnforcementRunnerStateRoot:
 
     def test_enforcement_runner_init_accepts_state_root(self, tmp_path: Path) -> None:
         """EnforcementRunner must accept state_root kwarg."""
-        from mcp_server.managers.enforcement_runner import EnforcementRunner
-
         state_root = tmp_path / ".phase-gate"
         runner = EnforcementRunner(
             workspace_root=tmp_path,
@@ -191,16 +191,16 @@ class TestBuildPhaseGuard:
     """build_phase_guard must take state_root (not workspace_root) and read state.json from it."""
 
     def test_reads_state_json_from_state_root(self, tmp_path: Path) -> None:
-        from mcp_server.tools.git_tools import build_phase_guard
-
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         state_file = state_root / "state.json"
         state_file.write_text(
-            json.dumps({
-                "branch": "feature/42-test",
-                "current_phase": "implementation",
-            }),
+            json.dumps(
+                {
+                    "branch": "feature/42-test",
+                    "current_phase": "implementation",
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -210,8 +210,6 @@ class TestBuildPhaseGuard:
 
     def test_does_not_read_from_workspace_st3(self, tmp_path: Path) -> None:
         """Guard built with state_root must not read from workspace_root/.st3."""
-        from mcp_server.tools.git_tools import build_phase_guard
-
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         # No state.json in state_root — should skip silently (no file = no guard)
@@ -239,14 +237,10 @@ class TestCycleToolsStateRoot:
 
     def test_transition_cycle_tool_reads_state_from_state_root(self, tmp_path: Path) -> None:
         """TransitionCycleTool._get_current_branch falls back to state_root/state.json."""
-        from mcp_server.tools.cycle_tools import TransitionCycleTool
-
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         state_file = state_root / "state.json"
-        state_file.write_text(
-            json.dumps({"branch": "feature/99-test"}), encoding="utf-8"
-        )
+        state_file.write_text(json.dumps({"branch": "feature/99-test"}), encoding="utf-8")
 
         tool = TransitionCycleTool(
             workspace_root=tmp_path,
@@ -258,11 +252,7 @@ class TestCycleToolsStateRoot:
             branch = tool._get_current_branch()  # pyright: ignore[reportPrivateUsage]
         assert branch == "feature/99-test"
 
-    def test_transition_cycle_tool_does_not_read_from_workspace_st3(
-        self, tmp_path: Path
-    ) -> None:
-        from mcp_server.tools.cycle_tools import TransitionCycleTool
-
+    def test_transition_cycle_tool_does_not_read_from_workspace_st3(self, tmp_path: Path) -> None:
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         # No state.json in state_root
@@ -293,8 +283,6 @@ class TestAdminToolsRestartMarker:
     """_get_restart_marker_path must resolve relative to MCP_WORKSPACE_ROOT, not CWD."""
 
     def test_uses_mcp_workspace_root_env_var(self, tmp_path: Path) -> None:
-        from mcp_server.tools.admin_tools import _get_restart_marker_path  # pyright: ignore[reportPrivateUsage]
-
         with patch.dict(os.environ, {"MCP_WORKSPACE_ROOT": str(tmp_path)}):
             result = _get_restart_marker_path()
 
@@ -302,8 +290,6 @@ class TestAdminToolsRestartMarker:
         assert ".restart_marker" in result.name
 
     def test_does_not_use_cwd_dot_st3(self, tmp_path: Path) -> None:
-        from mcp_server.tools.admin_tools import _get_restart_marker_path  # pyright: ignore[reportPrivateUsage]
-
         fake_workspace = tmp_path / "workspace"
         fake_workspace.mkdir()
         with patch.dict(os.environ, {"MCP_WORKSPACE_ROOT": str(fake_workspace)}):
@@ -322,8 +308,6 @@ class TestArtifactManagerEphemeralTemp:
 
     def test_ephemeral_temp_uses_workspace_root(self, tmp_path: Path) -> None:
         """Path('.st3/temp') must be replaced with self.workspace_root / state_dir / 'temp'."""
-        from mcp_server.managers.artifact_manager import ArtifactManager
-
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         (state_root / "template_registry.json").touch()
@@ -339,9 +323,6 @@ class TestArtifactManagerEphemeralTemp:
 
     def test_template_registry_path_not_cwd_relative(self, tmp_path: Path) -> None:
         """template_registry path must be based on workspace_root, not CWD."""
-        from mcp_server.managers.artifact_manager import ArtifactManager
-        from mcp_server.scaffolding.template_registry import TemplateRegistry
-
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         registry_path = state_root / "template_registry.json"
@@ -363,10 +344,10 @@ class TestArtifactManagerEphemeralTemp:
 class TestTemplateConfigNoCwdSt3:
     """get_template_root() must not check CWD-relative .st3/templates."""
 
-    def test_does_not_fall_through_to_cwd_dot_st3(self, tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    def test_does_not_fall_through_to_cwd_dot_st3(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Even if .st3/templates exists in CWD, it must not be used."""
-        from mcp_server.utils import template_config
-
         st3_templates = tmp_path / ".st3" / "templates"
         st3_templates.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
@@ -393,9 +374,6 @@ class TestTemplateRegistryDefaultArg:
 
     def test_default_registry_path_is_not_cwd_dot_st3(self) -> None:
         """TemplateRegistry() without args must not default to Path('.st3/...')."""
-        import inspect
-        from mcp_server.scaffolding.template_registry import TemplateRegistry
-
         sig = inspect.signature(TemplateRegistry.__init__)
         default = sig.parameters["registry_path"].default
 

@@ -35,9 +35,9 @@ logger = logging.getLogger(__name__)
 KNOWN_TOOL_CATEGORIES: frozenset[str] = frozenset({"branch_mutating"})
 
 
-def _read_current_phase(workspace_root: Path) -> str | None:
-    """Read the current workflow phase from .st3/state.json at call time."""
-    state_file = workspace_root / ".st3" / "state.json"
+def _read_current_phase(state_root: Path) -> str | None:
+    """Read the current workflow phase from state.json at call time."""
+    state_file = state_root / "state.json"
     if not state_file.exists():
         return None
     data: dict[str, object] = json.loads(state_file.read_text(encoding="utf-8"))
@@ -154,8 +154,10 @@ class EnforcementRunner:
         registry: EnforcementRegistry | dict[str, ActionHandler] | None = None,
         default_base_branch: str = "main",
         pr_status_reader: IPRStatusReader | None = None,
+        state_root: Path | None = None,
     ) -> None:
         self.workspace_root = Path(workspace_root)
+        self.state_root = state_root if state_root is not None else self.workspace_root / ".st3"
         self._config = config
         self.default_base_branch = default_base_branch
         self._pr_status_reader = pr_status_reader
@@ -325,7 +327,7 @@ class EnforcementRunner:
         """
         del context
         required_phase = action.policy
-        current_phase = _read_current_phase(workspace_root)
+        current_phase = _read_current_phase(self.state_root)
         if current_phase != required_phase:
             note_context.produce(
                 SuggestionNote(message=f'transition_phase(to_phase="{required_phase}")')

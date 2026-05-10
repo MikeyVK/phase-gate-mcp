@@ -106,6 +106,7 @@ class ArtifactManager:
             **kwargs: Legacy support for individual dependencies and workspace_root
         """
         workspace_root = kwargs.pop("workspace_root", None)
+        state_root = kwargs.pop("state_root", None)
 
         # Legacy compat: accept individual keyword arguments
         registry = kwargs.pop("registry", None)
@@ -120,6 +121,11 @@ class ArtifactManager:
             raise TypeError(f"Unexpected keyword arguments: {unexpected}")
 
         self.workspace_root = Path(workspace_root).resolve() if workspace_root else None
+        self.state_root = (
+            Path(state_root).resolve()
+            if state_root is not None
+            else (self.workspace_root / ".st3" if self.workspace_root is not None else None)
+        )
 
         # Merge dependencies container with individual kwargs (kwargs take precedence)
         deps = dependencies
@@ -184,13 +190,15 @@ class ArtifactManager:
         # IMPORTANT: resolve path relative to workspace root (never process CWD).
         if template_registry is None:
             fs_root = getattr(self.fs_adapter, "root_path", None)
-            if self.workspace_root is not None:
-                root = self.workspace_root
+            if self.state_root is not None:
+                effective_state_root = self.state_root
+            elif self.workspace_root is not None:
+                effective_state_root = self.workspace_root / ".st3"
             elif isinstance(fs_root, str | os.PathLike):
-                root = Path(fs_root).resolve()
+                effective_state_root = Path(fs_root).resolve() / ".st3"
             else:
-                root = Path.cwd().resolve()
-            registry_path = root / ".st3" / "template_registry.json"
+                effective_state_root = Path.cwd().resolve() / ".st3"
+            registry_path = effective_state_root / "template_registry.json"
             template_registry = TemplateRegistry(registry_path=registry_path)
         self.template_registry = template_registry
 
@@ -345,14 +353,19 @@ class ArtifactManager:
                     artifact_path = self.get_artifact_path(artifact_type, name)
                     output_path_value = artifact_path
         elif artifact.output_type == "ephemeral":
-            # Ephemeral artifacts write to .st3/temp/ at write time (uuid-based filename).
+            # Ephemeral artifacts write to <state_root>/temp/ at write time (uuid-based filename).
             # If caller provided explicit output_path, use it for the SCAFFOLD header.
             # Otherwise, use a stable placeholder — actual path determined by _validate_and_write.
             if provided_output_path is not None:
                 output_path_value = Path(provided_output_path)
             else:
                 ext = getattr(artifact, "file_extension", ".txt")
-                output_path_value = Path(".st3/temp") / f"{artifact_type}_render{ext}"
+                _temp_base = (
+                    self.state_root
+                    if self.state_root is not None
+                    else Path(".st3")
+                )
+                output_path_value = _temp_base / "temp" / f"{artifact_type}_render{ext}"
 
         # Instantiate RenderContext with lifecycle fields + user context fields
         # This validates all fields via Pydantic
@@ -573,7 +586,10 @@ class ArtifactManager:
             )
 
         if artifact.output_type == "ephemeral" and not explicit:
-            temp_dir = Path(".st3/temp")
+            _state_base = (
+                self.state_root if self.state_root is not None else Path(".st3")
+            )
+            temp_dir = _state_base / "temp"
             temp_dir.mkdir(parents=True, exist_ok=True)
 
             ext = artifact.file_extension

@@ -32,8 +32,10 @@ class TemplateRegistry:
       `template_registry.yaml` exists, it will be converted to JSON and removed.
     """
 
-    def __init__(self, registry_path: Path = Path(".st3/template_registry.json")) -> None:
-        self.registry_path = registry_path
+    def __init__(self, registry_path: Path | None = None) -> None:
+        self.registry_path = (
+            registry_path if registry_path is not None else Path(".st3/template_registry.json")
+        )
         self._data: dict[str, Any] = self._load()
 
     def _legacy_yaml_path(self) -> Path:

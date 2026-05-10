@@ -84,10 +84,12 @@ class PhaseStateEngine:
         workflow_gate_runner: IWorkflowGateRunner,
         state_reconstructor: IStateReconstructor,
         workflow_state_mutator: IWorkflowStateMutator,
+        state_root: Path | None = None,
     ) -> None:
         """Initialize PhaseStateEngine."""
         workspace_path = Path(workspace_root)
-        self.state_file = workspace_path / ".st3" / "state.json"
+        effective_state_root = state_root if state_root is not None else workspace_path / ".st3"
+        self.state_file = effective_state_root / "state.json"
         self.project_manager = project_manager
 
         self._contracts_config = contracts_config
@@ -455,7 +457,7 @@ class PhaseStateEngine:
             env.setdefault("PAGER", "cat")
 
             result = subprocess.run(
-                ["git", "status", "--porcelain", "--", ".st3/state.json"],
+                ["git", "status", "--porcelain", "--", str(self.state_file.relative_to(self._workspace_root_path()))],
                 cwd=self._workspace_root_path(),
                 stdin=subprocess.DEVNULL,
                 capture_output=True,

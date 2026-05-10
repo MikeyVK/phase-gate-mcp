@@ -42,10 +42,6 @@ def get_template_root() -> Path:
             )
         return template_root.resolve()
 
-    workspace_root = Path(".st3/templates")
-    if workspace_root.exists():
-        return workspace_root.resolve()
-
     package_root = Path(__file__).parent.parent / "scaffolding" / "templates"
     if package_root.exists():
         return package_root.resolve()
@@ -53,6 +49,5 @@ def get_template_root() -> Path:
     raise FileNotFoundError(
         "Template root not found. Expected one of:\n"
         "  - TEMPLATE_ROOT environment variable\n"
-        "  - .st3/templates/ in workspace\n"
         "  - mcp_server/scaffolding/templates/ in installed package"
     )

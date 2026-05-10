@@ -23,18 +23,19 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
-# Constants
-RESTART_MARKER_PATH = Path(".st3/.restart_marker")
-
-
 # Helper functions
 def _get_restart_marker_path() -> Path:
-    """Get the restart marker file path.
+    """Get the restart marker file path, resolved relative to MCP_WORKSPACE_ROOT.
 
     Returns:
-        Path to .st3/.restart_marker file
+        Path to <workspace_root>/.st3/.restart_marker, falling back to
+        Path('.st3/.restart_marker') when the env var is absent.
     """
-    return RESTART_MARKER_PATH
+    workspace_root_env = os.environ.get("MCP_WORKSPACE_ROOT")
+    if workspace_root_env:
+        return Path(workspace_root_env) / ".st3" / ".restart_marker"
+
+    return Path(".st3") / ".restart_marker"
 
 
 def _create_audit_props(

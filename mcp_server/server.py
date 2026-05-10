@@ -143,15 +143,6 @@ class MCPServer:
         # Initialize template registry (Issue #72 Task 1.6)
         workspace_root = Path(settings.server.workspace_root)
         self._workspace_root = workspace_root
-        registry_path = workspace_root / ".st3" / "template_registry.json"
-
-        # Bootstrap registry file if missing
-        if not registry_path.exists():
-            registry_path.parent.mkdir(parents=True, exist_ok=True)
-            lifecycle_logger.info("Bootstrapping template registry: %s", registry_path)
-
-        self.template_registry = TemplateRegistry(registry_path=registry_path)
-        lifecycle_logger.info("Template registry initialized")
 
         explicit_config_root = settings.server.config_root
         if explicit_config_root is not None and not str(explicit_config_root).strip():
@@ -162,6 +153,17 @@ class MCPServer:
             explicit_root=explicit_config_root,
             required_files=("git.yaml", "workflows.yaml", "workphases.yaml"),
         )
+        state_root = config_root.parent
+
+        registry_path = state_root / "template_registry.json"
+
+        # Bootstrap registry file if missing
+        if not registry_path.exists():
+            registry_path.parent.mkdir(parents=True, exist_ok=True)
+            lifecycle_logger.info("Bootstrapping template registry: %s", registry_path)
+
+        self.template_registry = TemplateRegistry(registry_path=registry_path)
+        lifecycle_logger.info("Template registry initialized")
 
         config_loader = ConfigLoader(config_root=config_root)
         git_config = config_loader.load_git_config()
@@ -193,7 +195,7 @@ class MCPServer:
 
         # Build shared state repository (used by resolver and PhaseStateEngine)
         self._state_repository = FileStateRepository(
-            state_file=workspace_root / ".st3" / "state.json"
+            state_file=state_root / "state.json"
         )
         # Build WorkflowStatusResolver (Issue #231 C4)
         _branch_validated_reader = BranchValidatedStateReader(inner=self._state_repository)
@@ -213,6 +215,7 @@ class MCPServer:
             git_manager=self.git_manager,
             workphases_config=workphases_config,
             workflow_status_resolver=self.workflow_status_resolver,
+            state_root=state_root,
         )
         self.phase_contract_resolver = PhaseContractResolver(
             PhaseConfigContext(
@@ -245,9 +248,10 @@ class MCPServer:
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
             workflow_state_mutator=self._workflow_state_mutator,
+            state_root=state_root,
         )
         _quality_state_repository = FileQualityStateRepository(
-            backing_file=workspace_root / ".st3" / "quality_state.json"
+            backing_file=state_root / "quality_state.json"
         )
         self.qa_manager = QAManager(
             workspace_root=workspace_root,
@@ -266,6 +270,7 @@ class MCPServer:
         )
         self.artifact_manager = ArtifactManager(
             workspace_root=workspace_root,
+            state_root=state_root,
             template_registry=self.template_registry,
             registry=artifact_registry,
             project_structure_config=project_structure_config,
@@ -281,6 +286,7 @@ class MCPServer:
             config=enforcement_config,
             default_base_branch=git_config.default_base_branch,
             pr_status_reader=self.pr_status_cache,
+            state_root=state_root,
         )
 
         self.server = Server(server_name)
@@ -298,7 +304,7 @@ class MCPServer:
             GitStatusTool(manager=self.git_manager),
             GitCommitTool(
                 manager=self.git_manager,
-                phase_guard=build_phase_guard(Path(settings.server.workspace_root)),
+                phase_guard=build_phase_guard(state_root),
                 commit_type_resolver=build_commit_type_resolver(
                     self.phase_state_engine,
                     self.phase_contract_resolver,
