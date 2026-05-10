@@ -24,7 +24,7 @@ from mcp.types import (
 from pydantic import AnyUrl, BaseModel, ValidationError
 
 # Config
-from mcp_server.config.loader import ConfigLoader, resolve_config_root
+from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
@@ -144,16 +144,11 @@ class MCPServer:
         workspace_root = Path(settings.server.workspace_root)
         self._workspace_root = workspace_root
 
-        explicit_config_root = settings.server.config_root
-        if explicit_config_root is not None and not str(explicit_config_root).strip():
-            explicit_config_root = None
-
-        config_root = resolve_config_root(
-            preferred_root=workspace_root,
-            explicit_root=explicit_config_root,
-            required_files=("git.yaml", "workflows.yaml", "workphases.yaml"),
-        )
-        server_root = config_root.parent
+        # C3: chain inversion — server_root is primary, config_root is derived.
+        # MCP_CONFIG_ROOT / settings.server.config_root is kept in settings for
+        # backward compatibility but is no longer used for path derivation here.
+        server_root = workspace_root / settings.server.state_dir
+        config_root = server_root / "config"
 
         registry_path = server_root / "template_registry.json"
 

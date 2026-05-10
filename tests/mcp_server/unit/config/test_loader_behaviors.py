@@ -66,9 +66,16 @@ def test_normalize_config_root_handles_workspace_and_st3_paths(tmp_path: Path) -
     with pytest.raises(FileNotFoundError):
         normalize_config_root(workspace_root)
 
-    # Hidden state-dir and config/ paths still resolve correctly.
-    assert normalize_config_root(workspace_root / ".st3") == config_root.resolve()
+    # C3: hidden state-dir without config/ on disk also raises (heuristic removed).
+    with pytest.raises(FileNotFoundError):
+        normalize_config_root(workspace_root / ".st3")
+
+    # config/ path always resolves correctly regardless of parent name.
     assert normalize_config_root(config_root) == config_root.resolve()
+
+    # Disk-based: state root WITH config/ subdir on disk resolves correctly.
+    config_root.mkdir(parents=True)
+    assert normalize_config_root(workspace_root / ".st3") == config_root.resolve()
 
 
 def test_resolve_config_root_uses_preferred_workspace_root(tmp_path: Path) -> None:
@@ -309,4 +316,3 @@ def test_normalize_config_root_c3_rejects_hidden_dir_without_config_subdir(
     # After C3 the function no longer guesses: if config/ doesn't exist on disk, raise.
     with pytest.raises(FileNotFoundError):
         normalize_config_root(hidden_dir)
-

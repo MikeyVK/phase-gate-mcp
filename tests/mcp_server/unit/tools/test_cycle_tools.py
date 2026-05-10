@@ -149,6 +149,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / ".st3" / "config"
             )
+            mock_settings_cls.from_env.return_value.server.state_dir = ".st3"
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"
@@ -202,6 +203,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / ".st3" / "config"
             )
+            mock_settings_cls.from_env.return_value.server.state_dir = ".st3"
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"

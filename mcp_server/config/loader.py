@@ -37,11 +37,11 @@ def normalize_config_root(config_root: Path | str) -> Path:
     Accepts any of:
     - A path ending in 'config' (already the config dir, any parent name)
     - A path to a state root dir that has a 'config' subdirectory (disk-based check)
-    - A hidden directory (starts with '.') — treated as state root, appends 'config'
-    - A workspace root (probed via resolve_config_root bootstrap logic)
 
-    The hidden-dir heuristic enables callers to pass any hidden state dir
-    (e.g. '.phase-gate') without requiring it to already exist on disk.
+    After C3 the hidden-directory heuristic is removed: callers must supply an
+    explicit config/ path or a state root that already has a config/ subdirectory
+    on disk. Use server_root / "config" (derived from settings.state_dir) as the
+    canonical call site.
     """
     candidate = Path(config_root).resolve()
     # Already points to a config directory (any parent name is fine)
@@ -50,14 +50,11 @@ def normalize_config_root(config_root: Path | str) -> Path:
     # Disk-based: candidate is a state root with an existing config/ subdirectory
     if (candidate / "config").is_dir():
         return candidate / "config"
-    # Heuristic: hidden directories are state roots (e.g. '.phase-gate')
-    if candidate.name.startswith("."):
-        return candidate / "config"
     # No matching heuristic — require an explicit path to config or state root
     raise FileNotFoundError(
         f"Cannot determine config root from: {config_root!r}. "
-        "Provide an explicit path to the config directory, the state root, "
-        "or a hidden state root directory (e.g. '.phase-gate')."
+        "Provide an explicit path to the config directory or a state root "
+        "that already has a config/ subdirectory on disk."
     )
 
 

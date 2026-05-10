@@ -16,7 +16,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Project modules
-from mcp_server.config.settings import Settings, _default_server_version
+from mcp_server.config.settings import (
+    ServerSettings,
+    Settings,
+    _default_server_version,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 @pytest.fixture(autouse=True)
@@ -95,8 +99,6 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
 
 def test_state_dir_default_is_st3() -> None:
     """C3 RED: ServerSettings must expose state_dir with default '.st3'."""
-    from mcp_server.config.settings import ServerSettings
-
     s = ServerSettings()
     assert s.state_dir == ".st3"
 
