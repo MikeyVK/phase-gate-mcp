@@ -284,6 +284,7 @@ class TestAdminToolsRestartMarker:
 
     def test_uses_mcp_workspace_root_env_var(self, tmp_path: Path) -> None:
         with patch.dict(os.environ, {"MCP_WORKSPACE_ROOT": str(tmp_path)}):
+            os.environ.pop("MCP_CONFIG_ROOT", None)  # ensure MCP_CONFIG_ROOT branch is skipped
             result = _get_restart_marker_path()
 
         assert str(tmp_path) in str(result)
@@ -293,9 +294,25 @@ class TestAdminToolsRestartMarker:
         fake_workspace = tmp_path / "workspace"
         fake_workspace.mkdir()
         with patch.dict(os.environ, {"MCP_WORKSPACE_ROOT": str(fake_workspace)}):
+            os.environ.pop("MCP_CONFIG_ROOT", None)  # ensure MCP_CONFIG_ROOT branch is skipped
             result = _get_restart_marker_path()
 
         assert ".st3" not in str(result) or str(fake_workspace) in str(result)
+
+    def test_uses_mcp_config_root_over_workspace_root(self, tmp_path: Path) -> None:
+        """MCP_CONFIG_ROOT takes precedence; marker goes in config_root.parent."""
+        config_root = tmp_path / ".phase-gate" / "config"
+        config_root.mkdir(parents=True)
+        expected_state_root = config_root.parent  # tmp_path / ".phase-gate"
+        env = {
+            "MCP_CONFIG_ROOT": str(config_root),
+            "MCP_WORKSPACE_ROOT": str(tmp_path),
+        }
+        with patch.dict(os.environ, env):
+            result = _get_restart_marker_path()
+
+        assert result == expected_state_root / ".restart_marker"
+        assert ".st3" not in str(result)
 
 
 # ---------------------------------------------------------------------------

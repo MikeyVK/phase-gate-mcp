@@ -194,9 +194,7 @@ class MCPServer:
         self.git_manager = GitManager(git_config=git_config, workphases_config=workphases_config)
 
         # Build shared state repository (used by resolver and PhaseStateEngine)
-        self._state_repository = FileStateRepository(
-            state_file=state_root / "state.json"
-        )
+        self._state_repository = FileStateRepository(state_file=state_root / "state.json")
         # Build WorkflowStatusResolver (Issue #231 C4)
         _branch_validated_reader = BranchValidatedStateReader(inner=self._state_repository)
         _commit_phase_detector = CommitPhaseDetector(
@@ -231,7 +229,10 @@ class MCPServer:
             workspace_root=workspace_root,
             git_config=git_config,
             project_manager=self.project_manager,
-            scope_decoder=ScopeDecoder(workphases_config=workphases_config),
+            scope_decoder=ScopeDecoder(
+                workphases_config=workphases_config,
+                state_path=state_root / "state.json",
+            ),
         )
         self._workflow_state_mutator = WorkflowStateMutator(
             state_repository=self._state_repository,
@@ -244,7 +245,10 @@ class MCPServer:
             contracts_config=contracts_config,
             workphases_config=workphases_config,
             state_repository=self._state_repository,
-            scope_decoder=ScopeDecoder(workphases_config=workphases_config),
+            scope_decoder=ScopeDecoder(
+                workphases_config=workphases_config,
+                state_path=state_root / "state.json",
+            ),
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
             workflow_state_mutator=self._workflow_state_mutator,
@@ -380,6 +384,7 @@ class MCPServer:
                 state_engine=self.phase_state_engine,
                 github_manager=self.github_manager,
                 workphases_config=workphases_config,
+                state_path=state_root / "state.json",
                 workflow_status_resolver=self.workflow_status_resolver,
             ),
         ]

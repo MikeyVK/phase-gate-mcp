@@ -23,14 +23,23 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
+
 # Helper functions
 def _get_restart_marker_path() -> Path:
-    """Get the restart marker file path, resolved relative to MCP_WORKSPACE_ROOT.
+    """Get the restart marker file path, resolved relative to state root.
+
+    Prefers MCP_CONFIG_ROOT (new) to derive state_root = config_root.parent,
+    then falls back to MCP_WORKSPACE_ROOT with legacy '.st3' sub-dir,
+    then falls back to a relative '.st3' path.
 
     Returns:
-        Path to <workspace_root>/.st3/.restart_marker, falling back to
-        Path('.st3/.restart_marker') when the env var is absent.
+        Path to <state_root>/.restart_marker.
     """
+    config_root_env = os.environ.get("MCP_CONFIG_ROOT")
+    if config_root_env:
+        state_root = Path(config_root_env).resolve().parent
+        return state_root / ".restart_marker"
+
     workspace_root_env = os.environ.get("MCP_WORKSPACE_ROOT")
     if workspace_root_env:
         return Path(workspace_root_env) / ".st3" / ".restart_marker"

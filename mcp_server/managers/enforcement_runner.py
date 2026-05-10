@@ -317,7 +317,7 @@ class EnforcementRunner:
         self,
         action: EnforcementAction,
         context: EnforcementContext,
-        workspace_root: Path,
+        workspace_root: Path,  # noqa: ARG002
         note_context: NoteContext,
     ) -> None:
         """Block tool execution when the current workflow phase does not match policy.

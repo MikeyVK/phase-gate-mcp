@@ -360,11 +360,7 @@ class ArtifactManager:
                 output_path_value = Path(provided_output_path)
             else:
                 ext = getattr(artifact, "file_extension", ".txt")
-                _temp_base = (
-                    self.state_root
-                    if self.state_root is not None
-                    else Path(".st3")
-                )
+                _temp_base = self.state_root if self.state_root is not None else Path(".st3")
                 output_path_value = _temp_base / "temp" / f"{artifact_type}_render{ext}"
 
         # Instantiate RenderContext with lifecycle fields + user context fields
@@ -586,9 +582,7 @@ class ArtifactManager:
             )
 
         if artifact.output_type == "ephemeral" and not explicit:
-            _state_base = (
-                self.state_root if self.state_root is not None else Path(".st3")
-            )
+            _state_base = self.state_root if self.state_root is not None else Path(".st3")
             temp_dir = _state_base / "temp"
             temp_dir.mkdir(parents=True, exist_ok=True)
 

@@ -79,7 +79,7 @@ class ScopeDecoder:
             state_path: Path to state.json file (defaults to .st3/state.json)
         """
         self._workphases_config = workphases_config
-        self.state_path = state_path or Path(".st3/state.json")
+        self.state_path = state_path if state_path is not None else Path(".st3/state.json")
         self._valid_phases: set[str] | None = None
 
     def detect_phase(

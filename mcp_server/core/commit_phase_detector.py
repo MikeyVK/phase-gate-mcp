@@ -25,9 +25,13 @@ class CommitPhaseDetector:
         self,
         workspace_root: Path,
         workphases_config: WorkphasesConfig | None = None,
+        config_root: Path | None = None,
     ) -> None:
         if workphases_config is None:
-            config_loader = ConfigLoader(workspace_root / ".st3" / "config")
+            effective_config_root = (
+                config_root if config_root is not None else workspace_root / ".st3" / "config"
+            )
+            config_loader = ConfigLoader(effective_config_root)
             try:
                 workphases_config = config_loader.load_workphases_config()
             except Exception:  # noqa: BLE001

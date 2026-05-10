@@ -105,7 +105,9 @@ class ProjectManager:
         self._git_manager = git_manager
         self._workphases_config = workphases_config
         self._workflow_status_resolver = workflow_status_resolver
-        effective_state_root = state_root if state_root is not None else self.workspace_root / ".st3"
+        effective_state_root = (
+            state_root if state_root is not None else self.workspace_root / ".st3"
+        )
         self.deliverables_file = effective_state_root / "deliverables.json"
         self.atomic_json_writer = AtomicJsonWriter()
 

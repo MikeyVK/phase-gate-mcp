@@ -457,7 +457,13 @@ class PhaseStateEngine:
             env.setdefault("PAGER", "cat")
 
             result = subprocess.run(
-                ["git", "status", "--porcelain", "--", str(self.state_file.relative_to(self._workspace_root_path()))],
+                [
+                    "git",
+                    "status",
+                    "--porcelain",
+                    "--",
+                    str(self.state_file.relative_to(self._workspace_root_path())),
+                ],
                 cwd=self._workspace_root_path(),
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
