@@ -398,3 +398,197 @@ class TestTemplateRegistryDefaultArg:
         assert default is None or str(default) != ".st3/template_registry.json", (
             f"Default registry_path should not be '.st3/template_registry.json', got: {default}"
         )
+
+
+# ===========================================================================
+# C2 RED — TDD Cycle 2: no-fallback enforcement
+# These tests FAIL before GREEN (constructors still have silent .st3 fallbacks).
+# ===========================================================================
+
+
+# ---------------------------------------------------------------------------
+# PhaseStateEngine — must raise when server_root absent
+# ---------------------------------------------------------------------------
+
+
+class TestPhaseStateEngineNoFallback:
+    """PhaseStateEngine must raise when server_root is not provided."""
+
+    def test_raises_when_server_root_is_none(self) -> None:
+        """Constructing without server_root must raise — no silent .st3 fallback.
+
+        RED: constructor currently has state_root: Path|None=None with
+        effective_state_root = state_root or workspace_path / '.st3'.
+        It succeeds silently instead of raising.
+        """
+        with pytest.raises((ValueError, TypeError)):
+            PhaseStateEngine(
+                workspace_root=Path("/some/workspace"),
+                project_manager=MagicMock(),
+                git_config=MagicMock(),
+                contracts_config=MagicMock(),
+                workphases_config=MagicMock(),
+                state_repository=MagicMock(),
+                scope_decoder=MagicMock(),
+                workflow_gate_runner=MagicMock(),
+                state_reconstructor=MagicMock(),
+                workflow_state_mutator=MagicMock(),
+                # server_root omitted — must raise, not default to workspace/.st3
+            )
+
+
+# ---------------------------------------------------------------------------
+# ProjectManager — must raise when server_root absent
+# ---------------------------------------------------------------------------
+
+
+class TestProjectManagerNoFallback:
+    """ProjectManager must raise when server_root is not provided."""
+
+    def test_raises_when_server_root_is_none(self) -> None:
+        """Constructing without server_root must raise — no silent .st3 fallback.
+
+        RED: constructor currently has state_root: Path|None=None with
+        effective_state_root = state_root or workspace_root / '.st3'.
+        It succeeds silently instead of raising.
+        """
+        with pytest.raises((ValueError, TypeError)):
+            ProjectManager(
+                workspace_root=Path("/some/workspace"),
+                contracts_config=MagicMock(),
+                workflow_status_resolver=MagicMock(),
+                # server_root omitted — must raise, not default to workspace/.st3
+            )
+
+
+# ---------------------------------------------------------------------------
+# EnforcementRunner — must raise when server_root absent
+# ---------------------------------------------------------------------------
+
+
+class TestEnforcementRunnerNoFallback:
+    """EnforcementRunner must raise when server_root is not provided."""
+
+    def test_raises_when_server_root_is_none(self) -> None:
+        """Constructing without server_root must raise — no silent .st3 fallback.
+
+        RED: constructor currently has state_root: Path|None=None with
+        self.state_root = state_root or workspace_root / '.st3'.
+        It succeeds silently instead of raising.
+        """
+        from mcp_server.managers.enforcement_runner import EnforcementConfig
+
+        with pytest.raises((ValueError, TypeError)):
+            EnforcementRunner(
+                workspace_root=Path("/some/workspace"),
+                config=EnforcementConfig(enforcement=[]),
+                # server_root omitted — must raise, not default to workspace/.st3
+            )
+
+
+# ---------------------------------------------------------------------------
+# _BaseTransitionTool / cycle tools — must raise when server_root absent
+# ---------------------------------------------------------------------------
+
+
+class TestBaseTransitionToolNoFallback:
+    """_BaseTransitionTool subclasses must raise when server_root is not provided."""
+
+    def test_transition_cycle_tool_raises_when_server_root_is_none(self) -> None:
+        """TransitionCycleTool without server_root must raise.
+
+        RED: _BaseTransitionTool has state_root: Path|None=None with
+        self.state_root = state_root or workspace_root / '.st3'.
+        Constructor succeeds silently.
+        """
+        with pytest.raises((ValueError, TypeError)):
+            TransitionCycleTool(
+                workspace_root=Path("/some/workspace"),
+                # server_root omitted — must raise, not default to workspace/.st3
+            )
+
+
+# ---------------------------------------------------------------------------
+# RestartServerTool — must accept server_root injection
+# ---------------------------------------------------------------------------
+
+
+class TestAdminToolsServerRootInjection:
+    """RestartServerTool must accept server_root and use it for the marker path."""
+
+    def test_restart_tool_uses_injected_server_root(self, tmp_path: Path) -> None:
+        """RestartServerTool(server_root=...) sets marker path from server_root.
+
+        RED: RestartServerTool has no __init__ accepting server_root.
+        Constructing with server_root= raises TypeError (unexpected kwarg).
+        """
+        from mcp_server.tools.admin_tools import RestartServerTool
+
+        server_root = tmp_path / ".phase-gate"
+        tool = RestartServerTool(server_root=server_root)
+
+        expected = server_root / ".restart_marker"
+        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
+        assert result == expected
+
+    def test_marker_path_ignores_env_vars_when_server_root_injected(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Injected server_root must win over any MCP_WORKSPACE_ROOT env var.
+
+        RED: marker path currently comes from env-var lookup, not constructor injection.
+        """
+        from mcp_server.tools.admin_tools import RestartServerTool
+
+        server_root = tmp_path / ".phase-gate"
+        tool = RestartServerTool(server_root=server_root)
+
+        monkeypatch.setenv("MCP_WORKSPACE_ROOT", "/some/other/workspace")
+        monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+
+        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
+        assert result == server_root / ".restart_marker"
+        assert "/some/other/workspace" not in str(result)
+
+
+# ---------------------------------------------------------------------------
+# normalize_config_root — final fallback must not produce .st3 path
+# ---------------------------------------------------------------------------
+
+
+class TestNormalizeConfigRootNoSt3Fallback:
+    """normalize_config_root must not hardcode .st3 in the final fallback branch."""
+
+    def test_workspace_root_fallback_does_not_produce_st3_path(self, tmp_path: Path) -> None:
+        """When given a plain directory (not hidden, no config/ child), must not return .st3.
+
+        RED: current last line is `return candidate / '.st3' / 'config'`,
+        which contains '.st3' in the result.
+        """
+        # tmp_path is a plain directory (no leading '.', no config/ subdirectory)
+        # This hits the final fallback branch of normalize_config_root
+        result = normalize_config_root(tmp_path)
+
+        assert ".st3" not in str(result), (
+            f"normalize_config_root final fallback still hardcodes '.st3': {result}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TemplateRegistry — constructing with None must not silently use .st3
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateRegistryNoSt3Fallback:
+    """TemplateRegistry with registry_path=None must raise, not silently use .st3."""
+
+    def test_none_registry_path_raises_or_no_st3(self) -> None:
+        """TemplateRegistry() without args: registry_path must not resolve to .st3.
+
+        RED: current __init__ body sets
+            self.registry_path = Path('.st3/template_registry.json')
+        when registry_path is None. The instance attribute silently contains '.st3'.
+        """
+        with pytest.raises((ValueError, TypeError)):
+            # Must raise when no explicit registry_path is provided
+            TemplateRegistry()
