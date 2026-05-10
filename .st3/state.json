@@ -2,9 +2,9 @@
   "branch": "feature/260-remove-st3-references",
   "issue_number": 260,
   "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Research findings are complete and captured in docs/development/issue260/findings.md. Design and planning phases are unnecessary: the change set is fully enumerated (8 structural + 2 cosmetic changes), all files are identified, and the approach is straightforward substitution with no architectural decisions pending. User approved direct implementation after findings review.",
+  "skip_reason": "Cycle 1 implementation complete (dead stubs removed, template_engine moved). Returning to research to resolve open naming questions before proceeding with further implementation cycles.",
   "issue_title": "Remove st3 references from MCP server codebase",
   "parent_branch": "main",
   "created_at": "2026-05-09T17:47:59.496938+00:00",
@@ -28,6 +28,14 @@
       "human_approval": "User approved on 2026-05-09 \u2014 skip design and planning, go directly to implementation",
       "forced": true,
       "skip_reason": "Research findings are complete and captured in docs/development/issue260/findings.md. Design and planning phases are unnecessary: the change set is fully enumerated (8 structural + 2 cosmetic changes), all files are identified, and the approach is straightforward substitution with no architectural decisions pending. User approved direct implementation after findings review."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-05-09T18:15:03.742928+00:00",
+      "human_approval": "User approved on 2026-05-09 \u2014 return to research to continue design discussion",
+      "forced": true,
+      "skip_reason": "Cycle 1 implementation complete (dead stubs removed, template_engine moved). Returning to research to resolve open naming questions before proceeding with further implementation cycles."
     }
   ],
   "reconstructed": false,

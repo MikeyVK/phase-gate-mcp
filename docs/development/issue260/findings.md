@@ -210,12 +210,73 @@ This issue (#260) only removes `st3` string references from the MCP server codeb
 
 ---
 
-## Open Questions
+## Decisions (2026-05-10)
 
-1. **Directory name:** What replaces `.st3/`? Options: `.mcp`, `.workflow`, `.copilot`
-2. **Server name:** What replaces `st3-workflow`? Options: `mcp-workflow`, `workflow-server`
-3. **URI scheme:** What replaces `st3://`? Breaking change for clients.
-4. **Derive from config_root.parent or add new Setting?** See F1 fix approach.
+All open questions are resolved. These decisions are final for this issue.
+
+### D1 — Server product name: **PhaseGate MCP**
+
+The server will be named **PhaseGate MCP** (`phase-gate-mcp`).
+
+| Context | Convention | Value |
+|---------|-----------|-------|
+| GitHub repo name | kebab-case | `phase-gate-mcp` |
+| `MCP_SERVER_NAME` env var / `mcp.json` | kebab-case | `phase-gate-mcp` |
+| Python package/module directory | snake_case | `phase_gate_mcp` (future, post-split) |
+| Class/type names in code | PascalCase | `PhaseGateMCP` |
+| Hidden state directory on disk | kebab | `.phase-gate` |
+| MCP resource URI scheme | short lowercase | `pgmcp://` |
+
+**Work name** (used until official rename): `mcp-workflow`.
+The work name is the default in `settings.py` and `mcp.json`.
+Switching to the product name requires changing exactly two values:
+`ServerSettings.name` default and `MCP_SERVER_NAME` in `mcp.json`.
+No code changes needed beyond those two.
+
+### D2 — State directory rename: `.st3/` → `.phase-gate/`
+
+The hidden workspace directory is renamed from `.st3/` to `.phase-gate/`.
+`MCP_CONFIG_ROOT` in `mcp.json` updated from
+`${workspaceFolder}/.st3/config` to `${workspaceFolder}/.phase-gate/config`.
+
+### D3 — URI scheme: `st3://` → `pgmcp://`
+
+All MCP resource URIs change scheme from `st3://` to `pgmcp://`.
+This is a breaking change for existing clients (agent.md, mcp.json consumers).
+All references updated in this issue.
+
+### D4 — State root derivation: use `config_root.parent`
+
+No new `ServerSettings` field is added.
+`state_root` is derived as `config_root.parent` in `server.py` once after
+`resolve_config_root()` returns. This is passed to all managers as a constructor
+argument, replacing all inline `workspace_root / ".st3"` constructions.
+Rationale: `MCP_CONFIG_ROOT` already encodes the config path; `config_root.parent`
+is always the state root without requiring a second env var.
+
+### D5 — Repo split strategy: rename current repo, extract backend
+
+The current `S1mpleTraderV3` repo on GitHub is renamed to `phase-gate-mcp`.
+A new empty `S1mpleTraderV3` repo is created and the `backend/` directory is
+pushed there. This preserves the full MCP server git history (the valuable part)
+and avoids a complex `git filter-repo` operation.
+Timing: deferred to post-issue-#289 (installable wheel), except the prereqs
+already completed in Cycle 1 of this issue.
+
+### D6 — `copilot_orchestration/` stays in MCP server repo
+
+`src/copilot_orchestration/` has no production imports from either `backend/`
+or `mcp_server/`. It remains in the current repo and travels with the MCP server
+on split.
+
+### D7 — Cycle 1 already completed (2026-05-09)
+
+The following prereqs for the split were resolved in Cycle 1:
+- `backend/core/scope_encoder.py` deleted (dead stub)
+- `backend/core/phase_detection.py` deleted (dead stub)
+- `backend/services/template_engine.py` moved to `mcp_server/services/template_engine.py`
+- `tests/backend/services/test_template_engine.py` moved to
+  `tests/mcp_server/unit/services/test_template_engine.py`, import updated
 
 ---
 
@@ -223,20 +284,20 @@ This issue (#260) only removes `st3` string references from the MCP server codeb
 
 ### Structural changes (behavior-affecting):
 
-| # | Change | Files |
-|---|--------|-------|
-| S1 | Add `MCP_ST3_DIR` setting, derive `state_root` in `server.py` | `settings.py`, `server.py` |
-| S2 | Pass `state_root` to managers (replace all inline `.st3` path construction) | 8 production files |
-| S3 | Fix `normalize_config_root()` fallback to use configurable name | `config/loader.py` |
-| S4 | Fix `admin_tools.py` marker path to be workspace-aware | `tools/admin_tools.py` |
-| S5 | Fix `artifact_manager.py` ephemeral temp to use `self.workspace_root` | `managers/artifact_manager.py` |
-| S6 | Rename `st3://` URI scheme | 3 resource files + validator + 4 test files |
-| S7 | Rename server default name | `settings.py` + `mcp.json` + 1 test file |
-| S8 | Update `contracts.yaml`, `project_structure.yaml`, `workflows.yaml` | 3 YAML files |
+| # | Change | Files | Cycle |
+|---|--------|-------|-------|
+| S1 | Derive `state_root = config_root.parent` in `server.py`; pass to managers | `settings.py` (no change), `server.py` | C2 |
+| S2 | Replace all inline `workspace_root / ".st3"` with injected `state_root` | 8 production files | C2 |
+| S3 | Fix `normalize_config_root()` fallback: remove `.st3` name-check, detect by required files | `config/loader.py` | C2 |
+| S4 | Fix `admin_tools.py` marker path: read `MCP_WORKSPACE_ROOT` at call time | `tools/admin_tools.py` | C2 |
+| S5 | Fix `artifact_manager.py` ephemeral temp: use `self.workspace_root / state_dir / "temp"` | `managers/artifact_manager.py` | C2 |
+| S6 | Rename `st3://` → `pgmcp://` URI scheme | 3 resource files + validator + 4 test files | C3 |
+| S7 | Rename server default name `st3-workflow` → `mcp-workflow` (work name) | `settings.py` + `mcp.json` + 1 test file | C3 |
+| S8 | Rename `.st3/` → `.phase-gate/` on disk + all YAML config files | `contracts.yaml`, `project_structure.yaml`, `workflows.yaml` + disk | C4 |
 
 ### Cosmetic changes (comments/docstrings):
 
-| # | Change | Files |
-|---|--------|-------|
-| C1 | Update display strings in managers | 6 files |
-| C2 | Update test variable names (`st3_dir`) | 3 test files |
+| # | Change | Files | Cycle |
+|---|--------|-------|-------|
+| C1 | Update display strings in managers | 6 files | C4 |
+| C2 | Update test variable names (`st3_dir`) | 3 test files | C4 |
