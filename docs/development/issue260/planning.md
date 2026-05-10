@@ -34,33 +34,35 @@ Fix: make `server_root` a required parameter (no default `None`) or raise explic
 
 | File | Change |
 |------|--------|
-| `mcp_server/server.py` | Derive `state_root = config_root.parent` after `resolve_config_root()`, pass to managers |
-| `mcp_server/managers/phase_state_engine.py` | Accept `state_root` via constructor, replace L90, L458 |
-| `mcp_server/managers/project_manager.py` | Accept `state_root`, replace L107 |
-| `mcp_server/managers/enforcement_runner.py` | Accept `state_root`, replace L40 |
-| `mcp_server/tools/git_tools.py` | Accept `state_root`, replace L48 |
-| `mcp_server/tools/cycle_tools.py` | Accept `state_root`, replace L129, L260 |
-| `mcp_server/managers/artifact_manager.py` | Accept `state_root`, replace L193, L355, L576 |
-| `mcp_server/tools/admin_tools.py` | Read `MCP_WORKSPACE_ROOT` at call time in `_get_restart_marker_path()`, replace L27 |
-| `mcp_server/utils/template_config.py` | Use `workspace_root / state_dir_name / "templates"` instead of CWD-relative path, L45 |
-| `mcp_server/scaffolding/template_registry.py` | Replace default arg `Path(".st3/...")` with explicit `state_root`-based path, L35 |
-| `mcp_server/config/loader.py` | Fix `normalize_config_root()` fallback (L41) to not hardcode `.st3`; detect by required YAML files presence |
+| `mcp_server/server.py` | Derive `server_root = config_root.parent` (temporary; C3 inverts this), pass to managers |
+| `mcp_server/managers/phase_state_engine.py` | Accept `server_root` via constructor (required, no fallback), replace L90, L458 |
+| `mcp_server/managers/project_manager.py` | Accept `server_root` (required, no fallback), replace L107 |
+| `mcp_server/managers/enforcement_runner.py` | Accept `server_root` (required, no fallback), replace L40 |
+| `mcp_server/tools/git_tools.py` | Accept `server_root` (required, no fallback), replace L48 |
+| `mcp_server/tools/cycle_tools.py` | Accept `server_root` (required, no fallback), replace L129, L260 |
+| `mcp_server/managers/artifact_manager.py` | Accept `server_root` (required, no fallback), replace L193, L355, L576 |
+| `mcp_server/tools/admin_tools.py` | Receive `server_root` injected from server.py; `_get_restart_marker_path()` uses `server_root / ".restart_marker"` — no `MCP_WORKSPACE_ROOT` env lookup |
+| `mcp_server/utils/template_config.py` | Use `server_root / "templates"` instead of CWD-relative path, L45 |
+| `mcp_server/scaffolding/template_registry.py` | Replace default arg `Path(".st3/...")` with explicit `server_root`-based path, L35 |
+| `mcp_server/config/loader.py` | Fix `normalize_config_root()` fallback (L41): remove `.st3` name-check; final fallback must not hardcode `.st3` |
 
 ### Test files affected
 
 | File | Change |
 |------|--------|
-| `tests/mcp_server/unit/managers/test_phase_state_engine.py` | Update constructor call with `state_root` |
+| `tests/mcp_server/unit/managers/test_phase_state_engine.py` | Update constructor call with `server_root` |
 | `tests/mcp_server/unit/managers/test_project_manager.py` | Update constructor call |
 | `tests/mcp_server/unit/managers/test_enforcement_runner.py` | Update constructor call |
 | `tests/mcp_server/unit/tools/test_git_tools.py` | Update constructor call |
 | `tests/mcp_server/unit/tools/test_cycle_tools.py` | Update constructor call |
 | `tests/mcp_server/unit/managers/test_artifact_manager.py` | Update constructor call |
-| `tests/mcp_server/unit/tools/test_admin_tools.py` | Update/mock `MCP_WORKSPACE_ROOT` |
+| `tests/mcp_server/unit/tools/test_admin_tools.py` | Remove `MCP_WORKSPACE_ROOT` mock; inject `server_root` instead |
 
 ### Exit criteria
 
 - [ ] `grep -r '\.st3' mcp_server/ --include='*.py'` returns zero hits (excluding comments)
+- [ ] `grep -r '\bstate_root\b' mcp_server/ --include='*.py'` returns zero hits (renamed to `server_root` in C2)
+- [ ] No manager constructor has a `workspace_root / ".st3"` fallback
 - [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
 - [ ] `run_quality_gates(scope="branch")` — 0 errors
 
@@ -94,7 +96,6 @@ be built on top without touching the wheel.
 
 - [ ] `server_root = workspace_root / settings.state_dir` — no `config_root.parent` derivation anywhere
 - [ ] `normalize_config_root()` no longer contains heuristics or `.st3` references
-- [ ] `grep -r 'state_root' mcp_server/ --include='*.py'` returns zero hits (renamed to `server_root`)
 - [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
 - [ ] `run_quality_gates(scope="branch")` — 0 errors
 

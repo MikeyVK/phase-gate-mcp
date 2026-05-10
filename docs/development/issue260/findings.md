@@ -280,7 +280,7 @@ The following prereqs for the split were resolved in Cycle 1:
 
 ---
 
-## Findings (session 2026-05-27 — C2 implementation analysis)
+## Findings (session 2026-05-10 — C2 implementation analysis)
 
 ### F8 — `state_root` variable name is misleading
 
@@ -386,10 +386,10 @@ respectively. However, fixing these requires the proxy and QA manager to receive
 
 | # | Change | Files | Cycle |
 |---|--------|-------|-------|
-| S1 | Derive `server_root = config_root.parent` in `server.py`; pass to managers (temporary, C3 inverts) | `server.py` | C2 |
-| S2 | Replace all inline `workspace_root / ".st3"` with injected `server_root`; rename `state_root` → `server_root` | 8 production files | C2 |
-| S3 | Remove manager constructor fallbacks entirely (make `server_root` required or raise ValueError) | 5 manager/tool files | C2 |
-| S4 | Fix `admin_tools.py` marker path: use `server_root` not legacy `MCP_WORKSPACE_ROOT` branch | `tools/admin_tools.py` | C2 |
+| S1 | Derive `server_root = config_root.parent` in `server.py`; pass to managers (temporary; C3 inverts) | `server.py` | C2 |
+| S2 | Replace all inline `workspace_root / ".st3"` with injected `server_root`; **rename `state_root` → `server_root` in all modified files** (C2, not C3) | 8 production files | C2 |
+| S3 | Remove manager constructor fallbacks entirely (make `server_root` required — no `Optional`, no `.st3` default) | 5 manager/tool files | C2 |
+| S4 | Fix `admin_tools.py`: inject `server_root` from `server.py`; `_get_restart_marker_path()` uses `server_root / ".restart_marker"` — remove `MCP_WORKSPACE_ROOT` env lookup | `tools/admin_tools.py` | C2 |
 | S5 | Fix `artifact_manager.py` ephemeral temp: use `server_root / "temp"` | `managers/artifact_manager.py` | C2 |
 | S6 | Fix `loader.py` bootstrap fallback: remove `.st3` from final fallback branch | `config/loader.py` | C2 |
 | S7 | Add `state_dir: str = ".st3"` to `ServerSettings` (env: `MCP_STATE_DIR`) | `config/settings.py` | C3 |

@@ -74,9 +74,24 @@ schema discovery for custom artifact types.
 
 ## Rationale
 
-`state_root = config_root.parent` avoids a redundant env var (`MCP_CONFIG_ROOT` already
-encodes the path). URI rename is batched in one cycle to keep client updates atomic.
-Directory rename is last to minimise test disruption.
+**`server_root` is primary, `config_root` is derived** (D4-revised). The previous
+design had `config_root` as the entry point and derived `server_root = config_root.parent`.
+That design was rejected because:
+
+1. `normalize_config_root()` heuristics depended on the `.st3` directory name, making
+   a rename (C5) break the boot path.
+2. The `config/` sub-directory was treated as more fundamental than the workspace home,
+   which is semantically backwards.
+3. Any additional sub-directory (`templates/`, `logs/`) would require new, separate
+   configuration — whereas a single `server_root` makes all sub-directories derivable.
+
+**New approach (D4-revised):** `server_root = workspace_root / settings.state_dir`.
+`config_root = server_root / "config"` is always derived. `settings.state_dir`
+(env `MCP_STATE_DIR`, default `.st3`) is the single configuration point.
+This approach is implemented in C2 (injection) and C3 (chain inversion).
+
+URI rename is batched in C4 to keep client updates atomic.
+Directory rename is last (C5) to minimise test disruption.
 
 ---
 
