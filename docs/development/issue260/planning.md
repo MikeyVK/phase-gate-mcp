@@ -89,7 +89,6 @@ be built on top without touching the wheel.
 | `mcp_server/config/settings.py` | Add `state_dir: str = ".st3"` (env: `MCP_STATE_DIR`) |
 | `mcp_server/server.py` | `server_root = workspace_root / settings.state_dir`; `config_root = server_root / "config"`; remove `resolve_config_root()` call or replace with new derivation |
 | `mcp_server/config/loader.py` | `normalize_config_root()` rewritten: input is always `server_root / "config"`, no heuristic needed |
-| All managers/tools | Rename `state_root` → `server_root` in parameters and attributes |
 | `MCP_CONFIG_ROOT` env var | Keep for backward compat but mark deprecated; derive `server_root` from `MCP_STATE_DIR` + `MCP_WORKSPACE_ROOT` instead |
 
 ### Exit criteria
