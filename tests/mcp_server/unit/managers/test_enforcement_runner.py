@@ -37,6 +37,7 @@ def _make_runner(
         workspace_root=tmp_path,
         config=config,
         registry=registry,
+        server_root=tmp_path,
     )
 
 
@@ -162,6 +163,7 @@ class TestEnforcementRunner:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            server_root=tmp_path,
         )
 
         runner.run(

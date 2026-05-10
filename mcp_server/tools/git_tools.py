@@ -43,9 +43,9 @@ def build_commit_type_resolver(
     return resolve_commit_type
 
 
-def build_phase_guard(state_root: Path) -> Callable[[str, str, int | None], None]:
+def build_phase_guard(server_root: Path) -> Callable[[str, str, int | None], None]:
     """Build a guard callable that blocks commits when phase/cycle mismatches state.json."""
-    state_file = state_root / "state.json"
+    state_file = server_root / "state.json"
 
     def phase_mismatch(branch: str, workflow_phase: str, cycle_number: int | None) -> None:
         if not state_file.exists():

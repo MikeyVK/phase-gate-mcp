@@ -106,7 +106,7 @@ class ArtifactManager:
             **kwargs: Legacy support for individual dependencies and workspace_root
         """
         workspace_root = kwargs.pop("workspace_root", None)
-        state_root = kwargs.pop("state_root", None)
+        server_root = kwargs.pop("server_root", None)
 
         # Legacy compat: accept individual keyword arguments
         registry = kwargs.pop("registry", None)
@@ -121,11 +121,12 @@ class ArtifactManager:
             raise TypeError(f"Unexpected keyword arguments: {unexpected}")
 
         self.workspace_root = Path(workspace_root).resolve() if workspace_root else None
-        self.state_root = (
-            Path(state_root).resolve()
-            if state_root is not None
-            else (self.workspace_root / ".st3" if self.workspace_root is not None else None)
-        )
+        if server_root is None:
+            raise ValueError(
+                "ArtifactManager requires server_root. "
+                "Pass server_root=config_root.parent from server.py."
+            )
+        self.server_root = Path(server_root).resolve()
 
         # Merge dependencies container with individual kwargs (kwargs take precedence)
         deps = dependencies
@@ -187,18 +188,9 @@ class ArtifactManager:
         self.fs_adapter = fs_adapter or FilesystemAdapter()
 
         # Task 1.1c: Template registry for provenance (lazy init if not provided)
-        # IMPORTANT: resolve path relative to workspace root (never process CWD).
+        # IMPORTANT: resolve path relative to server_root (never process CWD or .st3).
         if template_registry is None:
-            fs_root = getattr(self.fs_adapter, "root_path", None)
-            if self.state_root is not None:
-                effective_state_root = self.state_root
-            elif self.workspace_root is not None:
-                effective_state_root = self.workspace_root / ".st3"
-            elif isinstance(fs_root, str | os.PathLike):
-                effective_state_root = Path(fs_root).resolve() / ".st3"
-            else:
-                effective_state_root = Path.cwd().resolve() / ".st3"
-            registry_path = effective_state_root / "template_registry.json"
+            registry_path = self.server_root / "template_registry.json"
             template_registry = TemplateRegistry(registry_path=registry_path)
         self.template_registry = template_registry
 
@@ -360,7 +352,7 @@ class ArtifactManager:
                 output_path_value = Path(provided_output_path)
             else:
                 ext = getattr(artifact, "file_extension", ".txt")
-                _temp_base = self.state_root if self.state_root is not None else Path(".st3")
+                _temp_base = self.server_root
                 output_path_value = _temp_base / "temp" / f"{artifact_type}_render{ext}"
 
         # Instantiate RenderContext with lifecycle fields + user context fields
@@ -582,8 +574,7 @@ class ArtifactManager:
             )
 
         if artifact.output_type == "ephemeral" and not explicit:
-            _state_base = self.state_root if self.state_root is not None else Path(".st3")
-            temp_dir = _state_base / "temp"
+            temp_dir = self.server_root / "temp"
             temp_dir.mkdir(parents=True, exist_ok=True)
 
             ext = artifact.file_extension

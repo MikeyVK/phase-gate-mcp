@@ -102,6 +102,7 @@ class TestPhaseStateEngineTransitionC4:
             workflow_gate_runner=workflow_gate_runner,
             state_reconstructor=state_reconstructor,
             workflow_state_mutator=workflow_state_mutator,
+            server_root=tmp_path / ".st3",
         )
 
     def test_validate_transition_value_error_propagates(self, tmp_path: Path) -> None:
@@ -152,6 +153,7 @@ class TestProjectManagerPhaseDelegationC4:
             workspace_root=tmp_path,
             contracts_config=contracts,
             workflow_status_resolver=MagicMock(),
+            server_root=tmp_path / ".st3",
         )
 
     def test_get_first_phase_returns_research_for_feature(self, tmp_path: Path) -> None:

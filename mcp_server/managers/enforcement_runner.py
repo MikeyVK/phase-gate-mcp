@@ -154,10 +154,16 @@ class EnforcementRunner:
         registry: EnforcementRegistry | dict[str, ActionHandler] | None = None,
         default_base_branch: str = "main",
         pr_status_reader: IPRStatusReader | None = None,
-        state_root: Path | None = None,
+        state_root: Path | None = None,  # noqa: ARG002 — kept for call-site compat during C2; use server_root
+        server_root: Path | None = None,
     ) -> None:
         self.workspace_root = Path(workspace_root)
-        self.state_root = state_root if state_root is not None else self.workspace_root / ".st3"
+        if server_root is None:
+            raise ValueError(
+                "EnforcementRunner requires server_root. "
+                "Pass server_root=config_root.parent from server.py."
+            )
+        self.server_root = server_root
         self._config = config
         self.default_base_branch = default_base_branch
         self._pr_status_reader = pr_status_reader
@@ -327,7 +333,7 @@ class EnforcementRunner:
         """
         del context
         required_phase = action.policy
-        current_phase = _read_current_phase(self.state_root)
+        current_phase = _read_current_phase(self.server_root)
         if current_phase != required_phase:
             note_context.produce(
                 SuggestionNote(message=f'transition_phase(to_phase="{required_phase}")')

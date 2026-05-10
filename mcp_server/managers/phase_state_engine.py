@@ -84,12 +84,10 @@ class PhaseStateEngine:
         workflow_gate_runner: IWorkflowGateRunner,
         state_reconstructor: IStateReconstructor,
         workflow_state_mutator: IWorkflowStateMutator,
-        state_root: Path | None = None,
+        server_root: Path,
     ) -> None:
         """Initialize PhaseStateEngine."""
-        workspace_path = Path(workspace_root)
-        effective_state_root = state_root if state_root is not None else workspace_path / ".st3"
-        self.state_file = effective_state_root / "state.json"
+        self.state_file = server_root / "state.json"
         self.project_manager = project_manager
 
         self._contracts_config = contracts_config

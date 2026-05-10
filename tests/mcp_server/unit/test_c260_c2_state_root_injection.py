@@ -27,7 +27,7 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.tools.admin_tools import (
-    _get_restart_marker_path,  # pyright: ignore[reportPrivateUsage]
+    RestartServerTool,
 )
 from mcp_server.tools.cycle_tools import TransitionCycleTool
 from mcp_server.tools.git_tools import build_phase_guard
@@ -88,7 +88,7 @@ class TestPhaseStateEngineStateRoot:
     def _make_engine(self, state_root: Path, workspace_root: Path) -> PhaseStateEngine:
         return PhaseStateEngine(
             workspace_root=workspace_root,
-            state_root=state_root,
+            server_root=state_root,
             project_manager=MagicMock(),
             git_config=MagicMock(),
             contracts_config=MagicMock(),
@@ -130,7 +130,7 @@ class TestProjectManagerStateRoot:
     def _make_manager(self, state_root: Path, workspace_root: Path) -> ProjectManager:
         return ProjectManager(
             workspace_root=workspace_root,
-            state_root=state_root,
+            server_root=state_root,
             contracts_config=MagicMock(),
             workflow_status_resolver=MagicMock(),
         )
@@ -172,14 +172,14 @@ class TestEnforcementRunnerStateRoot:
         assert result == "implementation"
 
     def test_enforcement_runner_init_accepts_state_root(self, tmp_path: Path) -> None:
-        """EnforcementRunner must accept state_root kwarg."""
+        """EnforcementRunner must accept server_root kwarg (was state_root)."""
         state_root = tmp_path / ".phase-gate"
         runner = EnforcementRunner(
             workspace_root=tmp_path,
-            state_root=state_root,
+            server_root=state_root,
             config=MagicMock(),
         )
-        assert runner.state_root == state_root
+        assert runner.server_root == state_root
 
 
 # ---------------------------------------------------------------------------
@@ -244,7 +244,7 @@ class TestCycleToolsStateRoot:
 
         tool = TransitionCycleTool(
             workspace_root=tmp_path,
-            state_root=state_root,
+            server_root=state_root,
         )
         # Simulate git unavailable — should fall back to state.json
         with patch.object(tool, "_get_git_manager") as mock_git:
@@ -266,7 +266,7 @@ class TestCycleToolsStateRoot:
 
         tool = TransitionCycleTool(
             workspace_root=tmp_path,
-            state_root=state_root,
+            server_root=state_root,
         )
         with patch.object(tool, "_get_git_manager") as mock_git:
             mock_git.return_value.get_current_branch.return_value = "feature/correct-branch"
@@ -280,39 +280,33 @@ class TestCycleToolsStateRoot:
 
 
 class TestAdminToolsRestartMarker:
-    """_get_restart_marker_path must resolve relative to MCP_WORKSPACE_ROOT, not CWD."""
+    """RestartServerTool must resolve restart marker relative to injected server_root."""
 
-    def test_uses_mcp_workspace_root_env_var(self, tmp_path: Path) -> None:
-        with patch.dict(os.environ, {"MCP_WORKSPACE_ROOT": str(tmp_path)}):
-            os.environ.pop("MCP_CONFIG_ROOT", None)  # ensure MCP_CONFIG_ROOT branch is skipped
-            result = _get_restart_marker_path()
-
-        assert str(tmp_path) in str(result)
+    def test_uses_injected_server_root(self, tmp_path: Path) -> None:
+        """Marker path must come from constructor-injected server_root, not env vars."""
+        server_root = tmp_path / ".phase-gate"
+        tool = RestartServerTool(server_root=server_root)
+        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
+        assert str(server_root) in str(result)
         assert ".restart_marker" in result.name
 
     def test_does_not_use_cwd_dot_st3(self, tmp_path: Path) -> None:
-        fake_workspace = tmp_path / "workspace"
-        fake_workspace.mkdir()
-        with patch.dict(os.environ, {"MCP_WORKSPACE_ROOT": str(fake_workspace)}):
-            os.environ.pop("MCP_CONFIG_ROOT", None)  # ensure MCP_CONFIG_ROOT branch is skipped
-            result = _get_restart_marker_path()
-
-        assert ".st3" not in str(result) or str(fake_workspace) in str(result)
-
-    def test_uses_mcp_config_root_over_workspace_root(self, tmp_path: Path) -> None:
-        """MCP_CONFIG_ROOT takes precedence; marker goes in config_root.parent."""
-        config_root = tmp_path / ".phase-gate" / "config"
-        config_root.mkdir(parents=True)
-        expected_state_root = config_root.parent  # tmp_path / ".phase-gate"
-        env = {
-            "MCP_CONFIG_ROOT": str(config_root),
-            "MCP_WORKSPACE_ROOT": str(tmp_path),
-        }
-        with patch.dict(os.environ, env):
-            result = _get_restart_marker_path()
-
-        assert result == expected_state_root / ".restart_marker"
+        """Marker path must not contain CWD-relative '.st3'."""
+        server_root = tmp_path / ".phase-gate"
+        tool = RestartServerTool(server_root=server_root)
+        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
         assert ".st3" not in str(result)
+
+    def test_env_var_does_not_override_injected_server_root(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Even with MCP_WORKSPACE_ROOT set, injected server_root wins."""
+        server_root = tmp_path / ".phase-gate"
+        tool = RestartServerTool(server_root=server_root)
+        monkeypatch.setenv("MCP_WORKSPACE_ROOT", str(tmp_path / "other"))
+        monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+        result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
+        assert result == server_root / ".restart_marker"
 
 
 # ---------------------------------------------------------------------------
@@ -324,29 +318,29 @@ class TestArtifactManagerEphemeralTemp:
     """ArtifactManager ephemeral temp dir must be workspace_root-relative."""
 
     def test_ephemeral_temp_uses_workspace_root(self, tmp_path: Path) -> None:
-        """Path('.st3/temp') must be replaced with self.workspace_root / state_dir / 'temp'."""
+        """Path('.st3/temp') must be replaced with self.server_root / 'temp'."""
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         (state_root / "template_registry.json").touch()
 
         manager = ArtifactManager(
             workspace_root=tmp_path,
-            state_root=state_root,
+            server_root=state_root,
             registry=MagicMock(),
         )
 
-        # The internal state_root should be the injected one
-        assert manager.state_root == state_root
+        # The internal server_root should be the injected one
+        assert manager.server_root == state_root
 
     def test_template_registry_path_not_cwd_relative(self, tmp_path: Path) -> None:
-        """template_registry path must be based on workspace_root, not CWD."""
+        """template_registry path must be based on server_root, not CWD."""
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         registry_path = state_root / "template_registry.json"
 
         manager = ArtifactManager(
             workspace_root=tmp_path,
-            state_root=state_root,
+            server_root=state_root,
             registry=MagicMock(),
             template_registry=TemplateRegistry(registry_path=registry_path),
         )
@@ -562,16 +556,20 @@ class TestNormalizeConfigRootNoSt3Fallback:
     def test_workspace_root_fallback_does_not_produce_st3_path(self, tmp_path: Path) -> None:
         """When given a plain directory (not hidden, no config/ child), must not return .st3.
 
-        RED: current last line is `return candidate / '.st3' / 'config'`,
-        which contains '.st3' in the result.
+        GREEN: raises FileNotFoundError (no silent .st3 fallback).
+        Either raising or returning a non-.st3 path satisfies the contract.
         """
         # tmp_path is a plain directory (no leading '.', no config/ subdirectory)
         # This hits the final fallback branch of normalize_config_root
-        result = normalize_config_root(tmp_path)
-
-        assert ".st3" not in str(result), (
-            f"normalize_config_root final fallback still hardcodes '.st3': {result}"
-        )
+        try:
+            result = normalize_config_root(tmp_path)
+            # If no exception: result must not contain .st3
+            assert ".st3" not in str(result), (
+                f"normalize_config_root final fallback still hardcodes '.st3': {result}"
+            )
+        except (FileNotFoundError, ValueError):
+            # Raising is preferred — no .st3 path was produced
+            pass
 
 
 # ---------------------------------------------------------------------------

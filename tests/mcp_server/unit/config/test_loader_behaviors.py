@@ -62,7 +62,11 @@ def test_normalize_config_root_handles_workspace_and_st3_paths(tmp_path: Path) -
     workspace_root = tmp_path / "workspace"
     config_root = workspace_root / ".st3" / "config"
 
-    assert normalize_config_root(workspace_root) == config_root.resolve()
+    # C2: plain workspace roots no longer silently map to .st3/config — they raise.
+    with pytest.raises(FileNotFoundError):
+        normalize_config_root(workspace_root)
+
+    # Hidden state-dir and config/ paths still resolve correctly.
     assert normalize_config_root(workspace_root / ".st3") == config_root.resolve()
     assert normalize_config_root(config_root) == config_root.resolve()
 

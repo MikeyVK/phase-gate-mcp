@@ -203,6 +203,7 @@ def _artifact_manager(
         scaffolder=template_scaffolder,
         validation_service=validation_service,
         fs_adapter=fs_adapter,
+        server_root=temp_workspace / ".st3",
     )
 
 

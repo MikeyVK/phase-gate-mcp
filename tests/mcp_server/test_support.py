@@ -96,10 +96,19 @@ class _NopGateRunner:
 def _candidate_config_roots(workspace_root: Path | str | None = None) -> list[Path]:
     """Return workspace-first candidate canonical config roots for tests."""
     candidates: list[Path] = []
+
+    def _probe(root: Path | str) -> list[Path]:
+        try:
+            return [normalize_config_root(root)]
+        except FileNotFoundError:
+            # Plain workspace root — probe conventional hidden state directories.
+            p = Path(root).resolve()
+            return [p / hidden / "config" for hidden in (".st3", ".phase-gate")]
+
     if workspace_root is not None:
-        candidates.append(normalize_config_root(workspace_root))
-    candidates.append(normalize_config_root(Path.cwd()))
-    candidates.append(normalize_config_root(Path(__file__).resolve().parents[2]))
+        candidates.extend(_probe(workspace_root))
+    candidates.extend(_probe(Path.cwd()))
+    candidates.extend(_probe(Path(__file__).resolve().parents[2]))
 
     unique_candidates: list[Path] = []
     seen: set[Path] = set()
@@ -245,6 +254,7 @@ def make_project_manager(
         git_manager=resolved_git_manager,
         workphases_config=workphases_config,
         workflow_status_resolver=workflow_status_resolver,
+        server_root=Path(workspace_root) / ".st3",
     )
 
 
@@ -327,6 +337,7 @@ def make_phase_state_engine(
         workflow_gate_runner=resolved_workflow_gate_runner,
         state_reconstructor=resolved_state_reconstructor,
         workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
+        server_root=workspace_path / ".st3",
     )
 
 
@@ -500,6 +511,7 @@ def make_artifact_manager(workspace_root: Path | str) -> ArtifactManager:
         workspace_root=workspace_root,
         registry=registry,
         project_structure_config=project_structure,
+        server_root=Path(workspace_root) / ".st3",
     )
 
 

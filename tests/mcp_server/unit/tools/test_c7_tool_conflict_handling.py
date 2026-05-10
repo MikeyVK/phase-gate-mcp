@@ -79,6 +79,7 @@ class TestTransitionPhaseToolConflict:
             workspace_root=tmp_path,
             project_manager=pm,
             state_engine=engine,
+            server_root=tmp_path,
         )
 
     @pytest.mark.asyncio
@@ -130,6 +131,7 @@ class TestForcePhaseTransitionToolConflict:
             workspace_root=tmp_path,
             project_manager=pm,
             state_engine=engine,
+            server_root=tmp_path,
         )
 
     @pytest.mark.asyncio
@@ -203,6 +205,7 @@ class TestTransitionCycleToolConflict:
             project_manager=pm,
             state_engine=engine,
             git_manager=git_manager,
+            server_root=tmp_path,
         )
 
     @pytest.mark.asyncio
@@ -269,6 +272,7 @@ class TestForceCycleTransitionToolConflict:
             project_manager=pm,
             state_engine=engine,
             git_manager=git_manager,
+            server_root=tmp_path,
         )
 
     @pytest.mark.asyncio

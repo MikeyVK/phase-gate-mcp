@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Cycle 1 implementation complete (dead stubs removed, template_engine moved). Returning to research to resolve open naming questions before proceeding with further implementation cycles.",
+  "skip_reason": "QA GO op documentset; terugkeren naar implementation na research-correctieronde",
   "issue_title": "Remove st3 references from MCP server codebase",
   "parent_branch": "main",
   "created_at": "2026-05-09T17:47:59.496938+00:00",
@@ -60,8 +60,24 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-05-10T13:36:23.685315+00:00",
+      "human_approval": "User approved on 2026-05-10",
+      "forced": true,
+      "skip_reason": "QA NOGO op docsynchronisatie \u2014 terugkeren naar research om findings.md, planning.md en design.md te reconcili\u00ebren voordat C2 implementatie verdergaat"
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "implementation",
+      "timestamp": "2026-05-10T13:51:04.484217+00:00",
+      "human_approval": "User approved on 2026-05-10",
+      "forced": true,
+      "skip_reason": "QA GO op documentset; terugkeren naar implementation na research-correctieronde"
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": "red"
 }

@@ -64,6 +64,7 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             # Inject mock_registry into manager
@@ -110,6 +111,7 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             await manager.scaffold_artifact(
@@ -157,6 +159,7 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             await manager.scaffold_artifact(
@@ -204,6 +207,7 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             await manager.scaffold_artifact(

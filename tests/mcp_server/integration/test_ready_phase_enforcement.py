@@ -70,6 +70,7 @@ def _make_runner(tmp_path: Path) -> EnforcementRunner:
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        server_root=tmp_path / ".st3",
     )
 
 

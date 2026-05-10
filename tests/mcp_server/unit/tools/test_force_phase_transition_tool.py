@@ -54,6 +54,7 @@ class TestForcePhaseTransitionTool:
             workspace_root=workspace_root,
             project_manager=project_manager,
             state_engine=state_engine,
+            server_root=workspace_root,
         )
 
     @pytest.fixture
@@ -275,6 +276,7 @@ phases:
                 workspace_with_gates,
                 project_manager=make_project_manager(workspace_with_gates),
             ),
+            server_root=workspace_with_gates,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -306,6 +308,7 @@ phases:
                 workspace_no_gates,
                 project_manager=make_project_manager(workspace_no_gates),
             ),
+            server_root=workspace_no_gates,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -383,6 +386,7 @@ phases:
                 workspace,
                 project_manager=make_project_manager(workspace),
             ),
+            server_root=workspace,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -416,6 +420,7 @@ phases:
                 workspace,
                 project_manager=make_project_manager(workspace),
             ),
+            server_root=workspace,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -468,6 +473,7 @@ phases:
                 tmp_path,
                 project_manager=make_project_manager(tmp_path),
             ),
+            server_root=tmp_path,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,

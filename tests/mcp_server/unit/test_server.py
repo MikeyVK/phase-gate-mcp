@@ -375,6 +375,7 @@ class TestServerToolRegistration:
                     workspace_root=tmp_path,
                     project_manager=project_manager,
                     state_engine=state_engine,
+                    server_root=tmp_path / ".st3",
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -422,6 +423,7 @@ class TestServerToolRegistration:
                     workspace_root=tmp_path,
                     project_manager=server.project_manager,
                     state_engine=server.phase_state_engine,
+                    server_root=tmp_path / ".st3",
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]

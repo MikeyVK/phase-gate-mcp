@@ -153,9 +153,9 @@ class MCPServer:
             explicit_root=explicit_config_root,
             required_files=("git.yaml", "workflows.yaml", "workphases.yaml"),
         )
-        state_root = config_root.parent
+        server_root = config_root.parent
 
-        registry_path = state_root / "template_registry.json"
+        registry_path = server_root / "template_registry.json"
 
         # Bootstrap registry file if missing
         if not registry_path.exists():
@@ -194,7 +194,7 @@ class MCPServer:
         self.git_manager = GitManager(git_config=git_config, workphases_config=workphases_config)
 
         # Build shared state repository (used by resolver and PhaseStateEngine)
-        self._state_repository = FileStateRepository(state_file=state_root / "state.json")
+        self._state_repository = FileStateRepository(state_file=server_root / "state.json")
         # Build WorkflowStatusResolver (Issue #231 C4)
         _branch_validated_reader = BranchValidatedStateReader(inner=self._state_repository)
         _commit_phase_detector = CommitPhaseDetector(
@@ -213,7 +213,7 @@ class MCPServer:
             git_manager=self.git_manager,
             workphases_config=workphases_config,
             workflow_status_resolver=self.workflow_status_resolver,
-            state_root=state_root,
+            server_root=server_root,
         )
         self.phase_contract_resolver = PhaseContractResolver(
             PhaseConfigContext(
@@ -231,7 +231,7 @@ class MCPServer:
             project_manager=self.project_manager,
             scope_decoder=ScopeDecoder(
                 workphases_config=workphases_config,
-                state_path=state_root / "state.json",
+                state_path=server_root / "state.json",
             ),
         )
         self._workflow_state_mutator = WorkflowStateMutator(
@@ -247,15 +247,15 @@ class MCPServer:
             state_repository=self._state_repository,
             scope_decoder=ScopeDecoder(
                 workphases_config=workphases_config,
-                state_path=state_root / "state.json",
+                state_path=server_root / "state.json",
             ),
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
             workflow_state_mutator=self._workflow_state_mutator,
-            state_root=state_root,
+            server_root=server_root,
         )
         _quality_state_repository = FileQualityStateRepository(
-            backing_file=state_root / "quality_state.json"
+            backing_file=server_root / "quality_state.json"
         )
         self.qa_manager = QAManager(
             workspace_root=workspace_root,
@@ -274,7 +274,7 @@ class MCPServer:
         )
         self.artifact_manager = ArtifactManager(
             workspace_root=workspace_root,
-            state_root=state_root,
+            server_root=server_root,
             template_registry=self.template_registry,
             registry=artifact_registry,
             project_structure_config=project_structure_config,
@@ -290,7 +290,7 @@ class MCPServer:
             config=enforcement_config,
             default_base_branch=git_config.default_base_branch,
             pr_status_reader=self.pr_status_cache,
-            state_root=state_root,
+            server_root=server_root,
         )
 
         self.server = Server(server_name)
@@ -308,7 +308,7 @@ class MCPServer:
             GitStatusTool(manager=self.git_manager),
             GitCommitTool(
                 manager=self.git_manager,
-                phase_guard=build_phase_guard(state_root),
+                phase_guard=build_phase_guard(server_root),
                 commit_type_resolver=build_commit_type_resolver(
                     self.phase_state_engine,
                     self.phase_contract_resolver,
@@ -334,7 +334,7 @@ class MCPServer:
             TemplateValidationTool(),
             # Development tools
             HealthCheckTool(),
-            RestartServerTool(),
+            RestartServerTool(server_root=server_root),
             RunTestsTool(runner=PytestRunner(), settings=settings),
             CreateFileTool(settings=settings),
             # Project tools (Phase 0.5)
@@ -352,11 +352,13 @@ class MCPServer:
                 workspace_root=Path(settings.server.workspace_root),
                 project_manager=self.project_manager,
                 state_engine=self.phase_state_engine,
+                server_root=server_root,
             ),
             ForcePhaseTransitionTool(
                 workspace_root=Path(settings.server.workspace_root),
                 project_manager=self.project_manager,
                 state_engine=self.phase_state_engine,
+                server_root=server_root,
             ),
             # TDD Cycle tools (Issue #146)
             TransitionCycleTool(
@@ -365,6 +367,7 @@ class MCPServer:
                 state_engine=self.phase_state_engine,
                 git_manager=self.git_manager,
                 gate_runner=self.workflow_gate_runner,
+                server_root=server_root,
             ),
             ForceCycleTransitionTool(
                 workspace_root=Path(settings.server.workspace_root),
@@ -372,6 +375,7 @@ class MCPServer:
                 state_engine=self.phase_state_engine,
                 git_manager=self.git_manager,
                 gate_runner=self.workflow_gate_runner,
+                server_root=server_root,
             ),
             # Scaffold tools (unified artifact scaffolding)
             ScaffoldArtifactTool(manager=self.artifact_manager),
@@ -384,7 +388,7 @@ class MCPServer:
                 state_engine=self.phase_state_engine,
                 github_manager=self.github_manager,
                 workphases_config=workphases_config,
-                state_path=state_root / "state.json",
+                state_path=server_root / "state.json",
                 workflow_status_resolver=self.workflow_status_resolver,
             ),
         ]

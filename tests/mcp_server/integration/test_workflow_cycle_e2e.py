@@ -209,27 +209,10 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     assert result["workflow_phase"] == "research"
     assert result["source"] == "commit-scope"
 
-    # Transition to PLANNING
-    state_engine.transition(branch="feature/999-e2e-test", to_phase="planning")
-
-    # Phase 2: PLANNING
-    test_file.write_text("planning phase\n")
-    git_manager.commit_with_scope(
-        workflow_phase="planning",
-        message="create plan",
-        note_context=NoteContext(),
-        files=[str(test_file)],
-    )
-
-    commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
-    assert result["workflow_phase"] == "planning"
-    assert result["source"] == "commit-scope"
-
-    # Transition to DESIGN
+    # Transition to DESIGN (required before planning in feature workflow)
     state_engine.transition(branch="feature/999-e2e-test", to_phase="design")
 
-    # Phase 3: DESIGN
+    # Phase 2: DESIGN
     test_file.write_text("design phase\n")
     git_manager.commit_with_scope(
         workflow_phase="design",
@@ -241,6 +224,23 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     commits = git_manager.get_recent_commits(limit=1)
     result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
     assert result["workflow_phase"] == "design"
+    assert result["source"] == "commit-scope"
+
+    # Transition to PLANNING
+    state_engine.transition(branch="feature/999-e2e-test", to_phase="planning")
+
+    # Phase 3: PLANNING
+    test_file.write_text("planning phase\n")
+    git_manager.commit_with_scope(
+        workflow_phase="planning",
+        message="create plan",
+        note_context=NoteContext(),
+        files=[str(test_file)],
+    )
+
+    commits = git_manager.get_recent_commits(limit=1)
+    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    assert result["workflow_phase"] == "planning"
     assert result["source"] == "commit-scope"
 
     # Save planning deliverables (required by implementation-cycle hooks, Issue #146)

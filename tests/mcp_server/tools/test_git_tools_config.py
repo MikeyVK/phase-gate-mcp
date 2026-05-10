@@ -19,6 +19,11 @@ from pydantic import ValidationError
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.tools.git_tools import CreateBranchInput
 
+# config_path is always passed explicitly; config_root is only used as a required
+# constructor argument. Use the real .st3/config dir (name=="config" satisfies
+# normalize_config_root) to avoid coupling to arbitrary temp directories.
+_ST3_CONFIG = Path(__file__).resolve().parents[3] / ".st3" / "config"
+
 
 class TestGitToolsConfigIntegration:
     """Test git_tools Field validators use GitConfig (Conventions #7-8)."""
@@ -57,7 +62,7 @@ class TestGitToolsConfigIntegration:
 
         try:
             # Load custom config and inject it into the input validator
-            git_config = ConfigLoader(Path(temp_path).parent).load_git_config(
+            git_config = ConfigLoader(_ST3_CONFIG).load_git_config(
                 config_path=Path(temp_path)
             )
             CreateBranchInput.configure(git_config)

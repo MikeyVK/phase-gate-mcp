@@ -21,9 +21,11 @@ from mcp_server.config.schemas import LabelConfig
 from mcp_server.config.schemas.label_config import Label
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+
 
 def _load_label_config(config_path: Path) -> LabelConfig:
-    return ConfigLoader(config_path.parent).load_label_config(config_path=config_path)
+    return ConfigLoader(_ST3_CONFIG).load_label_config(config_path=config_path)
 
 
 class TestLabelCreation:

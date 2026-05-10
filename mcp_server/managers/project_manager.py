@@ -97,7 +97,7 @@ class ProjectManager:
         workphases_config: WorkphasesConfig | None = None,
         *,
         workflow_status_resolver: WorkflowStatusResolver,
-        state_root: Path | None = None,
+        server_root: Path,
     ) -> None:
         """Initialize ProjectManager."""
         self.workspace_root = Path(workspace_root)
@@ -105,10 +105,7 @@ class ProjectManager:
         self._git_manager = git_manager
         self._workphases_config = workphases_config
         self._workflow_status_resolver = workflow_status_resolver
-        effective_state_root = (
-            state_root if state_root is not None else self.workspace_root / ".st3"
-        )
-        self.deliverables_file = effective_state_root / "deliverables.json"
+        self.deliverables_file = server_root / "deliverables.json"
         self.atomic_json_writer = AtomicJsonWriter()
 
     def initialize_project(

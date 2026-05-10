@@ -27,6 +27,8 @@ from mcp_server.config.schemas.quality_config import (
 )
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+
 MINIMAL_ARTIFACT_LOGGING = {
     "enabled": True,
     "output_dir": "temp/qa_logs",
@@ -39,7 +41,7 @@ def with_artifact_logging(payload: dict[str, object]) -> dict[str, object]:
 
 
 def _load_quality_config(config_path: Path) -> QualityConfig:
-    return ConfigLoader(config_root=config_path.parent).load_quality_config(config_path=config_path)
+    return ConfigLoader(config_root=_ST3_CONFIG).load_quality_config(config_path=config_path)
 
 
 @pytest.fixture(name="quality_yaml_path")
@@ -388,7 +390,7 @@ class TestArtifactLoggingConfig:
         )
 
         with pytest.raises(ConfigError):
-            ConfigLoader(config_root=tmp_path).load_quality_config(config_path=yaml_path)
+            ConfigLoader(config_root=_ST3_CONFIG).load_quality_config(config_path=yaml_path)
 
     def test_artifact_logging_custom_values(self) -> None:
         config = QualityConfig.model_validate(
@@ -454,7 +456,7 @@ class TestArtifactLoggingConfig:
         )
 
         with pytest.raises(ConfigError):
-            ConfigLoader(config_root=tmp_path).load_quality_config(config_path=yaml_path)
+            ConfigLoader(config_root=_ST3_CONFIG).load_quality_config(config_path=yaml_path)
 
     def test_gate1_formatting_loads_from_yaml(self) -> None:
         """gate1_formatting definition loads correctly from quality.yaml."""

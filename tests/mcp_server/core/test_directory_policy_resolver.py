@@ -101,7 +101,6 @@ class TestDocumentArtifactDirectories:
         assert "planning" in policy.allowed_artifact_types
         assert "design" in policy.allowed_artifact_types
         assert "architecture" in policy.allowed_artifact_types
-        assert "tracking" in policy.allowed_artifact_types
         assert "reference" in policy.allowed_artifact_types
 
     def test_docs_development_subdirectory(self) -> None:
@@ -112,7 +111,6 @@ class TestDocumentArtifactDirectories:
         assert "research" in policy.allowed_artifact_types
         assert "planning" in policy.allowed_artifact_types
         assert "design" in policy.allowed_artifact_types
-        assert "tracking" in policy.allowed_artifact_types
 
     def test_docs_architecture_subdirectory(self) -> None:
         """docs/architecture allows architecture docs."""

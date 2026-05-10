@@ -69,6 +69,7 @@ class TestTransitionCycleTool:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
+            server_root=tmp_path / ".st3",
         )
 
     @pytest.fixture()
@@ -280,6 +281,7 @@ class TestForceCycleTransitionTool:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
+            server_root=tmp_path / ".st3",
         )
 
     @pytest.fixture()
@@ -509,6 +511,7 @@ class TestForceCycleAuditSchema:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
+            server_root=tmp_path / ".st3",
         )
 
     @pytest.fixture()
@@ -713,6 +716,7 @@ class TestTransitionCycleHistory:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
+            server_root=tmp_path / ".st3",
         )
 
     @pytest.fixture()
@@ -864,6 +868,7 @@ class TestTransitionCycleExitCriteria:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
+            server_root=tmp_path / ".st3",
         )
 
     def _make_project(

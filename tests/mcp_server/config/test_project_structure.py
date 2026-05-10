@@ -65,7 +65,7 @@ class TestProjectStructureConfig:
 
         mcp = config.directories["mcp_server"]
         assert "tool" in mcp.allowed_component_types
-        assert "resource" in mcp.allowed_component_types
+        assert "schema" in mcp.allowed_component_types
 
     def test_repeated_loads_are_equivalent(self) -> None:
         """Repeated loads of the same file should be value-equivalent."""

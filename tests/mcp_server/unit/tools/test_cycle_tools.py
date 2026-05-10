@@ -72,12 +72,14 @@ class TestCycleTools:
             project_manager=project_manager,
             state_engine=state_engine,
             git_manager=git_manager,
+            server_root=tmp_path,
         )
         force_tool = ForceCycleTransitionTool(
             workspace_root=tmp_path,
             project_manager=project_manager,
             state_engine=state_engine,
             git_manager=git_manager,
+            server_root=tmp_path,
         )
 
         assert transition_tool.workspace_root == tmp_path
@@ -161,6 +163,7 @@ class TestCycleTools:
                     state_engine=server.phase_state_engine,
                     git_manager=server.git_manager,
                     gate_runner=server.workflow_gate_runner,
+                    server_root=tmp_path / ".st3",
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -213,6 +216,7 @@ class TestCycleTools:
                     state_engine=server.phase_state_engine,
                     git_manager=server.git_manager,
                     gate_runner=server.workflow_gate_runner,
+                    server_root=tmp_path / ".st3",
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -280,6 +284,7 @@ class TestForceCycleToolFormatting:
             state_engine=state_engine,
             git_manager=git_manager,
             gate_runner=gate_runner,
+            server_root=tmp_path,
         )
 
         result = await tool.execute(
@@ -325,6 +330,7 @@ class TestForceCycleToolFormatting:
             state_engine=state_engine,
             git_manager=git_manager,
             gate_runner=object(),
+            server_root=tmp_path,
         )
 
         result = await tool.execute(

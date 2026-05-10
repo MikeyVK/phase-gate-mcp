@@ -18,6 +18,7 @@ Validates that:
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -134,7 +135,7 @@ def _make_manager_with_failing_scaffolder(
         registry=registry,
         scaffolder=scaffolder,
     )
-    manager = ArtifactManager(dependencies=deps)
+    manager = ArtifactManager(dependencies=deps, server_root=Path("."))
     note_context = NoteContext()
     return manager, note_context
 

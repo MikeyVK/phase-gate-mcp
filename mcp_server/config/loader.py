@@ -53,8 +53,12 @@ def normalize_config_root(config_root: Path | str) -> Path:
     # Heuristic: hidden directories are state roots (e.g. '.st3', '.phase-gate')
     if candidate.name.startswith("."):
         return candidate / "config"
-    # Workspace root fallback — conventional name for new-project bootstrap
-    return candidate / ".st3" / "config"
+    # No matching heuristic — require an explicit path to config or state root
+    raise FileNotFoundError(
+        f"Cannot determine config root from: {config_root!r}. "
+        "Provide an explicit path to the config directory, the state root, "
+        "or a hidden state root directory (e.g. '.st3', '.phase-gate')."
+    )
 
 
 def resolve_config_root(
@@ -84,10 +88,24 @@ def resolve_config_root(
         raise FileNotFoundError(f"Explicit config_root does not exist: {explicit_candidate}")
 
     candidates: list[Path] = []
+
+    def _probe_candidates(root: Path) -> list[Path]:
+        """Return candidate config paths for a given root.
+
+        normalize_config_root recognises known patterns (hidden dir, config/ child).
+        For plain workspace roots where normalize_config_root now raises, we fall
+        back to probing conventional hidden state-dir names explicitly.
+        """
+        try:
+            return [normalize_config_root(root)]
+        except FileNotFoundError:
+            # Plain workspace root — probe conventional hidden state directories.
+            return [root / hidden / "config" for hidden in (".st3", ".phase-gate")]
+
     if preferred_root is not None:
-        candidates.append(normalize_config_root(preferred_root))
-    candidates.append(normalize_config_root(Path.cwd()))
-    candidates.append(normalize_config_root(Path(__file__).resolve().parents[2]))
+        candidates.extend(_probe_candidates(Path(preferred_root).resolve()))
+    candidates.extend(_probe_candidates(Path.cwd().resolve()))
+    candidates.extend(_probe_candidates(Path(__file__).resolve().parents[2]))
 
     unique_candidates: list[Path] = []
     seen: set[Path] = set()

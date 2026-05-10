@@ -29,15 +29,11 @@ def test_restart_marker_written_with_correct_schema(
     """RED: Test that restart_server writes marker file with correct schema.
 
     Verifies:
-    - Marker file created at .st3/.restart_marker
+    - Marker file created at server_root/.restart_marker
     - Contains timestamp (float), pid (int), reason (str), iso_time (str)
     - Server exits with code 42
     """
     marker_path = tmp_path / ".restart_marker"
-    monkeypatch.setattr(
-        "mcp_server.tools.admin_tools._get_restart_marker_path",
-        lambda: marker_path,
-    )
 
     exit_calls: list[int] = []
 
@@ -51,7 +47,7 @@ def test_restart_marker_written_with_correct_schema(
     monkeypatch.setattr("sys.exit", mock_exit)
     monkeypatch.setattr("asyncio.sleep", mock_sleep)
 
-    tool = RestartServerTool()
+    tool = RestartServerTool(server_root=tmp_path)
     params = RestartServerInput(reason="Test marker schema")
 
     async def run_test() -> None:
@@ -97,10 +93,6 @@ def test_restart_events_logged_to_audit_trail(
     - Exit happens after tool execution (proves async background task)
     """
     marker_path = tmp_path / ".restart_marker"
-    monkeypatch.setattr(
-        "mcp_server.tools.admin_tools._get_restart_marker_path",
-        lambda: marker_path,
-    )
 
     exit_calls: list[int] = []
 
@@ -114,7 +106,7 @@ def test_restart_events_logged_to_audit_trail(
     monkeypatch.setattr("sys.exit", mock_exit)
     monkeypatch.setattr("asyncio.sleep", mock_sleep)
 
-    tool = RestartServerTool()
+    tool = RestartServerTool(server_root=tmp_path)
     params = RestartServerInput(reason="Test restart execution")
 
     async def run_test() -> None:
@@ -145,10 +137,6 @@ def test_verify_server_restarted_with_valid_marker(
     - Returns current vs previous PID
     """
     marker_path = tmp_path / ".restart_marker"
-    monkeypatch.setattr(
-        "mcp_server.tools.admin_tools._get_restart_marker_path",
-        lambda: marker_path,
-    )
 
     past_time = time.time() - 10
     marker_data = {
@@ -159,7 +147,7 @@ def test_verify_server_restarted_with_valid_marker(
     }
     marker_path.write_text(json.dumps(marker_data), encoding="utf-8")
 
-    result = verify_server_restarted(since_timestamp=past_time)
+    result = verify_server_restarted(since_timestamp=past_time, server_root=tmp_path)
 
     assert result["restarted"] is True
     assert result["previous_pid"] == 99999
@@ -179,13 +167,7 @@ def test_verify_server_restarted_no_marker(
     - Returns restarted=False when marker doesn't exist
     - Returns error message
     """
-    marker_path = tmp_path / ".restart_marker"
-    monkeypatch.setattr(
-        "mcp_server.tools.admin_tools._get_restart_marker_path",
-        lambda: marker_path,
-    )
-
-    result = verify_server_restarted(since_timestamp=time.time())
+    result = verify_server_restarted(since_timestamp=time.time(), server_root=tmp_path)
 
     assert result["restarted"] is False
     assert "error" in result
@@ -202,10 +184,6 @@ def test_verify_server_restarted_old_marker(
     - Returns restarted=False when marker timestamp < since_timestamp
     """
     marker_path = tmp_path / ".restart_marker"
-    monkeypatch.setattr(
-        "mcp_server.tools.admin_tools._get_restart_marker_path",
-        lambda: marker_path,
-    )
 
     old_time = time.time() - 100
     marker_data = {
@@ -217,7 +195,7 @@ def test_verify_server_restarted_old_marker(
     marker_path.write_text(json.dumps(marker_data), encoding="utf-8")
 
     recent_time = time.time() - 10
-    result = verify_server_restarted(since_timestamp=recent_time)
+    result = verify_server_restarted(since_timestamp=recent_time, server_root=tmp_path)
 
     assert result["restarted"] is False
 
@@ -251,9 +229,8 @@ def test_restart_uses_sys_exit_42_not_os_execv(
     monkeypatch.setattr("os.execv", mock_execv)
     monkeypatch.setattr("sys.exit", mock_exit)
     monkeypatch.setattr("asyncio.sleep", mock_sleep)
-    monkeypatch.chdir(tmp_path)
 
-    tool = RestartServerTool()
+    tool = RestartServerTool(server_root=tmp_path)
     params = RestartServerInput(reason="test sys.exit(42) restart")
 
     async def run_test() -> None:

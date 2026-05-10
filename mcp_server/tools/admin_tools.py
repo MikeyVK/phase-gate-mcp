@@ -24,27 +24,7 @@ from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
 
-# Helper functions
-def _get_restart_marker_path() -> Path:
-    """Get the restart marker file path, resolved relative to state root.
-
-    Prefers MCP_CONFIG_ROOT (new) to derive state_root = config_root.parent,
-    then falls back to MCP_WORKSPACE_ROOT with legacy '.st3' sub-dir,
-    then falls back to a relative '.st3' path.
-
-    Returns:
-        Path to <state_root>/.restart_marker.
-    """
-    config_root_env = os.environ.get("MCP_CONFIG_ROOT")
-    if config_root_env:
-        state_root = Path(config_root_env).resolve().parent
-        return state_root / ".restart_marker"
-
-    workspace_root_env = os.environ.get("MCP_WORKSPACE_ROOT")
-    if workspace_root_env:
-        return Path(workspace_root_env) / ".st3" / ".restart_marker"
-
-    return Path(".st3") / ".restart_marker"
+# Helper functions (module-level marker path helper removed — now an instance method)
 
 
 def _create_audit_props(
@@ -114,6 +94,15 @@ class RestartServerTool(BaseTool):
     description = "Restart MCP server to reload code changes"
     args_model = RestartServerInput
 
+    def __init__(self, server_root: Path) -> None:
+        """Initialize with the injected server_root directory."""
+        super().__init__()
+        self._server_root = server_root
+
+    def _get_restart_marker_path(self) -> Path:
+        """Return the restart marker path under the injected server_root."""
+        return self._server_root / ".restart_marker"
+
     @property
     def input_schema(self) -> dict[str, Any]:
         """Return the input schema for the tool."""
@@ -162,7 +151,7 @@ class RestartServerTool(BaseTool):
         )
 
         # Write restart marker file (for verification)
-        marker_path = _get_restart_marker_path()
+        marker_path = self._get_restart_marker_path()
         marker_path.parent.mkdir(exist_ok=True)
         marker_content = {
             "timestamp": restart_time.timestamp(),
@@ -240,21 +229,22 @@ class RestartServerTool(BaseTool):
 
 
 # Convenience function for backward compatibility and testing
-def restart_server(reason: str = "code changes") -> None:
+def restart_server(server_root: Path, reason: str = "code changes") -> None:
     """Restart MCP server (convenience function).
 
     This is a simple wrapper around RestartServerTool for easier testing.
     In production, use the tool via MCP protocol.
 
     Args:
+        server_root: Path to the server root directory (contains state.json etc.).
         reason: Description of why restart is needed
     """
-    tool = RestartServerTool()
+    tool = RestartServerTool(server_root=server_root)
     params = RestartServerInput(reason=reason)
     asyncio.run(tool.execute(params, NoteContext()))
 
 
-def verify_server_restarted(since_timestamp: float) -> dict[str, Any]:
+def verify_server_restarted(since_timestamp: float, server_root: Path | None = None) -> dict[str, Any]:
     """Verify that server restarted after given timestamp.
 
     **Purpose:** Allow agent to confirm restart completed before continuing.
@@ -295,7 +285,16 @@ def verify_server_restarted(since_timestamp: float) -> dict[str, Any]:
     """
     logger = get_logger("tools.admin")
 
-    marker_path = _get_restart_marker_path()
+    if server_root is not None:
+        marker_path = server_root / ".restart_marker"
+    else:
+        config_root_env = os.environ.get("MCP_CONFIG_ROOT")
+        if config_root_env:
+            marker_path = Path(config_root_env).resolve().parent / ".restart_marker"
+        else:
+            raise ValueError(
+                "verify_server_restarted requires server_root or MCP_CONFIG_ROOT env var"
+            )
 
     # Check if marker exists
     if not marker_path.exists():

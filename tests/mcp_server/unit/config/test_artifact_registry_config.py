@@ -25,9 +25,15 @@ from mcp_server.config.schemas import (
 )
 from mcp_server.core.exceptions import ConfigError
 
+# config_path is always passed explicitly to load_*; config_root is only used as
+# a required constructor argument. We point it at the real .st3/config directory
+# (named "config", so normalize_config_root accepts it) to avoid coupling the
+# loader constructor to arbitrary temp directories.
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+
 
 def _load_artifact_registry(config_path: Path) -> ArtifactRegistryConfig:
-    return ConfigLoader(config_path.parent).load_artifact_registry_config(config_path=config_path)
+    return ConfigLoader(_ST3_CONFIG).load_artifact_registry_config(config_path=config_path)
 
 
 @pytest.fixture

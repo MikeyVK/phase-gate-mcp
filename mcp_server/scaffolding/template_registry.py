@@ -33,9 +33,12 @@ class TemplateRegistry:
     """
 
     def __init__(self, registry_path: Path | None = None) -> None:
-        self.registry_path = (
-            registry_path if registry_path is not None else Path(".st3/template_registry.json")
-        )
+        if registry_path is None:
+            raise ValueError(
+                "TemplateRegistry requires an explicit registry_path. "
+                "Pass server_root / 'template_registry.json' from the caller."
+            )
+        self.registry_path = registry_path
         self._data: dict[str, Any] = self._load()
 
     def _legacy_yaml_path(self) -> Path:

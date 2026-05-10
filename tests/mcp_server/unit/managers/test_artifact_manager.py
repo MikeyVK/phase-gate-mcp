@@ -27,14 +27,14 @@ class TestArtifactManagerCore:
     def test_constructor_accepts_optional_registry(self) -> None:
         """Test that constructor accepts optional registry parameter."""
         mock_registry = Mock(spec=ArtifactRegistryConfig)
-        manager = ArtifactManager(registry=mock_registry)
+        manager = ArtifactManager(registry=mock_registry, server_root=Path("."))
         assert manager.registry is mock_registry
 
     def test_constructor_accepts_optional_scaffolder(self) -> None:
         """Test that constructor accepts optional scaffolder parameter."""
         mock_scaffolder = Mock(spec=TemplateScaffolder)
         mock_scaffolder.registry = Mock(spec=ArtifactRegistryConfig)
-        manager = ArtifactManager(scaffolder=mock_scaffolder)
+        manager = ArtifactManager(scaffolder=mock_scaffolder, server_root=Path("."))
         assert manager.scaffolder is mock_scaffolder
 
     @pytest.mark.asyncio
@@ -74,6 +74,7 @@ class TestArtifactManagerCore:
                 registry=mock_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
             result = await manager.scaffold_artifact(
                 "dto", output_path="test_scaffold_output.py", name="Test", fields=[]
@@ -107,7 +108,7 @@ class TestArtifactManagerCore:
         mock_scaffolder.registry = Mock(spec=ArtifactRegistryConfig)
         mock_scaffolder.validate.return_value = True
 
-        manager = ArtifactManager(scaffolder=mock_scaffolder)
+        manager = ArtifactManager(scaffolder=mock_scaffolder, server_root=Path("."))
         result = manager.validate_artifact("dto", name="Test")
 
         assert result is True
@@ -119,7 +120,7 @@ class TestArtifactManagerCore:
         mock_scaffolder.registry = Mock(spec=ArtifactRegistryConfig)
         mock_scaffolder.validate.side_effect = ValidationError("Missing field")
 
-        manager = ArtifactManager(scaffolder=mock_scaffolder)
+        manager = ArtifactManager(scaffolder=mock_scaffolder, server_root=Path("."))
         with pytest.raises(ValidationError):
             manager.validate_artifact("dto", name="Test")
 

@@ -131,7 +131,7 @@ class TestPhaseToolsAsyncSafe:
         )
 
         # Setup
-        tool = ForcePhaseTransitionTool(workspace_root=Path("."))
+        tool = ForcePhaseTransitionTool(workspace_root=Path("."), server_root=Path("."))
 
         # Mock the engine to track if it's called via to_thread
         mock_engine = MagicMock()
@@ -184,7 +184,7 @@ class TestPhaseToolsAsyncSafe:
         )
 
         # Setup
-        tool = TransitionPhaseTool(workspace_root=Path("."))
+        tool = TransitionPhaseTool(workspace_root=Path("."), server_root=Path("."))
 
         mock_engine = MagicMock()
         mock_engine.transition.return_value = {

@@ -16,6 +16,8 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import IssueConfig
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+
 _MINIMAL_ISSUES_YAML = {
     "version": "1.0",
     "issue_types": [
@@ -34,7 +36,7 @@ _MINIMAL_ISSUES_YAML = {
 
 
 def _load_issue_config(config_path: Path) -> IssueConfig:
-    return ConfigLoader(config_path.parent).load_issue_config(config_path=config_path)
+    return ConfigLoader(_ST3_CONFIG).load_issue_config(config_path=config_path)
 
 
 @pytest.fixture(name="issues_yaml_path")

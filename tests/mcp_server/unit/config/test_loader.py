@@ -35,7 +35,7 @@ class TestLoadWorkflowConfig:
             _workflow_yaml_without_phases(),
             encoding="utf-8",
         )
-        loader = ConfigLoader(config_root=tmp_path)
+        loader = ConfigLoader(config_root=config_dir)
 
         result = loader.load_workflow_config()
 
