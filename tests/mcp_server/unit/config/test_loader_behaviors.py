@@ -293,3 +293,20 @@ directories:
             config_path=structure_path,
             artifact_registry=_minimal_artifact_registry(),
         )
+
+
+# ---------------------------------------------------------------------------
+# C3 — normalize_config_root: hidden-dir heuristic removed
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_config_root_c3_rejects_hidden_dir_without_config_subdir(
+    tmp_path: Path,
+) -> None:
+    """C3 RED: hidden state dirs without a config/ subdir must raise — no heuristic fallback."""
+    hidden_dir = tmp_path / ".some-server"
+    hidden_dir.mkdir()
+    # After C3 the function no longer guesses: if config/ doesn't exist on disk, raise.
+    with pytest.raises(FileNotFoundError):
+        normalize_config_root(hidden_dir)
+

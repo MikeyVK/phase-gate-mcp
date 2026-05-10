@@ -88,6 +88,31 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
         _default_server_version()
 
 
+# ---------------------------------------------------------------------------
+# C3 — state_dir field in ServerSettings
+# ---------------------------------------------------------------------------
+
+
+def test_state_dir_default_is_st3() -> None:
+    """C3 RED: ServerSettings must expose state_dir with default '.st3'."""
+    from mcp_server.config.settings import ServerSettings
+
+    s = ServerSettings()
+    assert s.state_dir == ".st3"
+
+
+def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """C3 RED: MCP_STATE_DIR env var must override state_dir."""
+    monkeypatch.setenv("MCP_STATE_DIR", ".phase-gate")
+    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+    s = Settings.from_env()
+    assert s.server.state_dir == ".phase-gate"
+
+
 def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
