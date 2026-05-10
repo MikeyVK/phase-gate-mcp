@@ -106,14 +106,13 @@ class TestIGitContextReader:
 class TestCommitPhaseDetector:
     """CommitPhaseDetector wraps ScopeDecoder with fallback_to_state=False."""
 
-    def test_detector_exists_and_detects_from_commit(self, tmp_path: Path) -> None:
+    def test_detector_exists_and_detects_from_commit(self) -> None:
         detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("feat(P_IMPLEMENTATION_SP_C3_GREEN): add dto")
         assert result["workflow_phase"] == "implementation"
         assert result["source"] == "commit-scope"
 
     def test_detector_never_reads_state_json(self, tmp_path: Path) -> None:
-        """Even with a valid state.json present, detector uses commit-scope only."""
         state_dir = tmp_path / ".st3"
         state_dir.mkdir()
         (state_dir / "state.json").write_text(
@@ -125,13 +124,13 @@ class TestCommitPhaseDetector:
         assert result["source"] == "commit-scope"
         assert result["workflow_phase"] == "implementation"
 
-    def test_detector_returns_unknown_for_missing_scope(self, tmp_path: Path) -> None:
+    def test_detector_returns_unknown_for_missing_scope(self) -> None:
         detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("chore: bump version")
         assert result["workflow_phase"] == "unknown"
         assert result["source"] == "unknown"
 
-    def test_detector_returns_unknown_for_none_commit(self, tmp_path: Path) -> None:
+    def test_detector_returns_unknown_for_none_commit(self) -> None:
         detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit(None)
         assert result["workflow_phase"] == "unknown"
@@ -146,8 +145,6 @@ class TestWorkflowStatusResolver:
         commits: list[str] | None = None,
         state_phase: str = "implementation",
         state_cycle: int | None = 3,
-        *,
-        tmp_path: Path,
     ) -> WorkflowStatusResolver:
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = branch
@@ -172,46 +169,42 @@ class TestWorkflowStatusResolver:
             commit_phase_detector=detector,
         )
 
-    def test_resolve_current_returns_dto(self, tmp_path: Path) -> None:
+    def test_resolve_current_returns_dto(self) -> None:
         resolver = self._make_resolver(
             commits=["feat(P_IMPLEMENTATION_SP_C3_GREEN): add resolver"],
-            tmp_path=tmp_path,
         )
         result = resolver.resolve_current()
         assert isinstance(result, WorkflowStatusDTO)
 
-    def test_resolve_uses_state_json_when_state_present(self, tmp_path: Path) -> None:
+    def test_resolve_uses_state_json_when_state_present(self) -> None:
         """After #298: resolver always uses state.json as source (phase_source='state.json')."""
         resolver = self._make_resolver(
             commits=["feat(P_IMPLEMENTATION_SP_C3_GREEN): add resolver"],
-            tmp_path=tmp_path,
         )
         result = resolver.resolve_current()
         assert result.phase_source == "state.json"
         assert result.phase_confidence == "high"
         assert result.current_phase == "implementation"
 
-    def test_resolve_falls_back_to_state_when_no_commit_scope(self, tmp_path: Path) -> None:
+    def test_resolve_falls_back_to_state_when_no_commit_scope(self) -> None:
         resolver = self._make_resolver(
             commits=["chore: bump version"],
             state_phase="research",
             state_cycle=None,
-            tmp_path=tmp_path,
         )
         result = resolver.resolve_current()
         assert result.phase_source == "state.json"
         assert result.current_phase == "research"
 
-    def test_resolve_current_cycle_from_state(self, tmp_path: Path) -> None:
+    def test_resolve_current_cycle_from_state(self) -> None:
         resolver = self._make_resolver(
             commits=["feat(P_IMPLEMENTATION_SP_C3_GREEN): add resolver"],
             state_cycle=3,
-            tmp_path=tmp_path,
         )
         result = resolver.resolve_current()
         assert result.current_cycle == 3
 
-    def test_resolve_raises_state_not_found_on_branch_mismatch(self, tmp_path: Path) -> None:
+    def test_resolve_raises_state_not_found_on_branch_mismatch(self) -> None:
         """After #298: resolver raises StateNotFoundError when no state for current branch."""
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = "feature/99-other"
@@ -220,7 +213,7 @@ class TestWorkflowStatusResolver:
         state_repo = InMemoryStateRepository()
         state_repo.save(
             BranchState(
-                branch="feature/50-test",  # mismatch â€” different branch
+                branch="feature/50-test",  # mismatch Ã¢â‚¬â€ different branch
                 current_phase="research",
                 workflow_name="feature",
                 issue_number=50,
@@ -239,7 +232,7 @@ class TestWorkflowStatusResolver:
 
 
 # ---------------------------------------------------------------------------
-# C2 RED â€” WorkflowStatusDTO Literal narrowing (issue #298)
+# C2 RED Ã¢â‚¬â€ WorkflowStatusDTO Literal narrowing (issue #298)
 # ---------------------------------------------------------------------------
 
 
@@ -294,7 +287,7 @@ class TestWorkflowStatusDTOLiteralNarrowing:
 
 
 # ---------------------------------------------------------------------------
-# C3 RED â€” WorkflowStatusResolver inversion (issue #298)
+# C3 RED Ã¢â‚¬â€ WorkflowStatusResolver inversion (issue #298)
 # ---------------------------------------------------------------------------
 
 
@@ -308,7 +301,6 @@ class TestWorkflowStatusResolverInversion:
         state_phase: str = "implementation",
         state_cycle: int | None = 3,
         commits: list[str] | None = None,
-        tmp_path: Path,
     ) -> WorkflowStatusResolver:
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = branch
@@ -336,13 +328,12 @@ class TestWorkflowStatusResolverInversion:
         *,
         branch: str = "feature/298-test",
         commits: list[str] | None = None,
-        tmp_path: Path,
     ) -> WorkflowStatusResolver:
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = branch
         git_reader.get_recent_commits.return_value = commits or []
         state_repo = InMemoryStateRepository()
-        # no save â†’ state absent
+        # no save Ã¢â€ â€™ state absent
         detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
@@ -350,27 +341,24 @@ class TestWorkflowStatusResolverInversion:
             commit_phase_detector=detector,
         )
 
-    def test_resolve_uses_state_when_present_despite_high_confidence_commit(
-        self, tmp_path: Path
-    ) -> None:
+    def test_resolve_uses_state_when_present_despite_high_confidence_commit(self) -> None:
         """Even with a high-confidence commit-scope signal, state.json wins."""
         resolver = self._make_resolver_with_state(
             state_phase="research",
             commits=["feat(P_IMPLEMENTATION_SP_C3_GREEN): will be ignored"],
-            tmp_path=tmp_path,
         )
         result = resolver.resolve_current()
         assert result.phase_source == "state.json"
         assert result.phase_confidence == "high"
         assert result.current_phase == "research"
 
-    def test_resolve_raises_state_not_found_when_absent(self, tmp_path: Path) -> None:
+    def test_resolve_raises_state_not_found_when_absent(self) -> None:
         """When state.json is absent, resolve_current() must raise StateNotFoundError."""
-        resolver = self._make_resolver_no_state(tmp_path=tmp_path)
+        resolver = self._make_resolver_no_state()
         with pytest.raises(StateNotFoundError):
             resolver.resolve_current()
 
-    def test_resolve_raises_branch_mismatch_when_present_wrong_branch(self, tmp_path: Path) -> None:
+    def test_resolve_raises_branch_mismatch_when_present_wrong_branch(self) -> None:
         """State present with wrong branch raises StateBranchMismatchError."""
 
         class _WrongBranchReader:
