@@ -15,9 +15,9 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 
-_PHASE_CONTRACTS_DISPLAY_PATH = ".st3/config/contracts.yaml"
-_WORKPHASES_DISPLAY_PATH = ".st3/config/workphases.yaml"
-_DELIVERABLES_DISPLAY_PATH = ".st3/deliverables.json"
+_PHASE_CONTRACTS_DISPLAY_PATH = "config/contracts.yaml"
+_WORKPHASES_DISPLAY_PATH = "config/workphases.yaml"
+_DELIVERABLES_DISPLAY_PATH = "deliverables.json"
 
 
 @dataclass(frozen=True)

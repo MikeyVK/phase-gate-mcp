@@ -124,11 +124,27 @@ def resolve_config_root(
     workspace_root: Path | str | None = None,
     required_paths: tuple[str | Path, ...] = (),
 ) -> Path:
-    """Resolve the best .st3 config root for one workspace under test."""
-    return resolve_runtime_config_root(
-        preferred_root=workspace_root,
-        required_files=required_paths,
-    )
+    """Resolve the best config root for one workspace under test.
+
+    Production probe only tries .phase-gate.  Tests may still create workspaces
+    with the legacy .st3 layout, so we fall through to that candidate before
+    giving up and using the canonical project config.
+    """
+    _project_config = Path(__file__).resolve().parents[2] / ".st3" / "config"
+    if workspace_root is None:
+        return _project_config
+    try:
+        return resolve_runtime_config_root(
+            preferred_root=workspace_root,
+            required_files=required_paths,
+        )
+    except FileNotFoundError:
+        # Production probe only tries .phase-gate; try legacy .st3 next (test
+        # workspaces often use the old layout) but only if all required files exist.
+        legacy = Path(workspace_root) / ".st3" / "config"
+        if legacy.exists() and all((legacy / f).exists() for f in required_paths):
+            return legacy
+        return _project_config
 
 
 def make_config_loader(
@@ -242,7 +258,7 @@ def make_project_manager(
         workspace_path = Path(workspace_root)
         _git_reader = resolved_git_manager or make_git_manager(workspace_root)
         _state_reader = FileStateRepository(state_file=workspace_path / ".st3" / "state.json")
-        _detector = CommitPhaseDetector(workspace_root=workspace_path)
+        _detector = CommitPhaseDetector(workphases_config=workphases_config)
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=_git_reader,
             state_reader=_state_reader,

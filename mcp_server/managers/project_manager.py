@@ -11,7 +11,7 @@ Replaces hardcoded PHASE_TEMPLATES with dynamic ContractsConfig phase sequences.
     - Initialize projects with workflow selection
     - Validate workflow existence and execution mode
     - Support custom phase overrides with skip_reason
-    - Persist project plans to .st3/deliverables.json
+    - Persist project plans to deliverables.json
     - Retrieve stored project plans
 """
 
@@ -482,7 +482,7 @@ class ProjectManager:
         Args:
             plan: ProjectPlan to save
         """
-        # Ensure .st3 directory exists
+        # Ensure state directory exists
         self.deliverables_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load existing projects

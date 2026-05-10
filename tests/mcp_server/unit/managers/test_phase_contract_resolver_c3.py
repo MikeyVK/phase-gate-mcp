@@ -90,6 +90,6 @@ class TestPhaseContractResolverUsesContracts:
 
 class TestPhaseContractsDisplayPath:
     def test_display_path_equals_contracts_yaml(self) -> None:
-        """_PHASE_CONTRACTS_DISPLAY_PATH must equal '.st3/config/contracts.yaml'."""
+        """_PHASE_CONTRACTS_DISPLAY_PATH must equal 'config/contracts.yaml'."""
         module = importlib.import_module("mcp_server.managers.phase_contract_resolver")
-        assert module._PHASE_CONTRACTS_DISPLAY_PATH == ".st3/config/contracts.yaml"  # noqa: SLF001
+        assert module._PHASE_CONTRACTS_DISPLAY_PATH == "config/contracts.yaml"  # noqa: SLF001

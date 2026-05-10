@@ -24,7 +24,7 @@ def get_template_root() -> Path:
 
     Resolution order:
     1. TEMPLATE_ROOT environment variable (if set)
-    2. .st3/templates/ in current workspace (workspace-local, takes priority over package)
+    2. templates/ in current workspace state dir (workspace-local, takes priority over package)
     3. mcp_server/scaffolding/templates/ bundled in installed package
 
     Raises:

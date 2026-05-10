@@ -100,7 +100,7 @@ class QAManager:
         Returns v2.0 JSON schema with version, mode, summary, and gates.
 
         Notes:
-            - Gate catalog and active gates are defined in `.st3/config/quality.yaml`.
+            - Gate catalog and active gates are defined in `config/quality.yaml`.
             - Each gate filters files by its configured `capabilities.file_types`.
             - Some gates (e.g., pytest) are repo-scoped and ignore file lists.
         """
@@ -157,7 +157,7 @@ class QAManager:
                     "score": "N/A",
                     "issues": [
                         {
-                            "message": "No active_gates configured in .st3/config/quality.yaml",
+                            "message": "No active_gates configured in config/quality.yaml",
                         }
                     ],
                 },

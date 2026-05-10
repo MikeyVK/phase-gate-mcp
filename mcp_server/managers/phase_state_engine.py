@@ -14,7 +14,7 @@ with audit trail.
     - Execute standard sequential transitions
     - Execute forced non-sequential transitions with skip_reason
     - Maintain transition history with forced flag audit
-    - Persist state to .st3/state.json
+    - Persist state to state.json
 """
 
 # Standard library

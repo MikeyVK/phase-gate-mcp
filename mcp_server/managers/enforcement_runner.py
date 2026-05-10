@@ -3,7 +3,7 @@
 """Enforcement configuration loading and dispatch.
 
 Dispatch-level enforcement runner for tool events configured in
-.st3/config/enforcement.yaml.
+config/enforcement.yaml.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from mcp_server.core.operation_notes import (
 from mcp_server.schemas import EnforcementAction, EnforcementConfig, EnforcementRule
 from mcp_server.tools.tool_result import ToolResult
 
-_ENFORCEMENT_DISPLAY_PATH = ".st3/config/enforcement.yaml"
+_ENFORCEMENT_DISPLAY_PATH = "config/enforcement.yaml"
 _GIT_TIMEOUT_SECONDS = 2
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,9 @@ logger = logging.getLogger(__name__)
 KNOWN_TOOL_CATEGORIES: frozenset[str] = frozenset({"branch_mutating"})
 
 
-def _read_current_phase(state_root: Path) -> str | None:
+def _read_current_phase(server_root: Path) -> str | None:
     """Read the current workflow phase from state.json at call time."""
-    state_file = state_root / "state.json"
+    state_file = server_root / "state.json"
     if not state_file.exists():
         return None
     data: dict[str, object] = json.loads(state_file.read_text(encoding="utf-8"))
@@ -154,7 +154,6 @@ class EnforcementRunner:
         registry: EnforcementRegistry | dict[str, ActionHandler] | None = None,
         default_base_branch: str = "main",
         pr_status_reader: IPRStatusReader | None = None,
-        state_root: Path | None = None,  # noqa: ARG002 — kept for call-site compat during C2; use server_root
         server_root: Path | None = None,
     ) -> None:
         self.workspace_root = Path(workspace_root)

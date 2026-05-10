@@ -133,7 +133,7 @@ class RestartServerTool(BaseTool):
             - Development tool only, not for production use
             - Parent process must handle exit code 42 by restarting server
             - All audit logs flushed before exit (zero data loss)
-            - Restart marker written to .st3/.restart_marker
+            - Restart marker written to .restart_marker in the state root
             - Server exits 500ms after returning response (graceful)
         """
         del context  # Not used by restart tool

@@ -23,15 +23,16 @@ class CommitPhaseDetector:
 
     def __init__(
         self,
-        workspace_root: Path,
         workphases_config: WorkphasesConfig | None = None,
         config_root: Path | None = None,
     ) -> None:
         if workphases_config is None:
-            effective_config_root = (
-                config_root if config_root is not None else workspace_root / ".st3" / "config"
-            )
-            config_loader = ConfigLoader(effective_config_root)
+            if config_root is None:
+                raise ValueError(
+                    "CommitPhaseDetector requires either workphases_config or config_root. "
+                    "No default state directory is used."
+                )
+            config_loader = ConfigLoader(config_root)
             try:
                 workphases_config = config_loader.load_workphases_config()
             except Exception:  # noqa: BLE001

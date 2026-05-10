@@ -38,10 +38,10 @@ def normalize_config_root(config_root: Path | str) -> Path:
     - A path ending in 'config' (already the config dir, any parent name)
     - A path to a state root dir that has a 'config' subdirectory (disk-based check)
     - A hidden directory (starts with '.') — treated as state root, appends 'config'
-    - A workspace root (falls back to conventional '.st3/config' bootstrap path)
+    - A workspace root (probed via resolve_config_root bootstrap logic)
 
-    The hidden-dir heuristic enables callers to pass an arbitrary state dir
-    (e.g. '.st3', '.phase-gate') without requiring it to already exist on disk.
+    The hidden-dir heuristic enables callers to pass any hidden state dir
+    (e.g. '.phase-gate') without requiring it to already exist on disk.
     """
     candidate = Path(config_root).resolve()
     # Already points to a config directory (any parent name is fine)
@@ -50,14 +50,14 @@ def normalize_config_root(config_root: Path | str) -> Path:
     # Disk-based: candidate is a state root with an existing config/ subdirectory
     if (candidate / "config").is_dir():
         return candidate / "config"
-    # Heuristic: hidden directories are state roots (e.g. '.st3', '.phase-gate')
+    # Heuristic: hidden directories are state roots (e.g. '.phase-gate')
     if candidate.name.startswith("."):
         return candidate / "config"
     # No matching heuristic — require an explicit path to config or state root
     raise FileNotFoundError(
         f"Cannot determine config root from: {config_root!r}. "
         "Provide an explicit path to the config directory, the state root, "
-        "or a hidden state root directory (e.g. '.st3', '.phase-gate')."
+        "or a hidden state root directory (e.g. '.phase-gate')."
     )
 
 
@@ -99,8 +99,8 @@ def resolve_config_root(
         try:
             return [normalize_config_root(root)]
         except FileNotFoundError:
-            # Plain workspace root — probe conventional hidden state directories.
-            return [root / hidden / "config" for hidden in (".st3", ".phase-gate")]
+            # Plain workspace root — probe the canonical hidden state directory name.
+            return [root / ".phase-gate" / "config"]
 
     if preferred_root is not None:
         candidates.extend(_probe_candidates(Path(preferred_root).resolve()))
@@ -156,8 +156,8 @@ class ConfigLoader:
         if not resolved_path.exists():
             raise ConfigError(
                 "Artifact registry not found: "
-                f"{resolved_path}. Expected: .st3/config/artifacts.yaml. "
-                "Fix: Create .st3/config/artifacts.yaml manually or restore from backup.",
+                f"{resolved_path}. Expected: config/artifacts.yaml. "
+                "Fix: Create config/artifacts.yaml manually or restore from backup.",
                 file_path=str(resolved_path),
             )
 

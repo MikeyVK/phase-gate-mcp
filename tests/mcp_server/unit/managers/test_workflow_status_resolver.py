@@ -107,7 +107,7 @@ class TestCommitPhaseDetector:
     """CommitPhaseDetector wraps ScopeDecoder with fallback_to_state=False."""
 
     def test_detector_exists_and_detects_from_commit(self, tmp_path: Path) -> None:
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("feat(P_IMPLEMENTATION_SP_C3_GREEN): add dto")
         assert result["workflow_phase"] == "implementation"
         assert result["source"] == "commit-scope"
@@ -119,20 +119,20 @@ class TestCommitPhaseDetector:
         (state_dir / "state.json").write_text(
             '{"branch": "main", "current_phase": "research", "workflow_name": "feature"}'
         )
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("feat(P_IMPLEMENTATION_SP_C3_RED): add tests")
         # Must read commit-scope, NOT state.json
         assert result["source"] == "commit-scope"
         assert result["workflow_phase"] == "implementation"
 
     def test_detector_returns_unknown_for_missing_scope(self, tmp_path: Path) -> None:
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit("chore: bump version")
         assert result["workflow_phase"] == "unknown"
         assert result["source"] == "unknown"
 
     def test_detector_returns_unknown_for_none_commit(self, tmp_path: Path) -> None:
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         result = detector.detect_from_commit(None)
         assert result["workflow_phase"] == "unknown"
 
@@ -165,7 +165,7 @@ class TestWorkflowStatusResolver:
             )
         )
 
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -220,7 +220,7 @@ class TestWorkflowStatusResolver:
         state_repo = InMemoryStateRepository()
         state_repo.save(
             BranchState(
-                branch="feature/50-test",  # mismatch — different branch
+                branch="feature/50-test",  # mismatch â€” different branch
                 current_phase="research",
                 workflow_name="feature",
                 issue_number=50,
@@ -228,7 +228,7 @@ class TestWorkflowStatusResolver:
             )
         )
 
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -239,7 +239,7 @@ class TestWorkflowStatusResolver:
 
 
 # ---------------------------------------------------------------------------
-# C2 RED — WorkflowStatusDTO Literal narrowing (issue #298)
+# C2 RED â€” WorkflowStatusDTO Literal narrowing (issue #298)
 # ---------------------------------------------------------------------------
 
 
@@ -294,7 +294,7 @@ class TestWorkflowStatusDTOLiteralNarrowing:
 
 
 # ---------------------------------------------------------------------------
-# C3 RED — WorkflowStatusResolver inversion (issue #298)
+# C3 RED â€” WorkflowStatusResolver inversion (issue #298)
 # ---------------------------------------------------------------------------
 
 
@@ -324,7 +324,7 @@ class TestWorkflowStatusResolverInversion:
                 parent_branch="main",
             )
         )
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -342,8 +342,8 @@ class TestWorkflowStatusResolverInversion:
         git_reader.get_current_branch.return_value = branch
         git_reader.get_recent_commits.return_value = commits or []
         state_repo = InMemoryStateRepository()
-        # no save → state absent
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        # no save â†’ state absent
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         return WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=state_repo,
@@ -389,7 +389,7 @@ class TestWorkflowStatusResolverInversion:
         git_reader.get_current_branch.return_value = "feature/298-other"
         git_reader.get_recent_commits.return_value = []
         validated_reader = BranchValidatedStateReader(_WrongBranchReader())
-        detector = CommitPhaseDetector(workspace_root=tmp_path, workphases_config=_TEST_WORKPHASES)
+        detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
         resolver = WorkflowStatusResolver(
             git_context_reader=git_reader,
             state_reader=validated_reader,

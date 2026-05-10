@@ -198,7 +198,6 @@ class MCPServer:
         # Build WorkflowStatusResolver (Issue #231 C4)
         _branch_validated_reader = BranchValidatedStateReader(inner=self._state_repository)
         _commit_phase_detector = CommitPhaseDetector(
-            workspace_root=workspace_root,
             workphases_config=workphases_config,
         )
         self.workflow_status_resolver = WorkflowStatusResolver(

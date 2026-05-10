@@ -188,7 +188,7 @@ class ArtifactManager:
         self.fs_adapter = fs_adapter or FilesystemAdapter()
 
         # Task 1.1c: Template registry for provenance (lazy init if not provided)
-        # IMPORTANT: resolve path relative to server_root (never process CWD or .st3).
+        # IMPORTANT: resolve path relative to server_root (never process CWD or the state root).
         if template_registry is None:
             registry_path = self.server_root / "template_registry.json"
             template_registry = TemplateRegistry(registry_path=registry_path)
@@ -345,7 +345,7 @@ class ArtifactManager:
                     artifact_path = self.get_artifact_path(artifact_type, name)
                     output_path_value = artifact_path
         elif artifact.output_type == "ephemeral":
-            # Ephemeral artifacts write to <state_root>/temp/ at write time (uuid-based filename).
+            # Ephemeral artifacts write to <server_root>/temp/ at write time (uuid-based filename).
             # If caller provided explicit output_path, use it for the SCAFFOLD header.
             # Otherwise, use a stable placeholder — actual path determined by _validate_and_write.
             if provided_output_path is not None:
@@ -824,7 +824,7 @@ class ArtifactManager:
         if self._project_structure_config is None:
             raise ConfigError(
                 "ProjectStructureConfig must be injected to resolve artifact directories",
-                file_path=".st3/config/project_structure.yaml",
+                file_path="config/project_structure.yaml",
             )
         resolver = DirectoryPolicyResolver(self._project_structure_config)
         valid_dirs = resolver.find_directories_for_artifact(artifact_type)
@@ -832,7 +832,7 @@ class ArtifactManager:
         if not valid_dirs:
             raise ConfigError(
                 f"No valid directory found for artifact type: {artifact_type}",
-                file_path=".st3/config/project_structure.yaml",
+                file_path="config/project_structure.yaml",
             )
 
         # Use first directory
