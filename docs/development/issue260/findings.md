@@ -280,24 +280,128 @@ The following prereqs for the split were resolved in Cycle 1:
 
 ---
 
+## Findings (session 2026-05-27 — C2 implementation analysis)
+
+### F8 — `state_root` variable name is misleading
+
+The internal variable `state_root` was introduced in C2 to inject the `.st3/`
+directory path. The name implies "state storage" but the directory contains
+config, templates (future), logs, temp, state, deliverables — the **complete
+operational home** of the MCP server within a workspace.
+
+**Decision (D8):** Rename to `server_root` throughout all modified files.
+Rationale: analogous to `.git/` — not called "state dir" despite containing state.
+
+---
+
+### F9 — Chain inversion required: `server_root` must be primary
+
+Current derivation (fragile):
+```
+workspace_root → resolve_config_root() → config_root → config_root.parent → server_root
+```
+
+Problem: `resolve_config_root()` uses heuristics that depend on the `.st3` directory
+name. If the name changes, the heuristic in `normalize_config_root()` breaks.
+`server_root` being derived from `config_root.parent` means the primary concept
+is the sub-directory (`config/`), not the root — this is backwards.
+
+**Decision (D4-revised):** Invert the chain:
+```
+workspace_root + settings.state_dir → server_root (PRIMARY)
+server_root / "config" → config_root (DERIVED)
+```
+
+Add `state_dir: str = ".st3"` (env: `MCP_STATE_DIR`) to `ServerSettings`.
+This makes `server_root` the single configured concept; `config_root` is always
+`server_root / "config"`. The fragile `normalize_config_root()` heuristic is
+no longer needed for the main boot path.
+
+---
+
+### F10 — Manager constructor fallbacks still hardcode `.st3`
+
+After C2, all managers accept `server_root` (then `state_root`) via constructor.
+BUT: all fallbacks were left in place:
+```python
+self.state_root = state_root if state_root is not None else workspace_root / ".st3"
+```
+
+These fallbacks mean the `.st3` hardcoding is still present in production code.
+QA NOGO finding: silent fallback defeats the purpose of injection.
+
+**Affected files:** `phase_state_engine.py`, `project_manager.py`,
+`enforcement_runner.py`, `tools/phase_tools.py`, `artifact_manager.py`.
+
+**Fix (C2 blocker):** Remove `Optional` from `server_root` param — make it required —
+or raise `ValueError("server_root must be provided")` if None is passed.
+The fallback must be eliminated entirely, not just bypassed in `server.py`.
+
+---
+
+### F11 — Template Workspace Initiative (future issue)
+
+The three-part trinity (Pydantic context schemas + Jinja2 templates + artifacts.yaml)
+must not be split. Today all three live in the wheel, which means they cannot be
+customized without modifying source code.
+
+Future capability:
+- **Jinja2 templates** → workspace-owned in `server_root/templates/`, copied from
+  bundled via `init_templates` command
+- **Pydantic context schemas** → bundled base in wheel; external packs via
+  `entry_points("phase_gate.schemas")` (plugin architecture)
+- **artifacts.yaml** → merged from bundled + workspace-local overrides
+- Optional web UI: local HTTP server on `localhost:7890`, same tool logic exposed as REST
+
+**Prerequisite:** chain inversion (C3) must be complete before this initiative starts.
+Reason: templates are workspace-owned content under `server_root/templates/`; the
+Template Workspace Initiative only makes sense when `server_root` is the primary,
+runtime-configurable concept.
+
+**Action:** Defer to a separate issue post-C3.
+
+---
+
+### F12 — Two hardcoded log paths outside server_root injection scope
+
+Two log paths are not covered by the C2 injection pattern:
+
+| File | Line | Hardcoded path | Problem |
+|------|------|----------------|---------|
+| `mcp_server/core/proxy.py` | L141 | `Path("mcp_server/logs")` | CWD-relative; not in server_root |
+| `mcp_server/managers/qa_manager.py` | L60 | `Path("temp/qa_logs")` | CWD-relative; not in server_root |
+
+These should use `server_root / "logs"` and `server_root / "temp" / "qa_logs"`
+respectively. However, fixing these requires the proxy and QA manager to receive
+`server_root` — which is a separate injection chain from the current C2 scope.
+
+**Action:** Defer to a separate issue. Note that the Template Workspace Initiative
+(F11) and the log path fix (F12) can be combined in the same issue once C3 is done.
+
+---
+
 ## Minimal Change Set (implementation scope)
 
 ### Structural changes (behavior-affecting):
 
 | # | Change | Files | Cycle |
 |---|--------|-------|-------|
-| S1 | Derive `state_root = config_root.parent` in `server.py`; pass to managers | `settings.py` (no change), `server.py` | C2 |
-| S2 | Replace all inline `workspace_root / ".st3"` with injected `state_root` | 8 production files | C2 |
-| S3 | Fix `normalize_config_root()` fallback: remove `.st3` name-check, detect by required files | `config/loader.py` | C2 |
-| S4 | Fix `admin_tools.py` marker path: read `MCP_WORKSPACE_ROOT` at call time | `tools/admin_tools.py` | C2 |
-| S5 | Fix `artifact_manager.py` ephemeral temp: use `self.workspace_root / state_dir / "temp"` | `managers/artifact_manager.py` | C2 |
-| S6 | Rename `st3://` → `pgmcp://` URI scheme | 3 resource files + validator + 4 test files | C3 |
-| S7 | Rename server default name `st3-workflow` → `mcp-workflow` (work name) | `settings.py` + `mcp.json` + 1 test file | C3 |
-| S8 | Rename `.st3/` → `.phase-gate/` on disk + all YAML config files | `contracts.yaml`, `project_structure.yaml`, `workflows.yaml` + disk | C4 |
+| S1 | Derive `server_root = config_root.parent` in `server.py`; pass to managers (temporary, C3 inverts) | `server.py` | C2 |
+| S2 | Replace all inline `workspace_root / ".st3"` with injected `server_root`; rename `state_root` → `server_root` | 8 production files | C2 |
+| S3 | Remove manager constructor fallbacks entirely (make `server_root` required or raise ValueError) | 5 manager/tool files | C2 |
+| S4 | Fix `admin_tools.py` marker path: use `server_root` not legacy `MCP_WORKSPACE_ROOT` branch | `tools/admin_tools.py` | C2 |
+| S5 | Fix `artifact_manager.py` ephemeral temp: use `server_root / "temp"` | `managers/artifact_manager.py` | C2 |
+| S6 | Fix `loader.py` bootstrap fallback: remove `.st3` from final fallback branch | `config/loader.py` | C2 |
+| S7 | Add `state_dir: str = ".st3"` to `ServerSettings` (env: `MCP_STATE_DIR`) | `config/settings.py` | C3 |
+| S8 | Chain inversion: `server_root = workspace_root / settings.state_dir`; `config_root = server_root / "config"` | `server.py` | C3 |
+| S9 | Rewrite `normalize_config_root()`: remove heuristics, no `.st3` name-check | `config/loader.py` | C3 |
+| S10 | Rename `st3://` → `pgmcp://` URI scheme | 3 resource files + validator + test files | C4 |
+| S11 | Rename server default name `st3-workflow` → `mcp-workflow` | `settings.py` + `mcp.json` + test file | C4 |
+| S12 | Rename `.st3/` → `.phase-gate/` on disk + all YAML config files | `contracts.yaml`, `project_structure.yaml`, `workflows.yaml` + disk | C5 |
 
 ### Cosmetic changes (comments/docstrings):
 
 | # | Change | Files | Cycle |
 |---|--------|-------|-------|
-| C1 | Update display strings in managers | 6 files | C4 |
-| C2 | Update test variable names (`st3_dir`) | 3 test files | C4 |
+| CS1 | Update display strings in managers | 6 files | C5 |
+| CS2 | Update test variable names (`st3_dir`) | 3 test files | C5 |

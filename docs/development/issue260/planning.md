@@ -7,20 +7,28 @@
 
 ## Cycle Overview
 
-| Cycle | Scope | Type |
-|-------|-------|------|
-| C1 | Delete dead stubs, move template_engine | ✅ Done (commit `fccfe74`) |
-| C2 | State root injection — eliminate inline `.st3` path construction | Structural |
-| C3 | URI scheme + server name rename (`st3://` → `pgmcp://`, `st3-workflow` → `mcp-workflow`) | Breaking |
-| C4 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename |
+| Cycle | Scope | Type | Status |
+|-------|-------|------|--------|
+| C1 | Delete dead stubs, move template_engine | ✅ Done (commit `fccfe74`) | Done |
+| C2 | `server_root` injection — eliminate inline `.st3` path construction + manager fallbacks | Structural | In progress (QA NOGO ×2) |
+| C3 | Chain inversion — `server_root` becomes primary, `settings.state_dir` added, `config_root` derived | Structural | Not started |
+| C4 | URI scheme + server name rename (`st3://` → `pgmcp://`, `st3-workflow` → `mcp-workflow`) | Breaking | Not started |
+| C5 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename | Not started |
 
 ---
 
-## Cycle 2 — State Root Injection
+## Cycle 2 — `server_root` Injection
 
 ### Scope
 
-Replace all inline `workspace_root / ".st3"` constructions with injected `state_root`.
+Replace all inline `workspace_root / ".st3"` constructions with injected `server_root`.
+**C2 does NOT yet invert the chain** (that is C3). C2 uses `state_root = config_root.parent`
+as temporary derivation and renames it `server_root` in all callsites.
+
+**C2 blocker (QA NOGO ×2):** Constructor fallbacks `workspace_root / ".st3"` must be
+eliminated entirely — not just bypassed by injection in server.py. If a manager is
+constructed without `server_root`, it must not silently fall back to `.st3`.
+Fix: make `server_root` a required parameter (no default `None`) or raise explicitly.
 
 ### Files changed
 
@@ -58,7 +66,41 @@ Replace all inline `workspace_root / ".st3"` constructions with injected `state_
 
 ---
 
-## Cycle 3 — URI Scheme + Server Name Rename
+## Cycle 3 — Chain Inversion + `settings.state_dir`
+
+### Scope
+
+Invert the `config_root → server_root` derivation chain. Currently `server_root` is
+derived from `config_root.parent` (fragile). After C3, `server_root` is the primary
+concept derived directly from `workspace_root` and a new `settings.state_dir` field.
+`config_root` is always `server_root / "config"` — no longer the entry point.
+
+This is the enabler for the Template Workspace Initiative: once `server_root` is
+primary and configured via `settings.state_dir`, the directory name is runtime-
+configurable and the full sub-directory layout (`templates/`, `logs/`, `temp/`) can
+be built on top without touching the wheel.
+
+### Changes
+
+| File | Change |
+|------|--------|
+| `mcp_server/config/settings.py` | Add `state_dir: str = ".st3"` (env: `MCP_STATE_DIR`) |
+| `mcp_server/server.py` | `server_root = workspace_root / settings.state_dir`; `config_root = server_root / "config"`; remove `resolve_config_root()` call or replace with new derivation |
+| `mcp_server/config/loader.py` | `normalize_config_root()` rewritten: input is always `server_root / "config"`, no heuristic needed |
+| All managers/tools | Rename `state_root` → `server_root` in parameters and attributes |
+| `MCP_CONFIG_ROOT` env var | Keep for backward compat but mark deprecated; derive `server_root` from `MCP_STATE_DIR` + `MCP_WORKSPACE_ROOT` instead |
+
+### Exit criteria
+
+- [ ] `server_root = workspace_root / settings.state_dir` — no `config_root.parent` derivation anywhere
+- [ ] `normalize_config_root()` no longer contains heuristics or `.st3` references
+- [ ] `grep -r 'state_root' mcp_server/ --include='*.py'` returns zero hits (renamed to `server_root`)
+- [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
+- [ ] `run_quality_gates(scope="branch")` — 0 errors
+
+---
+
+## Cycle 4 — URI Scheme + Server Name Rename
 
 ### Scope
 
@@ -96,7 +138,7 @@ All client references updated in the same commit.
 
 ---
 
-## Cycle 4 — Directory Rename + YAML + Cosmetics
+## Cycle 5 — Directory Rename + YAML + Cosmetics
 
 ### Scope
 
@@ -155,9 +197,11 @@ match. Cosmetic string updates in comments and docstrings.
 ## Dependency Order
 
 ```
-C2 (state_root injection)
-  └─► C3 (URI + name rename) — independent of C2 but logically after
-      └─► C4 (dir rename) — must come last; server must already be dir-name-agnostic from C2
+C2 (server_root injection — eliminate .st3 fallbacks)
+  └─► C3 (chain inversion — server_root primary, settings.state_dir)
+      └─► C4 (URI + name rename) — independent of C2/C3 but logically after
+          └─► C5 (dir rename) — must come last; server must already be dir-name-agnostic from C2+C3
 ```
 
-C2 and C3 are logically independent but C4 depends on C2 (dir-name-agnostic paths).
+C2 and C4 are logically independent but C5 depends on both C2 and C3
+(dir-name-agnostic paths + runtime-configurable name via `settings.state_dir`).

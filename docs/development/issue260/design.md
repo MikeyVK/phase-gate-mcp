@@ -21,10 +21,12 @@ and config path detection logic. These are artefacts of the original project nam
 | D1 | Product name: **PhaseGate MCP** (`phase-gate-mcp`) |
 | D2 | State dir: `.st3/` → `.phase-gate/` |
 | D3 | URI scheme: `st3://` → `pgmcp://` |
-| D4 | `state_root = config_root.parent` — no new `ServerSettings` field |
+| D4 | ~~`state_root = config_root.parent`~~ → **`server_root` is primary** (see D4-revised) |
+| D4-revised | `server_root = workspace_root / settings.state_dir` — primary concept; `config_root = server_root / "config"` derived from it. `settings.state_dir: str = ".st3"` (env: `MCP_STATE_DIR`). Renamed from `state_root` to `server_root` (see D8). |
 | D5 | Repo rename deferred to post-issue-#289 |
 | D6 | `copilot_orchestration/` stays in MCP server repo |
 | D7 | Cycle 1 prereqs already done (dead stubs deleted, template_engine moved) |
+| D8 | Internal variable name: `server_root` (not `state_root`). Rationale: the directory contains config, templates, logs, temp, state — not "state" alone. Analogy: `.git/` is not called "state dir". |
 
 ---
 
@@ -32,19 +34,41 @@ and config path detection logic. These are artefacts of the original project nam
 
 ### Functional
 
-1. All runtime hardcoded `.st3` path strings in `mcp_server/` replaced with injected `state_root`.
+1. All runtime hardcoded `.st3` path strings in `mcp_server/` replaced with injected `server_root`.
 2. URI scheme changed from `st3://` to `pgmcp://`.
 3. Server default name changed from `st3-workflow` to `mcp-workflow`.
 4. `normalize_config_root()` must not depend on the `.st3` directory name.
-5. `admin_tools` restart marker resolves relative to `MCP_WORKSPACE_ROOT`, not CWD.
-6. `artifact_manager` temp dir uses `workspace_root`, not CWD.
+5. `admin_tools` restart marker resolves relative to `server_root`, not CWD.
+6. `artifact_manager` temp dir uses `server_root / "temp"`, not CWD.
+7. `server_root` is the primary concept; `config_root = server_root / "config"` is always derived from it — the current fragile inversion (`config_root.parent`) is eliminated.
 
 ### Non-Functional
 
 1. URI scheme change done atomically (all client-side references in same cycle).
-2. No new `ServerSettings` field required (`state_root` derived from `config_root.parent`).
+2. `settings.state_dir: str = ".st3"` (env: `MCP_STATE_DIR`) is the single configuration point for the server root directory name.
 3. All existing tests pass after each cycle.
 4. Quality gates (ruff, mypy, pylint) pass after each cycle.
+
+### Future-proofing (Template Workspace Initiative — separate issue)
+
+The `server_root` layout must support the following sub-directories as first-class assets, even if not yet implemented:
+
+```
+server_root/
+  config/          ← al aanwezig
+  templates/       ← toekomstig: workspace-owned Jinja2 templates
+  logs/            ← toekomstig: audit + proxy logs
+  temp/            ← al in gebruik (ephemeral artifacts)
+  state.json       ← al aanwezig
+  deliverables.json
+  quality_state.json
+  template_registry.json
+  .restart_marker
+```
+
+This layout is the enabler for the Template Workspace Initiative (separate issue),
+which adds `templates/` as a workspace-owned override layer and entry_points-based
+schema discovery for custom artifact types.
 
 ---
 
