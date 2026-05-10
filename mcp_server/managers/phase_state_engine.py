@@ -88,6 +88,7 @@ class PhaseStateEngine:
     ) -> None:
         """Initialize PhaseStateEngine."""
         self.state_file = server_root / "state.json"
+        self._workspace_root = Path(workspace_root)
         self.project_manager = project_manager
 
         self._contracts_config = contracts_config
@@ -673,7 +674,7 @@ class PhaseStateEngine:
 
     def _workspace_root_path(self) -> Path:
         """Return the workspace root derived from the tracked state file location."""
-        return self.state_file.parent.parent
+        return self._workspace_root
 
     def on_enter_cycle_based_phase(self, branch: str, issue_number: int) -> None:
         """Hook called when entering implementation phase.

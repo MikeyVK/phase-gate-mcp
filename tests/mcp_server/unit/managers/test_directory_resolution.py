@@ -1,7 +1,8 @@
 """Tests for directory resolution (Cycle 8).
 
 @layer: Tests (Unit)
-@dependencies: pytest, mcp_server.managers.artifact_manager, mcp_server.config.schemas.artifact_registry_config
+@dependencies: pytest, mcp_server.managers.artifact_manager,
+    mcp_server.config.schemas.artifact_registry_config
 """
 
 from pathlib import Path
@@ -27,8 +28,10 @@ class TestDirectoryResolution:
         mock_registry.get_artifact.return_value = artifact
 
         workspace_root = Path("/project").resolve()  # Normalize for Windows
-        manager = ArtifactManager(workspace_root=workspace_root, registry=mock_registry, server_root=workspace_root)
-        manager._project_structure_config = Mock()
+        manager = ArtifactManager(
+            workspace_root=workspace_root, registry=mock_registry, server_root=workspace_root
+        )
+        manager._project_structure_config = Mock()  # pyright: ignore[reportPrivateUsage]
         mock_resolver = Mock()
         mock_resolver.find_directories_for_artifact.return_value = ["mcp_server/dtos"]
 
@@ -52,8 +55,10 @@ class TestDirectoryResolution:
         artifact.name_suffix = ""
         mock_registry.get_artifact.return_value = artifact
 
-        manager = ArtifactManager(workspace_root=Path("/test"), registry=mock_registry, server_root=Path("/test"))
-        manager._project_structure_config = Mock()
+        manager = ArtifactManager(
+            workspace_root=Path("/test"), registry=mock_registry, server_root=Path("/test")
+        )
+        manager._project_structure_config = Mock()  # pyright: ignore[reportPrivateUsage]
         mock_resolver = Mock()
         mock_resolver.find_directories_for_artifact.return_value = ["dir1", "dir2"]
 
@@ -72,8 +77,10 @@ class TestDirectoryResolution:
         artifact.type_id = "unknown"
         mock_registry.get_artifact.return_value = artifact
 
-        manager = ArtifactManager(workspace_root=Path("/test"), registry=mock_registry, server_root=Path("/test"))
-        manager._project_structure_config = Mock()
+        manager = ArtifactManager(
+            workspace_root=Path("/test"), registry=mock_registry, server_root=Path("/test")
+        )
+        manager._project_structure_config = Mock()  # pyright: ignore[reportPrivateUsage]
         mock_resolver = Mock()
         mock_resolver.find_directories_for_artifact.return_value = []
 

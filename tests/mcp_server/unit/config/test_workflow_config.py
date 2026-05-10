@@ -92,9 +92,7 @@ class TestWorkflowConfigLoading:
         assert "Config file not found" in error_msg
         assert "nonexistent.yaml" in error_msg
 
-    def test_load_default_path_missing(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_load_default_path_missing(self, tmp_path: Path) -> None:
         """Test loading with default path when file doesn't exist."""
         config_dir = tmp_path / "config"
         config_dir.mkdir()

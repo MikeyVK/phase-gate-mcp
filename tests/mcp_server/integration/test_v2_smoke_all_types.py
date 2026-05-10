@@ -61,7 +61,9 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     registry = ConfigLoader(artifacts_path.parent).load_artifact_registry_config(
         config_path=artifacts_path
     )
-    return ArtifactManager(workspace_root=str(tmp_path), registry=registry, server_root=tmp_path / ".st3")
+    return ArtifactManager(
+        workspace_root=str(tmp_path), registry=registry, server_root=tmp_path / ".st3"
+    )
 
 
 # ---------------------------------------------------------------------------

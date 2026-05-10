@@ -8,7 +8,8 @@ RED phase: Tests that scaffold_artifact() integrates with TemplateRegistry:
 - Creates .st3/template_registry.yaml if not exists
 
 @layer: Tests (Unit)
-@dependencies: pytest, mcp_server.managers.artifact_manager, mcp_server.scaffolding.template_registry
+@dependencies: pytest, mcp_server.managers.artifact_manager,
+    mcp_server.scaffolding.template_registry
 """
 
 from pathlib import Path

@@ -279,8 +279,8 @@ labels:
 
         config = _load_label_config(yaml_file)
         # pylint: disable=protected-access
-        assert "type:feature" in config._labels_by_name
-        assert "priority:high" in config._labels_by_name
+        assert "type:feature" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
+        assert "priority:high" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
 
 
 class TestLabelValidation:
@@ -603,9 +603,9 @@ labels:
 
         config = _load_label_config(yaml_file)
         # pylint: disable=protected-access
-        assert len(config._labels_by_name) == 2
-        assert "type:feature" in config._labels_by_name
-        assert "priority:high" in config._labels_by_name
+        assert len(config._labels_by_name) == 2  # pyright: ignore[reportPrivateUsage]
+        assert "type:feature" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
+        assert "priority:high" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
 
 
 class TestGitHubSync:
@@ -867,7 +867,7 @@ labels:
         label = config.labels[0]
 
         github_label = {"color": "1D76DB", "description": "Test"}
-        assert config._needs_update(label, github_label)  # pylint: disable=protected-access
+        assert config._needs_update(label, github_label)  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
 
     def test_needs_update_description_differs(self, tmp_path: Path) -> None:
         """Helper detects description change."""
@@ -884,4 +884,4 @@ labels:
         label = config.labels[0]
 
         github_label = {"color": "1D76DB", "description": "Old"}
-        assert config._needs_update(label, github_label)  # pylint: disable=protected-access
+        assert config._needs_update(label, github_label)  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]

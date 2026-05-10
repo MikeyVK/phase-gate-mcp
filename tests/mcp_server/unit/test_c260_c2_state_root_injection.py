@@ -20,6 +20,7 @@ import pytest
 from mcp_server.config.loader import normalize_config_root
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import (
+    EnforcementConfig,
     EnforcementRunner,
     _read_current_phase,  # pyright: ignore[reportPrivateUsage]
 )
@@ -470,8 +471,6 @@ class TestEnforcementRunnerNoFallback:
         self.state_root = state_root or workspace_root / '.st3'.
         It succeeds silently instead of raising.
         """
-        from mcp_server.managers.enforcement_runner import EnforcementConfig
-
         with pytest.raises((ValueError, TypeError)):
             EnforcementRunner(
                 workspace_root=Path("/some/workspace"),
@@ -516,8 +515,6 @@ class TestAdminToolsServerRootInjection:
         RED: RestartServerTool has no __init__ accepting server_root.
         Constructing with server_root= raises TypeError (unexpected kwarg).
         """
-        from mcp_server.tools.admin_tools import RestartServerTool
-
         server_root = tmp_path / ".phase-gate"
         tool = RestartServerTool(server_root=server_root)
 
@@ -532,8 +529,6 @@ class TestAdminToolsServerRootInjection:
 
         RED: marker path currently comes from env-var lookup, not constructor injection.
         """
-        from mcp_server.tools.admin_tools import RestartServerTool
-
         server_root = tmp_path / ".phase-gate"
         tool = RestartServerTool(server_root=server_root)
 

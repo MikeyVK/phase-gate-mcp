@@ -127,7 +127,6 @@ def test_restart_events_logged_to_audit_trail(
 
 def test_verify_server_restarted_with_valid_marker(
     tmp_path: Path,
-    monkeypatch: MonkeyPatch,
 ) -> None:
     """RED: Test verify_server_restarted with valid marker.
 
@@ -159,7 +158,6 @@ def test_verify_server_restarted_with_valid_marker(
 
 def test_verify_server_restarted_no_marker(
     tmp_path: Path,
-    monkeypatch: MonkeyPatch,
 ) -> None:
     """RED: Test verify_server_restarted with missing marker.
 
@@ -176,7 +174,6 @@ def test_verify_server_restarted_no_marker(
 
 def test_verify_server_restarted_old_marker(
     tmp_path: Path,
-    monkeypatch: MonkeyPatch,
 ) -> None:
     """RED: Test verify_server_restarted with outdated marker.
 

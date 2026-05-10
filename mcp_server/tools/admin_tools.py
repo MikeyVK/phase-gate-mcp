@@ -23,7 +23,6 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
-
 # Helper functions (module-level marker path helper removed — now an instance method)
 
 
@@ -244,7 +243,9 @@ def restart_server(server_root: Path, reason: str = "code changes") -> None:
     asyncio.run(tool.execute(params, NoteContext()))
 
 
-def verify_server_restarted(since_timestamp: float, server_root: Path | None = None) -> dict[str, Any]:
+def verify_server_restarted(
+    since_timestamp: float, server_root: Path | None = None
+) -> dict[str, Any]:
     """Verify that server restarted after given timestamp.
 
     **Purpose:** Allow agent to confirm restart completed before continuing.
