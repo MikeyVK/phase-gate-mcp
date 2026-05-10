@@ -2,7 +2,7 @@
   "branch": "feature/260-remove-st3-references",
   "issue_number": 260,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": 1,
   "cycle_history": [],
@@ -36,6 +36,14 @@
       "human_approval": "User approved on 2026-05-09 \u2014 return to research to continue design discussion",
       "forced": true,
       "skip_reason": "Cycle 1 implementation complete (dead stubs removed, template_engine moved). Returning to research to resolve open naming questions before proceeding with further implementation cycles."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-10T06:26:04.910781+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
