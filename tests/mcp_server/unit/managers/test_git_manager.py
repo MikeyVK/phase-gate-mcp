@@ -432,7 +432,8 @@ class TestGitManagerCommitWithScope:
         )
 
         call_args = mock_adapter.commit.call_args
-        assert call_args[0][0] == "feat(P_IMPLEMENTATION_SP_GREEN): implement suffix injection (#228)"
+        expected = "feat(P_IMPLEMENTATION_SP_GREEN): implement suffix injection (#228)"
+        assert call_args[0][0] == expected
 
     def test_commit_with_scope_no_suffix_when_none(
         self, manager: GitManager, mock_adapter: MagicMock
