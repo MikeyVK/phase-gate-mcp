@@ -11,7 +11,7 @@ from mcp_server.resources.base import BaseResource
 class StandardsResource(BaseResource):
     """Provides access to coding standards."""
 
-    uri_pattern = "st3://rules/coding_standards"
+    uri_pattern = "pgmcp://rules/coding_standards"
     description = "Project coding standards and conventions"
 
     async def read(self, uri: str) -> str:  # noqa: ARG002

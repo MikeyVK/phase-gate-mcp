@@ -9,7 +9,7 @@ from mcp_server.resources.base import BaseResource
 class GitHubIssuesResource(BaseResource):
     """Resource for accessing GitHub issues."""
 
-    uri_pattern = "st3://github/issues"
+    uri_pattern = "pgmcp://github/issues"
     description = "Active GitHub issues"
 
     def __init__(self, manager: GitHubManager | None = None) -> None:

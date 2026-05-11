@@ -1,7 +1,8 @@
 """Tests for filesystem and status components.
 
 @layer: Tests (Integration)
-@dependencies: pytest, pathlib, unittest.mock, mcp_server.adapters.filesystem, mcp_server.resources.status
+@dependencies: pytest, pathlib, unittest.mock, mcp_server.adapters.filesystem,
+    mcp_server.resources.status
 """
 
 from pathlib import Path

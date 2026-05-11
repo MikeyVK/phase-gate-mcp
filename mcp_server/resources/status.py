@@ -11,7 +11,7 @@ from mcp_server.resources.base import BaseResource
 class StatusResource(BaseResource):
     """Resource for project status."""
 
-    uri_pattern = "st3://status/phase"
+    uri_pattern = "pgmcp://status/phase"
     description = "Current development phase and git status"
 
     def __init__(self, git_adapter: GitAdapter | None = None) -> None:

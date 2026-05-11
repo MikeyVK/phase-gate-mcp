@@ -1,6 +1,6 @@
 {
   "servers": {
-    "st3-workflow": {
+    "mcp-workflow": {
       "type": "stdio",
       "command": "python",
       "args": ["-m", "mcp_server.core.proxy"],
@@ -8,7 +8,7 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}",
         "LOG_LEVEL": "INFO",
-        "MCP_SERVER_NAME": "st3-workflow",
+        "MCP_SERVER_NAME": "mcp-workflow",
         "MCP_WORKSPACE_ROOT": "${workspaceFolder}",
         "MCP_CONFIG_ROOT": "${workspaceFolder}/.st3/config",
         "GITHUB_OWNER": "MikeyVK",

@@ -38,10 +38,10 @@ activate_code_validation_tools           → 4 validation tools
 Don't guess the phase or status. **Query the system:**
 
 1.  **Read Coding Standards:**
-    *   `st3://rules/coding_standards` → *Loads TDD rules, Style, Quality Gates.*
+    *   `pgmcp://rules/coding_standards` → *Loads TDD rules, Style, Quality Gates.*
     *   Also follow [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) for typing-issue resolution consistency (no global disables; targeted ignores only as last resort).
 2.  **Check Development Phase:**
-    *   `st3://status/phase` → *Tells you current_phase, active_branch, is_clean.*
+    *   `pgmcp://status/phase` → *Tells you current_phase, active_branch, is_clean.*
 3.  **Check Work Context:**
     *   `get_work_context` → *Retrieves active issue, blockers, and recent changes.*
 
@@ -217,7 +217,7 @@ transition_phase(to_phase="validation")
 1.  **Issue-First Development:** Never work directly on `main`. Always start with `create_issue`.
 2.  **Workflow Enforcement:** Always `initialize_project` before work. Use `transition_phase` for progression.
 3.  **TDD is Non-Negotiable:** If you write code without a test, you are violating protocol.
-4.  **Tools > Manual:** Never manually create a file if `scaffold_*` exists. Never manually parse status if `st3://status/*` exists.
+4.  **Tools > Manual:** Never manually create a file if `scaffold_*` exists. Never manually parse status if `pgmcp://status/*` exists.
 5.  **English Artifacts, Dutch Chat:**
     *   Write Code/Docs/Commits in **English**.
     *   Talk to the User in **Dutch** (Nederlands).
@@ -416,8 +416,8 @@ create_branch      → pre: check_branch_policy                   → geblokkeer
 
 **If you have run Phase 1: Orientation, you are now READY.**
 *   "What is my next task?" → Check `get_work_context`.
-*   "How do I build X?" → Check `st3://rules/coding_standards`.
-*   "What phase am I in?" → Check `st3://status/phase`.
+*   "How do I build X?" → Check `pgmcp://rules/coding_standards`.
+*   "What phase am I in?" → Check `pgmcp://status/phase`.
 *   "Which tool should I use?" → **Consult Phase 5: Tool Priority Matrix.**
 *   "How do I start work?" → **Follow Phase 2: Issue-First Development Workflow.**
 

@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from mcp_server.config.settings import Settings, ServerSettings
 from mcp_server.server import MCPServer
 
 
@@ -18,6 +19,8 @@ def server():
 
     This patches the GitHubAdapter at the manager level so all GitHub
     operations return mock data instead of hitting the real API.
+    Uses explicit Settings to avoid inheriting MCP_SERVER_NAME from the
+    host process (e.g. the running MCP server that launches the tests).
     """
     # Patch the GitHubAdapter at the point where it's instantiated
     with patch("mcp_server.managers.github_manager.GitHubAdapter") as mock_adapter_class:
@@ -26,4 +29,5 @@ def server():
         mock_adapter.list_issues.return_value = []
         mock_adapter_class.return_value = mock_adapter
 
-        yield MCPServer()
+        settings = Settings(server=ServerSettings())
+        yield MCPServer(settings=settings)

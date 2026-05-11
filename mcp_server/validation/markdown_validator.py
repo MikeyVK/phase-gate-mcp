@@ -59,7 +59,7 @@ class MarkdownValidator(BaseValidator):
 
             # Skip external links and anchors
             if link_target.startswith(
-                ("http:", "https:", "mailto:", "st3:")
+                ("http:", "https:", "mailto:", "pgmcp:")
             ) or link_target.startswith("#"):
                 continue
 
