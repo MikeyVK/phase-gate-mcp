@@ -468,6 +468,7 @@ class TestGitManagerPrepareSubmission:
         adapter.has_upstream.return_value = True
         adapter.has_net_diff_for_path.return_value = False
         adapter.push.return_value = None
+        adapter.get_current_branch.return_value = "main"
         return adapter
 
     @pytest.fixture
@@ -645,6 +646,48 @@ class TestGitManagerPrepareSubmission:
         )
         mock_adapter.commit.assert_called_once()
         mock_adapter.push.assert_called_once()
+
+    # --- C_228.3 RED: issue_number suffix in prepare_submission ---
+
+    def test_prepare_submission_issue_branch_carries_suffix(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """feature/228-* branch → neutralize commit ends with ' (#228)'."""
+        mock_adapter.has_net_diff_for_path.return_value = True
+        mock_adapter.commit.return_value = "abc1234"
+        mock_adapter.get_current_branch.return_value = "feature/228-add-issue-suffix"
+        context = NoteContext()
+
+        manager.prepare_submission(
+            artifact_paths=frozenset({".phase-gate/state.json"}),
+            base="main",
+            note_context=context,
+        )
+
+        call_args = mock_adapter.commit.call_args
+        assert call_args[0][0].endswith(" (#228)"), (
+            f"Expected commit message to end with ' (#228)', got: {call_args[0][0]!r}"
+        )
+
+    def test_prepare_submission_main_no_suffix(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """'main' branch → neutralize commit has no issue suffix (regression guard)."""
+        mock_adapter.has_net_diff_for_path.return_value = True
+        mock_adapter.commit.return_value = "abc1234"
+        mock_adapter.get_current_branch.return_value = "main"
+        context = NoteContext()
+
+        manager.prepare_submission(
+            artifact_paths=frozenset({".phase-gate/state.json"}),
+            base="main",
+            note_context=context,
+        )
+
+        call_args = mock_adapter.commit.call_args
+        assert "(#" not in call_args[0][0], (
+            f"Expected no issue suffix for 'main', got: {call_args[0][0]!r}"
+        )
 
 
 class TestGitManagerRollbackPush:
