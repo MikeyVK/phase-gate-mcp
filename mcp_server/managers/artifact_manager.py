@@ -124,7 +124,7 @@ class ArtifactManager:
         if server_root is None:
             raise ValueError(
                 "ArtifactManager requires server_root. "
-                "Pass server_root=config_root.parent from server.py."
+                "Pass server_root=workspace_root / settings.state_dir from server.py."
             )
         self.server_root = Path(server_root).resolve()
 

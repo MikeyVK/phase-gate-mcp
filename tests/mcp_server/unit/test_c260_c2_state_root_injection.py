@@ -50,12 +50,12 @@ class TestNormalizeConfigRootPhaseGate:
         assert result == config_dir.resolve()
 
     def test_accepts_phase_gate_state_root(self, tmp_path: Path) -> None:
-        """normalize_config_root('/ws/.phase-gate') → '/ws/.phase-gate/config'."""
+        """normalize_config_root is a pure resolver after C3 — returns resolved path as-is."""
         state_root = tmp_path / ".phase-gate"
         config_dir = state_root / "config"
         config_dir.mkdir(parents=True)
         result = normalize_config_root(state_root)
-        assert result == config_dir.resolve()
+        assert result == state_root.resolve()
 
     def test_st3_still_works(self, tmp_path: Path) -> None:
         """Backward compat: normalize_config_root still accepts .st3/config."""

@@ -62,20 +62,11 @@ def test_normalize_config_root_handles_workspace_and_st3_paths(tmp_path: Path) -
     workspace_root = tmp_path / "workspace"
     config_root = workspace_root / ".st3" / "config"
 
-    # C2: plain workspace roots no longer silently map to .st3/config — they raise.
-    with pytest.raises(FileNotFoundError):
-        normalize_config_root(workspace_root)
-
-    # C3: hidden state-dir without config/ on disk also raises (heuristic removed).
-    with pytest.raises(FileNotFoundError):
-        normalize_config_root(workspace_root / ".st3")
-
-    # config/ path always resolves correctly regardless of parent name.
+    # C3: normalize_config_root is a simple resolver — it always returns Path(...).resolve().
+    # Any path is accepted without disk probes or heuristics.
+    assert normalize_config_root(workspace_root) == workspace_root.resolve()
+    assert normalize_config_root(workspace_root / ".st3") == (workspace_root / ".st3").resolve()
     assert normalize_config_root(config_root) == config_root.resolve()
-
-    # Disk-based: state root WITH config/ subdir on disk resolves correctly.
-    config_root.mkdir(parents=True)
-    assert normalize_config_root(workspace_root / ".st3") == config_root.resolve()
 
 
 def test_resolve_config_root_uses_preferred_workspace_root(tmp_path: Path) -> None:
@@ -307,12 +298,10 @@ directories:
 # ---------------------------------------------------------------------------
 
 
-def test_normalize_config_root_c3_rejects_hidden_dir_without_config_subdir(
+def test_normalize_config_root_c3_returns_resolved_path_without_disk_probe(
     tmp_path: Path,
 ) -> None:
-    """C3 RED: hidden state dirs without a config/ subdir must raise — no heuristic fallback."""
+    """C3: normalize_config_root is a pure resolver — no disk access, no heuristics."""
     hidden_dir = tmp_path / ".some-server"
-    hidden_dir.mkdir()
-    # After C3 the function no longer guesses: if config/ doesn't exist on disk, raise.
-    with pytest.raises(FileNotFoundError):
-        normalize_config_root(hidden_dir)
+    # The directory does NOT exist on disk — normalize_config_root must still succeed.
+    assert normalize_config_root(hidden_dir) == hidden_dir.resolve()

@@ -32,30 +32,13 @@ SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
 
 def normalize_config_root(config_root: Path | str) -> Path:
-    """Return the canonical config directory for a workspace or config path.
+    """Return the resolved config directory path.
 
-    Accepts any of:
-    - A path ending in 'config' (already the config dir, any parent name)
-    - A path to a state root dir that has a 'config' subdirectory (disk-based check)
-
-    After C3 the hidden-directory heuristic is removed: callers must supply an
-    explicit config/ path or a state root that already has a config/ subdirectory
-    on disk. Use server_root / "config" (derived from settings.state_dir) as the
-    canonical call site.
+    After C3: callers always pass ``server_root / "config"`` (derived from
+    ``workspace_root / settings.state_dir / "config"``).  No heuristic or
+    disk-based probe is performed — the path is resolved and returned as-is.
     """
-    candidate = Path(config_root).resolve()
-    # Already points to a config directory (any parent name is fine)
-    if candidate.name == "config":
-        return candidate
-    # Disk-based: candidate is a state root with an existing config/ subdirectory
-    if (candidate / "config").is_dir():
-        return candidate / "config"
-    # No matching heuristic — require an explicit path to config or state root
-    raise FileNotFoundError(
-        f"Cannot determine config root from: {config_root!r}. "
-        "Provide an explicit path to the config directory or a state root "
-        "that already has a config/ subdirectory on disk."
-    )
+    return Path(config_root).resolve()
 
 
 def resolve_config_root(
@@ -89,15 +72,13 @@ def resolve_config_root(
     def _probe_candidates(root: Path) -> list[Path]:
         """Return candidate config paths for a given root.
 
-        normalize_config_root recognises known patterns (hidden dir, config/ child).
-        For plain workspace roots where normalize_config_root now raises, we fall
-        back to probing conventional hidden state-dir names explicitly.
+        After C3, callers supply the explicit config path directly.
+        For legacy uses of resolve_config_root with a bare workspace root,
+        we probe the conventional hidden state-dir sub-paths explicitly.
         """
-        try:
-            return [normalize_config_root(root)]
-        except FileNotFoundError:
-            # Plain workspace root — probe the canonical hidden state directory name.
-            return [root / ".phase-gate" / "config"]
+        # If the path itself looks like a config dir (or any explicit path), keep it.
+        # Also probe the canonical hidden state directory names as fallback.
+        return [root, root / ".phase-gate" / "config"]
 
     if preferred_root is not None:
         candidates.extend(_probe_candidates(Path(preferred_root).resolve()))
