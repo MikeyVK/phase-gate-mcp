@@ -141,11 +141,12 @@ class QAManager:
             return results
 
         python_files = list(existing_files)
-
         quality_config = self._require_quality_config()
         # Apply artifact logging config (config-first with safe defaults)
         self.qa_log_enabled = quality_config.artifact_logging.enabled
-        self.qa_log_dir = Path(quality_config.artifact_logging.output_dir)
+        if quality_config.artifact_logging.output_dir is not None:
+            self.qa_log_dir = Path(quality_config.artifact_logging.output_dir)
+        # else: keep injected logs_dir / "qa_logs" set in __init__
         self.qa_log_max_files = quality_config.artifact_logging.max_files
 
         if not quality_config.active_gates:

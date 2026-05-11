@@ -424,7 +424,7 @@ class TestArtifactLoggingConfig:
         assert config.artifact_logging.output_dir == "temp/custom_artifacts"
         assert config.artifact_logging.max_files == 50
 
-    def test_artifact_logging_missing_output_dir_raises_config_error(self, tmp_path: Path) -> None:
+    def test_artifact_logging_missing_output_dir_defaults_to_none(self, tmp_path: Path) -> None:
         yaml_path = tmp_path / "quality.yaml"
         yaml_path.write_text(
             yaml.dump(
@@ -455,8 +455,8 @@ class TestArtifactLoggingConfig:
             encoding="utf-8",
         )
 
-        with pytest.raises(ConfigError):
-            ConfigLoader(config_root=_ST3_CONFIG).load_quality_config(config_path=yaml_path)
+        config = ConfigLoader(config_root=_ST3_CONFIG).load_quality_config(config_path=yaml_path)
+        assert config.artifact_logging.output_dir is None
 
     def test_gate1_formatting_loads_from_yaml(self) -> None:
         """gate1_formatting definition loads correctly from quality.yaml."""
