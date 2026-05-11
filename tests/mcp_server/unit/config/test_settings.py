@@ -33,7 +33,7 @@ def mock_server_version() -> Iterator[None]:
 def test_default_settings() -> None:
     """Test that default settings are loaded correctly."""
     settings = Settings()
-    assert settings.server.name == "st3-workflow"
+    assert settings.server.name == "mcp-workflow"
     assert settings.server.version == "3.0.0"
     assert settings.logging.level == "INFO"
 

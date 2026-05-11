@@ -20,7 +20,7 @@ from mcp_server.resources.standards import StandardsResource
 async def test_standards_resource_read() -> None:
     """Test that standards resource returns valid JSON with required fields."""
     resource = StandardsResource()
-    content = await resource.read("st3://rules/coding_standards")
+    content = await resource.read("pgmcp://rules/coding_standards")
 
     data = json.loads(content)
     assert data["python"]["version"] == ">=3.11"
@@ -30,7 +30,7 @@ async def test_standards_resource_read() -> None:
 def test_standards_resource_metadata() -> None:
     """Test that standards resource has correct URI pattern and description."""
     resource = StandardsResource()
-    assert resource.uri_pattern == "st3://rules/coding_standards"
+    assert resource.uri_pattern == "pgmcp://rules/coding_standards"
     assert "coding standards" in resource.description
 
 
@@ -42,7 +42,7 @@ async def test_standards_resource_reads_active_gates_from_quality_yaml() -> None
     instead of returning hardcoded JSON.
     """
     resource = StandardsResource()
-    content = await resource.read("st3://rules/coding_standards")
+    content = await resource.read("pgmcp://rules/coding_standards")
 
     data = json.loads(content)
 

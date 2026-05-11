@@ -38,7 +38,7 @@ async def test_status_resource() -> None:
     mock_git.get_status.return_value = {"branch": "feature/test", "is_clean": True}
 
     resource = StatusResource(git_adapter=mock_git)
-    content = await resource.read("st3://status/phase")
+    content = await resource.read("pgmcp://status/phase")
 
     assert "Implementation" in content
     assert "feature/test" in content
