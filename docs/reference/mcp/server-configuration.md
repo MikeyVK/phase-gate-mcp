@@ -20,13 +20,12 @@ server code.  Override any segment via environment variable; use a YAML overlay 
 configuration.
 
 ---
-
 ## Path Derivation Chain
 
 ```
 MCP_WORKSPACE_ROOT          (default: cwd)
 └── MCP_SERVER_PROJECT_DIR  (default: .phase-gate)    → server_root
-    ├── config/                                        → config_root  (MCP_CONFIG_ROOT overrides)
+    ├── config/                                        → config_root  (always server_root/config)
     └── MCP_LOGS_DIR        (default: logs)            → logs_dir
         ├── mcp_audit.log                              → audit log    (LOG_LEVEL controls verbosity)
         └── qa_logs/                                   → QA artifact logs (gate failures only)
@@ -37,7 +36,6 @@ MCP_WORKSPACE_ROOT          (default: cwd)
 | `workspace_root` | `MCP_WORKSPACE_ROOT` | `os.getcwd()` |
 | `server_root` | `MCP_SERVER_PROJECT_DIR` | `.phase-gate` |
 | `logs_dir` | `MCP_LOGS_DIR` | `logs` |
-| `config_root` | `MCP_CONFIG_ROOT` | *(server_root/config)* |
 
 ---
 
@@ -50,7 +48,6 @@ MCP_WORKSPACE_ROOT          (default: cwd)
 | `MCP_WORKSPACE_ROOT` | `server.workspace_root` | `os.getcwd()` | Repository root. All relative paths resolve from here. |
 | `MCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.phase-gate` | Sub-directory under workspace_root for all server data. |
 | `MCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
-| `MCP_CONFIG_ROOT` | `server.config_root` | *(server_root/config)* | **Compat override.** Rarely needed; `server_root/config` is always the production path. |
 | `MCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
 
 ### Logging
@@ -90,12 +87,12 @@ settings: Settings = Settings.from_env()
 | `workspace_root` | `str` | `MCP_WORKSPACE_ROOT` | `os.getcwd()` |
 | `server_root_dir` | `str` | `MCP_SERVER_PROJECT_DIR` | `".phase-gate"` |
 | `logs_dir` | `str` | `MCP_LOGS_DIR` | `"logs"` |
-| `config_root` | `str \| None` | `MCP_CONFIG_ROOT` | `None` (auto-resolved; compat override only) |
+| `config_root` | `str \| None` | `MCP_CONFIG_ROOT` | `None` — **dead field; not used by `server.py`.** Kept in `settings.py` for backward compat only. |
 
 ### `LogSettings`
 
 | Field | Type | Env var | Default |
-|---|---|---|---|
+|---|---|---|-----------|
 | `level` | `str` | `LOG_LEVEL` | `"INFO"` |
 | `audit_log` | `str \| None` | `MCP_AUDIT_LOG` | `None` (auto-derived) |
 

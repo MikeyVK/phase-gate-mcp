@@ -63,14 +63,15 @@ directory name `.st3` is not configurable.
 | ~~`mcp_server/utils/template_config.py`~~ | ~~45~~ | ~~`templates/` (CWD-relative)~~ — **fixed pre-C2**: now uses `Path(__file__).parent.parent / "scaffolding/templates"` (package-relative) + `TEMPLATE_ROOT` env var override |
 | ~~`mcp_server/scaffolding/template_registry.py`~~ | ~~35~~ | ~~`template_registry.json` (default arg)~~ — **fixed pre-C2**: now raises `ValueError` if no `registry_path` provided |
 
-**Key insight:** `config_root` is already resolved in `server.py` via `resolve_config_root()`.
+> **⚠️ Historical analysis (pre-C3).** The following insight and fix approach describe the state at the time of analysis. The actual fix — chain inversion via D4-revised — is documented in F9 / D4-revised below.
+
+**Key insight (at time of finding):** `config_root` is already resolved in `server.py` via `resolve_config_root()`.
 `config_root.parent` IS the state root (currently `.st3/`). The derivation exists but is
 not used — every callsite recomputes `workspace_root / ".st3"` independently.
 
-**Fix approach:** Add `st3_dir: str = ".st3"` to `ServerSettings` (env: `MCP_ST3_DIR`),
-derive `state_root = workspace_root / settings.st3_dir` once in `server.py`,
-pass as constructor arg to all managers that need it. Alternatively, derive from
-`config_root.parent` — no new setting required.
+**Original fix approach (superseded by D4-revised):** ~~Add `st3_dir: str = ".st3"` to `ServerSettings` (env: `MCP_ST3_DIR`),
+derive `state_root = workspace_root / settings.st3_dir` once in `server.py`~~. **Executed as:** `server_root_dir: str = ".phase-gate"` (env: `MCP_SERVER_PROJECT_DIR`), C3+C6.
+
 
 ---
 
@@ -87,16 +88,14 @@ These URIs are MCP protocol-level identifiers visible to clients.
 Changing them is a **breaking change** for any client that hardcodes them (agent.md,
 test suite, `mcp.json`-based clients).
 
-**Fix approach:** Rename scheme to `mcp://`. Update all references including
-`tests/mcp_server/integration/mcp_server/test_server_startup.py` and
-`tests/mcp_server/unit/resources/test_standards.py`.
+> **⚠️ Historical fix approach (superseded).** Originally planned as `mcp://`. **Actual rename: `pgmcp://`** (C4, atomic).
 
 ---
 
 ### F3 — Server name `st3-workflow` in settings and mcp.json
 
 | Location | Value |
-|----------|-------|
+|----------|---------|
 | `mcp_server/config/settings.py` L50 | `name: str = "st3-workflow"` |
 | `docs/setup/mcp.json` | `"MCP_SERVER_NAME": "st3-workflow"` |
 | `tests/.../test_server_startup.py` L13 | `assert server.server.name == "st3-workflow"` |
@@ -107,7 +106,11 @@ test suite, `mcp.json`-based clients).
 
 ### F4 — `normalize_config_root()` hardcodes `.st3` in detection logic
 
-`mcp_server/config/loader.py` L37–41:
+
+> **⚠️ Historical code (pre-C3).** The code below shows the original `.st3`-name-checking heuristic.
+After C3, `normalize_config_root()` is purely `return Path(config_root).resolve()` — no name checks, no probing.
+
+`mcp_server/config/loader.py` L37–41 *(historical — replaced in C3)*:
 ```python
 if candidate.name == "config" and candidate.parent.name == ".st3":
     return candidate
@@ -116,14 +119,9 @@ if candidate.name == ".st3":
 return candidate / ".st3" / "config"   # ← fallback
 ```
 
-The function recognizes the config directory by its position relative to `.st3`.
-If the directory is renamed, the auto-detection logic breaks.
+The function recognized the config directory by its position relative to `.st3`.
+If the directory was renamed, the auto-detection logic would break.
 
-**Fix approach:** Accept any directory named `config` whose parent contains the
-required YAML files, OR derive `state_root` from `config_root.parent` without
-name-checking. The fallback line L41 must use the configurable name.
-
----
 
 ### F5 — `admin_tools.py`: restart marker has no workspace_root
 
@@ -244,14 +242,16 @@ All MCP resource URIs change scheme from `st3://` to `pgmcp://`.
 This is a breaking change for existing clients (agent.md, mcp.json consumers).
 All references updated in this issue.
 
-### D4 — State root derivation: use `config_root.parent`
+### D4 — State root derivation: use `config_root.parent` *(SUPERSEDED by D4-revised)*
 
-No new `ServerSettings` field is added.
+~~No new `ServerSettings` field is added.
 `state_root` is derived as `config_root.parent` in `server.py` once after
-`resolve_config_root()` returns. This is passed to all managers as a constructor
-argument, replacing all inline `workspace_root / ".st3"` constructions.
-Rationale: `MCP_CONFIG_ROOT` already encodes the config path; `config_root.parent`
-is always the state root without requiring a second env var.
+`resolve_config_root()` returns.~~
+
+**Superseded (C3+C6):** D4 was replaced by D4-revised (see design.md). Chain inversion:
+`server_root = workspace_root / settings.server.server_root_dir`;
+`config_root = server_root / "config"` (derived, never primary).
+`MCP_CONFIG_ROOT`/`settings.server.config_root` kept in settings but not used by `server.py`.
 
 ### D5 — Repo split strategy: rename current repo, extract backend
 

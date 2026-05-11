@@ -40,15 +40,17 @@ flowchart TD
 
 **Module:** `mcp_server/config/loader.py`
 
-A helper that normalises any path variant to its config subdirectory form using the
-**default `.phase-gate/config` convention**. Not called when `MCP_CONFIG_ROOT` is set — in
-that case `resolve_config_root` uses the explicit path directly.
+After C3 (chain inversion), this function is a **pure `Path.resolve()` wrapper**.
+Callers always supply the already-derived `server_root / "config"` path;
+no heuristic detection or directory-name probing is performed.
 
-| Input form | Output (default convention) |
-|------------|-----------------------------|
-| `<workspace>` | `<workspace>/.phase-gate/config` |
-| `<workspace>/.phase-gate` | `<workspace>/.phase-gate/config` |
-| `<workspace>/.phase-gate/config` | unchanged |
+```python
+def normalize_config_root(config_root: Path | str) -> Path:
+    return Path(config_root).resolve()
+```
+
+It is called by `ConfigLoader.__init__` to normalise whatever path the caller
+provides, and remains available as a utility for tests and manual invocations.
 
 ---
 

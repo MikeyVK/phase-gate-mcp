@@ -228,7 +228,7 @@ transition_phase(to_phase="validation")
 
 ## 🔧 Phase 5: Tool Priority Matrix (MANDATORY)
 
-> **🛑 CRITICAL RULE:** Use ST3 MCP tools for ALL operations. NEVER use terminal/CLI or create_file where an MCP tool exists.
+> **🛑 CRITICAL RULE:** Use PhaseGate MCP tools for ALL operations. NEVER use terminal/CLI or create_file where an MCP tool exists.
 
 ### Project Initialization & Planning
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -354,7 +354,7 @@ scaffold_artifact(
 | Edit file (multi-mode) | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | Manual file editing |
 | Create generic file | `create_file(path, content)` | VS Code create_file (deprecated) |
 
-> **📌 Remember:** The ST3 MCP tools use Jinja2 templates that ensure consistency, correct imports, proper structure, and automatic test file generation. Manual file creation bypasses all these benefits.
+> **📌 Remember:** The PhaseGate MCP tools use Jinja2 templates that ensure consistency, correct imports, proper structure, and automatic test file generation. Manual file creation bypasses all these benefits.
 
 ### Ready-Phase Enforcement (Issue #283)
 
