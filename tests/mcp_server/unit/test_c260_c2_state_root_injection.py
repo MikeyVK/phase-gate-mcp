@@ -102,22 +102,22 @@ class TestPhaseStateEngineStateRoot:
         )
 
     def test_state_file_uses_injected_state_root(self, tmp_path: Path) -> None:
-        """When state_root is provided, state_file = state_root / 'state.json'."""
+        """When state_root is provided, state_path = state_root / 'state.json'."""
         state_root = tmp_path / ".phase-gate"
         workspace_root = tmp_path / "workspace"
 
         engine = self._make_engine(state_root, workspace_root)
 
-        assert engine.state_file == state_root / "state.json"
+        assert engine.state_path == state_root / "state.json"
 
     def test_state_file_is_not_workspace_root_st3(self, tmp_path: Path) -> None:
-        """state_file must NOT be derived from workspace_root / '.phase-gate'."""
+        """state_path must NOT be derived from workspace_root / '.phase-gate'."""
         state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
 
         engine = self._make_engine(state_root, workspace_root)
 
-        assert ".phase-gate" not in str(engine.state_file)
+        assert ".phase-gate" not in str(engine.state_path)
 
     def test_state_path_uses_injected_state_root(self, tmp_path: Path) -> None:
         """C6 RED: state_path (not state_file) must equal state_root / 'state.json'."""

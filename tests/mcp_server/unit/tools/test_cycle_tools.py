@@ -149,7 +149,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / ".phase-gate" / "config"
             )
-            mock_settings_cls.from_env.return_value.server.state_dir = ".phase-gate"
+            mock_settings_cls.from_env.return_value.server.server_root_dir = ".phase-gate"
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"
@@ -203,7 +203,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / ".phase-gate" / "config"
             )
-            mock_settings_cls.from_env.return_value.server.state_dir = ".phase-gate"
+            mock_settings_cls.from_env.return_value.server.server_root_dir = ".phase-gate"
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"

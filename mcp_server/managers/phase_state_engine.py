@@ -87,7 +87,7 @@ class PhaseStateEngine:
         server_root: Path,
     ) -> None:
         """Initialize PhaseStateEngine."""
-        self.state_file = server_root / "state.json"
+        self.state_path = server_root / "state.json"
         self._workspace_root = Path(workspace_root)
         self.project_manager = project_manager
 
@@ -446,7 +446,7 @@ class PhaseStateEngine:
 
     def _has_uncommitted_state_changes(self) -> bool:
         """Check whether tracked state.json has local git changes."""
-        if not self.state_file.exists():
+        if not self.state_path.exists():
             return False
 
         try:
@@ -461,7 +461,7 @@ class PhaseStateEngine:
                     "status",
                     "--porcelain",
                     "--",
-                    str(self.state_file.relative_to(self._workspace_root_path())),
+                    str(self.state_path.relative_to(self._workspace_root_path())),
                 ],
                 cwd=self._workspace_root_path(),
                 stdin=subprocess.DEVNULL,

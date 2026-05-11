@@ -93,18 +93,18 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
 
 
 # ---------------------------------------------------------------------------
-# C3 — state_dir field in ServerSettings
+# C3 — server_root_dir field in ServerSettings (renamed from state_dir in C6)
 # ---------------------------------------------------------------------------
 
 
 def test_state_dir_default_is_phase_gate() -> None:
-    """C5 RED: ServerSettings state_dir default must be '.phase-gate'."""
+    """C5 RED: ServerSettings server_root_dir default must be '.phase-gate'."""
     s = ServerSettings()
-    assert s.state_dir == ".phase-gate"
+    assert s.server_root_dir == ".phase-gate"
 
 
 def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """C3 RED: MCP_STATE_DIR env var must override state_dir."""
+    """C3 RED: MCP_STATE_DIR env var must override server_root_dir."""
     monkeypatch.setenv("MCP_STATE_DIR", ".phase-gate")
     monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
     monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
@@ -112,7 +112,7 @@ def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("LOG_LEVEL", raising=False)
 
     s = Settings.from_env()
-    assert s.server.state_dir == ".phase-gate"
+    assert s.server.server_root_dir == ".phase-gate"
 
 
 # ---------------------------------------------------------------------------

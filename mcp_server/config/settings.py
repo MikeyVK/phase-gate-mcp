@@ -51,7 +51,7 @@ class ServerSettings(BaseModel):
     version: str = Field(default_factory=_default_server_version)
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
-    state_dir: str = ".phase-gate"
+    server_root_dir: str = ".phase-gate"
 
 
 class GitHubSettings(BaseModel):
@@ -91,7 +91,7 @@ class Settings(BaseModel):
         if env_workspace_root := os.environ.get("MCP_WORKSPACE_ROOT"):
             server_data["workspace_root"] = env_workspace_root
         if env_state_dir := os.environ.get("MCP_STATE_DIR"):
-            server_data["state_dir"] = env_state_dir
+            server_data["server_root_dir"] = env_state_dir
         if env_config_root := os.environ.get("MCP_CONFIG_ROOT"):
             server_data["config_root"] = env_config_root
 

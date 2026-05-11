@@ -35,7 +35,7 @@ def normalize_config_root(config_root: Path | str) -> Path:
     """Return the resolved config directory path.
 
     After C3: callers always pass ``server_root / "config"`` (derived from
-    ``workspace_root / settings.state_dir / "config"``).  No heuristic or
+    ``workspace_root / settings.server.server_root_dir / "config"``).  No heuristic or
     disk-based probe is performed — the path is resolved and returned as-is.
     """
     return Path(config_root).resolve()

@@ -46,7 +46,7 @@ def _patch_server_settings(
     mock.from_env.return_value.server.name = "test-server"
     mock.from_env.return_value.server.workspace_root = resolved_workspace_root
     mock.from_env.return_value.server.config_root = resolved_config_root
-    mock.from_env.return_value.server.state_dir = ".phase-gate"
+    mock.from_env.return_value.server.server_root_dir = ".phase-gate"
     mock.from_env.return_value.github.token = token
     mock.from_env.return_value.github.owner = "test"
     mock.from_env.return_value.github.repo = "repo"

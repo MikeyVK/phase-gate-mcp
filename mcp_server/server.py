@@ -147,7 +147,7 @@ class MCPServer:
         # C3: chain inversion — server_root is primary, config_root is derived.
         # MCP_CONFIG_ROOT / settings.server.config_root is kept in settings for
         # backward compatibility but is no longer used for path derivation here.
-        server_root = workspace_root / settings.server.state_dir
+        server_root = workspace_root / settings.server.server_root_dir
         config_root = server_root / "config"
 
         registry_path = server_root / "template_registry.json"

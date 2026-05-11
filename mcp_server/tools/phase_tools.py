@@ -80,7 +80,7 @@ class _BaseTransitionTool(BranchMutatingTool):
         if server_root is None:
             raise ValueError(
                 "_BaseTransitionTool requires server_root. "
-                "Pass server_root=workspace_root / settings.state_dir from server.py."
+                "Pass server_root=workspace_root / settings.server.server_root_dir from server.py."
             )
         self.server_root = server_root
         self._project_manager = project_manager
