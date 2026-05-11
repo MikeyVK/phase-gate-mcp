@@ -429,11 +429,14 @@ class GitManager:
         commit_made = False
         if to_neutralize:
             try:
+                branch = self.adapter.get_current_branch()
+                issue_number = self._git_config.extract_issue_number(branch)
                 self.commit_with_scope(
                     workflow_phase="ready",
                     message=f"neutralize branch-local artifacts to '{base}'",
                     note_context=note_context,
                     commit_type="chore",
+                    issue_number=issue_number,
                 )
                 commit_made = True
             except ExecutionError as exc:
