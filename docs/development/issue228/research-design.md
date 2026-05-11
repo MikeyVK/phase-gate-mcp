@@ -1,7 +1,7 @@
 # Research & Design: Add Issue Number to Commit Message
 
-**Issue:** #228 | **Status:** DRAFT | **Version:** 1.2
-**Date:** 2026-05-11 (rev: QA NOGO v2 → rewrite D2 explicit-path; fix D3 create_branch wording)
+**Issue:** #228 | **Status:** DRAFT | **Version:** 1.3
+**Date:** 2026-05-11 (rev: QA medium → fix impact section test list; planning ref bump)
 
 ---
 
@@ -219,8 +219,10 @@ Tests that will change:
 - `test_git_manager_config.py` — 3 asserts on exact message format (all pass `None`)
 - `test_git_manager.py` — asserts on `adapter.commit()` call args (all pass `None`)
 - `test_git_tools.py` — `commit_with_scope.assert_called_once_with()` needs
-  `issue_number=None`; mock for `get_current_phase` becomes mock for `get_state`
-  returning a `BranchState` stub with `.current_phase` and `.issue_number`
+  `issue_number=None`; auto-detect path mock changes from `get_current_phase` to
+  `get_state` returning a `BranchState` stub with `.current_phase` and `.issue_number`;
+  explicit-path tests add a `git_config.extract_issue_number` mock (no `get_state` mock
+  needed for that path)
 - `test_git_adapter_neutralize_to_base.py` — 2 asserts on `chore(P_READY): neutralize...`
   message (mock branch has no issue number → no suffix → unchanged)
 
@@ -229,10 +231,10 @@ New tests required:
 - `GitManager.commit_with_scope(issue_number=None)` → no suffix (regression guard)
 - `GitCommitTool.execute()` — auto-detect path: `get_state()` returns
   `issue_number=42` → suffix ` (#42)` present in `commit_with_scope` call
-- `GitCommitTool.execute()` — explicit `workflow_phase`: `get_state()` returns
-  `issue_number=42` → suffix present
-- `GitCommitTool.execute()` — `get_state()` raises `StateBranchMismatchError` with
-  explicit `workflow_phase` → `issue_number=None` → no suffix, no crash
+- `GitCommitTool.execute()` — auto-detect path: `StateBranchMismatchError` → hard error
+  (existing behavior, not `issue_number=None`)
+- `GitCommitTool.execute()` — explicit `workflow_phase`: `git_config.extract_issue_number`
+  returns `42` → suffix present in `commit_with_scope` call; no `get_state` call made
 - `prepare_submission` — branch `feature/228-title` → `commit_with_scope` called
   with `issue_number=228`
 - `prepare_submission` — branch `main` → `commit_with_scope` called with

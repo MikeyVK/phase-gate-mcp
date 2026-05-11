@@ -23,7 +23,7 @@ ScopeDecoder, PhaseDetection, WorkflowStatusResolver, integration tests that par
 ## Prerequisites
 
 Read these first:
-1. research-design.md v1.1 approved (QA GO on F4/D3 and D2)
+1. research-design.md v1.2 approved (QA GO on D2 two-path and D3)
 2. GitConfig.extract_issue_number() confirmed present (config/schemas/git_config.py L92)
 ---
 
