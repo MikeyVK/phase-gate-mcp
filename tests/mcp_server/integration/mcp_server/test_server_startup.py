@@ -12,7 +12,7 @@ from mcp_server.server import MCPServer
 @pytest.mark.asyncio
 async def test_server_initialization(server: MCPServer) -> None:
     """Test that the MCP server initializes correctly."""
-    assert server.server.name == "mcp-workflow"
+    assert server.server.name == "phase-gate-mcp"
     assert len(server.resources) > 0
 
 

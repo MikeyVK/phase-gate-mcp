@@ -1,0 +1,6 @@
+{
+  "timestamp": 1778397280.404537,
+  "pid": 39260,
+  "reason": "test sys.exit(42) restart",
+  "iso_time": "2026-05-10T07:14:40.404537+00:00"
+}
