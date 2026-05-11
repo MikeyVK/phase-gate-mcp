@@ -3,8 +3,8 @@
 # Add Issue Number to Commit Message Suffix (Issue #228)
 
 **Status:** DRAFT  
-**Version:** 1.0  
-**Last Updated:** 2026-05-11
+**Version:** 1.1  
+**Last Updated:** 2026-05-11 (rev: QA NOGO v2 → rewrite C_228.2, fix C_228.1 test names)
 
 ---
 
@@ -50,9 +50,9 @@ Three TDD cycles. C_228.1 adds the optional issue_number param to commit_with_sc
 **Tests:**
 - NEW: test_commit_with_scope_appends_issue_suffix — commit_with_scope(issue_number=228) produces message ending with ' (#228)'
 - NEW: test_commit_with_scope_no_suffix_when_none — commit_with_scope(issue_number=None) produces message without suffix (regression guard)
-- UPDATE: test_commit_full_message — add issue_number=None to existing call assertions
-- UPDATE: test_commit_message_format — same
-- UPDATE: test_commit_type_and_scope — same
+- UPDATE: test_commit_with_scope_phase_only — add issue_number=None to commit_with_scope call assertion
+- UPDATE: test_commit_with_scope_phase_and_subphase — same
+- UPDATE: test_commit_with_scope_with_cycle_number — same
 
 **Success Criteria:**
 - commit_with_scope(issue_number=228) → message ends with ' (#228)'
@@ -62,20 +62,34 @@ Three TDD cycles. C_228.1 adds the optional issue_number param to commit_with_sc
 
 
 
-### Cycle 2: C_228.2 — GitCommitTool reads issue_number via get_state()
+### Cycle 2: C_228.2 — GitCommitTool reads issue_number via two-path approach
 
-**Goal:** Replace get_current_phase() call in GitCommitTool.execute() with get_state() to obtain both .current_phase and .issue_number in one read. Pass issue_number to commit_with_scope(). Graceful fallback to None on any state error.
+**Goal:** Apply the two-path design from research-design.md D2.
+
+- **Auto-detect path** (`workflow_phase is None`): replace `get_current_phase()` with
+  `get_state()` to obtain both `state.current_phase` and `state.issue_number` in one read.
+  Existing hard-error behavior on `FileNotFoundError` / `StateBranchMismatchError` is
+  **preserved unchanged** — a mismatch is detected inconsistency, not a missing source.
+
+- **Explicit `workflow_phase` path**: use `self.manager.git_config.extract_issue_number(
+  current_branch)` — already available via `self.manager`, same helper as C_228.3.
+  No state read introduced. `None` on non-conforming branch = documented contract.
 
 **Tests:**
-- NEW: test_commit_tool_auto_detect_includes_suffix — auto-detect path, get_state() returns issue_number=42, asserts commit_with_scope called with issue_number=42
-- NEW: test_commit_tool_explicit_phase_includes_suffix — explicit workflow_phase provided, get_state() returns issue_number=42, asserts suffix injected
-- NEW: test_commit_tool_state_error_no_suffix_no_crash — get_state() raises StateBranchMismatchError with explicit workflow_phase, asserts issue_number=None, no exception propagated
-- UPDATE: existing test mocks — replace get_current_phase mock with get_state stub returning BranchState with .current_phase and .issue_number=None
+- NEW: test_commit_tool_auto_detect_includes_suffix — auto-detect path, get_state() returns
+  issue_number=42, asserts commit_with_scope called with issue_number=42
+- NEW: test_commit_tool_explicit_phase_uses_git_config — explicit workflow_phase provided,
+  git_config.extract_issue_number returns 42, asserts suffix injected; no get_state call
+- NEW: test_commit_tool_auto_detect_mismatch_returns_error — StateBranchMismatchError on
+  auto-detect path returns ToolResult.error, not issue_number=None
+- UPDATE: existing auto-detect test mocks — replace get_current_phase mock with get_state
+  stub returning BranchState with .current_phase and .issue_number=None
 
 **Success Criteria:**
 - Auto-detect path: get_state() called once, phase and issue_number both consumed
-- Explicit workflow_phase path: get_state() called for issue_number only; error yields issue_number=None, not exception
-- commit_with_scope receives issue_number on happy path
+- Auto-detect path: StateBranchMismatchError produces hard error (existing behavior)
+- Explicit path: git_config.extract_issue_number called, no get_state call made
+- commit_with_scope receives issue_number on both happy paths
 - All existing GitCommitTool tests pass
 - mypy / ruff clean on git_tools.py
 
@@ -105,8 +119,8 @@ Three TDD cycles. C_228.1 adds the optional issue_number param to commit_with_sc
 
 - **Risk:** Existing tests that assert exact commit message format may fail if test fixtures pass a non-None issue_number inadvertently.
   - **Mitigation:** All existing callers pass None implicitly via default; grep for commit_with_scope call sites before merging each cycle.
-- **Risk:** get_state() mock shape differs from get_current_phase() mock — wrong mock may silently return None for issue_number.
-  - **Mitigation:** C_228.2 RED test explicitly asserts suffix presence; missing issue_number would cause immediate RED failure.
+- **Risk:** Auto-detect path get_state() mock shape differs from get_current_phase() mock — wrong mock may silently return None for issue_number.
+  - **Mitigation:** C_228.2 RED test explicitly asserts suffix presence on auto-detect path; missing issue_number causes immediate RED failure.
 
 ---
 

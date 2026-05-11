@@ -65,42 +65,51 @@
           {
             "cycle_number": 2,
             "name": "GitCommitTool reads issue_number via get_state()",
-            "exit_criteria": "GitCommitTool.execute() calls get_state() not get_current_phase(); issue_number flows to commit_with_scope on happy path; StateBranchMismatchError with explicit workflow_phase yields issue_number=None without exception; all existing GitCommitTool tests pass green",
+            "exit_criteria": "Auto-detect path: get_state() called, phase and issue_number consumed, StateBranchMismatchError produces hard error (not None suffix); explicit path: git_config.extract_issue_number called, no get_state call; all existing GitCommitTool tests pass green",
             "deliverables": [
               {
-                "id": "C_228.2.D1",
                 "description": "get_state( call present in git_tools.py (auto-detect path)",
+                "id": "C_228.2.D1",
                 "validates": {
-                  "type": "contains_text",
                   "file": "mcp_server/tools/git_tools.py",
-                  "text": "get_state("
+                  "text": "get_state(",
+                  "type": "contains_text"
                 }
               },
               {
-                "id": "C_228.2.D2",
                 "description": "get_current_phase() call removed from git_tools.py",
+                "id": "C_228.2.D2",
                 "validates": {
-                  "type": "absent_text",
                   "file": "mcp_server/tools/git_tools.py",
-                  "text": "get_current_phase"
+                  "text": "get_current_phase",
+                  "type": "absent_text"
                 }
               },
               {
-                "id": "C_228.2.D3",
                 "description": "new test: auto-detect path produces suffix",
+                "id": "C_228.2.D3",
                 "validates": {
-                  "type": "contains_text",
                   "file": "tests/mcp_server/unit/tools/test_git_tools.py",
-                  "text": "test_commit_tool_auto_detect_includes_suffix"
+                  "text": "test_commit_tool_auto_detect_includes_suffix",
+                  "type": "contains_text"
                 }
               },
               {
+                "description": "new test: explicit path uses git_config (not get_state)",
                 "id": "C_228.2.D4",
-                "description": "new test: state error with explicit phase yields no crash",
                 "validates": {
-                  "type": "contains_text",
                   "file": "tests/mcp_server/unit/tools/test_git_tools.py",
-                  "text": "test_commit_tool_state_error_no_suffix_no_crash"
+                  "text": "test_commit_tool_explicit_phase_uses_git_config",
+                  "type": "contains_text"
+                }
+              },
+              {
+                "description": "new test: auto-detect mismatch returns error (not None suffix)",
+                "id": "C_228.2.D5",
+                "validates": {
+                  "file": "tests/mcp_server/unit/tools/test_git_tools.py",
+                  "text": "test_commit_tool_auto_detect_mismatch_returns_error",
+                  "type": "contains_text"
                 }
               }
             ]

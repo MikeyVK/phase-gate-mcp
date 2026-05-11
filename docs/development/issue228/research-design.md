@@ -1,7 +1,7 @@
 # Research & Design: Add Issue Number to Commit Message
 
-**Issue:** #228 | **Status:** DRAFT | **Version:** 1.1
-**Date:** 2026-05-11 (rev: QA NOGO → fixed F4/D3 and D2)
+**Issue:** #228 | **Status:** DRAFT | **Version:** 1.2
+**Date:** 2026-05-11 (rev: QA NOGO v2 → rewrite D2 explicit-path; fix D3 create_branch wording)
 
 ---
 
@@ -126,40 +126,50 @@ suffix = f" (#{issue_number})" if issue_number is not None else ""
 full_message = f"{commit_type}({scope}): {message}{suffix}"
 ```
 
-### D2 — GitCommitTool calls get_state() to obtain both phase and issue_number
+### D2 — GitCommitTool: two-path approach for issue_number
 
-`GitCommitTool.execute()` currently calls `self._state_engine.get_current_phase(branch)`
-for auto-detection, which internally calls `get_state()` and discards the full object
-(F5 above). This is a small inefficiency that we fix as part of this issue.
+`GitCommitTool.execute()` has two code paths depending on whether `workflow_phase` was
+supplied by the caller.
 
-**Change:** replace the `get_current_phase()` call at `git_tools.py` L328 with
-`get_state()` directly. This gives access to `state.current_phase` **and**
-`state.issue_number` in one call — no extra I/O.
+#### Path A — Auto-detect (`workflow_phase is None`)
 
-When `workflow_phase` is provided explicitly, a separate `get_state()` call is needed
-to read `issue_number`. This is one additional state.json read for that path.
+Replace the `get_current_phase()` call at `git_tools.py` L328 with `get_state()` directly.
+The full `BranchState` object is already loaded (F5); both `state.current_phase` and
+`state.issue_number` are consumed from the same result — zero additional I/O.
 
-**Rule:** on any failure in state access (no state engine, missing state,
-`StateBranchMismatchError`) → `issue_number = None`. The `workflow_phase is None`
-error path (missing state when auto-detecting phase) is preserved unchanged.
+On `FileNotFoundError` or `StateBranchMismatchError`: **hard error preserved unchanged**.
+A `StateBranchMismatchError` is detected inconsistency, not an absent source, and must
+never silently degrade to a `None` suffix (ARCHITECTURE_PRINCIPLES §8 Explicit over
+Implicit).
 
 ```python
-issue_number: int | None = None
-if self._state_engine is not None:
-    try:
-        state = self._state_engine.get_state(current_branch)
-        if workflow_phase is None:
-            workflow_phase = state.current_phase   # replaces get_current_phase() call
-        issue_number = state.issue_number
-    except (FileNotFoundError, StateBranchMismatchError):
-        if workflow_phase is None:
-            return ToolResult.error(
-                f"No state.json found for branch '{current_branch}'. "
-                "Provide workflow_phase explicitly: "
-                "git_add_or_commit(workflow_phase='<phase>', message='...')"
-            )
-        # workflow_phase was explicit: continue without issue_number
+# auto-detect path — existing error handling preserved, issue_number added
+state = self._state_engine.get_state(current_branch)   # raises on mismatch / missing
+workflow_phase = state.current_phase
+issue_number = state.issue_number                       # zero extra I/O
 ```
+
+#### Path B — Explicit `workflow_phase`
+
+The caller already knows the phase; there is no state read in the current code.
+To avoid introducing a new failure surface for an optional suffix, use
+`self.manager.git_config.extract_issue_number(current_branch)` — the same cohesion-correct
+git-conventions helper used by `prepare_submission` (D3).
+
+`GitCommitTool` already holds `self.manager` (and therefore `self.manager.git_config`),
+and `current_branch` is already read at `git_tools.py` L322.
+No new dependency. No state access. `None` on a non-conforming branch is the documented
+contract of `GitConfig.extract_issue_number()` — not a swallowed runtime error.
+
+```python
+# explicit-phase path — no state read introduced
+issue_number = self.manager.git_config.extract_issue_number(current_branch)
+# None when branch is not type/NNN-description → no suffix appended
+```
+
+**Planning implication:** C_228.2 changes only `git_tools.py`. The auto-detect path mock
+in tests changes from `get_current_phase` to `get_state`. Explicit-path tests add a
+`git_config.extract_issue_number` mock; no `get_state` mock is needed for that path.
 
 ### D3 — prepare_submission uses GitConfig.extract_issue_number()
 
@@ -173,7 +183,9 @@ issue_number = self._git_config.extract_issue_number(branch)
 
 `GitConfig.extract_issue_number()` validates the branch-type prefix against
 `git.yaml` `branch_types`, so it returns `None` for any branch that does not
-follow the `type/NNN-description` convention enforced by `create_branch`.
+follow the `type/NNN-description` convention. Branches like `main`, `feature/no-number`,
+or any manually created branch without the `NNN-` segment return `None` — that is the
+documented contract of this method, not an enforced production invariant.
 No duplicate regex; no new private helper in `GitManager`.
 
 ### D4 — No changes to GitCommitInput (tool API)
@@ -189,7 +201,8 @@ Agents and tests do not need to supply it.
 |----------|-----------|
 | Suffix, not prefix-in-scope | Keeps ScopeDecoder and all downstream parsers untouched |
 | issue_number optional (None = no suffix) | Graceful degradation outside normal workflow |
-| GitCommitTool calls get_state() not get_current_phase() | Reads full BranchState already loaded; provides both phase and issue_number in one I/O |
+| Auto-detect path: get_state() not get_current_phase() | BranchState already loaded; phase and issue_number consumed in one I/O; hard error on mismatch/missing preserved (ARCHITECTURE_PRINCIPLES §8) |
+| Explicit-path: git_config.extract_issue_number() not get_state() | No new failure surface; cohesion-correct source (ARCHITECTURE_PRINCIPLES §10 + §2 DRY); same helper as D3 |
 | prepare_submission delegates to GitConfig.extract_issue_number() | Existing tested method; validates branch-type prefix; no duplication |
 | No new public parameter on commit_with_scope | Encapsulated; callers decide their own source |
 
