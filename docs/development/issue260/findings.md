@@ -416,7 +416,7 @@ just for state. Decisions D8 / D4-revised established that internally only the t
 
 Additional issues uncovered:
 1. `mcp_server/resources/standards.py` (L19–21) re-derives the path via
-   `os.environ.get("MCP_STATE_DIR")` instead of using `Settings.from_env()`. This
+   `os.environ.get("MCP_STATE_DIR")` *(stale; renamed to `MCP_SERVER_PROJECT_DIR` in C6)* instead of using `Settings.from_env()`. This
    duplicates the env-to-settings mapping and will silently diverge if the mapping
    ever changes.
 2. Three error messages still reference `settings.state_dir` (stale after C3):
@@ -424,8 +424,7 @@ Additional issues uncovered:
    - `mcp_server/managers/enforcement_runner.py` L163
    - `mcp_server/tools/phase_tools.py` L83
 
-**Fix:** Rename `ServerSettings.state_dir` → `server_root_dir`. The env var
-`MCP_STATE_DIR` stays unchanged (backward compat). Fix `standards.py` to use
+**Fix:** Rename `ServerSettings.state_dir` → `server_root_dir`; rename env var `MCP_STATE_DIR` → `MCP_SERVER_PROJECT_DIR`. Fix `standards.py` to use
 `Settings.from_env()`. Fix the three stale error messages.
 
 ---
@@ -450,7 +449,7 @@ Update the two test assertions.
 
 | # | Change | Files | Cycle |
 |---|--------|-------|-------|
-| S13 | Rename `ServerSettings.state_dir` → `server_root_dir` (env var `MCP_STATE_DIR` unchanged) | `config/settings.py`, `server.py`, `config/loader.py` (docstring) | C6 |
+| S13 | Rename `ServerSettings.state_dir` → `server_root_dir`; rename env var `MCP_STATE_DIR` → `MCP_SERVER_PROJECT_DIR` | `config/settings.py`, `server.py`, `config/loader.py` (docstring) | C6 |
 | S14 | Fix `standards.py` duplicate path derivation → use `Settings.from_env()` | `resources/standards.py` | C6 |
 | S15 | Fix 3 stale error messages referencing `settings.state_dir` | `managers/artifact_manager.py`, `managers/enforcement_runner.py`, `tools/phase_tools.py` | C6 |
 | S16 | Rename `PhaseStateEngine.state_file` → `state_path` | `managers/phase_state_engine.py`, 2 test files | C6 |
