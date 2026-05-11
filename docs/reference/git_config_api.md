@@ -197,6 +197,7 @@ gc.extract_issue_number("feature/no-number")       # None
 Receives `git_config` at construction. Uses it for:
 - `has_branch_type()` — branch type validation in `create_branch`
 - `build_branch_type_regex()` / `extract_issue_number()` — internal branch parsing
+- `extract_issue_number()` — used by `GitCommitTool` and `GitManager.prepare_submission()` to auto-append ` (#NNN)` to commit messages (see [git.md § issue suffix auto-append](mcp/tools/git.md))
 - `is_protected()` — protected branch enforcement
 
 ### PolicyEngine

@@ -126,6 +126,7 @@ class GitManager:
         commit_type: str | None = None,
         files: list[str] | None = None,
         skip_paths: frozenset[str] = frozenset(),
+        issue_number: int | None = None,
     ) -> str:
         """Commit changes with workflow phase scope.
 
@@ -192,8 +193,9 @@ class GitManager:
         encoder = ScopeEncoder(self._workphases_config)
         scope = encoder.generate_scope(workflow_phase, sub_phase, cycle_number)
 
-        # Format: type(scope): message
-        full_message = f"{commit_type}({scope}): {message}"
+        # Format: type(scope): message (#NNN)
+        suffix = f" (#{issue_number})" if issue_number is not None else ""
+        full_message = f"{commit_type}({scope}): {message}{suffix}"
         return self.adapter.commit(full_message, files=files, skip_paths=skip_paths)
 
     def restore(self, files: list[str], note_context: NoteContext, source: str = "HEAD") -> None:
@@ -427,11 +429,14 @@ class GitManager:
         commit_made = False
         if to_neutralize:
             try:
+                branch = self.adapter.get_current_branch()
+                issue_number = self._git_config.extract_issue_number(branch)
                 self.commit_with_scope(
                     workflow_phase="ready",
                     message=f"neutralize branch-local artifacts to '{base}'",
                     note_context=note_context,
                     commit_type="chore",
+                    issue_number=issue_number,
                 )
                 commit_made = True
             except ExecutionError as exc:

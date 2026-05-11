@@ -63,6 +63,7 @@ def make_mock_git_config() -> MagicMock:
     git_config.commit_types = ["feat", "fix", "docs", "refactor", "test", "chore"]
     git_config.has_branch_type.return_value = True
     git_config.has_commit_type.return_value = True
+    git_config.extract_issue_number.return_value = None
     return git_config
 
 
@@ -290,6 +291,7 @@ class TestGitToolsIntegration:
             commit_type="feat",
             files=None,
             skip_paths=frozenset(),
+            issue_number=None,
         )
 
     @pytest.mark.asyncio
