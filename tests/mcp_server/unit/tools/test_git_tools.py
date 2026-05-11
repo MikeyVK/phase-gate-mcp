@@ -432,7 +432,9 @@ async def test_git_commit_integration_workflow_phases() -> None:
 
     assert "Committed: integration123" in result2.content[0]["text"]
     mock_adapter.commit.assert_called_with(
-        "test(P_IMPLEMENTATION_SP_C1_RED): add failing test (#999)", files=None, skip_paths=frozenset()
+        "test(P_IMPLEMENTATION_SP_C1_RED): add failing test (#999)",
+        files=None,
+        skip_paths=frozenset(),
     )
 
     # Test 3: Coordination phase (NEW)
@@ -847,9 +849,7 @@ async def test_git_add_or_commit_passes_when_phase_and_cycle_match(
 async def test_git_commit_no_state_json_returns_error(mock_git_manager: MagicMock) -> None:
     """GitCommitTool returns ToolResult.error when state.json is missing (e.g. main)."""
     mock_state_engine = MagicMock()
-    mock_state_engine.get_state.side_effect = FileNotFoundError(
-        "Branch state for 'main' not found"
-    )
+    mock_state_engine.get_state.side_effect = FileNotFoundError("Branch state for 'main' not found")
     mock_git_manager.adapter.get_current_branch.return_value = "main"
 
     tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
@@ -1003,7 +1003,10 @@ class TestGitCommitToolRecordSubPhase:
 
 @pytest.mark.asyncio
 async def test_commit_tool_auto_detect_includes_suffix(mock_git_manager: MagicMock) -> None:
-    """Auto-detect path: get_state() returns issue_number=42 → commit_with_scope called with issue_number=42."""
+    """Auto-detect path: get_state() returns issue_number=42.
+
+    commit_with_scope must be called with issue_number=42.
+    """
     mock_state_engine = MagicMock()
     branch_state_stub = MagicMock()
     branch_state_stub.current_phase = "research"
@@ -1050,7 +1053,9 @@ async def test_commit_tool_explicit_phase_uses_git_config(mock_git_manager: Magi
 
     result = await tool.execute(params, NoteContext())
 
-    mock_git_manager.git_config.extract_issue_number.assert_called_once_with("feature/42-my-feature")
+    mock_git_manager.git_config.extract_issue_number.assert_called_once_with(
+        "feature/42-my-feature"
+    )
     mock_git_manager.commit_with_scope.assert_called_once_with(
         workflow_phase="research",
         message="complete research",
@@ -1067,7 +1072,10 @@ async def test_commit_tool_explicit_phase_uses_git_config(mock_git_manager: Magi
 
 @pytest.mark.asyncio
 async def test_commit_tool_auto_detect_mismatch_returns_error(mock_git_manager: MagicMock) -> None:
-    """StateBranchMismatchError on auto-detect path returns ToolResult.error, not issue_number=None."""
+    """StateBranchMismatchError on auto-detect path returns ToolResult.error.
+
+    Must not silently degrade to issue_number=None.
+    """
     mock_state_engine = MagicMock()
     mock_state_engine.get_state.side_effect = StateBranchMismatchError(
         "Loaded state branch 'main' does not match requested branch 'feature/42-test'"
