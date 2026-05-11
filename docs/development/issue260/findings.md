@@ -101,7 +101,7 @@ test suite, `mcp.json`-based clients).
 | `docs/setup/mcp.json` | `"MCP_SERVER_NAME": "st3-workflow"` |
 | `tests/.../test_server_startup.py` L13 | `assert server.server.name == "st3-workflow"` |
 
-**Fix approach:** Change default to `"mcp-workflow"`. Update mcp.json and test.
+**Fix approach:** Change default to `"mcp-workflow"` (done in C4). Further renamed to `"phase-gate-mcp"` in C7.
 
 ---
 
@@ -229,17 +229,14 @@ The server will be named **PhaseGate MCP** (`phase-gate-mcp`).
 | Hidden state directory on disk | kebab | `.phase-gate` |
 | MCP resource URI scheme | short lowercase | `pgmcp://` |
 
-**Work name** (used until official rename): `mcp-workflow`.
-The work name is the default in `settings.py` and `mcp.json`.
-Switching to the product name requires changing exactly two values:
-`ServerSettings.name` default and `MCP_SERVER_NAME` in `mcp.json`.
-No code changes needed beyond those two.
+**Work name** (development alias): `mcp-workflow` — superseded by product name `phase-gate-mcp` (C7).
+`ServerSettings.name` and `MCP_SERVER_NAME` in `mcp.json` updated to `phase-gate-mcp`.
+
 
 ### D2 — State directory rename: `.st3/` → `.phase-gate/`
 
 The hidden workspace directory is renamed from `.st3/` to `.phase-gate/`.
-`MCP_CONFIG_ROOT` in `mcp.json` updated from
-`${workspaceFolder}/.st3/config` to `${workspaceFolder}/.phase-gate/config`.
+`mcp.json` updated: `MCP_SERVER_PROJECT_DIR: ".phase-gate"` (see Post-C6; replaces original `MCP_CONFIG_ROOT` approach).
 
 ### D3 — URI scheme: `st3://` → `pgmcp://`
 
@@ -310,11 +307,11 @@ is the sub-directory (`config/`), not the root — this is backwards.
 
 **Decision (D4-revised):** Invert the chain:
 ```
-workspace_root + settings.state_dir → server_root (PRIMARY)
+workspace_root + settings.server.server_root_dir → server_root (PRIMARY)
 server_root / "config" → config_root (DERIVED)
 ```
 
-Add `state_dir: str = ".st3"` (env: `MCP_STATE_DIR`) to `ServerSettings`.
+`server_root_dir: str = ".phase-gate"` (env: `MCP_SERVER_PROJECT_DIR`) in `ServerSettings`. *(C3 introduced as `state_dir`/`MCP_STATE_DIR`; renamed in C6+Post-C6.)*
 This makes `server_root` the single configured concept; `config_root` is always
 `server_root / "config"`. The fragile `normalize_config_root()` heuristic is
 no longer needed for the main boot path.

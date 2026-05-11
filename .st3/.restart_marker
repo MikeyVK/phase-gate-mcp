@@ -1,6 +1,6 @@
 {
-  "timestamp": 1778397280.404537,
-  "pid": 39260,
-  "reason": "test sys.exit(42) restart",
-  "iso_time": "2026-05-10T07:14:40.404537+00:00"
+  "timestamp": 1778517623.141504,
+  "pid": 35032,
+  "reason": "C7 GREEN: server name renamed to phase-gate-mcp",
+  "iso_time": "2026-05-11T16:40:23.141504+00:00"
 }

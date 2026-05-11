@@ -80,7 +80,7 @@ create_issue(
 # → Returns: issue #47: Add Redis caching to strategy loader
 ```
 
-**Workflow Types (from `.st3/config/workflows.yaml`):**
+**Workflow Types (from `.phase-gate/config/workflows.yaml`):**
 
 | **feature** | 6 phases: research → design → planning → implementation → validation → documentation | New functionality |
 | **bug** | 6 phases: research → design → planning → implementation → validation → documentation | Bug fixes |
@@ -100,7 +100,7 @@ create_issue(
 **Sequential Transitions (Strict Enforcement):**
 ```python
 transition_phase(branch="feature/42-name", to_phase="design")
-# Validates against workflow definition in .st3/config/workflows.yaml
+# Validates against workflow definition in .phase-gate/config/workflows.yaml
 # Must follow sequential order defined in workflow
 ```
 
@@ -112,7 +112,7 @@ force_phase_transition(
     skip_reason="Skipping integration - already covered by epic tests",
     human_approval="User: John approved on 2026-01-09"
 )
-# Creates audit trail in .st3/state.json
+# Creates audit trail in .phase-gate/state.json
 # Only use when documented reason exists
 ```
 
@@ -171,7 +171,7 @@ transition_phase(to_phase="validation")
 3. Wait for human approval (ALWAYS REQUIRED)
 4. merge_pr(pr_number=X) - only after human approval
 5. Branch cleanup - discuss with human (context-dependent)
-   - State cleanup (.st3/state.json) is automatic on git_checkout
+   - State cleanup (.phase-gate/state.json) is automatic on git_checkout
 ```
 
 ---
@@ -204,9 +204,9 @@ transition_phase(to_phase="validation")
 ### C. "Manage Labels & Milestones"
 1.  **Create Label:**
     *   `create_label(name="type:feature", color="0e8a16", description="...")`
-    *   Labels validated against `.st3/config/labels.yaml`
+    *   Labels validated against `.phase-gate/config/labels.yaml`
 2.  **Detect Drift:**
-    *   `list_labels()` → compare against `.st3/config/labels.yaml`
+    *   `list_labels()` → compare against `.phase-gate/config/labels.yaml`
     *   Missing labels: `create_label(...)` per entry
     *   Obsolete labels: `delete_label(name)` after confirming no active issues use it
 
@@ -303,7 +303,7 @@ transition_phase(to_phase="validation")
 - **Code:** dto, worker, adapter, interface, tool, resource, schema, service
 - **Docs:** design, architecture, tracking, generic, research, planning
 
-**Registry:** `.st3/config/artifacts.yaml` (let op: niet `.st3/artifacts.yaml`)
+**Registry:** `.phase-gate/config/artifacts.yaml` (let op: niet `.phase-gate/artifacts.yaml`)
 
 **Template System (Issue #72 - 5-tier Jinja2):**
 - Tier 0 (SCAFFOLD) → Tier 1 (CODE/DOC/CONFIG) → Tier 2 (Python/Markdown/YAML) → Tier 3 (component type) → Concrete template
@@ -364,10 +364,10 @@ scaffold_artifact(
 
 | Artifact | Pad | Reden |
 |----------|-----|-------|
-| Workflow state | `.st3/state.json` | Branch-local — mag nooit naar main |
-| Deliverables | `.st3/deliverables.json` | Branch-local — mag nooit naar main |
+| Workflow state | `.phase-gate/state.json` | Branch-local — mag nooit naar main |
+| Deliverables | `.phase-gate/deliverables.json` | Branch-local — mag nooit naar main |
 
-Configuratie: `.st3/config/enforcement.yaml` + `.st3/config/contracts.yaml`
+Configuratie: `.phase-gate/config/enforcement.yaml` + `.phase-gate/config/contracts.yaml`
 
 ```
 submit_pr          → pre: check_phase_readiness(policy=ready)   → geblokkeerd als phase != "ready"

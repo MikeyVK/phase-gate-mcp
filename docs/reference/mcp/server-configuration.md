@@ -50,8 +50,8 @@ MCP_WORKSPACE_ROOT          (default: cwd)
 | `MCP_WORKSPACE_ROOT` | `server.workspace_root` | `os.getcwd()` | Repository root. All relative paths resolve from here. |
 | `MCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.phase-gate` | Sub-directory under workspace_root for all server data. |
 | `MCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
-| `MCP_CONFIG_ROOT` | `server.config_root` | *(server_root/config)* | Override the config directory. Absolute or relative to workspace_root. |
-| `MCP_SERVER_NAME` | `server.name` | `mcp-workflow` | Server identifier shown in logs and API responses. |
+| `MCP_CONFIG_ROOT` | `server.config_root` | *(server_root/config)* | **Compat override.** Rarely needed; `server_root/config` is always the production path. |
+| `MCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
 
 ### Logging
 
@@ -86,11 +86,11 @@ settings: Settings = Settings.from_env()
 
 | Field | Type | Env var | Default |
 |---|---|---|---|
-| `name` | `str` | `MCP_SERVER_NAME` | `"mcp-workflow"` |
+| `name` | `str` | `MCP_SERVER_NAME` | `"phase-gate-mcp"` |
 | `workspace_root` | `str` | `MCP_WORKSPACE_ROOT` | `os.getcwd()` |
 | `server_root_dir` | `str` | `MCP_SERVER_PROJECT_DIR` | `".phase-gate"` |
 | `logs_dir` | `str` | `MCP_LOGS_DIR` | `"logs"` |
-| `config_root` | `str \| None` | `MCP_CONFIG_ROOT` | `None` (auto-resolved) |
+| `config_root` | `str \| None` | `MCP_CONFIG_ROOT` | `None` (auto-resolved; compat override only) |
 
 ### `LogSettings`
 

@@ -18,7 +18,8 @@ Herstart VS Code daarna zodat de variabele beschikbaar is.
 
 ### 2. mcp.json kopiëren
 
-Kopieer `docs/setup/mcp.json` naar `.vscode/mcp.json`:
+`docs/setup/mcp.json` is het canonieke template voor de MCP server configuratie.
+`.vscode/mcp.json` is gitignored en moet eenmalig aangemaakt worden door te kopiëren:
 
 ```powershell
 Copy-Item docs/setup/mcp.json .vscode/mcp.json

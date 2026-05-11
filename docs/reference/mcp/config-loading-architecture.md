@@ -21,7 +21,8 @@ no component re-reads YAML at runtime.
 ```mermaid
 flowchart TD
     ENV["Environment Variables<br/>Settings.from_env"] --> S[Settings]
-    S --> |workspace_root| CR["resolve_config_root()<br/>→ config_root"]
+    S --> SR["server_root = workspace_root / server_root_dir<br/>(e.g. .phase-gate/)"] 
+    SR --> CR["config_root = server_root / 'config'"]
     CR --> CL[ConfigLoader]
     CL --> |"load_*_config() × 14"| VO["Typed Value Objects<br/>Pydantic BaseModel"]
     VO --> CV["ConfigValidator<br/>validate_startup()"]
@@ -72,14 +73,9 @@ flowchart TD
     SCAN -- First match --> RETURN
     SCAN -- None --> ERR2[FileNotFoundError]
 ```
-
-**Called in production** (`server.py` line 161) with:
-```python
-resolve_config_root(
-    preferred_root=workspace_root,
-    required_files=("git.yaml", "workflows.yaml", "workphases.yaml"),
-)
-```
+> **Not called in production.** `server.py` (C3 chain inversion) derives `config_root` directly:
+> `server_root = workspace_root / settings.server.server_root_dir` → `config_root = server_root / "config"`.
+> Available as a test/manual-invocation utility.
 
 ---
 
@@ -211,7 +207,7 @@ classDiagram
 | `MCP_SERVER_PROJECT_DIR` | `settings.server.server_root_dir` | `".phase-gate"` |
 | `MCP_LOGS_DIR` | `settings.server.logs_dir` | `"logs"` |
 | `MCP_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
-| `MCP_SERVER_NAME` | `settings.server.name` | `"mcp-workflow"` |
+| `MCP_SERVER_NAME` | `settings.server.name` | `"phase-gate-mcp"` |
 | `LOG_LEVEL` | `settings.logging.level` | `"INFO"` |
 
 ---
@@ -245,11 +241,9 @@ Called as **second step** after `LabelConfig.validate_label_name()` (format chec
 ### Startup sequence in `MCPServer.__init__`
 
 ```python
-# 1. Resolve config root
-config_root = resolve_config_root(
-    preferred_root=workspace_root,
-    required_files=("git.yaml", "workflows.yaml", "workphases.yaml"),
-)
+# 1. Derive server_root and config_root (C3 chain inversion — server.py)
+server_root = workspace_root / settings.server.server_root_dir  # e.g. .phase-gate/
+config_root = server_root / "config"  # always derived; resolve_config_root() NOT called
 
 # 2. Load all configs (immutable from this point)
 config_loader = ConfigLoader(config_root=config_root)

@@ -16,6 +16,7 @@
 | C5 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename | ✅ Done (commits `13ab7425`, `35df0b24`, `b17a7d29`) |
 | C6 | Naming cleanup: `state_dir` → `server_root_dir`; fix `standards.py` duplication; fix stale error messages; rename `state_file` → `state_path` | Cleanup | ✅ Done (commit `bf213c09`) |
 | Post-C6 | Log centralization: `logs_dir` setting, audit_log under `server_root/logs/`, F12 resolved, `MCP_STATE_DIR` → `MCP_SERVER_PROJECT_DIR` | Extras | ✅ Done (2026-05-11) |
+| C7 | Server default name: `mcp-workflow` → `phase-gate-mcp` in `settings.py` and `mcp.json` | Breaking | ✅ Done (2026-05-11) |
 
 ### Scope
 
@@ -58,11 +59,11 @@ Fix: make `server_root` a required parameter (no default `None`) or raise explic
 
 ### Exit criteria
 
-- [ ] `grep -r '\.st3' mcp_server/ --include='*.py'` returns zero hits (excluding comments)
-- [ ] `grep -r '\bstate_root\b' mcp_server/ --include='*.py'` returns zero hits (renamed to `server_root` in C2)
-- [ ] No manager constructor has a `workspace_root / ".st3"` fallback
-- [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
-- [ ] `run_quality_gates(scope="branch")` — 0 errors
+- [x] `grep -r '\.st3' mcp_server/ --include='*.py'` returns zero hits (excluding comments)
+- [x] `grep -r '\bstate_root\b' mcp_server/ --include='*.py'` returns zero hits (renamed to `server_root` in C2)
+- [x] No manager constructor has a `workspace_root / ".st3"` fallback
+- [x] `run_tests(path="tests/mcp_server/")` — all tests pass
+- [x] `run_quality_gates(scope="branch")` — 0 errors
 
 ---
 
@@ -91,10 +92,10 @@ be built on top without touching the wheel.
 
 ### Exit criteria
 
-- [ ] `server_root = workspace_root / settings.state_dir` — no `config_root.parent` derivation anywhere
-- [ ] `normalize_config_root()` no longer contains heuristics or `.st3` references
-- [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
-- [ ] `run_quality_gates(scope="branch")` — 0 errors
+- [x] `server_root = workspace_root / settings.server.server_root_dir` — no `config_root.parent` derivation anywhere (field renamed from `state_dir` in C6)
+- [x] `normalize_config_root()` no longer contains heuristics or `.st3` references
+- [x] `run_tests(path="tests/mcp_server/")` — all tests pass
+- [x] `run_quality_gates(scope="branch")` — 0 errors
 
 ---
 
@@ -173,11 +174,11 @@ match. Cosmetic string updates in comments and docstrings.
 
 ### Exit criteria
 
-- [ ] `grep -rn '\.st3' . --include='*.py' --include='*.yaml' --include='*.json'` returns zero hits (excluding `.git/`)
-- [ ] `grep -rn '"st3"' . --include='*.py'` returns zero hits
-- [ ] `run_tests(path="tests/mcp_server/")` — all tests pass (with `.phase-gate/` dir on disk)
-- [ ] `run_quality_gates(scope="branch")` — 0 errors
-- [ ] MCP server starts with `.phase-gate/` directory structure
+- [x] `grep -rn '\.st3' . --include='*.py' --include='*.yaml' --include='*.json'` returns zero hits (excluding `.git/`)
+- [x] `grep -rn '"st3"' . --include='*.py'` returns zero hits
+- [x] `run_tests(path="tests/mcp_server/")` — all tests pass (with `.phase-gate/` dir on disk)
+- [x] `run_quality_gates(scope="branch")` — 0 errors
+- [x] MCP server starts with `.phase-gate/` directory structure
 
 ---
 
@@ -242,9 +243,9 @@ and three error messages reference the now-renamed `settings.state_dir`.
 
 ### Exit criteria
 
-- [ ] `grep -r 'state_dir' mcp_server/ --include='*.py'` returns zero hits (excluding `MCP_STATE_DIR` string literals)
-- [ ] `grep -r '\.state_file\b' mcp_server/ --include='*.py'` returns zero hits
-- [ ] Three error messages no longer reference `settings.state_dir`
-- [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
-- [ ] `run_quality_gates(scope="branch")` — 0 errors
-(dir-name-agnostic paths + runtime-configurable name via `settings.state_dir`).
+- [x] `grep -r 'state_dir' mcp_server/ --include='*.py'` returns zero hits (field renamed to `server_root_dir`; `MCP_STATE_DIR` renamed to `MCP_SERVER_PROJECT_DIR`)
+- [x] `grep -r '\.state_file\b' mcp_server/ --include='*.py'` returns zero hits
+- [x] Three error messages no longer reference `settings.state_dir`
+- [x] `run_tests(path="tests/mcp_server/")` — all tests pass
+- [x] `run_quality_gates(scope="branch")` — 0 errors
+(dir-name-agnostic paths + runtime-configurable name via `settings.server.server_root_dir`, env: `MCP_SERVER_PROJECT_DIR`).
