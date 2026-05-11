@@ -416,6 +416,41 @@ class TestGitManagerCommitWithScope:
                 note_context=NoteContext(),
             )
 
+    def test_commit_with_scope_appends_issue_suffix(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """commit_with_scope(issue_number=228) → message ends with ' (#228)'."""
+        mock_adapter.commit.return_value = "abc123"
+
+        manager.commit_with_scope(
+            workflow_phase="implementation",
+            message="implement suffix injection",
+            note_context=NoteContext(),
+            sub_phase="green",
+            commit_type="feat",
+            issue_number=228,
+        )
+
+        call_args = mock_adapter.commit.call_args
+        assert call_args[0][0] == "feat(P_IMPLEMENTATION_SP_GREEN): implement suffix injection (#228)"
+
+    def test_commit_with_scope_no_suffix_when_none(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
+        """commit_with_scope(issue_number=None) → no suffix (regression guard)."""
+        mock_adapter.commit.return_value = "abc123"
+
+        manager.commit_with_scope(
+            workflow_phase="research",
+            message="update README",
+            note_context=NoteContext(),
+            issue_number=None,
+        )
+
+        call_args = mock_adapter.commit.call_args
+        assert call_args[0][0] == "docs(P_RESEARCH): update README"
+        assert "(#" not in call_args[0][0]
+
 
 class TestGitManagerPrepareSubmission:
     """Tests for GitManager.prepare_submission — Issue #295 Cycles 2 & 3.
