@@ -93,8 +93,8 @@ class TestCycleTools:
         tmp_path: Path,
     ) -> None:
         """Dispatch post-hook should still run after a successful cycle transition."""
-        config_dir = tmp_path / ".st3" / "config"
-        copytree(Path.cwd() / ".st3" / "config", config_dir, dirs_exist_ok=True)
+        config_dir = tmp_path / ".phase-gate" / "config"
+        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
         project_manager = make_project_manager(tmp_path)
         project_manager.initialize_project(
@@ -147,9 +147,9 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.name = "test-server"
             mock_settings_cls.from_env.return_value.server.workspace_root = str(tmp_path)
             mock_settings_cls.from_env.return_value.server.config_root = str(
-                tmp_path / ".st3" / "config"
+                tmp_path / ".phase-gate" / "config"
             )
-            mock_settings_cls.from_env.return_value.server.state_dir = ".st3"
+            mock_settings_cls.from_env.return_value.server.state_dir = ".phase-gate"
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"
@@ -164,7 +164,7 @@ class TestCycleTools:
                     state_engine=server.phase_state_engine,
                     git_manager=server.git_manager,
                     gate_runner=server.workflow_gate_runner,
-                    server_root=tmp_path / ".st3",
+                    server_root=tmp_path / ".phase-gate",
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -194,16 +194,16 @@ class TestCycleTools:
         tmp_path: Path,
     ) -> None:
         """Force cycle transitions should fail when post-enforcement raises."""
-        config_dir = tmp_path / ".st3" / "config"
-        copytree(Path.cwd() / ".st3" / "config", config_dir, dirs_exist_ok=True)
+        config_dir = tmp_path / ".phase-gate" / "config"
+        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
         with patch("mcp_server.server.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"
             mock_settings_cls.from_env.return_value.server.workspace_root = str(tmp_path)
             mock_settings_cls.from_env.return_value.server.config_root = str(
-                tmp_path / ".st3" / "config"
+                tmp_path / ".phase-gate" / "config"
             )
-            mock_settings_cls.from_env.return_value.server.state_dir = ".st3"
+            mock_settings_cls.from_env.return_value.server.state_dir = ".phase-gate"
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"
@@ -218,7 +218,7 @@ class TestCycleTools:
                     state_engine=server.phase_state_engine,
                     git_manager=server.git_manager,
                     gate_runner=server.workflow_gate_runner,
-                    server_root=tmp_path / ".st3",
+                    server_root=tmp_path / ".phase-gate",
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]

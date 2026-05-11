@@ -51,7 +51,7 @@ class ServerSettings(BaseModel):
     version: str = Field(default_factory=_default_server_version)
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
-    state_dir: str = ".st3"
+    state_dir: str = ".phase-gate"
 
 
 class GitHubSettings(BaseModel):

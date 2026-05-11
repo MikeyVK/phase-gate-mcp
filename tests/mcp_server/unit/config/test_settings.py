@@ -123,7 +123,7 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     monkeypatch.setenv("MCP_CONFIG_PATH", str(missing_config))
     monkeypatch.setenv("MCP_SERVER_NAME", "env-server")
     monkeypatch.setenv("MCP_WORKSPACE_ROOT", str(tmp_path / "workspace"))
-    monkeypatch.setenv("MCP_CONFIG_ROOT", str(tmp_path / ".st3" / "config"))
+    monkeypatch.setenv("MCP_CONFIG_ROOT", str(tmp_path / ".phase-gate" / "config"))
     monkeypatch.setenv("GITHUB_OWNER", "example-owner")
     monkeypatch.setenv("GITHUB_REPO", "example-repo")
     monkeypatch.setenv("GITHUB_PROJECT_NUMBER", "42")
@@ -134,7 +134,7 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
 
     assert settings.server.name == "env-server"
     assert settings.server.workspace_root == str(tmp_path / "workspace")
-    assert settings.server.config_root == str(tmp_path / ".st3" / "config")
+    assert settings.server.config_root == str(tmp_path / ".phase-gate" / "config")
     assert settings.github.owner == "example-owner"
     assert settings.github.repo == "example-repo"
     assert settings.github.project_number == 42

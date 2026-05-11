@@ -21,7 +21,7 @@ from mcp_server.managers.deliverable_checker import (
     DeliverableCheckError,
 )
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 def _load_workphases_config(config_path: Path) -> WorkphasesConfig:
@@ -201,7 +201,7 @@ class TestDeliverableChecker:
 
         Issue #229 C1.
         """
-        json_file = tmp_path / ".st3" / "deliverables.json"
+        json_file = tmp_path / ".phase-gate" / "deliverables.json"
         json_file.parent.mkdir(parents=True)
         json_file.write_text(
             json.dumps({"229": {"planning_deliverables": {"tdd_cycles": {"total": 2}}}})
@@ -212,7 +212,7 @@ class TestDeliverableChecker:
             "D1.3",
             {
                 "type": "key_path",
-                "file": ".st3/deliverables.json",
+                "file": ".phase-gate/deliverables.json",
                 "path": "229.planning_deliverables",
             },
         )
@@ -224,7 +224,7 @@ class TestDeliverableChecker:
 
         Issue #229 C1.
         """
-        json_file = tmp_path / ".st3" / "deliverables.json"
+        json_file = tmp_path / ".phase-gate" / "deliverables.json"
         json_file.parent.mkdir(parents=True)
         json_file.write_text(json.dumps({"229": {}}))
 
@@ -233,7 +233,7 @@ class TestDeliverableChecker:
                 "D1.4",
                 {
                     "type": "key_path",
-                    "file": ".st3/deliverables.json",
+                    "file": ".phase-gate/deliverables.json",
                     "path": "229.planning_deliverables",
                 },
             )

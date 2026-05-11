@@ -14,9 +14,8 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ArtifactRegistryConfig
 from mcp_server.core.exceptions import ConfigError
 
-
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(Path(".st3/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_artifact_registry_config(config_path=config_path)
 
 
@@ -48,7 +47,7 @@ class TestArtifactRegistryConfig:
     def test_missing_file(self) -> None:
         """Test ConfigError when file not found."""
         with pytest.raises(ConfigError, match="Artifact registry not found"):
-            _load_artifact_registry(Path(".st3/config/nonexistent.yaml"))
+            _load_artifact_registry(Path(".phase-gate/config/nonexistent.yaml"))
 
     def test_get_artifact_valid(self) -> None:
         """Test get_artifact with valid type."""

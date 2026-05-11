@@ -113,7 +113,7 @@ class TestCommitPhaseDetector:
         assert result["source"] == "commit-scope"
 
     def test_detector_never_reads_state_json(self, tmp_path: Path) -> None:
-        state_dir = tmp_path / ".st3"
+        state_dir = tmp_path / ".phase-gate"
         state_dir.mkdir()
         (state_dir / "state.json").write_text(
             '{"branch": "main", "current_phase": "research", "workflow_name": "feature"}'

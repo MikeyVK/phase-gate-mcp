@@ -56,15 +56,15 @@ def make_work_context_tool(
 
 
 def load_workflow_config() -> WorkflowConfig:
-    return ConfigLoader(Path(".st3/config")).load_workflow_config()
+    return ConfigLoader(Path(".phase-gate/config")).load_workflow_config()
 
 
 def load_git_config() -> GitConfig:
-    return ConfigLoader(Path(".st3/config")).load_git_config()
+    return ConfigLoader(Path(".phase-gate/config")).load_git_config()
 
 
 def load_workphases_config() -> WorkphasesConfig:
-    return ConfigLoader(Path(".st3/config")).load_workphases_config()
+    return ConfigLoader(Path(".phase-gate/config")).load_workphases_config()
 
 
 class TestSearchDocumentationTool:

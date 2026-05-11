@@ -20,9 +20,9 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.tools.git_tools import CreateBranchInput
 
 # config_path is always passed explicitly; config_root is only used as a required
-# constructor argument. Use the real .st3/config dir (name=="config" satisfies
+# constructor argument. Use the real .phase-gate/config dir (name=="config" satisfies
 # normalize_config_root) to avoid coupling to arbitrary temp directories.
-_ST3_CONFIG = Path(__file__).resolve().parents[3] / ".st3" / "config"
+_ST3_CONFIG = Path(__file__).resolve().parents[3] / ".phase-gate" / "config"
 
 
 class TestGitToolsConfigIntegration:

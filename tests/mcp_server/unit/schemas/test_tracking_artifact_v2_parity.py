@@ -12,7 +12,7 @@ SCOPE (Cycle 7 - Tracking Artifact V2):
      fails while V1 fallback active
 
 Note on ephemeral artifacts:
-  Tracking artifacts (commit, pr, issue) use output_type: ephemeral — they write to .st3/temp/
+  Tracking artifacts (commit, pr, issue) use output_type: ephemeral — they write to .phase-gate/temp/
   instead of via fs_adapter.write_file. _run_v2_tracking patches _validate_and_write to avoid
   actual file writes in unit tests.
 
@@ -49,7 +49,7 @@ def _run_v2_tracking(manager: ArtifactManager, artifact_type: str, context: dict
     """Run V2 pipeline for tracking (ephemeral) artifacts, return rendered content.
 
     Unlike _run_v2 (which mocks fs_adapter.write_file), tracking artifacts bypass
-    fs_adapter and write to .st3/temp/ via Path.write_text. We patch _validate_and_write
+    fs_adapter and write to .phase-gate/temp/ via Path.write_text. We patch _validate_and_write
     to capture content before the ephemeral write occurs.
     """
     output_captured: list[str] = []

@@ -137,7 +137,7 @@ class TestScaffoldArtifactTool:
         """Should return error result on config error."""
         mock_manager.scaffold_artifact.side_effect = ConfigError(
             "No valid directory found for artifact type: dto",
-            file_path=".st3/config/project_structure.yaml",
+            file_path=".phase-gate/config/project_structure.yaml",
         )
 
         input_data = ScaffoldArtifactInput(artifact_type="dto", name="User")

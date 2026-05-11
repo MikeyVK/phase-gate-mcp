@@ -75,7 +75,7 @@ def test_render_renderable_appends_text_content() -> None:
     suggestion_note_type = _get_attr(module, "SuggestionNote")
 
     context = note_context_type()
-    context.produce(exclusion_note_type(file_path=".st3/state.json"))
+    context.produce(exclusion_note_type(file_path=".phase-gate/state.json"))
     context.produce(suggestion_note_type(message="Verify phase names"))
     base = ToolResult.text("ok")
 
@@ -86,7 +86,7 @@ def test_render_renderable_appends_text_content() -> None:
     assert result.content[0] == {"type": "text", "text": "ok"}
     assert result.content[1]["type"] == "text"
     assert result.content[1]["text"] == (
-        "Excluded from commit index: .st3/state.json\nSuggestion: Verify phase names"
+        "Excluded from commit index: .phase-gate/state.json\nSuggestion: Verify phase names"
     )
 
 

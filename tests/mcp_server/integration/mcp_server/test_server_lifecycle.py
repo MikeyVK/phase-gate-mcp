@@ -21,7 +21,7 @@ def _make_test_settings(audit_log: Path) -> Settings:
         server=ServerSettings(
             name="test-server",
             workspace_root=str(workspace_root),
-            config_root=str(workspace_root / ".st3" / "config"),
+            config_root=str(workspace_root / ".phase-gate" / "config"),
         ),
         logging=LogSettings(level="INFO", audit_log=str(audit_log)),
         github=GitHubSettings(owner="test", repo="repo", token=None),

@@ -166,7 +166,7 @@ class TestMetadataEndToEnd:
     @pytest.mark.skip(reason="commit_message template in wrong location (separate issue)")
     @pytest.mark.asyncio
     async def test_scaffold_ephemeral_returns_temp_path(self, manager: ArtifactManager) -> None:
-        """E2E: Scaffold ephemeral artifact → writes to .st3/temp/ and returns path."""
+        """E2E: Scaffold ephemeral artifact → writes to .phase-gate/temp/ and returns path."""
         result = await manager.scaffold_artifact(
             "commit_message",
             type="feat",
@@ -176,7 +176,7 @@ class TestMetadataEndToEnd:
 
         # Should return temp file path string
         assert isinstance(result, str)
-        assert result.startswith(".st3" + str(Path("/")) + "temp" + str(Path("/")))
+        assert result.startswith(".phase-gate" + str(Path("/")) + "temp" + str(Path("/")))
         assert "commit_message_" in result
         # Temp file should exist
         temp_file = Path(result)
@@ -205,7 +205,7 @@ class TestMetadataEndToEnd:
         4. Verify tier chain matches
         """
         # Setup registry in temp directory
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry_path.parent.mkdir(parents=True, exist_ok=True)
         template_registry = TemplateRegistry(registry_path=registry_path)
 

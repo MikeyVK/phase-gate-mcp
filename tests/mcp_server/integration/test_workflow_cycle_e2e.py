@@ -39,8 +39,8 @@ def git_repo(tmp_path: Path) -> Path:
         capture_output=True,
     )
 
-    # Create .st3 directory structure
-    st3_dir = tmp_path / ".st3"
+    # Create .phase-gate directory structure
+    st3_dir = tmp_path / ".phase-gate"
     config_dir = st3_dir / "config"
     config_dir.mkdir(parents=True)
 
@@ -98,7 +98,7 @@ def git_repo(tmp_path: Path) -> Path:
     # Create workflows.yaml (feature workflow)
     workflows = {
         "version": "1.0",
-        "phase_source": ".st3/workphases.yaml",
+        "phase_source": ".phase-gate/workphases.yaml",
         "workflows": {
             "feature": {
                 "name": "feature",
@@ -179,11 +179,11 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     # Initialize GitManager with tmp_path and ScopeDecoder
     git_adapter = GitAdapter(repo_path=str(git_repo))
-    git_config = ConfigLoader(git_repo / ".st3" / "config").load_git_config(
-        config_path=git_repo / ".st3" / "config" / "git.yaml"
+    git_config = ConfigLoader(git_repo / ".phase-gate" / "config").load_git_config(
+        config_path=git_repo / ".phase-gate" / "config" / "git.yaml"
     )
-    _workphases_config = ConfigLoader(git_repo / ".st3" / "config").load_workphases_config(
-        config_path=git_repo / ".st3" / "config" / "workphases.yaml"
+    _workphases_config = ConfigLoader(git_repo / ".phase-gate" / "config").load_workphases_config(
+        config_path=git_repo / ".phase-gate" / "config" / "workphases.yaml"
     )
     git_manager = GitManager(
         git_config=git_config,

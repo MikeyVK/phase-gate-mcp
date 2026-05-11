@@ -46,7 +46,7 @@ def resolve_config_root(
     explicit_root: Path | str | None = None,
     required_files: Iterable[str] = (),
 ) -> Path:
-    """Resolve one canonical ST3 config root without legacy compatibility fallbacks."""
+    """Resolve one canonical phase-gate config root without legacy compatibility fallbacks."""
     required = tuple(required_files)
 
     def _has_required_files(candidate: Path) -> bool:
@@ -97,7 +97,7 @@ def resolve_config_root(
         if candidate.exists() and _has_required_files(candidate):
             return candidate
 
-    raise FileNotFoundError("Could not locate canonical ST3 config directory")
+    raise FileNotFoundError("Could not locate canonical phase-gate config directory")
 
 
 class ConfigLoader:

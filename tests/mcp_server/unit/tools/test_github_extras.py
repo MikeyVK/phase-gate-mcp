@@ -22,7 +22,7 @@ from mcp_server.tools.pr_tools import (
     MergePRTool,
 )
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 @pytest.fixture

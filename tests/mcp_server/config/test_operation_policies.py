@@ -1,7 +1,7 @@
 # tests/mcp_server/config/test_operation_policies.py
 """Unit tests for OperationPoliciesConfig model.
 
-Tests Phase 1B: .st3/config/policies.yaml + OperationPoliciesConfig
+Tests Phase 1B: .phase-gate/config/policies.yaml + OperationPoliciesConfig
 Cross-validates allowed_phases against workflows.yaml.
 
 @layer: Tests (Unit)
@@ -16,9 +16,8 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import OperationPoliciesConfig, OperationPolicy
 from mcp_server.core.exceptions import ConfigError
 
-
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:
-    loader = ConfigLoader(Path(".st3/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_operation_policies_config(config_path=config_path)
 
 
@@ -58,7 +57,7 @@ class TestOperationPoliciesConfig:
     def test_missing_file(self) -> None:
         """Test ConfigError when file not found."""
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_operation_policies(Path(".st3/config/nonexistent.yaml"))
+            _load_operation_policies(Path(".phase-gate/config/nonexistent.yaml"))
 
     def test_get_operation_policy_valid(self) -> None:
         """Test get_operation_policy with valid operation."""

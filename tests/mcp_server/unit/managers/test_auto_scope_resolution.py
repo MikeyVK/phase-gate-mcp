@@ -24,7 +24,7 @@ from tests.mcp_server.test_support import make_qa_manager
 
 
 def _write_state(tmp_path: Path, baseline_sha: str, failed_files: list[str]) -> None:
-    """Write a .st3/state.json with quality_gates section."""
+    """Write a .phase-gate/state.json with quality_gates section."""
     state = {
         "branch": "refactor/251-refactor-run-quality-gates",
         "quality_gates": {
@@ -32,7 +32,7 @@ def _write_state(tmp_path: Path, baseline_sha: str, failed_files: list[str]) -> 
             "failed_files": failed_files,
         },
     }
-    state_path = tmp_path / ".st3" / "state.json"
+    state_path = tmp_path / ".phase-gate" / "state.json"
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state), encoding="utf-8")
 
@@ -43,7 +43,7 @@ def _make_quality_repo(
     failed_files: list[str] | None = None,
 ) -> FileQualityStateRepository:
     """Create a FileQualityStateRepository seeded with the given state."""
-    st3_dir = tmp_path / ".st3"
+    st3_dir = tmp_path / ".phase-gate"
     st3_dir.mkdir(exist_ok=True)
     repo = FileQualityStateRepository(backing_file=st3_dir / "quality_state.json")
     repo.apply(
@@ -132,7 +132,7 @@ class TestAutoScopeHappyPath:
         """Git diff uses baseline_sha..HEAD, not workflow.parent_branch..HEAD."""
         repo = _make_quality_repo(tmp_path, baseline_sha="deadbeef", failed_files=[])
         # Also write a workflow.parent_branch to ensure it is NOT used
-        state_path = tmp_path / ".st3" / "state.json"
+        state_path = tmp_path / ".phase-gate" / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state = {"branch": "feature/test", "workflow": {"parent_branch": "main"}}
         state_path.write_text(json.dumps(state), encoding="utf-8")
@@ -163,13 +163,13 @@ class TestAutoScopeHappyPath:
 
         raw_result = MagicMock(spec=subprocess.CompletedProcess)
         raw_result.returncode = 0
-        raw_result.stdout = "mcp_server/logic.py\ndocs/README.md\n.st3/state.json\n"
+        raw_result.stdout = "mcp_server/logic.py\ndocs/README.md\n.phase-gate/state.json\n"
 
         with patch("subprocess.run", return_value=raw_result):
             result = manager._resolve_scope("auto")
 
         assert "docs/README.md" not in result
-        assert ".st3/state.json" not in result
+        assert ".phase-gate/state.json" not in result
         assert "mcp_server/logic.py" in result
 
 
@@ -180,7 +180,7 @@ class TestAutoScopeEdgeCases:
         """When quality_gates has no baseline_sha, scope=auto delegates to project scope."""
         # State exists but quality_gates key is absent — no baseline recorded yet.
         state = {"branch": "refactor/251", "workflow": {"parent_branch": "main"}}
-        state_path = tmp_path / ".st3" / "state.json"
+        state_path = tmp_path / ".phase-gate" / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(json.dumps(state), encoding="utf-8")
 
@@ -216,7 +216,7 @@ class TestAutoScopeEdgeCases:
             "branch": "refactor/251",
             "quality_gates": {"baseline_sha": "", "failed_files": []},
         }
-        state_path = tmp_path / ".st3" / "state.json"
+        state_path = tmp_path / ".phase-gate" / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(json.dumps(state), encoding="utf-8")
 
@@ -294,7 +294,7 @@ class TestAutoScopeSplitState:
         from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
         from tests.mcp_server.test_support import make_qa_manager  # noqa: PLC0415
 
-        state_path = tmp_path / ".st3" / "state.json"
+        state_path = tmp_path / ".phase-gate" / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(
             '{"quality_gates": {"baseline_sha": "stale_sha", "failed_files": ["stale.py"]}}',

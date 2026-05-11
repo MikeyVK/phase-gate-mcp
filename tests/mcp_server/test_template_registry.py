@@ -24,7 +24,7 @@ class TestTemplateRegistryInitialization:
 
     def test_initialize_new_registry(self, tmp_path) -> None:
         """Should create empty registry with correct schema when file doesn't exist."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         assert not registry.get_all_hashes()
@@ -32,7 +32,7 @@ class TestTemplateRegistryInitialization:
 
     def test_load_existing_registry_json(self, tmp_path) -> None:
         """Should load existing registry from disk (JSON)."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry_path.parent.mkdir(parents=True, exist_ok=True)
 
         existing_data = {
@@ -60,7 +60,7 @@ class TestTemplateRegistryInitialization:
 
     def test_load_empty_json_file(self, tmp_path) -> None:
         """Should handle empty JSON file gracefully."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry_path.parent.mkdir(parents=True, exist_ok=True)
 
         registry_path.touch()
@@ -71,7 +71,7 @@ class TestTemplateRegistryInitialization:
 
     def test_load_invalid_json_file(self, tmp_path) -> None:
         """Should handle invalid JSON content gracefully."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry_path.parent.mkdir(parents=True, exist_ok=True)
 
         registry_path.write_text("just a string", encoding="utf-8")
@@ -82,7 +82,7 @@ class TestTemplateRegistryInitialization:
 
     def test_migrate_yaml_to_json_and_delete_yaml(self, tmp_path) -> None:
         """Should migrate legacy YAML to JSON on first run and delete YAML."""
-        st3_dir = tmp_path / ".st3"
+        st3_dir = tmp_path / ".phase-gate"
         st3_dir.mkdir(parents=True, exist_ok=True)
 
         legacy_yaml = st3_dir / "template_registry.yaml"
@@ -118,7 +118,7 @@ class TestTemplateRegistrySaveVersion:
 
     def test_save_new_version(self, tmp_path) -> None:
         """Should save new version entry with all tier information."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         tier_versions = {
@@ -150,7 +150,7 @@ class TestTemplateRegistrySaveVersion:
 
     def test_save_version_idempotent(self, tmp_path) -> None:
         """Should be idempotent when saving identical version."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         tier_versions = {
@@ -165,7 +165,7 @@ class TestTemplateRegistrySaveVersion:
 
     def test_save_version_collision_different_artifact_type(self, tmp_path) -> None:
         """Should raise ValueError when hash collision across artifact types."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         registry.save_version(
@@ -189,7 +189,7 @@ class TestTemplateRegistrySaveVersion:
 
     def test_save_version_collision_same_artifact_type_different_tiers(self, tmp_path) -> None:
         """Should raise ValueError when hash collision within artifact type."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         registry.save_version(
@@ -217,7 +217,7 @@ class TestTemplateRegistryLookup:
 
     def test_lookup_existing_hash(self, tmp_path) -> None:
         """Should return tier chain for existing hash."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         tier_versions = {
@@ -237,7 +237,7 @@ class TestTemplateRegistryLookup:
 
     def test_lookup_nonexistent_hash(self, tmp_path) -> None:
         """Should return None for non-existent hash."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         result = registry.lookup_hash("nonexistent")
@@ -249,7 +249,7 @@ class TestTemplateRegistryCurrentVersions:
 
     def test_get_current_version(self, tmp_path) -> None:
         """Should return current hash for artifact type."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         registry.save_version(
@@ -265,14 +265,14 @@ class TestTemplateRegistryCurrentVersions:
 
     def test_get_current_version_nonexistent(self, tmp_path) -> None:
         """Should return None for non-existent artifact type."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         assert registry.get_current_version("nonexistent") is None
 
     def test_update_current_version(self, tmp_path) -> None:
         """Should update current version when saving new version for same artifact type."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         registry.save_version(
@@ -305,7 +305,7 @@ class TestTemplateRegistryPersistence:
 
     def test_persist_creates_parent_directory(self, tmp_path) -> None:
         """Should create parent directory if it doesn't exist."""
-        registry_path = tmp_path / ".st3" / "nested" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "nested" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         registry.save_version("worker", "abc12345", {"concrete": ("worker.py", "3.1.0")})
@@ -315,7 +315,7 @@ class TestTemplateRegistryPersistence:
 
     def test_persist_updates_last_updated(self, tmp_path) -> None:
         """Should set last_updated timestamp on persist."""
-        registry_path = tmp_path / ".st3" / "template_registry.json"
+        registry_path = tmp_path / ".phase-gate" / "template_registry.json"
         registry = TemplateRegistry(registry_path)
 
         before = datetime.now(UTC)

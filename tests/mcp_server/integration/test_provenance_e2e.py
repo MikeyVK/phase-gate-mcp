@@ -6,7 +6,7 @@ E2E tests for Task 1.6b: Provenance regression testing.
 Validates complete scaffold -> parse -> registry lookup roundtrip:
 1. Scaffold each artifact type (dto, worker, service, generic, design)
 2. Parse SCAFFOLD header from generated content
-3. Lookup version_hash in .st3/template_registry.yaml
+3. Lookup version_hash in .phase-gate/template_registry.yaml
 4. Assert tier chain matches template inheritance
 5. Assert header format: artifact_type:version_hash | timestamp | output_path
 

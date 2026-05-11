@@ -196,7 +196,7 @@ class TestTransitionCycleToolConflict:
         git_manager.git_config = git_config
 
         # Write a minimal state.json so branch detection does not fall through
-        state_dir = tmp_path / ".st3"
+        state_dir = tmp_path / ".phase-gate"
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text('{"branch": "feature/42-test"}', encoding="utf-8")
 
@@ -263,7 +263,7 @@ class TestForceCycleTransitionToolConflict:
         git_config.extract_issue_number = MagicMock(return_value=42)
         git_manager.git_config = git_config
 
-        state_dir = tmp_path / ".st3"
+        state_dir = tmp_path / ".phase-gate"
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text('{"branch": "feature/42-test"}', encoding="utf-8")
 

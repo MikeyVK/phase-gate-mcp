@@ -24,7 +24,7 @@ from mcp_server.utils.template_config import get_template_root
 
 
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(Path(".st3/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_artifact_registry_config(config_path=config_path)
 
 

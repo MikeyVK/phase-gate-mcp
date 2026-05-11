@@ -30,7 +30,7 @@ class TestServiceTemplateResolution:
     def test_service_scaffolds_successfully_with_artifacts_yaml_template(self) -> None:
         """Service scaffold succeeds using template_path from artifacts.yaml."""
         # Arrange: Load real registry (has service with concrete/service_command.py.jinja2)
-        registry = ConfigLoader(Path(".st3/config")).load_artifact_registry_config()
+        registry = ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
         scaffolder = TemplateScaffolder(registry=registry)
         # Act: Scaffold service (should use artifacts.yaml template)
         result = scaffolder.scaffold(
@@ -61,7 +61,7 @@ class TestGenericTemplateResolution:
     def test_generic_scaffolds_with_default_template_from_artifacts_yaml(self) -> None:
         """Generic without template_name uses artifacts.yaml default."""
         # Arrange
-        registry = ConfigLoader(Path(".st3/config")).load_artifact_registry_config()
+        registry = ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
         scaffolder = TemplateScaffolder(registry=registry)
         # Act: Scaffold generic WITHOUT template_name (use default)
         result = scaffolder.scaffold(
@@ -79,7 +79,7 @@ class TestGenericTemplateResolution:
     def test_generic_with_custom_template_uses_context_override(self) -> None:
         """Generic with template_name context uses specified template."""
         # Arrange: Create custom template for testing
-        registry = ConfigLoader(Path(".st3/config")).load_artifact_registry_config()
+        registry = ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
         scaffolder = TemplateScaffolder(registry=registry)
         # Get template root and create custom template
         template_root = Path(get_template_root())
@@ -143,7 +143,7 @@ class TestNoLegacyComponentsFallback:
     def test_all_artifacts_use_concrete_templates(self) -> None:
         """All artifacts must use concrete/ templates - NO components/ allowed."""
         # Arrange
-        registry = ConfigLoader(Path(".st3/config")).load_artifact_registry_config()
+        registry = ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
         # Act & Assert: STRICT - components/ is NOT allowed (clean break)
         for artifact in registry.artifact_types:
             if artifact.template_path:

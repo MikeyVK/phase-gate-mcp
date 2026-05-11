@@ -17,7 +17,7 @@ class StandardsResource(BaseResource):
     async def read(self, uri: str) -> str:  # noqa: ARG002
         """Read coding standards from the canonical quality config."""
         workspace_root = Path(os.environ.get("MCP_WORKSPACE_ROOT") or os.getcwd())
-        state_dir = os.environ.get("MCP_STATE_DIR") or ".st3"
+        state_dir = os.environ.get("MCP_STATE_DIR") or ".phase-gate"
         config_root = workspace_root / state_dir / "config"
         quality_config = ConfigLoader(config_root).load_quality_config()
 

@@ -216,7 +216,7 @@ class TestForcePhaseTransitionToolSkippedGatesResponse:
     @pytest.fixture
     def workspace_with_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has exit_requires on planning."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """
@@ -238,7 +238,7 @@ phases:
     @pytest.fixture
     def workspace_no_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has no gates defined."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """
@@ -339,7 +339,7 @@ class TestForceTransitionResponseFormat:
 
     def _setup_workspace(self, tmp_path: Path, *, with_gate_key: bool = True) -> tuple[Path, str]:
         """Build workspace with workphases.yaml gate + optional planning_deliverables key."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """
@@ -364,7 +364,7 @@ phases:
 
         if with_gate_key:
             # Inject planning_deliverables so gate would have PASSED
-            projects_path = tmp_path / ".st3" / "deliverables.json"
+            projects_path = tmp_path / ".phase-gate" / "deliverables.json"
             data = json.loads(projects_path.read_text())
             data["42"]["planning_deliverables"] = {"tdd_cycles": {"total": 1, "cycles": []}}
             projects_path.write_text(json.dumps(data, indent=2))
@@ -446,7 +446,7 @@ phases:
         self, tmp_path: Path
     ) -> None:
         """No gates defined → only ✅ in response, no ⚠️ or ACTION REQUIRED (GAP-17/D10.3)."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """

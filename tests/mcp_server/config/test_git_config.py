@@ -17,10 +17,9 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
 from mcp_server.core.exceptions import ConfigError
 
-
 def _load_git_config(config_path: Path | None = None) -> GitConfig:
     if config_path is None:
-        return ConfigLoader(Path(".st3/config")).load_git_config()
+        return ConfigLoader(Path(".phase-gate/config")).load_git_config()
     return ConfigLoader(config_path.parent).load_git_config(config_path=config_path)
 
 
@@ -72,7 +71,7 @@ class TestGitConfig:
     def test_git_yaml_not_found(self) -> None:
         """Test ConfigError when git.yaml doesn't exist."""
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_git_config(Path(".st3/nonexistent.yaml"))
+            _load_git_config(Path(".phase-gate/nonexistent.yaml"))
 
     def test_git_config_domain_fields_have_no_defaults(self) -> None:
         """All GitConfig domain fields must be explicit, not Python-defaulted."""

@@ -1,11 +1,11 @@
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts:
-    - path: .st3/state.json
+    - path: .phase-gate/state.json
       reason: "MCP workflow state — branch-local, must never reach main"
-    - path: .st3/deliverables.json
+    - path: .phase-gate/deliverables.json
       reason: "MCP workflow deliverables — branch-local, must never reach main"
-    - path: .st3/quality_state.json
+    - path: .phase-gate/quality_state.json
       reason: "QA baseline state — branch-local, must never reach main"
 
 workflows:

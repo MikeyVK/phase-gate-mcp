@@ -205,7 +205,7 @@ class TestSchemaContext:
         """All optional schema fields should be storable."""
         ctx = SchemaContext(
             name="LabelConfig",
-            description="Validates .st3/labels.yaml",
+            description="Validates .phase-gate/labels.yaml",
             layer="mcp_server",
             fields=["name: str", "color: str"],
             frozen=False,

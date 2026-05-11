@@ -31,7 +31,7 @@ from tests.mcp_server.test_support import (
 @pytest.fixture(autouse=True)
 def cycle_based_phase_contracts(tmp_path: Path) -> None:
     """Provide minimal phase contracts so implementation remains cycle_based in temp workspaces."""
-    config_dir = tmp_path / ".st3" / "config"
+    config_dir = tmp_path / ".phase-gate" / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "contracts.yaml").write_text(
         (
@@ -69,7 +69,7 @@ class TestTransitionCycleTool:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".st3",
+            server_root=tmp_path / ".phase-gate",
         )
 
     @pytest.fixture()
@@ -281,7 +281,7 @@ class TestForceCycleTransitionTool:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".st3",
+            server_root=tmp_path / ".phase-gate",
         )
 
     @pytest.fixture()
@@ -511,7 +511,7 @@ class TestForceCycleAuditSchema:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".st3",
+            server_root=tmp_path / ".phase-gate",
         )
 
     @pytest.fixture()
@@ -716,7 +716,7 @@ class TestTransitionCycleHistory:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".st3",
+            server_root=tmp_path / ".phase-gate",
         )
 
     @pytest.fixture()
@@ -868,7 +868,7 @@ class TestTransitionCycleExitCriteria:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".st3",
+            server_root=tmp_path / ".phase-gate",
         )
 
     def _make_project(
@@ -901,7 +901,7 @@ class TestTransitionCycleExitCriteria:
         if bypass_validation:
             # Write planning deliverables directly to bypass schema validation
             # Used to simulate corrupt/external state for testing robustness
-            projects_file = workspace_root / ".st3" / "deliverables.json"
+            projects_file = workspace_root / ".phase-gate" / "deliverables.json"
             with projects_file.open() as f:
                 projects = json.load(f)
 

@@ -103,8 +103,8 @@ class TestIssue39CrossMachine:
         )
 
         # Verify deliverables register and branch state were created
-        deliverables_file = workspace_root / ".st3" / "deliverables.json"
-        state_file = workspace_root / ".st3" / "state.json"
+        deliverables_file = workspace_root / ".phase-gate" / "deliverables.json"
+        state_file = workspace_root / ".phase-gate" / "state.json"
 
         assert deliverables_file.exists()
         assert state_file.exists()
@@ -122,7 +122,7 @@ class TestIssue39CrossMachine:
 
         # Commit deliverables.json to git (state.json NOT committed - in .gitignore)
         subprocess.run(
-            ["git", "add", ".st3/deliverables.json"],
+            ["git", "add", ".phase-gate/deliverables.json"],
             cwd=workspace_root,
             check=True,
             capture_output=True,
@@ -243,7 +243,7 @@ class TestIssue39CrossMachine:
         )
 
         # Delete state.json
-        state_file = workspace_root / ".st3" / "state.json"
+        state_file = workspace_root / ".phase-gate" / "state.json"
         if state_file.exists():
             state_file.unlink()
 
@@ -324,7 +324,7 @@ class TestIssue39CrossMachine:
         )
 
         # Delete state.json
-        state_file = workspace_root / ".st3" / "state.json"
+        state_file = workspace_root / ".phase-gate" / "state.json"
         if state_file.exists():
             state_file.unlink()
 

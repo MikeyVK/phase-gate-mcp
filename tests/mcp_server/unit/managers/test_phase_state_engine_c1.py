@@ -55,7 +55,7 @@ class FakeGateRunner:
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Temporary workspace with minimal local config for gate-runner tests."""
-    config_dir = tmp_path / ".st3" / "config"
+    config_dir = tmp_path / ".phase-gate" / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(
         """
@@ -101,13 +101,13 @@ workflows:
 @pytest.fixture
 def repo_loader() -> ConfigLoader:
     """Repository config loader for shared workflow/git config."""
-    return ConfigLoader(Path(".st3/config"))
+    return ConfigLoader(Path(".phase-gate/config"))
 
 
 @pytest.fixture
 def workspace_loader(workspace_root: Path) -> ConfigLoader:
     """Workspace-local config loader for hermetic gate-runner tests."""
-    return ConfigLoader(workspace_root / ".st3" / "config")
+    return ConfigLoader(workspace_root / ".phase-gate" / "config")
 
 
 @pytest.fixture

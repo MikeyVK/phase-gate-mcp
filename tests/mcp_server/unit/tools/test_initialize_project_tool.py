@@ -71,11 +71,11 @@ class TestInitializeProjectToolMode1:
             assert not result.is_error
 
             # Verify deliverables.json created
-            projects_file = workspace_root / ".st3" / "deliverables.json"
+            projects_file = workspace_root / ".phase-gate" / "deliverables.json"
             assert projects_file.exists(), "deliverables.json must be created"
 
             # Verify state.json created
-            state_file = workspace_root / ".st3" / "state.json"
+            state_file = workspace_root / ".phase-gate" / "state.json"
             assert state_file.exists(), "state.json must be created (Issue #39 fix)"
 
             # Verify deliverables.json structure
@@ -113,7 +113,7 @@ class TestInitializeProjectToolMode1:
             assert not result.is_error
 
             # Verify state uses detected branch
-            state_file = workspace_root / ".st3" / "state.json"
+            state_file = workspace_root / ".phase-gate" / "state.json"
             state = json.loads(state_file.read_text())
             assert state["branch"] == "feature/42-user-auth"
 
@@ -135,7 +135,7 @@ class TestInitializeProjectToolMode1:
 
             assert not result.is_error
 
-            state_file = workspace_root / ".st3" / "state.json"
+            state_file = workspace_root / ".phase-gate" / "state.json"
             state = json.loads(state_file.read_text())
 
             # First phase from contracts.yaml (SSOT)
@@ -169,7 +169,7 @@ class TestInitializeProjectToolMode1:
             branch = f"{prefix}/{issue_num}-test"
 
             # Clear state between tests
-            state_file = workspace_root / ".st3" / "state.json"
+            state_file = workspace_root / ".phase-gate" / "state.json"
             if state_file.exists():
                 state_file.unlink()
 
@@ -242,7 +242,7 @@ class TestInitializeProjectToolMode1:
             assert not result.is_error
 
             # Verify deliverables.json has core required fields
-            projects_file = workspace_root / ".st3" / "deliverables.json"
+            projects_file = workspace_root / ".phase-gate" / "deliverables.json"
             projects = json.loads(projects_file.read_text())
             project = projects["39"]
 
@@ -268,8 +268,8 @@ class TestInitializeProjectToolMode1:
             assert not result.is_error
 
             # Verify separation
-            projects_file = workspace_root / ".st3" / "deliverables.json"
-            state_file = workspace_root / ".st3" / "state.json"
+            projects_file = workspace_root / ".phase-gate" / "deliverables.json"
+            state_file = workspace_root / ".phase-gate" / "state.json"
 
             assert projects_file.exists()
             assert state_file.exists()

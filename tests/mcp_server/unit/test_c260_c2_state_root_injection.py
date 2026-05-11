@@ -1,7 +1,7 @@
 """RED tests for Cycle 2 of issue #260: state_root injection.
 
 These tests verify that all production code accepts an injected state_root
-and does NOT compute workspace_root / '.st3' internally.
+and does NOT compute workspace_root / '.phase-gate' internally.
 
 TDD: These tests FAIL before the GREEN implementation.
 """
@@ -40,7 +40,7 @@ from mcp_server.utils import template_config
 
 
 class TestNormalizeConfigRootPhaseGate:
-    """normalize_config_root must accept .phase-gate/ as well as .st3/."""
+    """normalize_config_root must accept .phase-gate/ as well as .phase-gate/."""
 
     def test_accepts_phase_gate_config_dir(self, tmp_path: Path) -> None:
         """normalize_config_root('/ws/.phase-gate/config') → same path."""
@@ -57,16 +57,16 @@ class TestNormalizeConfigRootPhaseGate:
         result = normalize_config_root(state_root)
         assert result == state_root.resolve()
 
-    def test_st3_still_works(self, tmp_path: Path) -> None:
-        """Backward compat: normalize_config_root still accepts .st3/config."""
-        config_dir = tmp_path / ".st3" / "config"
+    def test_arbitrary_dir_name_still_works(self, tmp_path: Path) -> None:
+        """Backward compat: normalize_config_root accepts any hidden dir name."""
+        config_dir = tmp_path / ".legacy" / "config"
         config_dir.mkdir(parents=True)
         result = normalize_config_root(config_dir)
         assert result == config_dir.resolve()
 
     def test_state_root_parent_gives_back_state_root(self, tmp_path: Path) -> None:
         """config_root.parent == state_root for any hidden dir name."""
-        for state_dir_name in (".st3", ".phase-gate", ".myapp"):
+        for state_dir_name in (".legacy", ".phase-gate", ".myapp"):
             state_root = tmp_path / state_dir_name
             config_dir = state_root / "config"
             config_dir.mkdir(parents=True)
@@ -111,14 +111,13 @@ class TestPhaseStateEngineStateRoot:
         assert engine.state_file == state_root / "state.json"
 
     def test_state_file_is_not_workspace_root_st3(self, tmp_path: Path) -> None:
-        """state_file must NOT be derived from workspace_root / '.st3'."""
-        state_root = tmp_path / ".phase-gate"
+        """state_file must NOT be derived from workspace_root / '.phase-gate'."""
+        state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
 
         engine = self._make_engine(state_root, workspace_root)
 
-        assert ".st3" not in str(engine.state_file)
-
+        assert ".phase-gate" not in str(engine.state_file)
 
 # ---------------------------------------------------------------------------
 # F1 / ProjectManager — accepts state_root
@@ -145,13 +144,12 @@ class TestProjectManagerStateRoot:
         assert manager.deliverables_file == state_root / "deliverables.json"
 
     def test_deliverables_file_is_not_workspace_root_st3(self, tmp_path: Path) -> None:
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
 
         manager = self._make_manager(state_root, workspace_root)
 
-        assert ".st3" not in str(manager.deliverables_file)
-
+        assert ".phase-gate" not in str(manager.deliverables_file)
 
 # ---------------------------------------------------------------------------
 # F1 / EnforcementRunner — accepts state_root
@@ -162,7 +160,7 @@ class TestEnforcementRunnerStateRoot:
     """EnforcementRunner._read_current_phase must use injected state_root."""
 
     def test_reads_from_state_root_not_workspace_dot_st3(self, tmp_path: Path) -> None:
-        """_read_current_phase reads state.json from state_root, not workspace/.st3."""
+        """_read_current_phase reads state.json from state_root, not workspace/.phase-gate."""
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir(parents=True)
         state_file = state_root / "state.json"
@@ -210,23 +208,22 @@ class TestBuildPhaseGuard:
         guard("feature/42-test", "implementation", None)
 
     def test_does_not_read_from_workspace_st3(self, tmp_path: Path) -> None:
-        """Guard built with state_root must not read from workspace_root/.st3."""
-        state_root = tmp_path / ".phase-gate"
+        """Guard built with state_root must not read from workspace_root/.phase-gate."""
+        state_root = tmp_path / ".custom-state"
         state_root.mkdir()
         # No state.json in state_root — should skip silently (no file = no guard)
 
-        # Create a misleading .st3/state.json at tmp_path (workspace root)
-        st3_dir = tmp_path / ".st3"
-        st3_dir.mkdir()
-        (st3_dir / "state.json").write_text(
+        # Create a misleading .phase-gate/state.json at tmp_path (workspace root)
+        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir.mkdir()
+        (phase_gate_dir / "state.json").write_text(
             json.dumps({"branch": "feature/42-test", "current_phase": "research"}),
             encoding="utf-8",
         )
 
         guard = build_phase_guard(state_root)
-        # Should NOT raise — because guard reads from state_root, not workspace/.st3
+        # Should NOT raise — because guard reads from state_root, not workspace/.phase-gate
         guard("feature/42-test", "implementation", None)
-
 
 # ---------------------------------------------------------------------------
 # F1 / cycle_tools — uses state_root in _get_current_branch
@@ -234,7 +231,7 @@ class TestBuildPhaseGuard:
 
 
 class TestCycleToolsStateRoot:
-    """Cycle tools must read state.json from state_root, not workspace_root/.st3."""
+    """Cycle tools must read state.json from state_root, not workspace_root/.phase-gate."""
 
     def test_transition_cycle_tool_reads_state_from_state_root(self, tmp_path: Path) -> None:
         """TransitionCycleTool._get_current_branch falls back to state_root/state.json."""
@@ -254,14 +251,14 @@ class TestCycleToolsStateRoot:
         assert branch == "feature/99-test"
 
     def test_transition_cycle_tool_does_not_read_from_workspace_st3(self, tmp_path: Path) -> None:
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / ".custom-state"
         state_root.mkdir()
         # No state.json in state_root
 
-        # Put misleading state.json in workspace/.st3
-        st3_dir = tmp_path / ".st3"
-        st3_dir.mkdir()
-        (st3_dir / "state.json").write_text(
+        # Put misleading state.json in workspace/.phase-gate
+        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir.mkdir()
+        (phase_gate_dir / "state.json").write_text(
             json.dumps({"branch": "feature/wrong-branch"}), encoding="utf-8"
         )
 
@@ -292,11 +289,11 @@ class TestAdminToolsRestartMarker:
         assert ".restart_marker" in result.name
 
     def test_does_not_use_cwd_dot_st3(self, tmp_path: Path) -> None:
-        """Marker path must not contain CWD-relative '.st3'."""
-        server_root = tmp_path / ".phase-gate"
+        """Marker path must not contain CWD-relative '.phase-gate'."""
+        server_root = tmp_path / ".custom-state"
         tool = RestartServerTool(server_root=server_root)
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
-        assert ".st3" not in str(result)
+        assert ".phase-gate" not in str(result)
 
     def test_env_var_does_not_override_injected_server_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -309,7 +306,6 @@ class TestAdminToolsRestartMarker:
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
         assert result == server_root / ".restart_marker"
 
-
 # ---------------------------------------------------------------------------
 # F6 / artifact_manager — ephemeral temp uses workspace_root
 # ---------------------------------------------------------------------------
@@ -319,7 +315,7 @@ class TestArtifactManagerEphemeralTemp:
     """ArtifactManager ephemeral temp dir must be workspace_root-relative."""
 
     def test_ephemeral_temp_uses_workspace_root(self, tmp_path: Path) -> None:
-        """Path('.st3/temp') must be replaced with self.server_root / 'temp'."""
+        """Path('.phase-gate/temp') must be replaced with self.server_root / 'temp'."""
         state_root = tmp_path / ".phase-gate"
         state_root.mkdir()
         (state_root / "template_registry.json").touch()
@@ -349,55 +345,55 @@ class TestArtifactManagerEphemeralTemp:
 
 
 # ---------------------------------------------------------------------------
-# template_config — no CWD-relative .st3 fallback
+# template_config — no CWD-relative .phase-gate fallback
 # ---------------------------------------------------------------------------
 
 
 class TestTemplateConfigNoCwdSt3:
-    """get_template_root() must not check CWD-relative .st3/templates."""
+    """get_template_root() must not check CWD-relative .phase-gate/templates."""
 
     def test_does_not_fall_through_to_cwd_dot_st3(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Even if .st3/templates exists in CWD, it must not be used."""
-        st3_templates = tmp_path / ".st3" / "templates"
+        """Even if .phase-gate/templates exists in CWD, it must not be used."""
+        st3_templates = tmp_path / ".phase-gate" / "templates"
         st3_templates.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
         # Patch package root to not exist so we can test isolation
         # Actually: package templates ALWAYS exist, so the function should return those
-        # not the .st3/templates fallback. We verify package templates are returned.
+        # not the .phase-gate/templates fallback. We verify package templates are returned.
         with patch.dict(os.environ, {}, clear=False):
             if "TEMPLATE_ROOT" in os.environ:
                 del os.environ["TEMPLATE_ROOT"]
             result = template_config.get_template_root()
 
-        # Must return package templates, not .st3/templates
+        # Must return package templates, not .phase-gate/templates
         assert "scaffolding" in str(result), f"Expected scaffolding path, got: {result}"
 
 
 # ---------------------------------------------------------------------------
-# template_registry — default arg not .st3-based
+# template_registry — default arg not .phase-gate-based
 # ---------------------------------------------------------------------------
 
 
 class TestTemplateRegistryDefaultArg:
-    """TemplateRegistry default registry_path must not hardcode .st3."""
+    """TemplateRegistry default registry_path must not hardcode .phase-gate."""
 
     def test_default_registry_path_is_not_cwd_dot_st3(self) -> None:
-        """TemplateRegistry() without args must not default to Path('.st3/...')."""
+        """TemplateRegistry() without args must not default to Path('.phase-gate/...')."""
         sig = inspect.signature(TemplateRegistry.__init__)
         default = sig.parameters["registry_path"].default
 
-        # Default should be None (not a .st3 Path)
-        assert default is None or str(default) != ".st3/template_registry.json", (
-            f"Default registry_path should not be '.st3/template_registry.json', got: {default}"
+        # Default should be None (not a .phase-gate Path)
+        assert default is None or str(default) != ".phase-gate/template_registry.json", (
+            f"Default registry_path should not be '.phase-gate/template_registry.json', got: {default}"
         )
 
 
 # ===========================================================================
 # C2 RED — TDD Cycle 2: no-fallback enforcement
-# These tests FAIL before GREEN (constructors still have silent .st3 fallbacks).
+# These tests FAIL before GREEN (constructors still have silent .phase-gate fallbacks).
 # ===========================================================================
 
 
@@ -410,10 +406,10 @@ class TestPhaseStateEngineNoFallback:
     """PhaseStateEngine must raise when server_root is not provided."""
 
     def test_raises_when_server_root_is_none(self) -> None:
-        """Constructing without server_root must raise — no silent .st3 fallback.
+        """Constructing without server_root must raise — no silent .phase-gate fallback.
 
         RED: constructor currently has state_root: Path|None=None with
-        effective_state_root = state_root or workspace_path / '.st3'.
+        effective_state_root = state_root or workspace_path / '.phase-gate'.
         It succeeds silently instead of raising.
         """
         with pytest.raises((ValueError, TypeError)):
@@ -428,7 +424,7 @@ class TestPhaseStateEngineNoFallback:
                 workflow_gate_runner=MagicMock(),
                 state_reconstructor=MagicMock(),
                 workflow_state_mutator=MagicMock(),
-                # server_root omitted — must raise, not default to workspace/.st3
+                # server_root omitted — must raise, not default to workspace/.phase-gate
             )
 
 
@@ -441,10 +437,10 @@ class TestProjectManagerNoFallback:
     """ProjectManager must raise when server_root is not provided."""
 
     def test_raises_when_server_root_is_none(self) -> None:
-        """Constructing without server_root must raise — no silent .st3 fallback.
+        """Constructing without server_root must raise — no silent .phase-gate fallback.
 
         RED: constructor currently has state_root: Path|None=None with
-        effective_state_root = state_root or workspace_root / '.st3'.
+        effective_state_root = state_root or workspace_root / '.phase-gate'.
         It succeeds silently instead of raising.
         """
         with pytest.raises((ValueError, TypeError)):
@@ -452,7 +448,7 @@ class TestProjectManagerNoFallback:
                 workspace_root=Path("/some/workspace"),
                 contracts_config=MagicMock(),
                 workflow_status_resolver=MagicMock(),
-                # server_root omitted — must raise, not default to workspace/.st3
+                # server_root omitted — must raise, not default to workspace/.phase-gate
             )
 
 
@@ -465,17 +461,17 @@ class TestEnforcementRunnerNoFallback:
     """EnforcementRunner must raise when server_root is not provided."""
 
     def test_raises_when_server_root_is_none(self) -> None:
-        """Constructing without server_root must raise — no silent .st3 fallback.
+        """Constructing without server_root must raise — no silent .phase-gate fallback.
 
         RED: constructor currently has state_root: Path|None=None with
-        self.state_root = state_root or workspace_root / '.st3'.
+        self.state_root = state_root or workspace_root / '.phase-gate'.
         It succeeds silently instead of raising.
         """
         with pytest.raises((ValueError, TypeError)):
             EnforcementRunner(
                 workspace_root=Path("/some/workspace"),
                 config=EnforcementConfig(enforcement=[]),
-                # server_root omitted — must raise, not default to workspace/.st3
+                # server_root omitted — must raise, not default to workspace/.phase-gate
             )
 
 
@@ -491,13 +487,13 @@ class TestBaseTransitionToolNoFallback:
         """TransitionCycleTool without server_root must raise.
 
         RED: _BaseTransitionTool has state_root: Path|None=None with
-        self.state_root = state_root or workspace_root / '.st3'.
+        self.state_root = state_root or workspace_root / '.phase-gate'.
         Constructor succeeds silently.
         """
         with pytest.raises((ValueError, TypeError)):
             TransitionCycleTool(
                 workspace_root=Path("/some/workspace"),
-                # server_root omitted — must raise, not default to workspace/.st3
+                # server_root omitted — must raise, not default to workspace/.phase-gate
             )
 
 
@@ -541,46 +537,46 @@ class TestAdminToolsServerRootInjection:
 
 
 # ---------------------------------------------------------------------------
-# normalize_config_root — final fallback must not produce .st3 path
+# normalize_config_root — final fallback must not produce .phase-gate path
 # ---------------------------------------------------------------------------
 
 
 class TestNormalizeConfigRootNoSt3Fallback:
-    """normalize_config_root must not hardcode .st3 in the final fallback branch."""
+    """normalize_config_root must not hardcode .phase-gate in the final fallback branch."""
 
     def test_workspace_root_fallback_does_not_produce_st3_path(self, tmp_path: Path) -> None:
-        """When given a plain directory (not hidden, no config/ child), must not return .st3.
+        """When given a plain directory (not hidden, no config/ child), must not return .phase-gate.
 
-        GREEN: raises FileNotFoundError (no silent .st3 fallback).
-        Either raising or returning a non-.st3 path satisfies the contract.
+        GREEN: raises FileNotFoundError (no silent .phase-gate fallback).
+        Either raising or returning a non-.phase-gate path satisfies the contract.
         """
         # tmp_path is a plain directory (no leading '.', no config/ subdirectory)
         # This hits the final fallback branch of normalize_config_root
         try:
             result = normalize_config_root(tmp_path)
-            # If no exception: result must not contain .st3
-            assert ".st3" not in str(result), (
-                f"normalize_config_root final fallback still hardcodes '.st3': {result}"
+            # If no exception: result must not contain .phase-gate
+            assert ".phase-gate" not in str(result), (
+                f"normalize_config_root final fallback still hardcodes '.phase-gate': {result}"
             )
         except (FileNotFoundError, ValueError):
-            # Raising is preferred — no .st3 path was produced
+            # Raising is preferred — no .phase-gate path was produced
             pass
 
 
 # ---------------------------------------------------------------------------
-# TemplateRegistry — constructing with None must not silently use .st3
+# TemplateRegistry — constructing with None must not silently use .phase-gate
 # ---------------------------------------------------------------------------
 
 
 class TestTemplateRegistryNoSt3Fallback:
-    """TemplateRegistry with registry_path=None must raise, not silently use .st3."""
+    """TemplateRegistry with registry_path=None must raise, not silently use .phase-gate."""
 
     def test_none_registry_path_raises_or_no_st3(self) -> None:
-        """TemplateRegistry() without args: registry_path must not resolve to .st3.
+        """TemplateRegistry() without args: registry_path must not resolve to .phase-gate.
 
         RED: current __init__ body sets
-            self.registry_path = Path('.st3/template_registry.json')
-        when registry_path is None. The instance attribute silently contains '.st3'.
+            self.registry_path = Path('.phase-gate/template_registry.json')
+        when registry_path is None. The instance attribute silently contains '.phase-gate'.
         """
         with pytest.raises((ValueError, TypeError)):
             # Must raise when no explicit registry_path is provided

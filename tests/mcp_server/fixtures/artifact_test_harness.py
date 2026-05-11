@@ -111,9 +111,9 @@ def _artifacts_yaml_file_st3(
     """
     Write artifacts.yaml to temp workspace.
 
-    Returns path to .st3/config/artifacts.yaml
+    Returns path to .phase-gate/config/artifacts.yaml
     """
-    config_dir = temp_workspace / ".st3" / "config"
+    config_dir = temp_workspace / ".phase-gate" / "config"
     config_dir.mkdir(parents=True)
 
     artifacts_file = config_dir / "artifacts.yaml"
@@ -203,7 +203,7 @@ def _artifact_manager(
         scaffolder=template_scaffolder,
         validation_service=validation_service,
         fs_adapter=fs_adapter,
-        server_root=temp_workspace / ".st3",
+        server_root=temp_workspace / ".phase-gate",
     )
 
 

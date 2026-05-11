@@ -40,8 +40,8 @@ from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
-_STATE_JSON = ".st3/state.json"
-_DELIVERABLES_JSON = ".st3/deliverables.json"
+_STATE_JSON = ".phase-gate/state.json"
+_DELIVERABLES_JSON = ".phase-gate/deliverables.json"
 
 
 # ---------------------------------------------------------------------------
@@ -54,9 +54,9 @@ def _init_repo_scenario_a(repo_dir: Path) -> GitRepo:
 
     Branch layout after setup:
         main   (commit M: normal.py only)
-        └─ feature/test (commit F: + .st3/state.json added)
+        └─ feature/test (commit F: + .phase-gate/state.json added)
 
-    The excluded path (.st3/state.json) exists on feature/test but NOT on main.
+    The excluded path (.phase-gate/state.json) exists on feature/test but NOT on main.
     Simulates: developer created a branch-local artifact that was never on BASE.
     After neutralize_to_base the artifact must be absent from HEAD tree.
     """
@@ -73,7 +73,7 @@ def _init_repo_scenario_a(repo_dir: Path) -> GitRepo:
     repo.git.checkout("-b", "feature/test")
 
     # Commit state.json on the feature branch (absent from main)
-    state_dir = repo_dir / ".st3"
+    state_dir = repo_dir / ".phase-gate"
     state_dir.mkdir(parents=True, exist_ok=True)
     (state_dir / "state.json").write_text('{"cycle": 1}', encoding="utf-8")
     repo.index.add([_STATE_JSON])
@@ -86,10 +86,10 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
     """Create a repo where BASE (main) already has the excluded path at v1.
 
     Branch layout after setup:
-        main   (commit M: normal.py + .st3/state.json at v1)
+        main   (commit M: normal.py + .phase-gate/state.json at v1)
         └─ feature/test (forked from M, inherits v1)
 
-    The test must modify .st3/state.json to v2 on the feature branch. After
+    The test must modify .phase-gate/state.json to v2 on the feature branch. After
     neutralize_to_base the file must be restored to the BASE (v1) version.
     Covers the epic-parent scenario where main itself carries the artifact.
     """
@@ -100,7 +100,7 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
 
     repo.git.checkout("-b", "main")
 
-    state_dir = repo_dir / ".st3"
+    state_dir = repo_dir / ".phase-gate"
     state_dir.mkdir(parents=True, exist_ok=True)
     (repo_dir / "normal.py").write_text("# v1\n", encoding="utf-8")
     (state_dir / "state.json").write_text('{"cycle": 1}', encoding="utf-8")
@@ -113,7 +113,7 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
 
 def _make_commit_tool(repo_dir: Path) -> GitCommitTool:
     """Build GitCommitTool operating on repo_dir."""
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".st3" / "config")
+    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
     git_config = loader.load_git_config()
     manager = GitManager(
         git_config=git_config,
@@ -164,12 +164,12 @@ class TestModel1BranchTipNeutralization:
         """Scenario A: excluded path absent from BASE → zero net-diff and absent from HEAD tree.
 
         Setup:
-            - main has no .st3/state.json (artifact never existed on BASE)
+            - main has no .phase-gate/state.json (artifact never existed on BASE)
             - feature/test added state.json in a prior commit (branch-local artifact)
             - normal.py modified on feature branch
         Proof (D5 contract):
             - After ready-phase commit with ExclusionNote: zero net-diff against main
-            - .st3/state.json absent from HEAD tree (neutralized away entirely)
+            - .phase-gate/state.json absent from HEAD tree (neutralized away entirely)
         """
         repo = _init_repo_scenario_a(tmp_path)
 
@@ -212,12 +212,12 @@ class TestModel1BranchTipNeutralization:
         """Scenario B (epic-parent): path present on BASE is restored to BASE version.
 
         Setup:
-            - main has .st3/state.json at v1 ({"cycle": 1})
+            - main has .phase-gate/state.json at v1 ({"cycle": 1})
             - feature/test modifies it to v2 ({"cycle": 2, "current_phase": "ready"})
             - normal.py also modified
         Proof (D5 contract):
             - After ready-phase commit with ExclusionNote: zero net-diff against main
-            - HEAD tree version of .st3/state.json equals BASE version (v1)
+            - HEAD tree version of .phase-gate/state.json equals BASE version (v1)
         """
         repo = _init_repo_scenario_b(tmp_path)
 
@@ -259,7 +259,7 @@ class TestModel1BranchTipNeutralization:
         """Scenario C: without ExclusionNotes, all changed files appear in the commit diff.
 
         Regression guard: the neutralize route must NOT fire on a normal commit.
-        All modified files including .st3/state.json must appear in the net-diff
+        All modified files including .phase-gate/state.json must appear in the net-diff
         when no ExclusionNotes are present.
         """
         repo = _init_repo_scenario_b(tmp_path)  # base has state.json — convenient setup

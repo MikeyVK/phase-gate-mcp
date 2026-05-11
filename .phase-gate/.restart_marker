@@ -1,0 +1,6 @@
+{
+  "timestamp": 1778252256.845415,
+  "pid": 37080,
+  "reason": "remove redundant resource URI from validation error response",
+  "iso_time": "2026-05-08T14:57:36.845415+00:00"
+}

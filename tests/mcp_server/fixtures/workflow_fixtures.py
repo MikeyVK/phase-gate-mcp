@@ -4,7 +4,7 @@
 @dependencies: pytest, mcp_server.config.loader
 @responsibilities:
   - Provide workflow-phase fixtures for tests
-  - Load phase lists from .st3/config/contracts.yaml via ConfigLoader (SSOT)
+  - Load phase lists from .phase-gate/config/contracts.yaml via ConfigLoader (SSOT)
   - workflows.yaml fixtures retained for backward compat with WorkflowConfig tests
 """
 
@@ -16,22 +16,19 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import WorkflowConfig
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 
-
 def _make_loader() -> ConfigLoader:
-    return ConfigLoader(Path(".st3/config"))
-
+    return ConfigLoader(Path(".phase-gate/config"))
 
 @pytest.fixture
 def workflow_config() -> WorkflowConfig:
-    """Load workflow configuration from .st3/config/workflows.yaml."""
+    """Load workflow configuration from .phase-gate/config/workflows.yaml."""
     return _make_loader().load_workflow_config()
 
 
 @pytest.fixture
 def contracts_config() -> ContractsConfig:
-    """Load ContractsConfig from .st3/config/contracts.yaml (SSOT)."""
+    """Load ContractsConfig from .phase-gate/config/contracts.yaml (SSOT)."""
     return _make_loader().load_contracts_config()
-
 
 @pytest.fixture
 def workflow_phases(workflow_config: WorkflowConfig) -> list[str]:

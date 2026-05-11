@@ -14,7 +14,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ScopeConfig
 from mcp_server.core.exceptions import ConfigError
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 _MINIMAL_SCOPES_YAML = {
     "version": "1.0",
@@ -50,7 +50,7 @@ class TestScopeConfigFromFile:
 
     def test_from_file_raises_on_missing_file(self) -> None:
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_scope_config(Path(".st3/nonexistent_scopes.yaml"))
+            _load_scope_config(Path(".phase-gate/nonexistent_scopes.yaml"))
 
     def test_repeated_loads_are_equivalent(self, scopes_yaml_path: Path) -> None:
         cfg1 = _load_scope_config(scopes_yaml_path)

@@ -41,7 +41,7 @@ class _MockLabel:  # pylint: disable=too-few-public-methods
         self.description = description
 
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".st3" / "config"
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 def _load_label_config(tmp_path: Path, yaml_content: str) -> LabelConfig:

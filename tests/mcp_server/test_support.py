@@ -103,8 +103,7 @@ def _candidate_config_roots(workspace_root: Path | str | None = None) -> list[Pa
         except FileNotFoundError:
             # Plain workspace root — probe conventional hidden state directories.
             p = Path(root).resolve()
-            return [p / hidden / "config" for hidden in (".st3", ".phase-gate")]
-
+            return [p / hidden / "config" for hidden in (".phase-gate",)]
     if workspace_root is not None:
         candidates.extend(_probe(workspace_root))
     candidates.extend(_probe(Path.cwd()))
@@ -127,10 +126,10 @@ def resolve_config_root(
     """Resolve the best config root for one workspace under test.
 
     Production probe only tries .phase-gate.  Tests may still create workspaces
-    with the legacy .st3 layout, so we fall through to that candidate before
+    with the legacy .phase-gate layout, so we fall through to that candidate before
     giving up and using the canonical project config.
     """
-    _project_config = Path(__file__).resolve().parents[2] / ".st3" / "config"
+    _project_config = Path(__file__).resolve().parents[2] / ".phase-gate" / "config"
     if workspace_root is None:
         return _project_config
     try:
@@ -139,9 +138,9 @@ def resolve_config_root(
             required_files=required_paths,
         )
     except FileNotFoundError:
-        # Production probe only tries .phase-gate; try legacy .st3 next (test
+        # Production probe only tries .phase-gate; try legacy .phase-gate next (test
         # workspaces often use the old layout) but only if all required files exist.
-        legacy = Path(workspace_root) / ".st3" / "config"
+        legacy = Path(workspace_root) / ".phase-gate" / "config"
         if legacy.exists() and all((legacy / f).exists() for f in required_paths):
             return legacy
         return _project_config
@@ -257,7 +256,7 @@ def make_project_manager(
 
         workspace_path = Path(workspace_root)
         _git_reader = resolved_git_manager or make_git_manager(workspace_root)
-        _state_reader = FileStateRepository(state_file=workspace_path / ".st3" / "state.json")
+        _state_reader = FileStateRepository(state_file=workspace_path / ".phase-gate" / "state.json")
         _detector = CommitPhaseDetector(workphases_config=workphases_config)
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=_git_reader,
@@ -270,9 +269,8 @@ def make_project_manager(
         git_manager=resolved_git_manager,
         workphases_config=workphases_config,
         workflow_status_resolver=workflow_status_resolver,
-        server_root=Path(workspace_root) / ".st3",
+        server_root=Path(workspace_root) / ".phase-gate",
     )
-
 
 def make_state_reconstructor(
     workspace_root: Path | str,
@@ -323,7 +321,7 @@ def make_phase_state_engine(
         _load_config(workspace_root, "contracts.yaml", "load_contracts_config"),
     )
     resolved_state_repository = state_repository or FileStateRepository(
-        state_file=workspace_path / ".st3" / "state.json"
+        state_file=workspace_path / ".phase-gate" / "state.json"
     )
     resolved_scope_decoder = scope_decoder or ScopeDecoder(
         workphases_config=cast(WorkphasesConfig, workphases_config)
@@ -353,7 +351,7 @@ def make_phase_state_engine(
         workflow_gate_runner=resolved_workflow_gate_runner,
         state_reconstructor=resolved_state_reconstructor,
         workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
-        server_root=workspace_path / ".st3",
+        server_root=workspace_path / ".phase-gate",
     )
 
 
@@ -364,7 +362,7 @@ def make_phase_config_context(
     """Build a PhaseConfigContext explicitly from config and optional deliverables."""
     planning_deliverables = None
     workspace_path = Path(workspace_root)
-    deliverables_path = workspace_path / ".st3" / "deliverables.json"
+    deliverables_path = workspace_path / ".phase-gate" / "deliverables.json"
     if issue_number is not None and deliverables_path.exists():
         data = json.loads(deliverables_path.read_text(encoding="utf-8-sig"))
         issue_data = data.get(str(issue_number), {})
@@ -484,7 +482,7 @@ def make_qa_manager(
     )
     resolved_workspace = Path(workspace_root) if workspace_root is not None else None
     resolved_quality_state_repo: IQualityStateRepository = quality_state_repository or (
-        FileQualityStateRepository(backing_file=resolved_workspace / ".st3" / "quality_state.json")
+        FileQualityStateRepository(backing_file=resolved_workspace / ".phase-gate" / "quality_state.json")
         if resolved_workspace is not None
         else MagicMock()
     )
@@ -527,7 +525,7 @@ def make_artifact_manager(workspace_root: Path | str) -> ArtifactManager:
         workspace_root=workspace_root,
         registry=registry,
         project_structure_config=project_structure,
-        server_root=Path(workspace_root) / ".st3",
+        server_root=Path(workspace_root) / ".phase-gate",
     )
 
 
