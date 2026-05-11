@@ -143,6 +143,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 | `cycle_number` | `int` | No | **Required when `workflow_phase="implementation"`** — TDD cycle number (e.g. `1`, `2`, `3`) |
 | `commit_type` | `str` | No | Override commit type (e.g. `"feat"`, `"fix"`, `"docs"`) — use only as explicit override |
 | `files` | `list[str]` | No | Specific file paths to stage — default: stage all changed files |
+| `skip_paths` | `frozenset[str]` | No | File paths to exclude from staging (advanced use) |
 
 #### Returns
 
@@ -152,7 +153,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
   "message": "Changes committed",
   "commit": {
     "sha": "abc123def456",
-    "message": "feat(P_IMPLEMENTATION_SP_C1_GREEN): Implement user authentication"
+    "message": "feat(P_IMPLEMENTATION_SP_C1_GREEN): Implement user authentication (#42)"
   }
 }
 ```
@@ -202,6 +203,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 
 - **Auto-Stage:** If `files` specified, stages those files; otherwise stages all changes
 - **No Changes:** Returns error if no changes to commit
+- **Issue suffix auto-append (#228):** The active issue number is extracted from the current branch name via `extract_issue_number()` and appended to the commit message as ` (#NNN)`. For branches without a parseable issue number (e.g. `main`, `feature/no-number`), no suffix is added. This happens transparently — no parameter needed.
 - **`phase` parameter:** Does NOT exist — `GitCommitInput` uses `extra="forbid"`. Passing `phase` crashes with a validation error.
 - **`cycle_number`:** Required when `workflow_phase="implementation"` — omitting it causes a validation error
 - **Ready-phase auto-exclude (#283):** When in `ready` phase, `.st3/state.json` and `.st3/deliverables.json` are automatically removed from the commit index before committing
