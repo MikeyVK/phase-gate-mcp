@@ -32,7 +32,8 @@ def _patch_server_settings(mock: MagicMock, workspace_root: str | None = None) -
     mock.from_env.return_value.github.owner = "test"
     mock.from_env.return_value.github.repo = "test-repo"
     mock.from_env.return_value.logging.level = "WARNING"
-    mock.from_env.return_value.logging.audit_log = False
+    mock.from_env.return_value.server.logs_dir = "logs"
+    mock.from_env.return_value.logging.audit_log = None
 
 
 # ---------------------------------------------------------------------------
