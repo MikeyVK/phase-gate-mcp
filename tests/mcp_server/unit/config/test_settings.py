@@ -96,6 +96,7 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
 # C3 — state_dir field in ServerSettings
 # ---------------------------------------------------------------------------
 
+
 def test_state_dir_default_is_phase_gate() -> None:
     """C5 RED: ServerSettings state_dir default must be '.phase-gate'."""
     s = ServerSettings()

@@ -180,7 +180,9 @@ class TestPhaseConfigContext:
             make_phase_config_context(tmp_path)
 
         assert exc_info.value.file_path is not None
-        assert exc_info.value.file_path.replace("\\", "/").endswith("/.phase-gate/config/contracts.yaml")
+        assert exc_info.value.file_path.replace("\\", "/").endswith(
+            "/.phase-gate/config/contracts.yaml"
+        )
 
     def test_loader_applies_defaults_for_optional_phase_fields(self, tmp_path: Path) -> None:
         """Missing optional fields should resolve to empty collections and false."""

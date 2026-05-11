@@ -9,7 +9,8 @@ Documents requirement that 5 concrete templates must exist and scaffold successf
 - design.md.jinja2
 
 @layer: Tests (Integration)
-@dependencies: pytest, pathlib, mcp_server.config.loader, mcp_server.config.schemas, mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
+@dependencies: pytest, pathlib, mcp_server.config.loader, mcp_server.config.schemas,
+    mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
 """
 
 from pathlib import Path

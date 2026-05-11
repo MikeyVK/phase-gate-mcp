@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 # Project modules
 
+
 class ValidationTestDto(BaseModel):
     """ValidationTestDto DTO.
 
@@ -23,6 +24,7 @@ class ValidationTestDto(BaseModel):
         symbol: str
         price: float
     """
+
     symbol: str = Field(
         description="symbol field",
     )

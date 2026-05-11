@@ -21,6 +21,7 @@ from mcp_server.config.schemas import (
 )
 from mcp_server.core.exceptions import ConfigError
 
+
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
     loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_artifact_registry_config(config_path=config_path)
@@ -29,6 +30,7 @@ def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistry
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:
     loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_operation_policies_config(config_path=config_path)
+
 
 def _load_project_structure(config_path: Path | None = None) -> ProjectStructureConfig:
     loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)

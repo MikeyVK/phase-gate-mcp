@@ -451,4 +451,6 @@ class TestSubmitPRAtomicRefactored:
 
         call_args = git_manager.prepare_submission.call_args
         artifact_paths_arg = call_args[0][0] if call_args[0] else call_args[1]["artifact_paths"]
-        assert artifact_paths_arg == frozenset({".phase-gate/state.json", ".phase-gate/deliverables.json"})
+        assert artifact_paths_arg == frozenset(
+            {".phase-gate/state.json", ".phase-gate/deliverables.json"}
+        )

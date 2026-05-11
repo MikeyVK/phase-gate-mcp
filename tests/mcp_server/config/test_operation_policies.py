@@ -16,6 +16,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import OperationPoliciesConfig, OperationPolicy
 from mcp_server.core.exceptions import ConfigError
 
+
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:
     loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_operation_policies_config(config_path=config_path)

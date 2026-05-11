@@ -81,7 +81,9 @@ def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) 
 def _policy() -> MergePolicy:
     return MergePolicy(
         pr_allowed_phase="ready",
-        branch_local_artifacts=[BranchLocalArtifact(path=".phase-gate/state.json", reason="branch-local")],
+        branch_local_artifacts=[
+            BranchLocalArtifact(path=".phase-gate/state.json", reason="branch-local")
+        ],
     )
 
 

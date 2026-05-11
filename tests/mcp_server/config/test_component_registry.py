@@ -14,6 +14,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ArtifactRegistryConfig
 from mcp_server.core.exceptions import ConfigError
 
+
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
     loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_artifact_registry_config(config_path=config_path)

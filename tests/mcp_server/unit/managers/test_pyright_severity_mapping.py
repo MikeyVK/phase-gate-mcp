@@ -81,7 +81,7 @@ class TestPyrightSeverityMapping:
 
     def test_error_severity_is_extracted(self, manager: QAManager) -> None:
         """Pyright 'error' diagnostic → ViolationDTO.severity == 'error'."""
-        result = manager._parse_json_violations([_PYRIGHT_DIAG_ERROR], _PYRIGHT_PARSING)
+        result = manager._parse_json_violations([_PYRIGHT_DIAG_ERROR], _PYRIGHT_PARSING)  # type: ignore[reportPrivateUsage]
         assert len(result) == 1
         assert result[0].severity == "error"
 
@@ -89,7 +89,7 @@ class TestPyrightSeverityMapping:
 
     def test_warning_severity_is_extracted(self, manager: QAManager) -> None:
         """Pyright 'warning' diagnostic → ViolationDTO.severity == 'warning'."""
-        result = manager._parse_json_violations([_PYRIGHT_DIAG_WARNING], _PYRIGHT_PARSING)
+        result = manager._parse_json_violations([_PYRIGHT_DIAG_WARNING], _PYRIGHT_PARSING)  # type: ignore[reportPrivateUsage]
         assert len(result) == 1
         assert result[0].severity == "warning"
 
@@ -97,7 +97,7 @@ class TestPyrightSeverityMapping:
 
     def test_information_severity_is_extracted(self, manager: QAManager) -> None:
         """Pyright 'information' diagnostic → ViolationDTO.severity == 'information'."""
-        result = manager._parse_json_violations([_PYRIGHT_DIAG_INFORMATION], _PYRIGHT_PARSING)
+        result = manager._parse_json_violations([_PYRIGHT_DIAG_INFORMATION], _PYRIGHT_PARSING)  # type: ignore[reportPrivateUsage]
         assert len(result) == 1
         assert result[0].severity == "information"
 
@@ -105,7 +105,7 @@ class TestPyrightSeverityMapping:
 
     def test_multiple_diagnostics_each_have_correct_severity(self, manager: QAManager) -> None:
         """Mixed-severity batch: each DTO gets its own severity string, not null."""
-        results = manager._parse_json_violations(
+        results = manager._parse_json_violations(  # type: ignore[reportPrivateUsage]
             [_PYRIGHT_DIAG_ERROR, _PYRIGHT_DIAG_WARNING, _PYRIGHT_DIAG_INFORMATION],
             _PYRIGHT_PARSING,
         )
@@ -119,14 +119,14 @@ class TestPyrightSeverityMapping:
             field_map={k: v for k, v in _PYRIGHT_FIELD_MAP.items() if k != "severity"},
             line_offset=1,
         )
-        result = manager._parse_json_violations([_PYRIGHT_DIAG_ERROR], parsing_no_severity)
+        result = manager._parse_json_violations([_PYRIGHT_DIAG_ERROR], parsing_no_severity)  # type: ignore[reportPrivateUsage]
         assert result[0].severity is None
 
     # --- other fields not regressed ---
 
     def test_other_fields_still_extracted_correctly(self, manager: QAManager) -> None:
         """Severity fix must not regress other field extractions."""
-        result = manager._parse_json_violations([_PYRIGHT_DIAG_ERROR], _PYRIGHT_PARSING)
+        result = manager._parse_json_violations([_PYRIGHT_DIAG_ERROR], _PYRIGHT_PARSING)  # type: ignore[reportPrivateUsage]
         dto = result[0]
         assert dto.file == "backend/dtos/validation_fixture_gate4.py"
         assert dto.rule == "reportAssignmentType"

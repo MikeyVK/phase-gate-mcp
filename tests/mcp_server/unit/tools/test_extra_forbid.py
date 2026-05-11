@@ -3,57 +3,57 @@ from pydantic import ValidationError
 
 from mcp_server.tools.admin_tools import RestartServerInput
 from mcp_server.tools.code_tools import CreateFileInput
-from mcp_server.tools.cycle_tools import TransitionCycleInput, ForceCycleTransitionInput
-from mcp_server.tools.discovery_tools import SearchDocumentationInput, GetWorkContextInput
-from mcp_server.tools.git_analysis_tools import GitListBranchesInput, GitDiffInput
+from mcp_server.tools.cycle_tools import ForceCycleTransitionInput, TransitionCycleInput
+from mcp_server.tools.discovery_tools import GetWorkContextInput, SearchDocumentationInput
+from mcp_server.tools.git_analysis_tools import GitDiffInput, GitListBranchesInput
 from mcp_server.tools.git_fetch_tool import GitFetchInput
 from mcp_server.tools.git_pull_tool import GitPullInput
 from mcp_server.tools.git_tools import (
     CreateBranchInput,
-    GitStatusInput,
-    GitRestoreInput,
-    GitCheckoutInput,
-    GitPushInput,
-    GitMergeInput,
-    GitDeleteBranchInput,
-    GitStashInput,
     GetParentBranchInput,
+    GitCheckoutInput,
+    GitDeleteBranchInput,
+    GitMergeInput,
+    GitPushInput,
+    GitRestoreInput,
+    GitStashInput,
+    GitStatusInput,
 )
 from mcp_server.tools.health_tools import HealthCheckInput
 from mcp_server.tools.issue_tools import (
+    CloseIssueInput,
     CreateIssueInput,
     GetIssueInput,
     ListIssuesInput,
     UpdateIssueInput,
-    CloseIssueInput,
 )
 from mcp_server.tools.label_tools import (
-    ListLabelsInput,
+    AddLabelsInput,
     CreateLabelInput,
     DeleteLabelInput,
-    RemoveLabelsInput,
-    AddLabelsInput,
     DetectLabelDriftInput,
+    ListLabelsInput,
+    RemoveLabelsInput,
 )
 from mcp_server.tools.milestone_tools import (
-    ListMilestonesInput,
-    CreateMilestoneInput,
     CloseMilestoneInput,
+    CreateMilestoneInput,
+    ListMilestonesInput,
 )
-from mcp_server.tools.phase_tools import TransitionPhaseInput, ForcePhaseTransitionInput
+from mcp_server.tools.phase_tools import ForcePhaseTransitionInput, TransitionPhaseInput
 from mcp_server.tools.pr_tools import ListPRsInput, MergePRInput, SubmitPRInput
 from mcp_server.tools.project_tools import (
-    InitializeProjectInput,
     GetProjectPlanInput,
+    InitializeProjectInput,
     SavePlanningDeliverablesInput,
     UpdatePlanningDeliverablesInput,
 )
 from mcp_server.tools.quality_tools import RunQualityGatesInput
-from mcp_server.tools.safe_edit_tool import SafeEditInput, LineEdit, InsertLine
+from mcp_server.tools.safe_edit_tool import InsertLine, LineEdit, SafeEditInput
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
 from mcp_server.tools.template_validation_tool import TemplateValidationInput
 from mcp_server.tools.test_tools import RunTestsInput
-from mcp_server.tools.validation_tools import ValidationInput, ValidateDTOInput
+from mcp_server.tools.validation_tools import ValidateDTOInput, ValidationInput
 
 
 class TestExtraForbidOnAllInputModels:

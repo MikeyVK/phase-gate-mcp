@@ -17,6 +17,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
 from mcp_server.core.exceptions import ConfigError
 
+
 def _load_git_config(config_path: Path | None = None) -> GitConfig:
     if config_path is None:
         return ConfigLoader(Path(".phase-gate/config")).load_git_config()

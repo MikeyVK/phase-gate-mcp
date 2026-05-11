@@ -17,7 +17,7 @@ class StatusResource(BaseResource):
     def __init__(self, git_adapter: GitAdapter | None = None) -> None:
         self.git = git_adapter or GitAdapter()
 
-    async def read(self, _uri: str) -> str:
+    async def read(self, uri: str) -> str:  # noqa: ARG002
         """Read status."""
         try:
             git_status = self.git.get_status()

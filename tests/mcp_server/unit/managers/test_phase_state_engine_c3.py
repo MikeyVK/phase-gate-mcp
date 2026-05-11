@@ -26,7 +26,9 @@ from tests.mcp_server.test_support import make_phase_state_engine, make_project_
 
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
-    """Workspace root with .phase-gate/config/workphases.yaml containing exit_requires + entry_expects."""
+    """Workspace root with .phase-gate/config/workphases.yaml
+    containing exit_requires + entry_expects.
+    """
     config_dir = tmp_path / ".phase-gate" / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(

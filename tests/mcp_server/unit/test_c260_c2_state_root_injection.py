@@ -119,6 +119,7 @@ class TestPhaseStateEngineStateRoot:
 
         assert ".phase-gate" not in str(engine.state_file)
 
+
 # ---------------------------------------------------------------------------
 # F1 / ProjectManager — accepts state_root
 # ---------------------------------------------------------------------------
@@ -150,6 +151,7 @@ class TestProjectManagerStateRoot:
         manager = self._make_manager(state_root, workspace_root)
 
         assert ".phase-gate" not in str(manager.deliverables_file)
+
 
 # ---------------------------------------------------------------------------
 # F1 / EnforcementRunner — accepts state_root
@@ -224,6 +226,7 @@ class TestBuildPhaseGuard:
         guard = build_phase_guard(state_root)
         # Should NOT raise — because guard reads from state_root, not workspace/.phase-gate
         guard("feature/42-test", "implementation", None)
+
 
 # ---------------------------------------------------------------------------
 # F1 / cycle_tools — uses state_root in _get_current_branch
@@ -306,6 +309,7 @@ class TestAdminToolsRestartMarker:
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
         assert result == server_root / ".restart_marker"
 
+
 # ---------------------------------------------------------------------------
 # F6 / artifact_manager — ephemeral temp uses workspace_root
 # ---------------------------------------------------------------------------
@@ -387,7 +391,8 @@ class TestTemplateRegistryDefaultArg:
 
         # Default should be None (not a .phase-gate Path)
         assert default is None or str(default) != ".phase-gate/template_registry.json", (
-            f"Default registry_path should not be '.phase-gate/template_registry.json', got: {default}"
+            "Default registry_path should not be '.phase-gate/template_registry.json',"
+            f" got: {default}"
         )
 
 

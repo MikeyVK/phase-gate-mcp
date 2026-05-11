@@ -48,7 +48,9 @@ class TestIQualityStateRepositoryProtocol:
 
     def test_concrete_class_satisfies_protocol(self, tmp_path: Path) -> None:
         """FileQualityStateRepository satisfies IQualityStateRepository runtime check."""
-        repo = FileQualityStateRepository(backing_file=tmp_path / ".phase-gate" / "quality_state.json")
+        repo = FileQualityStateRepository(
+            backing_file=tmp_path / ".phase-gate" / "quality_state.json"
+        )
         assert isinstance(repo, IQualityStateRepository)
 
 
@@ -57,7 +59,9 @@ class TestFileQualityStateRepositoryLoad:
 
     def test_load_returns_empty_state_when_file_absent(self, tmp_path: Path) -> None:
         """load() returns QualityState() (all defaults) when backing file does not exist."""
-        repo = FileQualityStateRepository(backing_file=tmp_path / ".phase-gate" / "quality_state.json")
+        repo = FileQualityStateRepository(
+            backing_file=tmp_path / ".phase-gate" / "quality_state.json"
+        )
         state = repo.load()
         assert state == QualityState()
 

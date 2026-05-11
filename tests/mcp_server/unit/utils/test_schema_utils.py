@@ -1,5 +1,7 @@
 import json
+
 import pytest
+
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 

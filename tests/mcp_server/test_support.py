@@ -104,6 +104,7 @@ def _candidate_config_roots(workspace_root: Path | str | None = None) -> list[Pa
             # Plain workspace root — probe conventional hidden state directories.
             p = Path(root).resolve()
             return [p / hidden / "config" for hidden in (".phase-gate",)]
+
     if workspace_root is not None:
         candidates.extend(_probe(workspace_root))
     candidates.extend(_probe(Path.cwd()))
@@ -256,7 +257,9 @@ def make_project_manager(
 
         workspace_path = Path(workspace_root)
         _git_reader = resolved_git_manager or make_git_manager(workspace_root)
-        _state_reader = FileStateRepository(state_file=workspace_path / ".phase-gate" / "state.json")
+        _state_reader = FileStateRepository(
+            state_file=workspace_path / ".phase-gate" / "state.json"
+        )
         _detector = CommitPhaseDetector(workphases_config=workphases_config)
         workflow_status_resolver = WorkflowStatusResolver(
             git_context_reader=_git_reader,
@@ -271,6 +274,7 @@ def make_project_manager(
         workflow_status_resolver=workflow_status_resolver,
         server_root=Path(workspace_root) / ".phase-gate",
     )
+
 
 def make_state_reconstructor(
     workspace_root: Path | str,
@@ -482,7 +486,9 @@ def make_qa_manager(
     )
     resolved_workspace = Path(workspace_root) if workspace_root is not None else None
     resolved_quality_state_repo: IQualityStateRepository = quality_state_repository or (
-        FileQualityStateRepository(backing_file=resolved_workspace / ".phase-gate" / "quality_state.json")
+        FileQualityStateRepository(
+            backing_file=resolved_workspace / ".phase-gate" / "quality_state.json"
+        )
         if resolved_workspace is not None
         else MagicMock()
     )

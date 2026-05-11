@@ -20,9 +20,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ValidationHelper:
     """Helper used for validation testing"""
 
-    def placeholder(self):
+    def placeholder(self) -> None:
         """Placeholder method."""
         pass

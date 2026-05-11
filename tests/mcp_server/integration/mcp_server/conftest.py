@@ -4,16 +4,17 @@
 @dependencies: pytest, unittest.mock, mcp_server.server
 """
 
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from mcp_server.config.settings import Settings, ServerSettings
+from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.server import MCPServer
 
 
 @pytest.fixture
-def server():
+def server() -> Generator[MCPServer, None, None]:
     """
     Create an MCPServer instance with mocked GitHub dependencies.
 

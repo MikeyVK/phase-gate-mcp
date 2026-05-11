@@ -16,8 +16,10 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import WorkflowConfig
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 
+
 def _make_loader() -> ConfigLoader:
     return ConfigLoader(Path(".phase-gate/config"))
+
 
 @pytest.fixture
 def workflow_config() -> WorkflowConfig:
@@ -29,6 +31,7 @@ def workflow_config() -> WorkflowConfig:
 def contracts_config() -> ContractsConfig:
     """Load ContractsConfig from .phase-gate/config/contracts.yaml (SSOT)."""
     return _make_loader().load_contracts_config()
+
 
 @pytest.fixture
 def workflow_phases(workflow_config: WorkflowConfig) -> list[str]:

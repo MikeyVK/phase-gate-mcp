@@ -801,7 +801,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
         )
 
         assert not result.is_error
-        data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[str(issue_number)]
+        data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[
+            str(issue_number)
+        ]
         val_ids = [d["id"] for d in data["planning_deliverables"]["validation"]["deliverables"]]
         assert "Val1" in val_ids
         assert "Val2" in val_ids
@@ -843,7 +845,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
         )
 
         assert not result.is_error
-        data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[str(issue_number)]
+        data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[
+            str(issue_number)
+        ]
         doc_ids = [d["id"] for d in data["planning_deliverables"]["documentation"]["deliverables"]]
         assert "Doc1" in doc_ids
         assert "Doc2" in doc_ids

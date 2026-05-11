@@ -65,7 +65,10 @@ def test_normalize_config_root_handles_workspace_and_st3_paths(tmp_path: Path) -
     # C3: normalize_config_root is a simple resolver — it always returns Path(...).resolve().
     # Any path is accepted without disk probes or heuristics.
     assert normalize_config_root(workspace_root) == workspace_root.resolve()
-    assert normalize_config_root(workspace_root / ".phase-gate") == (workspace_root / ".phase-gate").resolve()
+    assert (
+        normalize_config_root(workspace_root / ".phase-gate")
+        == (workspace_root / ".phase-gate").resolve()
+    )
     assert normalize_config_root(config_root) == config_root.resolve()
 
 
