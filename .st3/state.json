@@ -1,0 +1,18 @@
+{
+  "branch": "feature/260-remove-st3-references",
+  "issue_number": null,
+  "workflow_name": "",
+  "current_phase": "",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [],
+  "execution_mode": "normal",
+  "skip_reason": null,
+  "issue_title": null,
+  "parent_branch": null,
+  "created_at": null,
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": "red"
+}

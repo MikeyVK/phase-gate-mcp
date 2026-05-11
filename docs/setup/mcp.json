@@ -1,6 +1,6 @@
 {
   "servers": {
-    "mcp-workflow": {
+    "phase-gate-mcp": {
       "type": "stdio",
       "command": "python",
       "args": ["-m", "mcp_server.core.proxy"],
@@ -8,7 +8,7 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}",
         "LOG_LEVEL": "INFO",
-        "MCP_SERVER_NAME": "mcp-workflow",
+        "MCP_SERVER_NAME": "phase-gate-mcp",
         "MCP_WORKSPACE_ROOT": "${workspaceFolder}",
         "MCP_CONFIG_ROOT": "${workspaceFolder}/.phase-gate/config",
         "GITHUB_OWNER": "MikeyVK",

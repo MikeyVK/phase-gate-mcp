@@ -47,7 +47,7 @@ class LogSettings(BaseModel):
 class ServerSettings(BaseModel):
     """Server configuration settings."""
 
-    name: str = "mcp-workflow"
+    name: str = "phase-gate-mcp"
     version: str = Field(default_factory=_default_server_version)
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
