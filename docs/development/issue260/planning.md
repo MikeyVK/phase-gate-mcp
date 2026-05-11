@@ -10,10 +10,10 @@
 | Cycle | Scope | Type | Status |
 |-------|-------|------|--------|
 | C1 | Delete dead stubs, move template_engine | ✅ Done (commit `fccfe74`) | Done |
-| C2 | `server_root` injection — eliminate inline `.st3` path construction + manager fallbacks | Structural | In progress (QA NOGO ×2) |
-| C3 | Chain inversion — `server_root` becomes primary, `settings.state_dir` added, `config_root` derived | Structural | Not started |
-| C4 | URI scheme + server name rename (`st3://` → `pgmcp://`, `st3-workflow` → `mcp-workflow`) | Breaking | Not started |
-| C5 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename | Not started |
+| C2 | `server_root` injection — eliminate inline `.st3` path construction + manager fallbacks | Structural | ✅ Done |
+| C3 | Chain inversion — `server_root` becomes primary, `settings.state_dir` added, `config_root` derived | Structural | ✅ Done |
+| C4 | URI scheme + server name rename (`st3://` → `pgmcp://`, `st3-workflow` → `mcp-workflow`) | Breaking | ✅ Done (commit `6df9847f`) |
+| C5 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename | **Next** |
 
 ---
 
@@ -130,11 +130,11 @@ All client references updated in the same commit.
 
 ### Exit criteria
 
-- [ ] `grep -r 'st3://' . --include='*.py' --include='*.md' --include='*.json'` returns zero hits
-- [ ] `grep -r 'st3-workflow' . --include='*.py' --include='*.json' --include='*.yaml'` returns zero hits
-- [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
-- [ ] `run_quality_gates(scope="branch")` — 0 errors
-- [ ] MCP server starts and exposes resources under `pgmcp://` scheme
+- [x] `grep -r 'st3://' . --include='*.py' --include='*.md' --include='*.json'` returns zero hits
+- [x] `grep -r 'st3-workflow' . --include='*.py' --include='*.json' --include='*.yaml'` returns zero hits
+- [x] `run_tests(path="tests/mcp_server/")` — all tests pass
+- [x] `run_quality_gates(scope="branch")` — 0 errors
+- [x] MCP server starts and exposes resources under `pgmcp://` scheme
 
 ---
 
