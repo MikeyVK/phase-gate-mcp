@@ -13,7 +13,8 @@
 | C2 | `server_root` injection — eliminate inline `.st3` path construction + manager fallbacks | Structural | ✅ Done |
 | C3 | Chain inversion — `server_root` becomes primary, `settings.state_dir` added, `config_root` derived | Structural | ✅ Done |
 | C4 | URI scheme + server name rename (`st3://` → `pgmcp://`, `st3-workflow` → `mcp-workflow`) | Breaking | ✅ Done (commit `6df9847f`) |
-| C5 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename | **Next** |
+| C5 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename | ✅ Done (commits `13ab7425`, `35df0b24`, `b17a7d29`) |
+| C6 | Naming cleanup: `state_dir` → `server_root_dir`; fix `standards.py` duplication; fix stale error messages; rename `state_file` → `state_path` | Cleanup | **Next** |
 
 ---
 
@@ -204,4 +205,49 @@ C2 (server_root injection — eliminate .st3 fallbacks)
 ```
 
 C2 and C4 are logically independent but C5 depends on both C2 and C3
+
+---
+
+## Cycle 6 — Naming Cleanup
+
+### Scope
+
+Fix the `state_dir` field name introduced in C3 (finding F13) and the `state_file`
+attribute naming in `PhaseStateEngine` (finding F14). Also fix two code-quality
+issues uncovered post-C5: `standards.py` duplicates the state-dir resolution logic,
+and three error messages reference the now-renamed `settings.state_dir`.
+
+### Changes
+
+| File | Change | Finding |
+|------|--------|---------|
+| `mcp_server/config/settings.py` | `state_dir: str` → `server_root_dir: str`; update dict key in `from_env()` | F13 |
+| `mcp_server/server.py` | `settings.server.state_dir` → `settings.server.server_root_dir` | F13 |
+| `mcp_server/config/loader.py` | Update docstring: `settings.state_dir` → `settings.server.server_root_dir` | F13 |
+| `mcp_server/resources/standards.py` | Replace manual `MCP_STATE_DIR` env lookup with `Settings.from_env()` | F13 |
+| `mcp_server/managers/artifact_manager.py` | Fix stale error message (L127) | F13 |
+| `mcp_server/managers/enforcement_runner.py` | Fix stale error message (L163) | F13 |
+| `mcp_server/tools/phase_tools.py` | Fix stale error message (L83) | F13 |
+| `mcp_server/managers/phase_state_engine.py` | `self.state_file` → `self.state_path` (L90, L449, L464) | F14 |
+
+### Test files affected
+
+| File | Change |
+|------|--------|
+| `tests/mcp_server/unit/config/test_settings.py` | `state_dir` → `server_root_dir` in test names + assertions (L96–108) |
+| `tests/mcp_server/unit/server/test_validate_tool_arguments.py` | `.state_dir` → `.server_root_dir` (L30) |
+| `tests/mcp_server/unit/test_c260_c2_state_root_injection.py` | `engine.state_file` → `engine.state_path` (L111, L120) |
+
+### Deferred (separate issue)
+
+- F12: `proxy.py` + `qa_manager.py` CWD-relative log paths (require `server_root` injection into proxy/QA manager chain)
+- F11: `template_config.py` workspace-local template path (Template Workspace Initiative)
+
+### Exit criteria
+
+- [ ] `grep -r 'state_dir' mcp_server/ --include='*.py'` returns zero hits (excluding `MCP_STATE_DIR` string literals)
+- [ ] `grep -r '\.state_file\b' mcp_server/ --include='*.py'` returns zero hits
+- [ ] Three error messages no longer reference `settings.state_dir`
+- [ ] `run_tests(path="tests/mcp_server/")` — all tests pass
+- [ ] `run_quality_gates(scope="branch")` — 0 errors
 (dir-name-agnostic paths + runtime-configurable name via `settings.state_dir`).

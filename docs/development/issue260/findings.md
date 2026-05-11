@@ -405,3 +405,55 @@ respectively. However, fixing these requires the proxy and QA manager to receive
 |---|--------|-------|-------|
 | CS1 | Update display strings in managers | 6 files | C5 |
 | CS2 | Update test variable names (`st3_dir`) | 3 test files | C5 |
+
+---
+
+## Findings (session 2026-05-xx — post-C5 observations)
+
+### F13 — `ServerSettings.state_dir` field name conflicts with internal naming convention
+
+C3 added `state_dir: str = ".phase-gate"` to `ServerSettings`. The name `state_dir`
+implies "directory for state files" but the directory IS the **server root** — not
+just for state. Decisions D8 / D4-revised established that internally only the term
+`server_root` should be used. The field name `state_dir` leaks a different concept.
+
+Additional issues uncovered:
+1. `mcp_server/resources/standards.py` (L19–21) re-derives the path via
+   `os.environ.get("MCP_STATE_DIR")` instead of using `Settings.from_env()`. This
+   duplicates the env-to-settings mapping and will silently diverge if the mapping
+   ever changes.
+2. Three error messages still reference `settings.state_dir` (stale after C3):
+   - `mcp_server/managers/artifact_manager.py` L127
+   - `mcp_server/managers/enforcement_runner.py` L163
+   - `mcp_server/tools/phase_tools.py` L83
+
+**Fix:** Rename `ServerSettings.state_dir` → `server_root_dir`. The env var
+`MCP_STATE_DIR` stays unchanged (backward compat). Fix `standards.py` to use
+`Settings.from_env()`. Fix the three stale error messages.
+
+---
+
+### F14 — `PhaseStateEngine.state_file` attribute name violates Python convention
+
+`self.state_file` in `PhaseStateEngine` is a `Path` pointing to `state.json`.
+Using the suffix `_file` for a `Path` object (rather than a file handle)
+violates Python convention (`_path` is standard). There are also multiple state
+files in `server_root` (`state.json`, `deliverables.json`, `quality_state.json`),
+making the unqualified name `state_file` ambiguous.
+
+External test access confirmed: `engine.state_file` is asserted in
+`tests/mcp_server/unit/test_c260_c2_state_root_injection.py` (lines 111, 120).
+
+**Fix:** Rename `self.state_file` → `self.state_path` in `phase_state_engine.py`.
+Update the two test assertions.
+
+---
+
+### S13–S16 additions to Minimal Change Set
+
+| # | Change | Files | Cycle |
+|---|--------|-------|-------|
+| S13 | Rename `ServerSettings.state_dir` → `server_root_dir` (env var `MCP_STATE_DIR` unchanged) | `config/settings.py`, `server.py`, `config/loader.py` (docstring) | C6 |
+| S14 | Fix `standards.py` duplicate path derivation → use `Settings.from_env()` | `resources/standards.py` | C6 |
+| S15 | Fix 3 stale error messages referencing `settings.state_dir` | `managers/artifact_manager.py`, `managers/enforcement_runner.py`, `tools/phase_tools.py` | C6 |
+| S16 | Rename `PhaseStateEngine.state_file` → `state_path` | `managers/phase_state_engine.py`, 2 test files | C6 |

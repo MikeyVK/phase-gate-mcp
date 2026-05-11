@@ -3,9 +3,16 @@
   "issue_number": 260,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
-  "cycle_history": [],
+  "current_cycle": 2,
+  "last_cycle": 1,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Naming Cleanup (C6)",
+      "forced": false,
+      "entered": "2026-05-11T08:32:36.163434+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -95,5 +102,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": null
 }

@@ -115,6 +115,30 @@ def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert s.server.state_dir == ".phase-gate"
 
 
+# ---------------------------------------------------------------------------
+# C6 — server_root_dir field rename (F13)
+# ---------------------------------------------------------------------------
+
+
+def test_server_root_dir_default_is_phase_gate() -> None:
+    """C6 RED: ServerSettings must expose server_root_dir (not state_dir)."""
+    s = ServerSettings()
+    assert s.server_root_dir == ".phase-gate"
+
+
+def test_server_root_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """C6 RED: MCP_STATE_DIR env var must populate server_root_dir field."""
+    monkeypatch.setenv("MCP_STATE_DIR", ".custom-root")
+    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+    s = Settings.from_env()
+    assert s.server.server_root_dir == ".custom-root"
+
+
+
 def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
