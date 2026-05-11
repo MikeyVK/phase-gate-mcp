@@ -23,7 +23,7 @@ from mcp_server.managers.enforcement_runner import (
 
 
 def _write_enforcement_file(tmp_path: Path, content: str) -> None:
-    config_dir = tmp_path / ".st3" / "config"
+    config_dir = tmp_path / ".phase-gate" / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "enforcement.yaml").write_text(content, encoding="utf-8")
 
@@ -37,6 +37,7 @@ def _make_runner(
         workspace_root=tmp_path,
         config=config,
         registry=registry,
+        server_root=tmp_path,
     )
 
 
@@ -162,6 +163,7 @@ class TestEnforcementRunner:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            server_root=tmp_path,
         )
 
         runner.run(

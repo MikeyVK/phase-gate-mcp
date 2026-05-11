@@ -52,7 +52,7 @@ class TestPhaseStateEnginePersistence:
     ) -> None:
         state_engine.initialize_branch("feature/1-first-feature", 1, "research")
 
-        state_file = workspace_root / ".st3" / "state.json"
+        state_file = workspace_root / ".phase-gate" / "state.json"
         assert state_file.exists()
 
         disk_state = json.loads(state_file.read_text(encoding="utf-8"))
@@ -68,7 +68,7 @@ class TestPhaseStateEnginePersistence:
         state_engine.initialize_branch("feature/1-first-feature", 1, "research")
         state_engine.initialize_branch("feature/2-second-feature", 2, "research")
 
-        state_file = workspace_root / ".st3" / "state.json"
+        state_file = workspace_root / ".phase-gate" / "state.json"
         disk_state = json.loads(state_file.read_text(encoding="utf-8"))
         assert disk_state["branch"] == "feature/2-second-feature"
         assert disk_state["issue_number"] == 2
@@ -83,7 +83,7 @@ class TestPhaseStateEnginePersistence:
         state_engine.initialize_branch(branch, 1, "research")
 
         result = state_engine.transition(branch=branch, to_phase="design")
-        state_file = workspace_root / ".st3" / "state.json"
+        state_file = workspace_root / ".phase-gate" / "state.json"
         disk_state = json.loads(state_file.read_text(encoding="utf-8"))
 
         assert result == {

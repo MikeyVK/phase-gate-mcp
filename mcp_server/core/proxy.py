@@ -128,6 +128,12 @@ class MCPProxy:
         self.proxy_pid = os.getpid()
 
         self._server_started = threading.Event()
+        # Derive logs directory from env vars directly (proxy is a standalone process;
+        # importing Settings here causes test isolation issues)
+        _workspace_root = os.environ.get("MCP_WORKSPACE_ROOT") or os.getcwd()
+        _server_root_dir = os.environ.get("MCP_SERVER_PROJECT_DIR") or ".phase-gate"
+        _logs_dir_name = os.environ.get("MCP_LOGS_DIR") or "logs"
+        self._logs_dir = Path(_workspace_root) / _server_root_dir / _logs_dir_name
 
     def audit_log(self, message: str, level: str = "INFO", **extra: Any) -> None:  # noqa: ANN401
         """Write structured log entry to mcp_audit.log.
@@ -138,7 +144,7 @@ class MCPProxy:
             **extra: Additional fields to include in log entry
         """
         try:
-            log_dir = Path("mcp_server/logs")
+            log_dir = self._logs_dir
             log_dir.mkdir(parents=True, exist_ok=True)
             audit_file = log_dir / "mcp_audit.log"
 

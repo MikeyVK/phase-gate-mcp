@@ -21,9 +21,11 @@ from mcp_server.config.schemas import LabelConfig
 from mcp_server.config.schemas.label_config import Label
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 
 def _load_label_config(config_path: Path) -> LabelConfig:
-    return ConfigLoader(config_path.parent).load_label_config(config_path=config_path)
+    return ConfigLoader(_ST3_CONFIG).load_label_config(config_path=config_path)
 
 
 class TestLabelCreation:
@@ -277,8 +279,8 @@ labels:
 
         config = _load_label_config(yaml_file)
         # pylint: disable=protected-access
-        assert "type:feature" in config._labels_by_name
-        assert "priority:high" in config._labels_by_name
+        assert "type:feature" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
+        assert "priority:high" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
 
 
 class TestLabelValidation:
@@ -601,9 +603,9 @@ labels:
 
         config = _load_label_config(yaml_file)
         # pylint: disable=protected-access
-        assert len(config._labels_by_name) == 2
-        assert "type:feature" in config._labels_by_name
-        assert "priority:high" in config._labels_by_name
+        assert len(config._labels_by_name) == 2  # pyright: ignore[reportPrivateUsage]
+        assert "type:feature" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
+        assert "priority:high" in config._labels_by_name  # pyright: ignore[reportPrivateUsage]
 
 
 class TestGitHubSync:
@@ -865,7 +867,7 @@ labels:
         label = config.labels[0]
 
         github_label = {"color": "1D76DB", "description": "Test"}
-        assert config._needs_update(label, github_label)  # pylint: disable=protected-access
+        assert config._needs_update(label, github_label)  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
 
     def test_needs_update_description_differs(self, tmp_path: Path) -> None:
         """Helper detects description change."""
@@ -882,4 +884,4 @@ labels:
         label = config.labels[0]
 
         github_label = {"color": "1D76DB", "description": "Old"}
-        assert config._needs_update(label, github_label)  # pylint: disable=protected-access
+        assert config._needs_update(label, github_label)  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]

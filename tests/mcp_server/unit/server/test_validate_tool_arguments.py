@@ -23,15 +23,17 @@ from mcp_server.tools.tool_result import ToolResult
 
 def _patch_server_settings(mock: MagicMock, workspace_root: str | None = None) -> None:
     resolved = workspace_root or str(Path(__file__).resolve().parents[4])
-    resolved_cfg = str(Path(resolved) / ".st3")
+    resolved_cfg = str(Path(resolved) / ".phase-gate")
     mock.from_env.return_value.server.name = "test-server"
     mock.from_env.return_value.server.workspace_root = resolved
     mock.from_env.return_value.server.config_root = resolved_cfg
+    mock.from_env.return_value.server.server_root_dir = ".phase-gate"
     mock.from_env.return_value.github.token = None
     mock.from_env.return_value.github.owner = "test"
     mock.from_env.return_value.github.repo = "test-repo"
     mock.from_env.return_value.logging.level = "WARNING"
-    mock.from_env.return_value.logging.audit_log = False
+    mock.from_env.return_value.server.logs_dir = "logs"
+    mock.from_env.return_value.logging.audit_log = None
 
 
 # ---------------------------------------------------------------------------

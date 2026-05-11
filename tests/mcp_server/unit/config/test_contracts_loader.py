@@ -38,8 +38,8 @@ from mcp_server.core.exceptions import ConfigError
 
 @pytest.fixture()
 def config_dir(tmp_path: Path) -> Path:
-    """Return a tmp .st3/config directory."""
-    d = tmp_path / ".st3" / "config"
+    """Return a tmp .phase-gate/config directory."""
+    d = tmp_path / ".phase-gate" / "config"
     d.mkdir(parents=True)
     return d
 
@@ -66,7 +66,7 @@ def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) 
             "merge_policy": {
                 "pr_allowed_phase": "ready",
                 "branch_local_artifacts": [
-                    {"path": ".st3/state.json", "reason": "branch-local"},
+                    {"path": ".phase-gate/state.json", "reason": "branch-local"},
                 ],
             },
             "workflows": workflows,
@@ -81,7 +81,9 @@ def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) 
 def _policy() -> MergePolicy:
     return MergePolicy(
         pr_allowed_phase="ready",
-        branch_local_artifacts=[BranchLocalArtifact(path=".st3/state.json", reason="branch-local")],
+        branch_local_artifacts=[
+            BranchLocalArtifact(path=".phase-gate/state.json", reason="branch-local")
+        ],
     )
 
 
@@ -106,7 +108,7 @@ class TestLoadContractsConfig:
 
     def test_feature_workflow_research_first_ready_last(self) -> None:
         """Real contracts.yaml: feature workflow has research first and ready last."""
-        real = Path(__file__).parents[4] / ".st3" / "config" / "contracts.yaml"
+        real = Path(__file__).parents[4] / ".phase-gate" / "config" / "contracts.yaml"
         if not real.exists():
             pytest.skip("contracts.yaml not yet created — passes after C2 GREEN")
         result = ConfigLoader(real.parent).load_contracts_config()

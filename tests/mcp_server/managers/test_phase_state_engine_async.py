@@ -44,7 +44,7 @@ class TestSaveStateNonBlocking:
         )
 
         # Setup
-        st3_dir = tmp_path / ".st3"
+        st3_dir = tmp_path / ".phase-gate"
         st3_dir.mkdir()
         state_file = st3_dir / "state.json"
 
@@ -78,7 +78,7 @@ class TestSaveStateNonBlocking:
         )
 
         # Setup
-        st3_dir = tmp_path / ".st3"
+        st3_dir = tmp_path / ".phase-gate"
         st3_dir.mkdir()
 
         project_manager = MagicMock(spec=ProjectManager)
@@ -131,7 +131,7 @@ class TestPhaseToolsAsyncSafe:
         )
 
         # Setup
-        tool = ForcePhaseTransitionTool(workspace_root=Path("."))
+        tool = ForcePhaseTransitionTool(workspace_root=Path("."), server_root=Path("."))
 
         # Mock the engine to track if it's called via to_thread
         mock_engine = MagicMock()
@@ -184,7 +184,7 @@ class TestPhaseToolsAsyncSafe:
         )
 
         # Setup
-        tool = TransitionPhaseTool(workspace_root=Path("."))
+        tool = TransitionPhaseTool(workspace_root=Path("."), server_root=Path("."))
 
         mock_engine = MagicMock()
         mock_engine.transition.return_value = {

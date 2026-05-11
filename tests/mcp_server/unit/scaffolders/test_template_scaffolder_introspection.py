@@ -32,7 +32,7 @@ from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 @pytest.fixture(name="registry")
 def fixture_registry() -> ArtifactRegistryConfig:
     """Provides artifact registry configuration"""
-    return ConfigLoader(Path(".st3/config")).load_artifact_registry_config()
+    return ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
 
 
 @pytest.fixture(name="scaffolder")

@@ -1,4 +1,4 @@
-# ST3 Workflow MCP Server - User Guide
+# PhaseGate MCP Server - User Guide
 
 **Status:** v1.0 (Foundation)
 **Last Updated:** 2025-01-21
@@ -7,7 +7,7 @@
 
 ## 1. Introduction
 
-The ST3 Workflow MCP Server is a Model Context Protocol server designed to assist with the development of the SimpleTraderV3 project. It provides AI agents with context about the project's state, coding standards, and facilitates workflows like TDD and GitHub integration.
+The PhaseGate MCP Server (`phase-gate-mcp`) is a Model Context Protocol server designed to assist with the development of the S1mpleTraderV3 project. It provides AI agents with context about the project's state, coding standards, and facilitates workflows like TDD and GitHub integration.
 
 ## 2. Installation
 
@@ -26,26 +26,26 @@ pip install -e "./mcp_server[dev]"
 The server is configured via a YAML file (`mcp_config.yaml`) or environment variables.
 
 ### 3.1 Environment Variables
-
 | Variable | Description | Default |
-|----------|-------------|---------|
+|----------|-------------|-------|
 | `GITHUB_TOKEN` | GitHub Personal Access Token (required for GitHub integration) | None |
-| `MCP_LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
+| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
+| `MCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.phase-gate` |
+| `MCP_LOGS_DIR` | Sub-directory under server_root for log files | `logs` |
 | `MCP_CONFIG_PATH` | Path to configuration file | `mcp_config.yaml` |
-
 ### 3.2 Configuration File (`mcp_config.yaml`)
 
 Example configuration:
 
 ```yaml
 server:
-  name: "st3-workflow"
-  version: "1.0.0"
+  name: "phase-gate-mcp"
   workspace_root: "."
 
 logging:
   level: "INFO"
-  audit_log: "logs/mcp_audit.log"
+  # audit_log is auto-derived as <server_root>/<logs_dir>/mcp_audit.log
+  # (default: .phase-gate/logs/mcp_audit.log)
 
 github:
   owner: "MikeyVK"
@@ -70,7 +70,7 @@ To use this MCP server with Claude Desktop, add the following to your `claude_de
 ```json
 {
   "mcpServers": {
-    "st3-workflow": {
+    "phase-gate-mcp": {
       "command": "python",
       "args": ["-m", "mcp_server"],
       "cwd": "/absolute/path/to/SimpleTraderV3",
@@ -88,7 +88,7 @@ Replace `/absolute/path/to/SimpleTraderV3` with the actual path to your reposito
 
 Currently, the following resources are available:
 
-### `st3://rules/coding_standards`
+### `pgmcp://rules/coding_standards`
 
 Returns a JSON object containing the project's coding standards, including:
 - Python version and style guide (PEP 8)
@@ -96,7 +96,7 @@ Returns a JSON object containing the project's coding standards, including:
 - Tooling (ruff, pyright, pytest)
 
 **Usage:**
-read_resource("st3://rules/coding_standards")
+read_resource("pgmcp://rules/coding_standards")
 
 ## 7. Available Tools
 

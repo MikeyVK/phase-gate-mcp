@@ -24,8 +24,8 @@ class TestGitManagerConfigIntegration:
         self.mock_adapter = MagicMock(spec=GitAdapter)
         self.mock_adapter.is_clean.return_value = True
         self.mock_adapter.get_current_branch.return_value = "main"
-        self.git_config = ConfigLoader(Path(".st3/config")).load_git_config()
-        workphases_config = ConfigLoader(Path(".st3/config")).load_workphases_config()
+        self.git_config = ConfigLoader(Path(".phase-gate/config")).load_git_config()
+        workphases_config = ConfigLoader(Path(".phase-gate/config")).load_workphases_config()
         self.manager = GitManager(
             git_config=self.git_config,
             adapter=self.mock_adapter,

@@ -47,7 +47,7 @@ async def test_template_missing_error_propagates_through_call_chain(
     - message contains template path
     """
     # Arrange: Add artifact type with non-existent template to registry
-    artifacts_yaml = temp_workspace / ".st3" / "config" / "artifacts.yaml"
+    artifacts_yaml = temp_workspace / ".phase-gate" / "config" / "artifacts.yaml"
     content = artifacts_yaml.read_text(encoding="utf-8")
 
     # Add dto_missing artifact type with non-existent template

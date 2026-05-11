@@ -12,9 +12,9 @@ SCOPE (Cycle 7 - Tracking Artifact V2):
      fails while V1 fallback active
 
 Note on ephemeral artifacts:
-  Tracking artifacts (commit, pr, issue) use output_type: ephemeral — they write to .st3/temp/
-  instead of via fs_adapter.write_file. _run_v2_tracking patches _validate_and_write to avoid
-  actual file writes in unit tests.
+  Tracking artifacts (commit, pr, issue) use output_type: ephemeral — they write to
+  .phase-gate/temp/ instead of via fs_adapter.write_file. _run_v2_tracking patches
+  _validate_and_write to avoid actual file writes in unit tests.
 
 Note on parity definition (aligned with Cycles 5+6 docstring):
   Parity = smoke: both pipelines produce valid output with routing confirmed.
@@ -49,11 +49,11 @@ def _run_v2_tracking(manager: ArtifactManager, artifact_type: str, context: dict
     """Run V2 pipeline for tracking (ephemeral) artifacts, return rendered content.
 
     Unlike _run_v2 (which mocks fs_adapter.write_file), tracking artifacts bypass
-    fs_adapter and write to .st3/temp/ via Path.write_text. We patch _validate_and_write
+    fs_adapter and write to .phase-gate/temp/ via Path.write_text. We patch _validate_and_write
     to capture content before the ephemeral write occurs.
     """
     output_captured: list[str] = []
-    original_vaw = manager._validate_and_write
+    original_vaw = manager._validate_and_write  # type: ignore[reportPrivateUsage]
 
     async def mock_vaw(
         art_type: str,  # noqa: ARG001
@@ -79,7 +79,7 @@ def _run_v2_tracking(manager: ArtifactManager, artifact_type: str, context: dict
 def _spy_v2_routed(manager: ArtifactManager) -> list[bool]:
     """Spy whether _enrich_context_v2 is called (V2 pipeline active, not V1 fallback)."""
     v2_calls: list[bool] = []
-    original = manager._enrich_context_v2
+    original = manager._enrich_context_v2  # type: ignore[reportPrivateUsage]
 
     def spy(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
         v2_calls.append(True)

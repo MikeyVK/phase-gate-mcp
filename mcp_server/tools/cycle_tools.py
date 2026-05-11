@@ -57,8 +57,9 @@ class TransitionCycleTool(BaseTransitionTool):
         state_engine: PhaseStateEngine | None = None,
         git_manager: GitManager | None = None,
         gate_runner: IWorkflowGateRunner | None = None,
+        server_root: Path | None = None,
     ) -> None:
-        super().__init__(workspace_root, project_manager, state_engine)
+        super().__init__(workspace_root, project_manager, state_engine, server_root)
         self._git_manager = git_manager
         self._gate_runner = gate_runner
 
@@ -126,7 +127,7 @@ class TransitionCycleTool(BaseTransitionTool):
         except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
             branch = None
 
-        state_file = self.workspace_root / ".st3" / "state.json"
+        state_file = self.server_root / "state.json"
         if state_file.exists():
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
             if isinstance(state_data, dict):
@@ -165,8 +166,9 @@ class ForceCycleTransitionTool(BaseTransitionTool):
         state_engine: PhaseStateEngine | None = None,
         git_manager: GitManager | None = None,
         gate_runner: IWorkflowGateRunner | None = None,
+        server_root: Path | None = None,
     ) -> None:
-        super().__init__(workspace_root, project_manager, state_engine)
+        super().__init__(workspace_root, project_manager, state_engine, server_root)
         self._git_manager = git_manager
         self._gate_runner = gate_runner
 
@@ -257,7 +259,7 @@ class ForceCycleTransitionTool(BaseTransitionTool):
         except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
             branch = None
 
-        state_file = self.workspace_root / ".st3" / "state.json"
+        state_file = self.server_root / "state.json"
         if state_file.exists():
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
             if isinstance(state_data, dict):

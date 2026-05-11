@@ -9,7 +9,8 @@ Documents requirement that 5 concrete templates must exist and scaffold successf
 - design.md.jinja2
 
 @layer: Tests (Integration)
-@dependencies: pytest, pathlib, mcp_server.config.loader, mcp_server.config.schemas, mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
+@dependencies: pytest, pathlib, mcp_server.config.loader, mcp_server.config.schemas,
+    mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
 """
 
 from pathlib import Path
@@ -24,7 +25,7 @@ from mcp_server.utils.template_config import get_template_root
 
 
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(Path(".st3/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
     return loader.load_artifact_registry_config(config_path=config_path)
 
 

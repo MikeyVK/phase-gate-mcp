@@ -42,13 +42,13 @@ def test_config_error_with_file_path() -> None:
     """ConfigError formats message with file path."""
     error = ConfigError(
         "Invalid YAML syntax",
-        file_path=".st3/artifacts.yaml",
+        file_path=".phase-gate/artifacts.yaml",
     )
 
     assert "Invalid YAML syntax" in str(error)
-    assert ".st3/artifacts.yaml" in str(error)
+    assert ".phase-gate/artifacts.yaml" in str(error)
     assert error.code == "ERR_CONFIG"
-    assert error.file_path == ".st3/artifacts.yaml"
+    assert error.file_path == ".phase-gate/artifacts.yaml"
 
 
 def test_config_error_without_file_path() -> None:

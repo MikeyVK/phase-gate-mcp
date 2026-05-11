@@ -250,7 +250,7 @@ class TestTransitionHooksWiring:
         """Create project with planning deliverables."""
         workspace_root = tmp_path
         issue_number = 999
-        config_dir = workspace_root / ".st3" / "config"
+        config_dir = workspace_root / ".phase-gate" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "contracts.yaml").write_text(
             (

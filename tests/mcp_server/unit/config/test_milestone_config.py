@@ -14,6 +14,8 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import MilestoneConfig
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 _EMPTY_MILESTONES_YAML = {"version": "1.0", "milestones": []}
 
 _POPULATED_MILESTONES_YAML = {
@@ -26,7 +28,7 @@ _POPULATED_MILESTONES_YAML = {
 
 
 def _load_milestone_config(config_path: Path) -> MilestoneConfig:
-    return ConfigLoader(config_path.parent).load_milestone_config(config_path=config_path)
+    return ConfigLoader(_ST3_CONFIG).load_milestone_config(config_path=config_path)
 
 
 @pytest.fixture(name="empty_milestones_path")
@@ -72,7 +74,7 @@ class TestMilestoneConfigFromFile:
 
     def test_from_file_raises_on_missing_file(self) -> None:
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_milestone_config(Path(".st3/nonexistent_milestones.yaml"))
+            _load_milestone_config(Path(".phase-gate/nonexistent_milestones.yaml"))
 
     def test_repeated_loads_are_equivalent(self, empty_milestones_path: Path) -> None:
         cfg1 = _load_milestone_config(empty_milestones_path)

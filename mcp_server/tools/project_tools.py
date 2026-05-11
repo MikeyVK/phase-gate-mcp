@@ -276,8 +276,8 @@ class InitializeProjectTool(BranchMutatingTool):
                 "required_phases": result["required_phases"],
                 "execution_mode": result["execution_mode"],
                 "files_created": [
-                    ".st3/deliverables.json (workflow definition)",
-                    ".st3/state.json (branch state)",
+                    "deliverables.json (workflow definition)",
+                    "state.json (branch state)",
                 ],
             }
 

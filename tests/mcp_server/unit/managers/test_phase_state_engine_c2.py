@@ -98,7 +98,7 @@ class InspectingGateRunner:
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Temporary workspace with hermetic workflow and phase-contract config."""
-    config_dir = tmp_path / ".st3" / "config"
+    config_dir = tmp_path / ".phase-gate" / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workflows.yaml").write_text(
         """
@@ -260,7 +260,7 @@ def test_transition_phase_enforces_contracts_from_phase_contracts_yaml(
         issue_title="Cycle 2 live resolver test",
         workflow_name="feature",
     )
-    loader = ConfigLoader(workspace_root / ".st3" / "config")
+    loader = ConfigLoader(workspace_root / ".phase-gate" / "config")
     resolver = PhaseContractResolver(
         PhaseConfigContext(
             workphases=loader.load_workphases_config(),

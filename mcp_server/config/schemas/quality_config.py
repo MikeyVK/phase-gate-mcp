@@ -154,7 +154,7 @@ class ArtifactLoggingConfig(BaseModel):
     """Artifact logging behavior for failed gate diagnostics."""
 
     enabled: bool = Field(default=True)
-    output_dir: str = Field(..., min_length=1)
+    output_dir: str | None = Field(default=None)
     max_files: int = Field(default=200, ge=1)
 
     model_config = ConfigDict(extra="forbid", frozen=True)

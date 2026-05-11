@@ -30,7 +30,7 @@ from mcp_server.utils.template_config import get_template_root
 @pytest.fixture(name="registry")
 def artifact_registry() -> ArtifactRegistryConfig:
     """Provide artifact registry configuration."""
-    return ConfigLoader(Path(".st3/config")).load_artifact_registry_config()
+    return ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
 
 
 @pytest.fixture(name="real_renderer")

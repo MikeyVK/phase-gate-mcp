@@ -35,7 +35,7 @@ class TestArtifactsYamlTypeField:
     @pytest.fixture
     def artifacts_yaml_path(self) -> Path:
         """Path to artifacts.yaml."""
-        return Path(__file__).parent.parent.parent / ".st3" / "config" / "artifacts.yaml"
+        return Path(__file__).parent.parent.parent / ".phase-gate" / "config" / "artifacts.yaml"
 
     @pytest.fixture
     def artifacts_data(self, artifacts_yaml_path: Path) -> ArtifactsYamlData:

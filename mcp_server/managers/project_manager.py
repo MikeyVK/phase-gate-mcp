@@ -11,7 +11,7 @@ Replaces hardcoded PHASE_TEMPLATES with dynamic ContractsConfig phase sequences.
     - Initialize projects with workflow selection
     - Validate workflow existence and execution mode
     - Support custom phase overrides with skip_reason
-    - Persist project plans to .st3/deliverables.json
+    - Persist project plans to deliverables.json
     - Retrieve stored project plans
 """
 
@@ -97,6 +97,7 @@ class ProjectManager:
         workphases_config: WorkphasesConfig | None = None,
         *,
         workflow_status_resolver: WorkflowStatusResolver,
+        server_root: Path,
     ) -> None:
         """Initialize ProjectManager."""
         self.workspace_root = Path(workspace_root)
@@ -104,7 +105,7 @@ class ProjectManager:
         self._git_manager = git_manager
         self._workphases_config = workphases_config
         self._workflow_status_resolver = workflow_status_resolver
-        self.deliverables_file = self.workspace_root / ".st3" / "deliverables.json"
+        self.deliverables_file = server_root / "deliverables.json"
         self.atomic_json_writer = AtomicJsonWriter()
 
     def initialize_project(
@@ -481,7 +482,7 @@ class ProjectManager:
         Args:
             plan: ProjectPlan to save
         """
-        # Ensure .st3 directory exists
+        # Ensure state directory exists
         self.deliverables_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load existing projects

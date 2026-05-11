@@ -207,7 +207,7 @@ def _create_cycle_engine(
 
 def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
     """Write a minimal workflow where tdd, not implementation, is cycle-based."""
-    config_dir = workspace_root / ".st3" / "config"
+    config_dir = workspace_root / ".phase-gate" / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "workflows.yaml").write_text(
         (

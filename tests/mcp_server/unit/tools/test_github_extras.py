@@ -22,6 +22,8 @@ from mcp_server.tools.pr_tools import (
     MergePRTool,
 )
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 
 @pytest.fixture
 def mock_git_config() -> Mock:
@@ -49,7 +51,7 @@ labels:
     yaml_file = tmp_path / "labels.yaml"
     yaml_file.write_text(yaml_content)
 
-    return ConfigLoader(tmp_path).load_label_config(config_path=yaml_file)
+    return ConfigLoader(_ST3_CONFIG).load_label_config(config_path=yaml_file)
 
 
 def test_add_labels_tool(mock_adapter: Mock, test_label_config: LabelConfig) -> None:

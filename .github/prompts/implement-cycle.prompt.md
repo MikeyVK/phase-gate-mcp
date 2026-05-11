@@ -37,8 +37,8 @@ Synchronize state:
 
 1. Read [agent.md](../../agent.md) — full document.
 2. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md) — binding contract.
-3. `st3://rules/coding_standards`
-4. `st3://status/phase` → record `active_branch`
+3. `pgmcp://rules/coding_standards`
+4. `pgmcp://status/phase` → record `active_branch`
 5. `get_work_context` → record `active_issue_number`
 
 <!-- FUTURE HOOK: get_work_context will become a mandatory per-cycle gate checkpoint.

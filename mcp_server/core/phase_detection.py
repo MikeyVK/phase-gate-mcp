@@ -76,10 +76,10 @@ class ScopeDecoder:
 
         Args:
             workphases_config: Parsed WorkphasesConfig instance
-            state_path: Path to state.json file (defaults to .st3/state.json)
+            state_path: Path to state.json file (must be explicit; no default discovery)
         """
         self._workphases_config = workphases_config
-        self.state_path = state_path or Path(".st3/state.json")
+        self.state_path = state_path
         self._valid_phases: set[str] | None = None
 
     def detect_phase(
@@ -220,7 +220,7 @@ class ScopeDecoder:
             - Invalid phases are rejected (returns None for unknown fallback)
         """
         try:
-            if not self.state_path.exists():
+            if self.state_path is None or not self.state_path.exists():
                 return None
 
             with self.state_path.open("r", encoding="utf-8") as f:

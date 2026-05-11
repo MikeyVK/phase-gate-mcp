@@ -125,6 +125,7 @@ class GetWorkContextTool(BaseTool):
         state_engine: PhaseStateEngine,
         github_manager: GitHubManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
+        state_path: Path | None = None,
         *,
         workflow_status_resolver: WorkflowStatusResolver,
     ) -> None:
@@ -135,6 +136,7 @@ class GetWorkContextTool(BaseTool):
         self._state_engine = state_engine
         self._github_manager = github_manager
         self._workphases_config = workphases_config
+        self._state_path = state_path
         self._workflow_status_resolver = workflow_status_resolver
 
     async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:
@@ -295,7 +297,7 @@ class GetWorkContextTool(BaseTool):
                 "raw_scope": None,
                 "error_message": "WorkphasesConfig not injected",
             }
-        decoder = ScopeDecoder(self._workphases_config)
+        decoder = ScopeDecoder(self._workphases_config, state_path=self._state_path)
         return decoder.detect_phase(commit_message=latest_commit, fallback_to_state=True)
 
     def _extract_checklist(self, body: str) -> list[str]:

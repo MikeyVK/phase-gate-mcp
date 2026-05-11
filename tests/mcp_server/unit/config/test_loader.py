@@ -29,13 +29,13 @@ def _workflow_yaml_without_phases() -> str:
 class TestLoadWorkflowConfig:
     def test_load_workflow_config_catalog_only(self, tmp_path: Path) -> None:
         """load_workflow_config() returns catalog metadata without phase ordering (C6+)."""
-        config_dir = tmp_path / ".st3" / "config"
+        config_dir = tmp_path / ".phase-gate" / "config"
         config_dir.mkdir(parents=True)
         (config_dir / "workflows.yaml").write_text(
             _workflow_yaml_without_phases(),
             encoding="utf-8",
         )
-        loader = ConfigLoader(config_root=tmp_path)
+        loader = ConfigLoader(config_root=config_dir)
 
         result = loader.load_workflow_config()
 

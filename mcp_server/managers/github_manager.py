@@ -111,7 +111,7 @@ class GitHubManager:
                     )
 
     def get_issues_resource_data(self) -> dict[str, Any]:
-        """Get data for st3://github/issues resource."""
+        """Get data for pgmcp://github/issues resource."""
         issues = self.adapter.list_issues(state="open")
 
         return {

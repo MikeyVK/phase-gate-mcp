@@ -38,10 +38,10 @@ activate_code_validation_tools           → 4 validation tools
 Don't guess the phase or status. **Query the system:**
 
 1.  **Read Coding Standards:**
-    *   `st3://rules/coding_standards` → *Loads TDD rules, Style, Quality Gates.*
+    *   `pgmcp://rules/coding_standards` → *Loads TDD rules, Style, Quality Gates.*
     *   Also follow [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) for typing-issue resolution consistency (no global disables; targeted ignores only as last resort).
 2.  **Check Development Phase:**
-    *   `st3://status/phase` → *Tells you current_phase, active_branch, is_clean.*
+    *   `pgmcp://status/phase` → *Tells you current_phase, active_branch, is_clean.*
 3.  **Check Work Context:**
     *   `get_work_context` → *Retrieves active issue, blockers, and recent changes.*
 
@@ -80,7 +80,7 @@ create_issue(
 # → Returns: issue #47: Add Redis caching to strategy loader
 ```
 
-**Workflow Types (from `.st3/config/workflows.yaml`):**
+**Workflow Types (from `.phase-gate/config/workflows.yaml`):**
 
 | **feature** | 6 phases: research → design → planning → implementation → validation → documentation | New functionality |
 | **bug** | 6 phases: research → design → planning → implementation → validation → documentation | Bug fixes |
@@ -100,7 +100,7 @@ create_issue(
 **Sequential Transitions (Strict Enforcement):**
 ```python
 transition_phase(branch="feature/42-name", to_phase="design")
-# Validates against workflow definition in .st3/config/workflows.yaml
+# Validates against workflow definition in .phase-gate/config/workflows.yaml
 # Must follow sequential order defined in workflow
 ```
 
@@ -112,7 +112,7 @@ force_phase_transition(
     skip_reason="Skipping integration - already covered by epic tests",
     human_approval="User: John approved on 2026-01-09"
 )
-# Creates audit trail in .st3/state.json
+# Creates audit trail in .phase-gate/state.json
 # Only use when documented reason exists
 ```
 
@@ -171,7 +171,7 @@ transition_phase(to_phase="validation")
 3. Wait for human approval (ALWAYS REQUIRED)
 4. merge_pr(pr_number=X) - only after human approval
 5. Branch cleanup - discuss with human (context-dependent)
-   - State cleanup (.st3/state.json) is automatic on git_checkout
+   - State cleanup (.phase-gate/state.json) is automatic on git_checkout
 ```
 
 ---
@@ -204,9 +204,9 @@ transition_phase(to_phase="validation")
 ### C. "Manage Labels & Milestones"
 1.  **Create Label:**
     *   `create_label(name="type:feature", color="0e8a16", description="...")`
-    *   Labels validated against `.st3/config/labels.yaml`
+    *   Labels validated against `.phase-gate/config/labels.yaml`
 2.  **Detect Drift:**
-    *   `list_labels()` → compare against `.st3/config/labels.yaml`
+    *   `list_labels()` → compare against `.phase-gate/config/labels.yaml`
     *   Missing labels: `create_label(...)` per entry
     *   Obsolete labels: `delete_label(name)` after confirming no active issues use it
 
@@ -217,7 +217,7 @@ transition_phase(to_phase="validation")
 1.  **Issue-First Development:** Never work directly on `main`. Always start with `create_issue`.
 2.  **Workflow Enforcement:** Always `initialize_project` before work. Use `transition_phase` for progression.
 3.  **TDD is Non-Negotiable:** If you write code without a test, you are violating protocol.
-4.  **Tools > Manual:** Never manually create a file if `scaffold_*` exists. Never manually parse status if `st3://status/*` exists.
+4.  **Tools > Manual:** Never manually create a file if `scaffold_*` exists. Never manually parse status if `pgmcp://status/*` exists.
 5.  **English Artifacts, Dutch Chat:**
     *   Write Code/Docs/Commits in **English**.
     *   Talk to the User in **Dutch** (Nederlands).
@@ -228,7 +228,7 @@ transition_phase(to_phase="validation")
 
 ## 🔧 Phase 5: Tool Priority Matrix (MANDATORY)
 
-> **🛑 CRITICAL RULE:** Use ST3 MCP tools for ALL operations. NEVER use terminal/CLI or create_file where an MCP tool exists.
+> **🛑 CRITICAL RULE:** Use PhaseGate MCP tools for ALL operations. NEVER use terminal/CLI or create_file where an MCP tool exists.
 
 ### Project Initialization & Planning
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -303,7 +303,7 @@ transition_phase(to_phase="validation")
 - **Code:** dto, worker, adapter, interface, tool, resource, schema, service
 - **Docs:** design, architecture, tracking, generic, research, planning
 
-**Registry:** `.st3/config/artifacts.yaml` (let op: niet `.st3/artifacts.yaml`)
+**Registry:** `.phase-gate/config/artifacts.yaml` (let op: niet `.phase-gate/artifacts.yaml`)
 
 **Template System (Issue #72 - 5-tier Jinja2):**
 - Tier 0 (SCAFFOLD) → Tier 1 (CODE/DOC/CONFIG) → Tier 2 (Python/Markdown/YAML) → Tier 3 (component type) → Concrete template
@@ -354,7 +354,7 @@ scaffold_artifact(
 | Edit file (multi-mode) | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | Manual file editing |
 | Create generic file | `create_file(path, content)` | VS Code create_file (deprecated) |
 
-> **📌 Remember:** The ST3 MCP tools use Jinja2 templates that ensure consistency, correct imports, proper structure, and automatic test file generation. Manual file creation bypasses all these benefits.
+> **📌 Remember:** The PhaseGate MCP tools use Jinja2 templates that ensure consistency, correct imports, proper structure, and automatic test file generation. Manual file creation bypasses all these benefits.
 
 ### Ready-Phase Enforcement (Issue #283)
 
@@ -364,10 +364,10 @@ scaffold_artifact(
 
 | Artifact | Pad | Reden |
 |----------|-----|-------|
-| Workflow state | `.st3/state.json` | Branch-local — mag nooit naar main |
-| Deliverables | `.st3/deliverables.json` | Branch-local — mag nooit naar main |
+| Workflow state | `.phase-gate/state.json` | Branch-local — mag nooit naar main |
+| Deliverables | `.phase-gate/deliverables.json` | Branch-local — mag nooit naar main |
 
-Configuratie: `.st3/config/enforcement.yaml` + `.st3/config/contracts.yaml`
+Configuratie: `.phase-gate/config/enforcement.yaml` + `.phase-gate/config/contracts.yaml`
 
 ```
 submit_pr          → pre: check_phase_readiness(policy=ready)   → geblokkeerd als phase != "ready"
@@ -416,8 +416,8 @@ create_branch      → pre: check_branch_policy                   → geblokkeer
 
 **If you have run Phase 1: Orientation, you are now READY.**
 *   "What is my next task?" → Check `get_work_context`.
-*   "How do I build X?" → Check `st3://rules/coding_standards`.
-*   "What phase am I in?" → Check `st3://status/phase`.
+*   "How do I build X?" → Check `pgmcp://rules/coding_standards`.
+*   "What phase am I in?" → Check `pgmcp://status/phase`.
 *   "Which tool should I use?" → **Consult Phase 5: Tool Priority Matrix.**
 *   "How do I start work?" → **Follow Phase 2: Issue-First Development Workflow.**
 

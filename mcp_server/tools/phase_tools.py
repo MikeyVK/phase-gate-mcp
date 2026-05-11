@@ -72,10 +72,17 @@ class _BaseTransitionTool(BranchMutatingTool):
         workspace_root: Path | str,
         project_manager: ProjectManager | None = None,
         state_engine: PhaseStateEngine | None = None,
+        server_root: Path | None = None,
     ) -> None:
         """Initialize tool with injected or legacy-created transition dependencies."""
         super().__init__()
         self.workspace_root = Path(workspace_root)
+        if server_root is None:
+            raise ValueError(
+                "_BaseTransitionTool requires server_root. "
+                "Pass server_root=workspace_root / settings.server.server_root_dir from server.py."
+            )
+        self.server_root = server_root
         self._project_manager = project_manager
         self._state_engine = state_engine
 

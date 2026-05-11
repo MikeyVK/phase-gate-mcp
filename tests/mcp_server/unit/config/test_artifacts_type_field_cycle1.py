@@ -1,7 +1,7 @@
 """Unit tests for artifacts.yaml type field (Issue #72, TDD Cycle 1).
 
 RED Phase Test:
-- Validates ALL artifacts in .st3/config/artifacts.yaml have type field (code|doc|config)
+- Validates ALL artifacts in .phase-gate/config/artifacts.yaml have type field (code|doc|config)
 - Validates code artifacts (dto, worker, adapter, tool, resource, etc.) have type: code
 - Validates document artifacts (research, planning, design, etc.) have type: doc
 
@@ -24,16 +24,16 @@ from mcp_server.config.schemas import ArtifactRegistryConfig, ArtifactType
 
 @pytest.fixture
 def artifacts_config() -> ArtifactRegistryConfig:
-    """Load config from actual .st3/config/artifacts.yaml."""
-    # Find project root (.st3 directory exists there)
+    """Load config from actual .phase-gate/config/artifacts.yaml."""
+    # Find project root (.phase-gate directory exists there)
     current_dir = Path(__file__).resolve()
     project_root = current_dir
-    while not (project_root / ".st3").exists():
+    while not (project_root / ".phase-gate").exists():
         project_root = project_root.parent
         if project_root == project_root.parent:
-            raise FileNotFoundError("Could not find .st3 directory")
+            raise FileNotFoundError("Could not find .phase-gate directory")
 
-    artifacts_yaml = project_root / ".st3" / "config" / "artifacts.yaml"
+    artifacts_yaml = project_root / ".phase-gate" / "config" / "artifacts.yaml"
     return ConfigLoader(artifacts_yaml.parent).load_artifact_registry_config(
         config_path=artifacts_yaml
     )

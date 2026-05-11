@@ -1,28 +1,24 @@
 """Resource for coding standards."""
 
 import json
-import os
 from pathlib import Path
 
-from mcp_server.config.loader import ConfigLoader, resolve_config_root
+from mcp_server.config.loader import ConfigLoader
+from mcp_server.config.settings import Settings
 from mcp_server.resources.base import BaseResource
 
 
 class StandardsResource(BaseResource):
     """Provides access to coding standards."""
 
-    uri_pattern = "st3://rules/coding_standards"
+    uri_pattern = "pgmcp://rules/coding_standards"
     description = "Project coding standards and conventions"
 
     async def read(self, uri: str) -> str:  # noqa: ARG002
         """Read coding standards from the canonical quality config."""
-        workspace_root = os.environ.get("MCP_WORKSPACE_ROOT")
-        explicit_config_root = os.environ.get("MCP_CONFIG_ROOT")
-        config_root = resolve_config_root(
-            preferred_root=workspace_root or Path.cwd(),
-            explicit_root=explicit_config_root,
-            required_files=("quality.yaml",),
-        )
+        settings = Settings.from_env()
+        server_root = Path(settings.server.workspace_root) / settings.server.server_root_dir
+        config_root = server_root / "config"
         quality_config = ConfigLoader(config_root).load_quality_config()
 
         standards = {

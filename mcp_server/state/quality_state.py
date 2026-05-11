@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class QualityState(BaseModel):
     """Immutable snapshot of quality-gate baseline tracking state.
 
-    Stored in ``.st3/quality_state.json`` (separate from workflow state.json).
+    Stored in ``quality_state.json`` under the state root.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")

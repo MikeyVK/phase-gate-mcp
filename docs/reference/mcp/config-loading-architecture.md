@@ -21,7 +21,8 @@ no component re-reads YAML at runtime.
 ```mermaid
 flowchart TD
     ENV["Environment Variables<br/>Settings.from_env"] --> S[Settings]
-    S --> |workspace_root| CR["resolve_config_root()<br/>→ config_root"]
+    S --> SR["server_root = workspace_root / server_root_dir<br/>(e.g. .phase-gate/)"] 
+    SR --> CR["config_root = server_root / 'config'"]
     CR --> CL[ConfigLoader]
     CL --> |"load_*_config() × 14"| VO["Typed Value Objects<br/>Pydantic BaseModel"]
     VO --> CV["ConfigValidator<br/>validate_startup()"]
@@ -39,15 +40,17 @@ flowchart TD
 
 **Module:** `mcp_server/config/loader.py`
 
-A helper that normalises any path variant to its config subdirectory form using the
-**default `.st3/config` convention**. Not called when `MCP_CONFIG_ROOT` is set — in
-that case `resolve_config_root` uses the explicit path directly.
+After C3 (chain inversion), this function is a **pure `Path.resolve()` wrapper**.
+Callers always supply the already-derived `server_root / "config"` path;
+no heuristic detection or directory-name probing is performed.
 
-| Input form | Output (default convention) |
-|------------|-----------------------------|
-| `<workspace>` | `<workspace>/.st3/config` |
-| `<workspace>/.st3` | `<workspace>/.st3/config` |
-| `<workspace>/.st3/config` | unchanged |
+```python
+def normalize_config_root(config_root: Path | str) -> Path:
+    return Path(config_root).resolve()
+```
+
+It is called by `ConfigLoader.__init__` to normalise whatever path the caller
+provides, and remains available as a utility for tests and manual invocations.
 
 ---
 
@@ -72,14 +75,9 @@ flowchart TD
     SCAN -- First match --> RETURN
     SCAN -- None --> ERR2[FileNotFoundError]
 ```
-
-**Called in production** (`server.py` line 161) with:
-```python
-resolve_config_root(
-    preferred_root=workspace_root,
-    required_files=("git.yaml", "workflows.yaml", "workphases.yaml"),
-)
-```
+> **Not called in production.** `server.py` (C3 chain inversion) derives `config_root` directly:
+> `server_root = workspace_root / settings.server.server_root_dir` → `config_root = server_root / "config"`.
+> Available as a test/manual-invocation utility.
 
 ---
 
@@ -185,13 +183,14 @@ classDiagram
     }
     class ServerSettings {
         +name: str
-        +version: str
         +workspace_root: str
+        +server_root_dir: str
+        +logs_dir: str
         +config_root: str | None
     }
     class LogSettings {
         +level: str
-        +audit_log: str
+        +audit_log: str | None
     }
     class GitHubSettings {
         +owner: str
@@ -207,7 +206,10 @@ classDiagram
 |----------------------|---------|---------|
 | `GITHUB_TOKEN` | `settings.github.token` | `None` — GitHub tools disabled |
 | `MCP_WORKSPACE_ROOT` | `settings.server.workspace_root` | `os.getcwd()` |
+| `MCP_SERVER_PROJECT_DIR` | `settings.server.server_root_dir` | `".phase-gate"` |
+| `MCP_LOGS_DIR` | `settings.server.logs_dir` | `"logs"` |
 | `MCP_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
+| `MCP_SERVER_NAME` | `settings.server.name` | `"phase-gate-mcp"` |
 | `LOG_LEVEL` | `settings.logging.level` | `"INFO"` |
 
 ---
@@ -241,11 +243,9 @@ Called as **second step** after `LabelConfig.validate_label_name()` (format chec
 ### Startup sequence in `MCPServer.__init__`
 
 ```python
-# 1. Resolve config root
-config_root = resolve_config_root(
-    preferred_root=workspace_root,
-    required_files=("git.yaml", "workflows.yaml", "workphases.yaml"),
-)
+# 1. Derive server_root and config_root (C3 chain inversion — server.py)
+server_root = workspace_root / settings.server.server_root_dir  # e.g. .phase-gate/
+config_root = server_root / "config"  # always derived; resolve_config_root() NOT called
 
 # 2. Load all configs (immutable from this point)
 config_loader = ConfigLoader(config_root=config_root)

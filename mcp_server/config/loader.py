@@ -32,13 +32,13 @@ SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
 
 def normalize_config_root(config_root: Path | str) -> Path:
-    """Return the canonical .st3/config directory for a workspace or config path."""
-    candidate = Path(config_root).resolve()
-    if candidate.name == "config" and candidate.parent.name == ".st3":
-        return candidate
-    if candidate.name == ".st3":
-        return candidate / "config"
-    return candidate / ".st3" / "config"
+    """Return the resolved config directory path.
+
+    After C3: callers always pass ``server_root / "config"`` (derived from
+    ``workspace_root / settings.server.server_root_dir / "config"``).  No heuristic or
+    disk-based probe is performed — the path is resolved and returned as-is.
+    """
+    return Path(config_root).resolve()
 
 
 def resolve_config_root(
@@ -46,7 +46,7 @@ def resolve_config_root(
     explicit_root: Path | str | None = None,
     required_files: Iterable[str] = (),
 ) -> Path:
-    """Resolve one canonical ST3 config root without legacy compatibility fallbacks."""
+    """Resolve one canonical phase-gate config root without legacy compatibility fallbacks."""
     required = tuple(required_files)
 
     def _has_required_files(candidate: Path) -> bool:
@@ -68,10 +68,22 @@ def resolve_config_root(
         raise FileNotFoundError(f"Explicit config_root does not exist: {explicit_candidate}")
 
     candidates: list[Path] = []
+
+    def _probe_candidates(root: Path) -> list[Path]:
+        """Return candidate config paths for a given root.
+
+        After C3, callers supply the explicit config path directly.
+        For legacy uses of resolve_config_root with a bare workspace root,
+        we probe the conventional hidden state-dir sub-paths explicitly.
+        """
+        # If the path itself looks like a config dir (or any explicit path), keep it.
+        # Also probe the canonical hidden state directory names as fallback.
+        return [root, root / ".phase-gate" / "config"]
+
     if preferred_root is not None:
-        candidates.append(normalize_config_root(preferred_root))
-    candidates.append(normalize_config_root(Path.cwd()))
-    candidates.append(normalize_config_root(Path(__file__).resolve().parents[2]))
+        candidates.extend(_probe_candidates(Path(preferred_root).resolve()))
+    candidates.extend(_probe_candidates(Path.cwd().resolve()))
+    candidates.extend(_probe_candidates(Path(__file__).resolve().parents[2]))
 
     unique_candidates: list[Path] = []
     seen: set[Path] = set()
@@ -85,7 +97,7 @@ def resolve_config_root(
         if candidate.exists() and _has_required_files(candidate):
             return candidate
 
-    raise FileNotFoundError("Could not locate canonical ST3 config directory")
+    raise FileNotFoundError("Could not locate canonical phase-gate config directory")
 
 
 class ConfigLoader:
@@ -122,8 +134,8 @@ class ConfigLoader:
         if not resolved_path.exists():
             raise ConfigError(
                 "Artifact registry not found: "
-                f"{resolved_path}. Expected: .st3/config/artifacts.yaml. "
-                "Fix: Create .st3/config/artifacts.yaml manually or restore from backup.",
+                f"{resolved_path}. Expected: config/artifacts.yaml. "
+                "Fix: Create config/artifacts.yaml manually or restore from backup.",
                 file_path=str(resolved_path),
             )
 

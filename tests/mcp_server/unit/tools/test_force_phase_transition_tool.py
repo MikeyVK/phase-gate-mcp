@@ -54,6 +54,7 @@ class TestForcePhaseTransitionTool:
             workspace_root=workspace_root,
             project_manager=project_manager,
             state_engine=state_engine,
+            server_root=workspace_root,
         )
 
     @pytest.fixture
@@ -215,7 +216,7 @@ class TestForcePhaseTransitionToolSkippedGatesResponse:
     @pytest.fixture
     def workspace_with_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has exit_requires on planning."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """
@@ -237,7 +238,7 @@ phases:
     @pytest.fixture
     def workspace_no_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has no gates defined."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """
@@ -275,6 +276,7 @@ phases:
                 workspace_with_gates,
                 project_manager=make_project_manager(workspace_with_gates),
             ),
+            server_root=workspace_with_gates,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -306,6 +308,7 @@ phases:
                 workspace_no_gates,
                 project_manager=make_project_manager(workspace_no_gates),
             ),
+            server_root=workspace_no_gates,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -336,7 +339,7 @@ class TestForceTransitionResponseFormat:
 
     def _setup_workspace(self, tmp_path: Path, *, with_gate_key: bool = True) -> tuple[Path, str]:
         """Build workspace with workphases.yaml gate + optional planning_deliverables key."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """
@@ -361,7 +364,7 @@ phases:
 
         if with_gate_key:
             # Inject planning_deliverables so gate would have PASSED
-            projects_path = tmp_path / ".st3" / "deliverables.json"
+            projects_path = tmp_path / ".phase-gate" / "deliverables.json"
             data = json.loads(projects_path.read_text())
             data["42"]["planning_deliverables"] = {"tdd_cycles": {"total": 1, "cycles": []}}
             projects_path.write_text(json.dumps(data, indent=2))
@@ -383,6 +386,7 @@ phases:
                 workspace,
                 project_manager=make_project_manager(workspace),
             ),
+            server_root=workspace,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -416,6 +420,7 @@ phases:
                 workspace,
                 project_manager=make_project_manager(workspace),
             ),
+            server_root=workspace,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -441,7 +446,7 @@ phases:
         self, tmp_path: Path
     ) -> None:
         """No gates defined → only ✅ in response, no ⚠️ or ACTION REQUIRED (GAP-17/D10.3)."""
-        st3_config = tmp_path / ".st3" / "config"
+        st3_config = tmp_path / ".phase-gate" / "config"
         st3_config.mkdir(parents=True)
         (st3_config / "workphases.yaml").write_text(
             """
@@ -468,6 +473,7 @@ phases:
                 tmp_path,
                 project_manager=make_project_manager(tmp_path),
             ),
+            server_root=tmp_path,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,

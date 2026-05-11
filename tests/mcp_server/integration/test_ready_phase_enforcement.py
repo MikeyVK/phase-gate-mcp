@@ -44,11 +44,11 @@ from mcp_server.tools.pr_tools import SubmitPRTool
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
-_STATE_JSON = ".st3/state.json"
+_STATE_JSON = ".phase-gate/state.json"
 
 
 def _write_state(tmp_path: Path, current_phase: str) -> None:
-    state_dir = tmp_path / ".st3"
+    state_dir = tmp_path / ".phase-gate"
     state_dir.mkdir(parents=True, exist_ok=True)
     (state_dir / "state.json").write_text(
         json.dumps(
@@ -64,12 +64,13 @@ def _write_state(tmp_path: Path, current_phase: str) -> None:
 
 def _make_runner(tmp_path: Path) -> EnforcementRunner:
     """Build EnforcementRunner backed by the live enforcement.yaml."""
-    enforcement_yaml = _REPO_ROOT / ".st3" / "config" / "enforcement.yaml"
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".st3" / "config")
+    enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
+    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
     config = loader.load_enforcement_config(config_path=enforcement_yaml)
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        server_root=tmp_path / ".phase-gate",
     )
 
 

@@ -14,7 +14,6 @@ active_gates:
 
 artifact_logging:
   enabled: true
-  output_dir: "mcp_server/logs/qa_logs"
   max_files: 200
 
 project_scope:

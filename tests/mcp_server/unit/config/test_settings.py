@@ -16,7 +16,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Project modules
-from mcp_server.config.settings import Settings, _default_server_version
+from mcp_server.config.settings import (
+    ServerSettings,
+    Settings,
+    _default_server_version,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +33,7 @@ def mock_server_version() -> Iterator[None]:
 def test_default_settings() -> None:
     """Test that default settings are loaded correctly."""
     settings = Settings()
-    assert settings.server.name == "st3-workflow"
+    assert settings.server.name == "phase-gate-mcp"
     assert settings.server.version == "3.0.0"
     assert settings.logging.level == "INFO"
 
@@ -88,6 +92,75 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
         _default_server_version()
 
 
+# ---------------------------------------------------------------------------
+# C3 — server_root_dir field in ServerSettings (renamed from state_dir in C6)
+# ---------------------------------------------------------------------------
+
+
+def test_state_dir_default_is_phase_gate() -> None:
+    """C5 RED: ServerSettings server_root_dir default must be '.phase-gate'."""
+    s = ServerSettings()
+    assert s.server_root_dir == ".phase-gate"
+
+
+def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """C3 RED: MCP_SERVER_PROJECT_DIR env var must override server_root_dir."""
+    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".phase-gate")
+    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+    s = Settings.from_env()
+    assert s.server.server_root_dir == ".phase-gate"
+
+
+# ---------------------------------------------------------------------------
+# C6 — server_root_dir field rename (F13)
+# ---------------------------------------------------------------------------
+
+
+def test_server_root_dir_default_is_phase_gate() -> None:
+    """C6 RED: ServerSettings must expose server_root_dir (not state_dir)."""
+    s = ServerSettings()
+    assert s.server_root_dir == ".phase-gate"
+
+
+def test_server_root_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """C6 RED: MCP_SERVER_PROJECT_DIR env var must populate server_root_dir field."""
+    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".custom-root")
+    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+    s = Settings.from_env()
+    assert s.server.server_root_dir == ".custom-root"
+
+
+# ---------------------------------------------------------------------------
+# logs_dir field in ServerSettings
+# ---------------------------------------------------------------------------
+
+
+def test_logs_dir_default_is_logs() -> None:
+    """ServerSettings logs_dir default must be 'logs'."""
+    s = ServerSettings()
+    assert s.logs_dir == "logs"
+
+
+def test_logs_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """MCP_LOGS_DIR env var must override logs_dir field."""
+    monkeypatch.setenv("MCP_LOGS_DIR", "custom-logs")
+    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+    s = Settings.from_env()
+    assert s.server.logs_dir == "custom-logs"
+
+
 def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -97,7 +170,7 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     monkeypatch.setenv("MCP_CONFIG_PATH", str(missing_config))
     monkeypatch.setenv("MCP_SERVER_NAME", "env-server")
     monkeypatch.setenv("MCP_WORKSPACE_ROOT", str(tmp_path / "workspace"))
-    monkeypatch.setenv("MCP_CONFIG_ROOT", str(tmp_path / ".st3" / "config"))
+    monkeypatch.setenv("MCP_CONFIG_ROOT", str(tmp_path / ".phase-gate" / "config"))
     monkeypatch.setenv("GITHUB_OWNER", "example-owner")
     monkeypatch.setenv("GITHUB_REPO", "example-repo")
     monkeypatch.setenv("GITHUB_PROJECT_NUMBER", "42")
@@ -108,7 +181,7 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
 
     assert settings.server.name == "env-server"
     assert settings.server.workspace_root == str(tmp_path / "workspace")
-    assert settings.server.config_root == str(tmp_path / ".st3" / "config")
+    assert settings.server.config_root == str(tmp_path / ".phase-gate" / "config")
     assert settings.github.owner == "example-owner"
     assert settings.github.repo == "example-repo"
     assert settings.github.project_number == 42

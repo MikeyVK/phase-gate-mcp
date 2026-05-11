@@ -28,12 +28,12 @@ class StructuredFormatter(logging.Formatter):
         return json.dumps(log_data)
 
 
-def setup_logging(log_level: str = "INFO", audit_log: str = ".logs/mcp_audit.log") -> None:
+def setup_logging(log_level: str = "INFO", audit_log: str | None = None) -> None:
     """Configure logging.
 
     Args:
         log_level: Log level string (DEBUG, INFO, WARNING, ERROR). Defaults to "INFO".
-        audit_log: Path to audit log file. Defaults to ".logs/mcp_audit.log".
+        audit_log: Path to audit log file. When None, no file handler is added.
     """
     logger = logging.getLogger("mcp_server")
     logger.setLevel(log_level)

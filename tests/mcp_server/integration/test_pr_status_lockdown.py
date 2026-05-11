@@ -128,13 +128,14 @@ def _make_pr_reader(status: PRStatus) -> IPRStatusReader:
 
 def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
     """Build an EnforcementRunner with the live enforcement.yaml and a mocked PR reader."""
-    enforcement_yaml = _REPO_ROOT / ".st3" / "config" / "enforcement.yaml"
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".st3" / "config")
+    enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
+    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
     config = loader.load_enforcement_config(config_path=enforcement_yaml)
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
         pr_status_reader=_make_pr_reader(pr_status),
+        server_root=tmp_path,
     )
 
 

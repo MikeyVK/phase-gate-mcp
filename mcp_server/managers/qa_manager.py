@@ -73,6 +73,7 @@ class QAManager:
         self,
         workspace_root: Path | None = None,
         quality_config: QualityConfig | None = None,
+        logs_dir: Path | None = None,
         *,
         quality_state_repository: IQualityStateRepository,
         git_context_reader: IGitContextReader,
@@ -80,7 +81,7 @@ class QAManager:
     ) -> None:
         """Initialize QA Manager with injected quality configuration."""
         # Runtime configuration (lowercase for instance mutability)
-        self.qa_log_dir = self.QA_LOG_DIR
+        self.qa_log_dir = (logs_dir / "qa_logs") if logs_dir is not None else self.QA_LOG_DIR
         self.qa_log_enabled = self.QA_LOG_ENABLED
         self.qa_log_max_files = self.QA_LOG_MAX_FILES
         # Optional workspace root: used for baseline state persistence
@@ -100,7 +101,7 @@ class QAManager:
         Returns v2.0 JSON schema with version, mode, summary, and gates.
 
         Notes:
-            - Gate catalog and active gates are defined in `.st3/config/quality.yaml`.
+            - Gate catalog and active gates are defined in `config/quality.yaml`.
             - Each gate filters files by its configured `capabilities.file_types`.
             - Some gates (e.g., pytest) are repo-scoped and ignore file lists.
         """
@@ -140,11 +141,12 @@ class QAManager:
             return results
 
         python_files = list(existing_files)
-
         quality_config = self._require_quality_config()
         # Apply artifact logging config (config-first with safe defaults)
         self.qa_log_enabled = quality_config.artifact_logging.enabled
-        self.qa_log_dir = Path(quality_config.artifact_logging.output_dir)
+        if quality_config.artifact_logging.output_dir is not None:
+            self.qa_log_dir = Path(quality_config.artifact_logging.output_dir)
+        # else: keep injected logs_dir / "qa_logs" set in __init__
         self.qa_log_max_files = quality_config.artifact_logging.max_files
 
         if not quality_config.active_gates:
@@ -157,7 +159,7 @@ class QAManager:
                     "score": "N/A",
                     "issues": [
                         {
-                            "message": "No active_gates configured in .st3/config/quality.yaml",
+                            "message": "No active_gates configured in config/quality.yaml",
                         }
                     ],
                 },

@@ -33,7 +33,7 @@ def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
         mock_server.assert_not_called()
 
     captured = capsys.readouterr()
-    assert "ST3 Workflow MCP Server v3.0.0" in captured.out
+    assert "Phase-Gate MCP Server v3.0.0" in captured.out
 
 
 def test_cli_run() -> None:

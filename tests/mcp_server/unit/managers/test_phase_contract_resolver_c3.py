@@ -11,7 +11,7 @@ Unit tests for PhaseConfigContext contracts field rename (issue #271 C3)
     - PhaseConfigContext accepts contracts: ContractsConfig (field renamed)
     - PhaseConfigContext.phase_contracts field no longer exists
     - PhaseContractResolver resolves via contracts field
-    - _PHASE_CONTRACTS_DISPLAY_PATH constant equals '.st3/config/contracts.yaml'
+    - _PHASE_CONTRACTS_DISPLAY_PATH constant equals '.phase-gate/config/contracts.yaml'
 """
 
 # Standard library
@@ -34,7 +34,7 @@ def _minimal_contracts() -> ContractsConfig:
         merge_policy=MergePolicy(
             pr_allowed_phase="ready",
             branch_local_artifacts=[
-                BranchLocalArtifact(path=".st3/state.json", reason="branch-local")
+                BranchLocalArtifact(path=".phase-gate/state.json", reason="branch-local")
             ],
         ),
         workflows={
@@ -90,6 +90,6 @@ class TestPhaseContractResolverUsesContracts:
 
 class TestPhaseContractsDisplayPath:
     def test_display_path_equals_contracts_yaml(self) -> None:
-        """_PHASE_CONTRACTS_DISPLAY_PATH must equal '.st3/config/contracts.yaml'."""
+        """_PHASE_CONTRACTS_DISPLAY_PATH must equal 'config/contracts.yaml'."""
         module = importlib.import_module("mcp_server.managers.phase_contract_resolver")
-        assert module._PHASE_CONTRACTS_DISPLAY_PATH == ".st3/config/contracts.yaml"  # noqa: SLF001
+        assert module._PHASE_CONTRACTS_DISPLAY_PATH == "config/contracts.yaml"  # noqa: SLF001

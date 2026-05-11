@@ -25,11 +25,13 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import WorkflowConfig, WorkflowTemplate
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 
 def _load_workflow_config(config_path: Path | None = None) -> WorkflowConfig:
     if config_path is None:
-        return ConfigLoader(Path(".st3/config")).load_workflow_config()
-    return ConfigLoader(config_path.parent).load_workflow_config(config_path=config_path)
+        return ConfigLoader(_ST3_CONFIG).load_workflow_config()
+    return ConfigLoader(_ST3_CONFIG).load_workflow_config(config_path=config_path)
 
 
 @pytest.fixture
@@ -90,17 +92,16 @@ class TestWorkflowConfigLoading:
         assert "Config file not found" in error_msg
         assert "nonexistent.yaml" in error_msg
 
-    def test_load_default_path_missing(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_load_default_path_missing(self, tmp_path: Path) -> None:
         """Test loading with default path when file doesn't exist."""
-        monkeypatch.chdir(tmp_path)
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
 
         with pytest.raises(ConfigError) as exc_info:
-            _load_workflow_config()
+            ConfigLoader(config_dir).load_workflow_config()
 
         error_msg = str(exc_info.value)
-        assert ".st3/config/workflows.yaml" in error_msg or "workflows.yaml" in error_msg
+        assert ".phase-gate/config/workflows.yaml" in error_msg or "workflows.yaml" in error_msg
 
     def test_load_invalid_yaml(self, invalid_yaml: Path) -> None:
         """Test loading malformed YAML file."""

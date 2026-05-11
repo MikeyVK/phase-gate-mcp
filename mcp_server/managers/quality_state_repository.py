@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class FileQualityStateRepository:
     """Persist QualityState to a dedicated JSON file using AtomicJsonWriter.
 
-    Backing file: ``.st3/quality_state.json`` (separate from ``state.json``).
+    Backing file: ``quality_state.json`` under the state root.
     """
 
     def __init__(

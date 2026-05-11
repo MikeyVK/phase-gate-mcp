@@ -16,6 +16,8 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ContributorConfig
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 _EMPTY_CONTRIBUTORS_YAML = {"version": "1.0", "contributors": []}
 
 _POPULATED_CONTRIBUTORS_YAML = {
@@ -28,7 +30,7 @@ _POPULATED_CONTRIBUTORS_YAML = {
 
 
 def _load_contributor_config(config_path: Path) -> ContributorConfig:
-    return ConfigLoader(config_path.parent).load_contributor_config(config_path=config_path)
+    return ConfigLoader(_ST3_CONFIG).load_contributor_config(config_path=config_path)
 
 
 @pytest.fixture(name="empty_contributors_path")
@@ -81,7 +83,7 @@ class TestContributorConfigFromFile:
 
     def test_from_file_raises_on_missing_file(self) -> None:
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_contributor_config(Path(".st3/nonexistent_contributors.yaml"))
+            _load_contributor_config(Path(".phase-gate/nonexistent_contributors.yaml"))
 
     def test_repeated_loads_are_equivalent(self, empty_contributors_path: Path) -> None:
         cfg1 = _load_contributor_config(empty_contributors_path)

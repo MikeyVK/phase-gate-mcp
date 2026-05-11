@@ -26,6 +26,8 @@ from mcp_server.tools.label_tools import (
     RemoveLabelsTool,
 )
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 
 @pytest.fixture
 def mock_github_manager() -> MagicMock:
@@ -47,7 +49,7 @@ labels:
     yaml_file = tmp_path / "labels.yaml"
     yaml_file.write_text(yaml_content)
 
-    yield ConfigLoader(tmp_path).load_label_config(config_path=yaml_file)
+    yield ConfigLoader(_ST3_CONFIG).load_label_config(config_path=yaml_file)
 
 
 @pytest.mark.asyncio

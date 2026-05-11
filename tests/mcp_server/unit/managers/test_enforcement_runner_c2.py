@@ -50,6 +50,7 @@ def _make_runner(
         workspace_root=tmp_path,
         config=config,
         pr_status_reader=pr_status_reader,
+        server_root=tmp_path / ".phase-gate",
     )
 
 
@@ -137,6 +138,7 @@ class TestToolCategoryDispatch:
             workspace_root=tmp_path,
             config=config,
             registry={"check_phase_readiness": fake_handler},
+            server_root=tmp_path,
         )
 
         runner.run(
@@ -317,7 +319,7 @@ class TestCheckPhaseReadinessHandler:
     """check_phase_readiness action via runner.run() public API."""
 
     def _make_state(self, tmp_path: Path, phase: str) -> None:
-        state_dir = tmp_path / ".st3"
+        state_dir = tmp_path / ".phase-gate"
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text(f'{{"current_phase": "{phase}"}}', encoding="utf-8")
 
@@ -424,6 +426,7 @@ class TestColdStartWiring:
             workspace_root=tmp_path,
             config=config,
             pr_status_reader=cache,
+            server_root=tmp_path,
         )
 
         # Must not raise; github_manager.get_pr_status called on cache miss
@@ -455,6 +458,7 @@ class TestColdStartWiring:
             workspace_root=tmp_path,
             config=config,
             pr_status_reader=cache,
+            server_root=tmp_path,
         )
 
         with pytest.raises(ValidationError):

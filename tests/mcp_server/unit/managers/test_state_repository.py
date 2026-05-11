@@ -56,7 +56,7 @@ class TestFileStateRepository:
 
     def test_load_returns_branch_state(self, tmp_path: Path) -> None:
         """Loading from state.json should return a validated BranchState instance."""
-        state_file = tmp_path / ".st3" / "state.json"
+        state_file = tmp_path / ".phase-gate" / "state.json"
         state_file.parent.mkdir(parents=True)
         state_file.write_text(
             json.dumps(
@@ -85,7 +85,7 @@ class TestFileStateRepository:
 
     def test_save_persists_branch_state(self, tmp_path: Path) -> None:
         """Saving BranchState should write state.json through the shared atomic writer."""
-        state_file = tmp_path / ".st3" / "state.json"
+        state_file = tmp_path / ".phase-gate" / "state.json"
         repository = FileStateRepository(state_file=state_file)
         state = BranchState(
             branch="feature/257-reorder-workflow-phases",
@@ -155,7 +155,7 @@ class TestInMemoryStateRepository:
 
         loaded = repository.load("feature/257-reorder-workflow-phases")
         assert loaded.current_phase == "implementation"
-        assert not (tmp_path / ".st3" / "state.json").exists()
+        assert not (tmp_path / ".phase-gate" / "state.json").exists()
 
 
 class TestAtomicJsonWriter:
@@ -165,7 +165,7 @@ class TestAtomicJsonWriter:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Rename failure must not corrupt the original file contents."""
-        target = tmp_path / ".st3" / "state.json"
+        target = tmp_path / ".phase-gate" / "state.json"
         target.parent.mkdir(parents=True)
         target.write_text(json.dumps({"current_phase": "design"}), encoding="utf-8")
 
@@ -192,7 +192,7 @@ class TestStateRepositoryProtocols:
         self, tmp_path: Path
     ) -> None:
         """FileStateRepository should satisfy both read-only and read-write protocols."""
-        repository = FileStateRepository(state_file=tmp_path / ".st3" / "state.json")
+        repository = FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json")
 
         reader = cast(IStateReader, repository)
         writable = cast(IStateRepository, repository)
@@ -288,7 +288,7 @@ class TestBranchStateCurrentSubPhase:
 
     def test_branch_state_current_sub_phase_persists(self, tmp_path: Path) -> None:
         """FileStateRepository save+load must round-trip current_sub_phase='red'."""
-        state_file = tmp_path / ".st3" / "state.json"
+        state_file = tmp_path / ".phase-gate" / "state.json"
         repository = FileStateRepository(state_file=state_file)
         state = BranchState(
             branch="feature/298-test",
@@ -305,7 +305,7 @@ class TestBranchStateCurrentSubPhase:
 
     def test_branch_state_current_sub_phase_none_round_trips(self, tmp_path: Path) -> None:
         """FileStateRepository save+load must round-trip current_sub_phase=None."""
-        state_file = tmp_path / ".st3" / "state.json"
+        state_file = tmp_path / ".phase-gate" / "state.json"
         repository = FileStateRepository(state_file=state_file)
         state = BranchState(
             branch="feature/298-test",
@@ -324,7 +324,7 @@ class TestBranchStateCurrentSubPhase:
         self, tmp_path: Path
     ) -> None:
         """Existing state.json files without current_sub_phase must not raise ValidationError."""
-        state_file = tmp_path / ".st3" / "state.json"
+        state_file = tmp_path / ".phase-gate" / "state.json"
         state_file.parent.mkdir(parents=True)
         state_file.write_text(
             json.dumps(

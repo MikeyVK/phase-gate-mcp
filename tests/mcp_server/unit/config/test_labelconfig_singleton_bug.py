@@ -10,9 +10,11 @@ from pathlib import Path
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import LabelConfig
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 
 def _load_label_config(config_path: Path) -> LabelConfig:
-    return ConfigLoader(config_path.parent).load_label_config(config_path=config_path)
+    return ConfigLoader(_ST3_CONFIG).load_label_config(config_path=config_path)
 
 
 class TestLabelConfigReloadBehavior:

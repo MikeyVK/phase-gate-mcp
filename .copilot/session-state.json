@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-03-25T16:28:48.877526+00:00",
+  "active_role": "qa",
+  "last_user_goal": "86c1f6d8-c25a-4a39-8cf1-f0efefaaa5c5",
+  "files_in_scope": [
+    "docs/development/issue257/research.md",
+    ".phase-gate/workflows.yaml",
+    ".phase-gate/projects.json",
+    "docs/development/issue257/research_sections_config_architecture.md",
+    "docs/development/issue257/SESSIE_OVERDRACHT_QA_20260303.md",
+    "docs/development/issue257/SESSIE_OVERDRACHT_QA_20260304.md",
+    "tests/mcp_server/tools/test_admin_tools.py",
+    ".phase-gate/config/phase_deliverables.yaml",
+    "docs/development/issue257/research_config_first_pse.md",
+    "mcp_server/schemas/contexts/research.py",
+    "mcp_server/managers/phase_state_engine.py",
+    "mcp_server/managers/project_manager.py"
+  ],
+  "pending_handover_summary": "# .copilot/sub-role-requirements.yaml # Project-level sub-role requirements (overrides package default). # Edit this file to customise sub-role markers, headings, or cross-chat behaviour # for this specific workspace. # # Schema: roles.<role>.default_sub_role + roles.<role>.sub_roles.<name>.* # A...",
+  "handover_prompt_block": "",
+  "snapshot_source": "pre_compact_agent"
+}

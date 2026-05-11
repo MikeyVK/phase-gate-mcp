@@ -5,11 +5,11 @@ Template Registry for multi-tier template version management (Issue #72 Task 1.1
 Task 3.8: Registry storage format migrated from YAML to JSON.
 
 Responsibilities:
-- Load/save `.st3/template_registry.json`
+- Load/save ``template_registry.json`` under the state root
 - Track version hashes → tier chains
 - Detect hash collisions
 - Manage current versions per artifact type
-- One-time migration: if legacy `.st3/template_registry.yaml` exists and JSON is missing,
+- One-time migration: if legacy ``template_registry.yaml`` exists and JSON is missing,
   convert YAML→JSON and delete the YAML file.
 """
 
@@ -24,7 +24,7 @@ import yaml
 
 
 class TemplateRegistry:
-    """Read/write operations for `.st3/template_registry.json`.
+    """Read/write operations for ``template_registry.json`` under the state root.
 
     Notes:
     - Internal representation matches persisted schema keys exactly.
@@ -32,7 +32,12 @@ class TemplateRegistry:
       `template_registry.yaml` exists, it will be converted to JSON and removed.
     """
 
-    def __init__(self, registry_path: Path = Path(".st3/template_registry.json")) -> None:
+    def __init__(self, registry_path: Path | None = None) -> None:
+        if registry_path is None:
+            raise ValueError(
+                "TemplateRegistry requires an explicit registry_path. "
+                "Pass server_root / 'template_registry.json' from the caller."
+            )
         self.registry_path = registry_path
         self._data: dict[str, Any] = self._load()
 

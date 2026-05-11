@@ -109,7 +109,7 @@ class TestStateReconstructor:
             workspace_root,
             project_manager=project_manager,
         )
-        deliverables_file = workspace_root / ".st3" / "deliverables.json"
+        deliverables_file = workspace_root / ".phase-gate" / "deliverables.json"
         if deliverables_file.exists():
             deliverables_file.unlink()
 

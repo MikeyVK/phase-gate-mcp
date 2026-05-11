@@ -82,13 +82,13 @@ class TestToolErrorHandlerC4:
 
         @tool_error_handler
         async def failing_tool() -> ToolResult:
-            raise ConfigError("Invalid YAML", file_path=".st3/config/git.yaml")
+            raise ConfigError("Invalid YAML", file_path=".phase-gate/config/git.yaml")
 
         result = await failing_tool()
 
         assert result.is_error
         assert result.error_code == "ERR_CONFIG"
-        assert result.file_path == ".st3/config/git.yaml"
+        assert result.file_path == ".phase-gate/config/git.yaml"
         assert "Invalid YAML" in result.content[0]["text"]
 
     @pytest.mark.asyncio

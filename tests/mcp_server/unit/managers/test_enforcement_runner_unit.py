@@ -24,8 +24,8 @@ from mcp_server.core.operation_notes import ExclusionNote, NoteContext
 from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
 from mcp_server.tools.tool_result import ToolResult
 
-_STATE_JSON = ".st3/state.json"
-_DELIVERABLES_JSON = ".st3/deliverables.json"
+_STATE_JSON = ".phase-gate/state.json"
+_DELIVERABLES_JSON = ".phase-gate/deliverables.json"
 
 
 class TestGitCommitToolC3:

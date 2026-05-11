@@ -1,7 +1,7 @@
 """
 Unit tests for scaffold metadata configuration models.
 
-Tests the Pydantic models that load and validate .st3/scaffold_metadata.yaml.
+Tests the Pydantic models that load and validate .phase-gate/scaffold_metadata.yaml.
 Following TDD: These tests are written BEFORE implementation (RED phase).
 
 @layer: Tests (Unit)
@@ -17,9 +17,11 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import CommentPattern, MetadataField, ScaffoldMetadataConfig
 from mcp_server.core.exceptions import ConfigError
 
+_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+
 
 def _load_scaffold_metadata_config(config_file: Path) -> ScaffoldMetadataConfig:
-    return ConfigLoader(config_file.parent).load_scaffold_metadata_config(config_path=config_file)
+    return ConfigLoader(_ST3_CONFIG).load_scaffold_metadata_config(config_path=config_file)
 
 
 class TestCommentPattern:

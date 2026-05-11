@@ -22,7 +22,7 @@ def _make_manager() -> tuple[GitManager, MagicMock]:
     mock_adapter = MagicMock()
     mock_adapter.commit.return_value = "def5678"
 
-    loader = ConfigLoader(Path(".st3/config"))
+    loader = ConfigLoader(Path(".phase-gate/config"))
     git_config = loader.load_git_config()
     workphases_config = loader.load_workphases_config()
     manager = GitManager(
@@ -38,7 +38,7 @@ class TestGitManagerSkipPaths:
         """commit_with_scope() forwards skip_paths to GitAdapter.commit()."""
         manager, mock_adapter = _make_manager()
 
-        skip = frozenset({".st3/state.json"})
+        skip = frozenset({".phase-gate/state.json"})
 
         manager.commit_with_scope(
             workflow_phase="implementation",

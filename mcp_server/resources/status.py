@@ -11,13 +11,13 @@ from mcp_server.resources.base import BaseResource
 class StatusResource(BaseResource):
     """Resource for project status."""
 
-    uri_pattern = "st3://status/phase"
+    uri_pattern = "pgmcp://status/phase"
     description = "Current development phase and git status"
 
     def __init__(self, git_adapter: GitAdapter | None = None) -> None:
         self.git = git_adapter or GitAdapter()
 
-    async def read(self, _uri: str) -> str:
+    async def read(self, uri: str) -> str:  # noqa: ARG002
         """Read status."""
         try:
             git_status = self.git.get_status()

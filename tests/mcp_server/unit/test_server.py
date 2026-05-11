@@ -32,7 +32,7 @@ from tests.mcp_server.test_support import make_phase_state_engine, make_project_
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
-    shutil.copytree(repo_root / ".st3", workspace_root / ".st3", dirs_exist_ok=True)
+    shutil.copytree(repo_root / ".phase-gate", workspace_root / ".phase-gate", dirs_exist_ok=True)
 
 
 def _patch_server_settings(
@@ -42,10 +42,11 @@ def _patch_server_settings(
 ) -> None:
     """Configure a Settings class mock for server tests."""
     resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[3])
-    resolved_config_root = str(Path(resolved_workspace_root) / ".st3")
+    resolved_config_root = str(Path(resolved_workspace_root) / ".phase-gate")
     mock.from_env.return_value.server.name = "test-server"
     mock.from_env.return_value.server.workspace_root = resolved_workspace_root
     mock.from_env.return_value.server.config_root = resolved_config_root
+    mock.from_env.return_value.server.server_root_dir = ".phase-gate"
     mock.from_env.return_value.github.token = token
     mock.from_env.return_value.github.owner = "test"
     mock.from_env.return_value.github.repo = "repo"
@@ -54,7 +55,7 @@ def _patch_server_settings(
 
 
 def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
-    state_file = workspace_root / ".st3" / "state.json"
+    state_file = workspace_root / ".phase-gate" / "state.json"
     state_file.parent.mkdir(parents=True, exist_ok=True)
     state_file.write_text(
         json.dumps(
@@ -91,12 +92,12 @@ def _run_git(workspace_root: Path, *args: str) -> None:
 
 
 def _track_branch_local_artifacts(workspace_root: Path) -> None:
-    deliverables_file = workspace_root / ".st3" / "deliverables.json"
+    deliverables_file = workspace_root / ".phase-gate" / "deliverables.json"
     if not deliverables_file.exists():
         deliverables_file.write_text("{}\n", encoding="utf-8")
 
     _run_git(workspace_root, "init")
-    _run_git(workspace_root, "add", ".st3/state.json", ".st3/deliverables.json")
+    _run_git(workspace_root, "add", ".phase-gate/state.json", ".phase-gate/deliverables.json")
 
 
 def _make_submit_pr_request() -> CallToolRequest:
@@ -214,7 +215,7 @@ class TestServerToolRegistration:
         tmp_path: Path,
     ) -> None:
         """Dispatch pre-hook should block invalid branch creation before tool execution."""
-        config_dir = tmp_path / ".st3" / "config"
+        config_dir = tmp_path / ".phase-gate" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "enforcement.yaml").write_text(
             """
@@ -332,8 +333,8 @@ class TestServerToolRegistration:
         text = "\n".join(c.text for c in response.root.content if hasattr(c, "text"))
         assert response.root.isError is True
         assert "Branch-local artifacts have a net delta against" in text
-        assert ".st3/state.json" in text
-        assert ".st3/deliverables.json" in text
+        assert ".phase-gate/state.json" in text
+        assert ".phase-gate/deliverables.json" in text
         assert "neutralize" in text
         mock_create_pr.assert_not_called()
 
@@ -375,6 +376,7 @@ class TestServerToolRegistration:
                     workspace_root=tmp_path,
                     project_manager=project_manager,
                     state_engine=state_engine,
+                    server_root=tmp_path / ".phase-gate",
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -422,6 +424,7 @@ class TestServerToolRegistration:
                     workspace_root=tmp_path,
                     project_manager=server.project_manager,
                     state_engine=server.phase_state_engine,
+                    server_root=tmp_path / ".phase-gate",
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]

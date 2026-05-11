@@ -52,6 +52,7 @@ class TestTransitionPhaseTool:
             workspace_root=workspace_root,
             project_manager=project_manager,
             state_engine=state_engine,
+            server_root=workspace_root,
         )
 
     @pytest.fixture

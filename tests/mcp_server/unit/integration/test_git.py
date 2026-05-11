@@ -26,7 +26,7 @@ def _mock_git_adapter_fixture() -> Mock:
 
 @pytest.fixture(name="git_config")
 def _git_config_fixture() -> GitConfig:
-    return ConfigLoader(Path(".st3/config")).load_git_config()
+    return ConfigLoader(Path(".phase-gate/config")).load_git_config()
 
 
 def test_git_manager_create_branch_valid(mock_git_adapter: Mock, git_config: GitConfig) -> None:
@@ -71,7 +71,7 @@ def test_git_manager_invalid_name(mock_git_adapter: Mock, git_config: GitConfig)
 
 def test_git_manager_commit_tdd(mock_git_adapter: Mock, git_config: GitConfig) -> None:
     """Test implementation-phase commit through workflow scope."""
-    workphases_config = ConfigLoader(Path(".st3/config")).load_workphases_config()
+    workphases_config = ConfigLoader(Path(".phase-gate/config")).load_workphases_config()
     manager = GitManager(
         git_config=git_config, adapter=mock_git_adapter, workphases_config=workphases_config
     )

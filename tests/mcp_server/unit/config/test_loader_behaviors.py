@@ -60,16 +60,21 @@ def _minimal_artifact_registry() -> ArtifactRegistryConfig:
 
 def test_normalize_config_root_handles_workspace_and_st3_paths(tmp_path: Path) -> None:
     workspace_root = tmp_path / "workspace"
-    config_root = workspace_root / ".st3" / "config"
+    config_root = workspace_root / ".phase-gate" / "config"
 
-    assert normalize_config_root(workspace_root) == config_root.resolve()
-    assert normalize_config_root(workspace_root / ".st3") == config_root.resolve()
+    # C3: normalize_config_root is a simple resolver — it always returns Path(...).resolve().
+    # Any path is accepted without disk probes or heuristics.
+    assert normalize_config_root(workspace_root) == workspace_root.resolve()
+    assert (
+        normalize_config_root(workspace_root / ".phase-gate")
+        == (workspace_root / ".phase-gate").resolve()
+    )
     assert normalize_config_root(config_root) == config_root.resolve()
 
 
 def test_resolve_config_root_uses_preferred_workspace_root(tmp_path: Path) -> None:
     workspace_root = tmp_path / "workspace"
-    config_root = workspace_root / ".st3" / "config"
+    config_root = workspace_root / ".phase-gate" / "config"
     _write_yaml(config_root / "git.yaml", "branch_types: []\n")
 
     assert (
@@ -84,7 +89,7 @@ def test_resolve_config_root_uses_preferred_workspace_root(tmp_path: Path) -> No
 def test_resolve_config_root_returns_explicit_root_when_required_files_exist(
     tmp_path: Path,
 ) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     _write_yaml(config_root / "workflows.yaml", "version: '1.0'\nworkflows: {}\n")
 
     assert (
@@ -99,7 +104,7 @@ def test_resolve_config_root_returns_explicit_root_when_required_files_exist(
 def test_resolve_config_root_raises_for_missing_required_file_in_explicit_root(
     tmp_path: Path,
 ) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     config_root.mkdir(parents=True)
 
     with pytest.raises(FileNotFoundError, match="missing required files"):
@@ -110,20 +115,20 @@ def test_resolve_config_root_raises_for_missing_required_file_in_explicit_root(
 
 
 def test_resolve_config_root_raises_for_nonexistent_explicit_root(tmp_path: Path) -> None:
-    missing_root = tmp_path / ".st3" / "config"
+    missing_root = tmp_path / ".phase-gate" / "config"
 
     with pytest.raises(FileNotFoundError, match="does not exist"):
         resolve_config_root(explicit_root=missing_root)
 
 
 def test_load_enforcement_config_allows_missing_file(tmp_path: Path) -> None:
-    loader = ConfigLoader(tmp_path / ".st3" / "config")
+    loader = ConfigLoader(tmp_path / ".phase-gate" / "config")
 
     assert loader.load_enforcement_config().enforcement == []
 
 
 def test_load_artifact_registry_rejects_empty_yaml(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     artifacts_path = _write_yaml(config_root / "artifacts.yaml", "")
     loader = ConfigLoader(config_root)
 
@@ -132,7 +137,7 @@ def test_load_artifact_registry_rejects_empty_yaml(tmp_path: Path) -> None:
 
 
 def test_load_artifact_registry_rejects_non_mapping_root(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     artifacts_path = _write_yaml(config_root / "artifacts.yaml", "- dto\n")
     loader = ConfigLoader(config_root)
 
@@ -141,7 +146,7 @@ def test_load_artifact_registry_rejects_non_mapping_root(tmp_path: Path) -> None
 
 
 def test_load_operation_policies_uses_workflow_loader_fallback(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     _write_yaml(
         config_root / "workflows.yaml",
         """
@@ -177,7 +182,7 @@ operations:
 
 
 def test_load_operation_policies_requires_operations_key(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     policies_path = _write_yaml(config_root / "policies.yaml", "version: '1.0'\n")
     loader = ConfigLoader(config_root)
 
@@ -186,7 +191,7 @@ def test_load_operation_policies_requires_operations_key(tmp_path: Path) -> None
 
 
 def test_load_project_structure_uses_registry_loader_fallback(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     _write_yaml(
         config_root / "artifacts.yaml",
         """
@@ -229,7 +234,7 @@ directories:
 
 
 def test_load_project_structure_requires_directories_key(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     structure_path = _write_yaml(config_root / "project_structure.yaml", "version: '1.0'\n")
     loader = ConfigLoader(config_root)
 
@@ -238,7 +243,7 @@ def test_load_project_structure_requires_directories_key(tmp_path: Path) -> None
 
 
 def test_load_project_structure_rejects_unknown_artifact_type(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
@@ -262,7 +267,7 @@ directories:
 
 
 def test_load_project_structure_rejects_unknown_parent_reference(tmp_path: Path) -> None:
-    config_root = tmp_path / ".st3" / "config"
+    config_root = tmp_path / ".phase-gate" / "config"
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
@@ -289,3 +294,17 @@ directories:
             config_path=structure_path,
             artifact_registry=_minimal_artifact_registry(),
         )
+
+
+# ---------------------------------------------------------------------------
+# C3 — normalize_config_root: hidden-dir heuristic removed
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_config_root_c3_returns_resolved_path_without_disk_probe(
+    tmp_path: Path,
+) -> None:
+    """C3: normalize_config_root is a pure resolver — no disk access, no heuristics."""
+    hidden_dir = tmp_path / ".some-server"
+    # The directory does NOT exist on disk — normalize_config_root must still succeed.
+    assert normalize_config_root(hidden_dir) == hidden_dir.resolve()

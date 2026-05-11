@@ -14,7 +14,7 @@ with audit trail.
     - Execute standard sequential transitions
     - Execute forced non-sequential transitions with skip_reason
     - Maintain transition history with forced flag audit
-    - Persist state to .st3/state.json
+    - Persist state to state.json
 """
 
 # Standard library
@@ -84,10 +84,11 @@ class PhaseStateEngine:
         workflow_gate_runner: IWorkflowGateRunner,
         state_reconstructor: IStateReconstructor,
         workflow_state_mutator: IWorkflowStateMutator,
+        server_root: Path,
     ) -> None:
         """Initialize PhaseStateEngine."""
-        workspace_path = Path(workspace_root)
-        self.state_file = workspace_path / ".st3" / "state.json"
+        self.state_path = server_root / "state.json"
+        self._workspace_root = Path(workspace_root)
         self.project_manager = project_manager
 
         self._contracts_config = contracts_config
@@ -445,7 +446,7 @@ class PhaseStateEngine:
 
     def _has_uncommitted_state_changes(self) -> bool:
         """Check whether tracked state.json has local git changes."""
-        if not self.state_file.exists():
+        if not self.state_path.exists():
             return False
 
         try:
@@ -455,7 +456,13 @@ class PhaseStateEngine:
             env.setdefault("PAGER", "cat")
 
             result = subprocess.run(
-                ["git", "status", "--porcelain", "--", ".st3/state.json"],
+                [
+                    "git",
+                    "status",
+                    "--porcelain",
+                    "--",
+                    str(self.state_path.relative_to(self._workspace_root_path())),
+                ],
                 cwd=self._workspace_root_path(),
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
@@ -667,7 +674,7 @@ class PhaseStateEngine:
 
     def _workspace_root_path(self) -> Path:
         """Return the workspace root derived from the tracked state file location."""
-        return self.state_file.parent.parent
+        return self._workspace_root
 
     def on_enter_cycle_based_phase(self, branch: str, issue_number: int) -> None:
         """Hook called when entering implementation phase.

@@ -5,10 +5,11 @@ RED phase: Tests that scaffold_artifact() integrates with TemplateRegistry:
 - Computes version_hash before rendering
 - Calls registry.save_version() with tier chain
 - Injects version_hash into template context
-- Creates .st3/template_registry.yaml if not exists
+- Creates .phase-gate/template_registry.yaml if not exists
 
 @layer: Tests (Unit)
-@dependencies: pytest, mcp_server.managers.artifact_manager, mcp_server.scaffolding.template_registry
+@dependencies: pytest, mcp_server.managers.artifact_manager,
+    mcp_server.scaffolding.template_registry
 """
 
 from pathlib import Path
@@ -64,6 +65,7 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             # Inject mock_registry into manager
@@ -110,6 +112,7 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             await manager.scaffold_artifact(
@@ -157,6 +160,7 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             await manager.scaffold_artifact(
@@ -173,7 +177,7 @@ class TestArtifactManagerRegistryIntegration:
 
     @pytest.mark.asyncio
     async def test_registry_yaml_created_if_not_exists(self) -> None:
-        """Should create .st3/template_registry.yaml on first scaffold operation.
+        """Should create .phase-gate/template_registry.yaml on first scaffold operation.
 
         REQUIREMENT: Registry file should be auto-created, not require manual setup.
         """
@@ -204,12 +208,13 @@ class TestArtifactManagerRegistryIntegration:
                 registry=mock_config_registry,
                 fs_adapter=mock_fs_adapter,
                 validation_service=mock_validation_service,
+                server_root=Path("."),
             )
 
             await manager.scaffold_artifact(
                 "dto", output_path="test_scaffold_output.py", name="Test", fields=[]
             )
 
-        # REQUIREMENT: .st3/template_registry.yaml should exist after scaffolding
+        # REQUIREMENT: .phase-gate/template_registry.yaml should exist after scaffolding
         # Currently FAILS - registry not integrated
         # After Task 1.1c fix, verify file creation via TemplateRegistry._persist()
