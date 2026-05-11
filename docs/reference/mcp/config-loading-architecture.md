@@ -40,14 +40,14 @@ flowchart TD
 **Module:** `mcp_server/config/loader.py`
 
 A helper that normalises any path variant to its config subdirectory form using the
-**default `.st3/config` convention**. Not called when `MCP_CONFIG_ROOT` is set — in
+**default `.phase-gate/config` convention**. Not called when `MCP_CONFIG_ROOT` is set — in
 that case `resolve_config_root` uses the explicit path directly.
 
 | Input form | Output (default convention) |
 |------------|-----------------------------|
-| `<workspace>` | `<workspace>/.st3/config` |
-| `<workspace>/.st3` | `<workspace>/.st3/config` |
-| `<workspace>/.st3/config` | unchanged |
+| `<workspace>` | `<workspace>/.phase-gate/config` |
+| `<workspace>/.phase-gate` | `<workspace>/.phase-gate/config` |
+| `<workspace>/.phase-gate/config` | unchanged |
 
 ---
 
@@ -185,13 +185,14 @@ classDiagram
     }
     class ServerSettings {
         +name: str
-        +version: str
         +workspace_root: str
+        +server_root_dir: str
+        +logs_dir: str
         +config_root: str | None
     }
     class LogSettings {
         +level: str
-        +audit_log: str
+        +audit_log: str | None
     }
     class GitHubSettings {
         +owner: str
@@ -207,7 +208,10 @@ classDiagram
 |----------------------|---------|---------|
 | `GITHUB_TOKEN` | `settings.github.token` | `None` — GitHub tools disabled |
 | `MCP_WORKSPACE_ROOT` | `settings.server.workspace_root` | `os.getcwd()` |
+| `MCP_SERVER_PROJECT_DIR` | `settings.server.server_root_dir` | `".phase-gate"` |
+| `MCP_LOGS_DIR` | `settings.server.logs_dir` | `"logs"` |
 | `MCP_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
+| `MCP_SERVER_NAME` | `settings.server.name` | `"mcp-workflow"` |
 | `LOG_LEVEL` | `settings.logging.level` | `"INFO"` |
 
 ---

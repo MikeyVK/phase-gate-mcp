@@ -2,9 +2,9 @@
   "branch": "feature/260-remove-st3-references",
   "issue_number": 260,
   "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 2,
-  "last_cycle": 1,
+  "current_phase": "documentation",
+  "current_cycle": null,
+  "last_cycle": 2,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -99,6 +99,22 @@
       "human_approval": "User approved on 2026-05-11",
       "forced": true,
       "skip_reason": "Branch checked out from remote, prior phases completed on other machine"
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-11T09:48:56.859117+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-11T11:27:46.828825+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

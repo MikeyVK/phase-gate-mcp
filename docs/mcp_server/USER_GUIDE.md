@@ -26,26 +26,26 @@ pip install -e "./mcp_server[dev]"
 The server is configured via a YAML file (`mcp_config.yaml`) or environment variables.
 
 ### 3.1 Environment Variables
-
 | Variable | Description | Default |
-|----------|-------------|---------|
+|----------|-------------|-------|
 | `GITHUB_TOKEN` | GitHub Personal Access Token (required for GitHub integration) | None |
-| `MCP_LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
+| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
+| `MCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.phase-gate` |
+| `MCP_LOGS_DIR` | Sub-directory under server_root for log files | `logs` |
 | `MCP_CONFIG_PATH` | Path to configuration file | `mcp_config.yaml` |
-
 ### 3.2 Configuration File (`mcp_config.yaml`)
 
 Example configuration:
 
 ```yaml
 server:
-  name: "st3-workflow"
-  version: "1.0.0"
+  name: "mcp-workflow"
   workspace_root: "."
 
 logging:
   level: "INFO"
-  audit_log: "logs/mcp_audit.log"
+  # audit_log is auto-derived as <server_root>/<logs_dir>/mcp_audit.log
+  # (default: .phase-gate/logs/mcp_audit.log)
 
 github:
   owner: "MikeyVK"
