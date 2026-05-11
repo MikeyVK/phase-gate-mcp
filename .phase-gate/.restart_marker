@@ -1,6 +1,6 @@
 {
-  "timestamp": 1778495850.383655,
-  "pid": 42900,
-  "reason": "code changes",
-  "iso_time": "2026-05-11T10:37:30.383655+00:00"
+  "timestamp": 1778529725.313085,
+  "pid": 1296,
+  "reason": "phase transition to validation \u2014 reload state",
+  "iso_time": "2026-05-11T20:02:05.313085+00:00"
 }
