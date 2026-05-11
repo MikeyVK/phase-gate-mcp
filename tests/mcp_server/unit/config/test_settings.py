@@ -96,11 +96,10 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
 # C3 — state_dir field in ServerSettings
 # ---------------------------------------------------------------------------
 
-
-def test_state_dir_default_is_st3() -> None:
-    """C3 RED: ServerSettings must expose state_dir with default '.st3'."""
+def test_state_dir_default_is_phase_gate() -> None:
+    """C5 RED: ServerSettings state_dir default must be '.phase-gate'."""
     s = ServerSettings()
-    assert s.state_dir == ".st3"
+    assert s.state_dir == ".phase-gate"
 
 
 def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:

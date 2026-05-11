@@ -126,13 +126,13 @@ class TestProjectStructureConfig:
         assert poc.allowed_extensions == []
 
     def test_config_directories(self) -> None:
-        """Test .st3 config directory policy."""
+        """Test .phase-gate config directory policy."""
         config = _load_project_structure()
-        st3 = config.directories[".st3"]
-        assert st3.parent is None
-        assert st3.allowed_component_types == []
-        assert ".yaml" in st3.allowed_extensions
-        assert ".yml" in st3.allowed_extensions
+        phase_gate = config.directories[".phase-gate"]
+        assert phase_gate.parent is None
+        assert phase_gate.allowed_component_types == []
+        assert ".yaml" in phase_gate.allowed_extensions
+        assert ".yml" in phase_gate.allowed_extensions
 
     def test_directory_policy_allowed_component_types_alias(self) -> None:
         """allowed_component_types should mirror allowed_artifact_types."""
