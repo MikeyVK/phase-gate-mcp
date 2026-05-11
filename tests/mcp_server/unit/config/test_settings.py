@@ -138,7 +138,6 @@ def test_server_root_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert s.server.server_root_dir == ".custom-root"
 
 
-
 def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

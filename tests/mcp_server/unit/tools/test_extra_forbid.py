@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
@@ -9,7 +11,6 @@ from mcp_server.tools.git_analysis_tools import GitDiffInput, GitListBranchesInp
 from mcp_server.tools.git_fetch_tool import GitFetchInput
 from mcp_server.tools.git_pull_tool import GitPullInput
 from mcp_server.tools.git_tools import (
-    CreateBranchInput,
     GetParentBranchInput,
     GitCheckoutInput,
     GitDeleteBranchInput,
@@ -22,7 +23,6 @@ from mcp_server.tools.git_tools import (
 from mcp_server.tools.health_tools import HealthCheckInput
 from mcp_server.tools.issue_tools import (
     CloseIssueInput,
-    CreateIssueInput,
     GetIssueInput,
     ListIssuesInput,
     UpdateIssueInput,
@@ -44,12 +44,11 @@ from mcp_server.tools.phase_tools import ForcePhaseTransitionInput, TransitionPh
 from mcp_server.tools.pr_tools import ListPRsInput, MergePRInput, SubmitPRInput
 from mcp_server.tools.project_tools import (
     GetProjectPlanInput,
-    InitializeProjectInput,
     SavePlanningDeliverablesInput,
     UpdatePlanningDeliverablesInput,
 )
 from mcp_server.tools.quality_tools import RunQualityGatesInput
-from mcp_server.tools.safe_edit_tool import InsertLine, LineEdit, SafeEditInput
+from mcp_server.tools.safe_edit_tool import LineEdit, SafeEditInput
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
 from mcp_server.tools.template_validation_tool import TemplateValidationInput
 from mcp_server.tools.test_tools import RunTestsInput
@@ -68,7 +67,10 @@ class TestExtraForbidOnAllInputModels:
             (CreateFileInput, {"path": "/tmp/f.py", "content": "x = 1\n"}),
             # cycle
             (TransitionCycleInput, {"to_cycle": 2}),
-            (ForceCycleTransitionInput, {"to_cycle": 2, "skip_reason": "r", "human_approval": "ok"}),
+            (
+                ForceCycleTransitionInput,
+                {"to_cycle": 2, "skip_reason": "r", "human_approval": "ok"},
+            ),
             # discovery
             (SearchDocumentationInput, {"query": "test"}),
             (GetWorkContextInput, {}),
@@ -108,14 +110,28 @@ class TestExtraForbidOnAllInputModels:
             (CloseMilestoneInput, {"milestone_number": 1}),
             # phase
             (TransitionPhaseInput, {"branch": "feature/1-x", "to_phase": "implementation"}),
-            (ForcePhaseTransitionInput, {"branch": "feature/1-x", "to_phase": "implementation", "skip_reason": "r", "human_approval": "ok"}),
+            (
+                ForcePhaseTransitionInput,
+                {
+                    "branch": "feature/1-x",
+                    "to_phase": "implementation",
+                    "skip_reason": "r",
+                    "human_approval": "ok",
+                },
+            ),
             # pr
             (ListPRsInput, {}),
             (MergePRInput, {"pr_number": 1}),
             (SubmitPRInput, {"head": "feature/1-x", "title": "PR", "body": "desc"}),
             # project
             (GetProjectPlanInput, {"issue_number": 1}),
-            (SavePlanningDeliverablesInput, {"issue_number": 1, "planning_deliverables": {"tdd_cycles": {"total": 1}, "cycles": []}}),
+            (
+                SavePlanningDeliverablesInput,
+                {
+                    "issue_number": 1,
+                    "planning_deliverables": {"tdd_cycles": {"total": 1}, "cycles": []},
+                },
+            ),
             (UpdatePlanningDeliverablesInput, {"issue_number": 1, "planning_deliverables": {}}),
             # quality
             (RunQualityGatesInput, {}),
@@ -130,7 +146,9 @@ class TestExtraForbidOnAllInputModels:
             (ValidateDTOInput, {"file_path": "/tmp/f.py"}),
         ],
     )
-    def test_extra_field_raises_validation_error(self, model_class, valid_kwargs):
+    def test_extra_field_raises_validation_error(
+        self, model_class: type[Any], valid_kwargs: dict[str, Any]
+    ) -> None:
         """Extra field raises ValidationError with extra="forbid"."""
 
         # Valid input should work
@@ -140,9 +158,11 @@ class TestExtraForbidOnAllInputModels:
         with pytest.raises(ValidationError) as exc_info:
             model_class(**valid_kwargs, extra_field="should_fail")
 
-        assert "extra_field" in str(exc_info.value).lower() or "extra" in str(exc_info.value).lower()
+        assert (
+            "extra_field" in str(exc_info.value).lower() or "extra" in str(exc_info.value).lower()
+        )
 
-    def test_safe_edit_nested_extra_forbid(self):
+    def test_safe_edit_nested_extra_forbid(self) -> None:
         """Extra field inside LineEdit / InsertLine also raises."""
 
         SafeEditInput(
@@ -154,7 +174,12 @@ class TestExtraForbidOnAllInputModels:
             SafeEditInput(
                 path="/test.py",
                 line_edits=[
-                    {"start_line": 1, "end_line": 1, "new_content": "x = 1\n", "extra_in_nested": "fail"}
+                    {
+                        "start_line": 1,
+                        "end_line": 1,
+                        "new_content": "x = 1\n",
+                        "extra_in_nested": "fail",
+                    }
                 ],
             )
 
@@ -163,4 +188,3 @@ class TestExtraForbidOnAllInputModels:
                 path="/test.py",
                 insert_lines=[{"at_line": 1, "content": "x = 1\n", "extra_in_insert": "fail"}],
             )
-
