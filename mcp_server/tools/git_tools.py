@@ -320,12 +320,15 @@ class GitCommitTool(BranchMutatingTool):
     async def execute(self, params: GitCommitInput, context: NoteContext) -> ToolResult:
         workflow_phase = params.workflow_phase
         current_branch = self.manager.adapter.get_current_branch()
+        issue_number: int | None = None
 
         if workflow_phase is None:
             if self._state_engine is None:
                 raise ValueError("PhaseStateEngine must be injected for auto-detection")
             try:
-                workflow_phase = self._state_engine.get_current_phase(branch=current_branch)
+                state = self._state_engine.get_state(current_branch)
+                workflow_phase = state.current_phase
+                issue_number = state.issue_number
             except (FileNotFoundError, StateBranchMismatchError):
                 return ToolResult.error(
                     f"No state.json found for branch '{current_branch}'. "
@@ -337,6 +340,8 @@ class GitCommitTool(BranchMutatingTool):
                 "Auto-detected workflow_phase from state.json",
                 extra={"props": {"branch": current_branch, "workflow_phase": workflow_phase}},
             )
+        else:
+            issue_number = self.manager.git_config.extract_issue_number(current_branch)
 
         if workflow_phase == "implementation" and params.cycle_number is None:
             raise ValueError(
@@ -366,6 +371,7 @@ class GitCommitTool(BranchMutatingTool):
             commit_type=commit_type,
             files=params.files,
             skip_paths=frozenset(),
+            issue_number=issue_number,
         )
         ctx.produce(CommitNote(commit_hash=commit_hash))
         if self._state_engine is not None:
