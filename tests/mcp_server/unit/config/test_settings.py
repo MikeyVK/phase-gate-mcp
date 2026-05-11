@@ -104,8 +104,8 @@ def test_state_dir_default_is_phase_gate() -> None:
 
 
 def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """C3 RED: MCP_STATE_DIR env var must override server_root_dir."""
-    monkeypatch.setenv("MCP_STATE_DIR", ".phase-gate")
+    """C3 RED: MCP_SERVER_PROJECT_DIR env var must override server_root_dir."""
+    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".phase-gate")
     monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
     monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
     monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
@@ -127,8 +127,8 @@ def test_server_root_dir_default_is_phase_gate() -> None:
 
 
 def test_server_root_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """C6 RED: MCP_STATE_DIR env var must populate server_root_dir field."""
-    monkeypatch.setenv("MCP_STATE_DIR", ".custom-root")
+    """C6 RED: MCP_SERVER_PROJECT_DIR env var must populate server_root_dir field."""
+    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".custom-root")
     monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
     monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
     monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
@@ -136,6 +136,29 @@ def test_server_root_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
     s = Settings.from_env()
     assert s.server.server_root_dir == ".custom-root"
+
+
+# ---------------------------------------------------------------------------
+# logs_dir field in ServerSettings
+# ---------------------------------------------------------------------------
+
+
+def test_logs_dir_default_is_logs() -> None:
+    """ServerSettings logs_dir default must be 'logs'."""
+    s = ServerSettings()
+    assert s.logs_dir == "logs"
+
+
+def test_logs_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """MCP_LOGS_DIR env var must override logs_dir field."""
+    monkeypatch.setenv("MCP_LOGS_DIR", "custom-logs")
+    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+    s = Settings.from_env()
+    assert s.server.logs_dir == "custom-logs"
 
 
 def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(

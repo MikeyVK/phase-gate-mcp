@@ -58,8 +58,10 @@ directory name `.st3` is not configurable.
 | `mcp_server/tools/cycle_tools.py` | 129, 260 | `state.json` (two methods) |
 | `mcp_server/managers/artifact_manager.py` | 193, 355, 576 | `template_registry.json`, `.st3/temp` (×2) |
 | `mcp_server/tools/admin_tools.py` | 27 | `.restart_marker` (module-level constant, no workspace_root!) |
-| `mcp_server/utils/template_config.py` | 45 | `templates/` (CWD-relative, not workspace_root) |
-| `mcp_server/scaffolding/template_registry.py` | 35 | `template_registry.json` (default arg) |
+| `mcp_server/core/proxy.py` | 141 | `mcp_server/logs` (CWD-relative; not in server_root) — see F12 |
+| `mcp_server/managers/qa_manager.py` | 60 | `temp/qa_logs` (CWD-relative; not in server_root) — see F12 |
+| ~~`mcp_server/utils/template_config.py`~~ | ~~45~~ | ~~`templates/` (CWD-relative)~~ — **fixed pre-C2**: now uses `Path(__file__).parent.parent / "scaffolding/templates"` (package-relative) + `TEMPLATE_ROOT` env var override |
+| ~~`mcp_server/scaffolding/template_registry.py`~~ | ~~35~~ | ~~`template_registry.json` (default arg)~~ — **fixed pre-C2**: now raises `ValueError` if no `registry_path` provided |
 
 **Key insight:** `config_root` is already resolved in `server.py` via `resolve_config_root()`.
 `config_root.parent` IS the state root (currently `.st3/`). The derivation exists but is
@@ -362,23 +364,21 @@ runtime-configurable concept.
 
 ---
 
-### F12 — Two hardcoded log paths outside server_root injection scope
+### F12 — Two hardcoded log paths outside server_root injection scope ✅ RESOLVED
 
-Two log paths are not covered by the C2 injection pattern:
+Two log paths were not covered by the C2 injection pattern:
 
-| File | Line | Hardcoded path | Problem |
-|------|------|----------------|---------|
-| `mcp_server/core/proxy.py` | L141 | `Path("mcp_server/logs")` | CWD-relative; not in server_root |
-| `mcp_server/managers/qa_manager.py` | L60 | `Path("temp/qa_logs")` | CWD-relative; not in server_root |
+| File | Original hardcoded path | Resolution |
+|------|------------------------|------------|
+| `mcp_server/core/proxy.py` | `Path("mcp_server/logs")` (CWD-relative) | `self._logs_dir` derived from `Settings.from_env()` → `server_root / logs_dir` |
+| `mcp_server/managers/qa_manager.py` | `Path("temp/qa_logs")` (CWD-relative) | `logs_dir / "qa_logs"` via new constructor param `logs_dir: Path \| None` |
 
-These should use `server_root / "logs"` and `server_root / "temp" / "qa_logs"`
-respectively. However, fixing these requires the proxy and QA manager to receive
-`server_root` — which is a separate injection chain from the current C2 scope.
+**Resolved post-C6** (session 2026-05-11) as part of log centralization work:
+- `ServerSettings.logs_dir: str = "logs"` added (env: `MCP_LOGS_DIR`)
+- `server_root / logs_dir` is the canonical log directory for all runtime log output
+- `LogSettings.audit_log` default changed to `None`; `server.py` derives `server_root/logs/mcp_audit.log` as default
+- `MCP_STATE_DIR` env var renamed to `MCP_SERVER_PROJECT_DIR`
 
-**Action:** Defer to a separate issue. Note that the Template Workspace Initiative
-(F11) and the log path fix (F12) can be combined in the same issue once C3 is done.
-
----
 
 ## Minimal Change Set (implementation scope)
 

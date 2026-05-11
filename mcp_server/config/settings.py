@@ -41,7 +41,7 @@ class LogSettings(BaseModel):
     """Logging configuration settings."""
 
     level: str = "INFO"
-    audit_log: str = ".logs/mcp_audit.log"
+    audit_log: str | None = None
 
 
 class ServerSettings(BaseModel):
@@ -52,6 +52,7 @@ class ServerSettings(BaseModel):
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
     server_root_dir: str = ".phase-gate"
+    logs_dir: str = "logs"
 
 
 class GitHubSettings(BaseModel):
@@ -90,8 +91,10 @@ class Settings(BaseModel):
             server_data["name"] = env_name
         if env_workspace_root := os.environ.get("MCP_WORKSPACE_ROOT"):
             server_data["workspace_root"] = env_workspace_root
-        if env_state_dir := os.environ.get("MCP_STATE_DIR"):
-            server_data["server_root_dir"] = env_state_dir
+        if env_project_dir := os.environ.get("MCP_SERVER_PROJECT_DIR"):
+            server_data["server_root_dir"] = env_project_dir
+        if env_logs_dir := os.environ.get("MCP_LOGS_DIR"):
+            server_data["logs_dir"] = env_logs_dir
         if env_config_root := os.environ.get("MCP_CONFIG_ROOT"):
             server_data["config_root"] = env_config_root
 

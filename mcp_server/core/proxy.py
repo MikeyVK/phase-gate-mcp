@@ -42,6 +42,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from mcp_server.config.settings import Settings
+
 # RESTART_MARKER: Printed to stderr by server to signal restart request
 # Proxy detects this marker and triggers transparent server restart
 RESTART_MARKER = "__MCP_RESTART_REQUEST__"
@@ -129,6 +131,14 @@ class MCPProxy:
 
         self._server_started = threading.Event()
 
+        # Derive logs directory from settings (env-configurable)
+        _settings = Settings.from_env()
+        self._logs_dir = (
+            Path(_settings.server.workspace_root)
+            / _settings.server.server_root_dir
+            / _settings.server.logs_dir
+        )
+
     def audit_log(self, message: str, level: str = "INFO", **extra: Any) -> None:  # noqa: ANN401
         """Write structured log entry to mcp_audit.log.
 
@@ -138,7 +148,7 @@ class MCPProxy:
             **extra: Additional fields to include in log entry
         """
         try:
-            log_dir = Path("mcp_server/logs")
+            log_dir = self._logs_dir
             log_dir.mkdir(parents=True, exist_ok=True)
             audit_file = log_dir / "mcp_audit.log"
 

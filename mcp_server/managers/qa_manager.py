@@ -73,6 +73,7 @@ class QAManager:
         self,
         workspace_root: Path | None = None,
         quality_config: QualityConfig | None = None,
+        logs_dir: Path | None = None,
         *,
         quality_state_repository: IQualityStateRepository,
         git_context_reader: IGitContextReader,
@@ -80,7 +81,7 @@ class QAManager:
     ) -> None:
         """Initialize QA Manager with injected quality configuration."""
         # Runtime configuration (lowercase for instance mutability)
-        self.qa_log_dir = self.QA_LOG_DIR
+        self.qa_log_dir = (logs_dir / "qa_logs") if logs_dir is not None else self.QA_LOG_DIR
         self.qa_log_enabled = self.QA_LOG_ENABLED
         self.qa_log_max_files = self.QA_LOG_MAX_FILES
         # Optional workspace root: used for baseline state persistence

@@ -9,16 +9,13 @@
 
 | Cycle | Scope | Type | Status |
 |-------|-------|------|--------|
-| C1 | Delete dead stubs, move template_engine | ✅ Done (commit `fccfe74`) | Done |
+| C1 | Delete dead stubs, move template_engine | Structural | ✅ Done (commit `fccfe74`) |
 | C2 | `server_root` injection — eliminate inline `.st3` path construction + manager fallbacks | Structural | ✅ Done |
-| C3 | Chain inversion — `server_root` becomes primary, `settings.state_dir` added, `config_root` derived | Structural | ✅ Done |
+| C3 | Chain inversion — `server_root` primary, `settings.server_root_dir` added, `config_root` derived | Structural | ✅ Done |
 | C4 | URI scheme + server name rename (`st3://` → `pgmcp://`, `st3-workflow` → `mcp-workflow`) | Breaking | ✅ Done (commit `6df9847f`) |
 | C5 | Directory rename `.st3/` → `.phase-gate/` + YAML config + cosmetics | Rename | ✅ Done (commits `13ab7425`, `35df0b24`, `b17a7d29`) |
-| C6 | Naming cleanup: `state_dir` → `server_root_dir`; fix `standards.py` duplication; fix stale error messages; rename `state_file` → `state_path` | Cleanup | **Next** |
-
----
-
-## Cycle 2 — `server_root` Injection
+| C6 | Naming cleanup: `state_dir` → `server_root_dir`; fix `standards.py` duplication; fix stale error messages; rename `state_file` → `state_path` | Cleanup | ✅ Done (commit `bf213c09`) |
+| Post-C6 | Log centralization: `logs_dir` setting, audit_log under `server_root/logs/`, F12 resolved, `MCP_STATE_DIR` → `MCP_SERVER_PROJECT_DIR` | Extras | ✅ Done (2026-05-11) |
 
 ### Scope
 

@@ -31,11 +31,11 @@ dist/
 *.swo
 *~
 
-# Legacy/alternate log folder (runtime)
+# Logs - runtime output under server_root/logs/ (new location)
+.phase-gate/logs/
+# Legacy CWD-relative log locations (kept for backward compat with old installs)
 mcp_server/logs/
-# Logs
 .logs/
-mcp_server/logs/
 
 # Local configuration (machine-specific paths)
 mcp_config.yaml
@@ -74,7 +74,7 @@ Kraken_Trading_History/
 # Ephemeral artifacts temp files
 .phase-gate/temp/
 
-# QA artifact logs (Cycle 5)
+# QA artifact logs (legacy CWD-relative location, superseded by .phase-gate/logs/qa_logs/)
 temp/qa_logs/
 
 # Phase-Gate Workflow - Local debug artifacts

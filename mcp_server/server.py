@@ -134,8 +134,12 @@ class MCPServer:
         self._settings = settings
         server_name = settings.server.name
 
-        # Configure logging with values from settings
-        setup_logging(settings.logging.level, settings.logging.audit_log)
+        # Configure logging — derive audit log path from server_root/logs_dir
+        # (settings.logging.audit_log explicit override takes precedence)
+        _server_root_early = Path(settings.server.workspace_root) / settings.server.server_root_dir
+        _logs_dir_early = _server_root_early / settings.server.logs_dir
+        _audit_log = settings.logging.audit_log or str(_logs_dir_early / "mcp_audit.log")
+        setup_logging(settings.logging.level, _audit_log)
 
         # Log server startup
         lifecycle_logger.info("MCP server starting")
@@ -149,7 +153,7 @@ class MCPServer:
         # backward compatibility but is no longer used for path derivation here.
         server_root = workspace_root / settings.server.server_root_dir
         config_root = server_root / "config"
-
+        logs_dir = server_root / settings.server.logs_dir
         registry_path = server_root / "template_registry.json"
 
         # Bootstrap registry file if missing
@@ -254,6 +258,7 @@ class MCPServer:
         self.qa_manager = QAManager(
             workspace_root=workspace_root,
             quality_config=quality_config,
+            logs_dir=logs_dir,
             quality_state_repository=_quality_state_repository,
             git_context_reader=self.git_manager,
             state_reader=_branch_validated_reader,
