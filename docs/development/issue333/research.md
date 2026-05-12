@@ -504,14 +504,110 @@ injection.
 
 ---
 
-## Questions
+## Part 5 — Resolved Architecture Decision
 
-1. Should `tools` in `.agent.md` frontmatter enumerate all st3-workflow MCP tools
-   individually, or is the `st3-workflow/*` wildcard format sufficient for MCP tools?
-   *(Official docs: "To include all tools of an MCP server, use the `<server name>/*` format.")*
-2. Should `handoffs` be added now or in a separate issue?
-3. Should `chat.includeReferencedInstructions` be documented as a project prerequisite,
-   or should the critical content be fully migrated into `.agent.md` bodies?
+### 5.1 AGENTS.md vs copilot-instructions.md — functional difference
+
+Both are always-on instruction files, but they serve different scopes per official docs:
+
+> *"Start with a single `.github/copilot-instructions.md` file for project-wide coding
+> standards. Use `AGENTS.md` if you work with multiple AI agents in your workspace."*
+
+`AGENTS.md` is the VS Code-recognized standard specifically designed for multi-agent
+cooperation. It is loaded by VS Code, Claude Code, Cursor, and other AI tools when the
+`chat.useAgentsMdFile` setting is enabled. `copilot-instructions.md` is the VS Code-native
+always-on file for coding standards and conventions, without the multi-agent context.
+
+**This project uses three cooperating agents (@co, @imp, @qa) — which is precisely the
+`AGENTS.md` use case per Microsoft documentation.**
+
+The correct separation is therefore:
+
+| File | Content | Why |
+|---|---|---|
+| `.github/copilot-instructions.md` | **Lean:** coding standards, architecture contract ref, tool priority matrix (compact), TDD cycle (correct params), prime directives | Loaded on every request — only universal rules that apply regardless of which agent is active |
+| `AGENTS.md` (workspace root) | **Multi-agent protocol:** three-agent model (@co/@imp/@qa), workflow, phase management, MCP tool rules, run_in_terminal restrictions, scaffolding, issue-first development | The VS Code-native home for multi-agent orchestration |
+
+### 5.2 Role of `*_agent.md` root files — eliminated
+
+The root files `co_agent.md`, `imp_agent.md`, `qa_agent.md` exist as detailed elaboration
+that is only included when `chat.includeReferencedInstructions` is enabled and the model
+follows the Markdown link. This creates an unreliable dependency.
+
+The `.github/agents/*.agent.md` body is the guaranteed-injected, VS Code-native location
+for role-specific content when that agent is selected. The body is "prepended to the user
+chat prompt" by VS Code directly — no settings dependency, no link-following required.
+
+**Decision: migrate all content from `*_agent.md` root files into the corresponding
+`.github/agents/*.agent.md` bodies. The root files are then deleted.**
+
+The `*_agent.md` split was introduced before `.agent.md` body content was understood to
+be the authoritative injection point. It is now superseded by the correct VS Code model.
+
+### 5.3 Final target architecture
+
+```
+AGENTS.md  (workspace root)
+  ├── Multi-agent protocol: three-agent model, workflow, phase management
+  ├── MCP tool rules, run_in_terminal restrictions
+  └── Replaces: agent.md (which was never a VS Code-recognized file)
+
+.github/copilot-instructions.md  (renamed: remove leading dot)
+  ├── Lean: coding standards, architecture contract ref, prime directives
+  ├── TDD cycle (repaired params: workflow_phase= / sub_phase=)
+  └── Workflow types (repaired phase names: implementation/validation)
+
+.github/agents/co.agent.md
+  ├── Frontmatter: tools (read-only MCP list), handoffs → @imp
+  └── Body (fully self-contained):
+        @co persona, all sub-roles (triager/backlog-reviewer/tracker/issue-author),
+        startup protocol, output contracts, QA boundary
+        [absorbs co_agent.md — root file deleted]
+
+.github/agents/imp.agent.md
+  ├── Frontmatter: tools (st3-workflow/*), handoffs → @qa
+  └── Body (fully self-contained):
+        @imp persona, all sub-roles, scope lock, architectural purity rules,
+        test refactor discipline, hand-over format, QA boundary
+        [absorbs imp_agent.md — root file deleted]
+
+.github/agents/qa.agent.md
+  ├── Frontmatter: tools (read-only list), handoffs → @imp / @co
+  └── Body (fully self-contained):
+        @qa persona, all sub-roles, suppression audit rule (CRITICAL),
+        8 core QA questions, review standard, scope determination
+        [absorbs qa_agent.md — root file deleted]
+
+.github/prompts/*.prompt.md  (8 files — one removed, two refs cleaned)
+  ├── plan-executionDirectiveBatch...prompt.md → moved to docs/ (not a slash command)
+  └── start-work + resume-work → remove dead .copilot/session-state.json reference
+```
+
+**Files deleted:** `agent.md`, `co_agent.md`, `imp_agent.md`, `qa_agent.md`  
+**Files created:** `AGENTS.md`  
+**Files renamed:** `.github/.copilot-instructions.md` → `.github/copilot-instructions.md`  
+**Files rewritten:** all three `.github/agents/*.agent.md` (bodies expanded, frontmatter completed)
+
+### 5.4 Required VS Code setting
+
+`AGENTS.md` requires `chat.useAgentsMdFile = true`. This must be documented as a project
+prerequisite (e.g., in README or `.vscode/settings.json`).
+
+### 5.5 Open question — tools enumeration
+
+For `.agent.md` frontmatter `tools` field: use `st3-workflow/*` for `@imp` (full access).
+For `@co` and `@qa`: enumerate specific tools to enforce read-only role boundaries —
+the wildcard would grant them write access that violates their role contract.
+
+---
+
+## Questions — RESOLVED
+
+| Question | Resolution |
+|---|---|
+| `tools` in `.agent.md`: individual list or wildcard? | `st3-workflow/*` for @imp only. @co and @qa get explicit read-only lists. |
+| `handoffs`: in scope of #333 or separate issue? | In scope — small frontmatter addition, completes the VS Code-native workflow. |
+| `chat.includeReferencedInstructions`: document or migrate? | Migrate: critical content goes into `.agent.md` bodies; root `*_agent.md` files deleted. |
 
 ---
 
@@ -520,5 +616,7 @@ injection.
 - VS Code custom instructions: https://code.visualstudio.com/docs/copilot/customization/custom-instructions
 - VS Code custom agents: https://code.visualstudio.com/docs/copilot/customization/custom-agents
 - VS Code prompt files: https://code.visualstudio.com/docs/copilot/customization/prompt-files
-- `chat.includeReferencedInstructions` setting: controls whether Markdown-linked instruction files are included
+- VS Code customization overview: https://code.visualstudio.com/docs/copilot/customization/overview
+- `chat.useAgentsMdFile` setting: enables AGENTS.md always-on loading
+- `chat.includeReferencedInstructions` setting: controls Markdown-linked instruction inclusion
 - `chat.agentFilesLocations` setting: configures additional agent file locations
