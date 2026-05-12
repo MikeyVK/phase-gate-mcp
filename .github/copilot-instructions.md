@@ -2,7 +2,7 @@
 
 **Auto-loaded by VS Code** — This file contains the complete operational protocol for the S1mpleTrader V3 project.
 
-**Full Reference:** [agent.md](../agent.md) in workspace root contains extended documentation and examples. This file is the **source of truth** for critical rules.
+**Full Reference:** [AGENTS.md](../AGENTS.md) in workspace root contains extended documentation and examples. This file is the **source of truth** for critical rules.
 
 ---
 
@@ -22,7 +22,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Write-capable interface for read-only consumer | Use narrow read-only interface (ISP) |
 | `get_state()` calls `save()` | CQS violation — split the method |
 | Module-level `Config.load()` | `ClassVar` + lazy init in `__init__` |
-| if-chain on `phase == "tdd"` etc. | Registry or config-driven dispatch (OCP) |
+| if-chain on `phase == "implementation"` etc. | Registry or config-driven dispatch (OCP) |
 | Value object without `frozen=True` | Add `@dataclass(frozen=True)` or `ConfigDict(frozen=True)` |
 | Issue number extracted in state engine | Delegate to git conventions config class |
 
@@ -36,7 +36,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
 | Create branch | `create_branch(name, base_branch, branch_type)` | `run_in_terminal("git branch")` |
-| Commit | `git_add_or_commit(phase, message)` | `run_in_terminal("git commit")` |
+| Commit | `git_add_or_commit(workflow_phase, message)` | `run_in_terminal("git commit")` |
 | Checkout | `git_checkout(branch)` | `run_in_terminal("git checkout")` |
 | Push | `git_push(set_upstream)` | `run_in_terminal("git push")` |
 | Merge | `git_merge(branch)` | `run_in_terminal("git merge")` |
@@ -75,7 +75,6 @@ This document is a **binding contract**. Code that violates these principles is 
 |--------|-------------|------------|
 | Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
 | Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
-| Validate architecture | `validate_architecture(scope)` | Manual review |
 | Validate DTO | `validate_dto(file_path)` | Manual review |
 | Validate template | `validate_template(path, template_type)` | Manual review |
 
@@ -122,19 +121,19 @@ This document is a **binding contract**. Code that violates these principles is 
 **Strict protocol — never skip steps:**
 
 1. **RED Phase:** Write failing test FIRST
-   - Commit: `git_add_or_commit(phase="red", message="Add failing test for X")`
+   - Commit: `git_add_or_commit(workflow_phase="implementation", sub_phase="red", cycle_number=1, message="Add failing test for X")`
    - Verify test fails: `run_tests(path="...")`
 
 2. **GREEN Phase:** Implement minimal code to pass test
-   - Commit: `git_add_or_commit(phase="green", message="Implement X")`
+   - Commit: `git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Implement X")`
    - Verify test passes: `run_tests(path="...")`
 
 3. **REFACTOR Phase:** Improve code while keeping tests green
-   - Commit: `git_add_or_commit(phase="refactor", message="Refactor X")`
+   - Commit: `git_add_or_commit(workflow_phase="implementation", sub_phase="refactor", cycle_number=1, message="Refactor X")`
    - Verify tests still pass: `run_tests(path="...")`
 
-4. **DOCS Phase:** Update documentation
-   - Commit: `git_add_or_commit(phase="docs", message="Document X")`
+4. **DOCUMENTATION Phase:** Update documentation
+   - Commit: `git_add_or_commit(workflow_phase="documentation", message="Document X")`
 
 **Quality Gates:** Run `run_quality_gates(files=[...])` before phase transitions and before PR creation.
 
@@ -157,12 +156,12 @@ This document is a **binding contract**. Code that violates these principles is 
 
 | Workflow | Phases | Use Case |
 |----------|--------|----------|
-| `feature` | research, planning, design, tdd, integration, documentation | New feature development |
-| `bug` | research, planning, design, tdd, integration, documentation | Bug fixes |
-| `docs` | planning, documentation | Documentation-only changes |
-| `refactor` | research, planning, tdd, integration, documentation | Code refactoring |
-| `hotfix` | tdd, integration, documentation | Emergency fixes |
-| `epic` | research, planning, design, tdd, integration | Large multi-issue features |
+| `feature` | research, design, planning, implementation, validation, documentation, ready | New feature development |
+| `bug` | research, design, planning, implementation, validation, documentation, ready | Bug fixes |
+| `docs` | planning, documentation, ready | Documentation-only changes |
+| `refactor` | research, planning, implementation, validation, documentation, ready | Code refactoring |
+| `hotfix` | implementation, validation, documentation, ready | Emergency fixes |
+| `epic` | research, design, planning, coordination, documentation, ready | Large multi-issue features |
 | `custom` | (user-defined) | Custom workflows |
 
 **Workflow Selection:** Use `initialize_project(issue_number, issue_title, workflow_name="feature|bug|docs|...")` to start.
@@ -192,17 +191,20 @@ This document is a **binding contract**. Code that violates these principles is 
 - **[TDD Workflow](../docs/coding_standards/TDD_WORKFLOW.md)** — TDD cycle details
 - **[Quality Gates](../docs/coding_standards/QUALITY_GATES.md)** — Validation standards
 - **[Git Workflow](../docs/coding_standards/GIT_WORKFLOW.md)** — Branch and commit conventions
-- **[Agent Protocol (agent.md)](../agent.md)** — Extended documentation and examples
+- **[Agent Protocol (AGENTS.md)](../AGENTS.md)** — Extended documentation and examples
 
 ---
 
 ## 🤝 Agent Cooperation
 
-This project uses **agent handoff** for large tasks:
-- Each agent reads these instructions automatically (VS Code auto-injects)
-- Fresh context every 50-100K tokens to avoid context pollution
-- All agents follow same protocol (consistency)
-- Full protocol details in [agent.md](../agent.md)
+This project uses **three specialized agents** in separate VS Code chat sessions:
+- `@co` — Coordination authority (issues, priorities, implementation briefs)
+- `@imp` — Implementation executor (all code, commits, phase transitions)
+- `@qa` — QA authority — read-only (tests, quality gates, verification)
+
+Each agent reads these instructions automatically (VS Code auto-injects).
+Fresh context every session to avoid context pollution.
+Full protocol details in [AGENTS.md](../AGENTS.md).
 
 ---
 

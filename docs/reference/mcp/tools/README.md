@@ -21,7 +21,7 @@ The MCP server exposes a rich set of tools across eight functional domains: Git 
 
 ## Tool Inventory Overview
 
-The MCP server has **50 registered tools** across 8 categories:
+The MCP server has **49 registered tools** across 8 categories:
 | Category | Tools | Documentation |
 |----------|-------|---------------|
 | **Git Workflow & Analysis** | 14 | [git.md](git.md) |
@@ -29,9 +29,9 @@ The MCP server has **50 registered tools** across 8 categories:
 | **Project & Phase Management** | 8 | [project.md](project.md) |
 | **File Editing** | 2 | [editing.md](editing.md) |
 | **Scaffolding** | 1 | [scaffolding.md](scaffolding.md) |
-| **Quality & Validation** | 5 | [quality.md](quality.md) |
+| **Quality & Validation** | 4 | [quality.md](quality.md) |
 | **Discovery & Admin** | 4 | [discovery.md](discovery.md) |
-| **TOTAL** | **50** | — |
+| **TOTAL** | **49** | — |
 ---
 
 ## Quick Reference by Category
@@ -149,7 +149,7 @@ Unified artifact generation from Jinja2 templates for code and documentation art
 
 ---
 
-### 6. Quality & Validation (5 tools)
+### 6. Quality & Validation (4 tools)
 
 Automated quality gates, test execution, and architectural validation.
 
@@ -157,7 +157,6 @@ Automated quality gates, test execution, and architectural validation.
 |------|---------|----------------|
 | `run_quality_gates` | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required only with `scope="files"`) |
 | `run_tests` | Run pytest — structured output: per-failure lines in `content[0]` text + full JSON payload in `content[1]` | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` |
-| `validate_architecture` | Validate code against patterns | `scope` (all/dtos/workers/platform) |
 | `validate_dto` | Validate DTO definition | `file_path` |
 | `validate_template` | Validate file structure vs template | `path`, `template_type` |
 
@@ -183,10 +182,10 @@ Documentation search, work context aggregation, and server administration.
 ## Tool Registration Architecture
 
 | Tier | Tools | Count | Registration Condition |
-| **Always Available** | Git (14), Quality (5), File Editing (2), Project/Phase (8), Scaffolding (1), Discovery & Admin (4) | **34** | None |
+| **Always Available** | Git (14), Quality (4), File Editing (2), Project/Phase (8), Scaffolding (1), Discovery & Admin (4) | **33** | None |
 | **GitHub-Dependent** | Issues (5), PRs (3), Labels (5), Milestones (3) | **16** | Requires `GITHUB_TOKEN` environment variable |
-| **TOTAL (with token)** | — | **50** | — |
-| **TOTAL (without token)** | — | **39** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
+| **TOTAL (with token)** | — | **49** | — |
+| **TOTAL (without token)** | — | **38** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
 **Note:** Issue management tools (5) are registered even without a token (schema-only registration). Tool calls will return errors if `GITHUB_TOKEN` is missing.
 
 ---
@@ -234,7 +233,7 @@ Tools validate inputs before execution. Invalid parameters return structured err
 
 ### 3. State Management
 
-Phase state persists in `.st3/state.json`. Tools like `git_checkout`, `transition_phase`, and `initialize_project` modify state atomically.
+Phase state persists in `.phase-gate/state.json`. Tools like `git_checkout`, `transition_phase`, and `initialize_project` modify state atomically.
 
 ### 4. Unicode Safety
 
@@ -249,7 +248,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 ### 6. Quality Gate Integration
 
 `safe_edit_file` delegates to `ValidationService` which selects validators by file extension:
-- `.py` → `PythonValidator` (Ruff, Pyright — config-driven via `.st3/quality.yaml`)
+- `.py` → `PythonValidator` (Ruff, Pyright — config-driven via `.phase-gate/config/quality.yaml`)
 - `.md` → `MarkdownValidator` (structure, SCAFFOLD headers)
 - SCAFFOLD headers → `TemplateValidator` (template conformance)
 

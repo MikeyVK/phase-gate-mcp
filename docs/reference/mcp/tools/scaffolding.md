@@ -13,12 +13,12 @@
 
 ## Purpose
 
-Complete reference documentation for unified artifact scaffolding via the `scaffold_artifact` tool. This tool generates code and documentation artifacts from Jinja2 templates defined in the [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml) registry.
+Complete reference documentation for unified artifact scaffolding via the `scaffold_artifact` tool. This tool generates code and documentation artifacts from Jinja2 templates defined in the [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) registry.
 
 The scaffolding system provides:
 - **Unified tool** for code and documentation generation (replaces separate tools)
 - **Template composition** via Jinja2 includes and inheritance
-- **Automatic directory resolution** from [.st3/project_structure.yaml](../../../../.st3/project_structure.yaml)
+- **Automatic directory resolution** from [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml)
 - **SCAFFOLD header injection** for template provenance tracking
 - **Context-driven customization** via template variables
 
@@ -54,7 +54,7 @@ Generate any artifact type (code or document) from unified registry.
 |-----------|------|----------|-------------|
 | `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `"dto"`, `"design"`, `"worker"`) |
 | `name` | `str` | **Yes** | Artifact name — PascalCase for code, kebab-case for docs |
-| `output_path` | `str` | **Yes** (file artifacts) / No (ephemeral) | Explicit output path. **Required** for file artifacts (`dto`, `worker`, `adapter`, `tool`, etc.) — omitting raises `ERR_VALIDATION`. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.st3/temp/`. |
+| `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.phase-gate/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |
 
 #### Returns
@@ -153,12 +153,12 @@ Generate any artifact type (code or document) from unified registry.
 
 ## Artifact Registry
 
-The unified artifact registry is defined in [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml).
+The unified artifact registry is defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
 
 ### Registry Structure
 
 ```yaml
-# .st3/artifacts.yaml
+# .phase-gate/config/artifacts.yaml
 artifacts:
   # Code Artifacts
   - id: dto
@@ -317,10 +317,10 @@ Each artifact type defines expected context variables in `context_schema`:
 
 ## Directory Resolution
 
-The `scaffold_artifact` tool automatically resolves output directories from [.st3/project_structure.yaml](../../../../.st3/project_structure.yaml):
+The `scaffold_artifact` tool automatically resolves output directories from [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml):
 
 ```yaml
-# .st3/project_structure.yaml
+# .phase-gate/config/project_structure.yaml
 directories:
   code:
     dto: "backend/dtos/"
@@ -481,35 +481,35 @@ Tier information is stored in `artifacts.yaml` and `template_registry.json`.
 
 ## Configuration
 
-### .st3/artifacts.yaml
+### .phase-gate/config/artifacts.yaml
 
 Complete artifact registry with template mappings, context schemas, and tier information.
 
-**See:** [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml) for full registry.
+**See:** [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) for full registry.
 
 ---
 
-### .st3/project_structure.yaml
+### .phase-gate/config/project_structure.yaml
 
 Directory resolution rules for artifact types.
 
-**See:** [.st3/project_structure.yaml](../../../../.st3/project_structure.yaml) for full structure.
+**See:** [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml) for full structure.
 
 ---
 
-### .st3/scaffold_metadata.yaml
+### .phase-gate/config/scaffold_metadata.yaml
 
 SCAFFOLD header format specification (comment patterns for different file types).
 
-**See:** [.st3/scaffold_metadata.yaml](../../../../.st3/scaffold_metadata.yaml) for header specs.
+**See:** [.phase-gate/config/scaffold_metadata.yaml](../../../../.phase-gate/config/scaffold_metadata.yaml) for header specs.
 
 ---
 
-### .st3/template_registry.json
+### .phase-gate/template_registry.json
 
 Template provenance tracking (version hashes → tier chains).
 
-**See:** [.st3/template_registry.json](../../../../.st3/template_registry.json) for version history.
+**See:** [.phase-gate/template_registry.json](../../../../.phase-gate/template_registry.json) for version history.
 
 ---
 
@@ -606,9 +606,9 @@ When templates are updated:
 - [README.md](README.md) — MCP Tools navigation index
 - [editing.md](editing.md) — safe_edit_file for manual edits
 - [quality.md](quality.md) — validate_template for conformance checking
-- [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml) — Complete artifact registry
-- [.st3/project_structure.yaml](../../../../.st3/project_structure.yaml) — Directory resolution
-- [.st3/scaffold_metadata.yaml](../../../../.st3/scaffold_metadata.yaml) — SCAFFOLD header specs
+- [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) — Complete artifact registry
+- [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml) — Directory resolution
+- [.phase-gate/config/scaffold_metadata.yaml](../../../../.phase-gate/config/scaffold_metadata.yaml) — SCAFFOLD header specs
 - [mcp_server/templates/](../../../../mcp_server/templates/) — Template library
 - [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 1.10: Scaffolding)
 
