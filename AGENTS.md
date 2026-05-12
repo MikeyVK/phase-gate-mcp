@@ -158,7 +158,7 @@ transition_phase(to_phase="validation")
 **Documentation Phase (after validation):**
 - Focus: Reference docs, project documentation updates
 - Tasks: Update issue content, generate PR description, finalize docs
-- Quality gate: `validate_architecture(scope="all")`
+- Quality gate: `run_quality_gates(scope="branch")`
 
 ### 2.5 Work Completion
 
@@ -199,7 +199,6 @@ transition_phase(to_phase="validation")
     *   Auto-resolves `docs/development/issueXX/` from artifacts.yaml
     *   *Result:* Creates perfectly structured markdown file.
 2.  **Validate:**
-    *   `validate_architecture(scope="all")` — verifies doc structure against schema
     *   Manual review: check all required sections are filled in
 
 ### C. "Manage Labels & Milestones"
@@ -392,7 +391,6 @@ After context compaction or a new session, always rebuild state from scratch:
 | Run tests | `run_tests(path, markers, last_failed_only, scope, timeout, coverage)` | `run_in_terminal("pytest")` |
 | Quality gates | `run_quality_gates(scope, files?)` | `run_in_terminal("ruff/mypy/pylint")` |
 | Validate template | `validate_template(path, template_type)` | Manual validation |
-| Validate architecture | `validate_architecture(scope)` | Manual review |
 
 ### Discovery & Context
 | Action | ✅ USE THIS | ❌ NEVER USE |

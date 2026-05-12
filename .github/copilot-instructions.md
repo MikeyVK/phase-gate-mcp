@@ -75,7 +75,6 @@ This document is a **binding contract**. Code that violates these principles is 
 |--------|-------------|------------|
 | Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
 | Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
-| Validate architecture | `validate_architecture(scope)` | Manual review |
 | Validate DTO | `validate_dto(file_path)` | Manual review |
 | Validate template | `validate_template(path, template_type)` | Manual review |
 
