@@ -1,0 +1,19 @@
+{
+  "268": {
+    "issue_title": "MCP-tool-first orchestration: get_work_context + create_handover",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-12T14:30:19.790232+00:00"
+  }
+}
