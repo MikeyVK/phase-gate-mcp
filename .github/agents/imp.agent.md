@@ -6,8 +6,20 @@ argument-hint: >
   Example: "implementer: start cycle C_LOADER.5 for issue 257"
 target: vscode
 tools:
+  # MCP — alle mutaties (file edits, git, tests, quality gates, scaffolding) — hoogste prioriteit
   - phase-gate-mcp/*
-  - run_in_terminal
+  # VS Code built-in — lezen en zoeken (geen mutaties; edits lopen altijd via phase-gate-mcp)
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/fileSearch
+  - search/textSearch
+  - search/listDirectory
+  - search/usages
+  - search/changes
+  # Execute — dev servers en build commands (zelden; MCP tools hebben prioriteit)
+  - execute/runInTerminal
+  - execute/getTerminalOutput
 handoffs:
   - agent: qa
     label: When implementation cycle is complete and hand-over is produced
