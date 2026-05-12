@@ -207,7 +207,7 @@ QA boundary). Remove Markdown link to `co_agent.md`.
 Frontmatter additions:
 ```yaml
 tools:
-  - mcp_phase-gate-mcp_*
+  - phase-gate-mcp/*
 handoffs:
   - agent: qa
     label: When implementation cycle is complete and hand-over is produced
@@ -221,6 +221,7 @@ Frontmatter additions:
 ```yaml
 tools:
   - mcp_phase-gate-mcp_get_work_context
+  - mcp_phase-gate-mcp_get_project_plan
   - mcp_phase-gate-mcp_run_tests
   - mcp_phase-gate-mcp_run_quality_gates
   - mcp_phase-gate-mcp_git_status
