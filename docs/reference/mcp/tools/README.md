@@ -234,7 +234,7 @@ Tools validate inputs before execution. Invalid parameters return structured err
 
 ### 3. State Management
 
-Phase state persists in `.st3/state.json`. Tools like `git_checkout`, `transition_phase`, and `initialize_project` modify state atomically.
+Phase state persists in `.phase-gate/state.json`. Tools like `git_checkout`, `transition_phase`, and `initialize_project` modify state atomically.
 
 ### 4. Unicode Safety
 
@@ -249,7 +249,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 ### 6. Quality Gate Integration
 
 `safe_edit_file` delegates to `ValidationService` which selects validators by file extension:
-- `.py` → `PythonValidator` (Ruff, Pyright — config-driven via `.st3/quality.yaml`)
+- `.py` → `PythonValidator` (Ruff, Pyright — config-driven via `.phase-gate/config/quality.yaml`)
 - `.md` → `MarkdownValidator` (structure, SCAFFOLD headers)
 - SCAFFOLD headers → `TemplateValidator` (template conformance)
 
