@@ -46,9 +46,9 @@
                 "id": "D_333.2.1"
               },
               {
-                "description": "imp.agent.md: tools frontmatter (st3-workflow/*), handoffs to @qa, body self-contained",
-                "file": ".github/agents/imp.agent.md",
-                "id": "D_333.2.2"
+                "id": "D_333.2.2",
+                "description": "imp.agent.md: tools frontmatter (phase-gate-mcp/*), handoffs to @qa, body self-contained",
+                "file": ".github/agents/imp.agent.md"
               },
               {
                 "description": "qa.agent.md: tools frontmatter (read-only list), handoffs to @imp and @co, body contains suppression audit",
@@ -81,10 +81,14 @@
                 "description": ".github/prompts/ root contains exactly 2 files: open-issue and implement-cycle",
                 "file": ".github/prompts/",
                 "id": "D_333.3.4"
+              },
+              {
+                "id": "D_333.3.5",
+                "description": "VS Code / command list shows only open-issue and implement-cycle; no archived prompt file visible (manual verification; if any archived file appears, apply _archived-*.prompt.md rename before closing cycle)"
               }
             ],
             "description": "Legacy cleanup: delete root agent files, fix dead reference, archive 7 legacy prompts",
-            "exit_criteria": "5 legacy root files absent from workspace root; 7 prompt files in archive/ and 2 in prompts/ root; resume-work has no session-state.json reference",
+            "exit_criteria": "5 legacy root files absent from workspace root; 7 prompt files in archive/ and 2 in prompts/ root; resume-work has no session-state.json reference; manual VS Code verification: /command list shows only open-issue and implement-cycle (if archived files appear, apply _archived-*.prompt.md rename fallback before closing cycle)",
             "id": "C_333.3"
           },
           {
