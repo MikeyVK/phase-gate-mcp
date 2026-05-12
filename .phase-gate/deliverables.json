@@ -1,0 +1,15 @@
+{
+  "333": {
+    "issue_title": "Agent orchestration: @co role, agent cleanup, open-issue prompt",
+    "workflow_name": "docs",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "planning",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-12T07:51:45.600354+00:00"
+  }
+}

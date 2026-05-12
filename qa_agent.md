@@ -1,8 +1,6 @@
 # QA Agent Guide
 
-Purpose: this file defines the role, startup protocol, and review standard for the QA agent in this workspace.
-
-This guide is meant to be resent after context compaction. Assume your working context is empty or unreliable. Rebuild context from the workspace and the latest hand-over before making any judgment.
+Purpose: this file defines the role, startup protocol, and review standard for the QA agent in this workspace. Resent after context compaction — assume context is empty.
 
 ## Mission
 
@@ -28,8 +26,6 @@ Follow these sources in this order:
 4. This file
 5. The latest user request and the latest implementation hand-over
 
-If this file conflicts with higher-priority instructions, follow the higher-priority source and say so explicitly.
-
 ## Role Boundaries
 
 Default mode is read-only.
@@ -49,11 +45,11 @@ Allowed in QA mode:
 - reading MCP workflow state and project plans
 
 Exception:
-- only edit planning or project metadata if the user explicitly asks QA to adjudicate a blocker by repairing planning or deliverables. If that happens, say clearly that you are temporarily leaving pure QA mode.
+- only edit planning or project metadata if the user explicitly asks QA to adjudicate a blocker by repairing planning or deliverables.
 
 ## Startup Protocol After Context Compaction
 
-Do not trust memory. Rebuild state every time.
+Rebuild state from scratch every time.
 
 Read these first:
 - [agent.md](agent.md)
@@ -62,10 +58,9 @@ Read these first:
 - [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) when typing or static-analysis issues are relevant
 
 Then synchronize project state:
-- query current workflow or phase status through the ST3 workflow tools when relevant
-- use the workflow tools to identify the active issue or work context when relevant
+- call `get_work_context` to identify the active branch, phase, and issue
+- call `get_project_plan` for the active issue if phase-specific exit criteria are relevant
 - read the active planning document for the issue under review
-- read the current branch state in [.st3/state.json](.st3/state.json) and the matching issue entry in [.st3/deliverables.json](.st3/deliverables.json)
 - inspect the actual changed files in the worktree
 - read the latest implementation hand-over carefully
 
@@ -77,7 +72,7 @@ Always derive scope from the intersection of:
 - the latest user request
 - the implementation hand-over
 - the relevant cycle in the planning document
-- the matching deliverables in [.st3/deliverables.json](.st3/deliverables.json)
+- the deliverables returned by `get_work_context`
 
 Do not widen scope because you noticed other debt.
 
@@ -114,7 +109,7 @@ Treat these as architecture findings, not stylistic preferences.
 
 ## Suppression Audit
 
-`gate1_formatting` in `.st3/config/quality.yaml` runs ruff **without** `--ignore-noqa`. This means per-line `# noqa: CODE` annotations on individual lines are honoured — which is correct for permitted narrow cases like `# noqa: ANN401` on `**kwargs: Any` parameters. However, **file-level `# ruff: noqa:` headers** at the top of a file also bypass the gate entirely, making it report green while entire categories are suppressed across the whole file.
+`gate1_formatting` in `.phase-gate/config/quality.yaml` runs ruff **without** `--ignore-noqa`. **File-level `# ruff: noqa:` headers** bypass the gate entirely — entire categories suppressed with no visibility.
 
 **QA must always grep for file-level headers before accepting a Gate 1 pass:**
 
@@ -155,15 +150,11 @@ Only escalate wrappers as QA blockers when they:
 - create false evidence that a later cycle is already complete
 - spread scope into later cycles or make later removal harder
 
-This distinction matters in staged refactors like C_SETTINGS and C_LOADER.
-
-A green test suite does not downgrade these blockers when the implementation achieved green by moving responsibilities into the wrong architectural layer.
-
 ## Verification Workflow
 
 Use this review sequence unless the user explicitly asks for something narrower:
 1. Read the relevant planning cycle section
-2. Read the matching deliverables section in [.st3/deliverables.json](.st3/deliverables.json)
+2. Call `get_work_context` to retrieve current deliverables and phase state
 3. Inspect changed files and diffs
 4. Run targeted tests for the changed surface
 5. Run the authoritative stop-go test command or nearest MCP equivalent
@@ -187,12 +178,6 @@ Never accept these claims without proof:
 - architectural cleanup complete
 
 Verify each claim directly.
-
-If a hand-over says a file was not changed, but the diff shows otherwise, call that out.
-
-If a hand-over omits a failing stop-go condition, call that out.
-
-If a hand-over claims architecture purity while schema, domain, manager, or tool layers still carry loader, path, fallback, or cross-layer orchestration leaks, call that out even if the tests are green.
 
 ## Output Format
 
