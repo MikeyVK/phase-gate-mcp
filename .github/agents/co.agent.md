@@ -6,19 +6,27 @@ argument-hint: >
   Example: "backlog-reviewer: review all medium issues under epic #72"
 target: vscode
 tools:
-  - mcp_phase-gate-mcp_get_work_context
-  - mcp_phase-gate-mcp_list_issues
-  - mcp_phase-gate-mcp_get_issue
-  - mcp_phase-gate-mcp_create_issue
-  - mcp_phase-gate-mcp_update_issue
-  - mcp_phase-gate-mcp_close_issue
-  - mcp_phase-gate-mcp_list_labels
-  - mcp_phase-gate-mcp_create_label
-  - mcp_phase-gate-mcp_list_milestones
-  - mcp_phase-gate-mcp_git_status
-  - mcp_phase-gate-mcp_git_list_branches
-  - mcp_phase-gate-mcp_search_documentation
-  - mcp_phase-gate-mcp_health_check
+  # MCP — coördinatie en read (geen git mutations, geen file edits, geen workflow state changes)
+  - phase-gate-mcp/get_work_context
+  - phase-gate-mcp/get_project_plan
+  - phase-gate-mcp/list_issues
+  - phase-gate-mcp/get_issue
+  - phase-gate-mcp/create_issue
+  - phase-gate-mcp/update_issue
+  - phase-gate-mcp/close_issue
+  - phase-gate-mcp/list_labels
+  - phase-gate-mcp/create_label
+  - phase-gate-mcp/delete_label
+  - phase-gate-mcp/add_labels
+  - phase-gate-mcp/remove_labels
+  - phase-gate-mcp/list_milestones
+  - phase-gate-mcp/create_milestone
+  - phase-gate-mcp/close_milestone
+  - phase-gate-mcp/git_status
+  - phase-gate-mcp/git_list_branches
+  - phase-gate-mcp/git_diff_stat
+  - phase-gate-mcp/search_documentation
+  - phase-gate-mcp/health_check
 handoffs:
   - agent: imp
     label: When coordination produces actionable implementation directive

@@ -6,17 +6,34 @@ argument-hint: >
   Example: "verifier: review latest implementation handover for cycle C_LOADER.5"
 target: vscode
 tools:
-  - mcp_phase-gate-mcp_get_work_context
-  - mcp_phase-gate-mcp_get_project_plan
-  - mcp_phase-gate-mcp_run_tests
-  - mcp_phase-gate-mcp_run_quality_gates
-  - mcp_phase-gate-mcp_git_status
-  - mcp_phase-gate-mcp_git_diff_stat
-  - mcp_phase-gate-mcp_git_list_branches
-  - mcp_phase-gate-mcp_search_documentation
-  - mcp_phase-gate-mcp_get_issue
-  - mcp_phase-gate-mcp_list_issues
-  - mcp_phase-gate-mcp_health_check
+  # Read / search (built-in VS Code)
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/fileSearch
+  - search/textSearch
+  - search/listDirectory
+  - search/changes
+  - search/usages
+  # Execute — verification only (pytest, grep, git log — no mutations)
+  - execute/runInTerminal
+  - execute/getTerminalOutput
+  # MCP — read and verify only (no git mutations, no workflow state changes, no file edits)
+  - phase-gate-mcp/get_work_context
+  - phase-gate-mcp/get_project_plan
+  - phase-gate-mcp/run_tests
+  - phase-gate-mcp/run_quality_gates
+  - phase-gate-mcp/validate_architecture
+  - phase-gate-mcp/validate_dto
+  - phase-gate-mcp/validate_template
+  - phase-gate-mcp/git_status
+  - phase-gate-mcp/git_diff_stat
+  - phase-gate-mcp/git_list_branches
+  - phase-gate-mcp/get_parent_branch
+  - phase-gate-mcp/search_documentation
+  - phase-gate-mcp/get_issue
+  - phase-gate-mcp/list_issues
+  - phase-gate-mcp/health_check
 handoffs:
   - agent: imp
     label: NOGO verdict — implementation corrections required
