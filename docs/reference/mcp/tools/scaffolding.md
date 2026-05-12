@@ -13,7 +13,7 @@
 
 ## Purpose
 
-Complete reference documentation for unified artifact scaffolding via the `scaffold_artifact` tool. This tool generates code and documentation artifacts from Jinja2 templates defined in the [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml) registry.
+Complete reference documentation for unified artifact scaffolding via the `scaffold_artifact` tool. This tool generates code and documentation artifacts from Jinja2 templates defined in the [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) registry.
 
 The scaffolding system provides:
 - **Unified tool** for code and documentation generation (replaces separate tools)
@@ -153,12 +153,12 @@ Generate any artifact type (code or document) from unified registry.
 
 ## Artifact Registry
 
-The unified artifact registry is defined in [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml).
+The unified artifact registry is defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
 
 ### Registry Structure
 
 ```yaml
-# .st3/artifacts.yaml
+# .phase-gate/config/artifacts.yaml
 artifacts:
   # Code Artifacts
   - id: dto
@@ -481,11 +481,11 @@ Tier information is stored in `artifacts.yaml` and `template_registry.json`.
 
 ## Configuration
 
-### .st3/artifacts.yaml
+### .phase-gate/config/artifacts.yaml
 
 Complete artifact registry with template mappings, context schemas, and tier information.
 
-**See:** [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml) for full registry.
+**See:** [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) for full registry.
 
 ---
 
@@ -606,7 +606,7 @@ When templates are updated:
 - [README.md](README.md) — MCP Tools navigation index
 - [editing.md](editing.md) — safe_edit_file for manual edits
 - [quality.md](quality.md) — validate_template for conformance checking
-- [.st3/artifacts.yaml](../../../../.st3/artifacts.yaml) — Complete artifact registry
+- [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) — Complete artifact registry
 - [.st3/project_structure.yaml](../../../../.st3/project_structure.yaml) — Directory resolution
 - [.st3/scaffold_metadata.yaml](../../../../.st3/scaffold_metadata.yaml) — SCAFFOLD header specs
 - [mcp_server/templates/](../../../../mcp_server/templates/) — Template library

@@ -157,12 +157,12 @@ This document is a **binding contract**. Code that violates these principles is 
 
 | Workflow | Phases | Use Case |
 |----------|--------|----------|
-| `feature` | research, planning, design, implementation, validation, documentation | New feature development |
-| `bug` | research, planning, design, implementation, validation, documentation | Bug fixes |
-| `docs` | planning, documentation | Documentation-only changes |
-| `refactor` | research, planning, implementation, validation, documentation | Code refactoring |
-| `hotfix` | implementation, validation, documentation | Emergency fixes |
-| `epic` | research, planning, design, implementation, validation | Large multi-issue features |
+| `feature` | research, design, planning, implementation, validation, documentation, ready | New feature development |
+| `bug` | research, design, planning, implementation, validation, documentation, ready | Bug fixes |
+| `docs` | planning, documentation, ready | Documentation-only changes |
+| `refactor` | research, planning, implementation, validation, documentation, ready | Code refactoring |
+| `hotfix` | implementation, validation, documentation, ready | Emergency fixes |
+| `epic` | research, design, planning, coordination, documentation, ready | Large multi-issue features |
 | `custom` | (user-defined) | Custom workflows |
 
 **Workflow Selection:** Use `initialize_project(issue_number, issue_title, workflow_name="feature|bug|docs|...")` to start.

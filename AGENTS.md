@@ -110,7 +110,7 @@ transition_phase(branch="feature/42-name", to_phase="design")
 force_phase_transition(
     branch="feature/42-name",
     to_phase="ready",
-    skip_reason="Skipping integration - already covered by epic tests",
+    skip_reason="Skipping validation - already covered by epic-level tests",
     human_approval="User: John approved on 2026-01-09"
 )
 # Creates audit trail in .phase-gate/state.json
