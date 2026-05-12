@@ -120,11 +120,15 @@ is enabled (default state varies by installation).
 **VS Code type:** Intended as always-on instructions file.  
 **Filename issue:** The file is named `.copilot-instructions.md` (with a leading dot), stored
 in `.github/`. The VS Code auto-detect path is `.github/copilot-instructions.md` (no leading
-dot). This means VS Code does NOT auto-detect this file via the standard mechanism. It is also not referenced in `.vscode/settings.json` (workspace) or user-level
-`settings.json`: neither contains a `chat.instructionsFilesLocations` entry (that setting
-controls `.instructions.md` discovery, not `copilot-instructions.md`), and neither references
-this file via `codeGeneration.instructions`. **Conclusion: this file is not currently loaded
-by any mechanism. It is dead.**
+dot). This means VS Code does NOT auto-detect this file via the standard mechanism. It is also not
+referenced in `.vscode/settings.json` (workspace) or user-level `settings.json` via
+`codeGeneration.instructions` or `chat.instructionsFilesLocations` (that setting controls
+`.instructions.md` discovery, not `copilot-instructions.md`). **Conclusion: this file is not
+natively always-on loaded.** It is still explicitly referenced via Markdown links in
+`start-work.prompt.md` (line 18), `resume-work.prompt.md` (line 15),
+`request-review.prompt.md` (line 12), `imp_agent.md` (line 50), and `qa_agent.md` (line 56),
+and will be included when those files are active and `chat.includeReferencedInstructions` is
+enabled. Its content therefore reaches agents indirectly, but not reliably or universally.
 
 **Current content summary:**
 - Architecture contract reference to `ARCHITECTURE_PRINCIPLES.md`
@@ -150,9 +154,11 @@ contracts, or startup protocols.
 - ❌ TDD commit parameter names stale (`phase=` → should be `workflow_phase=`/`sub_phase=`)
 - ❌ Workflow phase names stale (`tdd`/`integration` → `implementation`/`validation`)
 - ❌ Agent Cooperation section is thin — real role detail belongs in `.agent.md` bodies
-- ❌ Confirmed not loaded: workspace `.vscode/settings.json` and user `settings.json` contain
-  no reference to this file. `chat.instructionsFilesLocations` controls `.instructions.md`
-  files only. The file is currently inaccessible.
+- ❌ Confirmed not natively always-on: workspace `.vscode/settings.json` and user `settings.json`
+  contain no `codeGeneration.instructions` or `chat.instructionsFilesLocations` entry referencing
+  this file. It is only reachable via Markdown links in specific prompt/agent files
+  (`start-work`, `resume-work`, `request-review`, `imp_agent.md`, `qa_agent.md`) when
+  `chat.includeReferencedInstructions` is enabled — indirect, not universal.
 - ℹ️ Role description content is partially duplicated across this file and `agent.md`
 
 ---
@@ -555,7 +561,10 @@ injection.
 
 1. The filename `.github/.copilot-instructions.md` (with leading dot) breaks VS Code
    native auto-detect. Verified by inspecting `.vscode/settings.json` and user `settings.json`:
-   neither references this file via any mechanism. The file is not currently loaded — it is dead.
+   neither references this file via `codeGeneration.instructions`. The file is not natively
+   always-on loaded. It is only reachable via explicit Markdown links in `start-work`,
+   `resume-work`, `request-review`, `imp_agent.md`, and `qa_agent.md` — conditional on
+   `chat.includeReferencedInstructions` being enabled.
 2. The `.agent.md` files are structurally correct but incomplete — missing `tools` and
    `handoffs` frontmatter fields that VS Code uses to enforce role boundaries.
 3. The most critical operational rules (suppression audit, scope lock, QA questions) are
@@ -588,9 +597,9 @@ Both are always-on instruction files, but they serve different scopes per offici
 > standards. Use `AGENTS.md` if you work with multiple AI agents in your workspace."*
 
 `AGENTS.md` is the VS Code-recognized standard specifically designed for multi-agent
-cooperation. It is loaded by VS Code, Claude Code, Cursor, and other AI tools when the
-`chat.useAgentsMdFile` setting is enabled. `copilot-instructions.md` is the VS Code-native
-always-on file for coding standards and conventions, without the multi-agent context.
+cooperation. Per the cited VS Code documentation it is loaded natively when `chat.useAgentsMdFile`
+is enabled. `copilot-instructions.md` is the VS Code-native always-on file for coding
+standards and conventions, without the multi-agent context.
 
 **This project uses three cooperating agents (@co, @imp, @qa) — which is precisely the
 `AGENTS.md` use case per Microsoft documentation.**
