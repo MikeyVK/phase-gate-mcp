@@ -120,11 +120,11 @@ is enabled (default state varies by installation).
 **VS Code type:** Intended as always-on instructions file.  
 **Filename issue:** The file is named `.copilot-instructions.md` (with a leading dot), stored
 in `.github/`. The VS Code auto-detect path is `.github/copilot-instructions.md` (no leading
-dot). This means VS Code does NOT auto-detect this file via the standard mechanism. It is
-instead injected by the extension via `modeInstructions` in the YAML frontmatter of the
-`.agent.md` files, or via a configured `chat.instructionsFilesLocations` entry. This is a
-**de facto non-standard setup** — it works, but only through project-specific tooling, not
-the VS Code native mechanism.
+dot). This means VS Code does NOT auto-detect this file via the standard mechanism. It is also not referenced in `.vscode/settings.json` (workspace) or user-level
+`settings.json`: neither contains a `chat.instructionsFilesLocations` entry (that setting
+controls `.instructions.md` discovery, not `copilot-instructions.md`), and neither references
+this file via `codeGeneration.instructions`. **Conclusion: this file is not currently loaded
+by any mechanism. It is dead.**
 
 **Current content summary:**
 - Architecture contract reference to `ARCHITECTURE_PRINCIPLES.md`
@@ -150,6 +150,9 @@ contracts, or startup protocols.
 - ❌ TDD commit parameter names stale (`phase=` → should be `workflow_phase=`/`sub_phase=`)
 - ❌ Workflow phase names stale (`tdd`/`integration` → `implementation`/`validation`)
 - ❌ Agent Cooperation section is thin — real role detail belongs in `.agent.md` bodies
+- ❌ Confirmed not loaded: workspace `.vscode/settings.json` and user `settings.json` contain
+  no reference to this file. `chat.instructionsFilesLocations` controls `.instructions.md`
+  files only. The file is currently inaccessible.
 - ℹ️ Role description content is partially duplicated across this file and `agent.md`
 
 ---
@@ -157,9 +160,10 @@ contracts, or startup protocols.
 ### FILE 2: `agent.md` (workspace root)
 
 **VS Code type:** Plain Markdown — NOT a recognized VS Code customization file.  
-**Injection:** Not auto-injected by VS Code. Referenced via Markdown links from `.agent.md`
-body files and `copilot-instructions.md`. Injected into this session via extension
-`modeInstructions` YAML key.  
+**Injection:** Not auto-injected by VS Code. Loaded via `github.copilot.chat.codeGeneration.instructions.file`
+in `.vscode/settings.json` (gitignored — portability risk: absent on a fresh clone). Also
+included when Markdown links in `.agent.md` bodies are followed via `chat.includeReferencedInstructions`
+(enabled in user settings).  
 **Intended purpose:** Full project reference — workflow, tool matrix, TDD cycle, phase
 management, all MCP tools.
 
@@ -374,18 +378,79 @@ All are manually invoked via `/name`. ✅
 | `prepare-qa-brief.prompt.md` | `prepare-qa-brief` | `imp` | Deep copy-paste QA prompt block |
 | `request-review.prompt.md` | `request-review` | `qa` | Start separate QA review chat |
 | `prepare-implementation-brief.prompt.md` | `prepare-implementation-brief` | `qa` | Deep copy-paste impl prompt from QA |
-| `plan-executionDirectiveBatchCoordination.prompt.md` | *(no name field)* | *(none)* | Old design discussion doc — NOT a real slash command |
+| `plan-executionDirectiveBatchCoordination.prompt.md` | *(none — defaults to filename per VS Code docs)* | *(none)* | Stale design discussion doc from 2025. Valid slash command (`name` is optional). Candidate for archive. |
 
 **Assessment:**
-- ✅ 8 of 9 are correct VS Code prompt files
-- ❌ `plan-executionDirectiveBatchCoordination.prompt.md` has no frontmatter `name` field
-  and is not a prompt — it's a stale design discussion document that accidentally has a
-  `.prompt.md` extension. It will appear in the `/` command list with its full filename.
-- ⚠️ `start-work.prompt.md` and `resume-work.prompt.md` reference a `.copilot/session-state.json`
-  file that does not exist in the repo. This is dead reference.
+- ✅ All 9 files are structurally valid VS Code prompt files (`name` is optional per VS Code
+  docs — defaults to filename when absent)
+- ⚠️ `plan-executionDirectiveBatchCoordination.prompt.md` has no `name` field, but this is
+  permitted — VS Code uses the filename as the slash command name. The content is a stale
+  design discussion document from 2025. Candidate for archive.
+- ⚠️ `resume-work.prompt.md` (line 17) references `.copilot/session-state.json` which does
+  not exist in the repo. Dead reference. `start-work.prompt.md` does not have this reference.
+- ⚠️ 7 of 9 prompts are legacy — built on an orchestration model where session state,
+  role-file references, and hand-over preparation were managed via separate slash commands.
+  The new `.agent.md` body model absorbs these workflows. Candidates for archive:
+  `start-work`, `resume-work`, `prepare-handover`, `prepare-qa-brief`,
+  `prepare-implementation-brief`, `request-review`, `plan-executionDirectiveBatchCoordination`.
+- ✅ `open-issue.prompt.md` and `implement-cycle.prompt.md` remain current.
 - ⚠️ `implement-cycle.prompt.md` uses `activate_*` tool calls (Phase 0) that are specific
   to the MCP lazy-loading model. These work correctly but should be reviewed when MCP
   activation model changes.
+
+---
+
+### FILES 18–20: Additional Legacy Entry Points
+
+Three files referencing agent orchestration files were identified during QA review of this
+document. All are in scope for #333 because they reference files that will be deleted or
+renamed.
+
+#### FILE 18: `AGENT_PROMPT.md` (workspace root)
+
+**Content:** Single-line redirect: `This document has moved to [agent.md](agent.md).`  
+**Issue:** `agent.md` is being deleted as part of this issue. A redirect to a deleted file
+has zero value.  
+**Assessment:**
+- ❌ References `agent.md` which will be deleted
+- ❌ A redirect-only file with no independent content provides no value after migration
+- **Decision: Delete.**
+
+---
+
+#### FILE 19: `role_reset_snippets.md` (workspace root)
+
+**Content:** Copy-paste reset prompts for use after context compaction. Two snippets:
+- QA Reset: `"Gebruik qa_agent.md als rolhandleiding voor deze sessie. ..."`
+- Implementation Reset: `"Gebruik imp_agent.md als rolhandleiding voor deze sessie. ..."`
+
+**Issue:** Both snippets reference `qa_agent.md` and `imp_agent.md` by filename. These root
+files are being deleted — their content is absorbed into `.github/agents/*.agent.md` bodies.  
+**Assessment:**
+- ❌ References `qa_agent.md` / `imp_agent.md` which will be deleted
+- ✅ The concept (reset snippet after compaction) remains useful
+- **Decision: Update.** Replace `"Gebruik qa_agent.md als rolhandleiding"` with
+  `"Select @qa and run startup protocol"`. File stays, snippets updated.
+
+---
+
+#### FILE 20: `.agent/reboot.md`
+
+**Content:**
+```
+[SYSTEM REFRESH: S1mpleTrader V3 Protocol]
+Authority: Read `agent.md` for full context.
+1. ⚡ WAKE UP: Run activate_*_tools immediately.
+2. ⛔ FORBIDDEN: NO terminal git/file commands. NO manual create_file.
+3. ✅ MANDATORY: Use scaffold_artifact for code/docs.
+4. 🔄 WORKFLOW: Issue → Branch → TDD → PR.
+```
+
+**Issue:** References `agent.md`, which will be deleted and replaced by `AGENTS.md`.  
+**Assessment:**
+- ❌ References `agent.md` which will be deleted
+- ✅ Four-line wake-up snippet concept remains useful
+- **Decision: One-line update.** Change `agent.md` → `AGENTS.md` in authority line.
 
 ---
 
@@ -395,7 +460,7 @@ All are manually invoked via `/name`. ✅
 
 | User's described layer | Official reality | Verdict |
 |---|---|---|
-| `agent.md` = project-specific working method | Plain markdown, not VS Code-recognized. Injected via extension `modeInstructions` or Markdown links only. | ✅ Purpose correct — but injection is non-standard |
+| `agent.md` = project-specific working method | Plain markdown, not VS Code-recognized. Loaded via `github.copilot.chat.codeGeneration.instructions.file` in `.vscode/settings.json` (gitignored). Also included via Markdown links when `chat.includeReferencedInstructions` is enabled. | ✅ Purpose correct — but injection via gitignored settings file (portability risk) |
 | `copilot-instructions.md` = "what is the role? auto-injected every prompt?" | Always-on ✅, but purpose = **coding standards/conventions**, NOT role definition. Role is in `.agent.md`. | ❌ Purpose mislabelled |
 | `*.agent.md` = generic role descriptions | These ARE the authoritative role/persona definitions. Body prepended to user prompt when selected. Not "generic" — workspace-specific and fully authoritative. | ❌ Understated — they are THE authority |
 | `*_agent.md` = further elaboration, workspace-specific | NOT a VS Code concept. Included only if `chat.includeReferencedInstructions` enabled. | ✅ Purpose correct — but injection not guaranteed |
@@ -435,7 +500,7 @@ Manual invocation (slash commands):
 | `agent.md` workflow types table missing `ready` as final phase | Low | `agent.md` |
 | Tool matrix duplicated between `agent.md` and `copilot-instructions.md` | Low | Both |
 | `plan-executionDirectiveBatch...prompt.md` is a stale doc with `.prompt.md` extension | Medium | `.github/prompts/` |
-| `start-work` and `resume-work` reference non-existent `.copilot/session-state.json` | Low | 2 prompt files |
+| `resume-work` references non-existent `.copilot/session-state.json` (line 17) | Low | `resume-work.prompt.md` |
 | `*_agent.md` files are critical (suppression audit, scope lock, etc.) but inclusion not guaranteed | High | `co_agent.md`, `imp_agent.md`, `qa_agent.md` |
 
 ---
@@ -489,7 +554,8 @@ injection.
 ## Findings Summary
 
 1. The filename `.github/.copilot-instructions.md` (with leading dot) breaks VS Code
-   native auto-detect. The file is injected through non-standard means only.
+   native auto-detect. Verified by inspecting `.vscode/settings.json` and user `settings.json`:
+   neither references this file via any mechanism. The file is not currently loaded — it is dead.
 2. The `.agent.md` files are structurally correct but incomplete — missing `tools` and
    `handoffs` frontmatter fields that VS Code uses to enforce role boundaries.
 3. The most critical operational rules (suppression audit, scope lock, QA questions) are
@@ -498,9 +564,17 @@ injection.
    phase names that actively mislead agents.
 5. `agent.md` is accurate and comprehensive on the tool matrix but does not describe the
    three-agent model — a gap for onboarding.
-6. One prompt file (`plan-executionDirectiveBatch...`) is a stale document masquerading
-   as a slash command.
-7. Two prompt files reference a non-existent session state file.
+6. One prompt file (`plan-executionDirectiveBatch...`) contains a stale design discussion
+   document. Its content is legacy but it IS a valid slash command (VS Code docs: `name` is
+   optional, defaults to filename). Correct classification: valid slash command with stale content.
+7. One prompt file (`resume-work`) references a non-existent `.copilot/session-state.json`.
+   `start-work` does not have this reference.
+8. `agent.md` is injected via `github.copilot.chat.codeGeneration.instructions.file` in
+   `.vscode/settings.json`, which is gitignored. On a fresh clone this instruction layer is
+   absent. Migration to `AGENTS.md` (VS Code-native, committed to repo) eliminates this
+   portability risk.
+9. 7 of 9 prompt files are legacy (built on old orchestration model). Only `open-issue` and
+   `implement-cycle` remain current. The rest should be archived.
 
 ---
 
@@ -578,20 +652,43 @@ AGENTS.md  (workspace root)
         8 core QA questions, review standard, scope determination
         [absorbs qa_agent.md — root file deleted]
 
-.github/prompts/*.prompt.md  (8 files — one removed, two refs cleaned)
-  ├── plan-executionDirectiveBatch...prompt.md → moved to docs/ (not a slash command)
-  └── start-work + resume-work → remove dead .copilot/session-state.json reference
+.github/prompts/*.prompt.md  (2 kept, 7 archived)
+  ├── open-issue.prompt.md         → kept (current)
+  ├── implement-cycle.prompt.md    → kept (current)
+  └── archive/ (new subfolder)
+        start-work, resume-work, prepare-handover, prepare-qa-brief,
+        prepare-implementation-brief, request-review,
+        plan-executionDirectiveBatchCoordination
+        [legacy orchestration model — archived, not deleted]
+
+AGENT_PROMPT.md  → deleted
+  (redirect to agent.md which is deleted; redirect has zero value)
+
+role_reset_snippets.md  → updated
+  (snippets reference qa_agent.md/imp_agent.md by filename; update to
+   "select @qa / @imp and run startup protocol")
+
+.agent/reboot.md  → one-line update
+  (change `agent.md` → `AGENTS.md` in authority line)
 ```
 
-**Files deleted:** `agent.md`, `co_agent.md`, `imp_agent.md`, `qa_agent.md`  
-**Files created:** `AGENTS.md`  
-**Files renamed:** `.github/.copilot-instructions.md` → `.github/copilot-instructions.md`  
+**Files deleted:** `agent.md`, `co_agent.md`, `imp_agent.md`, `qa_agent.md`, `AGENT_PROMPT.md`
+**Files created:** `AGENTS.md`, `.github/prompts/archive/` (7 legacy prompts moved here)
+**Files renamed:** `.github/.copilot-instructions.md` → `.github/copilot-instructions.md`
 **Files rewritten:** all three `.github/agents/*.agent.md` (bodies expanded, frontmatter completed)
+**Files updated:** `role_reset_snippets.md`, `.agent/reboot.md`
 
 ### 5.4 Required VS Code setting
 
-`AGENTS.md` requires `chat.useAgentsMdFile = true`. This must be documented as a project
-prerequisite (e.g., in README or `.vscode/settings.json`).
+`AGENTS.md` requires `chat.useAgentsMdFile = true`. Additionally, migration requires
+updating `.vscode/settings.json` (gitignored — must be communicated manually):
+
+- Remove the `github.copilot.chat.codeGeneration.instructions` entry for `agent.md`
+  (replaced by `AGENTS.md` native loading)
+- Add `"chat.useAgentsMdFile": true`
+
+This change cannot be committed to the repo. It must be documented in the PR description
+and/or README as a post-merge manual setup step for all contributors.
 
 ### 5.5 Open question — tools enumeration
 
