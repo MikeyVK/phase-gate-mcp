@@ -16,11 +16,28 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Returning to research phase \u2014 documentation-only mini scope extension committed and pushed; active work on #268 continues in research",
   "issue_title": "MCP-tool-first orchestration: get_work_context + create_handover",
   "parent_branch": "main",
   "created_at": "2026-05-12T14:30:19.800556+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-12T15:11:05.668140+00:00",
+      "human_approval": "User approved on 2026-05-12",
+      "forced": true,
+      "skip_reason": "Mini scope extension: add built-in VS Code read/search tools to imp.agent.md tools frontmatter \u2014 documentation-only change, no code impact"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "research",
+      "timestamp": "2026-05-12T15:11:31.599448+00:00",
+      "human_approval": "User approved on 2026-05-12",
+      "forced": true,
+      "skip_reason": "Returning to research phase \u2014 documentation-only mini scope extension committed and pushed; active work on #268 continues in research"
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
