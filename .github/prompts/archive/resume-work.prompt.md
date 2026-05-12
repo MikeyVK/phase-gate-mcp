@@ -11,18 +11,17 @@ Reconstruct the active implementation context before making changes.
 
 ## Recovery Protocol
 
-1. Read [agent.md](../../agent.md).
-2. Read [.github/.copilot-instructions.md](../.copilot-instructions.md).
+1. Read [AGENTS.md](../../AGENTS.md).
+2. Read [.github/copilot-instructions.md](../copilot-instructions.md).
 3. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md).
-4. Read `.copilot/session-state.json` if it exists — this also contains the active sub-role.
-5. Inspect the current worktree before editing anything.
-6. Reconstruct scope from the latest user request, the current conversation, visible files in scope, and any explicit plan or handover.
+4. Inspect the current worktree before editing anything.
+5. Reconstruct scope from the latest user request, the current conversation, visible files in scope, and any explicit plan or handover.
 
 ## Required Output
 
 Respond with these sections before you continue implementation:
 1. Recovered goal
-2. Active sub-role (from state file, or default `researcher` if absent)
+2. Active sub-role
 3. Files in scope
 4. Verification state
 5. Next concrete step

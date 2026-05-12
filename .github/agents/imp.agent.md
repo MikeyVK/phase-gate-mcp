@@ -7,6 +7,7 @@ argument-hint: >
 target: vscode
 tools:
   - phase-gate-mcp/*
+  - run_in_terminal
 handoffs:
   - agent: qa
     label: When implementation cycle is complete and hand-over is produced
