@@ -1,6 +1,6 @@
 <!-- docs/development/issue268/research.md -->
 <!-- template=research version=8b7bb3ab created=2026-05-12T14:35Z updated=2026-05-12 -->
-# MCP-Tool-First Orchestration: get_work_context + create_handover
+# MCP-Tool-First Orchestration: get_work_context Extension and context_loaded Gate
 
 **Status:** FINAL DRAFT
 **Version:** 2.0
@@ -33,7 +33,7 @@ Three changes are needed:
 
 1. Define the SSOT and structure for workflow+phase work instructions
 2. Define the `get_work_context` response extension
-3. Define `create_handover` input schema and validation contract
+3. ~~Define `create_handover` input schema and validation contract~~ *(deferred — see Open Questions #6)*
 4. Establish the symmetric lifecycle model (open/close slash commands vs. in-phase tools)
 5. Define the `context_loaded` enforcement mechanism
 6. Determine blast radius in production and test code
@@ -45,7 +45,7 @@ Three changes are needed:
 **In scope:**
 - `contracts.yaml` `instructions` section design (conceptual)
 - `get_work_context` response extension
-- `create_handover` tool contract
+- ~~`create_handover` tool contract~~ *(deferred)*
 - Branch lifecycle symmetry model
 - `context_loaded` enforcement gate design
 - Reusable code from `feature/263`
@@ -156,21 +156,15 @@ The current response returns: branch, linked issue, phase, recent commits. Requi
 The response delivers everything an agent needs to begin work without reading any static
 document. It is the machine-driven equivalent of the AGENTS.md §1.2 startup protocol.
 
-### F_268.7 — create_handover: YAML-driven field validation
+### F_268.7 — context_loaded enforcement gate
 
-A new tool that validates a handover dict against the SubRoleSpec for the active sub-role.
-
-- **Input:** sub-role identifier + dict of handover fields
-- **Validation:** missing required fields → structured error with field list
-- **On success:** formatted handover block returned; optionally written to `.phase-gate/temp/`
-- **Config source:** SubRoleSpec YAML (cherry-pick from `feature/263`, see F_268.9)
-
-### F_268.8 — context_loaded enforcement gate
-
-After every phase transition and every cycle transition, a `context_loaded` flag in
-`state.json` is reset to `false`. All tools except `get_work_context` and the two force
-transition tools check this flag as a pre-condition. When `false`, execution is blocked.
-Calling `get_work_context` sets the flag to `true` as a side effect.
+On entry to every phase and every cycle, the `context_loaded` flag in `state.json` is
+reset to `false` by the state engine as part of writing the new phase/cycle state record.
+This is an invariant of the state engine, not a responsibility of the transition tools —
+an implementation agent must not land the reset on a transition tool call. All tools
+except `get_work_context` and the two force transition tools check this flag as a
+pre-condition. When `false`, execution is blocked. Calling `get_work_context` sets the
+flag to `true` as a side effect.
 
 **Excluded from the gate:**
 - `get_work_context` — the tool that unblocks; must always be callable
@@ -194,7 +188,7 @@ no practical value. An explicit opt-out preserves the intent; a degraded mode do
 pattern. A new `check_context_loaded` action type is registered in `enforcement.yaml`. The
 `context_loaded` flag is a new field in `state.json` managed by the state engine.
 
-### F_268.9 — Reusable code from feature/263
+### F_268.8 — Reusable code from feature/263
 
 Cherry-pick targets (hooks/ package excluded — confirmed dead):
 
@@ -227,16 +221,19 @@ side effect of execution. This is a CQS tension point (query that also writes st
 Architecture Principles section below.
 
 **`mcp_server/tools/phase_tools.py` — `TransitionPhaseTool`**
-Must reset `context_loaded = false` on successful transition. `ForcePhaseTool` must NOT
-reset the flag and must NOT be blocked by the gate.
+No direct change for the `context_loaded` flag. The state engine resets it automatically
+on writing new phase state. `ForcePhaseTool` is exempt from the blocking check; the state
+engine still resets the flag when it writes new state, so agents must call
+`get_work_context` after a forced phase transition before resuming other tool calls.
 
 **`mcp_server/tools/cycle_tools.py` — `TransitionCycleTool`**
-Must reset `context_loaded = false` on successful cycle transition. `ForceCycleTool` same
-exclusion as `ForcePhaseTool`.
+No direct change for the `context_loaded` flag. Same state-engine ownership as above.
+`ForceCycleTool` exempt from blocking check; flag still reset by state engine on entry.
 
 **`mcp_server/managers/phase_state_engine.py`**
-New field `context_loaded: bool` in state model. New methods to reset and set the flag,
-called by transition tools and `GetWorkContextTool` respectively.
+New field `context_loaded: bool` in state model. The engine resets the flag to `false`
+on any new phase or cycle state write. A separate method sets it to `true`, called by
+`GetWorkContextTool` after delivering context.
 
 **`mcp_server/managers/enforcement_runner.py`**
 New action type `check_context_loaded`. Reads the flag from state, returns blocking error
@@ -266,8 +263,10 @@ inherit `BranchMutatingTool`.
 effect verification via observable state (not private attribute inspection).
 
 **`tests/mcp_server/unit/managers/test_phase_state_engine.py`**
-New tests for `context_loaded` flag: reset on phase transition, reset on cycle transition,
-set on `get_work_context` execution. Force transitions must not reset the flag.
+New tests for `context_loaded` flag: reset by the engine on phase entry, reset on cycle
+entry, set by the engine when `get_work_context` marks context loaded. Force transitions
+verify that the engine resets the flag (as a state-write side effect) but are not blocked
+by the gate pre-check.
 
 **`tests/mcp_server/integration/test_ready_phase_enforcement.py`**
 Model for new integration test `test_context_loaded_enforcement.py`: verifies the gate
@@ -342,10 +341,11 @@ All remaining open questions are design or planning questions, not research ques
 
 5. **`close-issue` invoker** — is this a `@co` or `@imp` responsibility after human
    PR approval?
-   *(planning)*
-
-6. **`create_handover` output** — content-only return or write to `.phase-gate/temp/`?
-   *(design)*
+6. **`create_handover` tool** — deferred. A dedicated tool that validates handover
+   fields against the SubRoleSpec before cross-chat handover is a candidate feature,
+   but is not required for #268. The `handover_template` delivered by `get_work_context`
+   may be sufficient as a protocol-discipline mechanism. Pick up as a separate issue.
+   *(deferred)*
 
 ---
 
