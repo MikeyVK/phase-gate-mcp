@@ -73,7 +73,98 @@ Migration to `AGENTS.md` + self-contained `.agent.md` bodies eliminates all thre
 
 ## Implementation Steps
 
-This is a documentation issue — no TDD cycles. Steps are sequential file operations.
+This is a documentation issue — no TDD red/green/refactor cycles. Work is split into four
+logical cycles by cohesion and blast radius. Each cycle can be implemented, committed, and
+verified independently.
+
+---
+
+### C_333.1 — Foundation files (AGENTS.md + copilot-instructions.md)
+
+**Scope:** Create the two always-on instruction files that replace the current non-portable setup.
+
+**Steps:**
+- Step 1: Create `AGENTS.md` at workspace root  
+  Content: multi-agent protocol from `agent.md` (Phases 1–5, tool matrix, TDD cycle, workflow
+  types, ready-phase enforcement, `run_in_terminal` restrictions). Add three-agent model
+  section (@co/@imp/@qa, two-chat model, hand-over contract). Fix: add `ready` as final phase
+  in workflow types table.
+- Step 2: Git-rename `.github/.copilot-instructions.md` → `.github/copilot-instructions.md`  
+  Fix TDD commit params: `phase="red"` → `workflow_phase=... sub_phase=...`  
+  Fix workflow phase names: `tdd` → `implementation`, `integration` → `validation`
+
+**Deliverables:**
+- `AGENTS.md` exists at workspace root with three-agent model section
+- `.github/copilot-instructions.md` exists (no leading dot), TDD params correct, phase names correct
+- `.github/.copilot-instructions.md` deleted
+
+---
+
+### C_333.2 — Agent files (rewrite all three .agent.md)
+
+**Scope:** Make `.agent.md` bodies fully self-contained; add `tools` + `handoffs` frontmatter.
+Each file absorbs its corresponding `*_agent.md` root file.
+
+**Steps:**
+- Step 3: Rewrite `.github/agents/co.agent.md`
+- Step 4: Rewrite `.github/agents/imp.agent.md`
+- Step 5: Rewrite `.github/agents/qa.agent.md`
+
+For detailed frontmatter (`tools`, `handoffs`) and body content per file, see the sections
+below this cycles overview.
+
+**Deliverables:**
+- `co.agent.md`: `tools` frontmatter present (read-only list), `handoffs` present (→ @imp), body self-contained
+- `imp.agent.md`: `tools` frontmatter present (`st3-workflow/*`), `handoffs` present (→ @qa), body self-contained
+- `qa.agent.md`: `tools` frontmatter present (read-only list), `handoffs` present (→ @imp, → @co), body self-contained
+
+---
+
+### C_333.3 — Legacy cleanup (delete root files + archive prompts)
+
+**Scope:** Remove all files that are superseded by C_333.1 and C_333.2. Deactivate legacy
+prompts by moving to archive.
+
+**Steps:**
+- Step 6: Delete `agent.md`, `co_agent.md`, `imp_agent.md`, `qa_agent.md`, `AGENT_PROMPT.md`
+- Step 7: Fix dead `session-state.json` reference in `resume-work.prompt.md` (line 17) —
+  do this **before** moving to archive
+- Step 8: Move 7 legacy prompts to `.github/prompts/archive/`:
+  `start-work`, `resume-work`, `prepare-handover`, `prepare-qa-brief`,
+  `prepare-implementation-brief`, `request-review`, `plan-executionDirectiveBatchCoordination`
+
+**Post-step verification:** Only `open-issue.prompt.md` and `implement-cycle.prompt.md`
+remain in `.github/prompts/` root. Verify that archive files no longer appear in the VS Code
+`/` command list (subdirectory scanning behaviour).
+
+**Deliverables:**
+- `agent.md`, `co_agent.md`, `imp_agent.md`, `qa_agent.md`, `AGENT_PROMPT.md` deleted
+- `.github/prompts/archive/` contains 7 files
+- `.github/prompts/` root contains exactly 2 files
+- `resume-work.prompt.md` (in archive): dead session-state reference removed
+
+---
+
+### C_333.4 — Entry point updates (role_reset_snippets.md + .agent/reboot.md)
+
+**Scope:** Update two utility files that reference files being deleted. Smallest cycle —
+two targeted edits.
+
+**Steps:**
+- Step 9: Update `role_reset_snippets.md`  
+  QA Reset snippet: replace `"Gebruik qa_agent.md als rolhandleiding"` →  
+  `"Select @qa in the Chat view and run the startup protocol."`  
+  Implementation Reset snippet: replace `"Gebruik imp_agent.md als rolhandleiding"` →  
+  `"Select @imp in the Chat view and run the startup protocol."`
+- Step 10: Update `.agent/reboot.md`  
+  Change `Authority: Read \`agent.md\` for full context.` →  
+  `Authority: Read \`AGENTS.md\` for full context.`
+
+**Deliverables:**
+- `role_reset_snippets.md`: no references to `qa_agent.md` or `imp_agent.md`
+- `.agent/reboot.md`: authority line references `AGENTS.md`
+
+---
 
 ### Step 1 — Create AGENTS.md
 Content from `agent.md`: Phase 1 (Orientation), Phase 2 (Issue-First Workflow), Phase 3
