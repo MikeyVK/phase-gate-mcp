@@ -115,7 +115,7 @@ below this cycles overview.
 
 **Deliverables:**
 - `co.agent.md`: `tools` frontmatter present (read-only list), `handoffs` present (→ @imp), body self-contained
-- `imp.agent.md`: `tools` frontmatter present (`st3-workflow/*`), `handoffs` present (→ @qa), body self-contained
+- `imp.agent.md`: `tools` frontmatter present (`phase-gate-mcp/*`), `handoffs` present (→ @qa), body self-contained
 - `qa.agent.md`: `tools` frontmatter present (read-only list), `handoffs` present (→ @imp, → @co), body self-contained
 
 ---
@@ -142,6 +142,7 @@ remain in `.github/prompts/` root. Verify that archive files no longer appear in
 - `.github/prompts/archive/` contains 7 files
 - `.github/prompts/` root contains exactly 2 files
 - `resume-work.prompt.md` (in archive): dead session-state reference removed
+- Manual verification in VS Code: `/` command list shows only `open-issue` and `implement-cycle`; no archived prompt file visible (if any archived file appears, apply `_archived-*.prompt.md` rename fallback before closing cycle)
 
 ---
 
@@ -182,22 +183,22 @@ Fix: workflow types table missing `ready` as final phase.
 Frontmatter additions:
 ```yaml
 tools:
-  - mcp_st3-workflow_get_work_context
-  - mcp_st3-workflow_list_issues
-  - mcp_st3-workflow_get_issue
-  - mcp_st3-workflow_create_issue
-  - mcp_st3-workflow_update_issue
-  - mcp_st3-workflow_close_issue
-  - mcp_st3-workflow_list_labels
-  - mcp_st3-workflow_create_label
-  - mcp_st3-workflow_list_milestones
-  - mcp_st3-workflow_git_status
-  - mcp_st3-workflow_git_list_branches
-  - mcp_st3-workflow_search_documentation
-  - mcp_st3-workflow_health_check
+  - mcp_phase-gate-mcp_get_work_context
+  - mcp_phase-gate-mcp_list_issues
+  - mcp_phase-gate-mcp_get_issue
+  - mcp_phase-gate-mcp_create_issue
+  - mcp_phase-gate-mcp_update_issue
+  - mcp_phase-gate-mcp_close_issue
+  - mcp_phase-gate-mcp_list_labels
+  - mcp_phase-gate-mcp_create_label
+  - mcp_phase-gate-mcp_list_milestones
+  - mcp_phase-gate-mcp_git_status
+  - mcp_phase-gate-mcp_git_list_branches
+  - mcp_phase-gate-mcp_search_documentation
+  - mcp_phase-gate-mcp_health_check
 handoffs:
   - agent: imp
-    condition: When coordination produces actionable implementation directive
+    label: When coordination produces actionable implementation directive
 ```
 Body: absorb full `co_agent.md` content (sub-roles, startup protocol, output contracts,
 QA boundary). Remove Markdown link to `co_agent.md`.
@@ -206,10 +207,10 @@ QA boundary). Remove Markdown link to `co_agent.md`.
 Frontmatter additions:
 ```yaml
 tools:
-  - mcp_st3-workflow_*
+  - mcp_phase-gate-mcp_*
 handoffs:
   - agent: qa
-    condition: When implementation cycle is complete and hand-over is produced
+    label: When implementation cycle is complete and hand-over is produced
 ```
 Body: absorb full `imp_agent.md` content (scope lock, architectural purity rules, test
 refactor discipline, hand-over format, QA boundary). Remove Markdown links to `agent.md`
@@ -219,21 +220,21 @@ and `imp_agent.md`.
 Frontmatter additions:
 ```yaml
 tools:
-  - mcp_st3-workflow_get_work_context
-  - mcp_st3-workflow_run_tests
-  - mcp_st3-workflow_run_quality_gates
-  - mcp_st3-workflow_git_status
-  - mcp_st3-workflow_git_diff_stat
-  - mcp_st3-workflow_git_list_branches
-  - mcp_st3-workflow_search_documentation
-  - mcp_st3-workflow_get_issue
-  - mcp_st3-workflow_list_issues
-  - mcp_st3-workflow_health_check
+  - mcp_phase-gate-mcp_get_work_context
+  - mcp_phase-gate-mcp_run_tests
+  - mcp_phase-gate-mcp_run_quality_gates
+  - mcp_phase-gate-mcp_git_status
+  - mcp_phase-gate-mcp_git_diff_stat
+  - mcp_phase-gate-mcp_git_list_branches
+  - mcp_phase-gate-mcp_search_documentation
+  - mcp_phase-gate-mcp_get_issue
+  - mcp_phase-gate-mcp_list_issues
+  - mcp_phase-gate-mcp_health_check
 handoffs:
   - agent: imp
-    condition: NOGO verdict — implementation corrections required
+    label: NOGO verdict — implementation corrections required
   - agent: co
-    condition: Scope or planning issue requiring coordination
+    label: Scope or planning issue requiring coordination
 ```
 Body: absorb full `qa_agent.md` content (suppression audit — CRITICAL, 8 core QA questions,
 review standard, scope determination). Remove Markdown links to `agent.md` and `qa_agent.md`.
@@ -277,7 +278,7 @@ Change `Authority: Read \`agent.md\` for full context.`
 | `AGENTS.md` file size: full `agent.md` content may make always-on context very large | Keep AGENTS.md to multi-agent protocol only; omit detailed tool matrix; cross-reference to docs/ for deep reference |
 | `.vscode/settings.json` is gitignored: post-merge settings update not enforceable | Document in PR description as mandatory manual step |
 | VS Code may not scan `.github/prompts/archive/` subdirectory for slash commands | Verify in VS Code after archiving; if archive files still appear, rename to `_archived-*.prompt.md` pattern as fallback |
-| `chat.useAgentsMdFile` not yet enabled: `AGENTS.md` will be committed but inactive | Document as prerequisite; current `agent.md` injection continues to work until the developer updates their settings |
+| `agent.md` deletion (C_333.3) immediately breaks existing injection: `.vscode/settings.json` still references `agent.md`; after deletion this injection fails until developer updates settings | Intentional break — document in PR description: after pulling, each developer must add `"chat.useAgentsMdFile": true` and remove the `codeGeneration.instructions` entry for `agent.md` from `.vscode/settings.json`. Until then, the agent protocol is unavailable on that machine. |
 
 ---
 
