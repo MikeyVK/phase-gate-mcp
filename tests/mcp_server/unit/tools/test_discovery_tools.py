@@ -902,3 +902,97 @@ class TestGetWorkContextStateErrors:
         result = await tool.execute(GetWorkContextInput(), ctx)
 
         assert not result.is_error  # OSError → graceful degradation, not hard error
+
+
+# ---------------------------------------------------------------------------
+# C1 RED — GetWorkContextTool sub_role_hint + phase_instructions (issue #268)
+# ---------------------------------------------------------------------------
+
+
+class TestGetWorkContextSubRoleAndPhaseInstructions:
+    """C1 MVP (issue #268): sub_role_hint and phase_instructions fields in response."""
+
+    def _make_tool(self, phase: str) -> GetWorkContextTool:
+        """Return a GetWorkContextTool whose resolver returns the given phase."""
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/268-test"
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase=phase,
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="state.json",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        settings = make_settings()
+        settings.github.token = None
+        return GetWorkContextTool(
+            settings=settings,
+            git_manager=mock_git,
+            project_manager=MagicMock(),
+            state_engine=MagicMock(),
+            workflow_status_resolver=resolver,
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_sub_role_hint_for_known_phase(self) -> None:
+        """sub_role_hint must equal 'implementer' when phase is 'implementation'."""
+        tool = self._make_tool(phase="implementation")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "sub_role_hint" in text
+        assert "implementer" in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_phase_instructions_for_feature_implementation(
+        self,
+    ) -> None:
+        """phase_instructions must be non-empty for (feature, implementation)."""
+        tool = self._make_tool(phase="implementation")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "phase_instructions" in text
+        # Instructions must mention the core TDD tools agents should call
+        assert "get_project_plan" in text
+        assert "run_tests" in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_empty_string_for_unknown_workflow_phase(
+        self,
+    ) -> None:
+        """Unknown (workflow, phase) combo must return empty string, never KeyError."""
+        tool = self._make_tool(phase="nonexistent_phase_xyz")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        # sub_role_hint key must be present in output (empty string is fine)
+        text = result.content[0]["text"]
+        assert "sub_role_hint" in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_empty_string_when_workflow_unavailable(
+        self,
+    ) -> None:
+        """Graceful fallback when workflow resolution raises (OSError path)."""
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/268-test"
+        resolver = MagicMock()
+        resolver.resolve_current.side_effect = OSError("state.json missing")
+        settings = make_settings()
+        settings.github.token = None
+        tool = GetWorkContextTool(
+            settings=settings,
+            git_manager=mock_git,
+            project_manager=MagicMock(),
+            state_engine=MagicMock(),
+            workflow_status_resolver=resolver,
+        )
+
+        # OSError path uses graceful fallback — not an error result
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+        assert not result.is_error
