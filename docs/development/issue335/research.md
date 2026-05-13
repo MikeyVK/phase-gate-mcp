@@ -74,11 +74,23 @@ for state errors:
 The new exception `StateAlreadyExistsError` belongs in the same module as a peer of these.
 Callers (tool layer and tests) import it from there.
 
-### F_335.4 — `InitializeProjectTool` needs no change
+### F_335.4 — Tool layer: one-line change required (Option B chosen)
 
 `mcp_server/tools/project_tools.py` calls `state_engine.initialize_branch()` inside a
-`lambda`. The exception will propagate naturally; the tool's existing error formatting
-path handles it. No changes needed in the tool layer.
+`lambda`. The existing `except`-tuple catches `(ValueError, OSError, RuntimeError)`.
+
+`StateAlreadyExistsError` will inherit from `Exception` (consistent with peer exceptions
+`StateBranchMismatchError` and `StateNotFoundError`). It does **not** fall under `ValueError`
+or `RuntimeError`, so it would propagate unhandled through the MCP layer without a fix.
+
+**Decision: Option B** — `StateAlreadyExistsError(Exception)` + add to `except`-tuple:
+```python
+except (ValueError, OSError, RuntimeError, StateAlreadyExistsError) as e:
+    return ToolResult.error(str(e))
+```
+
+Rationale: consistent with existing exception hierarchy; semantically precise; tool change
+is exactly one word added to one tuple.
 
 ### F_335.5 — Affected test files
 
@@ -106,14 +118,15 @@ must not touch those test files.
 | F_335.1 | No guard before write in `initialize_branch()` | Add guard check |
 | F_335.2 | Existence detected via `_state_repository.load()` + branch compare | Use this pattern |
 | F_335.3 | New exception `StateAlreadyExistsError` needed | Add to `state_repository.py` |
-| F_335.4 | Tool layer (`project_tools.py`) unchanged | Confirmed out of scope |
+| F_335.4 | Tool layer needs one-line change (Option B: `StateAlreadyExistsError(Exception)`) | Add to `except`-tuple in `execute()` |
 | F_335.5 | One new test needed; no existing passing test breaks | Confirmed |
 | F_335.6 | Pre-existing #257 failures are unrelated | Do not touch |
 
 **Minimal fix surface:**
 1. `mcp_server/managers/state_repository.py` — add `StateAlreadyExistsError`
 2. `mcp_server/managers/phase_state_engine.py` — add guard in `initialize_branch()`
-3. `tests/mcp_server/unit/managers/test_phase_state_engine_persistence.py` — add one test
+3. `mcp_server/tools/project_tools.py` — add `StateAlreadyExistsError` to `except`-tuple
+4. `tests/mcp_server/unit/managers/test_phase_state_engine_persistence.py` — add one test
 
 ---
 
