@@ -351,6 +351,69 @@ only has value if instructions are actually followed.
 **Implementation order:** MVP is the first deliverable of the implementation phase.
 Full infrastructure (ContextLoadedCache, enforcement gate) is blocked on MVP validation.
 
+### F_268.12 — Role model: @co as lifecycle coordinator
+
+The current role definitions are inconsistent in one place: `open-issue` already grants
+`@co` write access to branch state (`initialize_project`), but the stated role definition
+calls `@co` read-only for git operations. The inconsistency should be resolved by
+formalizing the correct definition rather than reverting the `open-issue` behavior.
+
+**Revised role model:**
+
+| Dimension | `@co` | `@imp` | `@qa` |
+|-----------|-------|--------|-------|
+| Purpose | Lifecycle coordination | Technical execution | Quality judgment |
+| Write access | Lifecycle-administrative (branch open/close) | Technical (commits, transitions, files) | Never |
+| Decision authority | Priority, scope, go/no-go to implementation | How it is built | Approve or reject |
+| Team analogy | Project lead | Developer | QA engineer |
+
+**Lifecycle-boundary writes belong to `@co`:**
+
+- **Lifecycle entry (open-issue):** `create_issue`, `create_branch`, `git_checkout`,
+  `initialize_project`, `get_project_plan`
+- **Lifecycle exit (close-issue):** `merge_pr`, `close_issue`, optional branch cleanup
+- **Never:** commits, file edits, phase transitions, `submit_pr` — those remain `@imp`
+
+**`merge_pr` is a lifecycle-exit write, symmetric with `initialize_project`:**
+Both are administrative writes at a lifecycle boundary. The symmetry is structural:
+
+```
+open-issue  (@co):  ... → initialize_project  [lifecycle entry]
+close-issue (@co):  merge_pr → close_issue      [lifecycle exit]
+```
+
+**Why not `@imp`:** `@imp`'s scope closes at `submit_pr`. Starting a new `@imp` session
+solely to call `merge_pr` is a session-waste for one administrative tool-call. `@imp`
+executes within the branch; merging the branch is a boundary event, not within-branch work.
+
+**Why not `@qa`:** `@qa` must remain unconditionally write-free. The QA verdict is verbal
+("GO / NO-GO" in chat), not a mechanical action. If `@qa` can call `merge_pr`, the
+role loses its absolute read-only guarantee. `@qa`'s approval is input to `@co`, who
+decides to merge.
+
+**Human-in-the-loop protocol with this model:**
+```
+@qa:   "GO — all gates pass"
+         ↓
+Human: reads verdict, instructs @co to proceed
+         ↓
+@co:   merge_pr → close_issue
+```
+
+The merge is never automatic. The human triggers it by instructing `@co`. `@co` executes
+it. This satisfies the AGENTS.md "PR merge ALWAYS requires human approval" requirement
+without requiring a human to manually click GitHub.
+
+**Consequence for `close-issue.prompt.md`:** the slash command for lifecycle exit belongs
+to `@co`. It encodes: wait for human instruction (not just `@qa` verdict), call `merge_pr`,
+call `close_issue`, optionally clean up branch. This is the symmetric counterpart to
+`open-issue.prompt.md`.
+
+**Consequence for `AGENTS.md`:** the `@co` role definition must be updated to explicitly
+call out lifecycle-boundary write permissions (`initialize_project`, `merge_pr`,
+`close_issue`). The current wording "Read all; create/update issues, labels, milestones"
+understates the role.
+
 ## Blast Radius Analysis
 
 ### Production code
@@ -509,9 +572,13 @@ All remaining open questions are design or planning questions, not research ques
    for one workflow+phase. Full `contracts.yaml instructions` authorship is gated on MVP
    validation (see F_268.11). *(closed — implementation deferred past MVP)*
 
-5. **`close-issue` invoker** — is this a `@co` or `@imp` responsibility after human
-   PR approval?
-   *(planning)*
+5. ~~**`close-issue` invoker**~~ — resolved: `@co` (lifecycle coordinator role).
+   `merge_pr` and `close_issue` are lifecycle-exit writes, symmetric with
+   `initialize_project` on entry. `@imp` scope closes at `submit_pr`. `@qa` must
+   remain unconditionally write-free. Human-in-the-loop: human instructs `@co` after
+   reading `@qa` verdict; `@co` calls `merge_pr` → `close_issue`. See F_268.12.
+   Blast radius: `AGENTS.md` `@co` role definition and new `close-issue.prompt.md`.
+   *(closed)*
 
 6. **`create_handover` tool** — deferred. A dedicated tool that validates handover
    fields against the SubRoleSpec before cross-chat handover is a candidate feature,
