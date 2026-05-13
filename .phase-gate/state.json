@@ -1,11 +1,18 @@
 {
-  "branch": "bug/335-initialize-project-silently-overwrites-state",
-  "issue_number": 335,
-  "workflow_name": "bug",
-  "current_phase": "ready",
-  "current_cycle": null,
+  "branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
+  "issue_number": 268,
+  "workflow_name": "feature",
+  "current_phase": "implementation",
+  "current_cycle": 2,
   "last_cycle": 1,
-  "cycle_history": [],
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Interfaces + ContextLoadedCache",
+      "forced": false,
+      "entered": "2026-05-13T09:32:30.416441+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -16,15 +23,31 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
-  "issue_title": "initialize_project silently overwrites state.json on existing branch",
-  "parent_branch": "epic/268-mvp-validation",
-  "created_at": "2026-05-13T09:41:03.855413+00:00",
+  "skip_reason": "Returning to research phase \u2014 documentation-only mini scope extension committed and pushed; active work on #268 continues in research",
+  "issue_title": "MCP-tool-first orchestration: get_work_context + create_handover",
+  "parent_branch": "main",
+  "created_at": "2026-05-12T14:30:19.800556+00:00",
   "transitions": [
     {
       "from_phase": "research",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-12T15:11:05.668140+00:00",
+      "human_approval": "User approved on 2026-05-12",
+      "forced": true,
+      "skip_reason": "Mini scope extension: add built-in VS Code read/search tools to imp.agent.md tools frontmatter \u2014 documentation-only change, no code impact"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "research",
+      "timestamp": "2026-05-12T15:11:31.599448+00:00",
+      "human_approval": "User approved on 2026-05-12",
+      "forced": true,
+      "skip_reason": "Returning to research phase \u2014 documentation-only mini scope extension committed and pushed; active work on #268 continues in research"
+    },
+    {
+      "from_phase": "research",
       "to_phase": "design",
-      "timestamp": "2026-05-13T10:34:48.657136+00:00",
+      "timestamp": "2026-05-13T08:31:58.990966+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
@@ -32,7 +55,7 @@
     {
       "from_phase": "design",
       "to_phase": "planning",
-      "timestamp": "2026-05-13T10:46:28.110524+00:00",
+      "timestamp": "2026-05-13T09:13:41.722426+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
@@ -40,31 +63,7 @@
     {
       "from_phase": "planning",
       "to_phase": "implementation",
-      "timestamp": "2026-05-13T10:51:07.287978+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-05-13T10:57:57.764249+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-13T10:59:47.871519+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-05-13T11:00:12.147902+00:00",
+      "timestamp": "2026-05-13T09:25:01.326037+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
