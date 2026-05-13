@@ -151,10 +151,43 @@ The current response returns: branch, linked issue, phase, recent commits. Requi
 |-----------|--------|---------|
 | `sub_role_hint` | phase → sub-role mapping in instructions config | e.g. `phase=research → researcher` |
 | `phase_instructions` | `instructions` section in contracts.yaml for active workflow+phase | What to produce, which tools to use |
-| `handover_template` | SubRoleSpec required fields from YAML | Required fields for crosschat handover block |
+| `handover_template` | Static format from AGENTS.md (or contracts.yaml instructions field) | Required fields for crosschat handover block |
 
 The response delivers everything an agent needs to begin work without reading any static
-document. It is the machine-driven equivalent of the AGENTS.md §1.2 startup protocol.
+
+Cherry-pick targets (hooks/ package excluded — confirmed dead):
+
+| File | Purpose |
+|------|---------|
+| `src/copilot_orchestration/config/requirements_loader.py` | SubRoleSpec YAML loading backend |
+| `src/copilot_orchestration/contracts/interfaces.py` | SubRoleSpec datatype |
+| `src/copilot_orchestration/utils/_paths.py` | State file path resolver |
+| `.copilot/sub-role-requirements.yaml` | Sub-role config + handover required fields |
+| `.copilot/_default_requirements.yaml` | Default sub-role config |
+
+**SubRoleSpec is orthogonal to `contracts.yaml instructions`:**
+
+- `contracts.yaml instructions` (F_268.2) = what the agent must produce in this phase.
+  Per workflow+phase combination. Delivered by `get_work_context` as `phase_instructions`.
+- `SubRoleSpec` = which fields a crosschat handover must contain. Per sub-role
+  (e.g. `@imp implementer` must supply `scope`, `files`, `deliverables`, `stop_go_proof`).
+  This is the validation schema consumed by the future `create_handover` tool (OQ 6,
+  deferred).
+
+**Scope concern for #268:** `create_handover` is deferred (OQ 6). Without that consumer,
+the SubRoleSpec YAML loader has no active use in #268. The only remaining use would be
+populating the `handover_template` field in `get_work_context`, but the handover format
+is already defined statically in AGENTS.md. The cherry-pick of the full YAML+loader stack
+may be premature scope. For #268, `handover_template` can be a static format string from
+`contracts.yaml instructions` (or hardcoded), deferring SubRoleSpec YAML until
+`create_handover` is picked up. **This is an open scope question for design.**
+
+**Config root (OQ 3 resolved):** any SubRoleSpec YAML that does ship in #268 belongs in
+`.phase-gate/config/`, not `.copilot/`. Rationale: this project introduces a custom
+orchestration model that goes beyond standard VS Code agent orchestration. Forcing
+orchestration config into the VS Code-standard `.copilot/` structure would misrepresent
+the ownership and scope of the config. `.phase-gate/config/` is the existing convention
+for all project orchestration config and is the correct home.
 
 ### F_268.7 — context_loaded enforcement gate
 
@@ -417,9 +450,12 @@ All remaining open questions are design or planning questions, not research ques
    **Remaining:** category name choice and how `initialize_project` exemption is expressed
    when `state.json` does not yet exist. *(design)*
 
-3. **Config root for SubRoleSpec YAML** — `.copilot/` (as in feature/263) or
-   `.phase-gate/config/` (current convention)?
-   *(design)*
+3. ~~**Config root for SubRoleSpec YAML**~~ — resolved: `.phase-gate/config/` (Optie A).
+   Rationale: this project introduces a custom orchestration model beyond VS Code standard
+   orchestration; forcing config into `.copilot/` misrepresents ownership. Additionally:
+   SubRoleSpec YAML cherry-pick may be out of scope for #268 (no consumer until
+   `create_handover` is picked up). If any SubRoleSpec YAML ships in #268, it belongs in
+   `.phase-gate/config/`. *(closed)*
 
 4. **`instructions` section optional vs mandatory** — should phases without instructions
    silently omit the field or require an explicit empty declaration to force conscious
