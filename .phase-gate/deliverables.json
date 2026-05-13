@@ -241,5 +241,22 @@
         "total": 8
       }
     }
+  },
+  "335": {
+    "issue_title": "initialize_project silently overwrites state.json on existing branch",
+    "workflow_name": "bug",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/268-mvp-validation",
+    "created_at": "2026-05-13T09:41:03.757722+00:00"
   }
 }
