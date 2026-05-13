@@ -323,21 +323,25 @@ The MVP only extends the `get_work_context` response with three hardcoded fields
 workflow+phase combination (e.g., `feature/implementation`). No new YAML, no new cache,
 no new enforcement logic. Estimated effort: ~2 hours.
 
-**MVP test protocol:**
+**MVP validation harness — the initialize_project guard bug:**
 
-1. Add static `phase_instructions`, `sub_role_hint`, `handover_template` to
-   `get_work_context` response (hardcoded, feature/implementation only)
-2. Start a fresh `@imp` session on an implementation-phase branch
-3. Observe: does the agent reference `phase_instructions` content in its first response?
-   Does it follow the prescribed tool order? Does it produce the handover in the correct
-   format without reading AGENTS.md?
-4. Negative control: repeat with an agent that does NOT call `get_work_context` first
-   (simulate gate-absent baseline)
+The MVP is validated using real work, not a synthetic test scenario. After building the
+MVP, a new issue is created for the `initialize_project` guard bug (F_268.10). A fresh
+`@imp` session on that bug-fix branch becomes the test subject:
 
-**Success criteria:**
-- Agent follows at least one specific instruction from `phase_instructions` that differs
-  from baseline AGENTS.md behavior
-- Agent produces `sub_role_hint`-aligned role declaration without explicit prompt
+1. Build MVP: hardcoded `phase_instructions`, `sub_role_hint`, `handover_template` in
+   `get_work_context` response (this issue, implementation cycle 1)
+2. Create new issue: `initialize_project` guard — `initialize_branch()` must raise
+   `ValidationError` when `state.json` already exists
+3. Start fresh `@imp` session on the bug-fix branch
+4. Observe: does the agent call `get_work_context`? Does it reference content from
+   `phase_instructions` in its first response? Does it follow the prescribed tool order?
+   Does the handover match `handover_template` format without reading AGENTS.md?
+
+The bug-fix itself (~5 production lines + 1 test) is real deliverable work. If the agent
+executes it correctly while following `phase_instructions`, the delivery mechanism is
+validated. If the agent ignores `phase_instructions` but still produces correct work,
+the mechanism fails the hypothesis regardless of the output quality.
 
 **Failure modes to distinguish:**
 - Field present in response but ignored → formatting problem (field too buried in JSON)
@@ -349,6 +353,7 @@ and focus only on the response extension as a convenience feature. The enforceme
 only has value if instructions are actually followed.
 
 **Implementation order:** MVP is the first deliverable of the implementation phase.
+Full infrastructure (ContextLoadedCache, enforcement gate) is blocked on MVP validation.
 Full infrastructure (ContextLoadedCache, enforcement gate) is blocked on MVP validation.
 
 ### F_268.12 — Role model: @co as lifecycle coordinator
@@ -530,9 +535,12 @@ decision needed. **OQ 1 closed.**
 `check_context_loaded` must be registered in `enforcement.yaml`, not hardcoded in Python
 (ARCHITECTURE_PRINCIPLES.md §3, §13). The exemption mechanism — which tools are outside
 the gated category — belongs in config as a `tool_category` value, not as an
-`if tool_name == ...` chain in the runner. **OQ 2 partially resolved:** gate scope is
-defined by category membership (write-tools carry the category; read-tools and exempt
-write-tools do not). The exact category name and exemption representation is a design
+`if tool_name == ...` chain in the runner. **OQ 2 resolved — Optie B:** `exempt_tools`
+list at the action level in `enforcement.yaml`. The exempt list is action-type-specific:
+it applies only to `check_context_loaded`, not to `check_pr_status`. Force tools remain
+`BranchMutatingTool` and are still blocked by `check_pr_status` after `submit_pr` —
+the exemption is chirurgical. `initialize_project` is handled by an early return in the
+handler when `state.json` does not exist (not via the exempt list).
 question.
 
 ### ISP for the flag read
@@ -553,11 +561,11 @@ All remaining open questions are design or planning questions, not research ques
    section: `execute()` is a command-with-result at the tool layer; no CQS violation.
    *(closed)*
 
-2. ~~**Exemption mechanism for force tools**~~ — partially resolved: gate scope is
-   category-based (write-tools carry the gated category; read-tools and exempt write-tools
-   do not). Exact category name and config representation is a design question.
-   **Remaining:** category name choice and how `initialize_project` exemption is expressed
-   when `state.json` does not yet exist. *(design)*
+2. ~~**Exemption mechanism for force tools**~~ — resolved: Optie B — `exempt_tools`
+   list in `enforcement.yaml` at the action level, scoped to `check_context_loaded` only.
+   Does not affect `check_pr_status`; force tools remain blocked after `submit_pr`.
+   `initialize_project` pre-state exemption: early return in handler when `state.json`
+   absent, not via exempt list. *(closed)*
 
 3. ~~**Config root for SubRoleSpec YAML**~~ — deferred with `create_handover` (OQ 6).
    SubRoleSpec YAML has no consumer in #268 without that tool; the cherry-pick scope is
@@ -586,11 +594,13 @@ All remaining open questions are design or planning questions, not research ques
    may be sufficient as a protocol-discipline mechanism. Pick up as a separate issue.
    *(deferred)*
 
-7. **`initialize_project` guard bug** — when `state.json` already exists for the current
-   branch, `initialize_project` silently overwrites all state. Fix: `initialize_branch()`
-   must raise `ValidationError` on existing state. Separate issue required; blast radius
-   of #268 must account for the guard being in place before the gate can rely on it.
-   *(separate issue, design blocker for gate)*
+7. ~~**`initialize_project` guard bug**~~ — resolved scope: separate issue, fixed as
+   part of the MVP validation harness. After the MVP is built, a new issue is opened for
+   the guard fix (~5 production lines + 1 test). The bug-fix work session is the MVP
+   test subject: an agent on that branch calls `get_work_context`, receives
+   `phase_instructions`, and executes the fix. Correct execution while following
+   instructions validates the delivery mechanism. *(separate issue — MVP validation
+   harness)*
 
 
 ## References
