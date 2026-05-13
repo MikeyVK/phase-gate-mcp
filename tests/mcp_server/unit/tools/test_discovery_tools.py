@@ -925,13 +925,17 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
             phase_confidence="high",
             phase_detection_error=None,
         )
+        mock_state_engine = MagicMock()
+        mock_branch_state = MagicMock()
+        mock_branch_state.workflow_name = "feature"
+        mock_state_engine.get_state.return_value = mock_branch_state
         settings = make_settings()
         settings.github.token = None
         return GetWorkContextTool(
             settings=settings,
             git_manager=mock_git,
             project_manager=MagicMock(),
-            state_engine=MagicMock(),
+            state_engine=mock_state_engine,
             workflow_status_resolver=resolver,
         )
 

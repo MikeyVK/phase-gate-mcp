@@ -28,6 +28,41 @@ if TYPE_CHECKING:
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 
+# TODO(MVP): Replace with contracts.yaml instructions section on full implementation (issue #268).
+_SUB_ROLE_MAP: dict[str, str] = {
+    "research": "researcher",
+    "design": "designer",
+    "planning": "planner",
+    "implementation": "implementer",
+    "validation": "validator",
+    "documentation": "documenter",
+    "ready": "documenter",
+}
+
+# TODO(MVP): Replace with contracts.yaml instructions section on full implementation (issue #268).
+# Keyed by (workflow_name, phase_name). phase_instructions embeds the hand-over format
+# inline for roles that produce hand-overs. This avoids a universal handover_template field
+# that would be incorrect for non-hand-over roles.
+_PHASE_INSTRUCTIONS_MAP: dict[tuple[str, str], str] = {
+    ("feature", "implementation"): (
+        "Sub-role: implementer. "
+        "1. Call get_project_plan to read TDD cycle deliverables. "
+        "2. Follow RED\u2192GREEN\u2192REFACTOR strictly. "
+        "3. Commit with git_add_or_commit after each sub-phase (red/green/refactor). "
+        "4. Run run_tests after GREEN commit. "
+        "5. Run run_quality_gates(scope='files') after REFACTOR commit. "
+        "6. Produce Imp\u2192QA hand-over on completion using this exact format:\n"
+        "### Scope\n- what cycle or task was executed\n"
+        "- what was intentionally kept out of scope\n\n"
+        "### Files\n- changed files grouped by role\n\n"
+        "### Deliverables\n- which authoritative deliverables are now satisfied\n\n"
+        "### Stop-Go Proof\n- exact tests run\n"
+        "- exact gate commands or MCP checks run\n"
+        "- exact outcome"
+    ),
+}
+
+
 class SearchDocumentationInput(BaseModel):
     """Input for SearchDocumentationTool."""
 
@@ -242,6 +277,20 @@ class GetWorkContextTool(BaseTool):
             except (OSError, ValueError, RuntimeError, ImportError, MCPError):
                 pass  # GitHub integration optional
 
+        # MVP: hardcoded lookup; replaced by contracts.yaml on full implementation (issue #268).
+        phase = str(ctx.get("workflow_phase", ""))
+        workflow = ""
+        try:
+            branch = ctx.get("current_branch", "") or ""
+            if branch:
+                branch_state = self._state_engine.get_state(str(branch))
+                workflow = branch_state.workflow_name or ""
+        except Exception:  # noqa: BLE001
+            pass
+
+        ctx["sub_role_hint"] = _SUB_ROLE_MAP.get(phase, "")
+        ctx["phase_instructions"] = _PHASE_INSTRUCTIONS_MAP.get((workflow, phase), "")
+
         return ToolResult.text(self._format_context(ctx))
 
     def _extract_issue_number(self, branch: str) -> int | None:
@@ -396,5 +445,12 @@ class GetWorkContextTool(BaseTool):
             lines.append("\n**Recent Commits:**")
             for commit in context["recent_commits"][:3]:
                 lines.append(f"- {commit}")
+
+        # MVP: sub_role_hint + phase_instructions (issue #268 C1; replaced by contracts.yaml C6+).
+        # Always render both keys so consumers can detect them even when value is empty string.
+        lines.append(f"\n**sub_role_hint:** {context.get('sub_role_hint', '')}")
+        phase_instructions = context.get("phase_instructions", "")
+        if phase_instructions:
+            lines.append(f"\n**phase_instructions:** {phase_instructions}")
 
         return "\n".join(lines)
