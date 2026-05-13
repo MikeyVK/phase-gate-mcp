@@ -23,6 +23,7 @@ from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
+from mcp_server.managers.state_repository import StateAlreadyExistsError
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -283,7 +284,7 @@ class InitializeProjectTool(BranchMutatingTool):
 
             return ToolResult.text(json.dumps(success_message, indent=2))
 
-        except (ValueError, OSError, RuntimeError) as e:
+        except (ValueError, OSError, RuntimeError, StateAlreadyExistsError) as e:
             return ToolResult.error(str(e))
 
 

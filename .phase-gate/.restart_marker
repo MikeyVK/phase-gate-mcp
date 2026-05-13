@@ -1,6 +1,6 @@
 {
-  "timestamp": 1778529725.313085,
-  "pid": 1296,
-  "reason": "phase transition to validation \u2014 reload state",
-  "iso_time": "2026-05-11T20:02:05.313085+00:00"
+  "timestamp": 1778665158.716985,
+  "pid": 37812,
+  "reason": "enforcement.yaml updated to allow epic branch from feature/* for MVP validation scaffold",
+  "iso_time": "2026-05-13T09:39:18.716985+00:00"
 }

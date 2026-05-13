@@ -39,7 +39,11 @@ from mcp_server.core.interfaces import (
 )
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
+from mcp_server.managers.state_repository import (
+    BranchState,
+    StateAlreadyExistsError,
+    StateBranchMismatchError,
+)
 from mcp_server.schemas import ContractsConfig, GitConfig, WorkphasesConfig
 
 logger = logging.getLogger(__name__)
@@ -120,6 +124,18 @@ class PhaseStateEngine:
             ValueError: If project not initialized
         """
         # Get project plan to cache workflow_name
+        # Guard: refuse to overwrite an existing BranchState for this branch
+        try:
+            loaded = self._state_repository.load(branch)
+            if loaded.branch == branch:
+                raise StateAlreadyExistsError(
+                    f"Branch '{branch}' already has an initialized state "
+                    f"(phase: {loaded.current_phase}). "
+                    "Call initialize_project only once per branch."
+                )
+        except (FileNotFoundError, KeyError, OSError, json.JSONDecodeError, ValidationError):
+            pass
+
         project = self.project_manager.get_project_plan(issue_number)
         if not project:
             msg = f"Project {issue_number} not found. Initialize project first."

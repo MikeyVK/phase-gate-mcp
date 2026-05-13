@@ -26,6 +26,13 @@ class StateNotFoundError(Exception):
     """
 
 
+class StateAlreadyExistsError(Exception):
+    """Raised when initialize_branch() is called for a branch that already has state.
+
+    Prevents accidental overwrite of existing BranchState and phase history.
+    """
+
+
 class BranchState(BaseModel):
     """Validated immutable branch state."""
 

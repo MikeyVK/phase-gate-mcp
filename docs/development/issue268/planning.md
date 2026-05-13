@@ -159,12 +159,13 @@ Two-stage delivery. Stage 1 MVP: extend GetWorkContextTool to return sub_role_hi
 - test_phase_instructions_spec_requires_all_three_fields: missing any field raises
 - test_contracts_config_loads_instructions_field: PhaseEntry.instructions is PhaseInstructionsSpec when present
 - test_contracts_config_instructions_optional: phase with no instructions field parses as None
+- test_contracts_config_validator_passes_when_some_instructions_none: validator does not raise ConfigError when only feature/implementation has instructions and other phase entries have instructions=None
 
 **Success Criteria:**
 - PhaseInstructionsSpec has model_config = ConfigDict(frozen=True)
 - Phase entry schema accepts instructions as optional field (None default)
 - feature/implementation entry in contracts.yaml populated with sub_role, phase_instructions, handover_template
-- ConfigLoader post-load validator enforces mandatory instructions when Stage 2 is active
+- ConfigLoader post-load validator infrastructure added; raises ConfigError only after full instructions authorship (all workflows x phases populated — deferred issue). For C6: validator code present, non-enforcing on None instructions field.
 
 **Dependencies:** C1 committed
 
@@ -208,6 +209,7 @@ Two-stage delivery. Stage 1 MVP: extend GetWorkContextTool to return sub_role_hi
 - enforcement.yaml check_context_loaded rule active with force_phase_transition + force_cycle_transition in exempt_tools
 - Integration tests are hermetic: all writes via tmp_path, no real GitHub API calls
 - Full test suite green with no regressions
+- Note: mandatory ConfigLoader enforcement (all phases must have instructions) is out of scope for C8 — deferred until full contracts.yaml authorship is complete.
 
 **Dependencies:** C4 (handler registered), C5 (reset writers injected), C7 (full GetWorkContextTool)
 
