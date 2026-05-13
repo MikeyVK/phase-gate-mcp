@@ -14,6 +14,232 @@
     ],
     "skip_reason": null,
     "parent_branch": "main",
-    "created_at": "2026-05-12T14:30:19.790232+00:00"
+    "created_at": "2026-05-12T14:30:19.790232+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "deliverables": [
+              {
+                "description": "_SUB_ROLE_MAP module-level dict in discovery_tools.py (marked # TODO(MVP))",
+                "id": "C1.D1"
+              },
+              {
+                "description": "_PHASE_INSTRUCTIONS_MAP with (feature, implementation) entry embedding hand-over format",
+                "id": "C1.D2"
+              },
+              {
+                "description": "GetWorkContextTool.execute() appends sub_role_hint and phase_instructions to ctx",
+                "id": "C1.D3"
+              }
+            ],
+            "exit_criteria": "sub_role_hint and phase_instructions in GetWorkContextTool response; empty-string fallback for unknown combos; all 4 unit tests green.",
+            "files": [
+              "mcp_server/tools/discovery_tools.py",
+              "tests/mcp_server/unit/tools/test_discovery_tools.py"
+            ],
+            "id": "C1",
+            "name": "MVP \u2014 GetWorkContextTool response extension",
+            "stage": "MVP"
+          },
+          {
+            "cycle_number": 2,
+            "deliverables": [
+              {
+                "description": "IContextLoadedReader @runtime_checkable Protocol in core/interfaces/__init__.py",
+                "id": "C2.D1"
+              },
+              {
+                "description": "IContextLoadedWriter @runtime_checkable Protocol in core/interfaces/__init__.py",
+                "id": "C2.D2"
+              },
+              {
+                "description": "ContextLoadedCache in state/context_loaded_cache.py implementing both protocols, no import-time side effects",
+                "id": "C2.D3"
+              }
+            ],
+            "exit_criteria": "isinstance(cache, IContextLoadedReader) and isinstance(cache, IContextLoadedWriter) both True; all 6 unit tests green.",
+            "files": [
+              "mcp_server/core/interfaces/__init__.py",
+              "mcp_server/state/context_loaded_cache.py",
+              "tests/mcp_server/unit/state/test_context_loaded_cache.py"
+            ],
+            "id": "C2",
+            "name": "Interfaces + ContextLoadedCache",
+            "stage": "Stage 2"
+          },
+          {
+            "cycle_number": 3,
+            "deliverables": [
+              {
+                "description": "_EXEMPT_TOOLS_ALLOWED_TYPES frozenset constant (SSOT for exemption support)",
+                "id": "C3.D1"
+              },
+              {
+                "description": "EnforcementAction.exempt_tools: list[str] field with default []",
+                "id": "C3.D2"
+              },
+              {
+                "description": "model_validator that raises ValueError when exempt_tools non-empty on non-allowed action type",
+                "id": "C3.D3"
+              }
+            ],
+            "exit_criteria": "exempt_tools defaults to []; ValidationError on invalid type+exempt_tools combo at parse time; existing enforcement.yaml parses without regression; all 5 tests green.",
+            "files": [
+              "mcp_server/config/schemas/enforcement_config.py",
+              "tests/mcp_server/unit/config/test_enforcement_config.py"
+            ],
+            "id": "C3",
+            "name": "EnforcementAction schema \u2014 exempt_tools field + model_validator",
+            "stage": "Stage 2"
+          },
+          {
+            "cycle_number": 4,
+            "deliverables": [
+              {
+                "description": "EnforcementRunner._context_loaded_reader: IContextLoadedReader | None constructor param",
+                "id": "C4.D1"
+              },
+              {
+                "description": "_handle_check_context_loaded() registered in _build_default_registry()",
+                "id": "C4.D2"
+              },
+              {
+                "description": "Bootstrap domain rule via state.json predicate \u2014 no tool names in Python code",
+                "id": "C4.D3"
+              }
+            ],
+            "exit_criteria": "All 6 handler tests green via runner.run() public API only; no private method access in tests; bootstrap rule uses no tool names.",
+            "files": [
+              "mcp_server/managers/enforcement_runner.py",
+              "tests/mcp_server/unit/managers/test_enforcement_runner.py"
+            ],
+            "id": "C4",
+            "name": "EnforcementRunner \u2014 _handle_check_context_loaded handler",
+            "stage": "Stage 2"
+          },
+          {
+            "cycle_number": 5,
+            "deliverables": [
+              {
+                "description": "PhaseStateEngine._context_loaded_writer constructor param + _reset_context_loaded() helper",
+                "id": "C5.D1"
+              },
+              {
+                "description": "_reset_context_loaded() called in transition(), force_transition(), enter_cycle(), force_enter_cycle()",
+                "id": "C5.D2"
+              },
+              {
+                "description": "GitCheckoutTool._context_loaded_writer param + reset on successful checkout",
+                "id": "C5.D3"
+              },
+              {
+                "description": "GitPullTool._context_loaded_writer param + conditional reset (non-noop only)",
+                "id": "C5.D4"
+              }
+            ],
+            "exit_criteria": "All 9 reset-writer tests green; no regression in existing test suites; _reset_context_loaded tested only via public API.",
+            "files": [
+              "mcp_server/managers/phase_state_engine.py",
+              "mcp_server/tools/git_tools.py",
+              "mcp_server/tools/git_pull_tool.py",
+              "tests/mcp_server/unit/managers/test_phase_state_engine.py",
+              "tests/mcp_server/unit/tools/test_git_tools.py",
+              "tests/mcp_server/unit/tools/test_git_pull_tool.py"
+            ],
+            "id": "C5",
+            "name": "State reset writers \u2014 PhaseStateEngine, GitCheckoutTool, GitPullTool",
+            "stage": "Stage 2"
+          },
+          {
+            "cycle_number": 6,
+            "deliverables": [
+              {
+                "description": "PhaseInstructionsSpec Pydantic model with sub_role, phase_instructions, handover_template (ConfigDict(frozen=True))",
+                "id": "C6.D1"
+              },
+              {
+                "description": "PhaseEntry.instructions: PhaseInstructionsSpec | None = None optional field",
+                "id": "C6.D2"
+              },
+              {
+                "description": "feature/implementation instructions entry in .phase-gate/config/contracts.yaml",
+                "id": "C6.D3"
+              }
+            ],
+            "exit_criteria": "PhaseInstructionsSpec frozen; contracts.yaml parses without error; all 5 config tests green.",
+            "files": [
+              "mcp_server/config/schemas/contracts_config.py",
+              ".phase-gate/config/contracts.yaml",
+              "tests/mcp_server/unit/config/test_contracts_config.py"
+            ],
+            "id": "C6",
+            "name": "contracts.yaml instructions section + PhaseInstructionsSpec schema",
+            "stage": "Stage 2"
+          },
+          {
+            "cycle_number": 7,
+            "deliverables": [
+              {
+                "description": "_SUB_ROLE_MAP and _PHASE_INSTRUCTIONS_MAP removed \u2014 no # TODO(MVP) remaining",
+                "id": "C7.D1"
+              },
+              {
+                "description": "GetWorkContextTool._context_loaded_writer: IContextLoadedWriter | None constructor param",
+                "id": "C7.D2"
+              },
+              {
+                "description": "ctx['handover_template'] populated from PhaseInstructionsSpec.handover_template via injected ContractsConfig",
+                "id": "C7.D3"
+              },
+              {
+                "description": "writer.set_context_loaded(branch, value=True) called at end of execute()",
+                "id": "C7.D4"
+              }
+            ],
+            "exit_criteria": "No # TODO(MVP) markers in discovery_tools.py; ctx has sub_role_hint, phase_instructions, handover_template; writer called on success; all 6 updated tests green.",
+            "files": [
+              "mcp_server/tools/discovery_tools.py",
+              "tests/mcp_server/unit/tools/test_discovery_tools.py"
+            ],
+            "id": "C7",
+            "name": "GetWorkContextTool full \u2014 writer injection + contracts read + handover_template",
+            "stage": "Stage 2"
+          },
+          {
+            "cycle_number": 8,
+            "deliverables": [
+              {
+                "description": "ContextLoadedCache instantiated once at server.py composition root",
+                "id": "C8.D1"
+              },
+              {
+                "description": "All injections wired: EnforcementRunner (reader), GetWorkContextTool (writer), PhaseStateEngine (writer), GitCheckoutTool (writer), GitPullTool (writer)",
+                "id": "C8.D2"
+              },
+              {
+                "description": "enforcement.yaml check_context_loaded rule with force_phase_transition + force_cycle_transition in exempt_tools",
+                "id": "C8.D3"
+              },
+              {
+                "description": "Integration test suite: gate blocks, unblocks, force exemption, bootstrap rule, phase-reset, checkout-reset",
+                "id": "C8.D4"
+              }
+            ],
+            "exit_criteria": "Full test suite green including all 7 integration tests; no regressions in tests/mcp_server/; ContextLoadedCache instantiated exactly once.",
+            "files": [
+              "mcp_server/server.py",
+              ".phase-gate/config/enforcement.yaml",
+              "tests/mcp_server/integration/test_context_loaded_enforcement.py"
+            ],
+            "id": "C8",
+            "name": "server.py composition root + integration test suite",
+            "stage": "Stage 2"
+          }
+        ],
+        "total": 8
+      }
+    }
   }
 }
