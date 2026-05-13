@@ -3,7 +3,7 @@
 # MCP-Tool-First Orchestration: get_work_context Extension + context_loaded Gate
 
 **Status:** DRAFT
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** 2026-05-13
 
 ---
@@ -20,12 +20,13 @@ enforcement gate must block write-tools until an agent has acknowledged its cont
 ### 1.2. Requirements
 
 **Functional:**
-- [ ] `get_work_context` returns `sub_role_hint`, `phase_instructions`, `handover_template` fields
-- [ ] MVP: fields are hardcoded per-phase; full: read from `contracts.yaml` `instructions` section
+- [ ] `get_work_context` returns `sub_role_hint` and `phase_instructions` fields
+- [ ] MVP: `phase_instructions` embeds hand-over format inline for roles that produce hand-overs
+- [ ] Stage 2: `get_work_context` additionally returns `handover_template` as a separate field read from `contracts.yaml`
 - [ ] `context_loaded` flag resets on phase entry, cycle entry, `git_checkout`, non-noop `git_pull`
 - [ ] All `branch_mutating` tools are blocked when `context_loaded` is `false`
 - [ ] `force_phase_transition` and `force_cycle_transition` are exempt via `exempt_tools` in `enforcement.yaml`
-- [ ] `initialize_project` is exempt when `state.json` does not exist (pre-state bootstrap)
+- [ ] Gate is inactive for all tools when no `state.json` exists (bootstrap — no phase to acknowledge)
 - [ ] `get_work_context` sets `context_loaded = true` as a command side-effect
 - [ ] `EnforcementAction` schema gains `exempt_tools: list[str] = []` with startup validation
 
@@ -55,9 +56,9 @@ enforcement gate must block write-tools until an agent has acknowledged its cont
 
 ### Option A — MVP only (hardcoded fields, no gate)
 
-Extend `GetWorkContextTool.execute()` to append `sub_role_hint`, `phase_instructions`, and
-`handover_template` to the context dict using module-level lookup maps. No new files. No
-cache. No enforcement gate. Full implementation deferred until MVP validates the hypothesis.
+Extend `GetWorkContextTool.execute()` to append `sub_role_hint` and `phase_instructions`
+to the context dict using module-level lookup maps. No new files. No cache. No enforcement
+gate. Full implementation deferred until MVP validates the hypothesis.
 
 **Pros:** minimal blast radius; validates hypothesis before full investment.
 **Cons:** `context_loaded` gate does not exist; agents cannot be mechanically blocked.
@@ -96,11 +97,12 @@ gate until the mechanism is proven.
 | `context_loaded` storage | In-memory `ContextLoadedCache` | No external ground truth; `false` on cold start is semantically correct |
 | Flag keyed by | Branch name (`str`) | Consistent with `PRStatusCache` per-branch model |
 | `exempt_tools` scope | Action-level in `enforcement.yaml` | Chirurgical: applies only to `check_context_loaded`, not to `check_pr_status` |
-| `initialize_project` exemption | Handler early-return on absent `state.json` | Not in `exempt_tools` — the tool name should not appear in enforcement config as a static string |
+| Bootstrap exemption | Gate inactive when `state.json` absent — domain rule, no tool names in code | If no state exists there is no phase to acknowledge; rule covers all tools in bootstrap state, including `initialize_project` |
 | ISP split | `IContextLoadedReader` + `IContextLoadedWriter` (separate) | Writer injected into tools that set the flag; reader injected into enforcement only |
 | `EnforcementAction.exempt_tools` validation | `model_validator` with `_EXEMPT_TOOLS_ALLOWED_TYPES` constant | Fail-Fast §4: detected at startup, not at call time |
 | MVP content storage | Module-level dicts in `discovery_tools.py` with `# TODO(MVP)` | Explicit transitional; replaced by `contracts.yaml` on full implementation |
-| `handover_template` source | Static string (from AGENTS.md hand-over format) | SubRoleSpec YAML has no consumer without `create_handover` (OQ 6 deferred) |
+| `handover_template` MVP | Embedded in `phase_instructions` text for hand-over-producing roles | No separate field until Stage 2; avoids universal template that is wrong for non-implementer roles |
+| `handover_template` Stage 2 | Separate `handover_template` field, per-phase from `contracts.yaml` | Role-specific; part of `PhaseInstructionsSpec` alongside `sub_role` and `phase_instructions` |
 
 ---
 
@@ -125,32 +127,27 @@ _SUB_ROLE_MAP: dict[str, str] = {
 }
 
 # TODO(MVP): Replace with contracts.yaml instructions section on full implementation.
-# Keyed by (workflow_name, phase_name).
+# Keyed by (workflow_name, phase_name). phase_instructions embeds the hand-over format
+# inline for roles that produce hand-overs (implementer, documenter). This avoids a
+# universal handover_template field that would be incorrect for non-hand-over roles.
 _PHASE_INSTRUCTIONS_MAP: dict[tuple[str, str], str] = {
     ("feature", "implementation"): (
         "Sub-role: implementer. "
         "1. Call get_project_plan to read TDD cycle deliverables. "
-        "2. Follow RED→GREEN→REFACTOR strictly. "
+        "2. Follow RED\u2192GREEN\u2192REFACTOR strictly. "
         "3. Commit with git_add_or_commit after each sub-phase (red/green/refactor). "
         "4. Run run_tests after GREEN commit. "
         "5. Run run_quality_gates(scope='files') after REFACTOR commit. "
-        "6. Produce Imp→QA hand-over on completion."
+        "6. Produce Imp\u2192QA hand-over on completion using this exact format:\n"
+        "### Scope\n- what cycle or task was executed\n"
+        "- what was intentionally kept out of scope\n\n"
+        "### Files\n- changed files grouped by role\n\n"
+        "### Deliverables\n- which authoritative deliverables are now satisfied\n\n"
+        "### Stop-Go Proof\n- exact tests run\n"
+        "- exact gate commands or MCP checks run\n"
+        "- exact outcome"
     ),
 }
-
-_HANDOVER_TEMPLATE: str = (
-    "### Scope\n"
-    "- what cycle or task was executed\n"
-    "- what was intentionally kept out of scope\n\n"
-    "### Files\n"
-    "- changed files grouped by role\n\n"
-    "### Deliverables\n"
-    "- which authoritative deliverables are now satisfied\n\n"
-    "### Stop-Go Proof\n"
-    "- exact tests run\n"
-    "- exact gate commands or MCP checks run\n"
-    "- exact outcome"
-)
 ```
 
 **In `GetWorkContextTool.execute()`, append after building `ctx`:**
@@ -169,14 +166,14 @@ ctx["sub_role_hint"] = _SUB_ROLE_MAP.get(str(phase), "")
 ctx["phase_instructions"] = _PHASE_INSTRUCTIONS_MAP.get(
     (str(workflow), str(phase)), ""
 )
-ctx["handover_template"] = _HANDOVER_TEMPLATE
 ```
 
 **No constructor changes for MVP.** No `IContextLoadedWriter` injection yet.
 
 **Architecture compliance:**
 - DIP §1.5: no new instantiation in `execute()` — lookups are module-level constants
-- Config-First §3: intentionally violated — `# TODO(MVP)` marks the debt
+- Config-First §3: intentionally violated — `# TODO(MVP)` marks the debt; embedded
+  hand-over format is per-phase text, not a shared SSOT claim
 - CQS §5: no flag write in MVP; the side-effect is Stage 2
 
 ---
@@ -336,22 +333,24 @@ def _handle_check_context_loaded(
 ) -> None:
     """Block write-tools until get_work_context has been called this session.
 
-    Exempt tools listed in action.exempt_tools are never blocked.
-    initialize_project is exempt when state.json does not exist (pre-state bootstrap).
     Gate is inactive when no context_loaded_reader is injected (disabled mode).
+    Gate is inactive when state.json does not exist — bootstrap state; no phase
+    exists to acknowledge. This is a domain rule covering all tools, not a
+    tool-name exemption.
+    Exempt tools listed in action.exempt_tools bypass the gate regardless of flag.
     """
     del workspace_root  # unused; runner has self.server_root
     if self._context_loaded_reader is None:
         return  # gate disabled
 
-    # Exempt tools bypass the gate entirely.
-    if context.tool_name in action.exempt_tools:
+    # Domain rule: no state.json means bootstrap — gate is semantically inactive.
+    # This covers initialize_project and any other tool called before state exists.
+    if not (self.server_root / "state.json").exists():
         return
 
-    # initialize_project is exempt pre-state (no state.json yet).
-    if context.tool_name == "initialize_project":
-        if not (self.server_root / "state.json").exists():
-            return
+    # Exempt tools bypass the gate entirely (e.g. force_phase_transition).
+    if context.tool_name in action.exempt_tools:
+        return
 
     branch = _get_current_git_branch(self.workspace_root)
     if branch is None:
@@ -363,6 +362,12 @@ def _handle_check_context_loaded(
         )
 ```
 
+**Bootstrap domain rule — no Config-First §3 violation:** the `state.json` existence
+check is a domain predicate ("is there a workflow state to acknowledge?"), not a tool-name
+check. It applies uniformly to all tools — no tool name appears in Python code. The
+`exempt_tools` YAML list handles static per-tool exemptions; the bootstrap check handles
+the dynamic state-conditional case.
+
 **`KNOWN_TOOL_CATEGORIES` update:** no change needed — `check_context_loaded` matches on
 `tool_category: branch_mutating`, which is already in the frozenset. The category is not
 a new category; the action type is new.
@@ -372,7 +377,8 @@ a new category; the action type is new.
 - ISP §1.4: `EnforcementRunner` receives read-only `IContextLoadedReader` — cannot write the flag
 - SRP §1.1: handler is one method with one responsibility (block or pass)
 - OCP §1.2: new handler registered via registry, no modification to `run()` or existing handlers
-- Fail-Fast §4: `_validate_registered_actions()` already validates action types at startup; `check_context_loaded` must be registered before server accepts requests
+- Config-First §3: no tool names hardcoded in Python; bootstrap check is a domain predicate
+- Fail-Fast §4: `_validate_registered_actions()` already validates action types at startup
 
 ---
 
@@ -394,6 +400,10 @@ if self._context_loaded_writer is not None:
     if branch:
         self._context_loaded_writer.set_context_loaded(branch, value=True)
 ```
+
+Stage 2 also replaces the two `# TODO(MVP)` lookup maps with reads from the injected
+`ContractsConfig`. The response gains a third field `handover_template` read from
+`contracts.yaml` (see §4.10).
 
 **Architecture compliance:**
 - ISP §1.4: tool receives `IContextLoadedWriter` (write-only); cannot read the flag
@@ -426,8 +436,9 @@ Call `self._reset_context_loaded(branch)` in:
 - `enter_cycle()` — after `_apply_state()` on cycle entry
 - `force_enter_cycle()` — after `_apply_state()` on forced cycle entry
 
-**Not in `initialize_branch()`:** the gate handler's early-return covers this case. Calling
-reset on init would set `false` on a branch with no state, which is harmless but unnecessary.
+**Not in `initialize_branch()`:** the bootstrap domain rule in the gate handler covers
+the pre-state case. Calling reset on init would set `false` on a branch with no state,
+which is harmless but unnecessary.
 
 **Architecture compliance:**
 - SRP §1.1: `PhaseStateEngine` signals state-write events; it does not own the cache
@@ -468,9 +479,9 @@ On noop pull ("Already up to date"): no reset.
           - force_cycle_transition
 ```
 
-This rule fires for all `branch_mutating` tools on `pre` event. The handler applies
-`action.exempt_tools` to skip force tools. `initialize_project` is handled by the
-pre-state early return in the handler (not via `exempt_tools`).
+This rule fires for all `branch_mutating` tools on `pre` event. The handler applies the
+bootstrap domain rule first (inactive pre-state), then `action.exempt_tools` for static
+per-tool exemptions.
 
 **Why `branch_mutating` and not a new category:** force tools are `BranchMutatingTool`
 subclasses by design — they mutate state and must be blocked by `check_pr_status`. Adding
@@ -479,15 +490,15 @@ PR-status blocking on force tools. Using `exempt_tools` on the existing `branch_
 category is the correct chirurgical mechanism.
 
 **Architecture compliance:**
-- Config-First §3: exemptions live in config, not as an if-chain in Python
+- Config-First §3: exemptions live in config; bootstrap is a domain predicate, not a tool-name entry
 - OCP §1.2: adding a new exempt tool is a config change, not a code change
 - Fail-Fast §4: `EnforcementAction` model_validator rejects unknown types at startup
 
 ---
 
-### 4.10. Stage 2 — Full: contracts.yaml instructions section (placeholder design)
+### 4.10. Stage 2 — Full: contracts.yaml instructions section
 
-Each workflow+phase entry gains a sibling `instructions` section to `exit_requires`:
+Each workflow+phase entry gains a sibling `instructions` section alongside `exit_requires`:
 
 ```yaml
 workflows:
@@ -504,17 +515,51 @@ workflows:
         instructions:
           sub_role: implementer
           phase_instructions: |
+            1. Call get_project_plan to read TDD cycle deliverables.
+            2. Follow RED→GREEN→REFACTOR strictly.
             ...
           handover_template: |
-            ...
+            ### Scope
+            - what cycle or task was executed
+            - what was intentionally kept out of scope
+
+            ### Files
+            - changed files grouped by role
+
+            ### Deliverables
+            - which authoritative deliverables are now satisfied
+
+            ### Stop-Go Proof
+            - exact tests run
+            - exact gate commands or MCP checks run
+            - exact outcome
 ```
 
-**Full contracts.yaml authorship is out of scope for Stage 1.** The YAML structure is
-defined here as a forward-reference for Stage 2 planning. The Pydantic schema
-(`ContractsConfig`) gains an optional `instructions: PhaseInstructionsSpec | None = None`
-field per phase entry. Mandatory enforcement (OQ 4 closed — mandatory) means all phases
-require an explicit declaration; `ConfigLoader` raises `ConfigError` on missing sections
-after Stage 2 is activated.
+**`PhaseInstructionsSpec` Pydantic model** (new, in `mcp_server/config/schemas/contracts_config.py`):
+
+```python
+class PhaseInstructionsSpec(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    sub_role: str
+    phase_instructions: str
+    handover_template: str
+```
+
+**Phase entry gains optional field:**
+```python
+instructions: PhaseInstructionsSpec | None = None
+```
+
+**Mandatory enforcement (OQ 4 closed):** all phases require an explicit `instructions`
+declaration. `ConfigLoader` raises `ConfigError` on missing sections when Stage 2 is
+activated. This is enforced via a post-load validator in `ContractsConfig`, not in the
+schema model itself (Fail-Fast §4 at startup).
+
+**`handover_template` is role-specific by construction:** each phase entry defines its
+own `handover_template` text. An `@imp implementer` entry has the Imp→QA format; an
+`@imp researcher` entry has the Co→Imp format. No universal template — no SSOT drift
+between AGENTS.md and the tool response.
 
 ---
 
@@ -528,11 +573,12 @@ after Stage 2 is activated.
     → GetWorkContextTool.execute()
       → WorkflowStatusResolver.resolve_current() → phase: "implementation", workflow: "feature"
       → lookup _SUB_ROLE_MAP["implementation"] → "implementer"
-      → lookup _PHASE_INSTRUCTIONS_MAP[("feature","implementation")] → instructions string
-      → append _HANDOVER_TEMPLATE
-      → return ToolResult with ctx dict including new fields
+      → lookup _PHASE_INSTRUCTIONS_MAP[("feature","implementation")]
+          → instructions string with embedded hand-over format at end
+      → return ToolResult with ctx dict (sub_role_hint, phase_instructions)
   → agent reads phase_instructions in response
   → agent follows prescribed tool order (hypothesis validation)
+  → agent produces hand-over using format embedded in phase_instructions
 ```
 
 ### 5.2. Stage 2: context_loaded gate enforcement
@@ -541,13 +587,13 @@ after Stage 2 is activated.
 @imp session start (cold)
   → get_work_context()
     → execute() sets context_loaded_writer.set_context_loaded(branch, value=True)
-    → returns context with phase_instructions
+    → returns context with sub_role_hint, phase_instructions, handover_template
   → git_add_or_commit()
     → EnforcementRunner.run("git_add_or_commit", "pre", ...)
       → rule matches: tool_category=branch_mutating, timing=pre, action=check_context_loaded
       → _handle_check_context_loaded():
-          tool_name = "git_add_or_commit" → not in exempt_tools → continue
-          not "initialize_project" → continue
+          state.json exists → continue
+          "git_add_or_commit" not in exempt_tools → continue
           context_loaded_reader.is_context_loaded(branch) → True → pass
     → commit proceeds normally
 
@@ -555,8 +601,16 @@ after Stage 2 is activated.
   → git_add_or_commit()
     → EnforcementRunner.run(...)
       → _handle_check_context_loaded():
+          state.json exists → continue
+          not in exempt_tools → continue
           is_context_loaded(branch) → False → raise ValidationError
     → tool blocked with error message
+
+initialize_project on fresh branch (no state.json yet)
+  → EnforcementRunner.run("initialize_project", "pre", ...)
+    → _handle_check_context_loaded():
+        state.json does NOT exist → return (gate inactive)
+    → initialize_project proceeds normally
 ```
 
 ### 5.3. Stage 2: force tool exempt path
@@ -566,7 +620,7 @@ after Stage 2 is activated.
   → EnforcementRunner.run("force_phase_transition", "pre", ...)
     → rule matches: tool_category=branch_mutating, action=check_context_loaded
     → _handle_check_context_loaded():
-        context.tool_name = "force_phase_transition"
+        state.json exists → continue
         "force_phase_transition" in action.exempt_tools → True → return (pass)
     → force transition proceeds
 
@@ -581,31 +635,31 @@ after Stage 2 is activated.
 
 | File | Change | Stage |
 |------|--------|-------|
-| `mcp_server/tools/discovery_tools.py` | Add 3 lookup maps + 3 ctx fields in execute() | MVP |
+| `mcp_server/tools/discovery_tools.py` | Add 2 lookup maps + 2 ctx fields in execute() | MVP |
 | `mcp_server/core/interfaces/__init__.py` | Add `IContextLoadedReader`, `IContextLoadedWriter` | Stage 2 |
 | `mcp_server/state/context_loaded_cache.py` | New file: in-memory flag cache | Stage 2 |
 | `mcp_server/config/schemas/enforcement_config.py` | Add `exempt_tools` field + model_validator | Stage 2 |
 | `mcp_server/managers/enforcement_runner.py` | Add `context_loaded_reader` param + handler + registration | Stage 2 |
-| `mcp_server/tools/discovery_tools.py` | Add `context_loaded_writer` param + flag write in execute() | Stage 2 |
+| `mcp_server/tools/discovery_tools.py` | Add `context_loaded_writer` param + flag write + `handover_template` from config | Stage 2 |
 | `mcp_server/managers/phase_state_engine.py` | Add `context_loaded_writer` param + `_reset_context_loaded()` | Stage 2 |
 | `mcp_server/tools/git_tools.py` | Add `context_loaded_writer` + reset on checkout | Stage 2 |
 | `mcp_server/tools/git_pull_tool.py` | Add `context_loaded_writer` + conditional reset | Stage 2 |
 | `.phase-gate/config/enforcement.yaml` | Add `check_context_loaded` rule | Stage 2 |
-| `.phase-gate/config/contracts.yaml` | Add `instructions` section per workflow+phase | Stage 2 |
-| `mcp_server/config/schemas/contracts_config.py` | Add `PhaseInstructionsSpec` + optional `instructions` field | Stage 2 |
+| `.phase-gate/config/contracts.yaml` | Add `instructions` section (sub_role, phase_instructions, handover_template) per workflow+phase | Stage 2 |
+| `mcp_server/config/schemas/contracts_config.py` | Add `PhaseInstructionsSpec` + `instructions` field per phase entry | Stage 2 |
 | `mcp_server/server.py` | Instantiate `ContextLoadedCache`; inject into tools + managers | Stage 2 |
 
 **Test blast radius:**
 
 | File | Change | Stage |
 |------|--------|-------|
-| `tests/mcp_server/unit/tools/test_discovery_tools.py` | Extend `TestGetWorkContextTool`: new fields, writer side-effect | MVP + Stage 2 |
+| `tests/mcp_server/unit/tools/test_discovery_tools.py` | Extend `TestGetWorkContextTool`: new fields present; empty-string fallback for uncovered (workflow, phase) — no `KeyError`; Stage 2: writer side-effect | MVP + Stage 2 |
 | `tests/mcp_server/unit/state/test_context_loaded_cache.py` | New file: default false, set/reset, branch independence | Stage 2 |
 | `tests/mcp_server/integration/test_pr_status_lockdown.py` | Verify force tools STILL inherit `BranchMutatingTool` | Stage 2 |
 | `tests/mcp_server/unit/tools/test_git_tools.py` | Add checkout reset test | Stage 2 |
 | `tests/mcp_server/unit/tools/test_git_pull_tool.py` | Add noop/non-noop pull reset tests | Stage 2 |
 | `tests/mcp_server/unit/managers/test_phase_state_engine.py` | Add reset signal tests on phase/cycle entry | Stage 2 |
-| `tests/mcp_server/integration/test_context_loaded_enforcement.py` | New integration test: gate blocks/unblocks | Stage 2 |
+| `tests/mcp_server/integration/test_context_loaded_enforcement.py` | New integration test: gate blocks/unblocks; bootstrap domain rule (no state.json → all tools pass) | Stage 2 |
 
 ---
 
@@ -618,7 +672,7 @@ The following items are explicitly deferred and must not be pulled into implemen
 | Item | Status |
 |------|--------|
 | `create_handover` tool + SubRoleSpec YAML | Deferred — separate issue (OQ 6) |
-| Full `contracts.yaml` `instructions` authorship | Deferred — Stage 2, after MVP validation |
+| Full `contracts.yaml` `instructions` authorship (all workflows × phases) | Deferred — Stage 2, after MVP validation |
 | `close-issue.prompt.md` creation | Deferred — separate issue |
 | `AGENTS.md` `@co` role definition update | Deferred — separate issue or documentation phase |
 | `initialize_project` guard bug | Separate issue — MVP validation harness (F_268.10/F_268.11) |
