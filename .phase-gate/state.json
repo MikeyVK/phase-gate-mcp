@@ -2,7 +2,7 @@
   "branch": "bug/335-initialize-project-silently-overwrites-state",
   "issue_number": 335,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -20,7 +20,16 @@
   "issue_title": "initialize_project silently overwrites state.json on existing branch",
   "parent_branch": "epic/268-mvp-validation",
   "created_at": "2026-05-13T09:41:03.855413+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-13T10:34:48.657136+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
