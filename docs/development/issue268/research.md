@@ -158,37 +158,81 @@ document. It is the machine-driven equivalent of the AGENTS.md §1.2 startup pro
 
 ### F_268.7 — context_loaded enforcement gate
 
-On entry to every phase and every cycle, the `context_loaded` flag in `state.json` is
-reset to `false` by the state engine as part of writing the new phase/cycle state record.
-This is an invariant of the state engine, not a responsibility of the transition tools —
-an implementation agent must not land the reset on a transition tool call. All tools
-except `get_work_context` and the two force transition tools check this flag as a
-pre-condition. When `false`, execution is blocked. Calling `get_work_context` sets the
-flag to `true` as a side effect.
+On entry to every phase and every cycle, the `context_loaded` flag is reset to `false`
+by the state engine as part of writing the new phase/cycle state record. This is an
+invariant of the state engine, not a responsibility of the transition tools — an
+implementation agent must not land the reset on a transition tool call.
 
-**Excluded from the gate:**
+All write-tools check this flag as a pre-condition before execution. Read-only tools are
+never gated — reads may always proceed regardless of flag state. When the flag is `false`,
+write-tool execution is blocked. Calling `get_work_context` sets the flag to `true` as a
+command side-effect (see F_268.9 and Architecture Principles section).
+
+**Gate scope — write vs read distinction:**
+
+The gate applies only to tools that mutate branch state or workspace state. Read-only
+tools (`get_project_plan`, `git_status`, `health_check`, `search_documentation`, etc.) are
+never gated. This mirrors the existing `branch_mutating` category model: `check_pr_status`
+also gates only `branch_mutating` tools, not reads.
+
+This distinction resolves the open-issue edge case: after `initialize_project` (which
+creates `state.json`), `@co` can still call `get_project_plan` because it is read-only.
+Only write-tools are blocked until `@imp` calls `get_work_context`.
+
+**Excluded from the gate (write-tools that must never be blocked):**
 - `get_work_context` — the tool that unblocks; must always be callable
-- `force_phase_transition` and `force_cycle_transition` — exception paths that must not
-  require a context-load acknowledgment mid-correction (see scenario analysis below)
+- `force_phase_transition` and `force_cycle_transition` — correction paths that must not
+  require a context-load acknowledgment mid-correction
+- `initialize_project` — pre-state bootstrap; gate fires only when `state.json` already
+  exists for the current branch (see F_268.11 for related bug)
+- `git_checkout` and `git_pull` — these are reset-triggers themselves; blocking them
+  would be circular
+
+**`git_pull` reset is conditional:** the flag is reset only when the pull is non-noop
+(commits were received). An "Already up to date" pull does not invalidate context.
+
+**`git_checkout` always resets:** switching branch always invalidates context, regardless
+of whether the target branch has a different phase.
 
 **Phase-skip scenarios with the gate active:**
 
 | Scenario | Steps | Notes |
 |----------|-------|-------|
-| 1 | `force_phase_transition` directly to target | Cleanest; rationale is required by the tool |
+| 1 | `force_phase_transition` directly to target | Cleanest; rationale required by tool |
 | 2 | Normal transition → `force_phase_transition` | Valid but indirect |
 | 3 | Normal transition → `get_work_context` → normal transition | Only if no blocking exit gates |
 | 4 | Normal transition → `get_work_context` → `force_phase_transition` | Bypasses exit gates |
 
-**Configuration:** enabled by default. A single config flag allows developers to disable the
-gate. No `strict`/`warn` split — warn mode produces ruis without changing behavior and has
-no practical value. An explicit opt-out preserves the intent; a degraded mode does not.
+**Configuration:** enabled by default. A single boolean flag allows developers to disable
+the gate. No `strict`/`warn` split — warn mode produces noise without behavioral change
+and has no practical value (YAGNI, §9).
 
-**Implementation pattern:** follows the existing `enforcement_event` + `EnforcementRunner`
-pattern. A new `check_context_loaded` action type is registered in `enforcement.yaml`. The
-`context_loaded` flag is a new field in `state.json` managed by the state engine.
+**Implementation pattern:** new `check_context_loaded` action type registered in
+`enforcement.yaml`, following the existing `check_pr_status` handler pattern in
+`EnforcementRunner`. A new `IContextLoadedReader` interface is injected into
+`EnforcementRunner` alongside the existing `IPRStatusReader` — the blocking infrastructure
+(registry, dispatch, `ValidationError`) is reused unchanged.
 
-### F_268.8 — Reusable code from feature/263
+### F_268.8 — context_loaded is session-scope, not persistent
+
+`context_loaded` is an in-memory flag, not a field in `state.json`. The rationale follows
+the same logic as `PRStatusCache` (issue #283): there is no external source of truth to
+fall back to, but `false` is the correct default on any cold start.
+
+If the MCP server restarts, or work is picked up in an existing session on another machine
+after a `git pull` and `git checkout`, the flag is `false` — the agent must call
+`get_work_context` again. This is semantically correct: the agent's context has been lost
+and must be reloaded.
+
+**Contrast with `PRStatusCache`:** PR status has an external ground truth (GitHub API) to
+fall back to on cold start. `context_loaded` has no external source — `false` as the
+default is both the safe and the correct behavior.
+
+**No shared implementation with `PRStatusCache`:** the status-tracking mechanisms are
+fundamentally different. The blocking infrastructure (enforcement handler pattern) is
+shared via the existing registry — no new infrastructure needed.
+
+### F_268.9 — Reusable code from feature/263
 
 Cherry-pick targets (hooks/ package excluded — confirmed dead):
 
@@ -197,6 +241,29 @@ Cherry-pick targets (hooks/ package excluded — confirmed dead):
 | `src/copilot_orchestration/config/requirements_loader.py` | SubRoleSpec loading backend |
 | `src/copilot_orchestration/contracts/interfaces.py` | SubRoleSpec datatype |
 | `src/copilot_orchestration/utils/_paths.py` | State file path resolver |
+| `.copilot/sub-role-requirements.yaml` | Sub-role config + handover fields |
+| `.copilot/_default_requirements.yaml` | Default sub-role config |
+
+Config root question (for design phase): move `.copilot/` files to `.phase-gate/config/`
+to match current project convention?
+
+### F_268.10 — initialize_project has no guard on existing state (bug)
+
+`InitializeProjectTool.execute()` calls `state_engine.initialize_branch()` unconditionally.
+`initialize_branch()` constructs a fresh `BranchState` and overwrites `state.json` via
+`_apply_state()` with no check for an existing state record. If `state.json` already exists
+for the current branch, all transition history, cycle history, and current phase are silently
+destroyed.
+
+This is a bug independent of #268, but it intersects with the gate design:
+- When `state.json` exists, `initialize_project` must be blocked — both by the
+  `context_loaded` gate (it is a write-tool) and by an explicit guard in the tool itself.
+- An agent must not be able to reset the `context_loaded` gate by calling
+  `initialize_project` on an already-initialized branch.
+- Fix scope: `initialize_branch()` should raise `ValidationError` when a `BranchState`
+  already exists for the branch. This fix belongs in a separate issue but must be
+  accounted for in the blast radius of #268.
+
 | `.copilot/sub-role-requirements.yaml` | Sub-role config + handover fields |
 | `.copilot/_default_requirements.yaml` | Default sub-role config |
 
@@ -211,124 +278,144 @@ match current project convention?
 
 **`mcp_server/tools/base.py`**
 `BaseTool` gains `enforcement_event` support for `check_context_loaded`. No change to the
-class structure — the event is registered in `enforcement.yaml`, not hardcoded. The
-`BranchMutatingTool` pattern (class variable sets category → enforcement picks it up) is
-the model to follow.
+**`mcp_server/tools/base.py`**
+No structural change. The `BranchMutatingTool` ABC pattern is the model for the new
+`ContextGatedTool` category (or equivalent enforcement.yaml `tool_category` value).
 
 **`mcp_server/tools/discovery_tools.py` — `GetWorkContextTool`**
-Extended response schema (new fields). Must also set `context_loaded = true` in state as a
-side effect of execution. This is a CQS tension point (query that also writes state) — see
-Architecture Principles section below.
+Extended response schema (new fields: `sub_role_hint`, `phase_instructions`,
+`handover_template`). Sets `context_loaded = true` in the in-memory
+`ContextLoadedCache` as a command side-effect after delivering context.
 
 **`mcp_server/tools/phase_tools.py` — `TransitionPhaseTool`**
 No direct change for the `context_loaded` flag. The state engine resets it automatically
 on writing new phase state. `ForcePhaseTool` is exempt from the blocking check; the state
-engine still resets the flag when it writes new state, so agents must call
-`get_work_context` after a forced phase transition before resuming other tool calls.
+engine still resets the flag when it writes new state, so `get_work_context` must be
+called before resuming write-tool calls after a forced transition.
 
 **`mcp_server/tools/cycle_tools.py` — `TransitionCycleTool`**
-No direct change for the `context_loaded` flag. Same state-engine ownership as above.
-`ForceCycleTool` exempt from blocking check; flag still reset by state engine on entry.
+No direct change. Same state-engine ownership as above. `ForceCycleTool` exempt from
+blocking check; flag reset by state engine on cycle entry.
+
+**`mcp_server/tools/git_pull_tool.py` — `GitPullTool`**
+Conditional reset: if the pull result indicates new commits were received, the
+`ContextLoadedCache` flag is reset to `false`. Noop pulls ("Already up to date") do not
+reset the flag.
+
+**`mcp_server/tools/git_tools.py` — `GitCheckoutTool`**
+Unconditional reset: every branch switch invalidates context. `ContextLoadedCache` flag
+reset to `false` on successful checkout, regardless of target branch state.
 
 **`mcp_server/managers/phase_state_engine.py`**
-New field `context_loaded: bool` in state model. The engine resets the flag to `false`
-on any new phase or cycle state write. A separate method sets it to `true`, called by
-`GetWorkContextTool` after delivering context.
+No new field in `BranchState` / `state.json` — `context_loaded` is session-scope.
+The state engine signals phase/cycle entry to the `ContextLoadedCache` (injected),
+which performs the in-memory reset.
+
+**`mcp_server/state/context_loaded_cache.py`** (new file)
+In-memory flag store implementing `IContextLoadedReader` and `IContextLoadedWriter`.
+Default state: `false`. Analogous to `PRStatusCache` in structure, without API fallback.
+
+**`mcp_server/core/interfaces/__init__.py`**
+New `IContextLoadedReader` and `IContextLoadedWriter` Protocol definitions, alongside
+existing `IPRStatusReader` / `IPRStatusWriter`.
 
 **`mcp_server/managers/enforcement_runner.py`**
-New action type `check_context_loaded`. Reads the flag from state, returns blocking error
-when `false` (and gate is enabled in config). Follows existing `check_pr_status` pattern.
+New `_handle_check_context_loaded` handler registered in `_build_default_registry()`.
+New optional constructor parameter `context_loaded_reader: IContextLoadedReader | None`.
+Follows existing `pr_status_reader` injection pattern exactly.
 
 **`.phase-gate/config/enforcement.yaml`**
-New entry: event `tool_category: all` (or a new category), timing `pre`,
-action `check_context_loaded`. Excludes force tools and `get_work_context` by tool name or
-by a new `exempt` list.
+New entry: `tool_category: context_gated` (or equivalent), timing `pre`,
+action `check_context_loaded`. Force tools, `get_work_context`, `git_checkout`,
+`git_pull`, and `initialize_project` (pre-state) are outside this category.
 
 **`.phase-gate/config/contracts.yaml`**
-New `instructions` section per workflow+phase entry. Read by `get_work_context`, ignored
-by transition tools.
+New `instructions` section per workflow+phase entry.
 
 **`mcp_server/schemas/` (config schema)**
 New schema fields for `instructions` in the contracts YAML loader.
 
-### Test code
 
+**`mcp_server/schemas/` (config schema)**
 **`tests/mcp_server/integration/test_pr_status_lockdown.py`**
-This test asserts `len(BRANCH_MUTATING_TOOLS) == 18`. No new branch-mutating tools are
-added by this issue — count unchanged. Force tools must be explicitly verified to NOT
-inherit `BranchMutatingTool`.
+This test asserts `len(BRANCH_MUTATING_TOOLS) == 18`. Count unchanged — no new
+`BranchMutatingTool` subclasses are added. Force tools must be verified to NOT inherit
+`BranchMutatingTool`.
+
+**`tests/mcp_server/unit/state/test_context_loaded_cache.py`** (new file)
+Analogous to `test_pr_status_cache.py`. Tests: default `false`, set `true`, reset to
+`false`, independence per session.
 
 **`tests/mcp_server/unit/tools/test_discovery_tools.py`**
-`TestGetWorkContextTool` must be extended: new response fields, `context_loaded` side
-effect verification via observable state (not private attribute inspection).
+`TestGetWorkContextTool` extended: new response fields, `context_loaded` side-effect
+verification via observable `IContextLoadedReader` state (not private attribute access).
+
+**`tests/mcp_server/unit/tools/test_git_pull_tool.py`**
+New test: flag reset on non-noop pull; flag unchanged on noop pull.
+
+**`tests/mcp_server/unit/tools/test_git_tools.py` (GitCheckoutTool section)**
+New test: flag reset on successful checkout.
 
 **`tests/mcp_server/unit/managers/test_phase_state_engine.py`**
-New tests for `context_loaded` flag: reset by the engine on phase entry, reset on cycle
-entry, set by the engine when `get_work_context` marks context loaded. Force transitions
-verify that the engine resets the flag (as a state-write side effect) but are not blocked
-by the gate pre-check.
+New tests: state engine signals `ContextLoadedCache` on phase entry; on cycle entry;
+force transitions also signal reset (state-write side effect).
 
-**`tests/mcp_server/integration/test_ready_phase_enforcement.py`**
-Model for new integration test `test_context_loaded_enforcement.py`: verifies the gate
-blocks tools when `context_loaded = false`, unblocks after `get_work_context`, and that
-force tools are exempt.
+**`tests/mcp_server/integration/test_context_loaded_enforcement.py`** (new file)
+Modelled on `test_ready_phase_enforcement.py`: gate blocks write-tools when flag is
+`false`; unblocks after `get_work_context`; force tools are never blocked; read-only
+tools are never blocked regardless of flag state.
 
-**No backward compatibility with legacy code**: there is no prior `context_loaded`
-implementation to be compatible with. The `feature/263` cherry-pick targets contain
-`SubRoleSpec` logic that was never merged — no migration layer needed.
+**No backward compatibility with legacy code**: no prior `context_loaded` implementation
+exists. `feature/263` cherry-pick targets contain `SubRoleSpec` logic never merged —
+no migration layer needed.
 
----
 
 ## Architecture Principles Analysis
 
-### CQS tension in GetWorkContextTool
+### CQS tension in GetWorkContextTool — resolved
 
-`get_work_context` is a query (returns context) that must also set `context_loaded = true`
-(a state mutation). This is a CQS violation by the strict definition in
-ARCHITECTURE_PRINCIPLES.md §5.
-
-**Resolution:** the mutation is a logging/acknowledgment side effect, not a business state
-change that affects query results. The architectural precedent for this type of side effect
-exists in the codebase (`git_checkout` syncs phase state as a side effect). The correct
-framing: `get_work_context` is primarily a command (acknowledge context load) that also
-returns the loaded context as its result. The naming is user-facing and cannot change, but
-the internal design should treat the state write as the primary action.
-
-This is a design-phase decision.
+`get_work_context` sets `context_loaded = true` as a side effect, which is a CQS tension
+(§5: methods return a value OR mutate state, not both). Resolution: every MCP tool
+`execute()` always returns a `ToolResult` — there are no pure query tools at the tool
+layer. `submit_pr` writes `PRStatus.OPEN` and returns a result; `merge_pr` writes
+`PRStatus.ABSENT` and returns a result. The `execute()` method is by convention a
+command-with-result. §5 governs domain methods (e.g., preventing `get_state()` from
+calling `save()`), not the tool execution layer. No CQS violation, no design-phase
+decision needed. **OQ 1 closed.**
 
 ### Config-First and OCP for the new enforcement action
 
 `check_context_loaded` must be registered in `enforcement.yaml`, not hardcoded in Python
-(ARCHITECTURE_PRINCIPLES.md §3, §13). The exemption list for force tools and
-`get_work_context` must live in config, not as an `if tool_name == "force_phase_transition"`
-chain in the runner.
+(ARCHITECTURE_PRINCIPLES.md §3, §13). The exemption mechanism — which tools are outside
+the gated category — belongs in config as a `tool_category` value, not as an
+`if tool_name == ...` chain in the runner. **OQ 2 partially resolved:** gate scope is
+defined by category membership (write-tools carry the category; read-tools and exempt
+write-tools do not). The exact category name and exemption representation is a design
+question.
 
 ### ISP for the flag read
 
-The enforcement runner reads `context_loaded` from state. It should receive a narrow
-read-only interface (`IStateReader`), not the full `IStateRepository` with write methods
-(ARCHITECTURE_PRINCIPLES.md §1.4).
+The enforcement runner reads `context_loaded` via `IContextLoadedReader`. It should not
+receive a write interface (ARCHITECTURE_PRINCIPLES.md §1.4). Analogous to `IPRStatusReader`
+vs `IPRStatusWriter` split already present in the codebase.
 
 ### YAGNI on warn mode
 
-A `strict`/`warn` configuration split was considered and rejected. Warn mode produces
-behavioral ruis without changing outcomes and has no practical value. One boolean flag
+A `strict`/`warn` configuration split was considered and rejected. One boolean flag
 (enabled/disabled) is the correct scope (ARCHITECTURE_PRINCIPLES.md §9).
 
----
-
-## Open Questions
 
 All remaining open questions are design or planning questions, not research questions.
 
-1. **CQS resolution for GetWorkContextTool** — should the tool be renamed or restructured
-   to make the command nature primary, or is the side-effect framing sufficient?
-   *(design)*
+1. ~~**CQS resolution for GetWorkContextTool**~~ — resolved in Architecture Principles
+   section: `execute()` is a command-with-result at the tool layer; no CQS violation.
+   *(closed)*
 
-2. **Exemption mechanism for force tools** — should exemptions be a named list in
-   `enforcement.yaml`, a new tool class variable (`context_gate_exempt: bool = False`),
-   or something else?
-   *(design)*
+2. ~~**Exemption mechanism for force tools**~~ — partially resolved: gate scope is
+   category-based (write-tools carry the gated category; read-tools and exempt write-tools
+   do not). Exact category name and config representation is a design question.
+   **Remaining:** category name choice and how `initialize_project` exemption is expressed
+   when `state.json` does not yet exist. *(design)*
 
 3. **Config root for SubRoleSpec YAML** — `.copilot/` (as in feature/263) or
    `.phase-gate/config/` (current convention)?
@@ -341,13 +428,20 @@ All remaining open questions are design or planning questions, not research ques
 
 5. **`close-issue` invoker** — is this a `@co` or `@imp` responsibility after human
    PR approval?
+   *(planning)*
+
 6. **`create_handover` tool** — deferred. A dedicated tool that validates handover
    fields against the SubRoleSpec before cross-chat handover is a candidate feature,
    but is not required for #268. The `handover_template` delivered by `get_work_context`
    may be sufficient as a protocol-discipline mechanism. Pick up as a separate issue.
    *(deferred)*
 
----
+7. **`initialize_project` guard bug** — when `state.json` already exists for the current
+   branch, `initialize_project` silently overwrites all state. Fix: `initialize_branch()`
+   must raise `ValidationError` on existing state. Separate issue required; blast radius
+   of #268 must account for the guard being in place before the gate can rely on it.
+   *(separate issue, design blocker for gate)*
+
 
 ## References
 
