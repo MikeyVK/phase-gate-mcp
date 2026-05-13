@@ -277,8 +277,7 @@ Cherry-pick targets (hooks/ package excluded — confirmed dead):
 | `.copilot/sub-role-requirements.yaml` | Sub-role config + handover fields |
 | `.copilot/_default_requirements.yaml` | Default sub-role config |
 
-Config root question (for design phase): move `.copilot/` files to `.phase-gate/config/`
-to match current project convention?
+Config root resolved: `.phase-gate/config/` (see OQ 3 — closed).
 
 ### F_268.10 — initialize_project has no guard on existing state (bug)
 
@@ -424,8 +423,6 @@ understates the role.
 ### Production code
 
 **`mcp_server/tools/base.py`**
-`BaseTool` gains `enforcement_event` support for `check_context_loaded`. No change to the
-**`mcp_server/tools/base.py`**
 No structural change. The `BranchMutatingTool` ABC pattern is the model for the new
 `ContextGatedTool` category (or equivalent enforcement.yaml `tool_category` value).
 
@@ -472,9 +469,11 @@ New optional constructor parameter `context_loaded_reader: IContextLoadedReader 
 Follows existing `pr_status_reader` injection pattern exactly.
 
 **`.phase-gate/config/enforcement.yaml`**
-New entry: `tool_category: context_gated` (or equivalent), timing `pre`,
-action `check_context_loaded`. Force tools, `get_work_context`, `git_checkout`,
-`git_pull`, and `initialize_project` (pre-state) are outside this category.
+New entry: `tool_category: branch_mutating`, timing `pre`, action `check_context_loaded`,
+`exempt_tools: [force_phase_transition, force_cycle_transition]`. Force tools remain
+`BranchMutatingTool`; `get_work_context`, `git_checkout`, and `git_pull` are `BaseTool`
+(not `branch_mutating`) and are unaffected. `initialize_project` is `branch_mutating`
+but the handler returns early when `state.json` does not exist.
 
 **`.phase-gate/config/contracts.yaml`**
 New `instructions` section per workflow+phase entry.
@@ -482,12 +481,21 @@ New `instructions` section per workflow+phase entry.
 **`mcp_server/schemas/` (config schema)**
 New schema fields for `instructions` in the contracts YAML loader.
 
+**`mcp_server/config/schemas/enforcement_config.py`**
+`EnforcementAction` has `model_config = ConfigDict(extra="forbid")`. New optional field
+`exempt_tools: list[str] = []` required. A `model_validator` must validate that
+`exempt_tools` is only present on action types that support exemption (e.g.
+`check_context_loaded`). Without this schema change, adding `exempt_tools:` to
+`enforcement.yaml` triggers a `ConfigError` at startup — correct Fail-Fast behavior,
+but the field must exist in the schema first.
 
-**`mcp_server/schemas/` (config schema)**
+### Test code
+
 **`tests/mcp_server/integration/test_pr_status_lockdown.py`**
 This test asserts `len(BRANCH_MUTATING_TOOLS) == 18`. Count unchanged — no new
-`BranchMutatingTool` subclasses are added. Force tools must be verified to NOT inherit
-`BranchMutatingTool`.
+`BranchMutatingTool` subclasses are added. Force tools must be verified to STILL
+inherit `BranchMutatingTool` — they are exempt only from `check_context_loaded` via
+`exempt_tools`, not from `check_pr_status`.
 
 **`tests/mcp_server/unit/state/test_context_loaded_cache.py`** (new file)
 Analogous to `test_pr_status_cache.py`. Tests: default `false`, set `true`, reset to
@@ -516,7 +524,6 @@ tools are never blocked regardless of flag state.
 exists. `feature/263` cherry-pick targets contain `SubRoleSpec` logic never merged —
 no migration layer needed.
 
-
 ## Architecture Principles Analysis
 
 ### CQS tension in GetWorkContextTool — resolved
@@ -541,7 +548,6 @@ it applies only to `check_context_loaded`, not to `check_pr_status`. Force tools
 `BranchMutatingTool` and are still blocked by `check_pr_status` after `submit_pr` —
 the exemption is chirurgical. `initialize_project` is handled by an early return in the
 handler when `state.json` does not exist (not via the exempt list).
-question.
 
 ### ISP for the flag read
 
@@ -549,10 +555,12 @@ The enforcement runner reads `context_loaded` via `IContextLoadedReader`. It sho
 receive a write interface (ARCHITECTURE_PRINCIPLES.md §1.4). Analogous to `IPRStatusReader`
 vs `IPRStatusWriter` split already present in the codebase.
 
+
 ### YAGNI on warn mode
 
 A `strict`/`warn` configuration split was considered and rejected. One boolean flag
 (enabled/disabled) is the correct scope (ARCHITECTURE_PRINCIPLES.md §9).
+
 
 
 All remaining open questions are design or planning questions, not research questions.
