@@ -297,13 +297,59 @@ This is a bug independent of #268, but it intersects with the gate design:
   already exists for the branch. This fix belongs in a separate issue but must be
   accounted for in the blast radius of #268.
 
-| `.copilot/sub-role-requirements.yaml` | Sub-role config + handover fields |
-| `.copilot/_default_requirements.yaml` | Default sub-role config |
+### F_268.11 — MVP approach: validate delivery mechanism before full implementation
 
-Config root question (for design phase): move `.copilot/` files to `.phase-gate/config/` to
-match current project convention?
+The full #268 implementation is substantial (new cache, new enforcement handler, new
+interfaces, new YAML sections, extended test suite). Previous orchestration attempts
+(hooks in #263) invested similar effort and produced no measurable behavioral change.
+Before committing to the full implementation, the core hypothesis must be validated:
 
----
+**Hypothesis:** if `get_work_context` returns `phase_instructions` in its response, an
+agent in a fresh session will follow those instructions without reading static AGENTS.md.
+
+**MVP scope — F_268.6 only, everything else deferred:**
+
+| Component | MVP | Full |
+|-----------|-----|------|
+| `phase_instructions` field in response | ✅ hardcoded static string | from contracts.yaml |
+| `sub_role_hint` field in response | ✅ hardcoded | from contracts.yaml |
+| `handover_template` field in response | ✅ hardcoded | from contracts.yaml |
+| `contracts.yaml instructions` section | ❌ not yet | all workflows × phases |
+| `ContextLoadedCache` + interfaces | ❌ not yet | full implementation |
+| `check_context_loaded` enforcement gate | ❌ not yet | full implementation |
+| `enforce.yaml` new rule | ❌ not yet | full implementation |
+
+The MVP only extends the `get_work_context` response with three hardcoded fields for one
+workflow+phase combination (e.g., `feature/implementation`). No new YAML, no new cache,
+no new enforcement logic. Estimated effort: ~2 hours.
+
+**MVP test protocol:**
+
+1. Add static `phase_instructions`, `sub_role_hint`, `handover_template` to
+   `get_work_context` response (hardcoded, feature/implementation only)
+2. Start a fresh `@imp` session on an implementation-phase branch
+3. Observe: does the agent reference `phase_instructions` content in its first response?
+   Does it follow the prescribed tool order? Does it produce the handover in the correct
+   format without reading AGENTS.md?
+4. Negative control: repeat with an agent that does NOT call `get_work_context` first
+   (simulate gate-absent baseline)
+
+**Success criteria:**
+- Agent follows at least one specific instruction from `phase_instructions` that differs
+  from baseline AGENTS.md behavior
+- Agent produces `sub_role_hint`-aligned role declaration without explicit prompt
+
+**Failure modes to distinguish:**
+- Field present in response but ignored → formatting problem (field too buried in JSON)
+- Field followed in first response but reverted later → context-window pressure problem
+- Field followed consistently → mechanism validated; proceed with full #268
+
+**Consequence if MVP fails:** scope reduction — drop the enforcement gate (F_268.7/F_268.8)
+and focus only on the response extension as a convenience feature. The enforcement gate
+only has value if instructions are actually followed.
+
+**Implementation order:** MVP is the first deliverable of the implementation phase.
+Full infrastructure (ContextLoadedCache, enforcement gate) is blocked on MVP validation.
 
 ## Blast Radius Analysis
 
@@ -450,17 +496,18 @@ All remaining open questions are design or planning questions, not research ques
    **Remaining:** category name choice and how `initialize_project` exemption is expressed
    when `state.json` does not yet exist. *(design)*
 
-3. ~~**Config root for SubRoleSpec YAML**~~ — resolved: `.phase-gate/config/` (Optie A).
-   Rationale: this project introduces a custom orchestration model beyond VS Code standard
-   orchestration; forcing config into `.copilot/` misrepresents ownership. Additionally:
-   SubRoleSpec YAML cherry-pick may be out of scope for #268 (no consumer until
-   `create_handover` is picked up). If any SubRoleSpec YAML ships in #268, it belongs in
-   `.phase-gate/config/`. *(closed)*
+3. ~~**Config root for SubRoleSpec YAML**~~ — deferred with `create_handover` (OQ 6).
+   SubRoleSpec YAML has no consumer in #268 without that tool; the cherry-pick scope is
+   premature. If any SubRoleSpec YAML does ship in #268, it belongs in `.phase-gate/config/`
+   (custom orchestration model must not be forced into VS Code-standard `.copilot/`
+   structure). *(deferred with OQ 6)*
 
-4. **`instructions` section optional vs mandatory** — should phases without instructions
-   silently omit the field or require an explicit empty declaration to force conscious
-   authorship?
-   *(design)*
+4. ~~**`instructions` section optional vs mandatory**~~ — resolved: mandatory (Optie B).
+   Phases without instructions require an explicit empty declaration; the ConfigLoader raises
+   at startup on missing sections (Fail-Fast §4). However: the `instructions` section is
+   NOT populated in this issue's MVP. The MVP hardcodes field values in the tool response
+   for one workflow+phase. Full `contracts.yaml instructions` authorship is gated on MVP
+   validation (see F_268.11). *(closed — implementation deferred past MVP)*
 
 5. **`close-issue` invoker** — is this a `@co` or `@imp` responsibility after human
    PR approval?
