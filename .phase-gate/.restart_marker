@@ -1,6 +1,6 @@
 {
-  "timestamp": 1778665158.716985,
-  "pid": 37812,
-  "reason": "enforcement.yaml updated to allow epic branch from feature/* for MVP validation scaffold",
-  "iso_time": "2026-05-13T09:39:18.716985+00:00"
+  "timestamp": 1778873182.560093,
+  "pid": 41592,
+  "reason": "reload enforcement.yaml after adding feature/* to bug base branches",
+  "iso_time": "2026-05-15T19:26:22.560093+00:00"
 }
