@@ -912,7 +912,7 @@ class TestGetWorkContextStateErrors:
 class TestGetWorkContextSubRoleAndPhaseInstructions:
     """C1 MVP (issue #268): sub_role_hint and phase_instructions fields in response."""
 
-    def _make_tool(self, phase: str) -> GetWorkContextTool:
+    def _make_tool(self, phase: str, workflow_name: str = "feature") -> GetWorkContextTool:
         """Return a GetWorkContextTool whose resolver returns the given phase."""
         mock_git = MagicMock()
         mock_git.get_current_branch.return_value = "feature/268-test"
@@ -927,7 +927,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         )
         mock_state_engine = MagicMock()
         mock_branch_state = MagicMock()
-        mock_branch_state.workflow_name = "feature"
+        mock_branch_state.workflow_name = workflow_name
         mock_state_engine.get_state.return_value = mock_branch_state
         settings = make_settings()
         settings.github.token = None
@@ -1000,3 +1000,33 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         # OSError path uses graceful fallback — not an error result
         result = await tool.execute(GetWorkContextInput(), NoteContext())
         assert not result.is_error
+
+    # --- C1 correction: bug workflow entries ---
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_phase_instructions_for_bug_research(
+        self,
+    ) -> None:
+        """phase_instructions for (bug, research) must contain key research actions."""
+        tool = self._make_tool(phase="research", workflow_name="bug")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "phase_instructions" in text
+        assert "get_issue" in text  # bug research always starts with reading the issue
+        assert "Root Cause" in text  # must identify root cause
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_phase_instructions_for_bug_implementation(
+        self,
+    ) -> None:
+        """phase_instructions for (bug, implementation) must contain TDD hard rules."""
+        tool = self._make_tool(phase="implementation", workflow_name="bug")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "phase_instructions" in text
+        assert "RED" in text  # TDD RED phase required
+        assert "get_project_plan" in text  # always read deliverables first
