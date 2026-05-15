@@ -9,7 +9,7 @@ enforcement:
           hotfix: [main]
           epic: [main]
           feature: [main, "epic/*", "refactor/*"]
-          bug: [main, "epic/*", "feature/*"]
+          bug: [main, "epic/*"]
           fix: [main, "epic/*"]
           refactor: [main, "epic/*"]
           docs: [main, "epic/*"]
