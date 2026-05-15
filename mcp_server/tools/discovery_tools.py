@@ -43,7 +43,8 @@ _SUB_ROLE_MAP: dict[str, str] = {
 # Keyed by (workflow_name, phase_name). phase_instructions embeds the hand-over format
 # inline for roles that produce hand-overs. This avoids a universal handover_template field
 # that would be incorrect for non-hand-over roles.
-# Content authored in docs/development/issue268/bug-workflow-phase-instructions.md.
+# Human-readable reference: docs/development/issue268/bug-workflow-phase-instructions.md.
+# Python strings here are the runtime SSOT; the markdown is for review and refinement only.
 _PHASE_INSTRUCTIONS_MAP: dict[tuple[str, str], str] = {
     # ------------------------------------------------------------------ bug --
     ("bug", "research"): (
@@ -487,6 +488,7 @@ class GetWorkContextTool(BaseTool):
         try:
             branch = ctx.get("current_branch", "") or ""
             if branch:
+                # TODO(C7): eliminate double state-read when WorkflowStatusDTO exposes workflow_name.
                 branch_state = self._state_engine.get_state(str(branch))
                 workflow = branch_state.workflow_name or ""
         except Exception:  # noqa: BLE001

@@ -2,7 +2,7 @@
 
 **Status:** MVP hardcoded content — will migrate to contracts.yaml in C6
 **Scope:** `bug` workflow, all 7 phases
-**Source of truth for:** `_PHASE_INSTRUCTIONS_MAP` entries in `discovery_tools.py`
+**Human-readable reference for:** `_PHASE_INSTRUCTIONS_MAP` entries in `discovery_tools.py`
 
 ---
 
