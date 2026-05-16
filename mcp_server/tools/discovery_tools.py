@@ -488,7 +488,7 @@ class GetWorkContextTool(BaseTool):
         try:
             branch = ctx.get("current_branch", "") or ""
             if branch:
-                # TODO(C7): eliminate double state-read when WorkflowStatusDTO exposes workflow_name.
+                # TODO(C7): eliminate double state-read when WorkflowStatusDTO exposes workflow_name
                 branch_state = self._state_engine.get_state(str(branch))
                 workflow = branch_state.workflow_name or ""
         except Exception:  # noqa: BLE001
