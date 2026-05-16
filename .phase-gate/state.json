@@ -2,7 +2,7 @@
   "branch": "bug/139-get-project-plan-missing-current-phase",
   "issue_number": 139,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -20,7 +20,16 @@
   "issue_title": "Bug: get_project_plan does not return current_phase from state.json",
   "parent_branch": "main",
   "created_at": "2026-05-16T08:53:59.440027+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-16T08:59:03.621971+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
