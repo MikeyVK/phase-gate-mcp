@@ -241,5 +241,22 @@
         "total": 8
       }
     }
+  },
+  "139": {
+    "issue_title": "Bug: get_project_plan does not return current_phase from state.json",
+    "workflow_name": "bug",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-16T08:53:59.346401+00:00"
   }
 }
