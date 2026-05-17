@@ -306,21 +306,29 @@ Before committing to the full implementation, the core hypothesis must be valida
 **Hypothesis:** if `get_work_context` returns `phase_instructions` in its response, an
 agent in a fresh session will follow those instructions without reading static AGENTS.md.
 
-**MVP scope — F_268.6 only, everything else deferred:**
+**MVP scope — F_268.6 + F_268.13 (response restructuring), everything else deferred:**
 
 | Component | MVP | Full |
 |-----------|-----|------|
 | `phase_instructions` field in response | ✅ hardcoded static string | from contracts.yaml |
 | `sub_role_hint` field in response | ✅ hardcoded | from contracts.yaml |
 | `handover_template` field in response | ✅ hardcoded | from contracts.yaml |
+| F_268.13 noise-field removal (`tdd_cycle_info`, `active_issue`, `recent_commits`, `recently_closed`) | ✅ MVP — prerequisite for signal clarity | — |
+| F_268.13 BranchState fields added (`workflow_name`, `issue_number`, `parent_branch`) | ✅ MVP — zero cost, already in state | — |
+| F_268.13 `include_closed_recent` param removed | ✅ MVP — breaking change with no consumers | — |
+| F_268.13 `phase_instructions` promoted to top, conditional `phase_source` | ✅ MVP — structural | — |
 | `contracts.yaml instructions` section | ❌ not yet | all workflows × phases |
 | `ContextLoadedCache` + interfaces | ❌ not yet | full implementation |
 | `check_context_loaded` enforcement gate | ❌ not yet | full implementation |
 | `enforce.yaml` new rule | ❌ not yet | full implementation |
 
-The MVP only extends the `get_work_context` response with three hardcoded fields for one
-workflow+phase combination (e.g., `feature/implementation`). No new YAML, no new cache,
-no new enforcement logic. Estimated effort: ~2 hours.
+**All F_268.13 field changes are MVP-scope and belong in the same implementation cycle as
+`phase_instructions`.** The MVP hypothesis — that an agent follows `phase_instructions` in
+a fresh session — cannot be validated if the response is still cluttered with noise fields
+that bury the signal. The restructuring and the new fields are not optional convenience;
+they are preconditions for the validation to be meaningful.
+
+
 
 **MVP validation harness — the initialize_project guard bug:**
 
@@ -459,7 +467,7 @@ is absolute — the same information must not appear in both tools.
 
 | Field | Change |
 |---|---|
-| `current_cycle` | Retain as position indicator only in the phase header line; the full `tdd_cycle_info` block (name, deliverables, exit criteria) is removed. Format: `Phase: 🧪 implementation (cycle 2/3) → 🔴 red`. The cycle number is positional (`BranchState.current_cycle`), not planning content. Without it the agent cannot supply `cycle_number=N` to `git_add_or_commit`. |
+| `current_cycle` | Retain as position indicator only in the phase header line; the full `tdd_cycle_info` block (name, deliverables, exit criteria) is removed. Format: `Phase: 🧪 implementation (cycle 2) → 🔴 red`. The cycle number is positional (`BranchState.current_cycle`), not planning content. Without it the agent cannot supply `cycle_number=N` to `git_add_or_commit`. The total cycle count (`/M`) is **not** shown: it is planning content owned by `get_project_plan` and its inclusion would violate the non-overlap boundary stated in this finding. |
 | `phase_source` / `phase_confidence` | Conditional: rendered only when `confidence != 'high'` or source is not `state_json`. Mirrors the existing `phase_error_message` conditional pattern. |
 | `phase_instructions` | Promoted to dominant block; rendered first after the orientation header, not last. |
 | `linked_issue_number` | Renamed `issue_number` in rendered output and sourced from `BranchState.issue_number` (eliminates fragile regex on branch name). |
@@ -476,7 +484,7 @@ input schema (`GetWorkContextInput`).
 
 Branch: `feature/268-...` | Workflow: feature | Issue: #268
 Phase: 🔍 research | Role: researcher
-[Phase: 🧪 implementation (cycle 2/3) → 🔴 red | Role: implementer]  ← implementation only
+[Phase: 🧪 implementation (cycle 2) → 🔴 red | Role: implementer]   ← implementation only
 Parent: main
 [⚠️ Phase detection: source=reflog, confidence=medium]              ← only when non-high
 
@@ -504,12 +512,17 @@ No structural change. The `BranchMutatingTool` ABC pattern is the model for the 
 Response restructured per F_268.13: noise fields removed (`tdd_cycle_info` block,
 `active_issue`, `recent_commits`, `recently_closed`); new fields rendered from existing
 `BranchState` data (`workflow_name`, `issue_number`, `parent_branch`); `current_cycle`
-retained as compact position indicator in phase header; `phase_source`/`phase_confidence`
-made conditional on non-high confidence; `phase_instructions` promoted to dominant first
-block; `linked_issue_number` renamed `issue_number` with state-sourced extraction.
+retained as compact position indicator in phase header (format: `cycle N`, no total);
+`phase_source`/`phase_confidence` made conditional on non-high confidence;
+`phase_instructions` promoted to dominant first block; `linked_issue_number` renamed
+`issue_number` with state-sourced extraction (eliminates fragile branch-name regex).
 `GetWorkContextInput.include_closed_recent` parameter removed (breaking change — no
 external consumers). Sets `context_loaded = true` in the in-memory `ContextLoadedCache`
 as a command side-effect after delivering context.
+**C7 (`TODO(C7)` in discovery_tools.py):** the existing TODO anticipates extending
+`WorkflowStatusDTO` to expose `workflow_name`. F_268.13 resolves this differently:
+`workflow_name` is already in the `BranchState` object that `get_state()` returns;
+render it directly. No DTO extension required.
 
 **`mcp_server/tools/phase_tools.py` — `TransitionPhaseTool`**
 No direct change for the `context_loaded` flag. The state engine resets it automatically
