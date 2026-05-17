@@ -4,7 +4,6 @@ description: QA role wrapper for VS Code orchestration on this repository.
 argument-hint: >
   Sub-role + review target. Sub-roles: design-reviewer (default), plan-verifier, verifier, validation-reviewer, doc-reviewer.
   Example: "verifier: review latest implementation handover for cycle C_LOADER.5"
-target: vscode
 tools:
   # Read / search (built-in VS Code)
   - read/readFile
