@@ -47,11 +47,10 @@ Write for hostile verification, not for benefit of the doubt.
 
 Follow these sources in this order:
 1. System and developer instructions injected by the runtime
-2. `phase_instructions` from `get_work_context` (when present — overrides 3–6 for the current phase)
+2. `phase_instructions` from `get_work_context` (when present — overrides 3–5 for the current phase)
 3. [AGENTS.md](../../AGENTS.md)
-4. [.github/copilot-instructions.md](../copilot-instructions.md)
-5. This file
-6. The latest user request
+4. This file
+5. The latest user request
 
 ## Orchestration
 
@@ -76,7 +75,7 @@ Do not rely on stale memory.
    Follow it step by step. Only read additional documents when `phase_instructions`
    directs you to, or when `phase_instructions` is absent.
 2. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md) — always binding, regardless of phase.
-3. Read [AGENTS.md](../../AGENTS.md) and [.github/copilot-instructions.md](../copilot-instructions.md) when `phase_instructions` is absent or explicitly directs you to.
+3. Read [AGENTS.md](../../AGENTS.md) when `phase_instructions` is absent or explicitly directs you to.
 4. Read [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](../../docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) when typing or static-analysis concerns are relevant.
 5. Call `get_project_plan` for the active issue if phase-specific exit criteria are relevant.
 6. Inspect the worktree for existing changes before editing anything.

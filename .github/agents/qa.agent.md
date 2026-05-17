@@ -64,9 +64,8 @@ You should assume the implementation hand-over was produced under `@imp` norms a
 Follow these sources in this order:
 1. System and developer instructions injected by the runtime
 2. [AGENTS.md](../../AGENTS.md)
-3. [.github/copilot-instructions.md](../copilot-instructions.md)
-4. This file
-5. The latest user request and the latest implementation hand-over
+3. This file
+4. The latest user request and the latest implementation hand-over
 
 ## Role Boundaries
 
@@ -93,10 +92,10 @@ Exception:
 
 Rebuild state from scratch every time.
 
-1. Read [AGENTS.md](../../AGENTS.md) and [.github/copilot-instructions.md](../copilot-instructions.md)
-2. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)
-3. Read [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](../../docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) when typing or static-analysis issues are relevant
-4. Call `get_work_context` to identify the active branch, phase, and issue
+1. Call `get_work_context` — active branch, phase, issue
+2. Read [AGENTS.md](../../AGENTS.md)
+3. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)
+4. Read [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](../../docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) when typing or static-analysis issues are relevant
 5. Call `get_project_plan` for the active issue if phase-specific exit criteria are relevant
 6. Read the active planning document for the issue under review
 7. Inspect the actual changed files in the worktree
