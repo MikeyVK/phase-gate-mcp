@@ -2,9 +2,9 @@
 <!-- template=design version=5827e841 created=2026-05-13T08:34Z updated=2026-05-13 -->
 # MCP-Tool-First Orchestration: get_work_context Extension + context_loaded Gate
 
-**Status:** DRAFT
-**Version:** 1.1
-**Last Updated:** 2026-05-13
+**Status:** UPDATED
+**Version:** 1.2
+**Last Updated:** 2026-05-17
 
 ---
 
@@ -20,9 +20,15 @@ enforcement gate must block write-tools until an agent has acknowledged its cont
 ### 1.2. Requirements
 
 **Functional:**
-- [ ] `get_work_context` returns `sub_role_hint` and `phase_instructions` fields
+- [ ] `get_work_context` returns `sub_role_hint`, `phase_instructions`, `workflow_name`, `issue_number`, and `parent_branch` (sourced from `BranchState`)
 - [ ] MVP: `phase_instructions` embeds hand-over format inline for roles that produce hand-overs
 - [ ] Stage 2: `get_work_context` additionally returns `handover_template` as a separate field read from `contracts.yaml`
+- [ ] Response omits noise fields: no `tdd_cycle_info` block, `active_issue`, `recent_commits`, or `recently_closed` in output (F_268.13)
+- [ ] `current_cycle` rendered as compact position indicator only — no name, no total (format: `cycle N`)
+- [ ] `phase_source`/`phase_confidence` conditional: rendered only when confidence ≠ `high` or source ≠ `state_json`
+- [ ] `phase_instructions` promoted to dominant first block (after orientation header)
+- [ ] `linked_issue_number` → `issue_number`; sourced from `BranchState.issue_number` (eliminates branch-name regex)
+- [ ] `GetWorkContextInput.include_closed_recent` parameter removed (breaking — no external consumers)
 - [ ] `context_loaded` flag resets on phase entry, cycle entry, `git_checkout`, non-noop `git_pull`
 - [ ] All `branch_mutating` tools are blocked when `context_loaded` is `false`
 - [ ] `force_phase_transition` and `force_cycle_transition` are exempt via `exempt_tools` in `enforcement.yaml`
@@ -103,6 +109,10 @@ gate until the mechanism is proven.
 | MVP content storage | Module-level dicts in `discovery_tools.py` with `# TODO(MVP)` | Explicit transitional; replaced by `contracts.yaml` on full implementation |
 | `handover_template` MVP | Embedded in `phase_instructions` text for hand-over-producing roles | No separate field until Stage 2; avoids universal template that is wrong for non-implementer roles |
 | `handover_template` Stage 2 | Separate `handover_template` field, per-phase from `contracts.yaml` | Role-specific; part of `PhaseInstructionsSpec` alongside `sub_role` and `phase_instructions` |
+| `issue_number` sourcing | From `BranchState.issue_number` (not branch-name regex) | State is authoritative; regex is fragile and contradicts `BranchState` as SSOT |
+| `parent_branch` in response | Inline from `BranchState.parent_branch` | Same data source as `get_parent_branch` tool; eliminates redundant call in ready phase; zero cost |
+| Cycle indicator format | `cycle N` only — no `/M` total | Total cycle count is planning content owned by `get_project_plan`; non-overlap boundary (F_268.13) |
+| `include_closed_recent` removal | Remove from `GetWorkContextInput` (breaking) | Dead parameter after field removal; no external consumers; clean break preferred |
 
 ---
 
@@ -147,34 +157,93 @@ _PHASE_INSTRUCTIONS_MAP: dict[tuple[str, str], str] = {
         "- exact gate commands or MCP checks run\n"
         "- exact outcome"
     ),
+    ("bug", "research"): (
+        "Sub-role: researcher. "
+        "1. Call get_issue(issue_number) to read the full bug report. "
+        "2. Inspect affected files: read the relevant source and test files. "
+        "3. Identify root cause and record findings in docs/development/issueN/research.md. "
+        "4. Produce hand-over on completion."
+    ),
+    ("bug", "implementation"): (
+        "Sub-role: implementer. "
+        "1. Call get_project_plan to read TDD cycle deliverables. "
+        "2. Follow RED\u2192GREEN\u2192REFACTOR strictly. "
+        "3. Commit with git_add_or_commit after each sub-phase (red/green/refactor). "
+        "4. Run run_tests after GREEN commit. "
+        "5. Run run_quality_gates(scope='files') after REFACTOR commit. "
+        "6. Produce Imp\u2192QA hand-over on completion using this exact format:\n"
+        "### Scope\n- what cycle or task was executed\n"
+        "- what was intentionally kept out of scope\n\n"
+        "### Files\n- changed files grouped by role\n\n"
+        "### Deliverables\n- which authoritative deliverables are now satisfied\n\n"
+        "### Stop-Go Proof\n- exact tests run\n"
+        "- exact gate commands or MCP checks run\n"
+        "- exact outcome"
+    ),
 }
 ```
 
-**In `GetWorkContextTool.execute()`, append after building `ctx`:**
+**In `GetWorkContextTool.execute()`, replace ctx-building and append logic (F_268.13 restructuring):**
 
 ```python
-# MVP: hardcoded lookup; replaced by contracts.yaml on full implementation.
-phase = ctx.get("workflow_phase", "")
-workflow = ""
-try:
-    status = self._workflow_status_resolver.resolve_current()
-    workflow = status.workflow_name or ""
-except Exception:  # noqa: BLE001
-    pass
+# F_268.13 / MVP: orientation sourced from BranchState; lookup maps replaced by
+# contracts.yaml on full implementation.  # TODO(MVP)
+branch = self._git_manager.get_current_branch()
+state = await anyio.to_thread.run_sync(self._state_engine.get_state, branch)
 
-ctx["sub_role_hint"] = _SUB_ROLE_MAP.get(str(phase), "")
-ctx["phase_instructions"] = _PHASE_INSTRUCTIONS_MAP.get(
-    (str(workflow), str(phase)), ""
-)
+# Orientation fields — all from BranchState (already in memory, zero cost).
+workflow = state.workflow_name or ""
+phase = state.current_phase or ""
+
+ctx["workflow_name"] = workflow
+ctx["issue_number"] = state.issue_number        # renamed from linked_issue_number
+ctx["parent_branch"] = state.parent_branch or ""
+if state.current_cycle is not None:
+    ctx["current_cycle"] = state.current_cycle  # position indicator only; no deliverables
+
+# Noise fields intentionally omitted from ctx:
+#   tdd_cycle_info, active_issue, recent_commits, recently_closed — not added per F_268.13.
+
+# phase_source/phase_confidence: strip when confidence is "high" (healthy default).
+if ctx.get("phase_confidence") == "high":
+    ctx.pop("phase_source", None)
+    ctx.pop("phase_confidence", None)
+
+ctx["sub_role_hint"] = _SUB_ROLE_MAP.get(phase, "")
+ctx["phase_instructions"] = _PHASE_INSTRUCTIONS_MAP.get((workflow, phase), "")
 ```
+
+**`_format_context()` output structure (rewrite required):**
+
+The existing `_format_context()` function must be rewritten to produce the following
+structure. `phase_instructions` is the dominant first block — it is never buried at the
+end.
+
+```
+Branch: `<branch>` | Workflow: <workflow> | Issue: #<issue_number>
+Phase: <emoji> <phase>[ → <sub_phase>][ (cycle <N>)] | Role: <sub_role_hint>
+[Parent: <parent_branch>]                              ← only if non-empty
+[⚠️ Phase detection: source=<s>, confidence=<c>]      ← only if confidence ≠ high
+
+---
+
+### 🎯 Phase Instructions
+
+<phase_instructions>
+[(No instructions defined for workflow: X, phase: Y)]  ← if map returns ""
+```
+
+The ctx keys that drove the old renderer are either renamed (`linked_issue_number` →
+`issue_number`) or removed entirely (`active_issue`, `tdd_cycle_info`, `recent_commits`,
+`recently_closed`). The rewritten `_format_context()` must not reference removed keys.
 
 **No constructor changes for MVP.** No `IContextLoadedWriter` injection yet.
 
 **Architecture compliance:**
-- DIP §1.5: no new instantiation in `execute()` — lookups are module-level constants
-- Config-First §3: intentionally violated — `# TODO(MVP)` marks the debt; embedded
-  hand-over format is per-phase text, not a shared SSOT claim
+- DIP §1.5: no new instantiation in `execute()` — lookups are module-level constants; `BranchState` already fetched
+- Config-First §3: intentionally violated — `# TODO(MVP)` marks the debt; instructions are per-phase text, not a shared SSOT claim
 - CQS §5: no flag write in MVP; the side-effect is Stage 2
+- C7 (`TODO(C7)`): closed — `workflow_name` rendered directly from `BranchState`; no `WorkflowStatusDTO` extension needed
 
 ---
 
@@ -568,15 +637,17 @@ between AGENTS.md and the tool response.
 ### 5.1. MVP: agent startup with phase_instructions delivery
 
 ```
-@imp session start
+@imp session start (validation harness — bug/330 branch in research phase)
   → get_work_context()
     → GetWorkContextTool.execute()
-      → WorkflowStatusResolver.resolve_current() → phase: "implementation", workflow: "feature"
-      → lookup _SUB_ROLE_MAP["implementation"] → "implementer"
-      → lookup _PHASE_INSTRUCTIONS_MAP[("feature","implementation")]
-          → instructions string with embedded hand-over format at end
-      → return ToolResult with ctx dict (sub_role_hint, phase_instructions)
-  → agent reads phase_instructions in response
+      → get_state(branch) → state: workflow_name="bug", current_phase="research",
+                                    issue_number=330, parent_branch="main"
+      → lookup _SUB_ROLE_MAP["research"] → "researcher"
+      → lookup _PHASE_INSTRUCTIONS_MAP[("bug","research")]
+          → instructions string: read bug report, inspect files, write research.md, handover
+      → ctx built: workflow_name, issue_number, parent_branch, sub_role_hint, phase_instructions
+      → return ToolResult with orientation header + 🎯 Phase Instructions block
+  → agent reads phase_instructions as dominant first block
   → agent follows prescribed tool order (hypothesis validation)
   → agent produces hand-over using format embedded in phase_instructions
 ```
@@ -681,7 +752,7 @@ The following items are explicitly deferred and must not be pulled into implemen
 
 ## Related Documentation
 
-- [research.md](research.md) — Findings F_268.1–F_268.12, all open questions resolved
+- [research.md](research.md) — Findings F_268.1–F_268.13, all open questions resolved
 - [ARCHITECTURE_PRINCIPLES.md](../../coding_standards/ARCHITECTURE_PRINCIPLES.md)
 - Issue #268 — MCP-tool-first orchestration
 - Issue #263 — hook injection research (context for why MVP-first approach)
