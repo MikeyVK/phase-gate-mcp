@@ -418,6 +418,80 @@ call out lifecycle-boundary write permissions (`initialize_project`, `merge_pr`,
 `close_issue`). The current wording "Read all; create/update issues, labels, milestones"
 understates the role.
 
+
+### F_268.13 — get_work_context response: minimal-orientation contract and field decisions
+
+The current `GetWorkContextTool` response mixes three categories of information:
+
+1. **Orientation** — where the agent is now (branch, phase, role)
+2. **Work instructions** — what the agent must do now (`phase_instructions`)
+3. **Ancillary data** — recent commits, issue body, TDD cycle details, recently closed issues
+
+The tool contract must be reduced to categories 1 and 2 only. Category 3 belongs in
+dedicated read-only tools (`get_project_plan`, `get_issue`, git tooling) that `phase_instructions`
+explicitly instructs the agent to call when actually needed. Every category-3 field that
+remains in the response is noise that dilutes the `phase_instructions` signal.
+
+**Non-overlap boundary with `get_project_plan`:**
+`get_project_plan` owns the planning content: cycle names, deliverables, exit criteria.
+`get_work_context` owns the position: which cycle is active, which phase. This boundary
+is absolute — the same information must not appear in both tools.
+
+**Fields removed:**
+
+| Field | Reason |
+|---|---|
+| `tdd_cycle_info` block (name, deliverables, exit_criteria) | Direct overlap with `get_project_plan`; user-confirmed removal |
+| `active_issue` (title, body, labels, acceptance_criteria) | Noise during work phases; research phase calls `get_issue(N)` via `phase_instructions` |
+| `recent_commits` | Low orientation value; agent has full git tooling |
+| `recently_closed` | Co-agent information; no value to `@imp` during work |
+| `phase_source` / `phase_confidence` when confidence is high | Debug metadata; invisible during normal operation |
+
+**Fields added (all already in `BranchState`, not currently rendered):**
+
+| Field | Source | Rationale |
+|---|---|---|
+| `workflow_name` | `BranchState.workflow_name` | Fundamental orientation; agent must know which workflow type is active |
+| `issue_number` | `BranchState.issue_number` | Renamed from `linked_issue_number`; sourced from state, not regex on branch name |
+| `parent_branch` | `BranchState.parent_branch` | Needed for `submit_pr(base=...)` in ready phase; already read by `get_parent_branch` from the same state field — adding it here eliminates a redundant tool call with zero additional cost |
+
+**Fields changed:**
+
+| Field | Change |
+|---|---|
+| `current_cycle` | Retain as position indicator only in the phase header line; the full `tdd_cycle_info` block (name, deliverables, exit criteria) is removed. Format: `Phase: 🧪 implementation (cycle 2/3) → 🔴 red`. The cycle number is positional (`BranchState.current_cycle`), not planning content. Without it the agent cannot supply `cycle_number=N` to `git_add_or_commit`. |
+| `phase_source` / `phase_confidence` | Conditional: rendered only when `confidence != 'high'` or source is not `state_json`. Mirrors the existing `phase_error_message` conditional pattern. |
+| `phase_instructions` | Promoted to dominant block; rendered first after the orientation header, not last. |
+| `linked_issue_number` | Renamed `issue_number` in rendered output and sourced from `BranchState.issue_number` (eliminates fragile regex on branch name). |
+
+**`include_closed_recent` input parameter:** removed. With `recently_closed` removed from
+output, the parameter becomes vestigial. No external API consumers exist in this project;
+a clean break is preferable to a dead parameter. This is a breaking change to the tool
+input schema (`GetWorkContextInput`).
+
+**Resulting minimal output structure:**
+
+```
+## Work Context
+
+Branch: `feature/268-...` | Workflow: feature | Issue: #268
+Phase: 🔍 research | Role: researcher
+[Phase: 🧪 implementation (cycle 2/3) → 🔴 red | Role: implementer]  ← implementation only
+Parent: main
+[⚠️ Phase detection: source=reflog, confidence=medium]              ← only when non-high
+
+---
+
+### 🎯 Phase Instructions
+
+[phase_instructions content — operative block]
+```
+
+All other content — issue details, commit history, cycle deliverables — is available on
+demand via `get_issue`, `get_project_plan`, and git tools. The `phase_instructions` block
+should instruct the agent to call those tools when appropriate; `get_work_context` itself
+should not duplicate their output.
+
 ## Blast Radius Analysis
 
 ### Production code
@@ -427,9 +501,15 @@ No structural change. The `BranchMutatingTool` ABC pattern is the model for the 
 `ContextGatedTool` category (or equivalent enforcement.yaml `tool_category` value).
 
 **`mcp_server/tools/discovery_tools.py` — `GetWorkContextTool`**
-Extended response schema (new fields: `sub_role_hint`, `phase_instructions`,
-`handover_template`). Sets `context_loaded = true` in the in-memory
-`ContextLoadedCache` as a command side-effect after delivering context.
+Response restructured per F_268.13: noise fields removed (`tdd_cycle_info` block,
+`active_issue`, `recent_commits`, `recently_closed`); new fields rendered from existing
+`BranchState` data (`workflow_name`, `issue_number`, `parent_branch`); `current_cycle`
+retained as compact position indicator in phase header; `phase_source`/`phase_confidence`
+made conditional on non-high confidence; `phase_instructions` promoted to dominant first
+block; `linked_issue_number` renamed `issue_number` with state-sourced extraction.
+`GetWorkContextInput.include_closed_recent` parameter removed (breaking change — no
+external consumers). Sets `context_loaded = true` in the in-memory `ContextLoadedCache`
+as a command side-effect after delivering context.
 
 **`mcp_server/tools/phase_tools.py` — `TransitionPhaseTool`**
 No direct change for the `context_loaded` flag. The state engine resets it automatically

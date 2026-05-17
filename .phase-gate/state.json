@@ -2,7 +2,7 @@
   "branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
   "issue_number": 268,
   "workflow_name": "feature",
-  "current_phase": "documentation",
+  "current_phase": "research",
   "current_cycle": null,
   "last_cycle": 2,
   "cycle_history": [
@@ -23,7 +23,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Research deliverable (reference doc) is complete; consolidation work is documentation-only (AGENTS.md restructure + copilot-instructions.md removal). No implementation cycles needed for this sub-task.",
+  "skip_reason": "Nieuw onderzoek naar get_work_context response structuur \u2014 documentatie-werk afgerond, nieuw research-item voor issue #268.",
   "issue_title": "MCP-tool-first orchestration: get_work_context + create_handover",
   "parent_branch": "main",
   "created_at": "2026-05-12T14:30:19.800556+00:00",
@@ -83,6 +83,14 @@
       "human_approval": "User approved on 2026-05-17",
       "forced": true,
       "skip_reason": "Research deliverable (reference doc) is complete; consolidation work is documentation-only (AGENTS.md restructure + copilot-instructions.md removal). No implementation cycles needed for this sub-task."
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "research",
+      "timestamp": "2026-05-17T17:52:54.213356+00:00",
+      "human_approval": "User approved on 2026-05-17",
+      "forced": true,
+      "skip_reason": "Nieuw onderzoek naar get_work_context response structuur \u2014 documentatie-werk afgerond, nieuw research-item voor issue #268."
     }
   ],
   "reconstructed": false,
