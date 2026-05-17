@@ -241,38 +241,5 @@
         "total": 8
       }
     }
-  },
-  "139": {
-    "issue_title": "Bug: get_project_plan does not return current_phase from state.json",
-    "workflow_name": "bug",
-    "execution_mode": "interactive",
-    "required_phases": [
-      "research",
-      "design",
-      "planning",
-      "implementation",
-      "validation",
-      "documentation",
-      "ready"
-    ],
-    "skip_reason": null,
-    "parent_branch": "main",
-    "created_at": "2026-05-16T08:53:59.346401+00:00",
-    "planning_deliverables": {
-      "tdd_cycles": {
-        "total": 1,
-        "cycles": [
-          {
-            "cycle_number": 1,
-            "name": "C1: Update project.md reference documentation",
-            "deliverables": [
-              "docs/reference/mcp/tools/project.md \u2014 get_project_plan Returns block updated with actual flat-dict format",
-              "docs/reference/mcp/tools/project.md \u2014 Behavior Notes updated: state.json as sole source"
-            ],
-            "exit_criteria": "get_project_plan section shows correct output format with current_phase, phase_source, phase_detection_error and accurate Behavior Notes"
-          }
-        ]
-      }
-    }
   }
 }
