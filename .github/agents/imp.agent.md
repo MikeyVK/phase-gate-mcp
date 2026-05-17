@@ -4,10 +4,9 @@ description: Implementation role wrapper for VS Code orchestration on this repos
 argument-hint: >
   Sub-role + task. Sub-roles: researcher (default), planner, designer, implementer, validator, documenter.
   Example: "implementer: start cycle C_LOADER.5 for issue 257"
-target: vscode
 tools:
   # MCP — alle mutaties (file edits, git, tests, quality gates, scaffolding) — hoogste prioriteit
-  - phase-gate-mcp/*
+  - "phase-gate-mcp/*"
   # VS Code built-in — lezen en zoeken (geen mutaties; edits lopen altijd via phase-gate-mcp)
   - read/readFile
   - read/problems
