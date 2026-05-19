@@ -19,7 +19,7 @@ from mcp_server.config.schemas import GitConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.config.settings import Settings
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import (
@@ -377,7 +377,6 @@ class TestGetWorkContextTddCycleInfo:
         # Mock Git and settings
         with (
             patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-            patch("mcp_server.tools.discovery_tools.ScopeDecoder") as mock_decoder_class,
         ):
             mock_git = MagicMock()
             mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
@@ -392,17 +391,6 @@ class TestGetWorkContextTddCycleInfo:
             tool._project_manager = project_manager
             tool._state_engine = state_engine
             tool._settings.server.workspace_root = str(workspace_root)
-
-            # ScopeDecoder returns implementation phase from commit scope
-            mock_decoder = MagicMock()
-            mock_decoder.detect_phase.return_value = {
-                "workflow_phase": "implementation",
-                "sub_phase": "green",
-                "source": "commit-scope",
-                "confidence": "high",
-                "raw_scope": "P_IMPLEMENTATION_SP_C2_GREEN",
-            }
-            mock_decoder_class.return_value = mock_decoder
 
             # Configure resolver to match expected phase/cycle for TDD info visibility
             tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(  # pyright: ignore[reportPrivateUsage]
@@ -465,7 +453,6 @@ class TestGetWorkContextTddCycleInfo:
         # Mock Git
         with (
             patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-            patch("mcp_server.tools.discovery_tools.ScopeDecoder") as mock_decoder_class,
         ):
             mock_git = MagicMock()
             mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
@@ -479,17 +466,6 @@ class TestGetWorkContextTddCycleInfo:
             tool._project_manager = project_manager
             tool._state_engine = state_engine
             tool._settings.server.workspace_root = str(workspace_root)
-
-            # ScopeDecoder returns DESIGN phase (NOT tdd)
-            mock_decoder = MagicMock()
-            mock_decoder.detect_phase.return_value = {
-                "workflow_phase": "design",
-                "sub_phase": None,
-                "source": "state.json",
-                "confidence": "high",
-                "raw_scope": None,
-            }
-            mock_decoder_class.return_value = mock_decoder
 
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
@@ -530,7 +506,6 @@ class TestGetWorkContextTddCycleInfo:
         # Mock Git
         with (
             patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-            patch("mcp_server.tools.discovery_tools.ScopeDecoder") as mock_decoder_class,
         ):
             mock_git = MagicMock()
             mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
@@ -544,17 +519,6 @@ class TestGetWorkContextTddCycleInfo:
             tool._project_manager = project_manager
             tool._state_engine = state_engine
             tool._settings.server.workspace_root = str(workspace_root)
-
-            # ScopeDecoder returns implementation phase
-            mock_decoder = MagicMock()
-            mock_decoder.detect_phase.return_value = {
-                "workflow_phase": "implementation",
-                "sub_phase": "red",
-                "source": "state.json",
-                "confidence": "high",
-                "raw_scope": None,
-            }
-            mock_decoder_class.return_value = mock_decoder
 
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
@@ -621,7 +585,6 @@ class TestTddCycleInfoStatusField:
 
         with (
             patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-            patch("mcp_server.tools.discovery_tools.ScopeDecoder") as mock_decoder_class,
         ):
             mock_git = MagicMock()
             mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
@@ -636,16 +599,6 @@ class TestTddCycleInfoStatusField:
             tool._project_manager = project_manager
             tool._state_engine = state_engine
             tool._settings.server.workspace_root = str(workspace_root)
-
-            mock_decoder = MagicMock()
-            mock_decoder.detect_phase.return_value = {
-                "workflow_phase": "implementation",
-                "sub_phase": "red",
-                "source": "state.json",
-                "confidence": "high",
-                "raw_scope": None,
-            }
-            mock_decoder_class.return_value = mock_decoder
 
             # Configure resolver to provide implementation phase with cycle 1
             tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
@@ -1116,9 +1069,7 @@ class TestGetWorkContextC1Restructuring:
 
         assert not result.is_error
         text = result.content[0]["text"]
-        assert "### \U0001f3af Phase Instructions" in text, (
-            f"Header not found in output:\n{text}"
-        )
+        assert "### \U0001f3af Phase Instructions" in text, f"Header not found in output:\n{text}"
         first_h3 = text.find("###")
         phase_instructions_pos = text.find("### \U0001f3af Phase Instructions")
         assert first_h3 == phase_instructions_pos, (

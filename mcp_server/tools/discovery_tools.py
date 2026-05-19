@@ -3,21 +3,18 @@
 # pyright: reportIncompatibleMethodOverride=false
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.settings import Settings
-from mcp_server.core.exceptions import ExecutionError, MCPError
+from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
-from mcp_server.core.phase_detection import PhaseDetectionResult, ScopeDecoder
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.schemas import WorkphasesConfig
 from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
@@ -375,7 +372,7 @@ class GetWorkContextTool(BaseTool):
         self._state_path = state_path
         self._workflow_status_resolver = workflow_status_resolver
 
-    async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:  # noqa: ARG002
         """Execute work context aggregation."""
         _ = params  # GetWorkContextInput has no fields after C1 (issue #268)
 
@@ -412,71 +409,6 @@ class GetWorkContextTool(BaseTool):
         ctx["phase_instructions"] = _PHASE_INSTRUCTIONS_MAP.get((workflow, phase), "")
 
         return ToolResult.text(self._format_context(ctx))
-
-    def _extract_issue_number(self, branch: str) -> int | None:
-        """Extract issue number from branch name."""
-        patterns = [
-            r"(?:feature|fix|refactor|docs)/(\d+)-",
-            r"issue-(\d+)",
-            r"#(\d+)",
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, branch)
-            if match:
-                return int(match.group(1))
-
-        return None
-
-    def _detect_workflow_phase(self, commits: list[str]) -> PhaseDetectionResult:
-        """
-        Detect workflow phase deterministically using ScopeDecoder.
-
-        NOTE: This method is only called when the WorkflowStatusResolver is not
-        injected. When the resolver is present (standard path), phase comes from
-        state.json authoritatively (Issue #298). This fallback path is retained
-        for backward compatibility only.
-
-        Args:
-            commits: Recent commit messages
-
-        Returns:
-            PhaseDetectionResult dict with workflow_phase, sub_phase, source, confidence
-        """
-        if not commits:
-            return {
-                "workflow_phase": "unknown",
-                "sub_phase": None,
-                "source": "unknown",
-                "confidence": "unknown",
-                "raw_scope": None,
-                "error_message": None,
-            }
-
-        # Use most recent commit for phase detection
-        latest_commit = commits[0]
-
-        # Deterministic phase detection via ScopeDecoder
-        if self._workphases_config is None:
-            return {
-                "workflow_phase": "unknown",
-                "sub_phase": None,
-                "source": "unknown",
-                "confidence": "unknown",
-                "raw_scope": None,
-                "error_message": "WorkphasesConfig not injected",
-            }
-        decoder = ScopeDecoder(self._workphases_config, state_path=self._state_path)
-        return decoder.detect_phase(commit_message=latest_commit, fallback_to_state=True)
-
-    def _extract_checklist(self, body: str) -> list[str]:
-        """Extract checklist items from issue body."""
-        if not body:
-            return []
-
-        pattern = r"- \[[ x]\] (.+)"
-        matches = re.findall(pattern, body)
-        return matches[:10]  # Limit to 10 items
 
     def _format_context(self, context: dict[str, Any]) -> str:
         """Format work context into compact orientation header + phase instructions block."""
@@ -534,9 +466,7 @@ class GetWorkContextTool(BaseTool):
 
         # Orientation line 4: phase detection source (only if confidence != high)
         if phase_confidence != "high":
-            lines.append(
-                f"⚠️ Phase detection: source={phase_source}, confidence={phase_confidence}"
-            )
+            lines.append(f"⚠️ Phase detection: source={phase_source}, confidence={phase_confidence}")
 
         # Separator
         lines.append("")
