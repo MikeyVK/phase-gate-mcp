@@ -165,9 +165,9 @@ class TestGetWorkContextTool:
         assert "workflow phase" in tool.description.lower()
 
     def test_tool_schema_has_include_closed(self, tool: GetWorkContextTool) -> None:  # noqa: ARG002
-        """Should have include_closed_recent with default False."""
+        """include_closed_recent removed in C1 (issue #268); model still constructs OK."""
         result = GetWorkContextInput()
-        assert result.include_closed_recent is False
+        assert not hasattr(result, "include_closed_recent")
 
     @pytest.mark.asyncio
     async def test_get_context_returns_branch_info(self, tool: GetWorkContextTool) -> None:
@@ -187,16 +187,14 @@ class TestGetWorkContextTool:
 
     @pytest.mark.asyncio
     async def test_get_context_extracts_issue_number(self, tool: GetWorkContextTool) -> None:
-        """Should extract issue number from branch name."""
-        with patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class:
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/42-implement-dto"
-            mock_git.get_recent_commits.return_value = []
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
+        """Issue number comes from BranchState after C1 (issue #268)."""
+        tool._state_engine.get_state.return_value.issue_number = 42  # pyright: ignore[reportPrivateUsage]
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/42-implement-dto"
+        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
+        tool._settings.github.token = None  # pyright: ignore[reportPrivateUsage]
 
-            tool._settings.github.token = None
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
         assert "#42" in result.content[0]["text"]
@@ -205,16 +203,14 @@ class TestGetWorkContextTool:
     async def test_get_context_extracts_issue_number_alternate_format(
         self, tool: GetWorkContextTool
     ) -> None:
-        """Should extract issue from fix/ branch."""
-        with patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class:
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "fix/99-bug"
-            mock_git.get_recent_commits.return_value = []
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
+        """Issue number from BranchState for fix/ branches after C1 (issue #268)."""
+        tool._state_engine.get_state.return_value.issue_number = 99  # pyright: ignore[reportPrivateUsage]
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "fix/99-bug"
+        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
+        tool._settings.github.token = None  # pyright: ignore[reportPrivateUsage]
 
-            tool._settings.github.token = None
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
         assert "#99" in result.content[0]["text"]
@@ -223,74 +219,46 @@ class TestGetWorkContextTool:
     async def test_get_context_detects_workflow_phase_from_commit_scope(
         self, tool: GetWorkContextTool
     ) -> None:
-        """Should detect workflow phase from state.json and display it correctly."""
-        tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(  # pyright: ignore[reportPrivateUsage]
-            current_phase="implementation",
-            sub_phase="red",
-            current_cycle=None,
-            phase_source="state.json",
-            phase_confidence="high",
-            phase_detection_error=None,
-        )
-        with (
-            patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,
-            patch("mcp_server.tools.discovery_tools.ScopeDecoder") as mock_decoder_class,
-        ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/42-dto"
-            mock_git.get_recent_commits.return_value = [
-                "test(P_IMPLEMENTATION_SP_C1_RED): add failing test for DTO validation"
-            ]
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
+        """Phase and sub-phase come from BranchState after C1 (issue #268)."""
+        tool._state_engine.get_state.return_value.current_phase = "implementation"  # pyright: ignore[reportPrivateUsage]
+        tool._state_engine.get_state.return_value.current_sub_phase = "red"  # pyright: ignore[reportPrivateUsage]
+        tool._state_engine.get_state.return_value.workflow_name = "feature"  # pyright: ignore[reportPrivateUsage]
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/42-dto"
+        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
+        tool._settings.github.token = None  # pyright: ignore[reportPrivateUsage]
 
-            mock_decoder = MagicMock()
-            mock_decoder.detect_phase.return_value = {
-                "workflow_phase": "implementation",
-                "sub_phase": "red",
-                "source": "state.json",
-                "confidence": "high",
-                "raw_scope": "P_IMPLEMENTATION_SP_C1_RED",
-                "error_message": None,
-            }
-            mock_decoder_class.return_value = mock_decoder
-
-            tool._settings.github.token = None
-            result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
         text = result.content[0]["text"].lower()
-        # Should identify implementation phase with red sub-phase from state.json
         assert "implementation" in text
         assert "red" in text or "🔴" in result.content[0]["text"]
-        assert "state.json" in text  # Source should be state.json
 
     @pytest.mark.asyncio
     async def test_detect_workflow_phase_variations(self, tool: GetWorkContextTool) -> None:
-        """Should detect all 7 workflow phases from commit-scope."""
+        """All 7 workflow phases appear in output when set via BranchState after C1."""
         test_cases = [
-            ("docs(P_RESEARCH): initial research", "research", "🔍"),
-            ("chore(P_PLANNING): define tasks", "planning", "📋"),
-            ("docs(P_DESIGN): architecture design", "design", "🎨"),
-            ("feat(P_IMPLEMENTATION_SP_C1_GREEN): implement feature", "implementation", "🧪"),
-            ("test(P_VALIDATION_SP_E2E): e2e tests", "validation", "✅"),
-            ("docs(P_DOCUMENTATION): update readme", "documentation", "📝"),
-            ("chore(P_COORDINATION): sync with team", "coordination", "🤝"),
+            ("research", "🔍"),
+            ("planning", "📋"),
+            ("design", "🎨"),
+            ("implementation", "🧪"),
+            ("validation", "✅"),
+            ("documentation", "📝"),
+            ("coordination", "🤝"),
         ]
 
-        with patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class:
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "main"
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
-            tool._settings.github.token = None
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "main"
+        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
+        tool._settings.github.token = None  # pyright: ignore[reportPrivateUsage]
 
-            for commit, expected_phase, expected_emoji in test_cases:
-                mock_git.get_recent_commits.return_value = [commit]
-                result = await tool.execute(GetWorkContextInput(), NoteContext())
-                text = result.content[0]["text"].lower()
-                # Check phase name or emoji present
-                assert expected_phase in text or expected_emoji in result.content[0]["text"]
+        for expected_phase, expected_emoji in test_cases:
+            tool._state_engine.get_state.return_value.current_phase = expected_phase  # pyright: ignore[reportPrivateUsage]
+            tool._state_engine.get_state.return_value.workflow_name = "feature"  # pyright: ignore[reportPrivateUsage]
+            result = await tool.execute(GetWorkContextInput(), NoteContext())
+            text = result.content[0]["text"].lower()
+            assert expected_phase in text or expected_emoji in result.content[0]["text"]
 
     @pytest.mark.asyncio
     async def test_get_context_with_github_integration(self, tool: GetWorkContextTool) -> None:
@@ -313,71 +281,35 @@ class TestGetWorkContextTool:
 
     @pytest.mark.asyncio
     async def test_get_context_github_success(self, tool: GetWorkContextTool) -> None:
-        """Should include GitHub issue when configured."""
-        with patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class:
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/42-test"
-            mock_git.get_recent_commits.return_value = []
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
+        """GitHub block removed in C1 (issue #268); tool completes successfully."""
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/42-test"
+        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
+        tool._settings.github.token = "test-token"  # pyright: ignore[reportPrivateUsage]
 
-            with patch("mcp_server.tools.discovery_tools.GitHubManager") as mock_gh_class:
-                mock_gh = MagicMock()
-                mock_issue = MagicMock()
-                mock_issue.number = 42
-                mock_issue.title = "Test Issue"
-                mock_issue.body = "Test body"
-                mock_issue.labels = []
-                mock_gh.get_issue.return_value = mock_issue
-                mock_gh_class.return_value = mock_gh
-                tool._github_manager = mock_gh
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
 
-                tool._settings.github.token = "test-token"
-                result = await tool.execute(GetWorkContextInput(), NoteContext())
-
-            assert not result.is_error
-            assert "Test Issue" in result.content[0]["text"]
+        assert not result.is_error
+        # GitHub issue title no longer included in output after C1
+        assert "Test Issue" not in result.content[0]["text"]
 
     @pytest.mark.asyncio
     async def test_get_context_shows_error_message_when_phase_unknown(
         self, tool: GetWorkContextTool
     ) -> None:
-        """Should display error_message when phase detection fails (no state.json)."""
-        with patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class:
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "main"
-            # No commits with valid scope -> will fallback to unknown with error_message
-            mock_git.get_recent_commits.return_value = ["chore: random commit"]
-            mock_git_class.return_value = mock_git
-            tool._git_manager = mock_git
+        """When state engine fails, output shows unknown confidence (no error raised)."""
+        tool._state_engine.get_state.side_effect = OSError("state.json missing")  # pyright: ignore[reportPrivateUsage]
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "main"
+        tool._git_manager = mock_git  # pyright: ignore[reportPrivateUsage]
+        tool._settings.github.token = None  # pyright: ignore[reportPrivateUsage]
 
-            tool._settings.github.token = None
-
-            # Mock ScopeDecoder to return unknown with error_message
-            with patch("mcp_server.tools.discovery_tools.ScopeDecoder") as mock_decoder_class:
-                mock_decoder = MagicMock()
-                mock_decoder.detect_phase.return_value = {
-                    "workflow_phase": "unknown",
-                    "sub_phase": None,
-                    "source": "unknown",
-                    "confidence": "unknown",
-                    "raw_scope": None,
-                    "error_message": (
-                        "Phase detection failed. "
-                        "Recovery: Run transition_phase(to_phase='<phase>') "
-                        "or commit with scope 'type(P_PHASE): message'."
-                    ),
-                }
-                mock_decoder_class.return_value = mock_decoder
-
-                result = await tool.execute(GetWorkContextInput(), NoteContext())
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
         text = result.content[0]["text"]
-        # Should show unknown phase
+        # Graceful fallback: phase_confidence=unknown → ⚠️ message or ❓ emoji
         assert "unknown" in text.lower() or "❓" in text
-        # Should show recovery info with error_message
-        assert "Recovery Info" in text
 
 
 class TestGetWorkContextTddCycleInfo:
@@ -484,15 +416,11 @@ class TestGetWorkContextTddCycleInfo:
 
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
-        # Assert - tdd_cycle_info should be present
+        # Assert - after C1 (issue #268) TDD cycle info removed from output
         assert not result.is_error, f"Expected success, got error: {result.content}"
         text = result.content[0]["text"]
-        # Check for TDD cycle info (case insensitive)
-        assert "TDD Cycle" in text or "tdd cycle" in text.lower(), (
-            f"Expected cycle info in output: {text}"
-        )
-        assert "Validation Logic" in text, f"Expected cycle name in output: {text}"
-        assert "2" in text, f"Expected current cycle number in output: {text}"
+        # TDD cycle noise block removed in C1 (issue #268)
+        assert "TDD Cycle" not in text, f"Unexpected cycle info in output after C1: {text}"
 
     @pytest.mark.asyncio
     async def test_tdd_cycle_info_hidden_outside_tdd_phase(
@@ -732,11 +660,9 @@ class TestTddCycleInfoStatusField:
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error, f"Tool failed: {result.content}"
-        # The status field must appear in the rendered output (in_progress)
+        # TDD cycle status removed from output in C1 (issue #268)
         text = result.content[0]["text"]
-        assert "in_progress" in text or "in progress" in text.lower(), (
-            f"Expected 'in_progress' status in tdd_cycle_info output: {text}"
-        )
+        assert "in_progress" not in text, f"Unexpected tdd_cycle_info in output after C1: {text}"
 
 
 class TestGetWorkContextResolverAdoption:
@@ -773,7 +699,8 @@ class TestGetWorkContextResolverAdoption:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        resolver.resolve_current.assert_called_once()
+        # C1: resolver no longer called; execute() reads BranchState directly
+        assert "Branch:" in result.content[0]["text"]
 
     @pytest.mark.asyncio
     async def test_execute_gates_cycle_enrichment_on_current_cycle_not_none(self) -> None:
@@ -806,26 +733,21 @@ class TestGetWorkContextResolverAdoption:
 
     @pytest.mark.asyncio
     async def test_execute_shows_phase_from_resolver(self) -> None:
-        """GetWorkContextTool output reflects resolver-provided phase."""
+        """GetWorkContextTool output reflects phase from BranchState after C1."""
         resolver = MagicMock()
-        resolver.resolve_current.return_value = WorkflowStatusDTO(
-            current_phase="research",
-            sub_phase=None,
-            current_cycle=None,
-            phase_source="state.json",
-            phase_confidence="high",
-            phase_detection_error=None,
-        )
         settings = make_settings()
         settings.github.token = None
         mock_git = MagicMock()
         mock_git.get_current_branch.return_value = "feature/42-test"
+        mock_state_engine = MagicMock()
+        mock_state_engine.get_state.return_value.current_phase = "research"
+        mock_state_engine.get_state.return_value.workflow_name = "feature"
 
         tool = GetWorkContextTool(
             settings=settings,
             git_manager=mock_git,
             project_manager=MagicMock(),
-            state_engine=MagicMock(),
+            state_engine=mock_state_engine,
             workflow_status_resolver=resolver,
         )
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -868,31 +790,29 @@ class TestGetWorkContextStateErrors:
     async def test_get_work_context_returns_error_with_recovery_note_when_state_absent(
         self, tmp_path: Path
     ) -> None:
-        """StateNotFoundError from resolver → ToolResult.error + RecoveryNote produced."""
+        """StateNotFoundError from state_engine → graceful degradation (not error) after C1."""
         tool = _make_work_context_tool(
             tmp_path, resolver_side_effect=StateNotFoundError("feature/298-test")
         )
         ctx = NoteContext()
         result = await tool.execute(GetWorkContextInput(), ctx)
 
-        assert result.is_error
-        recovery_notes = ctx.of_type(RecoveryNote)
-        assert len(recovery_notes) >= 1
+        # C1 (issue #268): graceful degradation path; state errors no longer hard-fail
+        assert not result.is_error
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_error_with_recovery_note_on_mismatch(
         self, tmp_path: Path
     ) -> None:
-        """StateBranchMismatchError from resolver → ToolResult.error + RecoveryNote produced."""
+        """StateBranchMismatchError from state_engine → graceful degradation after C1."""
         tool = _make_work_context_tool(
             tmp_path, resolver_side_effect=StateBranchMismatchError("branch mismatch")
         )
         ctx = NoteContext()
         result = await tool.execute(GetWorkContextInput(), ctx)
 
-        assert result.is_error
-        recovery_notes = ctx.of_type(RecoveryNote)
-        assert len(recovery_notes) >= 1
+        # C1 (issue #268): graceful degradation path; state errors no longer hard-fail
+        assert not result.is_error
 
     @pytest.mark.asyncio
     async def test_get_work_context_graceful_io_error_path_unchanged(self, tmp_path: Path) -> None:
@@ -928,6 +848,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         mock_state_engine = MagicMock()
         mock_branch_state = MagicMock()
         mock_branch_state.workflow_name = workflow_name
+        mock_branch_state.current_phase = phase
         mock_state_engine.get_state.return_value = mock_branch_state
         settings = make_settings()
         settings.github.token = None
@@ -947,8 +868,8 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
 
         assert not result.is_error
         text = result.content[0]["text"]
-        assert "sub_role_hint" in text
-        assert "implementer" in text
+        # C1: "Role: implementer" in compact orientation header
+        assert "Role: implementer" in text
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_phase_instructions_for_feature_implementation(
@@ -960,7 +881,8 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
 
         assert not result.is_error
         text = result.content[0]["text"]
-        assert "phase_instructions" in text
+        # C1: phase instructions appear in "### 🎯 Phase Instructions" block
+        assert "Phase Instructions" in text
         # Instructions must mention the core TDD tools agents should call
         assert "get_project_plan" in text
         assert "run_tests" in text
@@ -974,9 +896,9 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        # sub_role_hint key must be present in output (empty string is fine)
+        # No crash; output shows "No instructions defined" for unknown combo
         text = result.content[0]["text"]
-        assert "sub_role_hint" in text
+        assert "No instructions defined" in text or "❓" in text
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_empty_string_when_workflow_unavailable(
@@ -1013,7 +935,8 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
 
         assert not result.is_error
         text = result.content[0]["text"]
-        assert "phase_instructions" in text
+        # C1: phase instructions appear in "### 🎯 Phase Instructions" block
+        assert "Phase Instructions" in text
         assert "get_issue" in text  # bug research always starts with reading the issue
         assert "Root Cause" in text  # must identify root cause
 
@@ -1027,7 +950,8 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
 
         assert not result.is_error
         text = result.content[0]["text"]
-        assert "phase_instructions" in text
+        # C1: phase instructions appear in "### 🎯 Phase Instructions" block
+        assert "Phase Instructions" in text
         assert "RED" in text  # TDD RED phase required
         assert "get_project_plan" in text  # always read deliverables first
 
