@@ -1030,3 +1030,190 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         assert "phase_instructions" in text
         assert "RED" in text  # TDD RED phase required
         assert "get_project_plan" in text  # always read deliverables first
+
+
+# ---------------------------------------------------------------------------
+# C1 RED — GetWorkContextTool response restructuring (issue #268 F_268.13)
+# ---------------------------------------------------------------------------
+
+
+class TestGetWorkContextC1Restructuring:
+    """C1 (issue #268 F_268.13): execute() restructuring + _format_context() rewrite.
+
+    All tests in this class FAIL (RED) until C1 is implemented in discovery_tools.py.
+    """
+
+    def _make_tool(
+        self,
+        *,
+        branch: str = "feature/268-test",
+        workflow_name: str = "feature",
+        current_phase: str = "implementation",
+        issue_number: int = 268,
+        parent_branch: str | None = "main",
+        current_cycle: int | None = None,
+        state_raises: Exception | None = None,
+        github_token: str | None = None,
+        github_issue: object | None = None,
+    ) -> GetWorkContextTool:
+        """Return a GetWorkContextTool pre-configured for C1 restructuring tests."""
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = branch
+
+        mock_state_engine = MagicMock()
+        if state_raises is not None:
+            mock_state_engine.get_state.side_effect = state_raises
+        else:
+            mock_state = MagicMock()
+            mock_state.workflow_name = workflow_name
+            mock_state.current_phase = current_phase
+            mock_state.issue_number = issue_number
+            mock_state.parent_branch = parent_branch
+            mock_state.current_cycle = current_cycle
+            mock_state.current_sub_phase = None
+            mock_state_engine.get_state.return_value = mock_state
+
+        mock_resolver = MagicMock()
+        mock_resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase=current_phase,
+            sub_phase=None,
+            current_cycle=current_cycle,
+            phase_source="state.json",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+
+        mock_github = None
+        if github_token is not None:
+            mock_github = MagicMock()
+            mock_github.get_issue.return_value = github_issue
+
+        settings = make_settings(github_token=github_token)
+        return GetWorkContextTool(
+            settings=settings,
+            git_manager=mock_git,
+            project_manager=MagicMock(),
+            state_engine=mock_state_engine,
+            github_manager=mock_github,
+            workflow_status_resolver=mock_resolver,
+        )
+
+    def test_get_work_context_input_has_no_include_closed_recent(self) -> None:
+        """GetWorkContextInput must reject include_closed_recent (field removed in C1)."""
+        with pytest.raises(ValidationError):
+            GetWorkContextInput(include_closed_recent=True)  # type: ignore[call-arg]
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_sub_role_hint_for_known_phase(self) -> None:
+        """New format: orientation header shows 'Role: implementer' for implementation phase."""
+        tool = self._make_tool(current_phase="implementation")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        assert "Role: implementer" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_phase_instructions_for_feature_implementation(
+        self,
+    ) -> None:
+        """New format: phase_instructions rendered under '### \U0001f3af Phase Instructions'."""
+        tool = self._make_tool(workflow_name="feature", current_phase="implementation")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "### \U0001f3af Phase Instructions" in text
+        assert "get_project_plan" in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_empty_string_for_unknown_workflow_phase(
+        self,
+    ) -> None:
+        """Unknown (workflow, phase): no crash; fallback message shown under instruction header."""
+        tool = self._make_tool(workflow_name="unknownwf", current_phase="unknownphase")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "### \U0001f3af Phase Instructions" in text
+        assert "No instructions defined" in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_workflow_name_from_branch_state(self) -> None:
+        """Orientation header must contain 'Workflow: feature' sourced from BranchState."""
+        tool = self._make_tool(workflow_name="feature")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        assert "Workflow: feature" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_issue_number_from_branch_state(self) -> None:
+        """Orientation header shows issue #268 from BranchState, not branch-name regex."""
+        # Branch name has no number → old regex gives None; BranchState.issue_number=268
+        tool = self._make_tool(branch="feature/no-number-in-name", issue_number=268)
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        assert "Issue: #268" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_returns_parent_branch_from_branch_state(self) -> None:
+        """Orientation header must show 'Parent: main' from BranchState.parent_branch."""
+        tool = self._make_tool(parent_branch="main")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        assert "Parent: main" in result.content[0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_omits_noise_fields(self) -> None:
+        """Active issue, recent commits, and TDD cycle info must not appear in C1 output."""
+        mock_issue = MagicMock()
+        mock_issue.number = 268
+        mock_issue.title = "Test Issue"
+        mock_issue.body = ""
+        mock_issue.labels = []
+
+        tool = self._make_tool(github_token="test-token", github_issue=mock_issue)
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "### Active Issue:" not in text
+        assert "Recent Commits:" not in text
+        assert "TDD Cycle" not in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_phase_instructions_is_dominant_first_block(self) -> None:
+        """'### \U0001f3af Phase Instructions' must be the first ### header in the output."""
+        tool = self._make_tool(workflow_name="feature", current_phase="implementation")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "### \U0001f3af Phase Instructions" in text, (
+            f"Header not found in output:\n{text}"
+        )
+        first_h3 = text.find("###")
+        phase_instructions_pos = text.find("### \U0001f3af Phase Instructions")
+        assert first_h3 == phase_instructions_pos, (
+            f"'### \U0001f3af Phase Instructions' is not the first ### header.\nText:\n{text}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_graceful_degradation_when_state_unavailable(self) -> None:
+        """No error result when state is unavailable (bootstrap degradation)."""
+        # state_engine.get_state raises → new code: graceful; old code path: via resolver
+        tool = self._make_tool(state_raises=StateNotFoundError("feature/268-test"))
+        # Also make resolver raise → triggers old-code ToolResult.error (the RED proof)
+        tool._workflow_status_resolver.resolve_current.side_effect = StateNotFoundError(
+            "feature/268-test"
+        )
+
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error, (
+            f"Expected graceful degradation, got error.\nContent: {result.content}"
+        )
+        assert "feature/268-test" in result.content[0]["text"]
