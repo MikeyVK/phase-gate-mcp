@@ -2,7 +2,7 @@
   "branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
   "issue_number": 268,
   "workflow_name": "feature",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": 2,
   "cycle_history": [
@@ -96,6 +96,14 @@
       "from_phase": "research",
       "to_phase": "design",
       "timestamp": "2026-05-17T19:39:09.825826+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-05-19T20:40:53.541065+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null

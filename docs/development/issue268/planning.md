@@ -2,9 +2,9 @@
 <!-- template=planning version=130ac5ea created=2026-05-13T09:17Z updated= -->
 # Issue #268 — MCP-Tool-First Orchestration: get_work_context + context_loaded Gate
 
-**Status:** DRAFT  
-**Version:** 1.0  
-**Last Updated:** 2026-05-13
+**Status:** UPDATED  
+**Version:** 1.1  
+**Last Updated:** 2026-05-19
 
 ---
 
@@ -23,14 +23,14 @@ create_handover tool and SubRoleSpec YAML (OQ 6 — separate issue). Full contra
 ## Prerequisites
 
 Read these first:
-1. design.md v1.1 QA-approved
+1. design.md v1.3 QA-approved (after F1/F2/F3 corrections)
 2. Feature branch feature/268-mcp-tool-first-orchestration-get-work-context-create-handover active
-3. Separate issue created for initialize_project guard bug (MVP validation harness)
+3. Issue #330 active as MVP validation harness (bug workflow, head filter fix)
 ---
 
 ## Summary
 
-Two-stage delivery. Stage 1 MVP: extend GetWorkContextTool to return sub_role_hint and phase_instructions via two module-level lookup maps. MVP validates the hypothesis that agents follow phase_instructions without reading AGENTS.md, using the initialize_project guard bug (separate issue) as the real-work test subject. Stage 2 (gated on MVP validation): add ContextLoadedCache, IContextLoadedReader/Writer protocol pair, check_context_loaded enforcement handler, state-reset writers in PhaseStateEngine and Git tools, contracts.yaml instructions section, and full composition-root wiring in server.py.
+Two-stage delivery. Stage 1 MVP (C1): restructure `GetWorkContextTool` — source orientation fields (`workflow_name`, `issue_number`, `parent_branch`) from `BranchState`, remove noise fields, rewrite `_format_context()` with `phase_instructions` as dominant first block, remove `include_closed_recent` parameter, add graceful bootstrap fallback. Map content (`_PHASE_INSTRUCTIONS_MAP` with 8 production entries) is unchanged. MVP validates the hypothesis that agents follow `phase_instructions` without reading AGENTS.md, using issue #330 (bug/head-filter fix) as the validation harness. Stage 2 (gated on MVP validation): add `ContextLoadedCache`, `IContextLoadedReader`/`Writer` protocol pair, `check_context_loaded` enforcement handler, state-reset writers in `PhaseStateEngine` and Git tools, `contracts.yaml` instructions section, and full composition-root wiring in `server.py`.
 
 ---
 
@@ -46,20 +46,36 @@ Two-stage delivery. Stage 1 MVP: extend GetWorkContextTool to return sub_role_hi
 ## TDD Cycles
 
 
-### Cycle 1: MVP — GetWorkContextTool response extension
+### Cycle 1: MVP — GetWorkContextTool response extension + F_268.13 restructuring
 
-**Goal:** Extend GetWorkContextTool.execute() to append sub_role_hint and phase_instructions to the context dict using two module-level lookup maps marked # TODO(MVP). Validates core delivery hypothesis with minimal blast radius: one file, no cache, no gate.
+**Goal:** Restructure `GetWorkContextTool.execute()` to source orientation fields from
+`BranchState` (replacing `WorkflowStatusResolver`); remove noise fields; rewrite
+`_format_context()` to produce the orientation header + dominant `### 🎯 Phase Instructions`
+block; remove the `include_closed_recent` parameter. Map content (`_PHASE_INSTRUCTIONS_MAP`
+with all 8 production entries) is retained unchanged — only the lookup path and output
+renderer change. Validates core delivery hypothesis: agents follow phase-specific
+`phase_instructions` without reading AGENTS.md.
 
 **Tests:**
-- test_get_work_context_returns_sub_role_hint_for_known_phase: sub_role_hint='implementer' when phase='implementation'
-- test_get_work_context_returns_phase_instructions_for_feature_implementation: non-empty instructions string returned for (feature, implementation)
-- test_get_work_context_returns_empty_string_for_unknown_workflow_phase: .get() fallback — no KeyError on uncovered (workflow, phase) combo
-- test_get_work_context_returns_empty_string_when_workflow_unavailable: graceful fallback when workflow resolution raises
+- `test_get_work_context_returns_sub_role_hint_for_known_phase`: `sub_role_hint='implementer'` when `phase='implementation'`
+- `test_get_work_context_returns_phase_instructions_for_feature_implementation`: non-empty instructions string returned for `("feature", "implementation")`
+- `test_get_work_context_returns_empty_string_for_unknown_workflow_phase`: `.get()` fallback — no `KeyError` on uncovered `(workflow, phase)` combo
+- `test_get_work_context_returns_workflow_name_from_branch_state`: `workflow_name` in response matches `BranchState.workflow_name`
+- `test_get_work_context_returns_issue_number_from_branch_state`: `issue_number` in response matches `BranchState.issue_number`
+- `test_get_work_context_returns_parent_branch_from_branch_state`: `parent_branch` in response matches `BranchState.parent_branch`
+- `test_get_work_context_omits_noise_fields`: response text does not contain `active_issue`, `recent_commits`, or `tdd_cycle_info`
+- `test_get_work_context_phase_instructions_is_dominant_first_block`: `### 🎯 Phase Instructions` appears before other content in `_format_context()` output
+- `test_get_work_context_graceful_degradation_when_state_unavailable`: no exception raised when `get_state()` returns `None` or raises; empty `phase_instructions` in output
+- `test_get_work_context_input_has_no_include_closed_recent`: `GetWorkContextInput` does not accept `include_closed_recent` parameter
 
 **Success Criteria:**
-- GetWorkContextTool.execute() response contains sub_role_hint and phase_instructions keys
-- phase_instructions for (feature, implementation) embeds hand-over format inline at end
-- Unknown (workflow, phase) combinations return empty string, never KeyError
+- `GetWorkContextTool.execute()` response contains `sub_role_hint`, `phase_instructions`, `workflow_name`, `issue_number`, and `parent_branch`
+- `phase_instructions` for `("feature", "implementation")` is non-empty and embeds hand-over format inline
+- `_format_context()` renders `### 🎯 Phase Instructions` as the dominant first block (after orientation header)
+- Noise fields (`active_issue`, `recent_commits`, `tdd_cycle_info`, `recently_closed`) absent from output
+- Bootstrap degradation: no crash when `BranchState` unavailable; returns orientation header with branch name only
+- `include_closed_recent` parameter removed — `GetWorkContextInput()` raises `TypeError` if passed
+- Unknown `(workflow, phase)` combinations return empty string, never `KeyError`
 - No new constructor parameters — zero DIP surface change for MVP
 
 
