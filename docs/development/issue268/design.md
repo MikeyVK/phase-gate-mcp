@@ -3,8 +3,8 @@
 # MCP-Tool-First Orchestration: get_work_context Extension + context_loaded Gate
 
 **Status:** UPDATED
-**Version:** 1.2
-**Last Updated:** 2026-05-17
+**Version:** 1.3
+**Last Updated:** 2026-05-19
 
 ---
 
@@ -140,66 +140,46 @@ _SUB_ROLE_MAP: dict[str, str] = {
 # Keyed by (workflow_name, phase_name). phase_instructions embeds the hand-over format
 # inline for roles that produce hand-overs (implementer, documenter). This avoids a
 # universal handover_template field that would be incorrect for non-hand-over roles.
-_PHASE_INSTRUCTIONS_MAP: dict[tuple[str, str], str] = {
-    ("feature", "implementation"): (
-        "Sub-role: implementer. "
-        "1. Call get_project_plan to read TDD cycle deliverables. "
-        "2. Follow RED\u2192GREEN\u2192REFACTOR strictly. "
-        "3. Commit with git_add_or_commit after each sub-phase (red/green/refactor). "
-        "4. Run run_tests after GREEN commit. "
-        "5. Run run_quality_gates(scope='files') after REFACTOR commit. "
-        "6. Produce Imp\u2192QA hand-over on completion using this exact format:\n"
-        "### Scope\n- what cycle or task was executed\n"
-        "- what was intentionally kept out of scope\n\n"
-        "### Files\n- changed files grouped by role\n\n"
-        "### Deliverables\n- which authoritative deliverables are now satisfied\n\n"
-        "### Stop-Go Proof\n- exact tests run\n"
-        "- exact gate commands or MCP checks run\n"
-        "- exact outcome"
-    ),
-    ("bug", "research"): (
-        "Sub-role: researcher. "
-        "1. Call get_issue(issue_number) to read the full bug report. "
-        "2. Inspect affected files: read the relevant source and test files. "
-        "3. Identify root cause and record findings in docs/development/issueN/research.md. "
-        "4. Produce hand-over on completion."
-    ),
-    ("bug", "implementation"): (
-        "Sub-role: implementer. "
-        "1. Call get_project_plan to read TDD cycle deliverables. "
-        "2. Follow RED\u2192GREEN\u2192REFACTOR strictly. "
-        "3. Commit with git_add_or_commit after each sub-phase (red/green/refactor). "
-        "4. Run run_tests after GREEN commit. "
-        "5. Run run_quality_gates(scope='files') after REFACTOR commit. "
-        "6. Produce Imp\u2192QA hand-over on completion using this exact format:\n"
-        "### Scope\n- what cycle or task was executed\n"
-        "- what was intentionally kept out of scope\n\n"
-        "### Files\n- changed files grouped by role\n\n"
-        "### Deliverables\n- which authoritative deliverables are now satisfied\n\n"
-        "### Stop-Go Proof\n- exact tests run\n"
-        "- exact gate commands or MCP checks run\n"
-        "- exact outcome"
-    ),
-}
+#
+# TODO(Stage 2): Populate remaining (workflow, phase) pairs via contracts.yaml.
+# Current production scope: all 7 bug phases + ("feature", "implementation").
+# Additional workflows (refactor, docs, hotfix, feature non-implementation phases)
+# are populated as contracts.yaml is implemented.
+_PHASE_INSTRUCTIONS_MAP: dict[tuple[str, str], str] = { ... }  # see note below
 ```
 
-**In `GetWorkContextTool.execute()`, replace ctx-building and append logic (F_268.13 restructuring):**
+> **C1 MAP CONTENT NOTE — F1 correction:**
+> The `_PHASE_INSTRUCTIONS_MAP` in `discovery_tools.py` already contains **8 production entries**:
+> all 7 bug phases (`research`, `design`, `planning`, `implementation`, `validation`,
+> `documentation`, `ready`), each with a full TODO checklist and embedded hand-over format,
+> plus `("feature", "implementation")` with the same structure.
+>
+> **C1 does not modify these entries.** The map content is retained as-is.
+> Only the `execute()` function (how the map is looked up and how `BranchState` fields are
+> sourced) changes in C1. An implementer must not replace the existing 8-entry map with a
+> shorter or truncated version — doing so is a regression.
 
 ```python
 # F_268.13 / MVP: orientation sourced from BranchState; lookup maps replaced by
 # contracts.yaml on full implementation.  # TODO(MVP)
 branch = self._git_manager.get_current_branch()
-state = await anyio.to_thread.run_sync(self._state_engine.get_state, branch)
+try:
+    state = await anyio.to_thread.run_sync(self._state_engine.get_state, branch)
+    workflow = state.workflow_name or "" if state is not None else ""
+    phase = state.current_phase or "" if state is not None else ""
+except Exception:  # noqa: BLE001 — bootstrap: branch not yet initialized
+    # Graceful degradation: return orientation header with branch name only.
+    # All map lookups produce "" → _format_context() shows "No instructions defined".
+    workflow, phase = "", ""
+    state = None
 
 # Orientation fields — all from BranchState (already in memory, zero cost).
-workflow = state.workflow_name or ""
-phase = state.current_phase or ""
-
 ctx["workflow_name"] = workflow
-ctx["issue_number"] = state.issue_number        # renamed from linked_issue_number
-ctx["parent_branch"] = state.parent_branch or ""
-if state.current_cycle is not None:
-    ctx["current_cycle"] = state.current_cycle  # position indicator only; no deliverables
+if state is not None:
+    ctx["issue_number"] = state.issue_number        # renamed from linked_issue_number
+    ctx["parent_branch"] = state.parent_branch or ""
+    if state.current_cycle is not None:
+        ctx["current_cycle"] = state.current_cycle  # position indicator only; no deliverables
 
 # Noise fields intentionally omitted from ctx:
 #   tdd_cycle_info, active_issue, recent_commits, recently_closed — not added per F_268.13.
@@ -706,7 +686,7 @@ initialize_project on fresh branch (no state.json yet)
 
 | File | Change | Stage |
 |------|--------|-------|
-| `mcp_server/tools/discovery_tools.py` | Add 2 lookup maps + 2 ctx fields in execute() | MVP |
+| `mcp_server/tools/discovery_tools.py` | C1: full `execute()` restructuring — `BranchState`-first sourcing with graceful bootstrap fallback, noise field removal (`active_issue`, `recent_commits`, `tdd_cycle_info`, `recently_closed`), conditional `phase_source`/`phase_confidence` stripping; `_format_context()` complete rewrite (orientation header + dominant `### 🎯 Phase Instructions` block); `GetWorkContextInput.include_closed_recent` parameter removed (breaking); 3 new orientation fields (`workflow_name`, `issue_number`, `parent_branch`) | MVP |
 | `mcp_server/core/interfaces/__init__.py` | Add `IContextLoadedReader`, `IContextLoadedWriter` | Stage 2 |
 | `mcp_server/state/context_loaded_cache.py` | New file: in-memory flag cache | Stage 2 |
 | `mcp_server/config/schemas/enforcement_config.py` | Add `exempt_tools` field + model_validator | Stage 2 |
@@ -724,7 +704,7 @@ initialize_project on fresh branch (no state.json yet)
 
 | File | Change | Stage |
 |------|--------|-------|
-| `tests/mcp_server/unit/tools/test_discovery_tools.py` | Extend `TestGetWorkContextTool`: new fields present; empty-string fallback for uncovered (workflow, phase) — no `KeyError`; Stage 2: writer side-effect | MVP + Stage 2 |
+| `tests/mcp_server/unit/tools/test_discovery_tools.py` | Extend `TestGetWorkContextTool`: orientation fields present (`workflow_name`, `issue_number`, `parent_branch`); noise fields absent (`active_issue`, `recent_commits`, `tdd_cycle_info`); `phase_instructions` as dominant first block in output; `include_closed_recent` parameter removed; bootstrap/no-state graceful degradation (no crash, empty instructions); empty-string fallback for uncovered `(workflow, phase)` — no `KeyError`; Stage 2: writer side-effect | MVP + Stage 2 |
 | `tests/mcp_server/unit/state/test_context_loaded_cache.py` | New file: default false, set/reset, branch independence | Stage 2 |
 | `tests/mcp_server/integration/test_pr_status_lockdown.py` | Verify force tools STILL inherit `BranchMutatingTool` | Stage 2 |
 | `tests/mcp_server/unit/tools/test_git_tools.py` | Add checkout reset test | Stage 2 |
