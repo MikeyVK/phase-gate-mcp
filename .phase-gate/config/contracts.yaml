@@ -18,6 +18,24 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/research*.md
+        instructions:
+          sub_role: researcher
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read the issue: get_issue(issue_number=N).
+            [ ] Explore the codebase for relevant patterns and constraints.
+            [ ] Document findings in docs/development/issueN/research.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='research', message='Research findings (#N)')
+            [ ] Produce hand-over for planner/designer.
+          handover_template: |
+            ### Research → Design Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/research.md (new)
+            #### Stop-Go Proof
+            - Research doc committed
       - name: design
         exit_requires:
           - id: design-doc
@@ -25,6 +43,24 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/design*.md
+        instructions:
+          sub_role: designer
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read research: docs/development/issueN/research.md.
+            [ ] Create design document: scaffold_artifact(artifact_type='design', name='design').
+            [ ] Document architecture decisions, data flow, interfaces, test approach.
+            [ ] Commit: git_add_or_commit(workflow_phase='design', message='Design for #N')
+            [ ] Produce hand-over for QA design review.
+          handover_template: |
+            ### Design → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/design.md (new)
+            #### Stop-Go Proof
+            - Design doc committed
       - name: planning
         exit_requires:
           - id: planning-doc
@@ -32,6 +68,26 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/planning*.md
+        instructions:
+          sub_role: planner
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read design: docs/development/issueN/design.md.
+            [ ] Create planning document: scaffold_artifact(artifact_type='planning', name='planning') or safe_edit_file.
+            [ ] Define TDD cycles with deliverables per cycle.
+            [ ] Save deliverables: save_planning_deliverables(issue_number=N, planning_deliverables={...})
+            [ ] Commit: git_add_or_commit(workflow_phase='planning', message='Planning for #N')
+            [ ] Produce hand-over for QA plan review.
+          handover_template: |
+            ### Planning → QA Hand-over
+            #### Scope
+            - Issue: #N
+            - Cycles planned: <N>
+            #### Files
+            - docs/development/issueN/planning.md (new)
+            #### Stop-Go Proof
+            - Planning doc and deliverables committed
       - name: implementation
         cycle_based: true
         subphases: [red, green, refactor]
@@ -110,6 +166,26 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/validation*.md
+        instructions:
+          sub_role: validator
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Run full test suite: run_tests(scope='full')
+            [ ] Run quality gates: run_quality_gates(scope='branch')
+            [ ] Validate architecture: validate_architecture(scope='all')
+            [ ] Document results in docs/development/issueN/validation.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='validation', message='Validation for #N')
+            [ ] Produce hand-over for QA review.
+          handover_template: |
+            ### Validation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/validation.md (new)
+            #### Stop-Go Proof
+            - Tests: run_tests(scope='full') → <N passed>
+            - Gates: run_quality_gates(scope='branch') → all green
       - name: documentation
         exit_requires:
           - id: documentation-handover
@@ -117,7 +193,39 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/SESSIE_OVERDRACHT*.md
+        instructions:
+          sub_role: documenter
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Update or create relevant documentation files.
+            [ ] Create session hand-over: docs/development/issueN/SESSIE_OVERDRACHT.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='documentation', message='Documentation for #N')
+            [ ] Produce hand-over for QA doc review.
+          handover_template: |
+            ### Documentation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/SESSIE_OVERDRACHT.md (new)
+            #### Stop-Go Proof
+            - Documentation committed
       - name: ready
+        instructions:
+          sub_role: implementer
+          phase_instructions: |
+            The branch is ready for PR submission.
+
+            [ ] Run final quality gate: run_quality_gates(scope='branch')
+            [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='...')
+            [ ] Do NOT call merge_pr — human approval required.
+          handover_template: |
+            ### Ready → Merge Hand-over
+            #### Scope
+            - Issue: #N
+            #### Stop-Go Proof
+            - Quality gates: run_quality_gates(scope='branch') → all green
+            - PR submitted (merge requires human approval)
 
   bug:
     phases:
@@ -128,6 +236,24 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/research*.md
+        instructions:
+          sub_role: researcher
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read the issue: get_issue(issue_number=N).
+            [ ] Reproduce the bug; identify root cause.
+            [ ] Document findings in docs/development/issueN/research.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='research', message='Research findings (#N)')
+            [ ] Produce hand-over for designer.
+          handover_template: |
+            ### Research → Design Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/research.md (new)
+            #### Stop-Go Proof
+            - Research doc committed
       - name: design
         exit_requires:
           - id: design-doc
@@ -135,6 +261,24 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/design*.md
+        instructions:
+          sub_role: designer
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read research: docs/development/issueN/research.md.
+            [ ] Document fix approach, affected files, regression risk.
+            [ ] Create design document: scaffold_artifact(artifact_type='design', name='design').
+            [ ] Commit: git_add_or_commit(workflow_phase='design', message='Design for #N')
+            [ ] Produce hand-over for QA design review.
+          handover_template: |
+            ### Design → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/design.md (new)
+            #### Stop-Go Proof
+            - Design doc committed
       - name: planning
         exit_requires:
           - id: planning-doc
@@ -142,6 +286,25 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/planning*.md
+        instructions:
+          sub_role: planner
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read design: docs/development/issueN/design.md.
+            [ ] Create planning document with TDD cycles.
+            [ ] Save deliverables: save_planning_deliverables(issue_number=N, planning_deliverables={...})
+            [ ] Commit: git_add_or_commit(workflow_phase='planning', message='Planning for #N')
+            [ ] Produce hand-over for QA plan review.
+          handover_template: |
+            ### Planning → QA Hand-over
+            #### Scope
+            - Issue: #N
+            - Cycles planned: <N>
+            #### Files
+            - docs/development/issueN/planning.md (new)
+            #### Stop-Go Proof
+            - Planning doc and deliverables committed
       - name: implementation
         cycle_based: true
         subphases: [red, green, refactor]
@@ -220,6 +383,26 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/validation*.md
+        instructions:
+          sub_role: validator
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Run full test suite: run_tests(scope='full')
+            [ ] Run quality gates: run_quality_gates(scope='branch')
+            [ ] Validate architecture: validate_architecture(scope='all')
+            [ ] Document results in docs/development/issueN/validation.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='validation', message='Validation for #N')
+            [ ] Produce hand-over for QA review.
+          handover_template: |
+            ### Validation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/validation.md (new)
+            #### Stop-Go Proof
+            - Tests: run_tests(scope='full') → <N passed>
+            - Gates: run_quality_gates(scope='branch') → all green
       - name: documentation
         exit_requires:
           - id: documentation-handover
@@ -227,7 +410,39 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/SESSIE_OVERDRACHT*.md
+        instructions:
+          sub_role: documenter
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Update or create relevant documentation files.
+            [ ] Create session hand-over: docs/development/issueN/SESSIE_OVERDRACHT.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='documentation', message='Documentation for #N')
+            [ ] Produce hand-over for QA doc review.
+          handover_template: |
+            ### Documentation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/SESSIE_OVERDRACHT.md (new)
+            #### Stop-Go Proof
+            - Documentation committed
       - name: ready
+        instructions:
+          sub_role: implementer
+          phase_instructions: |
+            The branch is ready for PR submission.
+
+            [ ] Run final quality gate: run_quality_gates(scope='branch')
+            [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='...')
+            [ ] Do NOT call merge_pr — human approval required.
+          handover_template: |
+            ### Ready → Merge Hand-over
+            #### Scope
+            - Issue: #N
+            #### Stop-Go Proof
+            - Quality gates: run_quality_gates(scope='branch') → all green
+            - PR submitted (merge requires human approval)
 
   hotfix:
     phases:
@@ -309,6 +524,26 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/validation*.md
+        instructions:
+          sub_role: validator
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Run full test suite: run_tests(scope='full')
+            [ ] Run quality gates: run_quality_gates(scope='branch')
+            [ ] Validate architecture: validate_architecture(scope='all')
+            [ ] Document results in docs/development/issueN/validation.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='validation', message='Validation for #N')
+            [ ] Produce hand-over for QA review.
+          handover_template: |
+            ### Validation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/validation.md (new)
+            #### Stop-Go Proof
+            - Tests: run_tests(scope='full') → <N passed>
+            - Gates: run_quality_gates(scope='branch') → all green
       - name: documentation
         exit_requires:
           - id: documentation-handover
@@ -316,7 +551,39 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/SESSIE_OVERDRACHT*.md
+        instructions:
+          sub_role: documenter
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Update or create relevant documentation files.
+            [ ] Create session hand-over: docs/development/issueN/SESSIE_OVERDRACHT.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='documentation', message='Documentation for #N')
+            [ ] Produce hand-over for QA doc review.
+          handover_template: |
+            ### Documentation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/SESSIE_OVERDRACHT.md (new)
+            #### Stop-Go Proof
+            - Documentation committed
       - name: ready
+        instructions:
+          sub_role: implementer
+          phase_instructions: |
+            The branch is ready for PR submission.
+
+            [ ] Run final quality gate: run_quality_gates(scope='branch')
+            [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='...')
+            [ ] Do NOT call merge_pr — human approval required.
+          handover_template: |
+            ### Ready → Merge Hand-over
+            #### Scope
+            - Issue: #N
+            #### Stop-Go Proof
+            - Quality gates: run_quality_gates(scope='branch') → all green
+            - PR submitted (merge requires human approval)
 
   refactor:
     phases:
@@ -327,6 +594,24 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/research*.md
+        instructions:
+          sub_role: researcher
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read the issue: get_issue(issue_number=N).
+            [ ] Explore the codebase for refactor scope, dependencies, risks.
+            [ ] Document findings in docs/development/issueN/research.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='research', message='Research findings (#N)')
+            [ ] Produce hand-over for planner.
+          handover_template: |
+            ### Research → Planning Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/research.md (new)
+            #### Stop-Go Proof
+            - Research doc committed
       - name: planning
         exit_requires:
           - id: planning-doc
@@ -334,6 +619,25 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/planning*.md
+        instructions:
+          sub_role: planner
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read research: docs/development/issueN/research.md.
+            [ ] Create planning document with TDD cycles.
+            [ ] Save deliverables: save_planning_deliverables(issue_number=N, planning_deliverables={...})
+            [ ] Commit: git_add_or_commit(workflow_phase='planning', message='Planning for #N')
+            [ ] Produce hand-over for QA plan review.
+          handover_template: |
+            ### Planning → QA Hand-over
+            #### Scope
+            - Issue: #N
+            - Cycles planned: <N>
+            #### Files
+            - docs/development/issueN/planning.md (new)
+            #### Stop-Go Proof
+            - Planning doc and deliverables committed
       - name: implementation
         cycle_based: true
         subphases: [red, green, refactor]
@@ -412,6 +716,26 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/validation*.md
+        instructions:
+          sub_role: validator
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Run full test suite: run_tests(scope='full')
+            [ ] Run quality gates: run_quality_gates(scope='branch')
+            [ ] Validate architecture: validate_architecture(scope='all')
+            [ ] Document results in docs/development/issueN/validation.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='validation', message='Validation for #N')
+            [ ] Produce hand-over for QA review.
+          handover_template: |
+            ### Validation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/validation.md (new)
+            #### Stop-Go Proof
+            - Tests: run_tests(scope='full') → <N passed>
+            - Gates: run_quality_gates(scope='branch') → all green
       - name: documentation
         exit_requires:
           - id: documentation-handover
@@ -419,7 +743,39 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/SESSIE_OVERDRACHT*.md
+        instructions:
+          sub_role: documenter
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Update or create relevant documentation files.
+            [ ] Create session hand-over: docs/development/issueN/SESSIE_OVERDRACHT.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='documentation', message='Documentation for #N')
+            [ ] Produce hand-over for QA doc review.
+          handover_template: |
+            ### Documentation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/SESSIE_OVERDRACHT.md (new)
+            #### Stop-Go Proof
+            - Documentation committed
       - name: ready
+        instructions:
+          sub_role: implementer
+          phase_instructions: |
+            The branch is ready for PR submission.
+
+            [ ] Run final quality gate: run_quality_gates(scope='branch')
+            [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='...')
+            [ ] Do NOT call merge_pr — human approval required.
+          handover_template: |
+            ### Ready → Merge Hand-over
+            #### Scope
+            - Issue: #N
+            #### Stop-Go Proof
+            - Quality gates: run_quality_gates(scope='branch') → all green
+            - PR submitted (merge requires human approval)
 
   docs:
     phases:
@@ -430,6 +786,23 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/planning*.md
+        instructions:
+          sub_role: planner
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read the issue: get_issue(issue_number=N).
+            [ ] Create planning document outlining documentation tasks.
+            [ ] Commit: git_add_or_commit(workflow_phase='planning', message='Planning for #N')
+            [ ] Produce hand-over for documenter.
+          handover_template: |
+            ### Planning → Documentation Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/development/issueN/planning.md (new)
+            #### Stop-Go Proof
+            - Planning doc committed
       - name: documentation
         exit_requires:
           - id: docs-readme
@@ -437,7 +810,39 @@ workflows:
             required: true
             dir: docs/mcp_server
             pattern: README*.md
+        instructions:
+          sub_role: documenter
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read planning: docs/development/issueN/planning.md.
+            [ ] Create or update documentation files as specified.
+            [ ] Commit: git_add_or_commit(workflow_phase='documentation', message='Documentation for #N')
+            [ ] Produce hand-over for QA doc review.
+          handover_template: |
+            ### Documentation → QA Hand-over
+            #### Scope
+            - Issue: #N
+            #### Files
+            - docs/... (updated)
+            #### Stop-Go Proof
+            - Documentation committed
       - name: ready
+        instructions:
+          sub_role: implementer
+          phase_instructions: |
+            The branch is ready for PR submission.
+
+            [ ] Run final quality gate: run_quality_gates(scope='branch')
+            [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='...')
+            [ ] Do NOT call merge_pr — human approval required.
+          handover_template: |
+            ### Ready → Merge Hand-over
+            #### Scope
+            - Issue: #N
+            #### Stop-Go Proof
+            - Quality gates: run_quality_gates(scope='branch') → all green
+            - PR submitted (merge requires human approval)
 
   epic:
     phases:
@@ -448,6 +853,24 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/research*.md
+        instructions:
+          sub_role: researcher
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read the epic issue: get_issue(issue_number=N).
+            [ ] Explore the codebase for scope, dependencies, stakeholders.
+            [ ] Document findings in docs/development/issueN/research.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='research', message='Research findings (#N)')
+            [ ] Produce hand-over for planner.
+          handover_template: |
+            ### Research → Planning Hand-over
+            #### Scope
+            - Epic: #N
+            #### Files
+            - docs/development/issueN/research.md (new)
+            #### Stop-Go Proof
+            - Research doc committed
       - name: planning
         exit_requires:
           - id: planning-doc
@@ -455,6 +878,25 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/planning*.md
+        instructions:
+          sub_role: planner
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read research: docs/development/issueN/research.md.
+            [ ] Break epic into child issues; create them via create_issue.
+            [ ] Create planning document.
+            [ ] Commit: git_add_or_commit(workflow_phase='planning', message='Planning for #N')
+            [ ] Produce hand-over for designer.
+          handover_template: |
+            ### Planning → Design Hand-over
+            #### Scope
+            - Epic: #N
+            - Child issues created: <list>
+            #### Files
+            - docs/development/issueN/planning.md (new)
+            #### Stop-Go Proof
+            - Planning doc committed
       - name: design
         exit_requires:
           - id: design-doc
@@ -462,8 +904,42 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/design*.md
+        instructions:
+          sub_role: designer
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Read planning: docs/development/issueN/planning.md.
+            [ ] Create architecture/design document for the epic.
+            [ ] Commit: git_add_or_commit(workflow_phase='design', message='Design for #N')
+            [ ] Produce hand-over for QA design review.
+          handover_template: |
+            ### Design → QA Hand-over
+            #### Scope
+            - Epic: #N
+            #### Files
+            - docs/development/issueN/design.md (new)
+            #### Stop-Go Proof
+            - Design doc committed
       - name: coordination
         exit_requires: []
+        instructions:
+          sub_role: researcher
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Review all child issues and their current status.
+            [ ] Update priorities and dependencies where needed.
+            [ ] Coordinate with @co as needed.
+            [ ] Document coordination notes.
+            [ ] Produce hand-over.
+          handover_template: |
+            ### Coordination Hand-over
+            #### Scope
+            - Epic: #N
+            - Sub-issues reviewed: <list>
+            #### Stop-Go Proof
+            - Sub-issues in expected states
       - name: documentation
         exit_requires:
           - id: documentation-handover
@@ -471,4 +947,36 @@ workflows:
             required: true
             dir: docs/development
             pattern: issue*/SESSIE_OVERDRACHT*.md
+        instructions:
+          sub_role: documenter
+          phase_instructions: |
+            Create a TODO list and work through it step by step:
+
+            [ ] Create or update epic-level documentation.
+            [ ] Create session hand-over: docs/development/issueN/SESSIE_OVERDRACHT.md.
+            [ ] Commit: git_add_or_commit(workflow_phase='documentation', message='Documentation for #N')
+            [ ] Produce hand-over for QA doc review.
+          handover_template: |
+            ### Documentation → QA Hand-over
+            #### Scope
+            - Epic: #N
+            #### Files
+            - docs/development/issueN/SESSIE_OVERDRACHT.md (new)
+            #### Stop-Go Proof
+            - Documentation committed
       - name: ready
+        instructions:
+          sub_role: implementer
+          phase_instructions: |
+            The branch is ready for PR submission.
+
+            [ ] Run final quality gate: run_quality_gates(scope='branch')
+            [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='...')
+            [ ] Do NOT call merge_pr — human approval required.
+          handover_template: |
+            ### Ready → Merge Hand-over
+            #### Scope
+            - Epic: #N
+            #### Stop-Go Proof
+            - Quality gates: run_quality_gates(scope='branch') → all green
+            - PR submitted (merge requires human approval)

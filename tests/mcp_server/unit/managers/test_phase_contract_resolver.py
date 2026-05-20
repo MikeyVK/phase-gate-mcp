@@ -60,6 +60,10 @@ workflows:
             required: true
             file: docs/development/issue257/planning.md
             heading: "## Goal"
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
       - name: implementation
         cycle_based: true
         subphases: [red, green, refactor]
@@ -83,7 +87,15 @@ workflows:
               required: true
               dir: tests/mcp_server/unit/managers
               pattern: test_phase_contract_resolver.py
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
       - name: ready
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
   docs:
     phases:
       - name: documentation
@@ -92,7 +104,15 @@ workflows:
             type: file_exists
             required: true
             file: docs/mcp_server/README.md
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
       - name: ready
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -172,7 +192,15 @@ class TestPhaseConfigContext:
             "    phases:\n"
             "      - name: implementation\n"
             "        cycle_based: true\n"
-            "      - name: ready\n",
+            "        instructions:\n"
+            "          sub_role: test-role\n"
+            "          phase_instructions: Test instructions.\n"
+            "          handover_template: Test handover.\n"
+            "      - name: ready\n"
+            "        instructions:\n"
+            "          sub_role: test-role\n"
+            "          phase_instructions: Test instructions.\n"
+            "          handover_template: Test handover.\n",
             encoding="utf-8",
         )
 
@@ -207,7 +235,15 @@ class TestPhaseConfigContext:
             "  feature:\n"
             "    phases:\n"
             "      - name: planning\n"
-            "      - name: ready\n",
+            "        instructions:\n"
+            "          sub_role: test-role\n"
+            "          phase_instructions: Test instructions.\n"
+            "          handover_template: Test handover.\n"
+            "      - name: ready\n"
+            "        instructions:\n"
+            "          sub_role: test-role\n"
+            "          phase_instructions: Test instructions.\n"
+            "          handover_template: Test handover.\n",
             encoding="utf-8",
         )
 

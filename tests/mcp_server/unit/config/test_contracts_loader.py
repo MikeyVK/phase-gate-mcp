@@ -26,10 +26,22 @@ from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
     ContractsConfig,
     MergePolicy,
+    PhaseInstructionsSpec,
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
 from mcp_server.core.exceptions import ConfigError
+
+_STUB_INSTR_DICT: dict[str, str] = {
+    "sub_role": "test-role",
+    "phase_instructions": "Test instructions.",
+    "handover_template": "Test handover.",
+}
+_STUB_INSTRUCTIONS = PhaseInstructionsSpec(
+    sub_role="test-role",
+    phase_instructions="Test instructions.",
+    handover_template="Test handover.",
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
@@ -56,11 +68,31 @@ workflows:
   feature:
     phases:
       - name: research
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
       - name: ready
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
 """
 
 
 def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) -> ConfigLoader:
+    # Inject stub instructions into every phase that lacks them (field is required).
+    enriched: dict[str, object] = {}
+    for wf_name, wf_data in workflows.items():
+        if isinstance(wf_data, dict) and "phases" in wf_data:
+            phases = [
+                {**p, "instructions": _STUB_INSTR_DICT}
+                if isinstance(p, dict) and "instructions" not in p
+                else p
+                for p in wf_data["phases"]
+            ]
+            wf_data = {**wf_data, "phases": phases}
+        enriched[wf_name] = wf_data
     content = yaml.dump(
         {
             "merge_policy": {
@@ -69,7 +101,7 @@ def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) 
                     {"path": ".phase-gate/state.json", "reason": "branch-local"},
                 ],
             },
-            "workflows": workflows,
+            "workflows": enriched,
         },
         default_flow_style=False,
         allow_unicode=True,
@@ -88,6 +120,8 @@ def _policy() -> MergePolicy:
 
 
 def _wpe(name: str, **kwargs: object) -> WorkflowPhaseEntry:
+    if "instructions" not in kwargs:
+        kwargs["instructions"] = _STUB_INSTRUCTIONS
     return WorkflowPhaseEntry(name=name, **kwargs)  # type: ignore[arg-type]
 
 

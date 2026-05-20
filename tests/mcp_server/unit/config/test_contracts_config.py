@@ -34,7 +34,16 @@ def _policy(phase: str = "ready") -> MergePolicy:
     return MergePolicy(pr_allowed_phase=phase, branch_local_artifacts=[])
 
 
+_STUB_INSTRUCTIONS = PhaseInstructionsSpec(
+    sub_role="test-role",
+    phase_instructions="Test phase instructions.",
+    handover_template="Test handover template.",
+)
+
+
 def _wpe(name: str, **kwargs: object) -> WorkflowPhaseEntry:
+    if "instructions" not in kwargs:
+        kwargs["instructions"] = _STUB_INSTRUCTIONS
     return WorkflowPhaseEntry(name=name, **kwargs)  # type: ignore[arg-type]
 
 
@@ -77,7 +86,7 @@ class TestPhaseContractPhaseFrozen:
 
 class TestWorkflowPhaseEntry:
     def test_inherits_frozen(self) -> None:
-        entry = WorkflowPhaseEntry(name="research")
+        entry = _wpe("research")
         with pytest.raises((ValidationError, TypeError)):
             entry.name = "other"  # type: ignore[misc]
 
@@ -89,8 +98,8 @@ class TestWorkflowPhaseEntry:
     def test_generic_cycle_based_any_name(self) -> None:
         """Schema must not contain a fasename-check on 'implementation'.
         A phase named 'research' with cycle_based=True and subphases must be valid."""
-        entry = WorkflowPhaseEntry(
-            name="research",
+        entry = _wpe(
+            "research",
             cycle_based=True,
             subphases=["explore", "consolidate"],
             commit_type_map={"explore": "docs", "consolidate": "docs"},
@@ -272,7 +281,11 @@ class TestWorkflowPhaseEntryInstructions:
         assert isinstance(entry.instructions, PhaseInstructionsSpec)
         assert entry.instructions.sub_role == "implementer"
 
-    def test_contracts_config_instructions_optional(self) -> None:
-        """WorkflowPhaseEntry without instructions field parses with instructions=None."""
-        entry = WorkflowPhaseEntry(name="research")
-        assert entry.instructions is None
+    def test_contracts_config_phase_entry_without_instructions_raises(self) -> None:
+        """WorkflowPhaseEntry without instructions field must raise ValidationError.
+
+        instructions is a required field — every defined phase must have instructions.
+        Fail-Fast §4: Pydantic enforces at parse time, no post-load validator needed.
+        """
+        with pytest.raises(ValidationError):
+            WorkflowPhaseEntry(name="research")

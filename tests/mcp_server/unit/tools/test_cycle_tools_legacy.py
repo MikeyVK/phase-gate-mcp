@@ -48,7 +48,15 @@ def cycle_based_phase_contracts(tmp_path: Path) -> None:
             "          red: test\n"
             "          green: feat\n"
             "          refactor: refactor\n"
+            "        instructions:\n"
+            "          sub_role: test-role\n"
+            "          phase_instructions: Test instructions.\n"
+            "          handover_template: Test handover.\n"
             "      - name: ready\n"
+            "        instructions:\n"
+            "          sub_role: test-role\n"
+            "          phase_instructions: Test instructions.\n"
+            "          handover_template: Test handover.\n"
         ),
         encoding="utf-8",
     )

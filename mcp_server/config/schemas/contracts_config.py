@@ -93,7 +93,7 @@ class WorkflowPhaseEntry(PhaseContractPhase):
     # inherits model_config = ConfigDict(extra="forbid", frozen=True) from PhaseContractPhase
 
     name: str = Field(..., description="Phase name; must exist in workphases.yaml catalog")
-    instructions: PhaseInstructionsSpec | None = None
+    instructions: PhaseInstructionsSpec
 
 
 class WorkflowEntry(BaseModel):

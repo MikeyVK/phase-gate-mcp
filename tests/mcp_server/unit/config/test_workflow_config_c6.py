@@ -24,6 +24,7 @@ from pydantic import ValidationError
 from mcp_server.config.schemas.contracts_config import (
     ContractsConfig,
     MergePolicy,
+    PhaseInstructionsSpec,
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
@@ -43,6 +44,12 @@ from mcp_server.schemas import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+_STUB_INSTRUCTIONS = PhaseInstructionsSpec(
+    sub_role="test-role",
+    phase_instructions="Test instructions.",
+    handover_template="Test handover.",
+)
+
 
 def _workphases(phases: list[str]) -> WorkphasesConfig:
     phase_dict: dict[str, PhaseDefinition] = {}
@@ -56,7 +63,7 @@ def _workphases(phases: list[str]) -> WorkphasesConfig:
 
 
 def _contracts(workflow_phases: list[str], pr_allowed_phase: str = "ready") -> ContractsConfig:
-    phases = [WorkflowPhaseEntry(name=p) for p in workflow_phases]
+    phases = [WorkflowPhaseEntry(name=p, instructions=_STUB_INSTRUCTIONS) for p in workflow_phases]
     return ContractsConfig(
         merge_policy=MergePolicy(pr_allowed_phase=pr_allowed_phase),
         workflows={"feature": WorkflowEntry(phases=phases)},

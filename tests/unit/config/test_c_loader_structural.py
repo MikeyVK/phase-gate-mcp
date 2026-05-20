@@ -258,8 +258,20 @@ def config_root(tmp_path: Path) -> Path:
                             "cycle_based": True,
                             "exit_requires": [],
                             "cycle_exit_requires": {},
+                            "instructions": {
+                                "sub_role": "test-role",
+                                "phase_instructions": "Test instructions.",
+                                "handover_template": "Test handover.",
+                            },
                         },
-                        {"name": "ready"},
+                        {
+                            "name": "ready",
+                            "instructions": {
+                                "sub_role": "test-role",
+                                "phase_instructions": "Test instructions.",
+                                "handover_template": "Test handover.",
+                            },
+                        },
                     ]
                 }
             },

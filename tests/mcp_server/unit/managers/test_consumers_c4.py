@@ -31,12 +31,20 @@ from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
     ContractsConfig,
     MergePolicy,
+    PhaseInstructionsSpec,
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.tools.issue_tools import CreateIssueTool
+
+
+_STUB_INSTRUCTIONS = PhaseInstructionsSpec(
+    sub_role="test-role",
+    phase_instructions="Test instructions.",
+    handover_template="Test handover.",
+)
 
 
 def _minimal_contracts(first_phase: str = "research") -> ContractsConfig:
@@ -50,9 +58,9 @@ def _minimal_contracts(first_phase: str = "research") -> ContractsConfig:
         workflows={
             "feature": WorkflowEntry(
                 phases=[
-                    WorkflowPhaseEntry(name=first_phase),
-                    WorkflowPhaseEntry(name="design"),
-                    WorkflowPhaseEntry(name="ready"),
+                    WorkflowPhaseEntry(name=first_phase, instructions=_STUB_INSTRUCTIONS),
+                    WorkflowPhaseEntry(name="design", instructions=_STUB_INSTRUCTIONS),
+                    WorkflowPhaseEntry(name="ready", instructions=_STUB_INSTRUCTIONS),
                 ]
             )
         },
