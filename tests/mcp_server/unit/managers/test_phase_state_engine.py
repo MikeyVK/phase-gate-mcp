@@ -21,6 +21,7 @@ from mcp_server.managers.state_repository import (
 )
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
+
 class TestTDDPhaseHooks:
     """Tests for TDD phase entry/exit hooks.
 
@@ -711,9 +712,7 @@ class TestContextLoadedWriterReset:
         )
         return tmp_path, issue_number
 
-    def test_phase_state_engine_resets_flag_on_transition(
-        self, project: tuple[Path, int]
-    ) -> None:
+    def test_phase_state_engine_resets_flag_on_transition(self, project: tuple[Path, int]) -> None:
         """writer.set_context_loaded(branch, False) called after successful transition()."""
         workspace_root, issue_number = project
         branch = f"feature/{issue_number}-test"
@@ -754,9 +753,7 @@ class TestContextLoadedWriterReset:
 
         writer.set_context_loaded.assert_called_with(branch, False)
 
-    def test_phase_state_engine_resets_flag_on_enter_cycle(
-        self, project: tuple[Path, int]
-    ) -> None:
+    def test_phase_state_engine_resets_flag_on_enter_cycle(self, project: tuple[Path, int]) -> None:
         """writer.set_context_loaded(branch, False) called after successful transition_cycle()."""
         workspace_root, issue_number = project
         branch = f"feature/{issue_number}-test"
@@ -783,9 +780,7 @@ class TestContextLoadedWriterReset:
 
         writer.set_context_loaded.assert_called_with(branch, False)
 
-    def test_phase_state_engine_no_reset_when_writer_none(
-        self, project: tuple[Path, int]
-    ) -> None:
+    def test_phase_state_engine_no_reset_when_writer_none(self, project: tuple[Path, int]) -> None:
         """No AttributeError when context_loaded_writer=None and transition() is called."""
         workspace_root, issue_number = project
         branch = f"feature/{issue_number}-test"

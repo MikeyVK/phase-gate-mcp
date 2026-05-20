@@ -20,9 +20,9 @@ from typing import Any
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field
-from mcp_server.core.interfaces import IContextLoadedWriter
 
 from mcp_server.core.exceptions import MCPError
+from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers import phase_state_engine
@@ -112,9 +112,8 @@ class GitPullTool(BranchMutatingTool):
         # Sync phase state after pull (commits may have changed).
         try:
             current_branch = self.manager.get_current_branch()
-            if (
-                self._context_loaded_writer is not None
-                and not pull_result.lower().startswith("already up to date")
+            if self._context_loaded_writer is not None and not pull_result.lower().startswith(
+                "already up to date"
             ):
                 self._context_loaded_writer.set_context_loaded(current_branch, False)
             await anyio.to_thread.run_sync(self._get_state_engine().get_state, current_branch)
