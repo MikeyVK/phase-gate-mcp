@@ -80,9 +80,7 @@ def _make_check_context_loaded_config(
 class TestCheckContextLoadedHandler:
     """check_context_loaded action via runner.run() public API."""
 
-    def test_raises_config_error_when_reader_not_configured(
-        self, tmp_path: Path
-    ) -> None:
+    def test_raises_config_error_when_reader_not_configured(self, tmp_path: Path) -> None:
         """Missing context_loaded_reader must raise ConfigError at execution time."""
         config = _make_check_context_loaded_config()
         runner = _make_runner_c4(tmp_path, config, context_loaded_reader=None)
@@ -111,9 +109,7 @@ class TestCheckContextLoadedHandler:
 
         reader.is_context_loaded.assert_called_once_with("feature/42-test")
 
-    def test_raises_validation_error_when_context_not_loaded(
-        self, tmp_path: Path
-    ) -> None:
+    def test_raises_validation_error_when_context_not_loaded(self, tmp_path: Path) -> None:
         """ValidationError raised when reader reports context not yet loaded."""
         reader = MagicMock(spec=IContextLoadedReader)
         reader.is_context_loaded.return_value = False
@@ -151,9 +147,7 @@ class TestCheckContextLoadedHandler:
         """Tool listed in exempt_tools passes even when context is not loaded."""
         reader = MagicMock(spec=IContextLoadedReader)
         reader.is_context_loaded.return_value = False
-        config = _make_check_context_loaded_config(
-            tool="some_tool", exempt_tools=["some_tool"]
-        )
+        config = _make_check_context_loaded_config(tool="some_tool", exempt_tools=["some_tool"])
         runner = _make_runner_c4(tmp_path, config, context_loaded_reader=reader)
 
         # Must not raise
@@ -166,9 +160,7 @@ class TestCheckContextLoadedHandler:
 
     def test_exempt_tool_bypasses_when_reader_none(self, tmp_path: Path) -> None:
         """Tool in exempt_tools bypasses even when no reader is configured."""
-        config = _make_check_context_loaded_config(
-            tool="some_tool", exempt_tools=["some_tool"]
-        )
+        config = _make_check_context_loaded_config(tool="some_tool", exempt_tools=["some_tool"])
         runner = _make_runner_c4(tmp_path, config, context_loaded_reader=None)
 
         # Must not raise ConfigError — exempt_tools checked before reader access

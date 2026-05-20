@@ -374,16 +374,12 @@ class EnforcementRunner:
             )
 
         branch = str(
-            context.get_param("current_branch")
-            or _get_current_git_branch(workspace_root)
-            or ""
+            context.get_param("current_branch") or _get_current_git_branch(workspace_root) or ""
         )
 
         if not self._context_loaded_reader.is_context_loaded(branch):
             note_context.produce(
-                SuggestionNote(
-                    message="Call get_work_context before using this tool."
-                )
+                SuggestionNote(message="Call get_work_context before using this tool.")
             )
             raise ValidationError(
                 f"get_work_context has not been called for branch '{branch}'. "
