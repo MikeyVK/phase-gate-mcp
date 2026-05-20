@@ -9,7 +9,9 @@ from typing import Any, ClassVar
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+
 from mcp_server.core.exceptions import MCPError
+from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import CommitNote, NoteContext
 from mcp_server.managers import phase_state_engine
@@ -444,11 +446,13 @@ class GitCheckoutTool(BaseTool):
         self,
         manager: GitManager | None = None,
         state_engine: phase_state_engine.PhaseStateEngine | None = None,
+        context_loaded_writer: IContextLoadedWriter | None = None,
     ) -> None:
         if manager is None:
             raise ValueError("GitManager must be injected")
         self.manager = manager
         self._state_engine = state_engine
+        self._context_loaded_writer = context_loaded_writer
 
     def _get_state_engine(self) -> phase_state_engine.PhaseStateEngine:
         if self._state_engine is None:
@@ -489,6 +493,8 @@ class GitCheckoutTool(BaseTool):
         if parent_branch:
             output += f"\nParent branch: {parent_branch}"
 
+        if self._context_loaded_writer is not None:
+            self._context_loaded_writer.set_context_loaded(params.branch, False)
         return ToolResult.text(output)
 
 

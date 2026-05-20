@@ -32,6 +32,7 @@ from pydantic import ValidationError
 
 from mcp_server.core.interfaces import (
     GateReport,
+    IContextLoadedWriter,
     IStateReconstructor,
     IStateRepository,
     IWorkflowGateRunner,
@@ -89,6 +90,7 @@ class PhaseStateEngine:
         state_reconstructor: IStateReconstructor,
         workflow_state_mutator: IWorkflowStateMutator,
         server_root: Path,
+        context_loaded_writer: "IContextLoadedWriter | None" = None,
     ) -> None:
         """Initialize PhaseStateEngine."""
         self.state_path = server_root / "state.json"
@@ -104,6 +106,12 @@ class PhaseStateEngine:
         self._state_reconstructor = state_reconstructor
         self._workflow_state_mutator = workflow_state_mutator
 
+        self._context_loaded_writer = context_loaded_writer
+
+    def _reset_context_loaded(self, branch: str) -> None:
+        """Reset context-loaded flag after a state-changing transition."""
+        if self._context_loaded_writer is not None:
+            self._context_loaded_writer.set_context_loaded(branch, False)
     def initialize_branch(
         self, branch: str, issue_number: int, initial_phase: str, parent_branch: str | None = None
     ) -> dict[str, Any]:
@@ -212,6 +220,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
             self.on_enter_cycle_based_phase(branch, issue_number)
@@ -279,6 +288,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
             self.on_enter_cycle_based_phase(branch, issue_number)
@@ -336,6 +346,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         return {
             "success": True,
@@ -401,6 +412,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         return {
             "success": True,
