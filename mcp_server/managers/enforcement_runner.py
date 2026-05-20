@@ -360,10 +360,24 @@ class EnforcementRunner:
         is skipped entirely (no reader access required). This allows get_work_context
         itself to be exempted via YAML config without any tool names in Python code.
 
-        Raises ConfigError when reader is not configured.
+        Bootstrap predicate: if state.json does not exist, the phase engine has not
+        been initialised yet. The gate is semantically inactive in that state so that
+        initialize_project (and any other bootstrapping tool) is never blocked.
+
+        NOTE (design deviation — F2): when _context_loaded_reader is None the handler
+        raises ConfigError instead of returning silently as the original design sketch
+        suggested. This is intentional: a missing reader indicates a composition-root
+        wiring error (server.py forgot to inject ContextLoadedCache). Failing loudly is
+        preferable to silently disabling the gate and hiding the misconfiguration.
+
+        Raises ConfigError when reader is not configured (wiring error).
         Raises ValidationError when context has not been loaded for the current branch.
         """
         if context.tool_name in action.exempt_tools:
+            return
+
+        # Bootstrap: no state.json means no active phase — gate is inactive.
+        if not (self.server_root / "state.json").exists():
             return
 
         if self._context_loaded_reader is None:
