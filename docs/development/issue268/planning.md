@@ -100,12 +100,14 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 **Dependencies:** C1 committed
 
 
-### Cycle 3: EnforcementAction schema — exempt_tools field + model_validator
+### Cycle 3: EnforcementAction schema — exempt_tools field + enabled flag + model_validator
 
-**Goal:** Add exempt_tools: list[str] = [] field to EnforcementAction with a model_validator that rejects exempt_tools on action types other than those in _EXEMPT_TOOLS_ALLOWED_TYPES. Fail-Fast §4: detected at Pydantic parse time (server startup). _EXEMPT_TOOLS_ALLOWED_TYPES frozenset is the SSOT for which action types support exemption (OCP §1.2).
+**Goal:** Add `exempt_tools: list[str] = []` and `enabled: bool = True` fields to `EnforcementAction`. A model_validator rejects `exempt_tools` on action types other than those in `_EXEMPT_TOOLS_ALLOWED_TYPES`. `enabled` is a generic gate on/off switch (explicit over implicit: disabling requires a deliberate YAML config decision). Fail-Fast §4: detected at Pydantic parse time (server startup). `_EXEMPT_TOOLS_ALLOWED_TYPES` frozenset is the SSOT for which action types support exemption (OCP §1.2).
 
 **Tests:**
 - test_enforcement_action_exempt_tools_defaults_empty: default value is []
+- test_enforcement_action_enabled_defaults_true: enabled field defaults to True
+- test_enforcement_action_enabled_false_parses: enabled=False parses without error
 - test_enforcement_action_exempt_tools_accepted_on_check_context_loaded: valid parse when type=check_context_loaded
 - test_enforcement_action_exempt_tools_rejected_on_check_pr_status: ValidationError when type=check_pr_status with non-empty exempt_tools
 - test_enforcement_action_exempt_tools_rejected_on_check_phase_readiness: ValidationError when type=check_phase_readiness
@@ -113,6 +115,7 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 
 **Success Criteria:**
 - exempt_tools field present with default []
+- enabled field present with default True
 - _EXEMPT_TOOLS_ALLOWED_TYPES frozenset is the extension point — add new types there, no if-chain change
 - model_validator raises ValueError on invalid type+exempt_tools combo at parse time
 - Existing enforcement.yaml parses without error (no regression)
@@ -122,23 +125,26 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 
 ### Cycle 4: EnforcementRunner — _handle_check_context_loaded handler
 
-**Goal:** Add _context_loaded_reader constructor param to EnforcementRunner. Register _handle_check_context_loaded in _build_default_registry(). Handler implements: gate disabled when reader=None; bootstrap domain rule (state.json absent = gate inactive, no tool names in code); static exempt_tools bypass; detached-HEAD pass-through. All tests via runner.run() public API (§14).
+**Goal:** Add `_context_loaded_reader` constructor param to `EnforcementRunner`. Register `_handle_check_context_loaded` in `_build_default_registry()`. Handler implements: gate disabled when `action.enabled=False` (explicit YAML decision — not by absent dependency); raises `ConfigError` when `action.enabled=True` but reader is `None` (composition-root wiring error — fail loudly); bootstrap domain rule (`state.json` absent = gate inactive, no tool names in code); static `exempt_tools` bypass; detached-HEAD pass-through. All tests via `runner.run()` public API (§14).
 
 **Tests:**
 - test_enforcement_runner_blocks_when_context_not_loaded: ValidationError raised when is_context_loaded returns False
 - test_enforcement_runner_passes_when_context_loaded: no error when is_context_loaded returns True
 - test_enforcement_runner_gate_inactive_when_no_state_json: no error when state.json absent — bootstrap domain rule
-- test_enforcement_runner_gate_disabled_when_reader_none: no error when context_loaded_reader=None injected
+- test_enforcement_runner_gate_disabled_when_enabled_false: no error when action.enabled=False, regardless of reader
+- test_enforcement_runner_raises_config_error_when_gate_enabled_but_reader_missing: ConfigError when action.enabled=True and context_loaded_reader=None
 - test_enforcement_runner_exempt_tool_bypasses_gate: no error when tool_name in action.exempt_tools
 - test_enforcement_runner_detached_head_passes: no error when _get_current_git_branch returns None
 
 **Success Criteria:**
 - IContextLoadedReader injected via constructor (DIP §1.5)
+- Gate disabled via action.enabled=False — never via absent reader (explicit over implicit)
+- reader=None with enabled=True is a wiring error: ConfigError raised immediately
 - Bootstrap exemption: no tool names in Python code — predicate is state.json existence
 - Handler tested exclusively via runner.run() public API — no private method access (§14)
 - check_context_loaded registered in _build_default_registry() — registry pattern, no if-chain (OCP)
 
-**Dependencies:** C2 (IContextLoadedReader interface), C3 (EnforcementAction.exempt_tools)
+**Dependencies:** C2 (IContextLoadedReader interface), C3 (EnforcementAction.exempt_tools + enabled)
 
 
 ### Cycle 5: State reset writers — PhaseStateEngine, GitCheckoutTool, GitPullTool
@@ -167,21 +173,21 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 
 ### Cycle 6: contracts.yaml instructions section + PhaseInstructionsSpec schema
 
-**Goal:** Add PhaseInstructionsSpec Pydantic model to contracts_config.py with sub_role, phase_instructions, handover_template fields (all frozen, ConfigDict(frozen=True)). Add optional instructions: PhaseInstructionsSpec | None field to phase entry schema. Populate feature/implementation entry in .phase-gate/config/contracts.yaml. handover_template text is the Imp→QA format from design.md.
+**Goal:** Add `PhaseInstructionsSpec` Pydantic model to `contracts_config.py` with `sub_role`, `phase_instructions`, `handover_template` fields (frozen, `ConfigDict(frozen=True)`). Add **required** `instructions: PhaseInstructionsSpec` field to phase entry schema (no `None`, no default — explicit over implicit: every defined phase must have instructions). Fully author `.phase-gate/config/contracts.yaml` with `instructions` blocks for all defined workflows × phases. The schema change (removing `None` default) activates only once the YAML is complete; until then a transitional `| None = None` is acceptable as a stepping stone but must be resolved within this cycle.
 
 **Tests:**
 - test_phase_instructions_spec_parses_with_all_fields: valid YAML dict parses correctly
 - test_phase_instructions_spec_is_frozen: assignment raises ValidationError or AttributeError
-- test_phase_instructions_spec_requires_all_three_fields: missing any field raises
+- test_phase_instructions_spec_requires_all_three_fields: missing any field raises ValidationError
 - test_contracts_config_loads_instructions_field: PhaseEntry.instructions is PhaseInstructionsSpec when present
-- test_contracts_config_instructions_optional: phase with no instructions field parses as None
-- test_contracts_config_validator_passes_when_some_instructions_none: validator does not raise ConfigError when only feature/implementation has instructions and other phase entries have instructions=None
+- test_contracts_config_phase_entry_without_instructions_raises: WorkflowPhaseEntry without instructions raises ValidationError at parse time
 
 **Success Criteria:**
 - PhaseInstructionsSpec has model_config = ConfigDict(frozen=True)
-- Phase entry schema accepts instructions as optional field (None default)
-- feature/implementation entry in contracts.yaml populated with sub_role, phase_instructions, handover_template
-- ConfigLoader post-load validator infrastructure added; raises ConfigError only after full instructions authorship (all workflows x phases populated — deferred issue). For C6: validator code present, non-enforcing on None instructions field.
+- Phase entry schema enforces instructions as required field at Pydantic parse time (Fail-Fast §4)
+- No post-load validator needed — Pydantic required-field enforcement is the SSOT
+- contracts.yaml contains instructions for every phase in every defined workflow
+- instructions blocks absent from contracts.yaml cause startup failure
 
 **Dependencies:** C1 committed
 
@@ -196,7 +202,6 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 - test_get_work_context_returns_handover_template_field: ctx['handover_template'] present and matches contracts.yaml entry
 - test_get_work_context_sets_context_loaded_flag_on_success: writer.set_context_loaded called with branch and value=True
 - test_get_work_context_no_writer_does_not_crash: optional writer=None is safe
-- test_get_work_context_returns_empty_strings_when_instructions_none: graceful for phase with no instructions entry
 
 **Success Criteria:**
 - _SUB_ROLE_MAP and _PHASE_INSTRUCTIONS_MAP removed — no # TODO(MVP) remaining

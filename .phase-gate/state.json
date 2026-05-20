@@ -2,9 +2,9 @@
   "branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
   "issue_number": 268,
   "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 6,
-  "last_cycle": 5,
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": 6,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -71,7 +71,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Nieuw onderzoek naar get_work_context response structuur \u2014 documentatie-werk afgerond, nieuw research-item voor issue #268.",
+  "skip_reason": "QA bevindingen C4 + C6 vereisen herontwerp: EnforcementAction.enabled flag ontbreekt; instructions-field moet verplicht worden na volledige contracts.yaml authorship. Design en planning moeten consistent worden bijgewerkt voordat C7 doorgaat.",
   "issue_title": "MCP-tool-first orchestration: get_work_context + create_handover",
   "parent_branch": "main",
   "created_at": "2026-05-12T14:30:19.800556+00:00",
@@ -163,8 +163,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-05-20T19:05:54.890488+00:00",
+      "human_approval": "Gebruiker approved op 2026-05-20: expliciet verzoek om terug naar research voor doc-correctie voor C4 en C6",
+      "forced": true,
+      "skip_reason": "QA bevindingen C4 + C6 vereisen herontwerp: EnforcementAction.enabled flag ontbreekt; instructions-field moet verplicht worden na volledige contracts.yaml authorship. Design en planning moeten consistent worden bijgewerkt voordat C7 doorgaat."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }

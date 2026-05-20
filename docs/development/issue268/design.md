@@ -35,6 +35,7 @@ enforcement gate must block write-tools until an agent has acknowledged its cont
 - [ ] Gate is inactive for all tools when no `state.json` exists (bootstrap — no phase to acknowledge)
 - [ ] `get_work_context` sets `context_loaded = true` as a command side-effect
 - [ ] `EnforcementAction` schema gains `exempt_tools: list[str] = []` with startup validation
+- [ ] `EnforcementAction` schema gains `enabled: bool = True` — explicit gate on/off switch (explicit over implicit)
 
 **Non-Functional:**
 - [ ] `context_loaded` is session-scope in-memory only — no `state.json` persistence
@@ -323,7 +324,8 @@ class EnforcementAction(BaseModel):
     rules: dict[str, list[str]] = Field(default_factory=dict)
     path: str | None = None
     message: str | None = None
-    exempt_tools: list[str] = Field(default_factory=list)  # new field
+    enabled: bool = True                                      # new field
+    exempt_tools: list[str] = Field(default_factory=list)    # new field
 
     @model_validator(mode="after")
     def validate_required_fields(self) -> EnforcementAction:
@@ -379,18 +381,27 @@ def _handle_check_context_loaded(
     context: EnforcementContext,
     workspace_root: Path,
     note_context: NoteContext,
-) -> None:
     """Block write-tools until get_work_context has been called this session.
 
-    Gate is inactive when no context_loaded_reader is injected (disabled mode).
+    Gate is explicitly disabled when action.enabled=False (explicit over implicit:
+    disabling requires a deliberate YAML config decision, never an absent dependency).
+    Raises ConfigError when action.enabled=True but reader is not injected — this is a
+    composition-root wiring error that must fail loudly at call time.
     Gate is inactive when state.json does not exist — bootstrap state; no phase
     exists to acknowledge. This is a domain rule covering all tools, not a
     tool-name exemption.
-    Exempt tools listed in action.exempt_tools bypass the gate regardless of flag.
+    Exempt tools listed in action.exempt_tools bypass the gate regardless.
     """
     del workspace_root  # unused; runner has self.server_root
+    if not action.enabled:
+        return  # gate explicitly disabled via YAML
+
     if self._context_loaded_reader is None:
-        return  # gate disabled
+        raise ConfigError(
+            "check_context_loaded action requires context_loaded_reader; "
+            "wire ContextLoadedCache in EnforcementRunner.__init__",
+            file_path=_ENFORCEMENT_DISPLAY_PATH,
+        )
 
     # Domain rule: no state.json means bootstrap — gate is semantically inactive.
     # This covers initialize_project and any other tool called before state exists.
@@ -595,15 +606,17 @@ class PhaseInstructionsSpec(BaseModel):
     handover_template: str
 ```
 
-**Phase entry gains optional field:**
+**Phase entry gains required field:**
 ```python
-instructions: PhaseInstructionsSpec | None = None
+instructions: PhaseInstructionsSpec
 ```
 
-**Mandatory enforcement (OQ 4 closed):** all phases require an explicit `instructions`
-declaration. `ConfigLoader` raises `ConfigError` on missing sections when Stage 2 is
-activated. This is enforced via a post-load validator in `ContractsConfig`, not in the
-schema model itself (Fail-Fast §4 at startup).
+**Instructions are required for every phase entry (explicit over implicit):** a phase
+defined in `contracts.yaml` without an `instructions` block is an incomplete definition.
+The Pydantic schema enforces this at parse time (Fail-Fast §4): startup fails immediately
+if any phase entry is missing `instructions`. No separate post-load validator is needed —
+Pydantic's own required-field enforcement is the SSOT. `contracts.yaml` must be fully
+authored for all workflows × phases before the schema change can be activated.
 
 **`handover_template` is role-specific by construction:** each phase entry defines its
 own `handover_template` text. An `@imp implementer` entry has the Imp→QA format; an
