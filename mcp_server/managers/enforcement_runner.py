@@ -356,7 +356,12 @@ class EnforcementRunner:
     ) -> None:
         """Block tool execution until get_work_context has been called for this branch.
 
-        Checks action.exempt_tools first — if context.tool_name is listed, the check
+        Gate is explicitly disabled when action.enabled=False (explicit over implicit:
+        disabling requires a deliberate YAML config decision, never an absent dependency).
+        Raises ConfigError when action.enabled=True but reader is not injected — this is a
+        composition-root wiring error (server.py forgot to inject ContextLoadedCache).
+
+        Checks action.exempt_tools next — if context.tool_name is listed, the check
         is skipped entirely (no reader access required). This allows get_work_context
         itself to be exempted via YAML config without any tool names in Python code.
 
@@ -364,15 +369,12 @@ class EnforcementRunner:
         been initialised yet. The gate is semantically inactive in that state so that
         initialize_project (and any other bootstrapping tool) is never blocked.
 
-        NOTE (design deviation — F2): when _context_loaded_reader is None the handler
-        raises ConfigError instead of returning silently as the original design sketch
-        suggested. This is intentional: a missing reader indicates a composition-root
-        wiring error (server.py forgot to inject ContextLoadedCache). Failing loudly is
-        preferable to silently disabling the gate and hiding the misconfiguration.
-
         Raises ConfigError when reader is not configured (wiring error).
         Raises ValidationError when context has not been loaded for the current branch.
         """
+        if not action.enabled:
+            return  # gate explicitly disabled via YAML config
+
         if context.tool_name in action.exempt_tools:
             return
 

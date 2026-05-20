@@ -30,6 +30,7 @@ class EnforcementAction(BaseModel):
     rules: dict[str, list[str]] = Field(default_factory=dict)
     path: str | None = None
     message: str | None = None
+    enabled: bool = True
     exempt_tools: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
