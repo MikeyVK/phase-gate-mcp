@@ -794,3 +794,41 @@ class TestContextLoadedWriterReset:
         engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
         # Must not raise AttributeError when writer is None
         engine.transition(branch=branch, to_phase="implementation")
+
+    def test_phase_state_engine_resets_flag_on_force_cycle_transition(
+        self, project: tuple[Path, int]
+    ) -> None:
+        """writer.set_context_loaded(branch, False) called after force_cycle_transition().
+
+        Retroactive RED for C5.D2 — force_cycle_transition reset was implemented in C5
+        but lacked a dedicated test (QA finding F1, SESSIE_OVERDRACHT_20260520_C5_QA.md).
+        """
+        workspace_root, issue_number = project
+        branch = f"feature/{issue_number}-test"
+        writer = MagicMock(spec=IContextLoadedWriter)
+        repo = InMemoryStateRepository()
+
+        engine = make_phase_state_engine(
+            workspace_root,
+            project_manager=make_project_manager(workspace_root),
+            state_repository=repo,
+            context_loaded_writer=writer,
+        )
+        repo.save(
+            BranchState(
+                branch=branch,
+                issue_number=issue_number,
+                workflow_name="feature",
+                current_phase="implementation",
+                current_cycle=1,
+            )
+        )
+        writer.reset_mock()
+        engine.force_cycle_transition(
+            branch=branch,
+            to_cycle=2,
+            skip_reason="skipping for test",
+            human_approval="test approved on 2026-01-01",
+        )
+
+        writer.set_context_loaded.assert_called_with(branch, value=False)
