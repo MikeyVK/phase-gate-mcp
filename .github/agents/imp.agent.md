@@ -16,6 +16,8 @@ tools:
   - search/listDirectory
   - search/usages
   - search/changes
+  # Todo — taaklijsten bijhouden per fase/sessie
+  - todo
   # Execute — dev servers en build commands (zelden; MCP tools hebben prioriteit)
   - execute/runInTerminal
   - execute/getTerminalOutput
