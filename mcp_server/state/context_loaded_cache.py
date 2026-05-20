@@ -27,6 +27,6 @@ class ContextLoadedCache(IContextLoadedReader, IContextLoadedWriter):
         """Return True if get_work_context has been called for *branch* this session."""
         return self._cache.get(branch, False)
 
-    def set_context_loaded(self, branch: str, value: bool) -> None:
+    def set_context_loaded(self, branch: str, *, value: bool) -> None:
         """Record context-loaded status for *branch*."""
         self._cache[branch] = value

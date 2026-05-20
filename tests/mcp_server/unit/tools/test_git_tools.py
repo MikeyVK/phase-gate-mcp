@@ -1104,7 +1104,7 @@ async def test_git_checkout_resets_context_loaded_on_success(
     result = await tool.execute(params, NoteContext())
 
     assert not result.is_error
-    writer.set_context_loaded.assert_called_once_with("feature/268-test", False)
+    writer.set_context_loaded.assert_called_once_with("feature/268-test", value=False)
 
 
 @pytest.mark.asyncio

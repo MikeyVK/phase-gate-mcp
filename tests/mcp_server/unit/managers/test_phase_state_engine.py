@@ -727,7 +727,7 @@ class TestContextLoadedWriterReset:
         engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
         engine.transition(branch=branch, to_phase="implementation")
 
-        writer.set_context_loaded.assert_called_with(branch, False)
+        writer.set_context_loaded.assert_called_with(branch, value=False)
 
     def test_phase_state_engine_resets_flag_on_force_transition(
         self, project: tuple[Path, int]
@@ -751,7 +751,7 @@ class TestContextLoadedWriterReset:
             human_approval="test approved on 2026-01-01",
         )
 
-        writer.set_context_loaded.assert_called_with(branch, False)
+        writer.set_context_loaded.assert_called_with(branch, value=False)
 
     def test_phase_state_engine_resets_flag_on_enter_cycle(self, project: tuple[Path, int]) -> None:
         """writer.set_context_loaded(branch, False) called after successful transition_cycle()."""
@@ -778,7 +778,7 @@ class TestContextLoadedWriterReset:
         writer.reset_mock()
         engine.transition_cycle(branch=branch, to_cycle=2)
 
-        writer.set_context_loaded.assert_called_with(branch, False)
+        writer.set_context_loaded.assert_called_with(branch, value=False)
 
     def test_phase_state_engine_no_reset_when_writer_none(self, project: tuple[Path, int]) -> None:
         """No AttributeError when context_loaded_writer=None and transition() is called."""

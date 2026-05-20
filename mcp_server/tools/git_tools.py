@@ -493,7 +493,7 @@ class GitCheckoutTool(BaseTool):
             output += f"\nParent branch: {parent_branch}"
 
         if self._context_loaded_writer is not None:
-            self._context_loaded_writer.set_context_loaded(params.branch, False)
+            self._context_loaded_writer.set_context_loaded(params.branch, value=False)
         return ToolResult.text(output)
 
 

@@ -168,5 +168,5 @@ class IContextLoadedReader(Protocol):
 class IContextLoadedWriter(Protocol):
     """Record that get_work_context has been called for a branch this session."""
 
-    def set_context_loaded(self, branch: str, value: bool) -> None:
+    def set_context_loaded(self, branch: str, *, value: bool) -> None:
         raise NotImplementedError

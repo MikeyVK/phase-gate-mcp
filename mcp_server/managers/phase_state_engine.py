@@ -111,7 +111,7 @@ class PhaseStateEngine:
     def _reset_context_loaded(self, branch: str) -> None:
         """Reset context-loaded flag after a state-changing transition."""
         if self._context_loaded_writer is not None:
-            self._context_loaded_writer.set_context_loaded(branch, False)
+            self._context_loaded_writer.set_context_loaded(branch, value=False)
 
     def initialize_branch(
         self, branch: str, issue_number: int, initial_phase: str, parent_branch: str | None = None

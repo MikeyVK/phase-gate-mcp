@@ -115,7 +115,7 @@ class GitPullTool(BranchMutatingTool):
             if self._context_loaded_writer is not None and not pull_result.lower().startswith(
                 "already up to date"
             ):
-                self._context_loaded_writer.set_context_loaded(current_branch, False)
+                self._context_loaded_writer.set_context_loaded(current_branch, value=False)
             await anyio.to_thread.run_sync(self._get_state_engine().get_state, current_branch)
         except (MCPError, ValueError, OSError, StateBranchMismatchError) as exc:
             logger.warning(

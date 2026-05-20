@@ -159,7 +159,7 @@ async def test_git_pull_resets_on_commits_received() -> None:
     with patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync):
         await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
 
-    writer.set_context_loaded.assert_called_once_with("feature/268-test", False)
+    writer.set_context_loaded.assert_called_once_with("feature/268-test", value=False)
 
 
 @pytest.mark.asyncio
