@@ -215,3 +215,70 @@ class TestImportPaths:
             "ContractsConfig",
         ]:
             assert hasattr(mod, symbol), f"{symbol} missing from contracts_config"
+
+
+# ---------------------------------------------------------------------------
+# C6 (issue #268): PhaseInstructionsSpec schema
+# ---------------------------------------------------------------------------
+
+
+class TestPhaseInstructionsSpec:
+    """C6: PhaseInstructionsSpec frozen model with sub_role, phase_instructions, handover_template."""
+
+    def test_phase_instructions_spec_parses_with_all_fields(self) -> None:
+        """Valid dict with all three fields parses into PhaseInstructionsSpec."""
+        from mcp_server.config.schemas.contracts_config import PhaseInstructionsSpec  # noqa: PLC0415
+
+        spec = PhaseInstructionsSpec(
+            sub_role="implementer",
+            phase_instructions="1. Do TDD.\n2. Commit.",
+            handover_template="### Scope\n- ...",
+        )
+        assert spec.sub_role == "implementer"
+        assert spec.phase_instructions == "1. Do TDD.\n2. Commit."
+        assert spec.handover_template == "### Scope\n- ..."
+
+    def test_phase_instructions_spec_is_frozen(self) -> None:
+        """PhaseInstructionsSpec must be frozen: attribute assignment raises."""
+        from mcp_server.config.schemas.contracts_config import PhaseInstructionsSpec  # noqa: PLC0415
+
+        spec = PhaseInstructionsSpec(
+            sub_role="researcher",
+            phase_instructions="read files",
+            handover_template="Co → Imp",
+        )
+        with pytest.raises((ValidationError, TypeError)):
+            spec.sub_role = "other"  # type: ignore[misc]
+
+    def test_phase_instructions_spec_requires_all_three_fields(self) -> None:
+        """Missing any of the three required fields must raise ValidationError."""
+        from mcp_server.config.schemas.contracts_config import PhaseInstructionsSpec  # noqa: PLC0415
+
+        with pytest.raises(ValidationError):
+            PhaseInstructionsSpec(sub_role="researcher")  # type: ignore[call-arg]
+
+
+class TestWorkflowPhaseEntryInstructions:
+    """C6: WorkflowPhaseEntry.instructions optional field."""
+
+    def test_contracts_config_loads_instructions_field(self) -> None:
+        """WorkflowPhaseEntry.instructions is PhaseInstructionsSpec when instructions present."""
+        from mcp_server.config.schemas.contracts_config import (  # noqa: PLC0415
+            PhaseInstructionsSpec,
+        )
+
+        entry = WorkflowPhaseEntry(
+            name="implementation",
+            instructions=PhaseInstructionsSpec(
+                sub_role="implementer",
+                phase_instructions="Do TDD.",
+                handover_template="### Scope",
+            ),
+        )
+        assert isinstance(entry.instructions, PhaseInstructionsSpec)
+        assert entry.instructions.sub_role == "implementer"
+
+    def test_contracts_config_instructions_optional(self) -> None:
+        """WorkflowPhaseEntry without instructions field parses with instructions=None."""
+        entry = WorkflowPhaseEntry(name="research")
+        assert entry.instructions is None  # type: ignore[attr-defined]
