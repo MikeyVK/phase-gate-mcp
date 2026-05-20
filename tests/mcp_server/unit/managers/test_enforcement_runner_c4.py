@@ -144,8 +144,8 @@ class TestCheckContextLoadedHandler:
                 note_context=note_context,
             )
 
-        notes = note_context.collect()
-        assert any(isinstance(n, SuggestionNote) for n in notes)
+        notes = note_context.of_type(SuggestionNote)
+        assert len(notes) >= 1
 
     def test_exempt_tool_bypasses_when_not_loaded(self, tmp_path: Path) -> None:
         """Tool listed in exempt_tools passes even when context is not loaded."""
