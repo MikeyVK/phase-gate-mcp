@@ -245,7 +245,7 @@ def test_list_prs_filter_head(adapter: GitHubAdapter) -> None:
 
     assert adapter.list_prs(head="feature") == mock_prs
     adapter.repo.get_pulls.assert_called_once()
-    assert adapter.repo.get_pulls.call_args[1]["head"] == "feature"
+    assert adapter.repo.get_pulls.call_args[1]["head"] == "test-owner:feature"
 
 
 def test_list_prs_error(adapter: GitHubAdapter) -> None:
