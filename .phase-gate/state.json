@@ -2,7 +2,7 @@
   "branch": "bug/330-github-adapter-list-prs-head-filter",
   "issue_number": 330,
   "workflow_name": "bug",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": null,
   "last_cycle": 1,
   "cycle_history": [],
@@ -57,6 +57,14 @@
       "from_phase": "validation",
       "to_phase": "documentation",
       "timestamp": "2026-05-20T12:16:20.754097+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-20T12:16:53.445150+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
