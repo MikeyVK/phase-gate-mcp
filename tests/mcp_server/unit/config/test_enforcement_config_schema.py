@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from mcp_server.config.schemas.enforcement_config import EnforcementRule
+from mcp_server.config.schemas.enforcement_config import EnforcementAction, EnforcementRule
 
 
 class TestEnforcementRuleToolCategory:
@@ -59,3 +59,41 @@ class TestEnforcementRuleToolCategory:
                 unknown_field="x",
                 actions=[],
             )
+
+
+class TestEnforcementActionExemptTools:
+    """EnforcementAction.exempt_tools field and model_validator."""
+
+    def test_enforcement_action_exempt_tools_defaults_empty(self) -> None:
+        action = EnforcementAction(
+            type="check_branch_policy", rules={"bug": ["main"]}
+        )
+        assert action.exempt_tools == []
+
+    def test_enforcement_action_exempt_tools_accepted_on_check_context_loaded(
+        self,
+    ) -> None:
+        action = EnforcementAction(
+            type="check_context_loaded", exempt_tools=["create_branch"]
+        )
+        assert action.exempt_tools == ["create_branch"]
+
+    def test_enforcement_action_exempt_tools_rejected_on_check_pr_status(
+        self,
+    ) -> None:
+        with pytest.raises(ValidationError):
+            EnforcementAction(type="check_pr_status", exempt_tools=["create_branch"])
+
+    def test_enforcement_action_exempt_tools_rejected_on_check_phase_readiness(
+        self,
+    ) -> None:
+        with pytest.raises(ValidationError):
+            EnforcementAction(
+                type="check_phase_readiness",
+                policy="ready",
+                exempt_tools=["create_branch"],
+            )
+
+    def test_enforcement_action_extra_fields_still_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            EnforcementAction(type="check_pr_status", unknown_field="x")
