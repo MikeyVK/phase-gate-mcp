@@ -18,6 +18,9 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+_EXEMPT_TOOLS_ALLOWED_TYPES: frozenset[str] = frozenset({"check_context_loaded"})
+
+
 class EnforcementAction(BaseModel):
     """One configured enforcement action."""
 
@@ -28,6 +31,7 @@ class EnforcementAction(BaseModel):
     rules: dict[str, list[str]] = Field(default_factory=dict)
     path: str | None = None
     message: str | None = None
+    exempt_tools: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_required_fields(self) -> EnforcementAction:
@@ -35,6 +39,11 @@ class EnforcementAction(BaseModel):
             raise ValueError("check_branch_policy requires non-empty rules")
         if self.type == "delete_file" and not self.path:
             raise ValueError("delete_file requires path")
+        if self.exempt_tools and self.type not in _EXEMPT_TOOLS_ALLOWED_TYPES:
+            raise ValueError(
+                f"exempt_tools is not supported for action type '{self.type}'; "
+                f"allowed types: {sorted(_EXEMPT_TOOLS_ALLOWED_TYPES)}"
+            )
         return self
 
 
