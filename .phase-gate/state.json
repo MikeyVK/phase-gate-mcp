@@ -3,14 +3,23 @@
   "issue_number": 268,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
+  "current_cycle": 2,
+  "last_cycle": 1,
   "cycle_history": [
     {
       "cycle_number": 2,
       "name": "Interfaces + ContextLoadedCache",
       "forced": false,
       "entered": "2026-05-13T09:32:30.416441+00:00"
+    },
+    {
+      "cycle_number": 2,
+      "name": "Interfaces + ContextLoadedCache",
+      "entered": "2026-05-20T13:31:32.781807+00:00",
+      "forced": true,
+      "skip_reason": "C1 RED/GREEN/REFACTOR volledig in commits (fedc7b24, 2165efa8, 39a10244) maar state.json werd niet bijgewerkt na de REFACTOR-commit \u2014 stale cycle counter",
+      "human_approval": "Gebruiker goedgekeurd op 2026-05-20",
+      "skipped_cycles": []
     }
   ],
   "required_phases": [
@@ -118,5 +127,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
