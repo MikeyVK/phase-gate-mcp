@@ -17,7 +17,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 _EXEMPT_TOOLS_ALLOWED_TYPES: frozenset[str] = frozenset({"check_context_loaded"})
 
 

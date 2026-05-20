@@ -65,17 +65,13 @@ class TestEnforcementActionExemptTools:
     """EnforcementAction.exempt_tools field and model_validator."""
 
     def test_enforcement_action_exempt_tools_defaults_empty(self) -> None:
-        action = EnforcementAction(
-            type="check_branch_policy", rules={"bug": ["main"]}
-        )
+        action = EnforcementAction(type="check_branch_policy", rules={"bug": ["main"]})
         assert action.exempt_tools == []
 
     def test_enforcement_action_exempt_tools_accepted_on_check_context_loaded(
         self,
     ) -> None:
-        action = EnforcementAction(
-            type="check_context_loaded", exempt_tools=["create_branch"]
-        )
+        action = EnforcementAction(type="check_context_loaded", exempt_tools=["create_branch"])
         assert action.exempt_tools == ["create_branch"]
 
     def test_enforcement_action_exempt_tools_rejected_on_check_pr_status(
