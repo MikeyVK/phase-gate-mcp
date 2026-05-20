@@ -1,18 +1,11 @@
 {
-  "branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
-  "issue_number": 268,
-  "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "Interfaces + ContextLoadedCache",
-      "forced": false,
-      "entered": "2026-05-13T09:32:30.416441+00:00"
-    }
-  ],
+  "branch": "bug/330-github-adapter-list-prs-head-filter",
+  "issue_number": 330,
+  "workflow_name": "bug",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
     "design",
@@ -23,100 +16,11 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Nieuw onderzoek naar get_work_context response structuur \u2014 documentatie-werk afgerond, nieuw research-item voor issue #268.",
-  "issue_title": "MCP-tool-first orchestration: get_work_context + create_handover",
-  "parent_branch": "main",
-  "created_at": "2026-05-12T14:30:19.800556+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-12T15:11:05.668140+00:00",
-      "human_approval": "User approved on 2026-05-12",
-      "forced": true,
-      "skip_reason": "Mini scope extension: add built-in VS Code read/search tools to imp.agent.md tools frontmatter \u2014 documentation-only change, no code impact"
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "research",
-      "timestamp": "2026-05-12T15:11:31.599448+00:00",
-      "human_approval": "User approved on 2026-05-12",
-      "forced": true,
-      "skip_reason": "Returning to research phase \u2014 documentation-only mini scope extension committed and pushed; active work on #268 continues in research"
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-13T08:31:58.990966+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-05-13T09:13:41.722426+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-13T09:25:01.326037+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "research",
-      "timestamp": "2026-05-17T07:21:49.469278+00:00",
-      "human_approval": "User requested force transition on 2026-05-17",
-      "forced": true,
-      "skip_reason": "Bug/139 experiment revealed phase_instructions are not followed by the agent; need to research enforcement mechanisms (server-side gating vs. text-based instructions) before continuing C2."
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-17T17:37:33.512828+00:00",
-      "human_approval": "User approved on 2026-05-17",
-      "forced": true,
-      "skip_reason": "Research deliverable (reference doc) is complete; consolidation work is documentation-only (AGENTS.md restructure + copilot-instructions.md removal). No implementation cycles needed for this sub-task."
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "research",
-      "timestamp": "2026-05-17T17:52:54.213356+00:00",
-      "human_approval": "User approved on 2026-05-17",
-      "forced": true,
-      "skip_reason": "Nieuw onderzoek naar get_work_context response structuur \u2014 documentatie-werk afgerond, nieuw research-item voor issue #268."
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-17T19:39:09.825826+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-05-19T20:40:53.541065+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-19T21:04:10.974105+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "skip_reason": null,
+  "issue_title": "GitHubAdapter.list_prs head filter needs owner:branch format",
+  "parent_branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
+  "created_at": "2026-05-20T09:20:08.866153+00:00",
+  "transitions": [],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }

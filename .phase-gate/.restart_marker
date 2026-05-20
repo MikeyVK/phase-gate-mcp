@@ -1,6 +1,6 @@
 {
-  "timestamp": 1778873182.560093,
-  "pid": 41592,
-  "reason": "reload enforcement.yaml after adding feature/* to bug base branches",
-  "iso_time": "2026-05-15T19:26:22.560093+00:00"
+  "timestamp": 1779268560.47722,
+  "pid": 36532,
+  "reason": "revert enforcement.yaml branch policy to original after bug/330 branch creation",
+  "iso_time": "2026-05-20T09:16:00.477220+00:00"
 }
