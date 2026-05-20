@@ -66,6 +66,7 @@ def _write_state_json(tmp_path: Path) -> None:
 def _make_check_context_loaded_config(
     tool: str = "some_tool",
     exempt_tools: list[str] | None = None,
+    enabled: bool = True,
 ) -> EnforcementConfig:
     return EnforcementConfig(
         enforcement=[
@@ -77,6 +78,7 @@ def _make_check_context_loaded_config(
                     EnforcementAction(
                         type="check_context_loaded",
                         exempt_tools=exempt_tools or [],
+                        enabled=enabled,
                     )
                 ],
             )
@@ -185,6 +187,24 @@ class TestCheckContextLoadedHandler:
             event="some_tool",
             timing="pre",
             enforcement_ctx=_make_ctx(tmp_path, tool_name="some_tool"),
+            note_context=_make_note_context(),
+        )
+
+    def test_gate_disabled_when_enabled_false(self, tmp_path: Path) -> None:
+        """No error raised when action.enabled=False, regardless of reader or context state.
+
+        Disabling a gate requires an explicit YAML decision (explicit over implicit).
+        """
+        _write_state_json(tmp_path)
+        # No reader injected — would raise ConfigError if enabled=True
+        config = _make_check_context_loaded_config(enabled=False)
+        runner = _make_runner_c4(tmp_path, config, context_loaded_reader=None)
+
+        # Must not raise — gate is explicitly disabled
+        runner.run(
+            event="some_tool",
+            timing="pre",
+            enforcement_ctx=_make_ctx(tmp_path),
             note_context=_make_note_context(),
         )
 

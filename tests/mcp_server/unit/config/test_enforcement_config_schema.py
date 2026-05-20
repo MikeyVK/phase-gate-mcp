@@ -90,6 +90,14 @@ class TestEnforcementActionExemptTools:
                 exempt_tools=["create_branch"],
             )
 
+    def test_enforcement_action_enabled_defaults_true(self) -> None:
+        action = EnforcementAction(type="check_context_loaded")
+        assert action.enabled is True
+
+    def test_enforcement_action_enabled_false_parses(self) -> None:
+        action = EnforcementAction(type="check_context_loaded", enabled=False)
+        assert action.enabled is False
+
     def test_enforcement_action_extra_fields_still_rejected(self) -> None:
         with pytest.raises(ValidationError):
             EnforcementAction(type="check_pr_status", unknown_field="x")
