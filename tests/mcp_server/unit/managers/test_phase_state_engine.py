@@ -9,16 +9,17 @@ Issue #146 Cycle 4: TDD phase lifecycle hooks.
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
+from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.managers.state_repository import (
     BranchState,
     InMemoryStateRepository,
     StateBranchMismatchError,
 )
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
-
 
 class TestTDDPhaseHooks:
     """Tests for TDD phase entry/exit hooks.
@@ -648,3 +649,153 @@ class TestPhaseStateEngineRecordSubPhase:
         engine.on_exit_cycle_based_phase(branch)
         # sub_phase must remain unchanged (hook owns only cycle tracking)
         assert repo.load(branch).current_sub_phase == "green"
+
+
+class TestContextLoadedWriterReset:
+    """C5: IContextLoadedWriter injected into PhaseStateEngine clears flag on state changes."""
+
+    _CONTRACTS_YAML = (
+        "merge_policy:\n"
+        "  pr_allowed_phase: ready\n"
+        "  branch_local_artifacts: []\n"
+        "workflows:\n"
+        "  feature:\n"
+        "    phases:\n"
+        "      - name: design\n"
+        "      - name: implementation\n"
+        "        cycle_based: true\n"
+        "        subphases: [red, green, refactor]\n"
+        "        commit_type_map:\n"
+        "          red: test\n"
+        "          green: feat\n"
+        "          refactor: refactor\n"
+        "      - name: validation\n"
+        "      - name: ready\n"
+    )
+
+    @pytest.fixture()
+    def project(self, tmp_path: Path) -> tuple[Path, int]:
+        """Set up project with two TDD cycles for reset-writer tests."""
+        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "contracts.yaml").write_text(self._CONTRACTS_YAML, encoding="utf-8")
+
+        issue_number = 268
+        pm = make_project_manager(tmp_path)
+        pm.initialize_project(
+            issue_number=issue_number,
+            issue_title="Context loaded writer test",
+            workflow_name="feature",
+        )
+        pm.save_planning_deliverables(
+            issue_number=issue_number,
+            planning_deliverables={
+                "tdd_cycles": {
+                    "total": 2,
+                    "cycles": [
+                        {
+                            "cycle_number": 1,
+                            "name": "A",
+                            "deliverables": ["x"],
+                            "exit_criteria": "pass",
+                        },
+                        {
+                            "cycle_number": 2,
+                            "name": "B",
+                            "deliverables": ["y"],
+                            "exit_criteria": "pass",
+                        },
+                    ],
+                }
+            },
+        )
+        return tmp_path, issue_number
+
+    def test_phase_state_engine_resets_flag_on_transition(
+        self, project: tuple[Path, int]
+    ) -> None:
+        """writer.set_context_loaded(branch, False) called after successful transition()."""
+        workspace_root, issue_number = project
+        branch = f"feature/{issue_number}-test"
+        writer = MagicMock(spec=IContextLoadedWriter)
+
+        engine = make_phase_state_engine(
+            workspace_root,
+            project_manager=make_project_manager(workspace_root),
+            state_repository=InMemoryStateRepository(),
+            context_loaded_writer=writer,
+        )
+        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
+        engine.transition(branch=branch, to_phase="implementation")
+
+        writer.set_context_loaded.assert_called_with(branch, False)
+
+    def test_phase_state_engine_resets_flag_on_force_transition(
+        self, project: tuple[Path, int]
+    ) -> None:
+        """writer.set_context_loaded(branch, False) called after successful force_transition()."""
+        workspace_root, issue_number = project
+        branch = f"feature/{issue_number}-test"
+        writer = MagicMock(spec=IContextLoadedWriter)
+
+        engine = make_phase_state_engine(
+            workspace_root,
+            project_manager=make_project_manager(workspace_root),
+            state_repository=InMemoryStateRepository(),
+            context_loaded_writer=writer,
+        )
+        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
+        engine.force_transition(
+            branch=branch,
+            to_phase="validation",
+            skip_reason="skipping for test",
+            human_approval="test approved on 2026-01-01",
+        )
+
+        writer.set_context_loaded.assert_called_with(branch, False)
+
+    def test_phase_state_engine_resets_flag_on_enter_cycle(
+        self, project: tuple[Path, int]
+    ) -> None:
+        """writer.set_context_loaded(branch, False) called after successful transition_cycle()."""
+        workspace_root, issue_number = project
+        branch = f"feature/{issue_number}-test"
+        writer = MagicMock(spec=IContextLoadedWriter)
+        repo = InMemoryStateRepository()
+
+        engine = make_phase_state_engine(
+            workspace_root,
+            project_manager=make_project_manager(workspace_root),
+            state_repository=repo,
+            context_loaded_writer=writer,
+        )
+        repo.save(
+            BranchState(
+                branch=branch,
+                issue_number=issue_number,
+                workflow_name="feature",
+                current_phase="implementation",
+                current_cycle=1,
+            )
+        )
+        writer.reset_mock()
+        engine.transition_cycle(branch=branch, to_cycle=2)
+
+        writer.set_context_loaded.assert_called_with(branch, False)
+
+    def test_phase_state_engine_no_reset_when_writer_none(
+        self, project: tuple[Path, int]
+    ) -> None:
+        """No AttributeError when context_loaded_writer=None and transition() is called."""
+        workspace_root, issue_number = project
+        branch = f"feature/{issue_number}-test"
+
+        engine = make_phase_state_engine(
+            workspace_root,
+            project_manager=make_project_manager(workspace_root),
+            state_repository=InMemoryStateRepository(),
+            context_loaded_writer=None,
+        )
+        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="design")
+        # Must not raise AttributeError when writer is None
+        engine.transition(branch=branch, to_phase="implementation")
