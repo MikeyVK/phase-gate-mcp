@@ -60,6 +60,7 @@ from mcp_server.resources.status import StatusResource
 
 # Scaffolding infrastructure (Issue #72)
 from mcp_server.scaffolding.template_registry import TemplateRegistry
+from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.tools.admin_tools import RestartServerTool
 from mcp_server.tools.base import BaseTool
@@ -236,6 +237,7 @@ class MCPServer:
             state_repository=self._state_repository,
             state_reconstructor=self.state_reconstructor,
         )
+        self._context_loaded_cache = ContextLoadedCache()
         self.phase_state_engine = PhaseStateEngine(
             workspace_root=workspace_root,
             project_manager=self.project_manager,
@@ -250,6 +252,7 @@ class MCPServer:
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
             workflow_state_mutator=self._workflow_state_mutator,
+            context_loaded_writer=self._context_loaded_cache,
             server_root=server_root,
         )
         _quality_state_repository = FileQualityStateRepository(
@@ -290,6 +293,7 @@ class MCPServer:
             default_base_branch=git_config.default_base_branch,
             pr_status_reader=self.pr_status_cache,
             server_root=server_root,
+            context_loaded_reader=self._context_loaded_cache,
         )
 
         self.server = Server(server_name)
@@ -314,9 +318,17 @@ class MCPServer:
                 ),
                 state_engine=self.phase_state_engine,
             ),
-            GitCheckoutTool(manager=self.git_manager, state_engine=self.phase_state_engine),
+            GitCheckoutTool(
+                manager=self.git_manager,
+                state_engine=self.phase_state_engine,
+                context_loaded_writer=self._context_loaded_cache,
+            ),
             GitFetchTool(manager=self.git_manager),
-            GitPullTool(manager=self.git_manager, state_engine=self.phase_state_engine),
+            GitPullTool(
+                manager=self.git_manager,
+                state_engine=self.phase_state_engine,
+                context_loaded_writer=self._context_loaded_cache,
+            ),
             GitPushTool(manager=self.git_manager),
             GitMergeTool(manager=self.git_manager),
             GitDeleteBranchTool(manager=self.git_manager),
@@ -389,6 +401,8 @@ class MCPServer:
                 workphases_config=workphases_config,
                 state_path=server_root / "state.json",
                 workflow_status_resolver=self.workflow_status_resolver,
+                contracts_config=contracts_config,
+                context_loaded_writer=self._context_loaded_cache,
             ),
         ]
 

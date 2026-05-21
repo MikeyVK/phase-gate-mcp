@@ -39,7 +39,6 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.tools.issue_tools import CreateIssueTool
 
-
 _STUB_INSTRUCTIONS = PhaseInstructionsSpec(
     sub_role="test-role",
     phase_instructions="Test instructions.",

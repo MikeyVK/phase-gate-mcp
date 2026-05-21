@@ -29,7 +29,6 @@ from mcp_server.config.schemas.contracts_config import (
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 from mcp_server.managers.phase_contract_resolver import PhaseConfigContext, PhaseContractResolver
 
-
 _STUB_INSTRUCTIONS = PhaseInstructionsSpec(
     sub_role="test-role",
     phase_instructions="Test instructions.",

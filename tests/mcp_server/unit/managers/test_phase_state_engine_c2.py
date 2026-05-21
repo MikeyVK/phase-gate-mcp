@@ -155,22 +155,43 @@ workflows:
   feature:
     phases:
       - name: research
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
         exit_requires:
           - id: research-doc
             type: file_glob
             dir: docs/development
             pattern: issue*/research*.md
       - name: planning
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
       - name: design
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
       - name: implementation
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
         cycle_based: true
         commit_type_map:
           red: test
           green: feat
           refactor: refactor
       - name: validation
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
       - name: documentation
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
       - name: ready
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
 """.strip(),
         encoding="utf-8",
     )
