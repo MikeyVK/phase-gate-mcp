@@ -259,8 +259,8 @@ class TestPhaseInstructionsSpec:
         with pytest.raises((ValidationError, TypeError)):
             spec.sub_role = "other"  # type: ignore[misc]
 
-    def test_phase_instructions_spec_requires_all_three_fields(self) -> None:
-        """Missing any of the three required fields must raise ValidationError."""
+    def test_phase_instructions_spec_requires_sub_role_and_phase_instructions(self) -> None:
+        """Only sub_role and phase_instructions are required; handover_template is optional."""
         with pytest.raises(ValidationError):
             PhaseInstructionsSpec(sub_role="researcher")  # type: ignore[call-arg]
 

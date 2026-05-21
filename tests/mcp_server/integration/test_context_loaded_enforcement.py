@@ -10,6 +10,7 @@ Verifies that:
   5. Bootstrap predicate: gate is inactive when state.json does not exist.
   6. GitCheckoutTool resets context-loaded flag after successful checkout.
   7. GitPullTool resets context-loaded flag when new commits are pulled.
+  8. PhaseStateEngine.transition() resets context-loaded flag after phase transition.
 
 @layer: Tests (Integration)
 @dependencies: [pytest, pytest-asyncio, unittest.mock,
@@ -18,14 +19,17 @@ Verifies that:
     mcp_server.core.interfaces,
     mcp_server.core.operation_notes,
     mcp_server.managers.enforcement_runner,
+    mcp_server.managers.phase_state_engine,
     mcp_server.state.context_loaded_cache,
     mcp_server.tools.git_tools,
-    mcp_server.tools.git_pull_tool]
+    mcp_server.tools.git_pull_tool,
+    tests.mcp_server.test_support]
 @responsibilities:
     - Verify check_context_loaded gate via live enforcement.yaml
     - Verify exempt_tools bypass for force_phase/cycle_transition
     - Verify bootstrap predicate suppresses gate before state.json exists
     - Verify GitCheckoutTool and GitPullTool reset context-loaded on execution
+    - Verify PhaseStateEngine.transition() resets context-loaded via live cache
 """
 
 from __future__ import annotations
@@ -44,6 +48,7 @@ from mcp_server.managers.enforcement_runner import EnforcementContext, Enforceme
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool
 from mcp_server.tools.git_tools import GitCheckoutInput, GitCheckoutTool
+from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 pytestmark = pytest.mark.asyncio
 
@@ -213,3 +218,57 @@ class TestContextLoadedResets:
         await tool.execute(GitPullInput(), NoteContext())
 
         assert not cache.is_context_loaded("feature/pull-test")
+
+    def test_phase_transition_resets_context_loaded(self, tmp_path: Path) -> None:
+        """PhaseStateEngine.transition() clears the live ContextLoadedCache flag.
+
+        Composition root proof: verifies that the real ContextLoadedCache injected
+        as context_loaded_writer into PhaseStateEngine is cleared on transition().
+        """
+        contracts_yaml = (
+            "merge_policy:\n"
+            "  pr_allowed_phase: ready\n"
+            "  branch_local_artifacts: []\n"
+            "workflows:\n"
+            "  feature:\n"
+            "    phases:\n"
+            "      - name: research\n"
+            "        instructions:\n"
+            "          sub_role: researcher\n"
+            "          phase_instructions: Research phase.\n"
+            "          handover_template: Co to Imp.\n"
+            "      - name: design\n"
+            "        instructions:\n"
+            "          sub_role: designer\n"
+            "          phase_instructions: Design phase.\n"
+            "          handover_template: Co to Imp.\n"
+            "      - name: ready\n"
+            "        instructions:\n"
+            "          sub_role: implementer\n"
+            "          phase_instructions: Ready phase.\n"
+            "          handover_template: Imp to QA.\n"
+        )
+        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir.mkdir(parents=True)
+        (config_dir / "contracts.yaml").write_text(contracts_yaml, encoding="utf-8")
+
+        issue_number = 268
+        branch = "feature/268-phase-reset-test"
+
+        pm = make_project_manager(tmp_path)
+        pm.initialize_project(
+            issue_number=issue_number,
+            issue_title="Phase reset integration test",
+            workflow_name="feature",
+        )
+
+        cache = ContextLoadedCache()
+        engine = make_phase_state_engine(tmp_path, project_manager=pm, context_loaded_writer=cache)
+        engine.initialize_branch(branch=branch, issue_number=issue_number, initial_phase="research")
+
+        cache.set_context_loaded(branch, value=True)
+        assert cache.is_context_loaded(branch)  # precondition
+
+        engine.transition(branch=branch, to_phase="design")
+
+        assert not cache.is_context_loaded(branch)

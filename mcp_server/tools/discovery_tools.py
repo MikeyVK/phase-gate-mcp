@@ -184,7 +184,7 @@ class GetWorkContextTool(BaseTool):
         ctx["phase_instructions"] = (
             instructions.phase_instructions if instructions is not None else ""
         )
-        if instructions is not None and instructions.handover_template is not None:
+        if instructions is not None:
             ctx["handover_template"] = instructions.handover_template
 
         formatted = self._format_context(ctx)

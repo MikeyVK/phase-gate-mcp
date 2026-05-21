@@ -173,7 +173,7 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 
 ### Cycle 6: contracts.yaml instructions section + PhaseInstructionsSpec schema
 
-**Goal:** Add `PhaseInstructionsSpec` Pydantic model to `contracts_config.py` with `sub_role`, `phase_instructions`, `handover_template` fields (frozen, `ConfigDict(frozen=True)`). Add **required** `instructions: PhaseInstructionsSpec` field to phase entry schema (no `None`, no default — explicit over implicit: every defined phase must have instructions). Fully author `.phase-gate/config/contracts.yaml` with `instructions` blocks for all defined workflows × phases. The schema change (removing `None` default) activates only once the YAML is complete; until then a transitional `| None = None` is acceptable as a stepping stone but must be resolved within this cycle.
+**Goal:** Add `PhaseInstructionsSpec` Pydantic model to `contracts_config.py` with `sub_role`, `phase_instructions`, `handover_template` fields (frozen, `ConfigDict(frozen=True)`). Add **required** `instructions: PhaseInstructionsSpec` field to phase entry schema (no `None`, no default — explicit over implicit: every defined phase must have instructions). Fully author `.phase-gate/config/contracts.yaml` with `instructions` blocks for all defined workflows × phases. `handover_template` is optional (`str | None = None`) — phases that do not need a handover template may omit the field.
 
 **Tests:**
 - test_phase_instructions_spec_parses_with_all_fields: valid YAML dict parses correctly

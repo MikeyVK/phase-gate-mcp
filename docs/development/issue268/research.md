@@ -564,8 +564,10 @@ Follows existing `pr_status_reader` injection pattern exactly.
 **`.phase-gate/config/enforcement.yaml`**
 New entry: `tool_category: branch_mutating`, timing `pre`, action `check_context_loaded`,
 `exempt_tools: [force_phase_transition, force_cycle_transition]`. Force tools remain
-`BranchMutatingTool`; `get_work_context`, `git_checkout`, and `git_pull` are `BaseTool`
-(not `branch_mutating`) and are unaffected. `initialize_project` is `branch_mutating`
+`BranchMutatingTool`; `get_work_context` and `git_checkout` are `BaseTool`
+(not `branch_mutating`) and are unaffected by the gate. `git_pull` is `BranchMutatingTool`
+(gated) but is listed in `exempt_tools` to prevent circular blocking — it must be able to
+pull updates before `get_work_context` has been called. `initialize_project` is `branch_mutating`
 but the handler returns early when `state.json` does not exist.
 
 **`.phase-gate/config/contracts.yaml`**
