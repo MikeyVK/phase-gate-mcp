@@ -73,19 +73,19 @@
             "cycle_number": 3,
             "deliverables": [
               {
-                "description": "_EXEMPT_TOOLS_ALLOWED_TYPES frozenset constant (SSOT for exemption support)",
-                "id": "C3.D1"
+                "id": "C3.D1",
+                "description": "EnforcementAction.enabled: bool = True field (gate-level enable/disable switch)"
               },
               {
-                "description": "EnforcementAction.exempt_tools: list[str] field with default []",
-                "id": "C3.D2"
+                "id": "C3.D2",
+                "description": "EnforcementRunner._handle_check_context_loaded: if not action.enabled: return (no-op when disabled)"
               },
               {
-                "description": "model_validator that raises ValueError when exempt_tools non-empty on non-allowed action type",
-                "id": "C3.D3"
+                "id": "C3.D3",
+                "description": "test_enforcement_config.py: enabled field tested; existing enforcement.yaml parses without regression"
               }
             ],
-            "exit_criteria": "exempt_tools defaults to []; ValidationError on invalid type+exempt_tools combo at parse time; existing enforcement.yaml parses without regression; all 5 tests green.",
+            "exit_criteria": "enabled defaults to True; action with enabled=False is skipped at runtime; all tests green.",
             "files": [
               "mcp_server/config/schemas/enforcement_config.py",
               "tests/mcp_server/unit/config/test_enforcement_config.py"
@@ -98,19 +98,19 @@
             "cycle_number": 4,
             "deliverables": [
               {
-                "description": "EnforcementRunner._context_loaded_reader: IContextLoadedReader | None constructor param",
-                "id": "C4.D1"
+                "id": "C4.D1",
+                "description": "EnforcementRunner._context_loaded_reader: IContextLoadedReader | None constructor param"
               },
               {
-                "description": "_handle_check_context_loaded() registered in _build_default_registry()",
-                "id": "C4.D2"
+                "id": "C4.D2",
+                "description": "_handle_check_context_loaded(): checks action.enabled first (returns noop if False), then checks IContextLoadedReader state"
               },
               {
-                "description": "Bootstrap domain rule via state.json predicate \u2014 no tool names in Python code",
-                "id": "C4.D3"
+                "id": "C4.D3",
+                "description": "Bootstrap domain rule via state.json predicate \u2014 no tool names in Python code"
               }
             ],
-            "exit_criteria": "All 6 handler tests green via runner.run() public API only; no private method access in tests; bootstrap rule uses no tool names.",
+            "exit_criteria": "All 6 handler tests green via runner.run() public API only; enabled=False skips handler; bootstrap rule uses no tool names.",
             "files": [
               "mcp_server/managers/enforcement_runner.py",
               "tests/mcp_server/unit/managers/test_enforcement_runner.py"
@@ -156,19 +156,19 @@
             "cycle_number": 6,
             "deliverables": [
               {
-                "description": "PhaseInstructionsSpec Pydantic model with sub_role, phase_instructions, handover_template (ConfigDict(frozen=True))",
-                "id": "C6.D1"
+                "id": "C6.D1",
+                "description": "PhaseInstructionsSpec frozen model: sub_role str, phase_instructions str, handover_template str | None = None"
               },
               {
-                "description": "PhaseEntry.instructions: PhaseInstructionsSpec | None = None optional field",
-                "id": "C6.D2"
+                "id": "C6.D2",
+                "description": "WorkflowPhaseEntry.instructions: PhaseInstructionsSpec \u2014 required field (no default, no None); ValidationError when omitted"
               },
               {
-                "description": "feature/implementation instructions entry in .phase-gate/config/contracts.yaml",
-                "id": "C6.D3"
+                "id": "C6.D3",
+                "description": "All 6 workflows \u00d7 all phases covered in .phase-gate/config/contracts.yaml with instructions blocks"
               }
             ],
-            "exit_criteria": "PhaseInstructionsSpec frozen; contracts.yaml parses without error; all 5 config tests green.",
+            "exit_criteria": "PhaseInstructionsSpec frozen; instructions required \u2014 ValidationError if omitted; all 6 workflows fully populated in contracts.yaml; all 25 config tests green.",
             "files": [
               "mcp_server/config/schemas/contracts_config.py",
               ".phase-gate/config/contracts.yaml",

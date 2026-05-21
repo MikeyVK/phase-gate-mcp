@@ -14,11 +14,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import ValidationError
 
+import mcp_server.tools.discovery_tools as discovery_module
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
+from mcp_server.config.schemas.contracts_config import (
+    ContractsConfig,
+    MergePolicy,
+    PhaseInstructionsSpec,
+    WorkflowEntry,
+    WorkflowPhaseEntry,
+)
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.config.settings import Settings
+from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
@@ -42,6 +51,8 @@ def make_settings(workspace_root: Path | str = ".", github_token: str | None = N
 def make_work_context_tool(
     workspace_root: Path | str = ".",
     github_token: str | None = None,
+    contracts_config: ContractsConfig | None = None,
+    context_loaded_writer: IContextLoadedWriter | None = None,
 ) -> GetWorkContextTool:
     settings = make_settings(workspace_root=workspace_root, github_token=github_token)
     return GetWorkContextTool(
@@ -52,6 +63,8 @@ def make_work_context_tool(
         github_manager=MagicMock(),
         workphases_config=load_workphases_config(),
         workflow_status_resolver=MagicMock(),
+        contracts_config=contracts_config,
+        context_loaded_writer=context_loaded_writer,
     )
 
 
@@ -65,6 +78,10 @@ def load_git_config() -> GitConfig:
 
 def load_workphases_config() -> WorkphasesConfig:
     return ConfigLoader(Path(".phase-gate/config")).load_workphases_config()
+
+
+def load_contracts_config() -> ContractsConfig:
+    return ConfigLoader(Path(".phase-gate/config")).load_contracts_config()
 
 
 class TestSearchDocumentationTool:
@@ -811,6 +828,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
             project_manager=MagicMock(),
             state_engine=mock_state_engine,
             workflow_status_resolver=resolver,
+            contracts_config=load_contracts_config(),
         )
 
     @pytest.mark.asyncio
@@ -891,7 +909,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         # C1: phase instructions appear in "### 🎯 Phase Instructions" block
         assert "Phase Instructions" in text
         assert "get_issue" in text  # bug research always starts with reading the issue
-        assert "Root Cause" in text  # must identify root cause
+        assert "root cause" in text.lower()  # must identify root cause
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_phase_instructions_for_bug_implementation(
@@ -973,6 +991,7 @@ class TestGetWorkContextC1Restructuring:
             state_engine=mock_state_engine,
             github_manager=mock_github,
             workflow_status_resolver=mock_resolver,
+            contracts_config=load_contracts_config(),
         )
 
     def test_get_work_context_input_has_no_include_closed_recent(self) -> None:
@@ -1092,3 +1111,136 @@ class TestGetWorkContextC1Restructuring:
             f"Expected graceful degradation, got error.\nContent: {result.content}"
         )
         assert "feature/268-test" in result.content[0]["text"]
+
+
+# ---------------------------------------------------------------------------
+# C7 GREEN - GetWorkContextTool ContractsConfig injection (issue #268)
+# ---------------------------------------------------------------------------
+
+
+def _make_c7_contracts(
+    workflow: str = "feature",
+    phase: str = "implementation",
+    sub_role: str = "implementer-c7",
+    phase_instructions: str = "Do TDD. Call get_project_plan.",
+    handover_template: str | None = "## Hand-over\nScope: ...",
+) -> ContractsConfig:
+    """Build a minimal ContractsConfig for C7 injection tests."""
+    return ContractsConfig(
+        merge_policy=MergePolicy(pr_allowed_phase="ready"),
+        workflows={
+            workflow: WorkflowEntry(
+                phases=[
+                    WorkflowPhaseEntry(
+                        name=phase,
+                        instructions=PhaseInstructionsSpec(
+                            sub_role=sub_role,
+                            phase_instructions=phase_instructions,
+                            handover_template=handover_template,
+                        ),
+                    ),
+                    WorkflowPhaseEntry(
+                        name="ready",
+                        instructions=PhaseInstructionsSpec(
+                            sub_role="documenter",
+                            phase_instructions="Create PR.",
+                            handover_template=None,
+                        ),
+                    ),
+                ]
+            ),
+        },
+    )
+
+
+class TestGetWorkContextC7ContractsInjection:
+    """C7: Verify removal of hardcoded MVP maps and ContractsConfig injection."""
+
+    def _make_c7_tool(
+        self,
+        contracts_config: ContractsConfig | None = None,
+        context_loaded_writer: IContextLoadedWriter | None = None,
+        workflow: str = "feature",
+        phase: str = "implementation",
+    ) -> GetWorkContextTool:
+        """Return a GetWorkContextTool pre-configured for C7 tests."""
+        mock_git = MagicMock()
+        mock_git.get_current_branch.return_value = "feature/42-test"
+        resolver = MagicMock()
+        resolver.resolve_current.return_value = WorkflowStatusDTO(
+            current_phase=phase,
+            sub_phase=None,
+            current_cycle=None,
+            phase_source="state.json",
+            phase_confidence="high",
+            phase_detection_error=None,
+        )
+        mock_state_engine = MagicMock()
+        mock_branch_state = MagicMock()
+        mock_branch_state.workflow_name = workflow
+        mock_branch_state.current_phase = phase
+        mock_state_engine.get_state.return_value = mock_branch_state
+        settings = make_settings()
+        settings.github.token = None
+        return GetWorkContextTool(
+            settings=settings,
+            git_manager=mock_git,
+            project_manager=MagicMock(),
+            state_engine=mock_state_engine,
+            github_manager=MagicMock(),
+            workphases_config=load_workphases_config(),
+            workflow_status_resolver=resolver,
+            contracts_config=contracts_config,
+            context_loaded_writer=context_loaded_writer,
+        )
+
+    def test_sub_role_map_removed_from_module(self) -> None:
+        assert not hasattr(discovery_module, "_SUB_ROLE_MAP")
+
+    def test_phase_instructions_map_removed_from_module(self) -> None:
+        assert not hasattr(discovery_module, "_PHASE_INSTRUCTIONS_MAP")
+
+    @pytest.mark.asyncio
+    async def test_sub_role_comes_from_contracts(self) -> None:
+        """sub_role_hint must come from ContractsConfig, not hardcoded maps."""
+        contracts = _make_c7_contracts(sub_role="implementer-c7")
+        tool = self._make_c7_tool(contracts_config=contracts)
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "implementer-c7" in text
+
+    @pytest.mark.asyncio
+    async def test_phase_instructions_come_from_contracts(self) -> None:
+        """phase_instructions must come from ContractsConfig, not hardcoded maps."""
+        contracts = _make_c7_contracts(
+            phase_instructions="Do TDD. Call get_project_plan.",
+        )
+        tool = self._make_c7_tool(contracts_config=contracts)
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "Do TDD. Call get_project_plan." in text
+
+    @pytest.mark.asyncio
+    async def test_handover_template_in_response(self) -> None:
+        """Hand-over template must appear in response when contracts provide one."""
+        contracts = _make_c7_contracts(handover_template="## Hand-over\nScope: ...")
+        tool = self._make_c7_tool(contracts_config=contracts)
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "### Hand-over Template" in text
+        assert "## Hand-over" in text
+
+    @pytest.mark.asyncio
+    async def test_context_loaded_writer_called_on_success(self) -> None:
+        """IContextLoadedWriter.set_context_loaded must be called after successful execute."""
+        writer = MagicMock(spec=IContextLoadedWriter)
+        tool = self._make_c7_tool(context_loaded_writer=writer)
+        await tool.execute(GetWorkContextInput(), NoteContext())
+
+        writer.set_context_loaded.assert_called_once_with("feature/42-test", value=True)

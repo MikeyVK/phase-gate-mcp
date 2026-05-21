@@ -61,7 +61,7 @@ class PhaseInstructionsSpec(BaseModel):
 
     sub_role: str
     phase_instructions: str
-    handover_template: str
+    handover_template: str | None = None
 
 
 class PhaseContractPhase(BaseModel):
