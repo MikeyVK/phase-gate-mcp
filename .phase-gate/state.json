@@ -2,9 +2,9 @@
   "branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
   "issue_number": 268,
   "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 8,
-  "last_cycle": 7,
+  "current_phase": "validation",
+  "current_cycle": null,
+  "last_cycle": 8,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -200,8 +200,16 @@
       "human_approval": "Gebruiker approved op 2026-05-20",
       "forced": true,
       "skip_reason": "QA-bevindingen C4+C6 zijn verwerkt in design.md en planning.md (doc-correcties zijn klaar en gecommit); terug naar implementation om code-correcties C4 en C7 te vervolgen."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-21T15:38:46.644780+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
