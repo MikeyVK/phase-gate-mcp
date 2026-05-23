@@ -1107,6 +1107,7 @@ class TestGetWorkContextC1Restructuring:
         assert reminder in text
         assert "keep exactly one item in progress" in text
         assert text.find(reminder) < text.find("### 🎯 Phase Instructions")
+
     @pytest.mark.asyncio
     async def test_get_work_context_graceful_degradation_when_state_unavailable(self) -> None:
         """No error result when state is unavailable (bootstrap degradation)."""
