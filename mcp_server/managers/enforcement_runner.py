@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import cast
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.interfaces import IPRStatusReader, PRStatus
+from mcp_server.core.interfaces import IContextLoadedReader, IPRStatusReader, PRStatus
 from mcp_server.core.operation_notes import (
     NoteContext,
     SuggestionNote,
@@ -155,6 +155,7 @@ class EnforcementRunner:
         default_base_branch: str = "main",
         pr_status_reader: IPRStatusReader | None = None,
         server_root: Path | None = None,
+        context_loaded_reader: IContextLoadedReader | None = None,
     ) -> None:
         self.workspace_root = Path(workspace_root)
         if server_root is None:
@@ -166,6 +167,7 @@ class EnforcementRunner:
         self._config = config
         self.default_base_branch = default_base_branch
         self._pr_status_reader = pr_status_reader
+        self._context_loaded_reader = context_loaded_reader
         if registry is None:
             self._registry = self._build_default_registry()
         elif isinstance(registry, EnforcementRegistry):
@@ -248,6 +250,10 @@ class EnforcementRunner:
         registry.register(
             "check_phase_readiness",
             self._handle_check_phase_readiness,
+        )
+        registry.register(
+            "check_context_loaded",
+            self._handle_check_context_loaded,
         )
         return registry
 
@@ -339,4 +345,59 @@ class EnforcementRunner:
             )
             raise ValidationError(
                 f"Tool requires phase '{required_phase}'. Current phase: '{current_phase}'.",
+            )
+
+    def _handle_check_context_loaded(
+        self,
+        action: EnforcementAction,
+        context: EnforcementContext,
+        workspace_root: Path,
+        note_context: NoteContext,
+    ) -> None:
+        """Block tool execution until get_work_context has been called for this branch.
+
+        Gate is explicitly disabled when action.enabled=False (explicit over implicit:
+        disabling requires a deliberate YAML config decision, never an absent dependency).
+        Raises ConfigError when action.enabled=True but reader is not injected — this is a
+        composition-root wiring error (server.py forgot to inject ContextLoadedCache).
+
+        Checks action.exempt_tools next — if context.tool_name is listed, the check
+        is skipped entirely (no reader access required). This allows get_work_context
+        itself to be exempted via YAML config without any tool names in Python code.
+
+        Bootstrap predicate: if state.json does not exist, the phase engine has not
+        been initialised yet. The gate is semantically inactive in that state so that
+        initialize_project (and any other bootstrapping tool) is never blocked.
+
+        Raises ConfigError when reader is not configured (wiring error).
+        Raises ValidationError when context has not been loaded for the current branch.
+        """
+        if not action.enabled:
+            return  # gate explicitly disabled via YAML config
+
+        if context.tool_name in action.exempt_tools:
+            return
+
+        # Bootstrap: no state.json means no active phase — gate is inactive.
+        if not (self.server_root / "state.json").exists():
+            return
+
+        if self._context_loaded_reader is None:
+            raise ConfigError(
+                "check_context_loaded action requires context_loaded_reader; "
+                "wire ContextLoadedCache in EnforcementRunner.__init__",
+                file_path=_ENFORCEMENT_DISPLAY_PATH,
+            )
+
+        branch = str(
+            context.get_param("current_branch") or _get_current_git_branch(workspace_root) or ""
+        )
+
+        if not self._context_loaded_reader.is_context_loaded(branch):
+            note_context.produce(
+                SuggestionNote(message="Call get_work_context before using this tool.")
+            )
+            raise ValidationError(
+                f"get_work_context has not been called for branch '{branch}'. "
+                "Call get_work_context before using this tool.",
             )

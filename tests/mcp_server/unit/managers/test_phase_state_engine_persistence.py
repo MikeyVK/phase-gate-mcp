@@ -9,6 +9,7 @@ import pytest
 
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.state_repository import StateAlreadyExistsError
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 
@@ -93,3 +94,12 @@ class TestPhaseStateEnginePersistence:
         }
         assert disk_state["current_phase"] == "design"
         assert disk_state["branch"] == branch
+
+    def test_initialize_branch_raises_if_state_already_exists(
+        self,
+        state_engine: PhaseStateEngine,
+    ) -> None:
+        state_engine.initialize_branch("feature/1-first-feature", 1, "research")
+
+        with pytest.raises(StateAlreadyExistsError, match="feature/1-first-feature"):
+            state_engine.initialize_branch("feature/1-first-feature", 1, "research")

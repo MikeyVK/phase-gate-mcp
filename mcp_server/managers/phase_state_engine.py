@@ -32,6 +32,7 @@ from pydantic import ValidationError
 
 from mcp_server.core.interfaces import (
     GateReport,
+    IContextLoadedWriter,
     IStateReconstructor,
     IStateRepository,
     IWorkflowGateRunner,
@@ -39,7 +40,11 @@ from mcp_server.core.interfaces import (
 )
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.state_repository import BranchState, StateBranchMismatchError
+from mcp_server.managers.state_repository import (
+    BranchState,
+    StateAlreadyExistsError,
+    StateBranchMismatchError,
+)
 from mcp_server.schemas import ContractsConfig, GitConfig, WorkphasesConfig
 
 logger = logging.getLogger(__name__)
@@ -85,6 +90,7 @@ class PhaseStateEngine:
         state_reconstructor: IStateReconstructor,
         workflow_state_mutator: IWorkflowStateMutator,
         server_root: Path,
+        context_loaded_writer: "IContextLoadedWriter | None" = None,
     ) -> None:
         """Initialize PhaseStateEngine."""
         self.state_path = server_root / "state.json"
@@ -99,6 +105,13 @@ class PhaseStateEngine:
         self._workflow_gate_runner = workflow_gate_runner
         self._state_reconstructor = state_reconstructor
         self._workflow_state_mutator = workflow_state_mutator
+
+        self._context_loaded_writer = context_loaded_writer
+
+    def _reset_context_loaded(self, branch: str) -> None:
+        """Reset context-loaded flag after a state-changing transition."""
+        if self._context_loaded_writer is not None:
+            self._context_loaded_writer.set_context_loaded(branch, value=False)
 
     def initialize_branch(
         self, branch: str, issue_number: int, initial_phase: str, parent_branch: str | None = None
@@ -120,6 +133,18 @@ class PhaseStateEngine:
             ValueError: If project not initialized
         """
         # Get project plan to cache workflow_name
+        # Guard: refuse to overwrite an existing BranchState for this branch
+        try:
+            loaded = self._state_repository.load(branch)
+            if loaded.branch == branch:
+                raise StateAlreadyExistsError(
+                    f"Branch '{branch}' already has an initialized state "
+                    f"(phase: {loaded.current_phase}). "
+                    "Call initialize_project only once per branch."
+                )
+        except (FileNotFoundError, KeyError, OSError, json.JSONDecodeError, ValidationError):
+            pass
+
         project = self.project_manager.get_project_plan(issue_number)
         if not project:
             msg = f"Project {issue_number} not found. Initialize project first."
@@ -196,6 +221,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
             self.on_enter_cycle_based_phase(branch, issue_number)
@@ -263,6 +289,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
             self.on_enter_cycle_based_phase(branch, issue_number)
@@ -320,6 +347,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         return {
             "success": True,
@@ -385,6 +413,7 @@ class PhaseStateEngine:
             current_sub_phase=None,
         )
         self._apply_state(branch, updated_state)
+        self._reset_context_loaded(branch)
 
         return {
             "success": True,

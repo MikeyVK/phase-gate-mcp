@@ -7,11 +7,12 @@ Also covers input schema helpers for 100% module coverage.
 @dependencies: [pytest, unittest.mock, mcp_server.tools.git_pull_tool]
 """
 
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
 from mcp_server.core.exceptions import PreflightError
+from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool, _input_schema
@@ -144,3 +145,47 @@ async def test_git_pull_branch_mismatch_is_non_fatal() -> None:
 
     assert result.is_error is False
     assert "Pulled" in str(result)
+
+
+@pytest.mark.asyncio
+async def test_git_pull_resets_on_commits_received() -> None:
+    """writer.set_context_loaded(branch, False) called when pull returns new commits."""
+    manager = Mock()
+    manager.get_current_branch.return_value = "feature/268-test"
+    writer = MagicMock(spec=IContextLoadedWriter)
+    tool = GitPullTool(manager=manager, context_loaded_writer=writer)
+
+    run_sync = AsyncMock(side_effect=["1 file changed, 2 insertions(+)", None])
+    with patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync):
+        await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
+
+    writer.set_context_loaded.assert_called_once_with("feature/268-test", value=False)
+
+
+@pytest.mark.asyncio
+async def test_git_pull_no_reset_on_already_up_to_date() -> None:
+    """writer.set_context_loaded NOT called when pull result is a noop."""
+    manager = Mock()
+    manager.get_current_branch.return_value = "feature/268-test"
+    writer = MagicMock(spec=IContextLoadedWriter)
+    tool = GitPullTool(manager=manager, context_loaded_writer=writer)
+
+    run_sync = AsyncMock(side_effect=["Already up to date.", None])
+    with patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync):
+        await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
+
+    writer.set_context_loaded.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_git_pull_no_reset_when_writer_none() -> None:
+    """No error when context_loaded_writer=None and pull returns new commits."""
+    manager = Mock()
+    manager.get_current_branch.return_value = "feature/268-test"
+    tool = GitPullTool(manager=manager, context_loaded_writer=None)
+
+    run_sync = AsyncMock(side_effect=["1 file changed", None])
+    with patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync):
+        result = await tool.execute(GitPullInput(remote="origin", rebase=False), NoteContext())
+
+    assert not result.is_error

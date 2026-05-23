@@ -91,7 +91,15 @@ workflows:
               type: file_glob
               dir: docs/development
               pattern: issue*/research_*.md
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
       - name: ready
+        instructions:
+          sub_role: test-role
+          phase_instructions: Test instructions.
+          handover_template: Test handover.
 """.strip(),
         encoding="utf-8",
     )

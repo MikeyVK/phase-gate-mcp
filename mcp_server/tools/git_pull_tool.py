@@ -22,6 +22,7 @@ import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
+from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers import phase_state_engine
@@ -73,9 +74,11 @@ class GitPullTool(BranchMutatingTool):
         self,
         manager: GitManager,
         state_engine: phase_state_engine.PhaseStateEngine | None = None,
+        context_loaded_writer: IContextLoadedWriter | None = None,
     ) -> None:
         self.manager = manager
         self._state_engine = state_engine
+        self._context_loaded_writer = context_loaded_writer
 
     def _get_state_engine(self) -> phase_state_engine.PhaseStateEngine:
         if self._state_engine is None:
@@ -109,6 +112,10 @@ class GitPullTool(BranchMutatingTool):
         # Sync phase state after pull (commits may have changed).
         try:
             current_branch = self.manager.get_current_branch()
+            if self._context_loaded_writer is not None and not pull_result.lower().startswith(
+                "already up to date"
+            ):
+                self._context_loaded_writer.set_context_loaded(current_branch, value=False)
             await anyio.to_thread.run_sync(self._get_state_engine().get_state, current_branch)
         except (MCPError, ValueError, OSError, StateBranchMismatchError) as exc:
             logger.warning(

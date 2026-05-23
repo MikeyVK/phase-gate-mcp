@@ -50,6 +50,20 @@ class CheckSpec(BaseModel):
     path: str | None = None
 
 
+class PhaseInstructionsSpec(BaseModel):
+    """Role-specific instructions for a workflow phase (frozen config value object).
+
+    Sub-field of WorkflowPhaseEntry.instructions. Populated in contracts.yaml per
+    workflow+phase combination. Stage 2 of issue #268.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    sub_role: str
+    phase_instructions: str
+    handover_template: str | None = None
+
+
 class PhaseContractPhase(BaseModel):
     """Per-workflow phase contract entry. Frozen config value object (§5 CQS)."""
 
@@ -79,6 +93,7 @@ class WorkflowPhaseEntry(PhaseContractPhase):
     # inherits model_config = ConfigDict(extra="forbid", frozen=True) from PhaseContractPhase
 
     name: str = Field(..., description="Phase name; must exist in workphases.yaml catalog")
+    instructions: PhaseInstructionsSpec
 
 
 class WorkflowEntry(BaseModel):

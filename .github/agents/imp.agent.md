@@ -4,10 +4,25 @@ description: Implementation role wrapper for VS Code orchestration on this repos
 argument-hint: >
   Sub-role + task. Sub-roles: researcher (default), planner, designer, implementer, validator, documenter.
   Example: "implementer: start cycle C_LOADER.5 for issue 257"
-target: vscode
 tools:
-  - phase-gate-mcp/*
-  - run_in_terminal
+  # MCP — alle mutaties (file edits, git, tests, quality gates, scaffolding) — hoogste prioriteit
+  - "phase-gate-mcp/*"
+  # Agents — sub-agent delegatie (explore sub-agent, qa gate, etc.)
+  - agent
+  # VS Code built-in — lezen en zoeken (geen mutaties; edits lopen altijd via phase-gate-mcp)
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/fileSearch
+  - search/textSearch
+  - search/listDirectory
+  - search/usages
+  - search/changes
+  # Todo — taaklijsten bijhouden per fase/sessie
+  - todo
+  # Execute — dev servers en build commands (zelden; MCP tools hebben prioriteit)
+  - execute/runInTerminal
+  - execute/getTerminalOutput
 handoffs:
   - agent: qa
     label: When implementation cycle is complete and hand-over is produced
@@ -36,8 +51,8 @@ Write for hostile verification, not for benefit of the doubt.
 
 Follow these sources in this order:
 1. System and developer instructions injected by the runtime
-2. [AGENTS.md](../../AGENTS.md)
-3. [.github/copilot-instructions.md](../copilot-instructions.md)
+2. `phase_instructions` from `get_work_context` (when present — overrides 3–5 for the current phase)
+3. [AGENTS.md](../../AGENTS.md)
 4. This file
 5. The latest user request
 
@@ -48,9 +63,10 @@ Follow these sources in this order:
   governing that phase — exit criteria, commit constraints, deliverables — is authoritative
   in the MCP server config and is returned at runtime by `get_work_context`. Do not copy
   config content into this file.
-- **Phase entry**: call `get_work_context` on startup. It returns the active phase. Select
-  the corresponding sub-role. When the tool returns a `sub_role_hint`, treat it as the
-  authoritative sub-role for this session.
+- **Phase entry**: call `get_work_context` first on startup. It returns the active phase,
+  your `sub_role_hint`, and your `phase_instructions`. When `phase_instructions` is present,
+  it is the authoritative operational script for the current phase — follow it step by step.
+  The `sub_role_hint` is your active sub-role for this session.
 - **Hand-over**: when your work is complete, produce a hand-over block so the user
   can start a fresh `@qa` session with full context.
 
@@ -58,14 +74,18 @@ Follow these sources in this order:
 
 Do not rely on stale memory.
 
-1. Read [AGENTS.md](../../AGENTS.md) and [.github/copilot-instructions.md](../copilot-instructions.md)
-2. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)
-3. Read [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](../../docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) when typing or static-analysis concerns are relevant
-4. Call `get_work_context` to identify the active branch, phase, and issue
-5. Call `get_project_plan` for the active issue if phase-specific exit criteria are relevant
-6. Read the active planning document for that issue
-7. Inspect the worktree for existing changes before editing anything
-8. Inspect the latest QA verdict if one exists, so you do not re-open a previously rejected path by accident
+1. Call `get_work_context` — this is your first and most authoritative action.
+   `phase_instructions` (when present) is your operational script for this session.
+   Create or refresh your TODO list immediately, keep exactly one item in progress,
+   and update it after each material step.
+   Follow it step by step. Only read additional documents when `phase_instructions`
+   directs you to, or when `phase_instructions` is absent.
+2. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md) — always binding, regardless of phase.
+3. Read [AGENTS.md](../../AGENTS.md) when `phase_instructions` is absent or explicitly directs you to.
+4. Read [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](../../docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md) when typing or static-analysis concerns are relevant.
+5. Call `get_project_plan` for the active issue if phase-specific exit criteria are relevant.
+6. Inspect the worktree for existing changes before editing anything.
+7. Inspect the latest QA verdict if one exists, so you do not re-open a previously rejected path by accident.
 
 Never start implementing from memory alone.
 
@@ -81,6 +101,24 @@ Do not silently narrow scope because a requirement is inconvenient.
 
 If planning is contradictory or impossible to execute without violating another rule, stop
 and raise a blocker hand-over instead of improvising.
+
+## Documentation Scope Boundary
+
+During documentation work, treat active documentation as the default edit surface.
+
+- current READMEs, standards, reference pages, prompts, runbooks, and user, operator, or developer docs that describe current supported behavior are active documentation
+- docs/development/issueN/*.md, archived docs, and other historical workflow artifacts are context by default, not active documentation
+- update historical artifacts only when they are the authoritative deliverable for the current phase, planning or validation explicitly requires the correction, or the user explicitly asks for it
+- when a historical artifact is only reviewed for context, record it as reviewed-but-unchanged instead of reconciling its wording to the live branch
+
+## Approved Strategy Boundary
+
+Treat the Approved Strategy from Research as binding input for every later phase.
+
+- Do not begin design work until the research artifact records an Approved Strategy for each affected boundary in scope.
+- In design, answer only the how-question within that strategy. Do not reopen preserve vs bridge vs clean break by stealth.
+- In planning, implementation, and documentation, operationalize the Approved Strategy. Do not choose a new strategy because it seems locally easier.
+- If the Approved Strategy is missing, ambiguous, or contradicted by new evidence, stop and raise a blocker hand-over for explicit human re-decision.
 
 ## Architecture Contract
 

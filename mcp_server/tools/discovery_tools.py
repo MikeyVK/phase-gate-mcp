@@ -3,21 +3,18 @@
 # pyright: reportIncompatibleMethodOverride=false
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.settings import Settings
-from mcp_server.core.exceptions import ExecutionError, MCPError
+from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
-from mcp_server.core.phase_detection import PhaseDetectionResult, ScopeDecoder
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.schemas import WorkphasesConfig
 from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
@@ -25,6 +22,8 @@ from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
 if TYPE_CHECKING:
+    from mcp_server.config.schemas.contracts_config import ContractsConfig
+    from mcp_server.core.interfaces import IContextLoadedWriter
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 
@@ -102,10 +101,6 @@ class GetWorkContextInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    include_closed_recent: bool = Field(
-        default=False, description="Include recently closed issues (last 7 days) for context"
-    )
-
 
 class GetWorkContextTool(BaseTool):
     """Tool to aggregate work context from Git and GitHub."""
@@ -128,6 +123,8 @@ class GetWorkContextTool(BaseTool):
         state_path: Path | None = None,
         *,
         workflow_status_resolver: WorkflowStatusResolver,
+        contracts_config: ContractsConfig | None = None,
+        context_loaded_writer: IContextLoadedWriter | None = None,
     ) -> None:
         super().__init__()
         self._settings = settings
@@ -138,192 +135,76 @@ class GetWorkContextTool(BaseTool):
         self._workphases_config = workphases_config
         self._state_path = state_path
         self._workflow_status_resolver = workflow_status_resolver
+        self._contracts_config = contracts_config
+        self._context_loaded_writer = context_loaded_writer
 
-    async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:  # noqa: ARG002
         """Execute work context aggregation."""
-        ctx: dict[str, Any] = {}
+        _ = params  # GetWorkContextInput has no fields after C1 (issue #268)
 
-        # Get Git context
         branch = self._git_manager.get_current_branch()
-        ctx["current_branch"] = branch
 
-        # Extract issue number from branch
-        issue_number = self._extract_issue_number(branch)
-        ctx["linked_issue_number"] = issue_number
+        ctx: dict[str, Any] = {"current_branch": branch}
 
-        current_cycle: int | None = None
-
-        # Use resolver for phase detection (Issue #231 C4)
+        # Primary state read: single source of truth (F_268.13, issue #268)
+        workflow = ""
+        phase = ""
         try:
-            status = self._workflow_status_resolver.resolve_current()
-            ctx["workflow_phase"] = status.current_phase
-            ctx["sub_phase"] = status.sub_phase
-            ctx["phase_source"] = status.phase_source
-            ctx["phase_confidence"] = status.phase_confidence
-            ctx["phase_error_message"] = status.phase_detection_error
-            ctx["recent_commits"] = self._git_manager.get_recent_commits(limit=5)
-            current_cycle = status.current_cycle
-        except (StateNotFoundError, StateBranchMismatchError) as exc:
-            context.produce(
-                RecoveryNote(
-                    message=(
-                        f"State not available for this branch: {exc}. "
-                        "Run 'initialize_project' to create a workflow state, "
-                        "or check out the correct feature branch."
-                    )
-                )
-            )
-            return ToolResult.error(
-                f"Workflow state unavailable: {exc}. "
-                "Use 'initialize_project' to set up state for this branch."
-            )
-        except (OSError, ValueError, RuntimeError):
-            ctx["workflow_phase"] = "unknown"
-            ctx["sub_phase"] = None
+            state = self._state_engine.get_state(branch)
+            workflow = state.workflow_name or ""
+            phase = state.current_phase or ""
+            ctx["workflow_name"] = workflow
+            ctx["phase"] = phase
+            if state.issue_number is not None:
+                ctx["issue_number"] = state.issue_number
+            if state.parent_branch:
+                ctx["parent_branch"] = state.parent_branch
+            if state.current_cycle is not None:
+                ctx["current_cycle"] = state.current_cycle
+            if state.current_sub_phase:
+                ctx["sub_phase"] = state.current_sub_phase
+            ctx["phase_source"] = "state.json"
+            ctx["phase_confidence"] = "high"
+        except Exception:  # noqa: BLE001 - bootstrap: branch not yet initialized
+            ctx["workflow_name"] = ""
+            ctx["phase"] = ""
             ctx["phase_source"] = "unknown"
             ctx["phase_confidence"] = "unknown"
-            ctx["phase_error_message"] = None
-            ctx["recent_commits"] = []
 
-        # Gate: current_cycle is not None (no hardcoded phase-name check)
-        if current_cycle is not None and issue_number:
+        instructions = None
+        if self._contracts_config is not None and workflow and phase:
             try:
-                project_plan = self._project_manager.get_project_plan(issue_number)
-                if project_plan is None:
-                    raise ValueError("Project plan not found")
-                planning_deliverables = project_plan.get("planning_deliverables")
-                if planning_deliverables:
-                    tdd_cycles = planning_deliverables.get("tdd_cycles", {})
-                    cycles = tdd_cycles.get("cycles", [])
-                    total = tdd_cycles.get("total", 0)
-                    cycle_details = next(
-                        (c for c in cycles if c.get("cycle_number") == current_cycle), None
-                    )
-                    if cycle_details:
-                        ctx["tdd_cycle_info"] = {
-                            "current": current_cycle,
-                            "total": total,
-                            "name": cycle_details.get("name"),
-                            "deliverables": cycle_details.get("deliverables", []),
-                            "exit_criteria": cycle_details.get("exit_criteria"),
-                            "status": "in_progress",
-                        }
-            except (OSError, ValueError, RuntimeError, KeyError):
-                pass  # Graceful degradation if cycle info unavailable
+                workflow_entry = self._contracts_config.workflows.get(workflow)
+                if workflow_entry is not None:
+                    instructions = workflow_entry.get_phase(phase).instructions
+            except (KeyError, ValueError):
+                pass
 
-        # Get GitHub issue details if configured
-        if self._settings.github.token:
-            try:
-                if self._github_manager is None:
-                    raise RuntimeError(
-                        "GitHubManager must be injected when GitHub access is enabled"
-                    )
+        ctx["sub_role_hint"] = instructions.sub_role if instructions is not None else ""
+        ctx["phase_instructions"] = (
+            instructions.phase_instructions if instructions is not None else ""
+        )
+        if instructions is not None:
+            ctx["handover_template"] = instructions.handover_template
 
-                # Active Issue
-                if issue_number:
-                    issue = self._github_manager.get_issue(issue_number)
-                    if issue:
-                        # GitHubManager.get_issue() returns PyGithub Issue object
-                        ctx["active_issue"] = {
-                            "number": issue.number,
-                            "title": issue.title,
-                            "body": (issue.body or "")[:500],
-                            "labels": [label.name for label in issue.labels],
-                            "acceptance_criteria": self._extract_checklist(issue.body or ""),
-                        }
-
-                # Recently Closed Issues (Implemented to satisfy param)
-                if params.include_closed_recent:
-                    # This effectively implements the logic for the formerly unused argument
-                    closed_issues = self._github_manager.list_issues(state="closed")
-                    # Naively taking top 3 for brevity, assuming list_issues sorts by recent
-                    ctx["recently_closed"] = [f"#{i.number} {i.title}" for i in closed_issues[:3]]
-
-            except (OSError, ValueError, RuntimeError, ImportError, MCPError):
-                pass  # GitHub integration optional
-
-        return ToolResult.text(self._format_context(ctx))
-
-    def _extract_issue_number(self, branch: str) -> int | None:
-        """Extract issue number from branch name."""
-        patterns = [
-            r"(?:feature|fix|refactor|docs)/(\d+)-",
-            r"issue-(\d+)",
-            r"#(\d+)",
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, branch)
-            if match:
-                return int(match.group(1))
-
-        return None
-
-    def _detect_workflow_phase(self, commits: list[str]) -> PhaseDetectionResult:
-        """
-        Detect workflow phase deterministically using ScopeDecoder.
-
-        NOTE: This method is only called when the WorkflowStatusResolver is not
-        injected. When the resolver is present (standard path), phase comes from
-        state.json authoritatively (Issue #298). This fallback path is retained
-        for backward compatibility only.
-
-        Args:
-            commits: Recent commit messages
-
-        Returns:
-            PhaseDetectionResult dict with workflow_phase, sub_phase, source, confidence
-        """
-        if not commits:
-            return {
-                "workflow_phase": "unknown",
-                "sub_phase": None,
-                "source": "unknown",
-                "confidence": "unknown",
-                "raw_scope": None,
-                "error_message": None,
-            }
-
-        # Use most recent commit for phase detection
-        latest_commit = commits[0]
-
-        # Deterministic phase detection via ScopeDecoder
-        if self._workphases_config is None:
-            return {
-                "workflow_phase": "unknown",
-                "sub_phase": None,
-                "source": "unknown",
-                "confidence": "unknown",
-                "raw_scope": None,
-                "error_message": "WorkphasesConfig not injected",
-            }
-        decoder = ScopeDecoder(self._workphases_config, state_path=self._state_path)
-        return decoder.detect_phase(commit_message=latest_commit, fallback_to_state=True)
-
-    def _extract_checklist(self, body: str) -> list[str]:
-        """Extract checklist items from issue body."""
-        if not body:
-            return []
-
-        pattern = r"- \[[ x]\] (.+)"
-        matches = re.findall(pattern, body)
-        return matches[:10]  # Limit to 10 items
+        formatted = self._format_context(ctx)
+        if self._context_loaded_writer is not None:
+            self._context_loaded_writer.set_context_loaded(branch, value=True)
+        return ToolResult.text(formatted)
 
     def _format_context(self, context: dict[str, Any]) -> str:
-        """Format context for readable output."""
-        lines = ["## Work Context\n"]
-
-        # Branch info
-        lines.append(f"**Current Branch:** `{context['current_branch']}`")
-
-        if context.get("linked_issue_number"):
-            lines.append(f"**Linked Issue:** #{context['linked_issue_number']}")
-
-        # Workflow Phase (all 7 phases supported)
-        phase = context.get("workflow_phase", "unknown")
+        """Format work context into compact orientation header + phase instructions block."""
+        branch = context.get("current_branch", "")
+        workflow = context.get("workflow_name", "")
+        phase = context.get("phase", "")
+        issue_number = context.get("issue_number")
+        parent_branch = context.get("parent_branch", "")
+        current_cycle = context.get("current_cycle")
         sub_phase = context.get("sub_phase")
-        source = context.get("phase_source", "unknown")
-        confidence = context.get("phase_confidence", "unknown")
+        sub_role_hint = context.get("sub_role_hint", "")
+        phase_source = context.get("phase_source", "unknown")
+        phase_confidence = context.get("phase_confidence", "unknown")
+        phase_instructions = context.get("phase_instructions", "")
 
         # Phase emoji mapping (7 workflow phases + unknown)
         phase_emoji = {
@@ -334,67 +215,68 @@ class GetWorkContextTool(BaseTool):
             "validation": "✅",
             "documentation": "📝",
             "coordination": "🤝",
-            "unknown": "❓",
         }.get(phase, "❓")
 
-        # Sub-phase emoji (TDD-specific for now, expandable)
-        subphase_emoji = {
-            "red": "🔴",
-            "green": "🟢",
-            "refactor": "🔄",
-        }
+        # Sub-phase emoji (TDD-specific)
+        subphase_emoji: dict[str, str] = {"red": "🔴", "green": "🟢", "refactor": "🔄"}
 
-        phase_display = f"{phase_emoji} {phase}"
+        lines: list[str] = []
+
+        # Orientation line 1: branch | workflow | issue
+        line1_parts = [f"Branch: `{branch}`"]
+        if workflow:
+            line1_parts.append(f"Workflow: {workflow}")
+        if issue_number is not None:
+            line1_parts.append(f"Issue: #{issue_number}")
+        lines.append(" | ".join(line1_parts))
+
+        # Orientation line 2: phase | role
+        phase_display = f"{phase_emoji} {phase}" if phase else "❓ unknown"
         if sub_phase:
-            emoji = subphase_emoji.get(sub_phase, "")
-            phase_display += f" → {emoji} {sub_phase}"
+            emoji = subphase_emoji.get(str(sub_phase), "")
+            phase_display += f" → {emoji} {sub_phase}".rstrip()
+        if current_cycle is not None:
+            phase_display += f" (cycle {current_cycle})"
+        line2_parts = [f"Phase: {phase_display}"]
+        if sub_role_hint:
+            line2_parts.append(f"Role: {sub_role_hint}")
+        lines.append(" | ".join(line2_parts))
 
-        lines.append(f"**Workflow Phase:** {phase_display}")
-        lines.append(f"**Phase Detection:** {source} (confidence: {confidence})")
+        # Orientation line 3: parent branch (only if non-empty)
+        if parent_branch:
+            lines.append(f"Parent: {parent_branch}")
 
-        # Show error_message if phase detection failed with recovery info
-        error_message = context.get("phase_error_message")
-        if error_message:
-            lines.append(f"**⚠️ Recovery Info:** {error_message}")
+        # Orientation line 4: phase detection source (only if confidence != high)
+        if phase_confidence != "high":
+            lines.append(f"⚠️ Phase detection: source={phase_source}, confidence={phase_confidence}")
+        lines.append(
+            "TODO discipline: create or refresh your TODO list now; "
+            "keep exactly one item in progress and update it after each material step."
+        )
 
-        # Issue #146 Cycle 3: TDD Cycle Info (conditional visibility during TDD phase)
-        if "tdd_cycle_info" in context:
-            cycle_info = context["tdd_cycle_info"]
-            lines.append("\n### 🧪 TDD Cycle Progress")
+        # Separator
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+        # Phase instructions block (dominant first block - F_268.13)
+        lines.append("### 🎯 Phase Instructions")
+        lines.append("")
+        if phase_instructions:
+            lines.append(phase_instructions)
+        else:
             lines.append(
-                f"**Cycle {cycle_info['current']}/{cycle_info['total']}:** {cycle_info['name']}"
+                f"(No instructions defined for workflow: {workflow or 'unknown'}, "
+                f"phase: {phase or 'unknown'})"
             )
-            if cycle_info.get("status"):
-                lines.append(f"**Status:** {cycle_info['status']}")
-            lines.append("\n**Deliverables:**")
-            for deliverable in cycle_info.get("deliverables", []):
-                lines.append(f"- {deliverable}")
-            lines.append(f"\n**Exit Criteria:** {cycle_info.get('exit_criteria', 'N/A')}")
 
-        # Active Issue Details
-        if "active_issue" in context:
-            issue = context["active_issue"]
-            lines.append(f"\n### Active Issue: #{issue['number']}")
-            lines.append(f"**{issue['title']}**")
-
-            if issue.get("labels"):
-                lines.append(f"Labels: {', '.join(issue['labels'])}")
-
-            if issue.get("acceptance_criteria"):
-                lines.append("\n**Acceptance Criteria:**")
-                for criterion in issue["acceptance_criteria"]:
-                    lines.append(f"- [ ] {criterion}")
-
-        # Recently Closed
-        if context.get("recently_closed"):
-            lines.append("\n**Recently Closed Issues:**")
-            for closed in context["recently_closed"]:
-                lines.append(f"- {closed}")
-
-        # Recent commits
-        if context.get("recent_commits"):
-            lines.append("\n**Recent Commits:**")
-            for commit in context["recent_commits"][:3]:
-                lines.append(f"- {commit}")
+        handover_template = context.get("handover_template")
+        if handover_template:
+            lines.append("")
+            lines.append("---")
+            lines.append("")
+            lines.append("### Hand-over Template")
+            lines.append("")
+            lines.append(handover_template)
 
         return "\n".join(lines)

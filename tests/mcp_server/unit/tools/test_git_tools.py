@@ -11,6 +11,7 @@ import pytest
 from pydantic import ValidationError
 
 from mcp_server.config.loader import ConfigLoader
+from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
@@ -1089,3 +1090,31 @@ async def test_commit_tool_auto_detect_mismatch_returns_error(mock_git_manager: 
 
     assert result.is_error
     mock_git_manager.commit_with_scope.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_git_checkout_resets_context_loaded_on_success(
+    mock_git_manager: MagicMock,
+) -> None:
+    """writer.set_context_loaded(branch, False) called on successful checkout."""
+    writer = MagicMock(spec=IContextLoadedWriter)
+    tool = GitCheckoutTool(manager=mock_git_manager, context_loaded_writer=writer)
+
+    params = GitCheckoutInput(branch="feature/268-test")
+    result = await tool.execute(params, NoteContext())
+
+    assert not result.is_error
+    writer.set_context_loaded.assert_called_once_with("feature/268-test", value=False)
+
+
+@pytest.mark.asyncio
+async def test_git_checkout_no_reset_when_writer_none(
+    mock_git_manager: MagicMock,
+) -> None:
+    """No error when context_loaded_writer=None and checkout succeeds."""
+    tool = GitCheckoutTool(manager=mock_git_manager, context_loaded_writer=None)
+
+    params = GitCheckoutInput(branch="feature/268-test")
+    result = await tool.execute(params, NoteContext())
+
+    assert not result.is_error

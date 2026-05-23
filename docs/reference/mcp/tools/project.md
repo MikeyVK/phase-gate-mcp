@@ -146,26 +146,24 @@ Get project phase plan for issue number.
 
 ```json
 {
-  "success": true,
-  "project": {
-    "issue_number": 123,
-    "issue_title": "Add OAuth2 authentication",
-    "workflow_name": "feature",
-    "phases": [
-      "planning",
-      "research",
-      "red",
-      "green",
-      "refactor",
-      "documentation",
-      "merge-prep"
-    ],
-    "current_phase": "green",
-    "completed_phases": ["planning", "research", "red"],
-    "parent_branch": "main",
-    "created_at": "2026-02-08T10:00:00Z",
-    "updated_at": "2026-02-08T12:00:00Z"
-  }
+  "issue_title": "Add OAuth2 authentication",
+  "workflow_name": "feature",
+  "execution_mode": "interactive",
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "skip_reason": null,
+  "parent_branch": "main",
+  "created_at": "2026-02-08T10:00:00Z",
+  "current_phase": "implementation",
+  "phase_source": "state.json",
+  "phase_detection_error": null
 }
 ```
 
@@ -180,7 +178,7 @@ Get project phase plan for issue number.
 #### Behavior Notes
 
 - **Read-Only:** Does not modify state
-- **Plan Access:** Reads workflow definition from `.st3/deliverables.json`; live phase is detected from commit scope with fallback to `.st3/state.json`
+- **Plan Access:** Reads workflow definition from `.st3/deliverables.json`; current phase is read from `.st3/state.json` via `WorkflowStatusResolver`. Returns plan without phase fields when state is absent or branch-mismatched.
 - **Not Found:** Returns error if project not initialized
 
 ---
@@ -435,7 +433,7 @@ workflows:
 
   epic:
     name: epic
-    description: "Epic workflow for large initiatives (research → design → planning → coordination → documentation)"
+    description: "Epic workflow for large initiatives (research → planning → design → coordination → documentation)"
     default_execution_mode: interactive
 
 ```

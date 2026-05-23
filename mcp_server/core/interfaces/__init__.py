@@ -154,3 +154,19 @@ class IWorkflowStateMutator(Protocol):
                 unrecoverable state.
         """
         raise NotImplementedError
+
+
+@runtime_checkable
+class IContextLoadedReader(Protocol):
+    """Read whether get_work_context has been called for a branch this session."""
+
+    def is_context_loaded(self, branch: str) -> bool:
+        raise NotImplementedError
+
+
+@runtime_checkable
+class IContextLoadedWriter(Protocol):
+    """Record that get_work_context has been called for a branch this session."""
+
+    def set_context_loaded(self, branch: str, *, value: bool) -> None:
+        raise NotImplementedError

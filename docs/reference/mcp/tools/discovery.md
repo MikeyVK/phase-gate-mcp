@@ -3,11 +3,11 @@
 # Discovery & Admin Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-05-23  
 
 **Source:** [mcp_server/tools/discovery_tools.py](../../../../mcp_server/tools/discovery_tools.py), [health_tools.py](../../../../mcp_server/tools/health_tools.py), [admin_tools.py](../../../../mcp_server/tools/admin_tools.py)  
-**Tests:** [tests/unit/test_discovery_tools.py](../../../../tests/unit/test_discovery_tools.py)  
+**Tests:** [tests/mcp_server/unit/tools/test_discovery_tools.py](../../../../tests/mcp_server/unit/tools/test_discovery_tools.py)  
 
 ---
 
@@ -26,7 +26,7 @@ The MCP server provides **4 discovery/admin tools**:
 | Tool | Purpose | Key Features |
 |------|---------|-------------|
 | `search_documentation` | Semantic/fuzzy search across docs/ | Scope filtering, ranked results with snippets |
-| `get_work_context` | Aggregate GitHub + branch + phase | Work queue discovery, context-aware suggestions |
+| `get_work_context` | Aggregate branch + workflow context | Orientation header, phase instructions, hand-over template |
 | `health_check` | Server health status | Uptime, memory, registered tools count |
 | `restart_server` | Hot-reload server via proxy | Zero-downtime restart for code changes |
 
@@ -127,80 +127,51 @@ Semantic/fuzzy search across all docs/ files. Returns ranked results with snippe
 **Class:** `GetWorkContextTool`  
 **File:** [mcp_server/tools/discovery_tools.py](../../../../mcp_server/tools/discovery_tools.py)
 
-Aggregates context from GitHub Issues, current branch, and TDD phase to understand what to work on next.
+Aggregates the active branch and workflow state into an operator-facing orientation response. The response is formatted text, not a JSON work-queue payload, and is designed to be the authoritative startup context for the current branch.
 
 #### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `include_closed_recent` | `bool` | No | Include recently closed issues (last 7 days) for context (default: `False`) |
+None. `GetWorkContextInput` is fieldless.
 
 #### Returns
 
-```json
-{
-  "success": true,
-  "context": {
-    "current_branch": {
-      "name": "feature/123-oauth",
-      "issue_number": 123,
-      "phase": "green",
-      "parent_branch": "main"
-    },
-    "open_issues": [
-      {
-        "number": 123,
-        "title": "Add OAuth2 authentication",
-        "labels": ["type:feature", "priority:high"],
-        "state": "open",
-        "assignees": ["developer1"]
-      },
-      {
-        "number": 124,
-        "title": "Fix login validation",
-        "labels": ["type:bug", "priority:medium"],
-        "state": "open",
-        "assignees": []
-      }
-    ],
-    "recent_closed": [
-      {
-        "number": 122,
-        "title": "Update user DTO",
-        "labels": ["type:refactor"],
-        "state": "closed",
-        "closed_at": "2026-02-07T10:00:00Z"
-      }
-    ],
-    "suggestions": [
-      "Continue implementing OAuth2 authentication (feature/123-oauth, phase: green)",
-      "Review unassigned bug #124: Fix login validation"
-    ]
-  }
-}
+```text
+Branch: `feature/123-oauth` | Workflow: feature | Issue: #123
+Phase: 🧪 implementation | Role: implementer
+Parent: main
+TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step.
+
+---
+
+### 🎯 Phase Instructions
+
+[ ] Call get_project_plan(issue_number=N)
+[ ] Execute the current TDD cycle
+
+---
+
+### Hand-over Template
+
+### Imp → QA hand-over
+#### Scope
+- Cycles executed: <list>
 ```
 
 #### Example Usage
 
-**Get current work context:**
 ```json
 {}
 ```
 
-**Include recently closed issues:**
-```json
-{
-  "include_closed_recent": true
-}
-```
-
 #### Behavior Notes
 
-- **Current Branch:** Includes phase state from `.st3/state.json`
-- **Open Issues:** All open issues in repository
-- **Recent Closed:** Last 7 days if `include_closed_recent=true`
-- **Suggestions:** AI-generated suggestions based on branch, phase, and open issues
-- **GitHub Token:** Requires `GITHUB_TOKEN` for issue data
+- **State Source:** Reads workflow, phase, issue number, parent branch, cycle, and sub-phase from branch-local `.phase-gate/state.json` when available.
+- **Phase Script Delivery:** Reads `sub_role_hint`, `phase_instructions`, and optional `handover_template` from `.phase-gate/config/contracts.yaml` for the active workflow and phase.
+- **Dominant Instructions Block:** Renders `### 🎯 Phase Instructions` as the first major section after the orientation header.
+- **No Legacy Work Queue Payload:** Does not return `open_issues`, `recent_closed`, `suggestions`, `active_issue`, `recent_commits`, or `tdd_cycle_info`.
+- **Bootstrap Degradation:** If branch state is unavailable, the tool still returns a branch-oriented response with an explicit "No instructions defined" fallback instead of failing.
+- **Context-Loaded Side Effect:** Marks the current branch context as loaded in the in-memory cache when the writer is wired, which unblocks later branch-mutating tools behind `check_context_loaded`.
+- **Gate Bootstrap Tool:** Remains callable even when `check_context_loaded` is active, because it is the tool that reloads branch context after phase, cycle, checkout, or non-noop pull changes.
 
 ---
 
@@ -341,7 +312,7 @@ The restart mechanism uses a transparent proxy:
 1. search_documentation(query="project structure overview")
 2. search_documentation(query="coding standards", scope="coding_standards")
 3. search_documentation(query="how to implement a worker", scope="architecture")
-4. get_work_context() → understand current work queue
+4. get_work_context() → load the current branch orientation and phase script
 ```
 
 ### Find Relevant Documentation During Implementation
@@ -353,11 +324,11 @@ The restart mechanism uses a transparent proxy:
 4. Implement worker based on documentation
 ```
 
-### Check Work Queue
+### Load Branch Context And Phase Script
 
 ```
 1. get_work_context()
-2. Review open_issues and suggestions
+2. Review the orientation header and current `### 🎯 Phase Instructions`
 3. git_checkout(branch="feature/123-oauth") → switch to issue branch
 4. get_project_plan(issue_number=123) → review phase plan
 ```
@@ -392,7 +363,7 @@ scopes:
 
 ### Restart Proxy Configuration
 
-Proxy behavior configured in [mcp_server/proxy.py](../../../../mcp_server/proxy.py):
+Proxy behavior configured in [mcp_server/core/proxy.py](../../../../mcp_server/core/proxy.py):
 
 - **Startup timeout:** 10 seconds
 - **Health check interval:** 500ms
@@ -412,9 +383,9 @@ Proxy behavior configured in [mcp_server/proxy.py](../../../../mcp_server/proxy.
 
 ### get_work_context
 
-- **GitHub API Calls:** 1-2 calls (issues + labels)
-- **Execution Time:** 500-1500ms (network dependent)
-- **Caching:** Issue data cached for 60 seconds
+- **State Reads:** Current branch plus local `.phase-gate/state.json` and `.phase-gate/config/contracts.yaml`
+- **Execution Time:** Local-only path with no GitHub network dependency
+- **Side Effect:** Sets the in-memory `context_loaded` flag for the active branch when the writer is configured
 
 ### health_check
 
@@ -435,12 +406,12 @@ Proxy behavior configured in [mcp_server/proxy.py](../../../../mcp_server/proxy.
 - [README.md](README.md) — MCP Tools navigation index
 - [docs/reference/mcp/proxy_restart.md](../proxy_restart.md) — Hot-reload proxy architecture (detailed)
 - [docs/reference/mcp/mcp_vision_reference.md](../mcp_vision_reference.md) — MCP server architecture and vision
-- [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 1.12: Discovery/Admin tools)
+- [docs/development/issue268/validation.md](../../../development/issue268/validation.md) — Validation evidence for the delivered `get_work_context` contract and `context_loaded` behavior
 
 ---
 
 ## Version History
-
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.1 | 2026-05-23 | Agent | Update `get_work_context` reference to the delivered text contract, phase instructions, hand-over template, and context-loaded behavior |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 discovery/admin tools: documentation search, work context, health check, server restart |

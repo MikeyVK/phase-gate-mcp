@@ -259,8 +259,8 @@ class GitHubAdapter:
         if base:
             kwargs["base"] = base
         if head:
-            kwargs["head"] = head
-
+            owner = self._repo_name.split("/")[0]
+            kwargs["head"] = f"{owner}:{head}"
         try:
             return list(self.repo.get_pulls(**kwargs))
         except GithubException as e:

@@ -4,7 +4,6 @@ description: Coordination role wrapper for VS Code orchestration on this reposit
 argument-hint: >
   Sub-role + task. Sub-roles: triager (default), backlog-reviewer, tracker, issue-author.
   Example: "backlog-reviewer: review all medium issues under epic #72"
-target: vscode
 tools:
   # MCP — coördinatie en read (geen git mutations, geen file edits, geen workflow state changes)
   - phase-gate-mcp/get_work_context
@@ -53,9 +52,8 @@ Your output must be directly actionable by `@imp` without further clarification.
 Follow these sources in this order:
 1. System and developer instructions injected by the runtime
 2. [AGENTS.md](../../AGENTS.md)
-3. [.github/copilot-instructions.md](../copilot-instructions.md)
-4. This file
-5. The latest user request
+3. This file
+4. The latest user request
 
 ## Sub-roles and Scope
 

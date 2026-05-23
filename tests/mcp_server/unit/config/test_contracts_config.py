@@ -20,6 +20,7 @@ from mcp_server.config.schemas.contracts_config import (
     ContractsConfig,
     MergePolicy,
     PhaseContractPhase,
+    PhaseInstructionsSpec,
     WorkflowEntry,
     WorkflowPhaseEntry,
 )
@@ -33,7 +34,16 @@ def _policy(phase: str = "ready") -> MergePolicy:
     return MergePolicy(pr_allowed_phase=phase, branch_local_artifacts=[])
 
 
+_STUB_INSTRUCTIONS = PhaseInstructionsSpec(
+    sub_role="test-role",
+    phase_instructions="Test phase instructions.",
+    handover_template="Test handover template.",
+)
+
+
 def _wpe(name: str, **kwargs: object) -> WorkflowPhaseEntry:
+    if "instructions" not in kwargs:
+        kwargs["instructions"] = _STUB_INSTRUCTIONS
     return WorkflowPhaseEntry(name=name, **kwargs)  # type: ignore[arg-type]
 
 
@@ -76,7 +86,7 @@ class TestPhaseContractPhaseFrozen:
 
 class TestWorkflowPhaseEntry:
     def test_inherits_frozen(self) -> None:
-        entry = WorkflowPhaseEntry(name="research")
+        entry = _wpe("research")
         with pytest.raises((ValidationError, TypeError)):
             entry.name = "other"  # type: ignore[misc]
 
@@ -88,8 +98,8 @@ class TestWorkflowPhaseEntry:
     def test_generic_cycle_based_any_name(self) -> None:
         """Schema must not contain a fasename-check on 'implementation'.
         A phase named 'research' with cycle_based=True and subphases must be valid."""
-        entry = WorkflowPhaseEntry(
-            name="research",
+        entry = _wpe(
+            "research",
             cycle_based=True,
             subphases=["explore", "consolidate"],
             commit_type_map={"explore": "docs", "consolidate": "docs"},
@@ -215,3 +225,67 @@ class TestImportPaths:
             "ContractsConfig",
         ]:
             assert hasattr(mod, symbol), f"{symbol} missing from contracts_config"
+
+
+# ---------------------------------------------------------------------------
+# C6 (issue #268): PhaseInstructionsSpec schema
+# ---------------------------------------------------------------------------
+
+
+class TestPhaseInstructionsSpec:
+    """C6: PhaseInstructionsSpec — frozen model.
+
+    Fields: sub_role, phase_instructions, handover_template.
+    """
+
+    def test_phase_instructions_spec_parses_with_all_fields(self) -> None:
+        """Valid dict with all three fields parses into PhaseInstructionsSpec."""
+        spec = PhaseInstructionsSpec(
+            sub_role="implementer",
+            phase_instructions="1. Do TDD.\n2. Commit.",
+            handover_template="### Scope\n- ...",
+        )
+        assert spec.sub_role == "implementer"
+        assert spec.phase_instructions == "1. Do TDD.\n2. Commit."
+        assert spec.handover_template == "### Scope\n- ..."
+
+    def test_phase_instructions_spec_is_frozen(self) -> None:
+        """PhaseInstructionsSpec must be frozen: attribute assignment raises."""
+        spec = PhaseInstructionsSpec(
+            sub_role="researcher",
+            phase_instructions="read files",
+            handover_template="Co \u2192 Imp",
+        )
+        with pytest.raises((ValidationError, TypeError)):
+            spec.sub_role = "other"  # type: ignore[misc]
+
+    def test_phase_instructions_spec_requires_sub_role_and_phase_instructions(self) -> None:
+        """Only sub_role and phase_instructions are required; handover_template is optional."""
+        with pytest.raises(ValidationError):
+            PhaseInstructionsSpec(sub_role="researcher")  # type: ignore[call-arg]
+
+
+class TestWorkflowPhaseEntryInstructions:
+    """C6: WorkflowPhaseEntry.instructions optional field."""
+
+    def test_contracts_config_loads_instructions_field(self) -> None:
+        """WorkflowPhaseEntry.instructions is PhaseInstructionsSpec when present."""
+        entry = WorkflowPhaseEntry(
+            name="implementation",
+            instructions=PhaseInstructionsSpec(
+                sub_role="implementer",
+                phase_instructions="Do TDD.",
+                handover_template="### Scope",
+            ),
+        )
+        assert isinstance(entry.instructions, PhaseInstructionsSpec)
+        assert entry.instructions.sub_role == "implementer"
+
+    def test_contracts_config_phase_entry_without_instructions_raises(self) -> None:
+        """WorkflowPhaseEntry without instructions field must raise ValidationError.
+
+        instructions is a required field — every defined phase must have instructions.
+        Fail-Fast §4: Pydantic enforces at parse time, no post-load validator needed.
+        """
+        with pytest.raises(ValidationError):
+            WorkflowPhaseEntry(name="research")

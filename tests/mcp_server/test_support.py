@@ -310,6 +310,7 @@ def make_phase_state_engine(
     workflow_gate_runner: object | None = None,
     state_reconstructor: object | None = None,
     workflow_state_mutator: object | None = None,
+    context_loaded_writer: object | None = None,
 ) -> PhaseStateEngine:
     """Build a PhaseStateEngine with explicit config objects and injected seams."""
     workspace_path = Path(workspace_root)
@@ -356,6 +357,7 @@ def make_phase_state_engine(
         state_reconstructor=resolved_state_reconstructor,
         workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
         server_root=workspace_path / ".phase-gate",
+        context_loaded_writer=context_loaded_writer,  # type: ignore[arg-type]
     )
 
 

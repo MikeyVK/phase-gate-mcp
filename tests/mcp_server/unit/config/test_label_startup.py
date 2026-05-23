@@ -26,6 +26,12 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 
+_STUB_INSTR: dict[str, str] = {
+    "sub_role": "test-role",
+    "phase_instructions": "Test instructions.",
+    "handover_template": "Test handover.",
+}
+
 
 class TestConfigValidator:
     @pytest.fixture
@@ -123,8 +129,9 @@ class TestConfigValidator:
                                 "cycle_based": True,
                                 "subphases": ["red", "green"],
                                 "commit_type_map": {"red": "test", "green": "feat"},
+                                "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready"},
+                            {"name": "ready", "instructions": _STUB_INSTR},
                         ]
                     }
                 },
@@ -175,8 +182,9 @@ class TestConfigValidator:
                                 "name": "implementation",
                                 "cycle_based": True,
                                 "commit_type_map": {"red": "test"},
+                                "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready"},
+                            {"name": "ready", "instructions": _STUB_INSTR},
                         ]
                     }
                 },
@@ -212,8 +220,9 @@ class TestConfigValidator:
                                 "name": "validation",
                                 "cycle_based": True,
                                 "commit_type_map": {"red": "test"},
+                                "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready"},
+                            {"name": "ready", "instructions": _STUB_INSTR},
                         ]
                     }
                 },
@@ -257,8 +266,9 @@ class TestConfigValidator:
                                 "name": "validation",
                                 "cycle_based": True,
                                 "commit_type_map": {"red": "test"},
+                                "instructions": _STUB_INSTR,
                             },
-                            {"name": "ready"},
+                            {"name": "ready", "instructions": _STUB_INSTR},
                         ]
                     }
                 },
