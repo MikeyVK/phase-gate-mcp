@@ -1096,6 +1096,18 @@ class TestGetWorkContextC1Restructuring:
         )
 
     @pytest.mark.asyncio
+    async def test_get_work_context_renders_todo_discipline_reminder_in_header(self) -> None:
+        """A fixed TODO-discipline reminder must appear before the phase-instructions block."""
+        tool = self._make_tool(workflow_name="feature", current_phase="implementation")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        reminder = "TODO discipline: create or refresh your TODO list now"
+        assert reminder in text
+        assert "keep exactly one item in progress" in text
+        assert text.find(reminder) < text.find("### 🎯 Phase Instructions")
+    @pytest.mark.asyncio
     async def test_get_work_context_graceful_degradation_when_state_unavailable(self) -> None:
         """No error result when state is unavailable (bootstrap degradation)."""
         # state_engine.get_state raises → new code: graceful; old code path: via resolver
