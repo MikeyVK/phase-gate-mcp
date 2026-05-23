@@ -236,9 +236,34 @@
             "id": "C8",
             "name": "server.py composition root + integration test suite",
             "stage": "Stage 2"
+          },
+          {
+            "cycle_number": 9,
+            "id": "C9",
+            "name": "TODO-discipline reinforcement in live work context",
+            "stage": "Follow-up",
+            "files": [
+              "mcp_server/tools/discovery_tools.py",
+              "tests/mcp_server/unit/tools/test_discovery_tools.py"
+            ],
+            "deliverables": [
+              {
+                "id": "C9.D1",
+                "description": "Fixed TODO-discipline reminder rendered in the non-H3 orientation/header layer of GetWorkContextTool output"
+              },
+              {
+                "id": "C9.D2",
+                "description": "Discovery-tool regression test covering the TODO reminder while preserving the first-H3 phase-instructions contract"
+              },
+              {
+                "id": "C9.D3",
+                "description": "Planning explicitly defers the companion imp.agent.md wording change to documentation phase"
+              }
+            ],
+            "exit_criteria": "get_work_context renders a fixed TODO-discipline reminder in the header without moving '### \ud83c\udfaf Phase Instructions' from the first H3 position; focused discovery-tool tests pass; imp.agent.md remains untouched during implementation."
           }
         ],
-        "total": 8
+        "total": 9
       }
     }
   }

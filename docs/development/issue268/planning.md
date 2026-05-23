@@ -3,23 +3,22 @@
 # Issue #268 — MCP-Tool-First Orchestration: get_work_context + context_loaded Gate
 
 **Status:** UPDATED  
-**Version:** 1.1  
-**Last Updated:** 2026-05-19
+**Version:** 1.2  
+**Last Updated:** 2026-05-23
 
 ---
 
 ## Purpose
 
-Define the TDD cycle breakdown for the two-stage delivery of MCP-tool-first orchestration (issue #268). Eight cycles: one MVP cycle that validates the delivery hypothesis, seven Stage 2 cycles that build the full enforcement infrastructure.
+Define the TDD cycle breakdown for the two-stage delivery of MCP-tool-first orchestration (issue #268). Nine cycles total: one MVP cycle that validates the delivery hypothesis, seven Stage 2 cycles that build the full enforcement infrastructure, and one small follow-up cycle for TODO-discipline reinforcement in the live work-context path.
 
 ## Scope
 
 **In Scope:**
-Stage 1 MVP: GetWorkContextTool response extension (sub_role_hint, phase_instructions). Stage 2: ContextLoadedCache + interfaces, EnforcementAction.exempt_tools, EnforcementRunner handler, PhaseStateEngine + GitCheckoutTool + GitPullTool reset writers, contracts.yaml + PhaseInstructionsSpec, GetWorkContextTool full implementation, server.py composition root wiring + integration test suite.
+Stage 1 MVP: GetWorkContextTool response extension (sub_role_hint, phase_instructions). Stage 2: ContextLoadedCache + interfaces, EnforcementAction.exempt_tools, EnforcementRunner handler, PhaseStateEngine + GitCheckoutTool + GitPullTool reset writers, contracts.yaml + PhaseInstructionsSpec, GetWorkContextTool full implementation, server.py composition root wiring + integration test suite. Follow-up cycle C9: strengthen TODO-discipline reinforcement in the `get_work_context` header while preserving the existing output contract and leaving the static `imp.agent.md` wording update to the documentation phase.
 
 **Out of Scope:**
-create_handover tool and SubRoleSpec YAML (OQ 6 — separate issue). Full contracts.yaml instructions authorship for all workflows/phases beyond feature/implementation. close-issue.prompt.md (separate issue). AGENTS.md @co role definition update (separate issue). initialize_project guard bug fix (separate issue — MVP validation harness).
-
+create_handover tool and SubRoleSpec YAML (OQ 6 — separate issue). Full contracts.yaml instructions authorship for all workflows/phases beyond feature/implementation. close-issue.prompt.md (separate issue). AGENTS.md @co role definition update (separate issue). initialize_project guard bug fix (separate issue — MVP validation harness). TODO-discipline changes to `.github/agents/imp.agent.md` during implementation; that wording lands in documentation phase for this follow-up.
 ## Prerequisites
 
 Read these first:
@@ -30,7 +29,7 @@ Read these first:
 
 ## Summary
 
-Two-stage delivery. Stage 1 MVP (C1): restructure `GetWorkContextTool` — source orientation fields (`workflow_name`, `issue_number`, `parent_branch`) from `BranchState`, remove noise fields, rewrite `_format_context()` with `phase_instructions` as dominant first block, remove `include_closed_recent` parameter, add graceful bootstrap fallback. Map content (`_PHASE_INSTRUCTIONS_MAP` with 8 production entries) is unchanged. MVP validates the hypothesis that agents follow `phase_instructions` without reading AGENTS.md, using issue #330 (bug/head-filter fix) as the validation harness. Stage 2 (gated on MVP validation): add `ContextLoadedCache`, `IContextLoadedReader`/`Writer` protocol pair, `check_context_loaded` enforcement handler, state-reset writers in `PhaseStateEngine` and Git tools, `contracts.yaml` instructions section, and full composition-root wiring in `server.py`.
+Two-stage delivery. Stage 1 MVP (C1): restructure `GetWorkContextTool` — source orientation fields (`workflow_name`, `issue_number`, `parent_branch`) from `BranchState`, remove noise fields, rewrite `_format_context()` with `phase_instructions` as dominant first block, remove `include_closed_recent` parameter, add graceful bootstrap fallback. Map content (`_PHASE_INSTRUCTIONS_MAP` with 8 production entries) is unchanged. MVP validates the hypothesis that agents follow `phase_instructions` without reading AGENTS.md, using issue #330 (bug/head-filter fix) as the validation harness. Stage 2 (gated on MVP validation): add `ContextLoadedCache`, `IContextLoadedReader`/`Writer` protocol pair, `check_context_loaded` enforcement handler, state-reset writers in `PhaseStateEngine` and Git tools, `contracts.yaml` instructions section, and full composition-root wiring in `server.py`. Follow-up cycle C9 adds a small live reminder in the `get_work_context` header so TODO-list discipline is reinforced before the phase-specific script, while preserving the current first-H3 contract.
 
 ---
 
@@ -236,6 +235,27 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 
 ---
 
+### Cycle 9: TODO-discipline reinforcement in live work context
+
+**Goal:** Add a small, always-visible TODO-discipline reminder to the `get_work_context` orientation/header layer without changing the fieldless input shape, without adding a new H3 block before `### 🎯 Phase Instructions`, and without moving the static `imp.agent.md` wording update into the implementation phase. This cycle keeps production scope to the live work-context path and its tests; the companion `imp.agent.md` wording change is intentionally deferred to documentation phase.
+
+**Tests:**
+- `test_get_work_context_phase_instructions_is_dominant_first_block`: remains green — `### 🎯 Phase Instructions` stays the first H3 block
+- `test_get_work_context_renders_todo_discipline_reminder_in_header`: output includes a fixed TODO-discipline reminder in the non-H3 orientation/header layer
+- `test_get_work_context_returns_phase_instructions_for_feature_implementation`: remains green — the phase script still renders under the phase-instructions block
+- `test_get_work_context_graceful_degradation_when_state_unavailable`: remains green — the reminder does not break bootstrap degradation
+
+**Success Criteria:**
+- `mcp_server/tools/discovery_tools.py` adds a stable TODO-discipline reminder above the phase-instructions block without introducing a new H3 section
+- `.github/agents/imp.agent.md` is not modified in implementation phase; that wording update remains documentation work by explicit scope decision
+- `tests/mcp_server/unit/tools/test_discovery_tools.py` covers the reminder and preserves the current first-H3 contract
+- Focused discovery-tool tests are green, and file-scoped quality checks pass for changed Python files
+- No typing suppressions, global config changes, or unrelated contract rewrites are introduced
+
+**Dependencies:** C7 committed; F_268.14 research finding and Approved Strategy recorded
+
+---
+
 ## Risks & Mitigation
 
 - **Risk:** MVP validation fails — agents do not follow phase_instructions from get_work_context response
@@ -272,4 +292,6 @@ renderer change. Validates core delivery hypothesis: agents follow phase-specifi
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2 | 2026-05-23 | Agent | Add follow-up Cycle 9 for TODO-discipline reinforcement and defer imp.agent.md wording to documentation phase |
+| 1.1 | 2026-05-19 | Agent | Update plan to the finalized eight-cycle two-stage delivery |
 | 1.0 |  | Agent | Initial draft |
