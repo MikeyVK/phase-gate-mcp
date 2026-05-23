@@ -433,7 +433,7 @@ workflows:
 
   epic:
     name: epic
-    description: "Epic workflow for large initiatives (research → design → planning → coordination → documentation)"
+    description: "Epic workflow for large initiatives (research → planning → design → coordination → documentation)"
     default_execution_mode: interactive
 
 ```
