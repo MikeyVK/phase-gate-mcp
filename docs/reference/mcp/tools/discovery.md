@@ -145,7 +145,6 @@ TODO discipline: create or refresh your TODO list now; keep exactly one item in 
 
 ### 🎯 Phase Instructions
 
-Create a TODO list now and work through it step by step:
 [ ] Call get_project_plan(issue_number=N)
 [ ] Execute the current TDD cycle
 

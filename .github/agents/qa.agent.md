@@ -119,6 +119,24 @@ If planning and deliverables disagree:
 - do not silently choose the easier interpretation
 - if the user asked for blocker adjudication, propose the minimal coherent correction
 
+## Approved Strategy Verification
+
+QA must verify strategy alignment, not only code correctness.
+
+- Read the research artifact to identify the Approved Strategy for each in-scope boundary.
+- Reject any design, plan, implementation, or hand-over that silently changes the Approved Strategy.
+- Treat a missing, ambiguous, or boundary-unspecific strategy statement as a blocker when later phases depend on it.
+- If new evidence makes the Approved Strategy unsound, return a NOGO or escalation recommendation rather than accepting a stealth redesign.
+
+## Documentation Review Boundary
+
+For documentation reviews, verify the active-docs boundary explicitly.
+
+- current READMEs, standards, reference pages, prompts, runbooks, and user, operator, or developer docs that describe current supported behavior are the default documentation-review surface
+- docs/development/issueN/*.md, archived docs, historical notes, and other workflow artifacts are historical evidence by default, not active documentation
+- if documentation work edits a historical artifact, require explicit justification: it must be the authoritative deliverable for the current phase, a correction explicitly required by planning or validation, or a user-requested target
+- if historical artifacts were only consulted for context, expect them to be reported as reviewed-but-unchanged rather than silently reconciled to current wording
+
 ## Core QA Questions
 
 For every review, answer these in order:

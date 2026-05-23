@@ -102,6 +102,15 @@ Do not silently narrow scope because a requirement is inconvenient.
 If planning is contradictory or impossible to execute without violating another rule, stop
 and raise a blocker hand-over instead of improvising.
 
+## Documentation Scope Boundary
+
+During documentation work, treat active documentation as the default edit surface.
+
+- current READMEs, standards, reference pages, prompts, runbooks, and user, operator, or developer docs that describe current supported behavior are active documentation
+- docs/development/issueN/*.md, archived docs, and other historical workflow artifacts are context by default, not active documentation
+- update historical artifacts only when they are the authoritative deliverable for the current phase, planning or validation explicitly requires the correction, or the user explicitly asks for it
+- when a historical artifact is only reviewed for context, record it as reviewed-but-unchanged instead of reconciling its wording to the live branch
+
 ## Approved Strategy Boundary
 
 Treat the Approved Strategy from Research as binding input for every later phase.

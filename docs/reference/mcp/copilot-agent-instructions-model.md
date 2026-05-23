@@ -209,8 +209,6 @@ lookup table (`_PHASE_INSTRUCTIONS_MAP`) keyed on `(workflow_name, phase_name)`.
 **Example output for `(bug, implementation)` phase:**
 
 ```
-Create a TODO list now and work through it step by step:
-
 [ ] Call get_project_plan to load TDD cycle deliverables
 [ ] Identify the active TDD cycle from the planning document
 [ ] Write the failing test (RED sub-phase) ...
