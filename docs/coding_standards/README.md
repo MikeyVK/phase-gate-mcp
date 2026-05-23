@@ -10,6 +10,8 @@ This directory contains the comprehensive coding standards for the project. All 
 
 🏛️ **[ARCHITECTURE_PRINCIPLES.md](ARCHITECTURE_PRINCIPLES.md)** — Binding architectural principles (SOLID, Config-First, Fail-Fast, CQS, ISP, Law of Demeter). This is the `primary` reference. Code that violates these principles is REJECTED, regardless of whether tooling gates pass.
 
+📝 **Documentation standard:** [DOCUMENTATION_STANDARD.md](DOCUMENTATION_STANDARD.md) — Shared rules for drafting, structuring, and presenting project documentation. Read this before drafting or scaffolding research, design, planning, or other governed documents.
+
 ---
 
 📋 **Pre-merge checklist:** [QUALITY_GATES.md](QUALITY_GATES.md) — 8 mandatory gates (incl. Gate 7 architectural review)
@@ -17,7 +19,6 @@ This directory contains the comprehensive coding standards for the project. All 
 ✨ **Formatting and style:** [CODE_STYLE.md](CODE_STYLE.md) — Code formatting (PEP 8 enforced by tooling)
 
 🧩 **Type checking:** [TYPE_CHECKING_PLAYBOOK.md](TYPE_CHECKING_PLAYBOOK.md) — Standardized approach for typing issues
-
 ## Documentation Structure
 
 ### 1. [TDD_WORKFLOW.md](TDD_WORKFLOW.md)
