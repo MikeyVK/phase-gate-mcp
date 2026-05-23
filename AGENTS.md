@@ -89,7 +89,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
 | Search docs | `search_documentation(query, scope)` | `grep_search` on docs/ |
-| Get work context | `get_work_context(include_closed_recent)` | Manual file reading |
+| Get work context | `get_work_context()` | Manual file reading |
 | Health check | `health_check()` | N/A |
 | Restart server | `restart_server(reason)` | Process kill |
 
@@ -148,6 +148,20 @@ This document is a **binding contract**. Code that violates these principles is 
 6. **Human-in-the-Loop:** PR merge ALWAYS requires human approval. `force_phase_transition` requires approval + reason.
 7. **Quality Gates:** Run before phase transitions and before PR creation. Linting 10.00/10 + Type checking Pass.
 8. **Type-Checking Consistency:** Resolve typing issues using [docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md). No global disables; targeted ignores only as last resort.
+
+---
+
+## 🧭 Strategy Approval Gate (MANDATORY)
+
+Compatibility, migration, and breakage strategy is decided at the end of Research, not later.
+
+- Research must identify the affected boundaries, consumers, strategy options, and the cost / risk / impact trade-offs for each relevant boundary.
+- Research must not close until the human decision is captured as an Approved Strategy.
+- The Approved Strategy must be explicit per affected boundary, not left as a vague issue-wide assumption.
+- Design may not start until an Approved Strategy exists for the boundaries it will shape.
+- Planning, implementation, and QA must treat the Approved Strategy as binding input.
+- No later phase may silently switch between preserve compatibility, temporary bridge, or clean break.
+- If later evidence makes the Approved Strategy unsound, stop and reopen the decision explicitly instead of changing strategy by stealth.
 
 ---
 

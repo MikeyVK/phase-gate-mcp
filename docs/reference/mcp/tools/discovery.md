@@ -324,7 +324,7 @@ The restart mechanism uses a transparent proxy:
 4. Implement worker based on documentation
 ```
 
-### Check Work Queue
+### Load Branch Context And Phase Script
 
 ```
 1. get_work_context()

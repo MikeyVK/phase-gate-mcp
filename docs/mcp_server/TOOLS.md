@@ -145,7 +145,7 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `search_documentation` | Semantic/fuzzy docs search | `query`, `scope` |
-| `get_work_context` | Aggregate current work context | `include_closed_recent` |
+| `get_work_context` | Aggregate current work context | `none` |
 | `health_check` | Report server health | none |
 | `restart_server` | Hot-reload the MCP server | `reason` |
 
