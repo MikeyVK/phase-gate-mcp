@@ -139,6 +139,7 @@ None. `GetWorkContextInput` is fieldless.
 Branch: `feature/123-oauth` | Workflow: feature | Issue: #123
 Phase: 🧪 implementation | Role: implementer
 Parent: main
+TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step.
 
 ---
 

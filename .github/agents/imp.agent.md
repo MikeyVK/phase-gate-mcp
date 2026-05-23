@@ -7,6 +7,8 @@ argument-hint: >
 tools:
   # MCP — alle mutaties (file edits, git, tests, quality gates, scaffolding) — hoogste prioriteit
   - "phase-gate-mcp/*"
+  # Agents — sub-agent delegatie (explore sub-agent, qa gate, etc.)
+  - agent
   # VS Code built-in — lezen en zoeken (geen mutaties; edits lopen altijd via phase-gate-mcp)
   - read/readFile
   - read/problems
@@ -74,6 +76,8 @@ Do not rely on stale memory.
 
 1. Call `get_work_context` — this is your first and most authoritative action.
    `phase_instructions` (when present) is your operational script for this session.
+   Create or refresh your TODO list immediately, keep exactly one item in progress,
+   and update it after each material step.
    Follow it step by step. Only read additional documents when `phase_instructions`
    directs you to, or when `phase_instructions` is absent.
 2. Read [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../docs/coding_standards/ARCHITECTURE_PRINCIPLES.md) — always binding, regardless of phase.
@@ -97,6 +101,15 @@ Do not silently narrow scope because a requirement is inconvenient.
 
 If planning is contradictory or impossible to execute without violating another rule, stop
 and raise a blocker hand-over instead of improvising.
+
+## Approved Strategy Boundary
+
+Treat the Approved Strategy from Research as binding input for every later phase.
+
+- Do not begin design work until the research artifact records an Approved Strategy for each affected boundary in scope.
+- In design, answer only the how-question within that strategy. Do not reopen preserve vs bridge vs clean break by stealth.
+- In planning, implementation, and documentation, operationalize the Approved Strategy. Do not choose a new strategy because it seems locally easier.
+- If the Approved Strategy is missing, ambiguous, or contradicted by new evidence, stop and raise a blocker hand-over for explicit human re-decision.
 
 ## Architecture Contract
 

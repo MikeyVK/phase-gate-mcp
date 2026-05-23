@@ -142,13 +142,15 @@ Find documentation and understand current work context.
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **SearchDocumentationTool** | Search docs semantically | `query`, `scope` (optional: all/architecture/coding_standards/development/reference/implementation) | Ranked results with file path, line number, snippet |
-| **GetWorkContextTool** | Get current work state | `none` | Orientation header, phase instructions, optional hand-over template |
+| **GetWorkContextTool** | Get current work state | `none` | Orientation header with TODO reminder, phase instructions, optional hand-over template |
 
 **Usage Example:**
 ```
 1. get_work_context() → Returns text like:
    Branch: `feature/x` | Workflow: feature | Issue: #4
    Phase: 🧪 implementation | Role: implementer
+   TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step.
+   ---
    ### 🎯 Phase Instructions
 2. search_documentation query="how to implement worker" → Returns: Ranked docs with examples
 ```
