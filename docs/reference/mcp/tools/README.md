@@ -3,8 +3,8 @@
 # MCP Tools Reference — Navigation Index
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-03-01  
+**Version:** 2.2  
+**Last Updated:** 2026-05-23  
 
 **Source:** [mcp_server/server.py](../../../../mcp_server/server.py)  
 **Tests:** [tests/mcp_server/](../../../../tests/mcp_server/)  
@@ -171,7 +171,7 @@ Documentation search, work context aggregation, and server administration.
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `search_documentation` | Semantic/fuzzy search across docs/ | `query`, `scope` |
-| `get_work_context` | Aggregate context from GitHub + branch + phase | `include_closed_recent` |
+| `get_work_context` | Aggregate branch + workflow context | None |
 | `health_check` | Server health check | None |
 | `restart_server` | Hot-reload server via proxy mechanism | `reason` |
 
@@ -198,6 +198,8 @@ Documentation search, work context aggregation, and server administration.
 1. create_branch(name="feature/123-my-feature", base_branch="main")
 2. git_checkout(branch="feature/123-my-feature")
 3. initialize_project(issue_number=123, issue_title="My Feature", workflow_name="feature")
+4. get_work_context()
+5. get_project_plan(issue_number=123)
 ```
 
 ### Implementing with TDD Cycle
@@ -271,13 +273,13 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 - [project.md](project.md) — Workflow types and phase management
 - [docs/reference/mcp/proxy_restart.md](../proxy_restart.md) — Hot-reload mechanism for `restart_server`
 - [docs/reference/mcp/mcp_vision_reference.md](../mcp_vision_reference.md) — MCP server architecture and vision
-- [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research
+- [docs/development/issue268/validation.md](../../../development/issue268/validation.md) — Validation evidence for the delivered `get_work_context` contract and context-loaded gate
 
 ---
 
 ## Version History
-
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 2.0 | 2026-02-08 | Agent | Complete navigation index for 46 tools across 8 categories |
+| 2.2 | 2026-05-23 | Agent | Update discovery/index guidance for the delivered `get_work_context` contract and startup flow |
 | 2.1 | 2026-04-10 | Agent | Fix tool counts (50 total, Project/Phase 8, GitHub-Dependent 16); fix stale params and merge_method |
+| 2.0 | 2026-02-08 | Agent | Complete navigation index for 46 tools across 8 categories |
