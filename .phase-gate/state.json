@@ -2,9 +2,9 @@
   "branch": "feature/268-mcp-tool-first-orchestration-get-work-context-create-handover",
   "issue_number": 268,
   "workflow_name": "feature",
-  "current_phase": "validation",
+  "current_phase": "ready",
   "current_cycle": null,
-  "last_cycle": 8,
+  "last_cycle": 9,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -80,6 +80,23 @@
       "name": "server.py composition root + integration test suite",
       "forced": false,
       "entered": "2026-05-21T08:18:57.444663+00:00"
+    },
+    {
+      "cycle_number": 9,
+      "name": "TODO-discipline reinforcement in live work context",
+      "entered": "2026-05-23T12:03:52.877221+00:00",
+      "forced": true,
+      "skip_reason": "Issue 268 re-entered implementation after historical cycles C1-C8 were already completed and validated; the newly planned follow-up work is the appended Cycle 9 for TODO-discipline reinforcement only.",
+      "human_approval": "User approved in chat on 2026-05-23 to capture a new finding, plan one small cycle, then implement and validate that cycle on this same branch.",
+      "skipped_cycles": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
     }
   ],
   "required_phases": [
@@ -92,7 +109,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "QA-bevindingen C4+C6 zijn verwerkt in design.md en planning.md (doc-correcties zijn klaar en gecommit); terug naar implementation om code-correcties C4 en C7 te vervolgen.",
+  "skip_reason": "User requested a disciplined mini-follow-up path for a small todo-discipline gap: capture the finding in research and move directly into one small planning cycle without a separate design artifact.",
   "issue_title": "MCP-tool-first orchestration: get_work_context + create_handover",
   "parent_branch": "main",
   "created_at": "2026-05-12T14:30:19.800556+00:00",
@@ -205,6 +222,78 @@
       "from_phase": "implementation",
       "to_phase": "validation",
       "timestamp": "2026-05-21T15:38:46.644780+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-21T16:58:30.904915+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-22T21:34:58.418552+00:00",
+      "human_approval": "User approved in chat on 2026-05-22",
+      "forced": true,
+      "skip_reason": "Validation phase was not executed according to the finalized phase instructions; reverting from documentation to validation to run the required branch-wide validation work now."
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-23T09:53:18.702345+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "research",
+      "timestamp": "2026-05-23T11:52:25.793802+00:00",
+      "human_approval": "User approved in chat on 2026-05-23: 'Leg dus een finding vast in research phase, daarna 1 kleine cycle plannen in planning phase. Daarna die cycle implementeren in implementation phase en daarna valideren in validation phase. Dan in doc phase de aanpassing van imp.agent.md laten landen.'",
+      "forced": true,
+      "skip_reason": "User requested a disciplined follow-up path for a newly identified todo-list discipline gap: capture finding in research, add one small planning cycle, implement, validate, then document on the same branch."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-05-23T11:55:31.668590+00:00",
+      "human_approval": "User approved in chat on 2026-05-23: 'Leg dus een finding vast in research phase, daarna 1 kleine cycle plannen in planning phase. Daarna die cycle implementeren in implementation phase en daarna valideren in validation phase. Dan in doc phase de aanpassing van imp.agent.md laten landen.'",
+      "forced": true,
+      "skip_reason": "User requested a disciplined mini-follow-up path for a small todo-discipline gap: capture the finding in research and move directly into one small planning cycle without a separate design artifact."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-05-23T12:02:38.271521+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-23T12:19:40.456181+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-23T12:23:56.976090+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-23T12:46:26.366336+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null

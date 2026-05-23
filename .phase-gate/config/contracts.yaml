@@ -707,6 +707,11 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
+            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+                for this branch, commit it before PR preparation.
+                Do not leave the last branch audit trail as dirty local state
+                just because submit_pr may later neutralize branch-local artifacts.
+
             [ ] Build the definitive deferred-work transfer from authoritative issueN artifacts only.
                 For each item capture:
                 - concise title
@@ -1489,6 +1494,11 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
+            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+                for this branch, commit it before PR preparation.
+                Do not leave the last branch audit trail as dirty local state
+                just because submit_pr may later neutralize branch-local artifacts.
+
             [ ] Build the definitive deferred-work transfer from authoritative issueN artifacts only.
                 For each item capture:
                 - concise title
@@ -1836,6 +1846,11 @@ workflows:
 
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
+
+            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+                for this branch, commit it before PR preparation.
+                Do not leave the last branch audit trail as dirty local state
+                just because submit_pr may later neutralize branch-local artifacts.
 
             [ ] Build the definitive deferred-work transfer from authoritative issueN artifacts only.
                 For each item capture:
@@ -2474,6 +2489,11 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
+            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+                for this branch, commit it before PR preparation.
+                Do not leave the last branch audit trail as dirty local state
+                just because submit_pr may later neutralize branch-local artifacts.
+
             [ ] Build the definitive deferred-work transfer from authoritative issueN artifacts only.
                 For each item capture:
                 - concise title
@@ -2728,6 +2748,11 @@ workflows:
 
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
+
+            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+                for this branch, commit it before PR preparation.
+                Do not leave the last branch audit trail as dirty local state
+                just because submit_pr may later neutralize branch-local artifacts.
 
             [ ] Build the definitive deferred-work transfer from authoritative issueN artifacts only.
                 For each item capture:
@@ -3294,6 +3319,11 @@ workflows:
 
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
+
+            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+                for this branch, commit it before PR preparation.
+                Do not leave the last branch audit trail as dirty local state
+                just because submit_pr may later neutralize branch-local artifacts.
 
             [ ] Build the definitive deferred-work transfer from authoritative epic artifacts only.
                 For each item capture:
