@@ -3,8 +3,9 @@
 # MCP-Tool-First Orchestration: get_work_context Extension and context_loaded Gate
 
 **Status:** FINAL DRAFT
-**Version:** 2.0
-**Last Updated:** 2026-05-12
+**Version:** 2.1
+**Last Updated:** 2026-05-23
+
 
 ---
 
@@ -500,6 +501,43 @@ demand via `get_issue`, `get_project_plan`, and git tools. The `phase_instructio
 should instruct the agent to call those tools when appropriate; `get_work_context` itself
 should not duplicate their output.
 
+### F_268.14 — TODO-list discipline is phase-local today and lacks an always-on reinforcement layer
+
+The current issue-268 delivery makes TODO-list usage visible inside per-phase `phase_instructions`, but it does not yet enforce the same discipline through the two global channels that shape `@imp` behavior before or alongside those instructions:
+
+1. **Static implementation-role instructions** in `.github/agents/imp.agent.md`
+2. **The fixed orientation header** rendered by `GetWorkContextTool._format_context()`
+
+Repo evidence is consistent:
+
+| Surface | Current behavior | Gap |
+|---|---|---|
+| `.phase-gate/config/contracts.yaml` | Every governed phase already starts with `Create a TODO list and work through it step by step` or equivalent wording | Strong phase-local discipline exists once the agent is already following the phase script |
+| `.github/agents/imp.agent.md` | Startup protocol requires `get_work_context`, architecture review, plan lookup, and worktree inspection | No always-on instruction says TODO-list creation or refresh is mandatory before execution, that only one item may be in progress, or that the list must be updated after each material step |
+| `mcp_server/tools/discovery_tools.py` | `get_work_context` renders a compact orientation header, then the first H3 block `### 🎯 Phase Instructions` | No fixed header reminder reinforces TODO-list discipline before the phase script begins |
+| `tests/mcp_server/unit/tools/test_discovery_tools.py` | The current contract requires `### 🎯 Phase Instructions` to remain the first H3 block | Any reminder added as a new H3 section would create unnecessary contract churn and break current expectations |
+
+This makes the current gap behavioral rather than structural. The missing piece is not another phase instruction. The missing piece is a persistent reinforcement layer that survives across phases and is visible even before the phase-specific checklist is read in detail.
+
+**Blast radius for the follow-up:**
+
+| Surface | Expected change scope |
+|---|---|
+| `.github/agents/imp.agent.md` | Small wording-only tightening of always-on TODO-list discipline |
+| `mcp_server/tools/discovery_tools.py` | Small formatting change in the orientation/header area of `get_work_context` |
+| `tests/mcp_server/unit/tools/test_discovery_tools.py` | Narrow assertion updates or one new regression test for the fixed reminder line |
+| Documentation follow-up | Update reference docs after validation so the documented work-context contract matches the new reminder |
+
+**Viable policy options for later phases:**
+
+| Option | Description | Trade-off |
+|---|---|---|
+| A | Strengthen only `.github/agents/imp.agent.md` | Improves static discipline, but `get_work_context` still misses a live reminder at execution time |
+| B | Strengthen only `get_work_context` header | Improves live orientation, but leaves the always-on role contract underspecified |
+| C | Reinforce both channels while preserving the current output structure | Smallest complete correction; adds discipline without expanding the work-context payload or phase schema |
+
+Research recommendation: later phases should treat **Option C** as the preferred direction, but preserve the current `get_work_context` shape where `### 🎯 Phase Instructions` remains the first H3 block and the TODO reminder lives in the non-H3 header layer.
+
 ## Blast Radius Analysis
 
 ### Production code
@@ -706,16 +744,24 @@ All remaining open questions are design or planning questions, not research ques
    harness)*
 
 
-## References
+## Approved Strategy
 
+| Boundary / consumer scope | Selected strategy | Rationale | Constraints for later phases |
+|---|---|---|---|
+| `@imp` startup discipline plus `get_work_context` orientation output | Preserve compatibility for the current work-context structure while adding a small, always-on TODO-discipline reinforcement | The gap is behavioral, not architectural. Existing phase instructions already carry TODO discipline, and current tests already protect `### 🎯 Phase Instructions` as the first H3 block. The safest correction strengthens behavior without reopening the response contract or widening scope. | Later phases may tighten `.github/agents/imp.agent.md` and add a non-H3 TODO reminder in the `get_work_context` header. They must not add a new top-level H3 block before `### 🎯 Phase Instructions`, must not reintroduce old work-queue payload fields, and must keep the change limited to the small blast radius identified in F_268.14. |
+
+## References
 - Issue #268 (this issue)
 - Issue #263 `feature/263-vscode-implementation-orchestration` (cherry-pick source; not on main)
 - Issue #333 results: `AGENTS.md` §1.2, `.github/prompts/open-issue.prompt.md`
 - Issue #258 (closed): content_contract gate superseded by #268
 - Issue #290 (parent epic): Workflow Intelligence / Agent UX
+- `.github/agents/imp.agent.md` — current static implementation-role instructions
 - `mcp_server/tools/base.py` — `BaseTool`, `BranchMutatingTool`
+- `mcp_server/tools/discovery_tools.py` — current work-context header and phase-instructions renderer
 - `mcp_server/managers/enforcement_runner.py` — `KNOWN_TOOL_CATEGORIES`
 - `.phase-gate/config/enforcement.yaml` — existing gate registrations
 - `.phase-gate/config/contracts.yaml` — existing workflow+phase gate structure
 - `.phase-gate/config/workphases.yaml` — workflow-agnostic phase definitions
+- `tests/mcp_server/unit/tools/test_discovery_tools.py` — current output-contract guardrails
 - `tests/mcp_server/integration/test_pr_status_lockdown.py` — blast radius reference
