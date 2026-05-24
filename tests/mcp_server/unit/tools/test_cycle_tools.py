@@ -7,19 +7,21 @@
 @dependencies: pytest, mcp.types, mcp_server.tools.cycle_tools, tests.mcp_server.test_support
 """
 
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from shutil import copytree
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.server import MCPServer
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
+    TransitionCycleInput,
     TransitionCycleTool,
 )
 from mcp_server.tools.phase_tools import TRANSITION_ADVISORY_NOTE
@@ -55,6 +57,16 @@ class FakeForceCycleStateEngine:
             "gate_runner": gate_runner,
         }
         return self._result
+
+
+def _make_transition_advisory_execute(
+    text: str,
+) -> Callable[[object, object, NoteContext], Awaitable[ToolResult]]:
+    async def execute(_self: object, _params: object, context: NoteContext) -> ToolResult:
+        context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
+        return ToolResult.text(text)
+
+    return execute
 
 
 class TestCycleTools:
@@ -140,9 +152,7 @@ class TestCycleTools:
             patch("mcp_server.server.Settings") as mock_settings_cls,
             patch(
                 "mcp_server.tools.cycle_tools.TransitionCycleTool.execute",
-                new=AsyncMock(
-                    return_value=ToolResult.text("✅ Transitioned to TDD Cycle 1/2: One")
-                ),
+                new=_make_transition_advisory_execute("✅ Transitioned to TDD Cycle 1/2: One"),
             ),
         ):
             mock_settings_cls.from_env.return_value.server.name = "test-server"
@@ -231,7 +241,7 @@ class TestCycleTools:
                 patch.object(
                     ForceCycleTransitionTool,
                     "execute",
-                    new=AsyncMock(return_value=ToolResult.text("✅ Forced cycle transition")),
+                    new=_make_transition_advisory_execute("✅ Forced cycle transition"),
                 ),
             ):
                 req = CallToolRequest(
@@ -393,7 +403,7 @@ class TestCycleTools:
                 patch.object(
                     ForceCycleTransitionTool,
                     "execute",
-                    new=AsyncMock(return_value=ToolResult.text("✅ Forced cycle transition")),
+                    new=_make_transition_advisory_execute("✅ Forced cycle transition"),
                 ),
             ):
 
@@ -417,10 +427,135 @@ class TestCycleTools:
                 response = await handler(req)
 
         text = response.root.content[0].text
+        assert len(response.root.content) == 1
         assert "cycle hook failed" in text
         assert "⚠️" not in text
         assert "✅" not in text
         assert TRANSITION_ADVISORY_NOTE not in text
+
+
+class FakeTransitionCycleStateEngine:
+    """Minimal transition-cycle state engine fake for wrapper tests."""
+
+    def __init__(self, result: dict[str, object]) -> None:
+        self._result = result
+        self.last_call: dict[str, object] | None = None
+
+    def transition_cycle(
+        self,
+        *,
+        branch: str,
+        to_cycle: int,
+        gate_runner: object | None = None,
+    ) -> dict[str, object]:
+        self.last_call = {
+            "branch": branch,
+            "to_cycle": to_cycle,
+            "gate_runner": gate_runner,
+        }
+        return self._result
+
+
+class TestTransitionCycleToolAdvisoryNote:
+    """Success-path advisory note tests for standard cycle transitions."""
+
+    @pytest.mark.asyncio
+    async def test_transition_cycle_tool_emits_advisory_info_note_after_success(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Successful cycle transitions should emit the standard advisory note."""
+        gate_runner = object()
+        git_manager = MagicMock()
+        git_manager.get_current_branch.return_value = "feature/257-cycle-orchestration"
+        state_engine = FakeTransitionCycleStateEngine(
+            {
+                "success": True,
+                "to_cycle": 3,
+                "total_cycles": 4,
+                "cycle_name": "Transition advisory note",
+            }
+        )
+        tool = TransitionCycleTool(
+            workspace_root=tmp_path,
+            project_manager=MagicMock(),
+            state_engine=state_engine,
+            git_manager=git_manager,
+            gate_runner=gate_runner,
+            server_root=tmp_path,
+        )
+        context = NoteContext()
+
+        result = await tool.execute(
+            TransitionCycleInput(to_cycle=3, issue_number=257),
+            context,
+        )
+
+        assert not result.is_error
+        assert state_engine.last_call is not None
+        assert state_engine.last_call["gate_runner"] is gate_runner
+        notes = context.of_type(InfoNote)
+        assert len(notes) == 1
+        assert notes[0].message == (
+            "Call get_work_context to load the current phase context for this branch before "
+            "proceeding."
+        )
+
+        rendered = context.render_to_response(result)
+        assert len(rendered.content) == 2
+        assert rendered.content[0]["text"] == result.content[0]["text"]
+        assert rendered.content[1]["text"] == notes[0].message
+
+
+class TestForceCycleToolAdvisoryNote:
+    """Success-path advisory note tests for forced cycle transitions."""
+
+    @pytest.mark.asyncio
+    async def test_force_cycle_tool_emits_advisory_info_note_after_success(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Forced cycle transitions should emit the standard advisory note."""
+        git_manager = MagicMock()
+        git_manager.get_current_branch.return_value = "feature/257-cycle-orchestration"
+        state_engine = FakeForceCycleStateEngine(
+            {
+                "success": True,
+                "from_cycle": 2,
+                "to_cycle": 3,
+                "total_cycles": 4,
+                "cycle_name": "Transition advisory note",
+                "skipped_gates": [],
+                "passing_gates": [],
+            }
+        )
+        tool = ForceCycleTransitionTool(
+            workspace_root=tmp_path,
+            project_manager=MagicMock(),
+            state_engine=state_engine,
+            git_manager=git_manager,
+            gate_runner=object(),
+            server_root=tmp_path,
+        )
+        context = NoteContext()
+
+        result = await tool.execute(
+            ForceCycleTransitionInput(
+                to_cycle=3,
+                skip_reason="audited skip",
+                human_approval="Verifier approved",
+                issue_number=257,
+            ),
+            context,
+        )
+
+        assert not result.is_error
+        notes = context.of_type(InfoNote)
+        assert len(notes) == 1
+        assert notes[0].message == (
+            "Call get_work_context to load the current phase context for this branch before "
+            "proceeding."
+        )
 
 
 class TestForceCycleToolFormatting:

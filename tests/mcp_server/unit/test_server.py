@@ -10,7 +10,7 @@ import logging
 import os
 import shutil
 import subprocess
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
@@ -20,7 +20,7 @@ import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.server import MCPServer
 from mcp_server.tools.base import BaseTool
@@ -116,6 +116,16 @@ def _make_submit_pr_request() -> CallToolRequest:
             },
         )
     )
+
+
+def _make_transition_advisory_execute(
+    text: str,
+) -> Callable[[object, object, NoteContext], Awaitable[ToolResult]]:
+    async def execute(_self: object, _params: object, context: NoteContext) -> ToolResult:
+        context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
+        return ToolResult.text(text)
+
+    return execute
 
 
 class TestServerToolRegistration:
@@ -390,7 +400,7 @@ class TestServerToolRegistration:
                 patch.object(
                     TransitionPhaseTool,
                     "execute",
-                    new=AsyncMock(return_value=ToolResult.text("Successfully transitioned")),
+                    new=_make_transition_advisory_execute("Successfully transitioned"),
                 ),
             ):
                 req = CallToolRequest(
@@ -440,7 +450,7 @@ class TestServerToolRegistration:
                 patch.object(
                     ForcePhaseTransitionTool,
                     "execute",
-                    new=AsyncMock(return_value=ToolResult.text("✅ Forced phase transition")),
+                    new=_make_transition_advisory_execute("✅ Forced phase transition"),
                 ),
             ):
                 req = CallToolRequest(
@@ -556,7 +566,7 @@ class TestServerToolRegistration:
                 patch.object(
                     ForcePhaseTransitionTool,
                     "execute",
-                    new=AsyncMock(return_value=ToolResult.text("✅ Forced phase transition")),
+                    new=_make_transition_advisory_execute("✅ Forced phase transition"),
                 ),
             ):
 
@@ -580,6 +590,7 @@ class TestServerToolRegistration:
                 response = await handler(req)
 
         text = response.root.content[0].text
+        assert len(response.root.content) == 1
         assert "post hook failed" in text
         assert "⚠️" not in text
         assert "✅" not in text
