@@ -2,9 +2,9 @@
   "branch": "feature/341-co-as-end-to-end-epic-workflow-owner",
   "issue_number": 341,
   "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
+  "current_phase": "ready",
+  "current_cycle": null,
+  "last_cycle": 1,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -52,7 +52,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested a targeted formatting fix to get_work_context to be implemented and committed from implementation phase.",
+  "skip_reason": "Return branch to ready after a targeted implementation-only formatting fix that was narrowly validated and already previously passed validation and documentation work on this branch.",
   "issue_title": "Research: @co as end-to-end epic workflow owner",
   "parent_branch": "main",
   "created_at": "2026-05-23T14:07:02.289391+00:00",
@@ -184,6 +184,14 @@
       "human_approval": "User requested forced transition to implementation phase in chat on 2026-05-24",
       "forced": true,
       "skip_reason": "User requested a targeted formatting fix to get_work_context to be implemented and committed from implementation phase."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-24T13:32:33.928472+00:00",
+      "human_approval": "User requested moving back to ready phase in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "Return branch to ready after a targeted implementation-only formatting fix that was narrowly validated and already previously passed validation and documentation work on this branch."
     }
   ],
   "reconstructed": false,
