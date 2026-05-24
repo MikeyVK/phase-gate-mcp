@@ -271,5 +271,6 @@ Research consequence: later phases must keep `git_delete_branch` remote deletion
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2 | 2026-05-24 | Agent | Update Approved Strategy for existing callers to reflect design-phase supersession |
 | 1.1 | 2026-05-24 | Agent | Expanded research scope with approved lifecycle-exit, ready-phase, and branch-state discipline findings; recorded additional approved strategy boundaries |
 | 1.0 | 2026-05-24 | Agent | Initial draft |
