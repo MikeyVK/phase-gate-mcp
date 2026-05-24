@@ -101,7 +101,7 @@
           {
             "cycle_number": 3,
             "title": "ready-phase PR body contract",
-            "exit_criteria": "All six ready blocks carry unified deferred-work-in-body instruction; six ready blocks include explicit Closes #N decision step; six ready blocks include closure-readiness review step; six ready blocks treat handover template as completeness-check gate; PRContext optional fields do not break existing callers; template renders deferred-work section conditionally; all existing and new tests green; ruff+mypy clean",
+            "exit_criteria": "All six ready blocks carry unified deferred-work-in-body instruction; six ready blocks include explicit Closes #N decision step; six ready blocks include closure-readiness review step; six ready blocks treat handover template as completeness-check gate; six ready blocks include original-issue-body honesty check (update issue body before PR creation when scope changed); PRContext optional fields do not break existing callers; template renders deferred-work section conditionally; all existing and new tests green; ruff+mypy clean",
             "deliverables": [
               {
                 "id": "D3.1",
@@ -137,6 +137,11 @@
                 "description": "Six ready blocks: explicit Closes #N decision step, closure-readiness review for all in-scope issues, handover-template-as-completeness-check obligation",
                 "file": ".phase-gate/config/contracts.yaml",
                 "id": "D3.7"
+              },
+              {
+                "description": "Six ready blocks updated: original issue body honesty check \u2014 before PR creation, verify that the original issue body still accurately describes branch intent and in-scope breadth; update the issue body when research widened or changed the scope",
+                "file": ".phase-gate/config/contracts.yaml",
+                "id": "D3.8"
               }
             ]
           },

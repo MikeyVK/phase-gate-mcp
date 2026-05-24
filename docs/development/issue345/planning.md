@@ -3,7 +3,7 @@
 # Planning: git_delete_branch remote deletion and lifecycle closeout alignment
 
 **Status:** DRAFT
-**Version:** 1.1
+**Version:** 1.2
 **Last Updated:** 2026-05-24
 
 ---
@@ -167,6 +167,7 @@ Close the runtime gap: update six `contracts.yaml` ready blocks to (1) unify def
 | D3.5 | Template tests extended to cover new deferred-work section rendering | `tests/mcp_server/scaffolding/test_task37_tracking_templates.py` |
 | D3.6 | PRContext schema test extended to cover new optional fields | `tests/mcp_server/unit/schemas/test_tracking_artifact_v2_parity.py` |
 | D3.7 | Six ready blocks updated: explicit `Closes #N` decision step (verify PR body contains correct close signals for all in-scope issues), closure-readiness review step, and handover-template-as-completeness-check obligation | `.phase-gate/config/contracts.yaml` (feature, bug, refactor, docs, hotfix, epic) |
+| D3.8 | Six ready blocks updated: original issue body honesty check — before PR creation, verify that the original issue body still accurately describes branch intent and in-scope breadth; update the issue body when research widened or changed the scope | `.phase-gate/config/contracts.yaml` (feature, bug, refactor, docs, hotfix, epic) |
 
 ### Exit Criteria
 
@@ -174,6 +175,7 @@ Close the runtime gap: update six `contracts.yaml` ready blocks to (1) unify def
 - All six `contracts.yaml` ready blocks include an explicit `Closes #N` decision step requiring the implementer to verify that the PR body contains correct close signals for every in-scope issue before the PR is submitted.
 - All six `contracts.yaml` ready blocks include a closure-readiness review step (in-scope issues are in the expected open state at the time of merge; no orphan open issues).
 - All six `contracts.yaml` ready blocks treat the handover template as a completeness check: the handover must be produced and checked as the final gate before PR submission.
+- All six `contracts.yaml` ready blocks include an original-issue-body honesty check: before PR creation the implementer must verify whether the original issue body still accurately describes the branch intent and in-scope breadth; if research widened or changed the intended scope, the issue body must be updated before the PR is created.
 - `PRContext` accepts `deferred_work` and `tracking_state` as optional string fields; existing callers that omit them still pass validation.
 - Template renders a `## Deferred Work` section when `deferred_work` is provided; the section is absent when the field is `None`.
 - All existing template and schema tests green; new tests green.
@@ -239,3 +241,4 @@ Align active documentation and agent instruction surfaces with the C1 contract c
 |---------|------|--------|---------|
 | 1.0 | 2026-05-24 | Agent | Initial planning draft |
 | 1.1 | 2026-05-24 | Agent | QA fixes: D1.11 added, C1 exit criteria tightened (mode=both absent), C2 exit criteria @co-owned + human-approval signal, C3 expanded with Closes #N / closure-readiness / handover-template gate, adapter rename risk reformulated |
+| 1.2 | 2026-05-24 | Agent | QA fix: D3.8 added (issue-body honesty check before PR creation) |
