@@ -4,7 +4,7 @@ import json
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -14,7 +14,7 @@ from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import CommitNote, NoteContext
 from mcp_server.managers import phase_state_engine
-from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas import GitConfig
@@ -588,7 +588,10 @@ class GitDeleteBranchInput(BaseModel):
 
     branch: str = Field(..., description="Branch name to delete")
     force: bool = Field(default=False, description="Force delete unmerged branch")
-
+    mode: Literal["local", "remote", "both"] = Field(
+        default="both",
+        description="Deletion scope: 'local' (local only), 'remote' (remote only), 'both' (default)",
+    )
 
 class GitDeleteBranchTool(BranchMutatingTool):
     """Tool to delete a branch."""
@@ -617,8 +620,16 @@ class GitDeleteBranchTool(BranchMutatingTool):
         return _input_schema(self.args_model)
 
     async def execute(self, params: GitDeleteBranchInput, context: NoteContext) -> ToolResult:
-        self.manager.delete_branch(params.branch, context, force=params.force)
-        return ToolResult.text(f"Deleted branch: {params.branch}")
+        result: BranchDeleteResult = self.manager.delete_branch(
+            params.branch, context, force=params.force, mode=params.mode
+        )
+        parts: list[str] = []
+        if result.local_status != "skipped":
+            parts.append(f"local: {result.local_status}")
+        if result.remote_status != "skipped":
+            parts.append(f"remote: {result.remote_status}")
+        suffix = f" ({', '.join(parts)})" if parts else ""
+        return ToolResult.text(f"Deleted branch: {params.branch}{suffix}")
 
 
 class GitStashInput(BaseModel):
