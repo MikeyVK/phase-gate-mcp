@@ -7,6 +7,15 @@ argument-hint: >
   epic-documenter, epic-releaser.
   Example: "epic-designer: refine epic contract surfaces for issue #341"
 tools:
+  # VS Code built-in — lezen en zoeken (geen mutaties; edits lopen altijd via phase-gate-mcp)
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/fileSearch
+  - search/textSearch
+  - search/listDirectory
+  - search/usages
+  - search/changes
   # MCP - coordination baseline + narrow epic workflow ownership allowlist
   - phase-gate-mcp/get_work_context
   - phase-gate-mcp/get_project_plan
