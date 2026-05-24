@@ -3,7 +3,7 @@
 # git_delete_branch remote deletion support
 
 **Status:** DRAFT  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-05-24
 
 ---
@@ -120,12 +120,13 @@ The active ready-phase instructions for `feature`, `bug`, and `refactor` workflo
 - they require validation evidence and PR scaffolding
 - they populate PR scaffold context with `closes_issues: [N] when the PR closes the issue`
 
-But they do not currently include two explicit decision points that the approved end-of-issue model depends on:
+But they do not currently include the explicit closeout checks that the approved end-of-issue model depends on:
 
-1. verify that the GitHub issue body is correct and complete as the factual representation of the delivered work before PR creation
-2. explicitly decide whether this PR should close the issue and therefore include `Closes #N` in the PR body
+1. verify whether the original issue body still honestly reflects the intended scope when research has broadened or clarified that scope
+2. explicitly review which issues claimed as in scope are actually closure-ready on this branch
+3. explicitly encode only those closure-ready issues in the PR body via `Closes #N`
 
-Research consequence: the current ready-phase contract leaves the `Closes #N` decision implicit, which makes the close-out prompt depend on work that the ready phase does not yet explicitly require.
+Research consequence: the current ready-phase contract leaves closure-readiness and `Closes #N` decisions too implicit, which makes the close-out prompt depend on work that the ready phase does not yet explicitly require.
 
 ### F_345.6 - Branch-local state discipline is modeled inconsistently across contracts, docs, and role surfaces
 

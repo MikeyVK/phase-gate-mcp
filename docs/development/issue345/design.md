@@ -3,7 +3,7 @@
 # Design: git_delete_branch remote deletion and lifecycle closeout alignment
 
 **Status:** DRAFT  
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** 2026-05-24
 
 ---
@@ -45,10 +45,10 @@ Research established the smallest coherent blast radius, but the final design in
 - [ ] Make `both` the default delete mode because the repository's normal branch lifecycle expects both local and remote branch cleanup.
 - [ ] Define idempotent behavior for missing sides during cleanup, especially when the remote branch is already absent.
 - [ ] Replace the stale lifecycle-exit prompt contract with a new `end-issue` flow aligned to the approved ownership model.
-- [ ] Add explicit issue-body verification and explicit `Closes #N` decision steps to all workflows that end in PR submission.
-- [ ] Store closeout intent in one authoritative location that `end-issue` can read without hidden state.
+- [ ] Treat the PR body as the persistent `@imp` -> `@co` transfer artifact that survives machine and session boundaries.
+- [ ] Add explicit ready-phase checks for original issue-body honesty, in-scope issue closure readiness, and PR-body `Closes #N` decisions across all workflows that end in PR submission.
 - [ ] Align active documentation and role instructions so branch-local state artifacts travel with branch commits until `submit_pr` neutralizes them.
-- [ ] Bind the first child-workflow upstream push responsibility to the first existing workphase completion checkpoint rather than to a standalone push todo.
+- [ ] Bind the first child-workflow upstream push responsibility to the first existing workphase completion checkpoint, with `git_push(set_upstream=true)` on the same todo line as the commit instruction.
 - [ ] Allow `@co` to recommend the next logically following issue during lifecycle exit as an advisory judgment, not as an automatic reprioritization rule.
 
 **Non-Functional:**
@@ -183,38 +183,45 @@ The current [.github/prompts/close-issue.prompt.md][related-6] contract is repla
 
 `end-issue` is an `@co`-owned lifecycle-boundary action. Human invocation of the prompt is the required merge-approval signal for this flow. The prompt must not be interpreted as an automatic merge path for `@imp`, and `@qa` remains read-only and outside merge or cleanup execution.
 
-The new prompt keeps one linear flow with one conditional epic-parent update step, but the design intentionally fixes only the contract boundary, not the eventual step-by-step prompt prose:
+The approved end-issue contract remains the normative F5 direction from research: one linear flow, one conditional epic-parent step, issue closure through PR-body `Closes #N`, and no normative `close_issue(...)` step.
+
+Within that flow, the PR body becomes the persistent `@imp` -> `@co` transfer artifact. It replaces any need for a separate durable closeout report and survives different sessions, machines, and timing boundaries between ready and lifecycle exit.
+
+The contract-level flow is therefore:
 - `get_work_context()` identifies the closing branch, workflow, issue number, and parent branch.
-- `get_issue(ISSUE_NUMBER)` reads the issue body, including the authoritative closeout intent prepared in ready.
 - `merge_pr(pr_number=PR_NUMBER)` is the authoritative proof that the host-side merge was accepted.
 - `git_checkout(branch=<parent_branch>)` exists to make local branch cleanup legal; it is not itself proof that the merge landed.
 - `git_delete_branch(branch=<closing_branch>, mode="both")` performs the cleanup.
+- `@co` reads the PR body as the persistent transfer surface that explains what was delivered, which issues were intended to close on merge, and what follow-up context matters for closeout.
 - a single conditional step updates epic-parent coordination state when relevant.
-- the final report includes merge result, cleanup result, actual issue state, expected closeout intent, and an advisory next-issue recommendation.
+- `@co` may use the merged PR body plus live issue state to recommend the next logically following issue.
 
 The design explicitly rejects stale local `git_diff_stat(...)` as the default merge-proof mechanism after `merge_pr(...)`. If planning keeps a landed-work consistency check, it must rely on an authoritative host-side merge result or on explicitly refreshed local refs, not on stale local branch state.
 
-`close_issue(...)` is not part of the normative path. It remains recovery-only when the ready phase explicitly chose `Closes #N`, the merge is complete, and the issue is still open unexpectedly.
+`close_issue(...)` is not part of the normative path. It remains recovery-only when the merged PR body claimed closure for a specific issue, the merge is complete, and that issue is still open unexpectedly.
 
-### 3.5. Ready-Phase Closeout Intent SSOT
+### 3.5. Ready-Phase PR Body And Issue-Body Responsibilities
 
-Every workflow ready block that scaffolds a PR body in [.phase-gate/config/contracts.yaml][related-7] should gain the same two explicit checks before PR scaffolding:
+Every workflow ready block that scaffolds a PR body in [.phase-gate/config/contracts.yaml][related-7] should gain the same explicit checks before PR scaffolding:
 
-1. Verify that the GitHub issue body is correct and complete as the factual representation of what this branch delivers.
-2. Make an explicit `close current issue on merge = yes|no` decision.
+1. Verify whether the original issue body is still honest about the branch intent and in-scope breadth established during research.
+2. If research broadened scope and the original issue body no longer reflects that intent honestly, update the original issue body before PR creation.
+3. Review all issues explicitly claimed as in scope in `research.md` and decide which of them are actually closure-ready on this branch.
+4. Encode only those closure-ready issues in the PR body via explicit `Closes #N` entries.
 
 This applies to all workflows whose ready phase submits a PR, including `feature`, `bug`, `refactor`, `docs`, `hotfix`, and `epic`.
 
-The GitHub issue body becomes the authoritative location for that closeout intent because it is the read surface that both ready and `end-issue` can access through `get_issue(...)`. The PR body mirrors the decision but does not own it.
+The original issue body and the PR body serve different purposes and must not be collapsed:
 
-| Closeout fact | Authoritative location | Writer | Reader |
+| Artifact | Purpose | Update rule | Consumer |
 |---|---|---|---|
-| `close current issue on merge = yes|no` | GitHub issue body | Ready-phase workflow | `end-issue` via `get_issue(...)` |
-| `closes_issues: [N]` mirror when closeout is `yes` | PR body scaffold | Ready-phase workflow | GitHub merge behavior |
+| Original issue body | Honest statement of intent and approved scope | Update only when research widened or changed the intended scope enough that the body is no longer truthful | Humans, ready-phase verification |
+| PR body | Delivered-work summary plus persistent `@imp` -> `@co` transfer, including explicit `Closes #N` claims | Always scaffold and finalize during ready | Reviewers, GitHub merge automation, `end-issue` |
+| Ready-phase hand-over | Temporary human-loop summary | Produced at ready end, but not the durable machine-to-machine closeout source | Human operator |
 
-This keeps the closeout contract inside a visible SSOT and avoids hidden branch-local state. `end-issue` reports against the issue-body decision and the post-merge issue state; it does not re-infer closeout intent from heuristics.
+This keeps closure intent where GitHub actually acts on it: the PR body. `end-issue` reads the PR body rather than treating the original issue body as a hidden closure-transport surface.
 
-The exact markdown wording of the issue-body marker belongs in planning and documentation. The design decision is only that one explicit closeout marker exists in the issue body and is treated as authoritative.
+The exact markdown shape for multi-issue closure claims belongs in planning and documentation. The design decision is only that closure readiness is evaluated in ready against all explicitly in-scope issues, and the resulting durable transfer lives in the PR body.
 
 ### 3.6. Branch-Local State And First-Push Discipline
 
@@ -227,7 +234,7 @@ Required wording alignment:
 
 The design-level push rule is also explicit: for non-epic child workflows, upstream creation belongs to the first existing workflow-completion checkpoint after the `@co` hand-off, not to a standalone push todo and not back to `@co` or `@qa`.
 
-That rule later maps to the existing first completion checkpoint already present in each workflow family, such as research completion for `feature`/`bug`/`refactor`, planning completion for `docs`, and the first completed implementation checkpoint for `hotfix`. Epic startup is unchanged because [.github/prompts/start-issue.prompt.md][related-9] already makes `@co` own the first commit and `git_push(set_upstream=true)` on epic branches.
+That rule later maps to the existing first completion checkpoint already present in each workflow family, such as research completion for `feature`/`bug`/`refactor`, planning completion for `docs`, and the first completed implementation checkpoint for `hotfix`. In those workflow instructions, `git_push(set_upstream=true)` must appear on the same todo line as the corresponding commit instruction rather than as a separate todo item. Epic startup is unchanged because [.github/prompts/start-issue.prompt.md][related-9] already makes `@co` own the first commit and `git_push(set_upstream=true)` on epic branches.
 
 ### 3.7. Key Design Decisions
 
@@ -239,9 +246,10 @@ That rule later maps to the existing first completion checkpoint already present
 | Keep policy enforcement in `GitManager` | Protected-branch safety and local-delete guardrails already have a single enforcement boundary there |
 | Introduce a structured branch-delete result | Combined cleanup needs explicit side-by-side outcomes without embedding adapter details in prompt or doc logic |
 | Make `end-issue` an explicit `@co` lifecycle-boundary contract | Merge and post-merge cleanup remain human-approved coordination actions, not `@imp` work or `@qa` actions |
-| Use the issue body as the SSOT for closeout intent | `get_issue(...)` is the shared readable surface available to ready and `end-issue`, so the contract stays explicit and visible |
+| Make the PR body the durable `@imp` -> `@co` transfer surface | It persists across machines and time, and GitHub already acts on its closure claims during merge |
+| Keep the original issue body limited to honest intent and scope | It should be corrected when research widens intent, but it must not become the delivered-work or closure-claim transport |
 | Reject stale local diff as default merge proof | `merge_pr(...)` proves host-side merge acceptance; local consistency checks need refreshed refs if they are retained at all |
-| Bind first upstream push to the first workflow completion checkpoint | This preserves the approved `@co` versus `@imp` ownership split while avoiding a loose extra push checklist item |
+| Bind first upstream push to the same todo line as the first qualifying commit | This preserves the approved `@co` versus `@imp` ownership split while preventing a loose extra push checklist item |
 
 ---
 
@@ -284,6 +292,7 @@ The user resolved the design checkpoint decisions on 2026-05-24:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.3 | 2026-05-24 | Agent | Made the PR body the durable `@imp` -> `@co` closeout transfer, restored PR-body-owned closure claims, limited the original issue body to honest intent/scope correction, and required first-push coupling on the same todo line as the commit |
 | 1.2 | 2026-05-24 | Agent | Repaired QA findings by making `@co` lifecycle authority explicit, defining issue-body closeout intent as the SSOT, rejecting stale local diff as merge proof, and reducing planning-like sequencing |
 | 1.1 | 2026-05-24 | Agent | Locked the user-approved design choices for enum default behavior, all-workflow ready-phase closeout checks, and advisory next-issue recommendation |
 | 1.0 | 2026-05-24 | Agent | Initial scaffolded design draft |
