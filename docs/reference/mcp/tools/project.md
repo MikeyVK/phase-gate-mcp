@@ -7,7 +7,7 @@
 **Last Updated:** 2026-05-24  
 
 **Source:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py), [phase_tools.py](../../../../mcp_server/tools/phase_tools.py)  
-**Tests:** [tests/unit/test_project_tools.py](../../../../tests/unit/test_project_tools.py), [tests/unit/test_phase_tools.py](../../../../tests/unit/test_phase_tools.py)  
+**Tests:** [tests/mcp_server/unit/tools/test_project_tools.py](../../../../tests/mcp_server/unit/tools/test_project_tools.py), [tests/mcp_server/unit/tools/test_transition_phase_tool.py](../../../../tests/mcp_server/unit/tools/test_transition_phase_tool.py), [tests/mcp_server/unit/tools/test_force_phase_transition_tool.py](../../../../tests/mcp_server/unit/tools/test_force_phase_transition_tool.py)  
 
 ---
 
@@ -15,7 +15,7 @@
 
 Complete reference documentation for project lifecycle and phase management tools. These 4 tools provide workflow initialization, phase plan inspection, sequential phase transitions, and emergency phase skipping with human approval.
 
-Phase state persists in [.st3/state.json](../../../../.st3/state.json) and workflow definitions / planning deliverables persist in [.st3/deliverables.json](../../../../.st3/deliverables.json). Both files are branch-local artifacts synchronized with git branch operations and neutralized before PR submission.
+Phase state persists in [.phase-gate/state.json](../../../../.phase-gate/state.json) and workflow definitions / planning deliverables persist in [.phase-gate/deliverables.json](../../../../.phase-gate/deliverables.json). Both files are branch-local artifacts synchronized with git branch operations and neutralized before PR submission.
 
 ---
 
@@ -32,9 +32,9 @@ The MCP server provides **4 project/phase tools**:
 
 All tools interact with:
 - **PhaseStateEngine:** Phase state tracking and validation
-- **[.st3/workflows.yaml](../../../../.st3/workflows.yaml):** Workflow definitions (feature, bug, docs, refactor, hotfix, epic, custom)
-- **[.st3/state.json](../../../../.st3/state.json):** Current branch state (runtime, not committed)
-- **[.st3/deliverables.json](../../../../.st3/deliverables.json):** Workflow definition and planning deliverables (branch-local artifact)
+- **[.phase-gate/config/workflows.yaml](../../../../.phase-gate/config/workflows.yaml):** Workflow definitions (feature, bug, docs, refactor, hotfix, epic, custom)
+- **[.phase-gate/state.json](../../../../.phase-gate/state.json):** Current branch state (runtime, not committed)
+- **[.phase-gate/deliverables.json](../../../../.phase-gate/deliverables.json):** Workflow definition and planning deliverables (branch-local artifact)
 
 ---
 
@@ -499,10 +499,10 @@ Phase state is **synchronized** with git branch operations:
 
 - [README.md](README.md) — MCP Tools navigation index
 - [git.md](git.md) — Git workflow tools (branch, checkout, commit)
-- [.st3/workflows.yaml](../../../../.st3/workflows.yaml) — Workflow definitions
-- [.st3/state.json](../../../../.st3/state.json) — Current branch state
-- [.st3/deliverables.json](../../../../.st3/deliverables.json) — Workflow definition and planning deliverables
-- [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 1.8: Project/Phase tools)
+- [.phase-gate/config/workflows.yaml](../../../../.phase-gate/config/workflows.yaml) — Workflow definitions
+- [.phase-gate/state.json](../../../../.phase-gate/state.json) — Current branch state
+- [.phase-gate/deliverables.json](../../../../.phase-gate/deliverables.json) — Workflow definition and planning deliverables
+- [docs/development/issue268/validation.md](../../../development/issue268/validation.md) — Validation evidence for the delivered phase-state and `get_work_context` contract
 
 ---
 
