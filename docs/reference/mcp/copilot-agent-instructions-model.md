@@ -1,10 +1,10 @@
 <!-- docs/reference/mcp/copilot-agent-instructions-model.md -->
-<!-- template=generic_doc version=43c84181 created=2026-05-17 updated=2026-05-17 -->
+<!-- template=generic_doc version=43c84181 created=2026-05-17 updated=2026-05-24 -->
 # Copilot Agent Instructions Model
 
 **Status:** DEFINITIVE
-**Version:** 1.1
-**Last Updated:** 2026-05-17
+**Version:** 1.2
+**Last Updated:** 2026-05-24
 
 ---
 
@@ -105,7 +105,7 @@ takes precedence over `copilot-instructions.md`).
 | File | Role | Content |
 |------|------|---------|
 | `AGENTS.md` (root) | **Always-on** \u2014 operational reference + coordination manifest | Tool priority matrix, TDD protocol, quality gates, architecture contract, three-agent model, sub-roles, hand-over formats |
-| `.github/agents/co.agent.md` | **@co role** | Coordination startup, sub-roles, tool allowlist (GitHub + read-only) |
+| `.github/agents/co.agent.md` | **@co role** | Coordination and epic-lifecycle startup, `@co` sub-roles, and the narrow epic allowlist |
 | `.github/agents/imp.agent.md` | **@imp role** | Implementation startup, scope lock, architecture contract, hand-over format |
 | `.github/agents/qa.agent.md` | **@qa role** | Review startup, suppression audit, verification workflow, tool allowlist (read-only) |
 
@@ -136,15 +136,15 @@ Per Microsoft's "minimal by default" principle, `AGENTS.md` must not contain:
 
 | Agent | Invocation | Mission | File |
 |-------|-----------|---------|------|
-| `@co` | `@co <sub-role>: <task>` | Coordination authority \u2014 assess, prioritize, author issues | [co.agent.md][co-agent] |
-| `@imp` | `@imp <sub-role>: <task>` | Implementation executor \u2014 code, tests, commits, phase transitions | [imp.agent.md][imp-agent] |
+| `@co` | `@co <sub-role>: <task>` | Coordination authority and epic workflow owner \u2014 owned-branch epic execution or background coordination around child work | [co.agent.md][co-agent] |
+| `@imp` | `@imp <sub-role>: <task>` | Implementation executor \u2014 code, tests, commits, phase and cycle transitions | [imp.agent.md][imp-agent] |
 | `@qa` | `@qa <sub-role>: <task>` | QA authority \u2014 read-only review, test runs, verdicts | [qa.agent.md][qa-agent] |
 
 ### Sub-Roles
 
 Each agent has sub-roles that bind to a phase of the workflow:
 
-**`@co`:** `triager` (default), `backlog-reviewer`, `tracker`, `issue-author`
+**`@co`:** coordination: `triager` (default), `backlog-reviewer`, `tracker`, `issue-author`; epic lifecycle: `epic-researcher`, `epic-planner`, `epic-designer`, `epic-coordinator`, `epic-documenter`, `epic-releaser`
 
 **`@imp`:** `researcher` (default), `planner`, `designer`, `implementer`, `validator`, `documenter`
 
@@ -157,15 +157,18 @@ Tool restrictions are enforced by VS Code at the frontmatter level, not by text 
 | Capability | `@co` | `@imp` | `@qa` |
 |------------|-------|--------|-------|
 | Read files, search | \u2705 | \u2705 | \u2705 |
-| Run tests / quality gates | \u274c | \u2705 | \u2705 |
-| Edit files (`safe_edit_file`) | \u274c | \u2705 (via MCP) | \u274c |
-| Git operations | \u274c read-only | \u2705 (via MCP) | \u274c read-only |
+| Run tests | \u274c | \u2705 | \u2705 |
+| Run quality gates | \u2705 on epic-owned branches | \u2705 | \u2705 |
+| Edit files (`safe_edit_file`) | \u2705 epic docs/contracts/prompts only | \u2705 (via MCP) | \u274c |
+| Git operations | \u2705 narrow epic-owned lifecycle ops | \u2705 (via MCP) | \u274c read-only |
 | GitHub issue/label/milestone | \u2705 | \u2705 (via MCP) | \u274c read-only |
-| Phase transitions | \u274c | \u2705 (via MCP) | \u274c |
+| Phase transitions | \u2705 on epic-owned branches | \u2705 (via MCP) | \u274c |
+| PR submission / merge | \u2705 on epic-owned branches | \u2705 (via MCP) | \u274c |
 | All `phase-gate-mcp/*` tools | \u274c (explicit allowlist) | \u2705 (wildcard) | \u274c (explicit allowlist) |
 
 `@imp` uses `tools: ["phase-gate-mcp/*"]` \u2014 all MCP tools. `@co` and `@qa` use explicit
-per-tool allowlists that exclude mutation operations.
+per-tool allowlists. `@co`'s allowlist intentionally includes the narrow mutation set
+needed for epic-owned branches, while `@qa` remains hard read-only.
 
 ### Two-Chat Model
 
@@ -173,11 +176,14 @@ Use separate VS Code chat sessions for each role. This prevents role contaminati
 
 ```
 User \u2192 @co triager: assess incoming issue \u2192 Co\u2192Imp hand-over
-User \u2192 @imp implementer: execute cycle X  \u2192 Imp\u2192QA hand-over
-User \u2192 @qa verifier: review C_LOADER.5   \u2192 GO/NOGO verdict
+User \u2192 @co epic-designer: refine epic contract surfaces \u2192 QA findings route back to @co
+User \u2192 @imp implementer: execute child issue cycle X \u2192 Imp\u2192QA hand-over
+User \u2192 @qa verifier: review latest hand-over \u2192 GO/NOGO verdict
 ```
 
 Never mix roles in one session. Fresh context prevents authority confusion and scope drift.
+Epic-owned branch review and lifecycle continuation stay with `@co`; child technical work
+still routes `@imp` \u2192 `@qa`.
 
 ---
 
@@ -186,25 +192,34 @@ Never mix roles in one session. Fresh context prevents authority confusion and s
 ### 4.1 `get_work_context` \u2014 the runtime context bridge
 
 The `get_work_context` MCP tool is the bridge between the static instruction files and the
-dynamic workflow state. It reads the active branch's `.phase-gate/state.json`, queries the
-GitHub issue, and returns a context block that agents can act on immediately.
+dynamic workflow state. It reads the active branch, branch-local `.phase-gate/state.json`,
+and `.phase-gate/config/contracts.yaml`, then returns a formatted orientation response that
+agents can act on immediately.
 
-**Key fields returned:**
+**Key fields returned or rendered:**
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `current_phase` | string | Active workflow phase |
 | `current_branch` | string | Active git branch |
-| `workflow_name` | string | Active workflow type (feature/bug/etc.) |
-| `active_issue` | object | GitHub issue title, number, labels |
-| `sub_role_hint` | string | Suggested `@imp` sub-role for the current phase |
-| `phase_instructions` | string | **Operational TODO list for the current phase** |
+| `workflow_name` | string | Active workflow type (feature/bug/docs/refactor/hotfix/epic/custom) |
+| `phase` | string | Active workflow phase from branch state |
+| `issue_number` | integer | Bound issue number when available |
+| `parent_branch` | string | Parent branch when available |
+| `current_cycle` / `sub_phase` | integer / string | Active TDD cycle or sub-phase when applicable |
+| `sub_role_hint` | string | Suggested sub-role for the active workflow-phase contract |
+| `phase_instructions` | string | **Operational script for the current workflow-phase** |
+| `handover_template` | string | Optional ready-to-use hand-over block from the active contract |
+
+When branch state points to a known workflow but an invalid phase, `get_work_context`
+remains non-error and renders a recovery warning before the `### \ud83c\udfaf Phase Instructions`
+block instead of failing hard.
 
 ### 4.2 `phase_instructions` \u2014 dynamic operational script
 
-`phase_instructions` is a multi-line string that contains the complete TODO list for the
-current (workflow, phase) combination. It is generated by `GetWorkContextTool` from a
-lookup table (`_PHASE_INSTRUCTIONS_MAP`) keyed on `(workflow_name, phase_name)`.
+`phase_instructions` is a multi-line string that contains the operational TODO list for the
+current `(workflow, phase)` contract. `GetWorkContextTool` resolves the active workflow and
+phase from branch state, then reads the matching instruction block from
+`.phase-gate/config/contracts.yaml`.
 
 **Example output for `(bug, implementation)` phase:**
 
@@ -217,25 +232,24 @@ lookup table (`_PHASE_INSTRUCTIONS_MAP`) keyed on `(workflow_name, phase_name)`.
 [ ] Produce the Imp\u2192QA hand-over block
 ```
 
-**Why this matters:** `@imp` agents can autonomously execute all phases because
-`transition_phase` has no built-in human-approval gate. `phase_instructions` is the
-mechanism that scopes the agent to the current phase's expected behavior. It is returned
-at invocation time, not embedded in a static file, so it can evolve without changing the
-`.agent.md` file.
+**Why this matters:** agents can execute phase-specific work without relying on stale static
+prompt text. The contract lives in configuration, is returned at invocation time, and can
+evolve without changing the `.agent.md` files.
 
 ### 4.3 `sub_role_hint` \u2014 sub-role guidance
 
-`sub_role_hint` maps the current phase to the correct `@imp` sub-role:
+`sub_role_hint` is config-driven and comes from the same workflow-phase contract entry as
+`phase_instructions`.
 
-| Phase | Sub-role hint |
-|-------|--------------|
-| research | researcher |
-| design | designer |
-| planning | planner |
-| implementation | implementer |
-| validation | validator |
-| documentation | documenter |
-| ready | documenter |
+| Workflow / phase | Example sub-role hint |
+|------------------|-----------------------|
+| `feature` / `implementation` | `implementer` |
+| `feature` / `documentation` | `documenter` |
+| `bug` / `research` | `researcher` |
+| `epic` / `research` | `epic-researcher` |
+| `epic` / `design` | `epic-designer` |
+| `epic` / `coordination` | `epic-coordinator` |
+| `epic` / `ready` | `epic-releaser` |
 
 This ensures the agent declares the correct sub-role without guessing from the phase name.
 
@@ -275,10 +289,13 @@ Always loaded:
 On @co invocation:
   .github/agents/co.agent.md     \u2190 role persona, tool allowlist, sub-roles
 
-Startup sequence (per co.agent.md):
+Normal startup sequence (per co.agent.md):
   1. get_work_context
-  2. list_issues(state="open")
-  3. [tracker only] get_issue(<number>)
+  2. Follow returned phase_instructions / sub_role_hint when present
+  3. Use list_issues, get_issue, and the narrow @co allowlist only as required by the active coordination or epic-lifecycle task
+
+Lifecycle-boundary exception:
+  - /open-issue and /close-issue may run their scripted bootstrap / exit sequence before control returns to a normal get_work_context-first session
 ```
 
 ### `@imp` session
@@ -383,14 +400,15 @@ longer exists in the project.
 ### Why `phase_instructions` via MCP and not in the `.agent.md` file?
 
 Three reasons:
-1. **Dynamic**: phase instructions change as the project evolves without requiring agent
-   file changes. The lookup table in `GetWorkContextTool` is the single source of truth.
-2. **Per-workflow**: different workflows (feature/bug/docs/refactor) have different phase
-   instructions for the same phase name. A static file cannot express this without complex
-   conditionals.
-3. **Precedence position**: by returning `phase_instructions` at runtime, `@imp` can place
-   it at precedence #2 (above all static files), making it the highest-authority script.
-   This is not achievable with static embedded text.
+1. **Dynamic**: phase instructions change as workflow contracts evolve without requiring
+   agent-file changes. The active workflow-phase entry in `.phase-gate/config/contracts.yaml`
+   is the source of truth.
+2. **Per-workflow**: different workflows can attach different instructions and sub-role
+   hints to the same phase name. A static file cannot express this cleanly without
+   embedding contract logic.
+3. **Precedence position**: by returning `phase_instructions` at runtime, the active agent
+   can place them at precedence #2 (above all static files), making the loaded contract the
+   highest-authority script for the session.
 
 ### Why is `@qa` read-only enforced at the tool level, not by text?
 
@@ -410,16 +428,17 @@ by the `.agent.md` body instructions and by QA review \u2014 not by tool restric
 
 ## 8. Adding a New Workflow Phase
 
-If a new workflow is added to `workflows.yaml` and a new phase is added, the instruction
-layer must be updated:
+If a workflow gains a new phase, update the contract layer that `get_work_context` reads:
 
-1. Add entries to `_PHASE_INSTRUCTIONS_MAP` in `mcp_server/tools/discovery_tools.py`
-   for every `(workflow_name, phase_name)` tuple that should have instructions.
-2. Add an entry to `_SUB_ROLE_MAP` if the phase needs a specific `@imp` sub-role hint.
-3. Test with `get_work_context` on a branch in that workflow+phase to verify the output.
+1. Add or adjust the workflow-phase entry in `.phase-gate/config/contracts.yaml`, including
+   `sub_role`, `phase_instructions`, and any `handover_template` text.
+2. If the change also alters global workflow metadata or role ownership semantics, align the
+   corresponding reference docs and startup instructions.
+3. Test with `get_work_context` on a branch in that workflow-phase to verify the rendered
+   orientation header, instructions, sub-role hint, and hand-over template.
 
-No changes to `.agent.md` files or `AGENTS.md` are required for new phases \u2014 those files
-are static infrastructure.
+No `.agent.md` or `AGENTS.md` changes are required for ordinary phase-script updates unless
+the new phase changes a global role boundary, ownership model, or lifecycle exception.
 
 ---
 
@@ -450,5 +469,6 @@ are static infrastructure.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2 | 2026-05-24 | Agent | Update the three-agent model reference for `@co` epic ownership, config-driven `get_work_context`, and lifecycle-boundary startup exceptions |
 | 1.1 | 2026-05-17 | Agent | Consolidation decision: single always-on file (AGENTS.md); remove copilot-instructions.md references; update diagram, precedence chain, loading order, rationale |
 | 1.0 | 2026-05-17 | Agent | Initial document \u2014 covers instruction hierarchy, three-agent model, MCP integration, context loading order |
