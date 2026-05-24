@@ -2823,7 +2823,7 @@ workflows:
             dir: docs/development
             pattern: issue*/research*.md
         instructions:
-          sub_role: researcher
+          sub_role: epic-researcher
           phase_instructions: |
             [ ] Read the epic issue: get_issue(issue_number=N).
             [ ] Read ARCHITECTURE_PRINCIPLES.md before drawing conclusions.
@@ -2960,7 +2960,7 @@ workflows:
             dir: docs/development
             pattern: issue*/planning*.md
         instructions:
-          sub_role: planner
+          sub_role: epic-planner
           phase_instructions: |
             [ ] Read the research artifact, the research hand-over, and the Approved Strategy from the previous phases.
             [ ] Read DOCUMENTATION_STANDARD.md before drafting or scaffolding the planning document.
@@ -3077,7 +3077,7 @@ workflows:
             dir: docs/development
             pattern: issue*/design*.md
         instructions:
-          sub_role: designer
+          sub_role: epic-designer
           phase_instructions: |
             [ ] Read the research artifact, the planning artifact, the planning hand-over,
                 and the Approved Strategy from the previous phases.
@@ -3217,11 +3217,11 @@ workflows:
       - name: coordination
         exit_requires: []
         instructions:
-          sub_role: researcher
+          sub_role: epic-coordinator
           phase_instructions: |
             [ ] Review all child issues and their current status.
-            [ ] Update priorities and dependencies where needed.
-            [ ] Coordinate with @co as needed.
+            [ ] Update priorities, dependencies, and epic-level blockers where needed.
+            [ ] Coordinate child-work hand-offs, user checkpoints, and QA follow-up as needed.
             [ ] Document coordination notes.
             [ ] Produce hand-over.
           handover_template: |
@@ -3233,7 +3233,7 @@ workflows:
             - Sub-issues in expected states
       - name: documentation
         instructions:
-          sub_role: documenter
+          sub_role: epic-documenter
           phase_instructions: |
             [ ] Call get_project_plan(issue_number=N) and get_work_context.
                 Treat documentation as the epic docs-workspace reconciliation and close-out phase after
@@ -3309,7 +3309,7 @@ workflows:
             - Documentation committed
       - name: ready
         instructions:
-          sub_role: implementer
+          sub_role: epic-releaser
           phase_instructions: |
             The branch is ready for PR submission.
 

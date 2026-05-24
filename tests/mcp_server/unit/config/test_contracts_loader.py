@@ -450,3 +450,21 @@ class TestContractsConfigRoundtrip:
             },
         )
         assert loader.load_contracts_config() == expected
+
+    def test_real_epic_workflow_uses_coordination_scoped_sub_roles(self) -> None:
+        """Real contracts.yaml: epic workflow uses @co-scoped sub-role names."""
+        real = Path(__file__).parents[4] / ".phase-gate" / "config" / "contracts.yaml"
+        if not real.exists():
+            pytest.skip("contracts.yaml not yet created — passes after C2 GREEN")
+
+        result = ConfigLoader(real.parent).load_contracts_config()
+        epic = result.workflows["epic"]
+
+        assert [phase.instructions.sub_role for phase in epic.phases] == [
+            "epic-researcher",
+            "epic-planner",
+            "epic-designer",
+            "epic-coordinator",
+            "epic-documenter",
+            "epic-releaser",
+        ]
