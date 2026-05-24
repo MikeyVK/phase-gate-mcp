@@ -1033,6 +1033,47 @@ class TestGetWorkContextC1Restructuring:
         text = result.content[0]["text"]
         assert "### \U0001f3af Phase Instructions" in text
         assert "No instructions defined" in text
+        assert "⚠️ Invalid workflow state:" not in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_renders_invalid_phase_warning_for_known_workflow(self) -> None:
+        """Known workflow + invalid phase must render explicit recovery guidance."""
+        tool = self._make_tool(workflow_name="feature", current_phase="invalid_phase")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        assert "⚠️ Invalid workflow state:" in text
+        assert (
+            "⚠️ Invalid workflow state: workflow 'feature' does not contains phase "
+            "'invalid_phase'." in text
+        )
+        assert "which is not valid for this workflow" not in text
+        assert "Valid phases:" in text
+        assert "research" in text
+        assert "ready" in text
+        assert "force_phase_transition" in text
+        assert "get_work_context again" in text
+        assert "No instructions defined" not in text
+
+    @pytest.mark.asyncio
+    async def test_get_work_context_places_invalid_phase_warning_before_instructions(self) -> None:
+        """Invalid-state warning must appear before the phase-instructions block."""
+        tool = self._make_tool(workflow_name="feature", current_phase="invalid_phase")
+        result = await tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not result.is_error
+        text = result.content[0]["text"]
+        warning_pos = text.find("⚠️ Invalid workflow state:")
+        phase_instructions_pos = text.find("### 🎯 Phase Instructions")
+        first_h3 = text.find("###")
+
+        assert warning_pos != -1, f"Warning not found in output:\n{text}"
+        assert phase_instructions_pos != -1, (
+            f"Phase instructions header not found in output:\n{text}"
+        )
+        assert warning_pos < phase_instructions_pos, f"Warning must precede instructions.\n{text}"
+        assert first_h3 == phase_instructions_pos, f"Warning must not become an H3 header.\n{text}"
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_workflow_name_from_branch_state(self) -> None:
@@ -1106,6 +1147,7 @@ class TestGetWorkContextC1Restructuring:
         reminder = "TODO discipline: create or refresh your TODO list now"
         assert reminder in text
         assert "keep exactly one item in progress" in text
+        assert "Parent: main\n\nTODO discipline:" in text
         assert text.find(reminder) < text.find("### 🎯 Phase Instructions")
 
     @pytest.mark.asyncio

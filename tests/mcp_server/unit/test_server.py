@@ -10,7 +10,7 @@ import logging
 import os
 import shutil
 import subprocess
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
@@ -20,12 +20,16 @@ import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.server import MCPServer
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.git_tools import CreateBranchTool
-from mcp_server.tools.phase_tools import ForcePhaseTransitionTool, TransitionPhaseTool
+from mcp_server.tools.phase_tools import (
+    TRANSITION_ADVISORY_NOTE,
+    ForcePhaseTransitionTool,
+    TransitionPhaseTool,
+)
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
@@ -112,6 +116,16 @@ def _make_submit_pr_request() -> CallToolRequest:
             },
         )
     )
+
+
+def _make_transition_advisory_execute(
+    text: str,
+) -> Callable[[object, object, NoteContext], Awaitable[ToolResult]]:
+    async def execute(_self: object, _params: object, context: NoteContext) -> ToolResult:
+        context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
+        return ToolResult.text(text)
+
+    return execute
 
 
 class TestServerToolRegistration:
@@ -386,7 +400,7 @@ class TestServerToolRegistration:
                 patch.object(
                     TransitionPhaseTool,
                     "execute",
-                    new=AsyncMock(return_value=ToolResult.text("Successfully transitioned")),
+                    new=_make_transition_advisory_execute("Successfully transitioned"),
                 ),
             ):
                 req = CallToolRequest(
@@ -402,10 +416,128 @@ class TestServerToolRegistration:
                 response = await handler(req)
 
         assert "Successfully transitioned" in response.root.content[0].text
+        assert len(response.root.content) == 2
+        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
         )
+
+    @pytest.mark.asyncio
+    async def test_call_tool_post_enforcement_runs_after_force_phase_transition(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Successful forced phase transitions append the advisory note after post-hook success."""
+        _bootstrap_workspace_configs(tmp_path)
+
+        with patch("mcp_server.server.Settings") as mock_settings_cls:
+            _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+
+            server = MCPServer()
+            server.tools = [
+                ForcePhaseTransitionTool(
+                    workspace_root=tmp_path,
+                    project_manager=server.project_manager,
+                    state_engine=server.phase_state_engine,
+                    server_root=tmp_path / ".phase-gate",
+                )
+            ]
+            handler = server.server.request_handlers[CallToolRequest]
+
+            with (
+                patch.object(server.enforcement_runner, "run", return_value=[]) as mock_run,
+                patch.object(
+                    ForcePhaseTransitionTool,
+                    "execute",
+                    new=_make_transition_advisory_execute("✅ Forced phase transition"),
+                ),
+            ):
+                req = CallToolRequest(
+                    params=CallToolRequestParams(
+                        name="force_phase_transition",
+                        arguments={
+                            "branch": "feature/257-reorder-workflow-phases",
+                            "to_phase": "planning",
+                            "skip_reason": "Force test",
+                            "human_approval": "Approved",
+                        },
+                    )
+                )
+                response = await handler(req)
+
+        assert response.root.content[0].text == "✅ Forced phase transition"
+        assert len(response.root.content) == 2
+        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
+        assert any(
+            call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
+            for call in mock_run.call_args_list
+        )
+
+    @pytest.mark.asyncio
+    async def test_call_tool_transition_post_enforcement_error_omits_advisory_note(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Post-hook errors must not leak the success-path advisory note."""
+        _bootstrap_workspace_configs(tmp_path)
+
+        project_manager = make_project_manager(tmp_path)
+        project_manager.initialize_project(
+            issue_number=257,
+            issue_title="Cycle 5 enforcement",
+            workflow_name="feature",
+        )
+        state_engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=project_manager,
+            state_repository=InMemoryStateRepository(),
+        )
+        branch = "feature/257-reorder-workflow-phases"
+        state_engine.initialize_branch(
+            branch=branch,
+            issue_number=257,
+            initial_phase="research",
+        )
+
+        with patch("mcp_server.server.Settings") as mock_settings_cls:
+            _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+
+            server = MCPServer()
+            server.tools = [
+                TransitionPhaseTool(
+                    workspace_root=tmp_path,
+                    project_manager=project_manager,
+                    state_engine=state_engine,
+                    server_root=tmp_path / ".phase-gate",
+                )
+            ]
+            handler = server.server.request_handlers[CallToolRequest]
+
+            with patch.object(server.enforcement_runner, "run") as mock_run:
+
+                def side_effect(*_args: object, **kwargs: object) -> list[str]:
+                    if kwargs.get("event") == "transition_phase" and kwargs.get("timing") == "post":
+                        raise ConfigError("post hook failed")
+                    return []
+
+                mock_run.side_effect = side_effect
+                req = CallToolRequest(
+                    params=CallToolRequestParams(
+                        name="transition_phase",
+                        arguments={
+                            "branch": branch,
+                            "to_phase": "design",
+                            "human_approval": "Move into design",
+                        },
+                    )
+                )
+                response = await handler(req)
+
+        texts = [item.text for item in response.root.content]
+        assert len(response.root.content) == 1
+        assert "post hook failed" in texts[0]
+        assert all(TRANSITION_ADVISORY_NOTE not in text for text in texts)
 
     @pytest.mark.asyncio
     async def test_call_tool_force_phase_post_enforcement_returns_error(
@@ -434,7 +566,7 @@ class TestServerToolRegistration:
                 patch.object(
                     ForcePhaseTransitionTool,
                     "execute",
-                    new=AsyncMock(return_value=ToolResult.text("✅ Forced phase transition")),
+                    new=_make_transition_advisory_execute("✅ Forced phase transition"),
                 ),
             ):
 
@@ -458,9 +590,11 @@ class TestServerToolRegistration:
                 response = await handler(req)
 
         text = response.root.content[0].text
+        assert len(response.root.content) == 1
         assert "post hook failed" in text
         assert "⚠️" not in text
         assert "✅" not in text
+        assert TRANSITION_ADVISORY_NOTE not in text
 
     @pytest.mark.asyncio
     async def test_run_uses_injected_settings_without_extra_from_env(self) -> None:

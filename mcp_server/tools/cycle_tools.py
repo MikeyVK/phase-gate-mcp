@@ -17,11 +17,12 @@ import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
+from mcp_server.tools.phase_tools import TRANSITION_ADVISORY_NOTE
 from mcp_server.tools.phase_tools import (
     _BaseTransitionTool as BaseTransitionTool,  # pyright: ignore[reportPrivateUsage]  # Shared transition base pending tool consolidation.
 )
@@ -89,6 +90,7 @@ class TransitionCycleTool(BaseTransitionTool):
 
         try:
             result = await anyio.to_thread.run_sync(do_transition)
+            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
             return ToolResult.text(
                 f"✅ Transitioned to TDD Cycle {result['to_cycle']}/{result['total_cycles']}: "
                 f"{result['cycle_name']}"
@@ -224,6 +226,7 @@ class ForceCycleTransitionTool(BaseTransitionTool):
             if passing:
                 lines.append(f"ℹ️ Gates that would have passed: {', '.join(passing)}")
 
+            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
             return ToolResult.text("\n".join(lines))
         except StateMutationConflictError as e:
             context.produce(RecoveryNote(message=e.recovery))

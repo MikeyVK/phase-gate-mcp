@@ -106,7 +106,11 @@ from mcp_server.tools.milestone_tools import (
     CreateMilestoneTool,
     ListMilestonesTool,
 )
-from mcp_server.tools.phase_tools import ForcePhaseTransitionTool, TransitionPhaseTool
+from mcp_server.tools.phase_tools import (
+    TRANSITION_ADVISORY_NOTE,
+    ForcePhaseTransitionTool,
+    TransitionPhaseTool,
+)
 from mcp_server.tools.pr_tools import ListPRsTool, MergePRTool, SubmitPRTool
 from mcp_server.tools.project_tools import (
     GetProjectPlanTool,
@@ -124,6 +128,13 @@ from mcp_server.tools.validation_tools import ValidateDTOTool, ValidationTool
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
+
+TRANSITION_ADVISORY_TOOL_NAMES = {
+    "transition_phase",
+    "force_phase_transition",
+    "transition_cycle",
+    "force_cycle_transition",
+}
 
 
 class MCPServer:
@@ -607,6 +618,8 @@ class MCPServer:
                 note_context=note_context,
             )
         except MCPError as exc:
+            if timing == "post" and tool.name in TRANSITION_ADVISORY_TOOL_NAMES:
+                note_context.discard_info_message(TRANSITION_ADVISORY_NOTE)
             base = ToolResult.error(message=exc.message, error_code=exc.code)
             return note_context.render_to_response(base)
         return None

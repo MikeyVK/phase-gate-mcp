@@ -1,10 +1,10 @@
 <!-- docs/reference/mcp/tools/discovery.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-02-08 -->
+<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-05-24 -->
 # Discovery & Admin Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-05-23  
+**Version:** 2.2  
+**Last Updated:** 2026-05-24  
 
 **Source:** [mcp_server/tools/discovery_tools.py](../../../../mcp_server/tools/discovery_tools.py), [health_tools.py](../../../../mcp_server/tools/health_tools.py), [admin_tools.py](../../../../mcp_server/tools/admin_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_discovery_tools.py](../../../../tests/mcp_server/unit/tools/test_discovery_tools.py)  
@@ -26,7 +26,7 @@ The MCP server provides **4 discovery/admin tools**:
 | Tool | Purpose | Key Features |
 |------|---------|-------------|
 | `search_documentation` | Semantic/fuzzy search across docs/ | Scope filtering, ranked results with snippets |
-| `get_work_context` | Aggregate branch + workflow context | Orientation header, phase instructions, hand-over template |
+| `get_work_context` | Aggregate branch + workflow context | Orientation header, phase instructions, invalid-state recovery warning, hand-over template |
 | `health_check` | Server health status | Uptime, memory, registered tools count |
 | `restart_server` | Hot-reload server via proxy | Zero-downtime restart for code changes |
 
@@ -169,7 +169,8 @@ TODO discipline: create or refresh your TODO list now; keep exactly one item in 
 - **Phase Script Delivery:** Reads `sub_role_hint`, `phase_instructions`, and optional `handover_template` from `.phase-gate/config/contracts.yaml` for the active workflow and phase.
 - **Dominant Instructions Block:** Renders `### 🎯 Phase Instructions` as the first major section after the orientation header.
 - **No Legacy Work Queue Payload:** Does not return `open_issues`, `recent_closed`, `suggestions`, `active_issue`, `recent_commits`, or `tdd_cycle_info`.
-- **Bootstrap Degradation:** If branch state is unavailable, the tool still returns a branch-oriented response with an explicit "No instructions defined" fallback instead of failing.
+- **Bootstrap Degradation:** If branch state is unavailable, the tool still returns a branch-oriented response with an explicit `No instructions defined` fallback instead of failing.
+- **Invalid Workflow-Phase Recovery:** If the workflow is known but the stored phase is invalid, the response stays non-error and renders a warning before `### 🎯 Phase Instructions` with the valid phases plus `force_phase_transition` / `get_work_context` recovery guidance.
 - **Context-Loaded Side Effect:** Marks the current branch context as loaded in the in-memory cache when the writer is wired, which unblocks later branch-mutating tools behind `check_context_loaded`.
 - **Gate Bootstrap Tool:** Remains callable even when `check_context_loaded` is active, because it is the tool that reloads branch context after phase, cycle, checkout, or non-noop pull changes.
 
@@ -333,6 +334,14 @@ The restart mechanism uses a transparent proxy:
 4. get_project_plan(issue_number=123) → review phase plan
 ```
 
+### Recover From Invalid Workflow-Phase State
+
+```
+1. get_work_context() → inspect the invalid workflow-state warning and valid phases list
+2. force_phase_transition(branch="feature/123-oauth", to_phase="documentation", skip_reason="Repair invalid branch state", human_approval="Approved by workflow owner to repair invalid phase state")
+3. get_work_context() → reload the current phase context and instructions
+```
+
 ### Development Iteration with Hot-Reload
 
 ```
@@ -413,5 +422,6 @@ Proxy behavior configured in [mcp_server/core/proxy.py](../../../../mcp_server/c
 ## Version History
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.2 | 2026-05-24 | Agent | Document the invalid workflow-phase recovery warning and recovery path for `get_work_context` |
 | 2.1 | 2026-05-23 | Agent | Update `get_work_context` reference to the delivered text contract, phase instructions, hand-over template, and context-loaded behavior |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 discovery/admin tools: documentation search, work context, health check, server restart |

@@ -174,7 +174,7 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 | `docs` | planning, documentation, ready | Documentation-only changes |
 | `refactor` | research, planning, implementation, validation, documentation, ready | Code refactoring |
 | `hotfix` | implementation, validation, documentation, ready | Emergency fixes |
-| `epic` | research, design, planning, coordination, documentation, ready | Large multi-issue features |
+| `epic` | See `.phase-gate/config/contracts.yaml` (SSOT for epic phase order) | Large multi-issue features |
 | `custom` | (user-defined) | Custom workflows |
 
 **Workflow Selection:** Use `initialize_project(issue_number, issue_title, workflow_name="feature|bug|docs|...")` to start.
@@ -206,36 +206,44 @@ This project uses three specialized agents in separate VS Code chat sessions to 
 
 | Agent | Role | Allowed operations |
 |-------|------|--------------------|
-| `@co` | Coordination authority | Read all; create/update issues, labels, milestones; produce implementation briefs |
-| `@imp` | Implementation executor | All PhaseGate MCP tools; file edits; commits; phase transitions |
+| `@co` | Coordination authority and epic workflow owner | Read all; issue/label/milestone admin; epic docs/contracts/prompts edits; epic lifecycle mutations, phase transitions, commits, quality gates, PR submission, and merge within the approved narrow allowlist |
+| `@imp` | Child-issue implementation executor | Production code and test work on non-epic branches; cycle execution; commits; phase and cycle transitions |
 | `@qa` | QA authority — read-only | Read files; run tests; run quality gates. **No edits, no commits** |
 
 ### Sub-roles
 
-**`@co` sub-roles:** `triager` (default), `backlog-reviewer`, `tracker`, `issue-author`  
+**`@co` sub-roles:** coordination: `triager` (default), `backlog-reviewer`, `tracker`, `issue-author`; epic lifecycle: `epic-researcher`, `epic-planner`, `epic-designer`, `epic-coordinator`, `epic-documenter`, `epic-releaser`  
 **`@imp` sub-roles:** `researcher` (default), `planner`, `designer`, `implementer`, `validator`, `documenter`  
 **`@qa` sub-roles:** `design-reviewer` (default), `plan-verifier`, `verifier`, `validation-reviewer`, `doc-reviewer`
 
 Declare your active sub-role in the invocation text.  
 Example: `@imp implementer: start cycle C_LOADER.5 for issue 257`
 
+### @co Operating Modes
+
+- **Owned-branch epic execution:** `@co` owns the epic branch end-to-end and may edit epic docs/contracts/prompts, perform lifecycle mutations, phase transitions, commits, quality gates, PR submission, and merge after approval.
+- **Background coordination:** `@co` reads status, updates issue coordination state, and hands child technical work to `@imp` without taking over the implementation branch.
+
 ### Two-Chat Model
 
-- **Coordination** → use `@co`. When output is actionable, produce a Co → Imp hand-over.
-- **Implementation** → use `@imp`. Execute the current cycle. Produce an Imp → QA hand-over.
-- **Review** → use `@qa`. Provide findings and a verdict. If corrections needed, user starts a new `@imp` session.
+- **Coordination / epic ownership** → use `@co`. Use `@co` either for owned-branch epic execution or for background coordination around child work. Produce a Co → Imp hand-over only when delegating child technical implementation.
+- **Implementation** → use `@imp` for child technical work. Execute the current cycle. Produce an Imp → QA hand-over.
+- **Review** → use `@qa`. Findings on epic-owned branches route back to `@co`; findings on child technical work route back to `@imp`.
 
 Never mix roles in one session. Fresh context prevents scope contamination and authority confusion.
-
 ### Startup Protocol
 
-Each agent has its own startup protocol defined in its `.agent.md` file. All roles call
-`get_work_context` as the first tool invocation. See:
+Each agent has its own startup protocol defined in its `.agent.md` file. Normal chat sessions call
+`get_work_context` as the first tool invocation. `open-issue` and `close-issue` are explicit
+lifecycle-boundary exceptions that may run their scripted bootstrap or exit sequence before
+control returns to a normal `get_work_context`-first session. See:
 - [`@co` startup](.github/agents/co.agent.md)
 - [`@imp` startup](.github/agents/imp.agent.md)
 - [`@qa` startup](.github/agents/qa.agent.md)
 
 ### Hand-Over Contract
+
+Use Co → Imp only for child technical delegation. Epic-owned branch review and lifecycle continuation stay with `@co`; QA findings and merge follow-up on those branches route back there.
 
 **Co → Imp hand-over:**
 ```text
