@@ -28,8 +28,6 @@ from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.schemas import GitConfig, WorkphasesConfig
 
 
-
-
 @dataclass(frozen=True)
 class BranchDeleteResult:
     """Result of a branch deletion operation."""
@@ -319,6 +317,7 @@ class GitManager:
             remote_status = self.adapter.delete_remote_branch(branch_name)
 
         return BranchDeleteResult(local_status=local_status, remote_status=remote_status)
+
     def stash(self, message: str | None = None, include_untracked: bool = False) -> None:
         """Stash current changes.
 

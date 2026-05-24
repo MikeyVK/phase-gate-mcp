@@ -558,7 +558,9 @@ async def test_git_delete_branch_tool(mock_git_manager: MagicMock) -> None:
 
     params = GitDeleteBranchInput(branch="feature/old", force=True)
     result = await tool.execute(params, NoteContext())
-    mock_git_manager.delete_branch.assert_called_once_with("feature/old", ANY, force=True, mode="both")
+    mock_git_manager.delete_branch.assert_called_once_with(
+        "feature/old", ANY, force=True, mode="both"
+    )
     assert "feature/old" in result.content[0]["text"]
 
 
@@ -570,7 +572,9 @@ async def test_git_delete_branch_mode_local(mock_git_manager: MagicMock) -> None
     params = GitDeleteBranchInput(branch="feature/old", mode="local")
     result = await tool.execute(params, NoteContext())
 
-    mock_git_manager.delete_branch.assert_called_once_with("feature/old", ANY, force=False, mode="local")
+    mock_git_manager.delete_branch.assert_called_once_with(
+        "feature/old", ANY, force=False, mode="local"
+    )
     assert "feature/old" in result.content[0]["text"]
 
 
@@ -582,9 +586,10 @@ async def test_git_delete_branch_mode_remote(mock_git_manager: MagicMock) -> Non
     params = GitDeleteBranchInput(branch="feature/old", mode="remote")
     result = await tool.execute(params, NoteContext())
 
-    mock_git_manager.delete_branch.assert_called_once_with("feature/old", ANY, force=False, mode="remote")
+    mock_git_manager.delete_branch.assert_called_once_with(
+        "feature/old", ANY, force=False, mode="remote"
+    )
     assert "feature/old" in result.content[0]["text"]
-
 
 
 @pytest.mark.asyncio

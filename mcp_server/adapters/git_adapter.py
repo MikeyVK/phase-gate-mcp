@@ -374,7 +374,6 @@ class GitAdapter:
         except Exception as e:
             raise ExecutionError(f"Failed to delete remote branch {branch_name}: {e}") from e
 
-
     def stash(self, message: str | None = None, include_untracked: bool = False) -> None:
         """Stash current changes."""
         try:

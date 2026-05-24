@@ -590,8 +590,9 @@ class GitDeleteBranchInput(BaseModel):
     force: bool = Field(default=False, description="Force delete unmerged branch")
     mode: Literal["local", "remote", "both"] = Field(
         default="both",
-        description="Deletion scope: 'local' (local only), 'remote' (remote only), 'both' (default)",
+        description="Deletion scope: local-only, remote-only, or both (default)",
     )
+
 
 class GitDeleteBranchTool(BranchMutatingTool):
     """Tool to delete a branch."""

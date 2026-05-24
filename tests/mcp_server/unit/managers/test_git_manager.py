@@ -183,10 +183,13 @@ class TestGitManagerOperations:
         mock_adapter.delete_local_branch.assert_called_once_with("feature/old", force=False)
         mock_adapter.delete_remote_branch.assert_called_once_with("feature/old")
 
-    def test_delete_branch_mode_both_local_absent(self, manager: GitManager, mock_adapter: MagicMock) -> None:
+    def test_delete_branch_mode_both_local_absent(
+        self, manager: GitManager, mock_adapter: MagicMock
+    ) -> None:
         """Test mode=both with absent local branch does not raise; remote still called."""
-        from mcp_server.core.exceptions import ExecutionError
-        mock_adapter.delete_local_branch.side_effect = ExecutionError("Branch feature/old does not exist")
+        mock_adapter.delete_local_branch.side_effect = ExecutionError(
+            "Branch feature/old does not exist"
+        )
         manager.delete_branch("feature/old", NoteContext(), mode="both")
         mock_adapter.delete_remote_branch.assert_called_once_with("feature/old")
 
