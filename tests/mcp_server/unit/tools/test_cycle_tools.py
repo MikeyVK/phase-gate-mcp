@@ -497,8 +497,8 @@ class TestTransitionCycleToolAdvisoryNote:
         notes = context.of_type(InfoNote)
         assert len(notes) == 1
         assert notes[0].message == (
-            "Call get_work_context to load the current phase context for this branch before "
-            "proceeding."
+            "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
+            "to load the current phase context for this branch."
         )
 
         rendered = context.render_to_response(result)
@@ -553,8 +553,8 @@ class TestForceCycleToolAdvisoryNote:
         notes = context.of_type(InfoNote)
         assert len(notes) == 1
         assert notes[0].message == (
-            "Call get_work_context to load the current phase context for this branch before "
-            "proceeding."
+            "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
+            "to load the current phase context for this branch."
         )
 
 

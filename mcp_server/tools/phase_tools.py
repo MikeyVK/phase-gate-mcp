@@ -27,7 +27,8 @@ from mcp_server.tools.base import BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
 TRANSITION_ADVISORY_NOTE = (
-    "Call get_work_context to load the current phase context for this branch before proceeding."
+    "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
+    "to load the current phase context for this branch."
 )
 
 
