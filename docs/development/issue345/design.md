@@ -197,7 +197,6 @@ The contract-level flow is therefore:
 - `git_delete_branch(branch=<closing_branch>, mode="both")` performs the cleanup.
 - `@co` reads the PR body as the persistent transfer surface for durable closeout facts prepared during ready.
 - that PR body must carry the durable closeout facts `@co` needs later, including what was delivered, which issues were intended to close on merge, deferred items/work, and tracking state for those deferred items.
-- that PR body must carry the durable closeout facts `@co` needs later, including what was delivered, which issues were intended to close on merge, deferred items/work, and tracking state for those deferred items.
 - a single conditional step updates epic-parent coordination state when relevant.
 - `@co` may use the merged PR body plus live issue state to recommend the next logically following issue.
 
