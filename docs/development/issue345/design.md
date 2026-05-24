@@ -18,7 +18,7 @@ Define the smallest coherent design for issue #345 across the git delete capabil
 `git_delete_branch` contract and layering, lifecycle exit prompt replacement, ready-phase PR closeout requirements, branch-local state artifact wording, and first child-workflow push responsibility.
 
 **Out of Scope:**
-Implementation sequencing, generic workflow redesign, multi-remote support, host-provider policy changes, and unrelated git or GitHub tool behavior.
+Implementation sequencing, generic workflow redesign, multi-remote support, host-provider policy changes, the `SubmitPRInput` tool schema, and unrelated git or GitHub tool behavior.
 
 ## Prerequisites
 
@@ -46,7 +46,8 @@ Research established the smallest coherent blast radius, but the final design in
 - [ ] Define idempotent behavior for missing sides during cleanup, especially when the remote branch is already absent.
 - [ ] Replace the stale lifecycle-exit prompt contract with a new `end-issue` flow aligned to the approved ownership model.
 - [ ] Treat the PR body as the persistent `@imp` -> `@co` transfer artifact that survives machine and session boundaries.
-- [ ] Add explicit ready-phase checks for original issue-body honesty, in-scope issue closure readiness, and PR-body `Closes #N` decisions across all workflows that end in PR submission.
+- [ ] Use the ready-phase handover template as a completeness check for durable closeout facts, not as a 1:1 schema for the PR body.
+- [ ] Ensure the PR body carries durable closeout facts needed by `@co`, including at minimum closure claims, deferred items/work, and tracking state.
 - [ ] Align active documentation and role instructions so branch-local state artifacts travel with branch commits until `submit_pr` neutralizes them.
 - [ ] Bind the first child-workflow upstream push responsibility to the first existing workphase completion checkpoint, with `git_push(set_upstream=true)` on the same todo line as the commit instruction.
 - [ ] Allow `@co` to recommend the next logically following issue during lifecycle exit as an advisory judgment, not as an automatic reprioritization rule.
@@ -187,12 +188,16 @@ The approved end-issue contract remains the normative F5 direction from research
 
 Within that flow, the PR body becomes the persistent `@imp` -> `@co` transfer artifact. It replaces any need for a separate durable closeout report and survives different sessions, machines, and timing boundaries between ready and lifecycle exit.
 
+The ready-phase handover template is a useful completeness check for that durable transfer, but it is not the normative schema for the PR body. The PR body and the final ready hand-over may overlap on durable facts, yet they serve different consumers and can differ in structure and level of detail.
+
 The contract-level flow is therefore:
 - `get_work_context()` identifies the closing branch, workflow, issue number, and parent branch.
 - `merge_pr(pr_number=PR_NUMBER)` is the authoritative proof that the host-side merge was accepted.
 - `git_checkout(branch=<parent_branch>)` exists to make local branch cleanup legal; it is not itself proof that the merge landed.
 - `git_delete_branch(branch=<closing_branch>, mode="both")` performs the cleanup.
-- `@co` reads the PR body as the persistent transfer surface that explains what was delivered, which issues were intended to close on merge, and what follow-up context matters for closeout.
+- `@co` reads the PR body as the persistent transfer surface for durable closeout facts prepared during ready.
+- that PR body must carry the durable closeout facts `@co` needs later, including what was delivered, which issues were intended to close on merge, deferred items/work, and tracking state for those deferred items.
+- that PR body must carry the durable closeout facts `@co` needs later, including what was delivered, which issues were intended to close on merge, deferred items/work, and tracking state for those deferred items.
 - a single conditional step updates epic-parent coordination state when relevant.
 - `@co` may use the merged PR body plus live issue state to recommend the next logically following issue.
 
@@ -200,28 +205,28 @@ The design explicitly rejects stale local `git_diff_stat(...)` as the default me
 
 `close_issue(...)` is not part of the normative path. It remains recovery-only when the merged PR body claimed closure for a specific issue, the merge is complete, and that issue is still open unexpectedly.
 
-### 3.5. Ready-Phase PR Body And Issue-Body Responsibilities
-
-Every workflow ready block that scaffolds a PR body in [.phase-gate/config/contracts.yaml][related-7] should gain the same explicit checks before PR scaffolding:
-
+### 3.5. Ready-Phase PR Body, Handover Basis, And Issue-Body Responsibilities
 1. Verify whether the original issue body is still honest about the branch intent and in-scope breadth established during research.
 2. If research broadened scope and the original issue body no longer reflects that intent honestly, update the original issue body before PR creation.
 3. Review all issues explicitly claimed as in scope in `research.md` and decide which of them are actually closure-ready on this branch.
-4. Encode only those closure-ready issues in the PR body via explicit `Closes #N` entries.
-
-This applies to all workflows whose ready phase submits a PR, including `feature`, `bug`, `refactor`, `docs`, `hotfix`, and `epic`.
-
-The original issue body and the PR body serve different purposes and must not be collapsed:
+4. Build the definitive deferred-work transfer from authoritative issue artifacts only.
+5. Check that every durable closeout fact `@co` may need after merge is present in the PR body, even when the ready hand-over also mentions it.
+6. Use the ready-phase handover template as a completeness check for those durable facts, not as a 1:1 PR-body schema.
+7. Encode the resulting closure-ready issues in the PR body via explicit `Closes #N` entries, and carry deferred items/work plus tracking state into the PR body as durable transfer content.
+The original issue body, the PR body, and the ready hand-over serve different purposes and must not be collapsed:
 
 | Artifact | Purpose | Update rule | Consumer |
 |---|---|---|---|
 | Original issue body | Honest statement of intent and approved scope | Update only when research widened or changed the intended scope enough that the body is no longer truthful | Humans, ready-phase verification |
-| PR body | Delivered-work summary plus persistent `@imp` -> `@co` transfer, including explicit `Closes #N` claims | Always scaffold and finalize during ready | Reviewers, GitHub merge automation, `end-issue` |
-| Ready-phase hand-over | Temporary human-loop summary | Produced at ready end, but not the durable machine-to-machine closeout source | Human operator |
+| PR body | Delivered-work summary plus persistent `@imp` -> `@co` transfer, including explicit `Closes #N`, deferred items/work, and tracking state | Always scaffold and finalize during ready so durable closeout facts survive beyond the ready session | Reviewers, GitHub merge automation, `end-issue` |
+| Ready-phase hand-over | Temporary human-loop rendering of overlapping ready facts | Produced at ready end for the human, but it does not define the PR-body schema and must not become the only durable closeout source | Human operator |
 
-This keeps closure intent where GitHub actually acts on it: the PR body. `end-issue` reads the PR body rather than treating the original issue body as a hidden closure-transport surface.
+This keeps closure intent where GitHub actually acts on it: the PR body. It also ensures that the durable closeout content `@co` may need later on another machine or at another time is not trapped only in the transient ready hand-over.
 
-The exact markdown shape for multi-issue closure claims belongs in planning and documentation. The design decision is only that closure readiness is evaluated in ready against all explicitly in-scope issues, and the resulting durable transfer lives in the PR body.
+The current ready contract and current PR template still expose a design gap: ready instructions in [.phase-gate/config/contracts.yaml][related-7] currently separate the PR narrative from the deferred-work transfer, and the current PR template does not yet provide an explicit deferred-work section. Planning and implementation must close that gap so the runtime contract matches this design.
+
+The exact markdown shape for multi-issue closure claims and deferred-work sections belongs in planning and documentation. The design decision is that closure readiness is evaluated in ready against all explicitly in-scope issues, that the resulting durable transfer lives in the PR body, and that the handover template acts only as a completeness check for durable facts.
+
 
 ### 3.6. Branch-Local State And First-Push Discipline
 
@@ -244,9 +249,9 @@ That rule later maps to the existing first completion checkpoint already present
 | Make `both` the default mode | The normal phase-gate-mcp path expects both a local work branch and a remote branch for PR-driven completion |
 | Keep `origin` as the only supported remote | Research found current remote behavior is already `origin`-centric and there is no approved scope for multi-remote support |
 | Keep policy enforcement in `GitManager` | Protected-branch safety and local-delete guardrails already have a single enforcement boundary there |
-| Introduce a structured branch-delete result | Combined cleanup needs explicit side-by-side outcomes without embedding adapter details in prompt or doc logic |
 | Make `end-issue` an explicit `@co` lifecycle-boundary contract | Merge and post-merge cleanup remain human-approved coordination actions, not `@imp` work or `@qa` actions |
 | Make the PR body the durable `@imp` -> `@co` transfer surface | It persists across machines and time, and GitHub already acts on its closure claims during merge |
+| Use the ready handover template as a completeness check, not a schema | This keeps durable closeout facts aligned without forcing a 1:1 copy of the human hand-over into the PR body |
 | Keep the original issue body limited to honest intent and scope | It should be corrected when research widens intent, but it must not become the delivered-work or closure-claim transport |
 | Reject stale local diff as default merge proof | `merge_pr(...)` proves host-side merge acceptance; local consistency checks need refreshed refs if they are retained at all |
 | Bind first upstream push to the same todo line as the first qualifying commit | This preserves the approved `@co` versus `@imp` ownership split while preventing a loose extra push checklist item |
