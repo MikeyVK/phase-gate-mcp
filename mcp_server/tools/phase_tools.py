@@ -13,22 +13,22 @@ phase transitions via PhaseStateEngine.
     - Format success/error messages
 """
 
-# Standard library
 from pathlib import Path
 from typing import Any
 
-# Third-party
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
-
-# Project modules
+from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.tools.base import BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
+
+TRANSITION_ADVISORY_NOTE = (
+    "Call get_work_context to load the current phase context for this branch before proceeding."
+)
 
 
 class TransitionPhaseInput(BaseModel):
@@ -132,6 +132,7 @@ class TransitionPhaseTool(_BaseTransitionTool):
 
         try:
             result = await anyio.to_thread.run_sync(do_transition)
+            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
 
             return ToolResult.text(
                 f"✅ Successfully transitioned '{params.branch}' "
@@ -206,6 +207,7 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
             if passing:
                 lines.append(f"ℹ️ Gates that would have passed: {', '.join(passing)}")
 
+            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
             return ToolResult.text("\n".join(lines))
 
         except StateMutationConflictError as e:

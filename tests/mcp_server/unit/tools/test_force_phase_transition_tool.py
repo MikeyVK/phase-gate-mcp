@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.tools.phase_tools import (
@@ -113,6 +113,31 @@ class TestForcePhaseTransitionTool:
         transition = state.transitions[0]
         assert transition["forced"] is True
         assert transition["skip_reason"] == "Planning already done in previous project"
+
+    @pytest.mark.asyncio
+    async def test_force_phase_transition_tool_emits_advisory_info_note_after_success(
+        self,
+        tool: ForcePhaseTransitionTool,
+        initialized_branch: str,
+        feature_phases: list[str],
+    ) -> None:
+        """Forced transitions should emit the standard get_work_context advisory note."""
+        params = ForcePhaseTransitionInput(
+            branch=initialized_branch,
+            to_phase=feature_phases[2],
+            skip_reason="Planning already done in previous project",
+            human_approval="Approved: Skip planning phase",
+        )
+        context = NoteContext()
+
+        await tool.execute(params, context)
+
+        notes = context.of_type(InfoNote)
+        assert len(notes) == 1
+        assert notes[0].message == (
+            "Call get_work_context to load the current phase context for this branch before "
+            "proceeding."
+        )
 
     def test_force_phase_transition_tool_requires_skip_reason(
         self, initialized_branch: str, feature_phases: list[str]
