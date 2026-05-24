@@ -173,12 +173,16 @@ class GetWorkContextTool(BaseTool):
 
         instructions = None
         if self._contracts_config is not None and workflow and phase:
-            try:
-                workflow_entry = self._contracts_config.workflows.get(workflow)
-                if workflow_entry is not None:
+            workflow_entry = self._contracts_config.workflows.get(workflow)
+            if workflow_entry is not None:
+                try:
                     instructions = workflow_entry.get_phase(phase).instructions
-            except (KeyError, ValueError):
-                pass
+                except ValueError:
+                    ctx["invalid_phase_warning"] = self._build_invalid_phase_warning(
+                        workflow=workflow,
+                        phase=phase,
+                        valid_phases=workflow_entry.get_phase_names(),
+                    )
 
         ctx["sub_role_hint"] = instructions.sub_role if instructions is not None else ""
         ctx["phase_instructions"] = (
@@ -192,6 +196,23 @@ class GetWorkContextTool(BaseTool):
             self._context_loaded_writer.set_context_loaded(branch, value=True)
         return ToolResult.text(formatted)
 
+    def _build_invalid_phase_warning(
+        self,
+        *,
+        workflow: str,
+        phase: str,
+        valid_phases: list[str],
+    ) -> str:
+        """Build recovery-oriented warning text for known workflow + invalid phase state."""
+        valid_phase_text = ", ".join(valid_phases) if valid_phases else "(none)"
+        return (
+            f"⚠️ Invalid workflow state: workflow '{workflow}' contains phase '{phase}', "
+            "which is not valid for this workflow.\n"
+            f"Valid phases: {valid_phase_text}\n"
+            "Recovery: use force_phase_transition to move this branch to a valid phase, "
+            "then call get_work_context again."
+        )
+
     def _format_context(self, context: dict[str, Any]) -> str:
         """Format work context into compact orientation header + phase instructions block."""
         branch = context.get("current_branch", "")
@@ -204,6 +225,7 @@ class GetWorkContextTool(BaseTool):
         sub_role_hint = context.get("sub_role_hint", "")
         phase_source = context.get("phase_source", "unknown")
         phase_confidence = context.get("phase_confidence", "unknown")
+        invalid_phase_warning = context.get("invalid_phase_warning", "")
         phase_instructions = context.get("phase_instructions", "")
 
         # Phase emoji mapping (7 workflow phases + unknown)
@@ -259,11 +281,19 @@ class GetWorkContextTool(BaseTool):
         lines.append("---")
         lines.append("")
 
+        if invalid_phase_warning:
+            lines.append(invalid_phase_warning)
+            lines.append("")
+
         # Phase instructions block (dominant first block - F_268.13)
         lines.append("### 🎯 Phase Instructions")
         lines.append("")
         if phase_instructions:
             lines.append(phase_instructions)
+        elif invalid_phase_warning:
+            lines.append(
+                "(No phase instructions available until the branch is moved to a valid phase.)"
+            )
         else:
             lines.append(
                 f"(No instructions defined for workflow: {workflow or 'unknown'}, "
