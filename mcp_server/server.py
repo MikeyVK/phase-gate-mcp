@@ -30,7 +30,7 @@ from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger, setup_logging
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.deliverable_checker import DeliverableChecker
@@ -106,7 +106,11 @@ from mcp_server.tools.milestone_tools import (
     CreateMilestoneTool,
     ListMilestonesTool,
 )
-from mcp_server.tools.phase_tools import ForcePhaseTransitionTool, TransitionPhaseTool
+from mcp_server.tools.phase_tools import (
+    TRANSITION_ADVISORY_NOTE,
+    ForcePhaseTransitionTool,
+    TransitionPhaseTool,
+)
 from mcp_server.tools.pr_tools import ListPRsTool, MergePRTool, SubmitPRTool
 from mcp_server.tools.project_tools import (
     GetProjectPlanTool,
@@ -124,6 +128,13 @@ from mcp_server.tools.validation_tools import ValidateDTOTool, ValidationTool
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
+
+TRANSITION_ADVISORY_TOOL_NAMES = {
+    "transition_phase",
+    "force_phase_transition",
+    "transition_cycle",
+    "force_cycle_transition",
+}
 
 
 class MCPServer:
@@ -689,6 +700,8 @@ class MCPServer:
                             )
                             if post_result is not None:
                                 return self._convert_tool_result_to_mcp_result(post_result)
+                            if name in TRANSITION_ADVISORY_TOOL_NAMES:
+                                note_context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
 
                         # Render notes and convert result to MCP content
                         result = note_context.render_to_response(raw_result)

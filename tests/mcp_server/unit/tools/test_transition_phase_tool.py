@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.core.operation_notes import InfoNote, NoteContext
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.tools.phase_tools import (
@@ -93,30 +93,6 @@ class TestTransitionPhaseTool:
         assert "✅" in result.content[0]["text"]
         assert f"{feature_phases[0]} → {feature_phases[1]}" in result.content[0]["text"]
         assert initialized_branch in result.content[0]["text"]
-
-    @pytest.mark.asyncio
-    async def test_transition_phase_tool_emits_advisory_info_note_after_success(
-        self, tool: TransitionPhaseTool, initialized_branch: str, feature_phases: list[str]
-    ) -> None:
-        """Successful transitions should emit the standard get_work_context advisory note."""
-        params = TransitionPhaseInput(
-            branch=initialized_branch, to_phase=feature_phases[1], human_approval="Ready to plan"
-        )
-        context = NoteContext()
-
-        result = await tool.execute(params, context)
-
-        notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert notes[0].message == (
-            "Call get_work_context to load the current phase context for this branch before "
-            "proceeding."
-        )
-
-        rendered = context.render_to_response(result)
-        assert len(rendered.content) == 2
-        assert rendered.content[0]["text"] == result.content[0]["text"]
-        assert rendered.content[1]["text"] == notes[0].message
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_validates_sequence(

@@ -19,7 +19,7 @@ from typing import Any
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
@@ -132,7 +132,6 @@ class TransitionPhaseTool(_BaseTransitionTool):
 
         try:
             result = await anyio.to_thread.run_sync(do_transition)
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
 
             return ToolResult.text(
                 f"✅ Successfully transitioned '{params.branch}' "
@@ -207,7 +206,6 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
             if passing:
                 lines.append(f"ℹ️ Gates that would have passed: {', '.join(passing)}")
 
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
             return ToolResult.text("\n".join(lines))
 
         except StateMutationConflictError as e:
