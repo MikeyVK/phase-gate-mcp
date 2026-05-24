@@ -1,10 +1,10 @@
 <!-- docs\development\issue341\design.md -->
-<!-- template=design version=5827e841 created=2026-05-23T15:00Z updated=2026-05-23 -->
+<!-- template=design version=5827e841 created=2026-05-23T15:00Z updated=2026-05-24 -->
 # Design: @co-owned epic workflow orchestration
 
 **Status:** DRAFT  
-**Version:** 1.0  
-**Last Updated:** 2026-05-23
+**Version:** 1.1  
+**Last Updated:** 2026-05-24
 
 ---
 
@@ -167,14 +167,18 @@ The design keeps `@co` narrow but sufficient. The existing repo read/search base
 - `run_quality_gates`
 - `submit_pr`
 - `merge_pr`
-- `close_issue`
+
+The existing issue-admin baseline already includes `close_issue`, but the lifecycle-exit redesign does not use it as the normative epic-owned merged-path step. No additional `@co` tools are silently approved here beyond the research-boundary allowlist.
+
 **Do not add to `@co`:**
 - `transition_cycle`
 - `force_cycle_transition`
 - `run_tests`
 - DTO/template validators
 - general production-code implementation tools beyond docs/contracts/prompt editing
-
+- `run_tests`
+- DTO/template validators
+- general production-code implementation tools beyond docs/contracts/prompt editing
 The wrapper itself must expose two sub-role families in both `AGENTS.md` and `.github/agents/co.agent.md` rather than leaving epic vocabulary only inside `contracts.yaml`:
 - coordination sub-roles preserved for non-lifecycle coordination: `triager`, `backlog-reviewer`, `tracker`, `issue-author`
 - epic lifecycle sub-roles added for branch-owned epic execution: `epic-researcher`, `epic-planner`, `epic-designer`, `epic-coordinator`, `epic-documenter`, `epic-releaser`
@@ -189,26 +193,28 @@ The project-level and agent-level authorities must both change in five explicit 
 Issue `#341` is an epic-specific extension of the lifecycle-coordinator prior art from issue `#268`, not a repo-wide replacement of it. Issue `#268` remains the baseline model for general issue entry or exit and for non-epic implementation branches. On epic-owned branches only, the broader `@co` allowlist is the approved override: because the branch itself is coordination work, `@co` may perform the branch-local commits, prompt-surface edits, phase transitions, PR submission, and merge or close actions required to execute the epic lifecycle end-to-end. For non-epic branches, the issue-268 baseline still applies and `@co` does not own the first implementation commit or push.
 ### 3.5. Lifecycle Prompt Design
 
-Prompt copy, examples, and output contracts must stay consistent with the active workflow contract they surface and must not introduce a new epic phase-order policy. `open-issue` and `close-issue` are explicit lifecycle-boundary exceptions to the ordinary session-start rule; outside those prompts, the normal `get_work_context`-first startup contract remains in force.
 **`open-issue.prompt.md`**
 - ownership moves from `agent: imp` to `agent: co`
 - this prompt models explicit lifecycle entry, not background coordination
 - behavior is workflow-split:
-  - for `epic`, the exact owned-branch bootstrap sequence is `get_issue -> create_branch -> git_checkout -> initialize_project(issue_number, issue_title, workflow_name) -> get_project_plan -> get_work_context -> first commit with the current workflow-aware commit contract -> git_push`
-  - for non-epic workflows, `@co` owns branch entry through `get_issue`, `create_branch`, `git_checkout`, `initialize_project(issue_number, issue_title, workflow_name)`, and `get_project_plan`, then hands off to `@imp`; `@imp` becomes the first agent to call `get_work_context` and owns the first commit or push boundary on that branch
+  - for `epic`, the exact owned-branch bootstrap sequence is `get_issue -> create_branch -> git_checkout -> initialize_project(issue_number, issue_title, workflow_name) -> get_work_context -> get_project_plan -> first commit with the current workflow-aware commit contract -> git_push`
+  - on that epic-owned path, `get_work_context` and `get_project_plan` are both explicit bootstrap verification steps; if `get_work_context` cannot load the startup phase context cleanly, or if `get_project_plan` returns a missing or inconsistent workflow or phase contract, `@co` must stop before the first commit or push
+  - for non-epic workflows, preserve the issue-268 lifecycle-entry baseline rather than redefining it here: `@co` owns branch entry through `get_issue`, `create_branch`, `git_checkout`, `initialize_project(issue_number, issue_title, workflow_name)`, and `get_project_plan`, then hands off to `@imp`; in that inherited path, `get_project_plan` remains a hand-off verification step and must stop the flow if the initialized plan is missing or inconsistent, while `@imp` becomes the first agent to call `get_work_context` before the first commit or any further write action on that branch
 - if `@co` is merely coordinating around ongoing `@imp` work, use a normal `@co` session rather than this prompt
 - output contract should report branch, workflow, first phase, whether the flow stopped at `@co` hand-off or completed full owned-branch bootstrap, push result when applicable, and blockers
 
 **`close-issue.prompt.md`**
 - new `@co`-owned lifecycle-exit prompt
 - this prompt models owned-branch lifecycle exit only, not general background coordination
-- the normative owned-branch exit path is: wait for human approval and satisfied QA or handover conditions, call `merge_pr`, then call `close_issue`
-- the prompt may mention optional follow-on branch cleanup as separate coordination, but the lifecycle-exit contract itself is `merge_pr -> close_issue`
-- must stay symmetric with the lifecycle-coordinator model from issue `#268`
-- the current mixed branch topology is transitional context for coordination, not a reason to redefine lifecycle-exit sequencing inside this design
+- for ordinary non-epic lifecycle exit, preserve the issue-268 baseline rather than redefining it inside issue `#341`
+- on epic-owned branches, the close-issue design adds post-merge coordination duties: after human approval and satisfied QA or handover conditions, merge the PR, return to the parent branch, verify that the merged work has landed there, confirm branch cleanup including remote-branch absence, then update the epic issue body when relevant and present the next planned or logically following issue
+- `close_issue` is not the normative next action on that epic-owned path; repo-local evidence shows `merge_pr` itself only merges, while issue-closure intent currently lives in PR-body references such as `Closes #123`
+- because the exact `@co` allowlist is frozen by the Approved Strategy, the design defines these as required epic-owned exit outcomes rather than silently approving additional `@co` tools here; planning must either realize them within the approved boundary or escalate an explicit allowlist amendment
+- `close_issue` remains an explicit recovery action if post-merge verification shows the linked issue is still open and a human wants to close it deliberately
+- the prompt must stay symmetric with issue `#268` at the lifecycle-boundary ownership level while keeping the richer merge-verify-cleanup model scoped to epic-owned exit rather than the general non-epic baseline
 
 **`implement-cycle.prompt.md`**
-- retired by removing it from the live prompt inventory, preferably by moving it into `.github/prompts/archive/` or deleting it outright
+- retired by removing it from the live prompt inventory and moving it into `.github/prompts/archive/`
 - not repurposed for epic execution
 - not reused to represent `@co` background coordination
 - leaving a frontmatter-bearing live prompt file at `.github/prompts/implement-cycle.prompt.md` is not an allowed end state for issue `#341`
@@ -219,7 +225,7 @@ Prompt copy, examples, and output contracts must stay consistent with the active
 The existing note bus and server response assembly already support the desired user-visible behavior:
 - transition tools can produce notes through `NoteContext`
 - `mcp_server/server.py` renders notes after the primary result via `render_to_response(...)`
-- `InfoNote` is already available and semantically fits a success-path follow-up message better than `SuggestionNote`
+- `InfoNote` remains the better fit here because issue `#339` needs a post-success orchestration nudge; current repo usage of `SuggestionNote` is tied to advisory or error-preflight paths rather than success-path follow-up
 
 **Chosen contract:**
 - `transition_phase`, `force_phase_transition`, `transition_cycle`, and `force_cycle_transition` append the same `InfoNote`
@@ -299,6 +305,8 @@ Within that runtime surface, planning must keep issues `#339` and `#340` as sepa
 - `#339 transition advisory`: the exact standardized post-transition note text defined in section 3.6 on the four transition tools
 - `#340 invalid-state recovery`: the explicit `get_work_context` warning defined in section 3.7, including valid phases, recovery action, and header-layer placement before the phase-instructions block
 
+Planning must also account for the lifecycle-exit cleanup asymmetry surfaced during design: local branch cleanup is tool-supported in the repository, while remote branch absence is only a required outcome. Implementation must therefore either rely on host-side auto-delete plus verification or surface explicit follow-up when the remote branch remains.
+
 The current mixed branch topology remains relevant context, but exact debt-retirement sequencing belongs to planning and coordination rather than to this design artifact.
 No design-blocking questions remain. The `#339` and `#340` wording and placement contracts are fixed by sections 3.6 and 3.7. Planning and implementation may still choose:
 - the safest rollout order across docs, prompts, contracts, runtime code, and tests
@@ -310,11 +318,12 @@ No design-blocking questions remain. The `#339` and `#340` wording and placement
 | Use a contract-first redesign instead of a generic runtime framework | Matches approved strategy and keeps the blast radius narrow |
 | Keep epic phase sequencing out of scope for issue `#341` and preserve the active runtime contract rather than making a new policy decision in design | Avoids strategy drift while still letting the ownership redesign target the existing contract surfaces |
 | Make epic phases explicitly `@co`-scoped via dedicated sub-role names | Removes lingering semantic overlap with `@imp` |
-| Expand `@co` with a narrow explicit allowlist plus explicit wrapper sub-role redesign instead of broad implementation rights | Gives `@co` enough authority to own epic branches without collapsing role boundaries |
-| Move lifecycle prompts to `@co` and retire the stale cycle prompt | Aligns lifecycle entry/exit with the lifecycle-coordinator model |
+| Expand `@co` only within the research-approved narrow allowlist plus explicit wrapper sub-role redesign instead of broad implementation rights | Gives `@co` enough authority to own epic branches without silently broadening role boundaries |
+| Keep `get_project_plan` as an explicit stop-go verification step wherever lifecycle entry retains it | Prevents a read-only routine call from surviving in the prompt flow without a decision attached |
+| Move lifecycle prompts to `@co`, archive the stale cycle prompt, and scope merge-verify-cleanup to epic-owned exit without rewriting the inherited non-epic baseline from issue `#268` | Aligns lifecycle ownership while keeping issue `#341` inside its approved scope boundary |
+| Keep `close_issue` available only as explicit post-merge recovery on the epic-owned override, not as the default next step after `merge_pr` there | Repo-local evidence shows merge and explicit issue closure are distinct actions, so the richer epic-owned exit flow must verify landed work and cleanup first |
 | Deliver `#339` via appended `InfoNote` on successful transitions | Reuses existing note and rendering infrastructure with minimal runtime change |
 | Deliver `#340` via explicit recovery warning inside `get_work_context` while keeping a non-error result | Improves operator guidance without widening into enforcement redesign |
-
 ## Related Documentation
 - **[docs/development/issue341/research.md][related-1]**
 - **[docs/development/issue268/research.md][related-2]**
@@ -348,4 +357,5 @@ No design-blocking questions remain. The `#339` and `#340` wording and placement
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-05-24 | Agent | Refined lifecycle prompt design after user review: added explicit rationale and stop-go consequences for retained `get_project_plan` calls, scoped merge-verify-cleanup to epic-owned exit without silently broadening the `@co` allowlist, kept the archive direction for `implement-cycle`, and clarified why `#339` keeps `InfoNote` |
 | 1.0 | 2026-05-23 | Agent | Initial issue341 design draft covering epic ownership, prompt lifecycle, and runtime contracts for issues #339 and #340 |
