@@ -2,10 +2,46 @@
   "branch": "feature/341-co-as-end-to-end-epic-workflow-owner",
   "issue_number": 341,
   "workflow_name": "feature",
-  "current_phase": "research",
-  "current_cycle": null,
-  "last_cycle": null,
-  "cycle_history": [],
+  "current_phase": "implementation",
+  "current_cycle": 1,
+  "last_cycle": 0,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Lifecycle prompt realignment",
+      "forced": false,
+      "entered": "2026-05-24T06:38:42.856218+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Transition advisory note",
+      "forced": false,
+      "entered": "2026-05-24T06:47:33.688549+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "Invalid-state recovery warning",
+      "forced": false,
+      "entered": "2026-05-24T07:43:03.280949+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Transition advisory note",
+      "entered": "2026-05-24T11:34:28.031059+00:00",
+      "forced": true,
+      "skip_reason": "QA rework requires committing previously uncommitted Cycle 3 wording changes after the branch was force-returned to implementation cycle 1 for commit protocol repair.",
+      "human_approval": "User approved QA rework in chat on 2026-05-24",
+      "skipped_cycles": [
+        2
+      ]
+    },
+    {
+      "cycle_number": 4,
+      "name": "Invalid-state recovery warning",
+      "forced": false,
+      "entered": "2026-05-24T11:34:40.987309+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -16,11 +52,140 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "User requested a targeted formatting fix to get_work_context to be implemented and committed from implementation phase.",
   "issue_title": "Research: @co as end-to-end epic workflow owner",
   "parent_branch": "main",
   "created_at": "2026-05-23T14:07:02.289391+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-23T14:57:50.948333+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-05-24T06:01:42.336443+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-05-24T06:19:24.797746+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-24T08:08:34.530753+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "coordination",
+      "timestamp": "2026-05-24T08:22:03.030458+00:00",
+      "human_approval": "User approved in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "User explicitly requested a forced transition from validation to coordination on a feature workflow branch."
+    },
+    {
+      "from_phase": "coordination",
+      "to_phase": "implementation",
+      "timestamp": "2026-05-24T08:25:24.675360+00:00",
+      "human_approval": "User approved in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "User requested a targeted small fix to be executed from implementation phase after forcing the branch into invalid coordination state."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "coordination",
+      "timestamp": "2026-05-24T08:28:41.661808+00:00",
+      "human_approval": "User approved in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "User explicitly requested forcing the feature workflow branch back into coordination to inspect get_work_context output."
+    },
+    {
+      "from_phase": "coordination",
+      "to_phase": "implementation",
+      "timestamp": "2026-05-24T10:50:13.680356+00:00",
+      "human_approval": "User approved in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "User explicitly requested returning the feature workflow branch to implementation before a targeted advisory-note text fix."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-24T10:57:26.152177+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-05-24T11:33:40.137042+00:00",
+      "human_approval": "User approved QA rework in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "QA rework requires committing previously uncommitted implementation deliverables before re-running validation and committing the updated validation report."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-24T11:34:54.995787+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-24T11:42:59.129387+00:00",
+      "human_approval": "QA GO for documentation phase confirmed in chat on 2026-05-24",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-24T12:03:33.622220+00:00",
+      "human_approval": "Documentation phase completed for issue #341 on 2026-05-24",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-24T13:15:33.422241+00:00",
+      "human_approval": "User requested force transition to documentation phase in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "User requested a forced move back from ready to documentation to continue documentation-phase work."
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-24T13:27:00.586149+00:00",
+      "human_approval": "Documentation update for /Go prompt committed on 2026-05-24; user requested transition to ready.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "implementation",
+      "timestamp": "2026-05-24T13:29:02.719443+00:00",
+      "human_approval": "User requested forced transition to implementation phase in chat on 2026-05-24",
+      "forced": true,
+      "skip_reason": "User requested a targeted formatting fix to get_work_context to be implemented and committed from implementation phase."
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }

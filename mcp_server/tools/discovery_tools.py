@@ -270,6 +270,7 @@ class GetWorkContextTool(BaseTool):
         # Orientation line 4: phase detection source (only if confidence != high)
         if phase_confidence != "high":
             lines.append(f"⚠️ Phase detection: source={phase_source}, confidence={phase_confidence}")
+        lines.append("")
         lines.append(
             "TODO discipline: create or refresh your TODO list now; "
             "keep exactly one item in progress and update it after each material step."

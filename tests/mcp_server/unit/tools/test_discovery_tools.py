@@ -1147,6 +1147,7 @@ class TestGetWorkContextC1Restructuring:
         reminder = "TODO discipline: create or refresh your TODO list now"
         assert reminder in text
         assert "keep exactly one item in progress" in text
+        assert "Parent: main\n\nTODO discipline:" in text
         assert text.find(reminder) < text.find("### 🎯 Phase Instructions")
 
     @pytest.mark.asyncio
