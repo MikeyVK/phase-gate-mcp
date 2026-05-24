@@ -1044,8 +1044,11 @@ class TestGetWorkContextC1Restructuring:
         assert not result.is_error
         text = result.content[0]["text"]
         assert "⚠️ Invalid workflow state:" in text
-        assert "workflow 'feature'" in text
-        assert "phase 'invalid_phase'" in text
+        assert (
+            "⚠️ Invalid workflow state: workflow 'feature' does not contains phase "
+            "'invalid_phase'." in text
+        )
+        assert "which is not valid for this workflow" not in text
         assert "Valid phases:" in text
         assert "research" in text
         assert "ready" in text
