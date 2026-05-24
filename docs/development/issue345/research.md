@@ -81,15 +81,16 @@ During this research session, the user also supplied an approved `@co -> @imp` h
 
 Research consequence: later phases should reuse the existing `origin`-first boundary unless a separate issue deliberately broadens the remote contract.
 
-### F_345.3 - `submit_pr` and PR-based merge flow require a remote branch on the current implementation
+### F_345.3 - The current GitHub PR -> merge tool path technically requires a remote branch
 
-Repo evidence shows no blanket requirement that every local git branch must exist remotely. However, the repository's approved operating model for this work is PR-based merge for traceability, and the current PR tooling requires an upstream remote branch for that path:
+Repo evidence shows no blanket requirement that every local git branch must exist remotely. A fully local branch can exist as long as the workflow stays on local git operations. However, once the workflow uses the repository's GitHub PR -> merge path, a remote branch becomes a technical prerequisite on the current implementation:
 
 - `GitManager.prepare_submission()` in `mcp_server/managers/git_manager.py` blocks when no upstream tracking branch exists and tells the caller to run `git_push(set_upstream=True)` first.
 - `SubmitPRTool` in `mcp_server/tools/pr_tools.py` always calls `prepare_submission()`, always pushes, and then calls `GitHubManager.create_pr(...)`.
 - `GitHubAdapter.create_pr()` in `mcp_server/adapters/github_adapter.py` calls `repo.create_pull(...)`, which depends on the head branch existing on GitHub.
+- `merge_pr` operates on an existing GitHub pull request, so the merge half of that path is unavailable until the PR exists.
 
-Research consequence: later phases should not model remote branch creation as globally mandatory for raw git branching, but they must model it as mandatory for the repository's PR-driven close-out path.
+Research consequence: later phases should not model remote branch creation as globally mandatory for raw git branching, but they must model it as technically mandatory whenever the workflow is expected to use `submit_pr` and `merge_pr`.
 
 ### F_345.4 - The current lifecycle-exit prompt still models an older `close_issue`-driven contract
 
@@ -138,15 +139,16 @@ Several active sources agree that `.phase-gate/state.json` and `.phase-gate/deli
 
 Research consequence: the inconsistency is not about whether these files may reach `main`; that rule already exists. The unresolved gap is that the active instructions and reference docs do not yet consistently state that the state artifacts are supposed to travel with the branch history until `submit_pr` neutralizes them.
 
-### F_345.7 - The repository already has the right role split for first push, but the first child-workphase instructions do not yet make that responsibility explicit
+### F_345.7 - The repository already has the right role split for first push, but the first child-workphase final commit step does not yet encode it
 
-The user's approved operating rule is now explicit for this branch and should be preserved in later phases:
+The approved operating rule is now explicit for this branch and should be preserved in later phases:
 
 - epic branch bootstrap remains a `@co` responsibility and already includes first commit plus `git_push(set_upstream=true)` in `.github/prompts/start-issue.prompt.md`
 - child issue branches remain an `@imp` responsibility after the `@co` hand-off
 - `@qa` has no role in branch bootstrapping, upstream creation, or state-artifact responsibility
+- for child workflows, the first remote push should not be introduced as a separate extra todo; it should be attached to the existing final commit step of the first active workphase for that workflow
 
-Research consequence: later phases should preserve this role boundary and add the missing first-workphase discipline to the `@imp` side rather than flattening everything into a generic auto-push rule.
+Research consequence: later phases should preserve this role boundary and encode `git_push(set_upstream=true)` inside the existing final commit checkpoint of the first child workphase in each relevant workflow, rather than flattening everything into a generic auto-push rule or a standalone push checklist item.
 
 ### F_345.8 - The adjacent findings are approved as same-branch scope, but remain secondary to the primary git-delete capability
 
@@ -221,11 +223,11 @@ Research consequence: later phases must keep `git_delete_branch` remote deletion
 | Close-out callers that need one-go cleanup | Additive extension | The user explicitly wants local and remote deletion in the same flow when requested | Support a single tool path that can remove local and remote without requiring a second terminal command |
 | Remote-absent case | Idempotent non-error handling | The issue text explicitly asks for a clear message instead of an error when the remote branch is already absent | Later phases must return a clear result for `remote=True` even when there is nothing left to delete remotely |
 | Remote boundary | Preserve current supported contract | Repo prior art is `origin`-centric and there is no current requirement for broader remote routing | Do not widen this issue into multi-remote support without a separate decision |
-| PR-driven merge traceability | Preserve remote-branch requirement for PR path | The user explicitly chooses GitHub PR merge for traceability, and the current `submit_pr` / `merge_pr` flow requires upstream + GitHub-visible head branch | Do not model remote branch existence as a universal git requirement, but do model it as required before PR-driven closeout |
+| GitHub PR -> merge path | Preserve remote-branch requirement for the GitHub PR tool path | The current `submit_pr` / `merge_pr` flow technically requires upstream tracking and a GitHub-visible head branch | Do not model remote branch existence as a universal git requirement, but do model it as required whenever the workflow is expected to use `submit_pr` and `merge_pr` |
 | Lifecycle-exit prompt contract | Clean break to a new `end-issue` prompt | The current `close-issue` prompt name and flow no longer fit the approved lifecycle-exit model | Remove `close-issue.prompt.md` rather than archive it; later phases should introduce `end-issue.prompt.md` with one linear flow, no normative `close_issue` call, and only one conditional epic-parent update step |
 | Ready-phase PR closure decision | Make the decision explicit in ready, not implicit in close-out | The approved end-of-issue flow depends on PR body closure behavior that the current ready phase does not explicitly decide | Later phases must add explicit issue-body verification and explicit `Closes #N` decision steps to the relevant ready-phase instructions before PR scaffolding |
 | Branch-local state artifacts | Preserve git-tracked branch-local state on work branches | The state artifacts are the branch-local workflow backbone across machines, but merge policy already forbids them from reaching `main` | Later phases must stop describing `.phase-gate/state.json` as runtime-only or uncommitted and must preserve `submit_pr` neutralization before merge |
-| First push responsibility | Keep the role split explicit instead of auto-pushing every commit | Epic branch startup and child branch execution have different owners by design | Preserve `@co` first commit + push on epic startup, preserve `@imp` ownership of first child-branch commit/push after hand-off, and keep `@qa` out of this responsibility model |
+| First push responsibility | Keep the role split explicit and attach first push to the existing first-workphase final commit | Epic branch startup and child branch execution have different owners by design, and the user-approved workflow does not want a separate standalone push todo | Preserve `@co` first commit + push on epic startup, preserve `@imp` ownership of first child-branch commit/push after hand-off, encode `git_push(set_upstream=true)` inside the existing final commit step of the first child workphase for each relevant workflow, and keep `@qa` out of this responsibility model |
 
 ## Open Questions
 
