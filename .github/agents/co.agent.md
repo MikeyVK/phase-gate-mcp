@@ -38,6 +38,9 @@ tools:
   - phase-gate-mcp/git_add_or_commit
   - phase-gate-mcp/git_push
   - phase-gate-mcp/run_quality_gates
+  - phase-gate-mcp/git_delete_branch
+  - phase-gate-mcp/git_stash
+  - phase-gate-mcp/git_pull
   - phase-gate-mcp/submit_pr
   - phase-gate-mcp/merge_pr
 handoffs:
