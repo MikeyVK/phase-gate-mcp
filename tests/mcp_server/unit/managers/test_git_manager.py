@@ -163,7 +163,32 @@ class TestGitManagerOperations:
     def test_delete_branch_valid(self, manager: GitManager, mock_adapter: MagicMock) -> None:
         """Test deleting a valid branch."""
         manager.delete_branch("feature/old", NoteContext())
-        mock_adapter.delete_branch.assert_called_once_with("feature/old", force=False)
+        mock_adapter.delete_local_branch.assert_called_once_with("feature/old", force=False)
+
+    def test_delete_branch_mode_local(self, manager: GitManager, mock_adapter: MagicMock) -> None:
+        """Test mode=local only calls local delete."""
+        manager.delete_branch("feature/old", NoteContext(), mode="local")
+        mock_adapter.delete_local_branch.assert_called_once_with("feature/old", force=False)
+        mock_adapter.delete_remote_branch.assert_not_called()
+
+    def test_delete_branch_mode_remote(self, manager: GitManager, mock_adapter: MagicMock) -> None:
+        """Test mode=remote only calls remote delete, not local."""
+        manager.delete_branch("feature/old", NoteContext(), mode="remote")
+        mock_adapter.delete_local_branch.assert_not_called()
+        mock_adapter.delete_remote_branch.assert_called_once_with("feature/old")
+
+    def test_delete_branch_mode_both(self, manager: GitManager, mock_adapter: MagicMock) -> None:
+        """Test mode=both calls both local and remote delete."""
+        manager.delete_branch("feature/old", NoteContext(), mode="both")
+        mock_adapter.delete_local_branch.assert_called_once_with("feature/old", force=False)
+        mock_adapter.delete_remote_branch.assert_called_once_with("feature/old")
+
+    def test_delete_branch_mode_both_local_absent(self, manager: GitManager, mock_adapter: MagicMock) -> None:
+        """Test mode=both with absent local branch does not raise; remote still called."""
+        from mcp_server.core.exceptions import ExecutionError
+        mock_adapter.delete_local_branch.side_effect = ExecutionError("Branch feature/old does not exist")
+        manager.delete_branch("feature/old", NoteContext(), mode="both")
+        mock_adapter.delete_remote_branch.assert_called_once_with("feature/old")
 
     def test_stash_operations(self, manager: GitManager, mock_adapter: MagicMock) -> None:
         """Test stash delegations."""

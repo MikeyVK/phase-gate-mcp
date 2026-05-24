@@ -264,7 +264,7 @@ class TestGitAdapterDeleteBranch:
             mock_repo_class.return_value = mock_repo
 
             adapter = GitAdapter("/fake/path")
-            adapter.delete_branch("feature/test")
+            adapter.delete_local_branch("feature/test")
 
             mock_repo.delete_head.assert_called_once_with("feature/test", force=False)
 
@@ -279,7 +279,7 @@ class TestGitAdapterDeleteBranch:
             adapter = GitAdapter("/fake/path")
 
             with pytest.raises(ExecutionError, match="current branch"):
-                adapter.delete_branch("feature/test")
+                adapter.delete_local_branch("feature/test")
 
     def test_delete_nonexistent_branch_raises_error(self) -> None:
         """Test delete non-existent branch raises ExecutionError."""
@@ -287,6 +287,57 @@ class TestGitAdapterDeleteBranch:
             mock_repo = MagicMock()
             mock_repo.heads.__contains__ = lambda _self, _x: False
             mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+            with pytest.raises(ExecutionError, match="does not exist"):
+                adapter.delete_local_branch("nonexistent")
+
+
+class TestGitAdapterDeleteRemoteBranch:
+    """Tests for remote branch deletion."""
+
+    def test_delete_remote_branch_deleted(self) -> None:
+        """Test successful remote branch deletion returns 'deleted'."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_remote = MagicMock()
+            mock_ref = MagicMock()
+            mock_ref.name = "origin/feature/old"
+            mock_remote.refs = [mock_ref]
+            mock_repo.remote.return_value = mock_remote
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+            result = adapter.delete_remote_branch("feature/old")
+
+            assert result == "deleted"
+            mock_repo.git.push.assert_called_once_with("origin", "--delete", "feature/old")
+
+    def test_delete_remote_branch_absent_returns_absent(self) -> None:
+        """Test absent remote branch returns 'absent', not an error."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_remote = MagicMock()
+            mock_remote.refs = []
+            mock_repo.remote.return_value = mock_remote
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+            result = adapter.delete_remote_branch("feature/old")
+
+            assert result == "absent"
+            mock_repo.git.push.assert_not_called()
+
+    def test_delete_remote_branch_no_origin_raises_error(self) -> None:
+        """Test missing origin remote raises ExecutionError."""
+        with patch("mcp_server.adapters.git_adapter.Repo") as mock_repo_class:
+            mock_repo = MagicMock()
+            mock_repo.remote.side_effect = ValueError("Remote 'origin' not found")
+            mock_repo_class.return_value = mock_repo
+
+            adapter = GitAdapter("/fake/path")
+            with pytest.raises(ExecutionError, match="not configured"):
+                adapter.delete_remote_branch("feature/old")
 
 
 class TestGitAdapterStash:
@@ -391,7 +442,7 @@ class TestGitAdapterStash:
             adapter = GitAdapter("/fake/path")
 
             with pytest.raises(ExecutionError, match="does not exist"):
-                adapter.delete_branch("nonexistent")
+                adapter.delete_local_branch("nonexistent")
 
 
 class TestGitAdapterCommit:
