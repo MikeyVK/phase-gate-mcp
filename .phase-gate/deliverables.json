@@ -70,20 +70,28 @@
             "name": "C3 \u2014 FileQualityStateRepository lock",
             "deliverables": [
               {
-                "id": "C3-D1",
-                "description": "FileQualityStateRepository.apply() acquires threading.Lock (5s timeout) before read-apply-write"
+                "description": "FileQualityStateRepository.apply() acquires threading.Lock (5s timeout) before read-apply-write",
+                "id": "C3-D1"
               },
               {
-                "id": "C3-D2",
-                "description": "QualityStateMutationConflictError defined in quality_state_repository.py"
+                "description": "QualityStateMutationConflictError defined in quality_state_repository.py",
+                "id": "C3-D2"
               },
               {
-                "id": "C3-D3",
-                "description": "New lock-contention unit test passes; new timeout unit test passes"
+                "description": "New lock-contention unit test passes; new timeout unit test passes",
+                "id": "C3-D3"
               },
               {
-                "id": "C3-D4",
-                "description": "IQualityStateRepository protocol unchanged; existing tests green; mypy + ruff clean"
+                "description": "IQualityStateRepository protocol unchanged; existing tests green; mypy + ruff clean on quality_state_repository.py",
+                "id": "C3-D4"
+              },
+              {
+                "description": "RunQualityGatesTool.execute() catches QualityStateMutationConflictError and returns RecoveryNote(message=e.recovery) + ToolResult.error(e.diagnostic)",
+                "id": "C3-D5"
+              },
+              {
+                "description": "New test: QualityStateMutationConflictError raised by manager -> RecoveryNote produced + ToolResult.error returned (test_quality_tools.py); mypy + ruff clean on quality_tools.py",
+                "id": "C3-D6"
               }
             ],
             "exit_criteria": "Lock in place; QualityStateMutationConflictError raised on timeout; IQualityStateRepository unchanged; new unit tests pass; existing tests green; quality gates green"

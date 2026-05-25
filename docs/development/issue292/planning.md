@@ -38,7 +38,7 @@ Four TDD cycles to eliminate the stale-lambda pattern in all 8 PhaseStateEngine 
 
 Implementation must observe these bindings from research.md v1.2 and design.md v0.3:
 
-- **Boundary 1:** All 8 former `_apply_state()` call sites must pass a lambda that derives from `_s`. Six use `_s.with_updates(DELTA_FIELDS)`. Approved exception: `_load_state_or_reconstruct()` uses `lambda _s: reconstructed_state` where `reconstructed_state` comes from git history, not from a pre-lock read of `state.json`.
+- **Boundary 1:** All 8 former `_apply_state()` call sites must pass a lambda that derives from `_s`. Seven use `_s.with_updates(DELTA_FIELDS)`. Approved exception: `_load_state_or_reconstruct()` uses `lambda _s: reconstructed_state` where `reconstructed_state` comes from git history, not from a pre-lock read of `state.json`.
 - **Boundary 2:** `FileQualityStateRepository.apply()` must acquire a `threading.Lock` (5s timeout) before the read-apply-write sequence. `QualityStateMutationConflictError` must be defined in `quality_state_repository.py` (no cross-import from `workflow_state_mutator.py`).
 - **Boundary 3:** `_save_state()` is dead code — delete it, migrate Category A, delete Category B.
 - **No schema changes:** `BranchState`, `IWorkflowStateMutator`, `IQualityStateRepository` signatures unchanged.
@@ -102,25 +102,29 @@ Implementation must observe these bindings from research.md v1.2 and design.md v
 **Dependencies:** C1 complete
 
 
-### Cycle 3: C3 — `FileQualityStateRepository` lock
+### Cycle 3: C3 — `FileQualityStateRepository` lock and tool-layer propagation
 
-**Goal:** Add `threading.Lock` (5s timeout) to `FileQualityStateRepository.apply()` and introduce `QualityStateMutationConflictError`.
+**Goal:** Add `threading.Lock` (5s timeout) to `FileQualityStateRepository.apply()`, introduce `QualityStateMutationConflictError`, and add the tool-layer catch block in `RunQualityGatesTool` so the new exception is returned as a `RecoveryNote` + `ToolResult.error`.
 
 **Production files:**
 - `mcp_server/managers/quality_state_repository.py` — lock + `QualityStateMutationConflictError` added
+- `mcp_server/tools/quality_tools.py` — `except QualityStateMutationConflictError` catch block added (same `RecoveryNote(message=e.recovery)` + `ToolResult.error(e.diagnostic)` pattern as `StateMutationConflictError` in other tools)
 
 **Tests:**
 - `tests/mcp_server/unit/managers/test_quality_state_repository.py`:
   - New: lock-contention test — two concurrent `apply()` calls, assert both writes land (no lost update)
   - New: timeout test — lock held >5s, assert `QualityStateMutationConflictError` raised
   - Existing tests stay green
+- `tests/mcp_server/unit/tools/test_quality_tools.py`:
+  - New: `QualityStateMutationConflictError` raised by manager — assert `RecoveryNote` produced and `ToolResult.error` returned
 
 **Success Criteria:**
 - `FileQualityStateRepository.apply()` acquires lock before read-apply-write
 - `QualityStateMutationConflictError` raised on 5s timeout
 - `IQualityStateRepository` protocol unchanged
-- `QAManager` callers propagate exception unchanged
-- mypy + ruff clean on `quality_state_repository.py`
+- `QAManager` callers propagate exception unchanged (no new catch blocks in `qa_manager.py`)
+- `RunQualityGatesTool.execute()` catches `QualityStateMutationConflictError` and returns `RecoveryNote` + `ToolResult.error`
+- mypy + ruff clean on `quality_state_repository.py` and `quality_tools.py`
 - Quality gates green
 
 
@@ -159,3 +163,4 @@ Implementation must observe these bindings from research.md v1.2 and design.md v
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-05-25 | Agent | Initial planning document |
+| 1.1 | 2026-05-25 | Agent | QA NOGO fixes: Boundary 1 count 6→7; C3 expanded with quality_tools.py surface + tool-layer deliverable |
