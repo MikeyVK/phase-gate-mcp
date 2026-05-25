@@ -174,6 +174,7 @@ class PhaseStateEngine:
                 parent_branch=parent_branch,
                 created_at=datetime.now(UTC).isoformat(),
                 transitions=[],
+                reconstructed=False,
             ),
         )
 
