@@ -2,7 +2,7 @@
   "branch": "bug/293-cycle-transitions-wrong-phase-exit-gates",
   "issue_number": 293,
   "workflow_name": "bug",
-  "current_phase": "validation",
+  "current_phase": "documentation",
   "current_cycle": null,
   "last_cycle": 2,
   "cycle_history": [
@@ -56,6 +56,14 @@
       "from_phase": "implementation",
       "to_phase": "validation",
       "timestamp": "2026-05-25T12:43:32.835164+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-25T12:50:36.657504+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
