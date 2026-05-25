@@ -891,7 +891,7 @@ class TestPhaseStateFreshSLambdaC1:
             self._fresh_s = fresh_s
             self.results: list[BranchState] = []
 
-        def apply(self, branch: str, mutate: object) -> None:
+        def apply(self, _branch: str, mutate: object) -> None:
             result = mutate(self._fresh_s)  # type: ignore[operator]
             self._repo.save(result)
             self.results.append(result)
@@ -1115,7 +1115,8 @@ class TestPhaseStateFreshSLambdaC1:
         assert len(last.cycle_history) == 2, (
             f"Expected 2 cycle_history entries (1 concurrent + 1 new), "
             f"got {len(last.cycle_history)}. "
-            "Lambda must use _s.cycle_history (fresh under lock), not pre-captured state.cycle_history."
+            "Lambda must use _s.cycle_history (fresh under lock), "
+            "not pre-captured state.cycle_history."
         )
 
     # -----------------------------------------------------------------------
@@ -1181,5 +1182,6 @@ class TestPhaseStateFreshSLambdaC1:
         assert len(last.cycle_history) == 3, (
             f"Expected 3 cycle_history entries (2 from fresh_s + 1 new), "
             f"got {len(last.cycle_history)}. "
-            "Lambda must use _s.cycle_history (fresh under lock), not pre-captured state.cycle_history."
+            "Lambda must use _s.cycle_history (fresh under lock), "
+            "not pre-captured state.cycle_history."
         )

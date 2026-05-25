@@ -686,7 +686,6 @@ class PhaseStateEngine:
         validated_state = state if state.branch == branch else state.with_updates(branch=branch)
         self._state_repository.save(validated_state)
 
-
     def _transition_to_dict(self, transition: TransitionRecord) -> dict[str, Any]:
         """Convert TransitionRecord to dict for JSON serialization.
 
@@ -719,6 +718,7 @@ class PhaseStateEngine:
             branch: Branch name
             issue_number: GitHub issue number
         """
+
         def _enter_lambda(_s: BranchState) -> BranchState:
             if _s.current_cycle is None:
                 return _s.with_updates(
@@ -741,6 +741,7 @@ class PhaseStateEngine:
         Args:
             branch: Branch name
         """
+
         def _exit_lambda(_s: BranchState) -> BranchState:
             if _s.current_cycle is not None:
                 logger.info(
