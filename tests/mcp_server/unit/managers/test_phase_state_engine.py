@@ -864,3 +864,322 @@ class TestContextLoadedWriterReset:
         )
 
         writer.set_context_loaded.assert_called_with(branch, value=False)
+
+
+class TestPhaseStateFreshSLambdaC1:
+    """C1 (#292): PSE write lambdas must derive result from _s, not pre-captured state.
+
+    Each of the 8 _apply_state() callers currently passes ``lambda _s: pre_captured_state``,
+    discarding the fresh state loaded under lock. These tests prove the stale-lambda bug by
+    giving the mutator a *different* _s than what was loaded before the call and asserting the
+    saved result is derived from that fresh _s.
+
+    RED: all four tests fail because the lambda ignores _s.
+    GREEN: all four tests pass after migrating callers to ``_s.with_updates()``.
+    """
+
+    class _FreshSMutator:
+        """Mutator that calls the lambda with a caller-supplied _s.
+
+        Simulates a concurrent write that modified state between the outer
+        ``_load_state_or_reconstruct()`` and the lock acquisition inside ``apply()``.
+        The lambda receives this fresh _s, which differs from the stale pre-loaded state.
+        """
+
+        def __init__(self, repo: InMemoryStateRepository, fresh_s: BranchState) -> None:
+            self._repo = repo
+            self._fresh_s = fresh_s
+            self.results: list[BranchState] = []
+
+        def apply(self, branch: str, mutate: object) -> None:
+            result = mutate(self._fresh_s)  # type: ignore[operator]
+            self._repo.save(result)
+            self.results.append(result)
+
+    @pytest.fixture()
+    def cycle_project(self, tmp_path: Path) -> tuple[Path, int]:
+        """Workspace with a cycle-based implementation phase and 2 planned cycles."""
+        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "contracts.yaml").write_text(
+            (
+                "merge_policy:\n"
+                "  pr_allowed_phase: ready\n"
+                "  branch_local_artifacts: []\n"
+                "workflows:\n"
+                "  bug:\n"
+                "    phases:\n"
+                "      - name: research\n"
+                "        instructions:\n"
+                "          sub_role: researcher\n"
+                "          phase_instructions: Research.\n"
+                "          handover_template: Handover.\n"
+                "      - name: implementation\n"
+                "        cycle_based: true\n"
+                "        subphases: [red, green, refactor]\n"
+                "        commit_type_map:\n"
+                "          red: test\n"
+                "          green: feat\n"
+                "          refactor: refactor\n"
+                "        instructions:\n"
+                "          sub_role: implementer\n"
+                "          phase_instructions: Implement.\n"
+                "          handover_template: Handover.\n"
+                "      - name: ready\n"
+                "        instructions:\n"
+                "          sub_role: releaser\n"
+                "          phase_instructions: Ready.\n"
+                "          handover_template: Handover.\n"
+            ),
+            encoding="utf-8",
+        )
+        pm = make_project_manager(tmp_path)
+        pm.initialize_project(
+            issue_number=292, issue_title="Concurrent mutations", workflow_name="bug"
+        )
+        pm.save_planning_deliverables(
+            issue_number=292,
+            planning_deliverables={
+                "tdd_cycles": {
+                    "total": 2,
+                    "cycles": [
+                        {
+                            "cycle_number": 1,
+                            "name": "C1",
+                            "deliverables": ["D1"],
+                            "exit_criteria": "pass",
+                        },
+                        {
+                            "cycle_number": 2,
+                            "name": "C2",
+                            "deliverables": ["D2"],
+                            "exit_criteria": "pass",
+                        },
+                    ],
+                }
+            },
+        )
+        return tmp_path, 292
+
+    # -----------------------------------------------------------------------
+    # transition()
+    # -----------------------------------------------------------------------
+
+    def test_transition_lambda_uses_s_transitions(self, tmp_path: Path) -> None:
+        """transition() lambda appends to _s.transitions, not to pre-captured state.transitions.
+
+        Before fix: ``lambda _s: state.with_updates(transitions=[*state.transitions, new])``
+        captures stale list (empty) -> 1 transition saved.
+        After fix:  ``lambda _s: _s.with_updates(transitions=[*_s.transitions, new])``
+        uses fresh _s (1 concurrent entry) -> 2 transitions saved.
+        """
+        pm = make_project_manager(tmp_path)
+        pm.initialize_project(issue_number=292, issue_title="Test", workflow_name="feature")
+        repo = InMemoryStateRepository()
+        concurrent_entry = {
+            "from_phase": "concurrent",
+            "to_phase": "write",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "human_approval": None,
+            "forced": False,
+            "skip_reason": None,
+        }
+        seed = BranchState(
+            branch="feature/292-test",
+            issue_number=292,
+            workflow_name="feature",
+            current_phase="research",
+            transitions=[],
+        )
+        repo.save(seed)
+        # fresh_s has 1 extra transition simulating a concurrent write under lock
+        fresh_s = seed.with_updates(transitions=[concurrent_entry])
+        mutator = self._FreshSMutator(repo, fresh_s)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=pm,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+
+        engine.transition(branch="feature/292-test", to_phase="design")
+
+        # After fix: 2 transitions (1 from fresh_s + 1 new).
+        # Before fix: 1 transition (lambda captures stale transitions=[]).
+        assert len(mutator.results) >= 1
+        last = mutator.results[-1]
+        assert len(last.transitions) == 2, (
+            f"Expected 2 transitions (1 concurrent + 1 new), got {len(last.transitions)}. "
+            "Lambda must use _s.transitions (fresh under lock), not pre-captured state.transitions."
+        )
+
+    # -----------------------------------------------------------------------
+    # force_transition()
+    # -----------------------------------------------------------------------
+
+    def test_force_transition_lambda_uses_s_transitions(self, tmp_path: Path) -> None:
+        """force_transition() lambda appends to _s.transitions, not pre-captured state.transitions.
+
+        Same stale-lambda pattern as transition(); verified independently.
+        """
+        pm = make_project_manager(tmp_path)
+        pm.initialize_project(issue_number=292, issue_title="Test", workflow_name="feature")
+        repo = InMemoryStateRepository()
+        concurrent_entry = {
+            "from_phase": "concurrent",
+            "to_phase": "write",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "human_approval": None,
+            "forced": False,
+            "skip_reason": None,
+        }
+        seed = BranchState(
+            branch="feature/292-test",
+            issue_number=292,
+            workflow_name="feature",
+            current_phase="research",
+            transitions=[],
+        )
+        repo.save(seed)
+        fresh_s = seed.with_updates(transitions=[concurrent_entry])
+        mutator = self._FreshSMutator(repo, fresh_s)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=pm,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+
+        engine.force_transition(
+            branch="feature/292-test",
+            to_phase="design",
+            skip_reason="force-test",
+            human_approval="tester approved on 2026-05-25",
+        )
+
+        assert len(mutator.results) >= 1
+        last = mutator.results[-1]
+        assert len(last.transitions) == 2, (
+            f"Expected 2 transitions (1 concurrent + 1 new), got {len(last.transitions)}. "
+            "Lambda must use _s.transitions (fresh under lock), not pre-captured state.transitions."
+        )
+
+    # -----------------------------------------------------------------------
+    # transition_cycle()
+    # -----------------------------------------------------------------------
+
+    def test_transition_cycle_lambda_uses_s_cycle_history(
+        self, cycle_project: tuple[Path, int]
+    ) -> None:
+        """transition_cycle() lambda appends to _s.cycle_history, not pre-captured cycle_history.
+
+        Before fix: ``[*state.cycle_history, entry]`` with stale empty list -> 1 history entry.
+        After fix:  ``[*_s.cycle_history, entry]`` with fresh list (1 concurrent) -> 2 entries.
+        """
+        tmp_path, issue_number = cycle_project
+        branch = "bug/292-concurrent-state-mutations-lost-updates"
+        pm = make_project_manager(tmp_path)
+        repo = InMemoryStateRepository()
+        concurrent_history = {
+            "cycle_number": 0,
+            "name": "concurrent",
+            "forced": False,
+            "entered": "2026-01-01T00:00:00+00:00",
+        }
+        seed = BranchState(
+            branch=branch,
+            issue_number=issue_number,
+            workflow_name="bug",
+            current_phase="implementation",
+            current_cycle=None,
+            last_cycle=0,
+            cycle_history=[],
+        )
+        repo.save(seed)
+        # fresh_s has 1 pre-existing history entry from a concurrent cycle write
+        fresh_s = seed.with_updates(cycle_history=[concurrent_history])
+        mutator = self._FreshSMutator(repo, fresh_s)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=pm,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+
+        engine.transition_cycle(branch=branch, to_cycle=1)
+
+        # After fix: 2 entries (1 concurrent from fresh_s + 1 new).
+        # Before fix: 1 entry (lambda captures stale cycle_history=[]).
+        assert len(mutator.results) >= 1
+        last = mutator.results[-1]
+        assert len(last.cycle_history) == 2, (
+            f"Expected 2 cycle_history entries (1 concurrent + 1 new), "
+            f"got {len(last.cycle_history)}. "
+            "Lambda must use _s.cycle_history (fresh under lock), not pre-captured state.cycle_history."
+        )
+
+    # -----------------------------------------------------------------------
+    # force_cycle_transition()
+    # -----------------------------------------------------------------------
+
+    def test_force_cycle_transition_lambda_uses_s_cycle_history(
+        self, cycle_project: tuple[Path, int]
+    ) -> None:
+        """force_cycle_transition() lambda appends to _s.cycle_history, not pre-captured.
+
+        Seed has 1 cycle_history entry; fresh_s adds a concurrent extra entry (2 total).
+        After fix: appends to fresh_s's 2-entry list -> 3 entries saved.
+        Before fix: appends to stale 1-entry list -> only 2 entries saved.
+        """
+        tmp_path, issue_number = cycle_project
+        branch = "bug/292-concurrent-state-mutations-lost-updates"
+        pm = make_project_manager(tmp_path)
+        repo = InMemoryStateRepository()
+        c1_history = {
+            "cycle_number": 1,
+            "name": "C1",
+            "forced": False,
+            "entered": "2026-01-01T00:00:00+00:00",
+        }
+        concurrent_history = {
+            "cycle_number": 0,
+            "name": "concurrent",
+            "forced": False,
+            "entered": "2026-01-01T00:01:00+00:00",
+        }
+        seed = BranchState(
+            branch=branch,
+            issue_number=issue_number,
+            workflow_name="bug",
+            current_phase="implementation",
+            current_cycle=1,
+            last_cycle=0,
+            cycle_history=[c1_history],
+        )
+        repo.save(seed)
+        # fresh_s has 2 entries: the concurrent write added one between load and lock
+        fresh_s = seed.with_updates(cycle_history=[c1_history, concurrent_history])
+        mutator = self._FreshSMutator(repo, fresh_s)
+        engine = make_phase_state_engine(
+            tmp_path,
+            project_manager=pm,
+            state_repository=repo,
+            workflow_state_mutator=mutator,
+        )
+
+        engine.force_cycle_transition(
+            branch=branch,
+            to_cycle=2,
+            skip_reason="force-test",
+            human_approval="tester approved on 2026-05-25",
+        )
+
+        # After fix: 3 entries (2 from fresh_s + 1 new force-cycle entry).
+        # Before fix: 2 entries (1 from stale seed + 1 new force-cycle entry).
+        assert len(mutator.results) >= 1
+        last = mutator.results[-1]
+        assert len(last.cycle_history) == 3, (
+            f"Expected 3 cycle_history entries (2 from fresh_s + 1 new), "
+            f"got {len(last.cycle_history)}. "
+            "Lambda must use _s.cycle_history (fresh under lock), not pre-captured state.cycle_history."
+        )
