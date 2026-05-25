@@ -154,6 +154,7 @@ No logic change in `transition()` or `force_transition()`: they still pass `cycl
 |---|---|
 | `tests/mcp_server/test_support.py` | Rename `enforce()` → `enforce_phase_exit()`, `inspect()` → `inspect_phase_exit()` in shared fake |
 | `tests/mcp_server/unit/managers/test_phase_contract_resolver.py` | Replace combined-behavior test (L270) with separate `resolve_phase_exit` + `resolve_cycle_exit` tests |
+| `tests/mcp_server/unit/managers/test_phase_contract_resolver_c3.py` | L94: `resolver.resolve(…)` → `resolver.resolve_phase_exit(…)` (functional equivalence for non-cycle-number call) |
 | `tests/mcp_server/unit/managers/test_phase_state_engine_c1.py` | Update `FakeGateRunner` (L25); update direct `runner.enforce/inspect` calls at L154, L155, L169, L203 |
 | `tests/mcp_server/unit/managers/test_phase_state_engine_c2.py` | Update `BlockingGateRunner` + `InspectingGateRunner` fakes |
 | `tests/mcp_server/unit/managers/test_phase_state_engine_c3_issue257.py` | Update `PassingGateRunner` + `ReportingGateRunner` fakes |
@@ -197,7 +198,7 @@ The following behaviors must continue to pass after the fix:
 
 ## 7. Open Questions
 
-No open questions remain. Integration and acceptance tests verified: `tests/integration/` and `tests/acceptance/` contain no calls to `WorkflowGateRunner.enforce()` or `inspect()`. `test_cycle_tools.py` exercises the real `WorkflowGateRunner` via `gate_runner=server.workflow_gate_runner` and requires no fake update — it will exercise the new `enforce_cycle_exit` / `inspect_cycle_exit` methods directly once the production code is updated. The full out-of-scope test surface is limited to the 7 files listed in §5.2.
+No open questions remain. Integration and acceptance tests verified: `tests/integration/` and `tests/acceptance/` contain no calls to `WorkflowGateRunner.enforce()` or `inspect()`. `test_cycle_tools.py` exercises the real `WorkflowGateRunner` via `gate_runner=server.workflow_gate_runner` and requires no fake update — it will exercise the new `enforce_cycle_exit` / `inspect_cycle_exit` methods directly once the production code is updated. The full out-of-scope test surface is limited to the 8 files listed in §5.2.
 
 ---
 
