@@ -327,7 +327,7 @@ class TestPhaseContractResolver:
     def test_resolve_phase_exit_returns_exit_requires_plus_cycle_gates_when_cycle_number_present(
         self, workspace_root: Path
     ) -> None:
-        """resolve_phase_exit with cycle_number returns exit_requires + cycle_exit_requires gates."""
+        """resolve_phase_exit with cycle_number returns exit_requires + cycle_exit_requires."""
         resolver = PhaseContractResolver(
             make_phase_config_context(workspace_root, issue_number=257)
         )
