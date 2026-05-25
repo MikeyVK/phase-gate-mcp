@@ -166,11 +166,13 @@ Direction B is architecturally superior and aligns with the user's stated prefer
 - Boundary intent is declared at every call site; no behavioral inference from `cycle_number is not None`.
 
 ---
-
 ## Open Questions
 
-- Should the old `enforce()` / `inspect()` methods be deprecated in this fix, redirected to `enforce_phase_exit()`, or removed? This is a design decision with test-suite implications.
-- Are there any integration tests or end-to-end fixtures that call `WorkflowGateRunner.enforce()` / `inspect()` with `cycle_number` and rely on the combined result?
+*Resolved — no open questions remain.*
+
+- **enforce()/inspect() fate:** Resolved in Approved Strategy below: clean break, removed in C2 alongside resolve(). No deprecation stubs.
+- **Integration test exposure:** Resolved in design §7: `test_cycle_tools.py` uses the real runner and is updated automatically by C2 production changes; no integration fixtures rely on the combined resolve(cycle_number=N) behavior.
+
 
 ---
 
