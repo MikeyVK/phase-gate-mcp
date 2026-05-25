@@ -2,7 +2,7 @@
   "branch": "bug/353-create-branch-remove-auto-checkout",
   "issue_number": 353,
   "workflow_name": "bug",
-  "current_phase": "planning",
+  "current_phase": "validation",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Design phase adds no value: root cause is a single-line fix, all design questions resolved in research, zero architectural trade-offs, Approved Strategy leaves no open decisions for design to answer.",
+  "skip_reason": "Phase state.json not committed before branch switch detour to hotfix/355; RED+GREEN+REFACTOR commits confirm C1 cycle complete; transition_phase was called successfully earlier this session",
   "issue_title": "create_branch: remove implicit auto-checkout (SRP violation)",
   "parent_branch": "main",
   "created_at": "2026-05-25T19:15:08.025831+00:00",
@@ -28,6 +28,14 @@
       "human_approval": "User approved skip on 2026-05-25",
       "forced": true,
       "skip_reason": "Design phase adds no value: root cause is a single-line fix, all design questions resolved in research, zero architectural trade-offs, Approved Strategy leaves no open decisions for design to answer."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "validation",
+      "timestamp": "2026-05-25T20:09:54.958270+00:00",
+      "human_approval": "user approved transition to validation on 2026-05-25",
+      "forced": true,
+      "skip_reason": "Phase state.json not committed before branch switch detour to hotfix/355; RED+GREEN+REFACTOR commits confirm C1 cycle complete; transition_phase was called successfully earlier this session"
     }
   ],
   "reconstructed": false,
