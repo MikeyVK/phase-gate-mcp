@@ -14,6 +14,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.interfaces import IContextLoadedWriter
+from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.state_repository import (
     BranchState,
     InMemoryStateRepository,
@@ -1184,4 +1185,26 @@ class TestPhaseStateFreshSLambdaC1:
             f"got {len(last.cycle_history)}. "
             "Lambda must use _s.cycle_history (fresh under lock), "
             "not pre-captured state.cycle_history."
+        )
+
+
+# C2 RED — _save_state() dead method removal (issue #292)
+
+
+class TestSaveStateMethodRemoved:
+    """C2 (#292): _save_state() must be deleted from PhaseStateEngine.
+
+    C2 removes this dead method. All state writes now go through
+    WorkflowStateMutator.apply() or IStateRepository.save() directly.
+
+    RED: test fails because _save_state() still exists.
+    GREEN: test passes after _save_state() is deleted from PhaseStateEngine.
+    """
+
+    def test_save_state_method_deleted(self) -> None:
+        """_save_state() must not exist on PhaseStateEngine (C2-D1)."""
+        assert not hasattr(PhaseStateEngine, "_save_state"), (
+            "_save_state() still exists on PhaseStateEngine. "
+            "C2 removes this dead method — all state writes go through "
+            "WorkflowStateMutator.apply() or IStateRepository.save() directly."
         )

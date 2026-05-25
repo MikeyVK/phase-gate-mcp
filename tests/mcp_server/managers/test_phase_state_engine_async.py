@@ -13,7 +13,6 @@ Fix: Use write_text() instead of open()+flush().
 """
 
 import ast
-import json
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -21,95 +20,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.state_repository import BranchState
-from tests.mcp_server.test_support import make_phase_state_engine
 
-
-class TestSaveStateNonBlocking:
-    """Tests verifying _save_state() uses non-blocking write_text()."""
-
-    def test_save_state_uses_write_text_not_open(self, tmp_path: Path) -> None:
-        """Verify _save_state() uses Path.write_text() instead of open()+flush().
-
-        The old implementation used:
-            with open(...) as f:
-                json.dump(state, f)
-                f.flush()  # BLOCKING!
-
-        The new implementation should use:
-            self.state_file.write_text(json.dumps(state, indent=2))
-        """
-        from mcp_server.managers.project_manager import (  # noqa: PLC0415
-            ProjectManager,
-        )
-
-        # Setup
-        st3_dir = tmp_path / ".phase-gate"
-        st3_dir.mkdir()
-        state_file = st3_dir / "state.json"
-
-        project_manager = MagicMock(spec=ProjectManager)
-        engine = make_phase_state_engine(tmp_path, project_manager=project_manager)
-
-        test_state = BranchState(
-            branch="test/123-test",
-            issue_number=123,
-            workflow_name="feature",
-            current_phase="implementation",
-            transitions=[],
-        )
-
-        # Act - call _save_state (protected access needed for testing)
-        engine._save_state("test/123-test", test_state)  # noqa: SLF001
-
-        # Assert - file should exist with correct content
-        assert state_file.exists()
-        saved_content = json.loads(state_file.read_text())
-        assert saved_content == test_state.model_dump(mode="json")
-
-    def test_save_state_does_not_call_flush(self, tmp_path: Path) -> None:
-        """Verify _save_state() does NOT call f.flush() which blocks.
-
-        We patch the builtin open() to detect if flush() is called.
-        The new implementation should NOT use open() at all.
-        """
-        from mcp_server.managers.project_manager import (  # noqa: PLC0415
-            ProjectManager,
-        )
-
-        # Setup
-        st3_dir = tmp_path / ".phase-gate"
-        st3_dir.mkdir()
-
-        project_manager = MagicMock(spec=ProjectManager)
-        engine = make_phase_state_engine(tmp_path, project_manager=project_manager)
-
-        test_state = BranchState(
-            branch="test/123-test",
-            issue_number=None,
-            workflow_name="feature",
-            current_phase="implementation",
-            transitions=[],
-        )
-
-        # Track if open() builtin is called
-        original_open = open
-        open_was_called = False
-
-        def tracking_open(*args: object, **kwargs: object) -> object:
-            nonlocal open_was_called
-            open_was_called = True
-            return original_open(*args, **kwargs)
-
-        # Patch open in the module where it's used
-        with patch("builtins.open", tracking_open):
-            engine._save_state("test/123-test", test_state)  # noqa: SLF001
-
-        # Assert - open() should NOT be called (we use write_text now)
-        assert not open_was_called, (
-            "_save_state() should use Path.write_text() instead of open(). "
-            "Using open() with flush() causes blocking I/O that hangs MCP stream."
-        )
 
 
 class TestPhaseToolsAsyncSafe:
