@@ -179,9 +179,9 @@ class TestFileQualityStateLockC3:
     """
 
     def test_apply_raises_conflict_error_on_timeout(self, tmp_path: Path) -> None:
-        """apply() raises QualityStateMutationConflictError when lock held (simulated timeout) (C3-D1, C3-D2)."""
+        """apply() raises QualityStateMutationConflictError when lock cannot be acquired (C3-D1, C3-D2)."""
         import pytest  # noqa: PLC0415
-        from unittest.mock import patch  # noqa: PLC0415
+        from unittest.mock import MagicMock  # noqa: PLC0415
 
         from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
             QualityStateMutationConflictError,
@@ -190,10 +190,13 @@ class TestFileQualityStateLockC3:
         backing = tmp_path / ".phase-gate" / "quality_state.json"
         repo = FileQualityStateRepository(backing_file=backing)
 
-        # Simulate lock timeout without waiting 5s: acquire() returns False immediately.
-        with patch.object(repo._lock, "acquire", return_value=False):  # pyright: ignore[reportPrivateUsage]
-            with pytest.raises(QualityStateMutationConflictError) as exc_info:
-                repo.apply(lambda _s: _s)
+        # Replace lock with a mock that simulates timeout (acquire returns False immediately).
+        mock_lock = MagicMock()
+        mock_lock.acquire.return_value = False
+        repo._lock = mock_lock  # pyright: ignore[reportPrivateUsage]  # Test lock injection.
+
+        with pytest.raises(QualityStateMutationConflictError) as exc_info:
+            repo.apply(lambda _s: _s)
 
         assert exc_info.value.diagnostic, "QualityStateMutationConflictError must have diagnostic"
         assert exc_info.value.recovery, "QualityStateMutationConflictError must have recovery"

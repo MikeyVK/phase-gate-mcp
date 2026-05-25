@@ -6,8 +6,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.managers.quality_state_repository import QualityStateMutationConflictError
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
+
 
 
 class RunQualityGatesInput(BaseModel):
@@ -102,6 +104,9 @@ class RunQualityGatesTool(BaseTool):
                 resolved_files,
                 effective_scope=effective_scope,
             )
+        except QualityStateMutationConflictError as e:
+            context.produce(RecoveryNote(message=e.recovery))
+            return ToolResult.error(e.diagnostic)
         except OSError as e:
             context.produce(
                 RecoveryNote(
