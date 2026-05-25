@@ -131,8 +131,14 @@ TEMPLATE_METADATA:
 
 {{ breaking_changes }}
 {%- endif %}
-{% if related_docs %}
+{% if deferred_work %}
 
+## Deferred Work
+
+{{ deferred_work }}
+{%- endif %}
+
+{% if related_docs %}
 {{ related.pattern_related_docs_section(related_docs) -}}
 {%- endif %}
 {% if closes_issues %}

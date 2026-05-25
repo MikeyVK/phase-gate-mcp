@@ -737,13 +737,28 @@ workflows:
                 - related_docs: validation report and updated documentation the reviewer should open
                 - closes_issues: [N] when the PR closes the issue
                 - breaking_changes: only when explicitly supported by authoritative issue artifacts
+                - deferred_work: deferred items from authoritative issue artifacts (omit when none)
+                - tracking_state: tracking state for deferred items (issue refs or triage notes)
 
             [ ] Read the scaffolded PR markdown from the returned artifact path
                 and use that template output as the body for submit_pr.
 
-            [ ] Keep the PR narrative and the deferred-work transfer separate:
-                - the PR body should summarize the delivered branch
-                - the final hand-over should carry the deferred-work transfer for @co
+            [ ] Verify the original issue body still honestly describes the branch intent and scope:
+                - if research broadened or changed scope, update the issue body before PR creation
+                - use update_issue(issue_number=N, body="<updated>") when changes are needed
+
+            [ ] Review all issues explicitly in scope: decide which are closure-ready on this branch:
+                - for each in-scope issue, decide: close on merge via Closes #N, or explicitly defer
+                - encode only closure-ready issues in the PR body via Closes #N
+
+            [ ] Carry deferred work into the PR body as the persistent @imp → @co transfer artifact:
+                - populate the PR body with deferred_work and tracking_state scaffold fields
+                - the PR body must carry: delivered scope, Closes #N claims, deferred items, tracking state
+                - the hand-over template is a completeness check, not a replacement for PR body facts
+
+            [ ] Verify the PR body is complete using the handover template as a completeness check:
+                - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
+                - use the hand-over template sections as a gate before calling submit_pr
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
@@ -1524,13 +1539,28 @@ workflows:
                 - related_docs: validation report and updated documentation the reviewer should open
                 - closes_issues: [N] when the PR closes the issue
                 - breaking_changes: only when explicitly supported by authoritative issue artifacts
+                - deferred_work: deferred items from authoritative issue artifacts (omit when none)
+                - tracking_state: tracking state for deferred items (issue refs or triage notes)
 
             [ ] Read the scaffolded PR markdown from the returned artifact path
                 and use that template output as the body for submit_pr.
 
-            [ ] Keep the PR narrative and the deferred-work transfer separate:
-                - the PR body should summarize the delivered branch
-                - the final hand-over should carry the deferred-work transfer for @co
+            [ ] Verify the original issue body still honestly describes the branch intent and scope:
+                - if research broadened or changed scope, update the issue body before PR creation
+                - use update_issue(issue_number=N, body="<updated>") when changes are needed
+
+            [ ] Review all issues explicitly in scope: decide which are closure-ready on this branch:
+                - for each in-scope issue, decide: close on merge via Closes #N, or explicitly defer
+                - encode only closure-ready issues in the PR body via Closes #N
+
+            [ ] Carry deferred work into the PR body as the persistent @imp → @co transfer artifact:
+                - populate the PR body with deferred_work and tracking_state scaffold fields
+                - the PR body must carry: delivered scope, Closes #N claims, deferred items, tracking state
+                - the hand-over template is a completeness check, not a replacement for PR body facts
+
+            [ ] Verify the PR body is complete using the handover template as a completeness check:
+                - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
+                - use the hand-over template sections as a gate before calling submit_pr
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
@@ -1877,13 +1907,28 @@ workflows:
                 - related_docs: validation report and updated documentation the reviewer should open
                 - closes_issues: [N] when the PR closes the issue
                 - breaking_changes: only when explicitly supported by authoritative issue artifacts
+                - deferred_work: deferred items from authoritative issue artifacts (omit when none)
+                - tracking_state: tracking state for deferred items (issue refs or triage notes)
 
             [ ] Read the scaffolded PR markdown from the returned artifact path
                 and use that template output as the body for submit_pr.
 
-            [ ] Keep the PR narrative and the deferred-work transfer separate:
-                - the PR body should summarize the delivered branch
-                - the final hand-over should carry the deferred-work transfer for @co
+            [ ] Verify the original issue body still honestly describes the branch intent and scope:
+                - if research broadened or changed scope, update the issue body before PR creation
+                - use update_issue(issue_number=N, body="<updated>") when changes are needed
+
+            [ ] Review all issues explicitly in scope: decide which are closure-ready on this branch:
+                - for each in-scope issue, decide: close on merge via Closes #N, or explicitly defer
+                - encode only closure-ready issues in the PR body via Closes #N
+
+            [ ] Carry deferred work into the PR body as the persistent @imp → @co transfer artifact:
+                - populate the PR body with deferred_work and tracking_state scaffold fields
+                - the PR body must carry: delivered scope, Closes #N claims, deferred items, tracking state
+                - the hand-over template is a completeness check, not a replacement for PR body facts
+
+            [ ] Verify the PR body is complete using the handover template as a completeness check:
+                - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
+                - use the hand-over template sections as a gate before calling submit_pr
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
@@ -2519,13 +2564,28 @@ workflows:
                 - related_docs: validation report and updated documentation the reviewer should open
                 - closes_issues: [N] when the PR closes the issue
                 - breaking_changes: only when explicitly supported by authoritative issue artifacts
+                - deferred_work: deferred items from authoritative issue artifacts (omit when none)
+                - tracking_state: tracking state for deferred items (issue refs or triage notes)
 
             [ ] Read the scaffolded PR markdown from the returned artifact path
                 and use that template output as the body for submit_pr.
 
-            [ ] Keep the PR narrative and the deferred-work transfer separate:
-                - the PR body should summarize the delivered branch
-                - the final hand-over should carry the deferred-work transfer for @co
+            [ ] Verify the original issue body still honestly describes the branch intent and scope:
+                - if research broadened or changed scope, update the issue body before PR creation
+                - use update_issue(issue_number=N, body="<updated>") when changes are needed
+
+            [ ] Review all issues explicitly in scope: decide which are closure-ready on this branch:
+                - for each in-scope issue, decide: close on merge via Closes #N, or explicitly defer
+                - encode only closure-ready issues in the PR body via Closes #N
+
+            [ ] Carry deferred work into the PR body as the persistent @imp → @co transfer artifact:
+                - populate the PR body with deferred_work and tracking_state scaffold fields
+                - the PR body must carry: delivered scope, Closes #N claims, deferred items, tracking state
+                - the hand-over template is a completeness check, not a replacement for PR body facts
+
+            [ ] Verify the PR body is complete using the handover template as a completeness check:
+                - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
+                - use the hand-over template sections as a gate before calling submit_pr
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
@@ -2779,13 +2839,28 @@ workflows:
                 - related_docs: planning artifact and the updated docs the reviewer should open
                 - closes_issues: [N] when the PR closes the issue
                 - breaking_changes: only when explicitly supported by authoritative issue artifacts
+                - deferred_work: deferred items from authoritative issue artifacts (omit when none)
+                - tracking_state: tracking state for deferred items (issue refs or triage notes)
 
             [ ] Read the scaffolded PR markdown from the returned artifact path
                 and use that template output as the body for submit_pr.
 
-            [ ] Keep the PR narrative and the deferred-work transfer separate:
-                - the PR body should summarize the delivered branch
-                - the final hand-over should carry the deferred-work transfer for @co
+            [ ] Verify the original issue body still honestly describes the branch intent and scope:
+                - if research broadened or changed scope, update the issue body before PR creation
+                - use update_issue(issue_number=N, body="<updated>") when changes are needed
+
+            [ ] Review all issues explicitly in scope: decide which are closure-ready on this branch:
+                - for each in-scope issue, decide: close on merge via Closes #N, or explicitly defer
+                - encode only closure-ready issues in the PR body via Closes #N
+
+            [ ] Carry deferred work into the PR body as the persistent @imp → @co transfer artifact:
+                - populate the PR body with deferred_work and tracking_state scaffold fields
+                - the PR body must carry: delivered scope, Closes #N claims, deferred items, tracking state
+                - the hand-over template is a completeness check, not a replacement for PR body facts
+
+            [ ] Verify the PR body is complete using the handover template as a completeness check:
+                - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
+                - use the hand-over template sections as a gate before calling submit_pr
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
@@ -3350,13 +3425,28 @@ workflows:
                 - related_docs: planning, design, and updated epic documentation the reviewer should open
                 - closes_issues: [N] when the PR closes the epic issue
                 - breaking_changes: only when explicitly supported by authoritative epic artifacts
+                - deferred_work: deferred items from authoritative epic artifacts (omit when none)
+                - tracking_state: tracking state for deferred items (issue refs or triage notes)
 
             [ ] Read the scaffolded PR markdown from the returned artifact path
                 and use that template output as the body for submit_pr.
 
-            [ ] Keep the PR narrative and the deferred-work transfer separate:
-                - the PR body should summarize the delivered branch
-                - the final hand-over should carry the deferred-work transfer for @co
+            [ ] Verify the original issue body still honestly describes the branch intent and scope:
+                - if research broadened or changed scope, update the issue body before PR creation
+                - use update_issue(issue_number=N, body="<updated>") when changes are needed
+
+            [ ] Review all issues explicitly in scope: decide which are closure-ready on this branch:
+                - for each in-scope issue, decide: close on merge via Closes #N, or explicitly defer
+                - encode only closure-ready issues in the PR body via Closes #N
+
+            [ ] Carry deferred work into the PR body as the persistent @imp → @co transfer artifact:
+                - populate the PR body with deferred_work and tracking_state scaffold fields
+                - the PR body must carry: delivered scope, Closes #N claims, deferred items, tracking state
+                - the hand-over template is a completeness check, not a replacement for PR body facts
+
+            [ ] Verify the PR body is complete using the handover template as a completeness check:
+                - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
+                - use the hand-over template sections as a gate before calling submit_pr
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.

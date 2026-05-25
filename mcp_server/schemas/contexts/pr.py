@@ -40,3 +40,11 @@ class PRContext(TitledArtifactContext):
     breaking_changes: str | None = Field(
         default=None, description="Breaking changes description (⚠️ warning)"
     )
+    deferred_work: str | None = Field(
+        default=None,
+        description="Deferred items or work not included in this PR",
+    )
+    tracking_state: str | None = Field(
+        default=None,
+        description="Tracking state for deferred items (e.g. issue refs or triage notes)",
+    )
