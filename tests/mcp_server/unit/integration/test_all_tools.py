@@ -361,7 +361,9 @@ class TestGitToolsIntegration:
         result = await tool.execute(GitDeleteBranchInput(branch="feature/old"), NoteContext())
 
         assert "feature/old" in result.content[0]["text"]
-        mock_manager.delete_branch.assert_called_once_with("feature/old", ANY, force=False)
+        mock_manager.delete_branch.assert_called_once_with(
+            "feature/old", ANY, force=False, mode="both"
+        )
 
     @pytest.mark.asyncio
     async def test_git_stash_tool_push_flow(self) -> None:

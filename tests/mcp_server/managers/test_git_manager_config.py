@@ -98,4 +98,6 @@ class TestGitManagerConfigIntegration:
             self.manager.delete_branch("develop", NoteContext())
 
         self.manager.delete_branch("feature/123-test", NoteContext())
-        self.mock_adapter.delete_branch.assert_called_once_with("feature/123-test", force=False)
+        self.mock_adapter.delete_local_branch.assert_called_once_with(
+            "feature/123-test", force=False
+        )

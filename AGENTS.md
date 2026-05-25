@@ -39,7 +39,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Checkout | `git_checkout(branch)` | `run_in_terminal("git checkout")` |
 | Push | `git_push(set_upstream)` | `run_in_terminal("git push")` |
 | Merge | `git_merge(branch)` | `run_in_terminal("git merge")` |
-| Delete branch | `git_delete_branch(branch, force)` | `run_in_terminal("git branch -d")` |
+| Delete branch | `git_delete_branch(branch, force, mode)` | `run_in_terminal("git branch -d")` |
 | Stash | `git_stash(action, message)` | `run_in_terminal("git stash")` |
 | Status | `git_status()` | `run_in_terminal("git status")` |
 | Restore | `git_restore(files, source)` | `run_in_terminal("git restore")` |
@@ -234,7 +234,7 @@ Never mix roles in one session. Fresh context prevents scope contamination and a
 ### Startup Protocol
 
 Each agent has its own startup protocol defined in its `.agent.md` file. Normal chat sessions call
-`get_work_context` as the first tool invocation. `open-issue` and `close-issue` are explicit
+`get_work_context` as the first tool invocation. `open-issue` and `end-issue` are explicit
 lifecycle-boundary exceptions that may run their scripted bootstrap or exit sequence before
 control returns to a normal `get_work_context`-first session. See:
 - [`@co` startup](.github/agents/co.agent.md)

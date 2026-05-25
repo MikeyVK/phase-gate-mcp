@@ -12,8 +12,8 @@ Use the active branch phase as the source of truth for this session.
 ## Startup rule
 
 1. Call `get_work_context()` first.
-2. Treat the returned `phase_instructions` as the default operational script for this session.
-3. Resolve the invocation argument before taking further action.
+2. You must create a todo list using built-in tools to track the steps you will take based on the returned `phase_instructions`.
+3. Treat the returned `phase_instructions` as the default operational script for this session.
 
 ## Optional invocation modes
 

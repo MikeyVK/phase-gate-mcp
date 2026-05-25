@@ -19,7 +19,7 @@ git restore --staged before index.commit().
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from git import InvalidGitRepositoryError, Repo
 
@@ -341,8 +341,8 @@ class GitAdapter:
         except Exception as e:
             raise ExecutionError(f"Failed to merge {branch_name}: {e}") from e
 
-    def delete_branch(self, branch_name: str, force: bool = False) -> None:
-        """Delete a branch."""
+    def delete_local_branch(self, branch_name: str, force: bool = False) -> None:
+        """Delete a local branch."""
         try:
             if branch_name not in self.repo.heads:
                 raise ExecutionError(f"Branch {branch_name} does not exist")
@@ -353,6 +353,26 @@ class GitAdapter:
             raise
         except Exception as e:
             raise ExecutionError(f"Failed to delete {branch_name}: {e}") from e
+
+    def delete_remote_branch(
+        self, branch_name: str, remote: str = "origin"
+    ) -> Literal["deleted", "absent"]:
+        """Delete a remote branch. Returns 'deleted' if removed, 'absent' if not found."""
+        try:
+            try:
+                remote_obj = self.repo.remote(remote)
+            except ValueError as e:
+                raise ExecutionError(f"Remote '{remote}' is not configured") from e
+            remote_ref_name = f"{remote}/{branch_name}"
+            has_remote = any(ref.name == remote_ref_name for ref in remote_obj.refs)
+            if not has_remote:
+                return "absent"
+            self.repo.git.push(remote, "--delete", branch_name)
+            return "deleted"
+        except ExecutionError:
+            raise
+        except Exception as e:
+            raise ExecutionError(f"Failed to delete remote branch {branch_name}: {e}") from e
 
     def stash(self, message: str | None = None, include_untracked: bool = False) -> None:
         """Stash current changes."""

@@ -1,11 +1,11 @@
 ---
-name: open-issue
+name: start-issue
 description: Bootstrap issue lifecycle entry under the approved ownership model.
 agent: co
 argument-hint: Issue number + workflow type. Example: "issue 341 epic"
 ---
 
-# Open Issue
+# Start Issue
 
 Bootstrap explicit lifecycle entry. This prompt models branch entry, not background coordination around work already in progress.
 
@@ -49,7 +49,7 @@ Use this path only when `WORKFLOW_TYPE` is `epic`.
    → if the workflow or phase contract is missing or inconsistent, stop before the first commit or push and report the blocker.
 
 7. **First commit**
-   `git_add_or_commit(workflow_phase="<first phase from get_work_context>", message="Open issue #ISSUE_NUMBER: {title}")`
+   `git_add_or_commit(workflow_phase="<first phase from get_work_context>", message="Start issue #ISSUE_NUMBER: {title}")`
    → use the initialized workflow phase returned by `get_work_context`; do not guess or hardcode the phase name.
 
 8. **Push**

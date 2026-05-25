@@ -162,6 +162,18 @@ class TestPRV2Parity:
         with pytest.raises(ValidationError):
             _run_v2_tracking(manager, "pr", {})
 
+    def test_pr_context_deferred_work_and_tracking_state_optional(self) -> None:
+        """PRContext accepts deferred_work and tracking_state as optional fields."""
+        from mcp_server.schemas import PRContext  # noqa: PLC0415
+
+        ctx = PRContext(
+            **self._MINIMAL,
+            deferred_work="Issue #400: deferred multi-remote support",
+            tracking_state="Tracked via #400",
+        )
+        assert ctx.deferred_work == "Issue #400: deferred multi-remote support"
+        assert ctx.tracking_state == "Tracked via #400"
+
 
 # ---------------------------------------------------------------------------
 # Issue (3 tests)

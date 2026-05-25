@@ -7,6 +7,15 @@ argument-hint: >
   epic-documenter, epic-releaser.
   Example: "epic-designer: refine epic contract surfaces for issue #341"
 tools:
+  # VS Code built-in — lezen en zoeken (geen mutaties; edits lopen altijd via phase-gate-mcp)
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/fileSearch
+  - search/textSearch
+  - search/listDirectory
+  - search/usages
+  - search/changes
   # MCP - coordination baseline + narrow epic workflow ownership allowlist
   - phase-gate-mcp/get_work_context
   - phase-gate-mcp/get_project_plan
@@ -38,6 +47,9 @@ tools:
   - phase-gate-mcp/git_add_or_commit
   - phase-gate-mcp/git_push
   - phase-gate-mcp/run_quality_gates
+  - phase-gate-mcp/git_delete_branch
+  - phase-gate-mcp/git_stash
+  - phase-gate-mcp/git_pull
   - phase-gate-mcp/submit_pr
   - phase-gate-mcp/merge_pr
 handoffs:
@@ -142,7 +154,8 @@ Rebuild state from scratch every time.
 1. Call `get_work_context` - active branch, phase, issue.
 2. Call `list_issues(state="open")` when backlog or dependency context matters.
 3. For tracker sub-role: read epic #320 body via `get_issue(320)`.
-4. For ordinary chat sessions, keep the `get_work_context`-first rule. `open-issue` and `close-issue` are lifecycle-boundary exceptions that follow their own scripted bootstrap or exit sequence before control returns to a normal `@co` session.
+4. For ordinary chat sessions, keep the `get_work_context`-first rule. `open-issue` and `end-issue` are lifecycle-boundary exceptions that follow their own scripted bootstrap or exit sequence before control returns to a normal `@co` session.
+5. When reading `.phase-gate/state.json` on an epic branch: it is a branch-local artifact committed with the branch. Do not treat it as runtime-only or ephemeral — it carries the authoritative phase audit trail until `submit_pr` neutralizes it.
 
 ## Role Boundary
 

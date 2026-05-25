@@ -17,7 +17,8 @@ and commit message formatting based on the active workflow state.
     - Pre-flight checks (clean working directory) before branch operations
 """
 
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.core.exceptions import ExecutionError, PreflightError, ValidationError
@@ -25,6 +26,14 @@ from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote, SuggestionNote
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.schemas import GitConfig, WorkphasesConfig
+
+
+@dataclass(frozen=True)
+class BranchDeleteResult:
+    """Result of a branch deletion operation."""
+
+    local_status: Literal["deleted", "absent", "skipped"]
+    remote_status: Literal["deleted", "absent", "skipped"]
 
 
 class GitManager:
@@ -273,9 +282,13 @@ class GitManager:
         self.adapter.merge(branch_name)
 
     def delete_branch(
-        self, branch_name: str, note_context: NoteContext, force: bool = False
-    ) -> None:
-        """Delete a branch."""
+        self,
+        branch_name: str,
+        note_context: NoteContext,
+        force: bool = False,
+        mode: Literal["local", "remote", "both"] = "both",
+    ) -> BranchDeleteResult:
+        """Delete a branch locally, remotely, or both."""
         # Convention #4: Protected branches via GitConfig
         if self._git_config.is_protected(branch_name):
             note_context.produce(
@@ -286,7 +299,24 @@ class GitManager:
                 )
             )
             raise ValidationError(f"Cannot delete protected branch: {branch_name}")
-        self.adapter.delete_branch(branch_name, force=force)
+
+        local_status: Literal["deleted", "absent", "skipped"] = "skipped"
+        remote_status: Literal["deleted", "absent", "skipped"] = "skipped"
+
+        if mode in ("local", "both"):
+            try:
+                self.adapter.delete_local_branch(branch_name, force=force)
+                local_status = "deleted"
+            except ExecutionError as e:
+                if "does not exist" in str(e):
+                    local_status = "absent"
+                else:
+                    raise
+
+        if mode in ("remote", "both"):
+            remote_status = self.adapter.delete_remote_branch(branch_name)
+
+        return BranchDeleteResult(local_status=local_status, remote_status=remote_status)
 
     def stash(self, message: str | None = None, include_untracked: bool = False) -> None:
         """Stash current changes.

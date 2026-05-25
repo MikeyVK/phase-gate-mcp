@@ -35,7 +35,7 @@ Comprehensive git flow automation with TDD phase tracking.
 6. submit_pr(title="Add feature", head="feature/my-feature", base="main")
 7. (After merge)
 8. git_checkout(branch="main")
-9. git_delete_branch(branch="feature/my-feature")
+9. git_delete_branch(branch="feature/my-feature")  # mode="both" (default: deletes local + remote)
 ```
 
 **Related:** [TDD_WORKFLOW.md](../../coding_standards/TDD_WORKFLOW.md)
@@ -283,7 +283,7 @@ File: `.vscode/mcp.json`
 10. (Request review, get approval)
 11. merge_pr(pr_number=123)
 12. git_checkout(branch="main")
-13. git_delete_branch(branch="feature/add-caching", force=False)
+13. git_delete_branch(branch="feature/add-caching", force=False)  # mode="both" (default: deletes local + remote)
 ```
 
 ### Issue Lifecycle Management
