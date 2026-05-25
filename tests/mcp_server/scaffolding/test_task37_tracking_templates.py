@@ -229,6 +229,38 @@ def test_pr_md_custom_checklist(jinja_env) -> None:
     assert "- [x] Quality gates passing" in output
 
 
+def test_pr_md_renders_deferred_work_section(jinja_env) -> None:
+    """Test pr.md renders a Deferred Work section when deferred_work is set."""
+    template = jinja_env.get_template("concrete/pr.md.jinja2")
+
+    context = {
+        "tracking_type": "pr",
+        "title": "Test PR with deferred work",
+        "changes": "Main changes delivered",
+        "deferred_work": "Multi-remote support deferred to #400",
+    }
+
+    output = template.render(**context)
+
+    assert "## Deferred Work" in output
+    assert "Multi-remote support deferred to #400" in output
+
+
+def test_pr_md_deferred_work_absent_when_not_set(jinja_env) -> None:
+    """Test pr.md does not render Deferred Work section when deferred_work is not set."""
+    template = jinja_env.get_template("concrete/pr.md.jinja2")
+
+    context = {
+        "tracking_type": "pr",
+        "title": "Test PR",
+        "changes": "Main changes",
+    }
+
+    output = template.render(**context)
+
+    assert "## Deferred Work" not in output
+
+
 # ===== ISSUE DESCRIPTION RENDERING TESTS =====
 
 
