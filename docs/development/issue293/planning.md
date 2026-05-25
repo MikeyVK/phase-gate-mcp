@@ -1,5 +1,5 @@
 <!-- docs\development\issue293\planning.md -->
-<!-- template=planning version=130ac5ea created=2026-05-25T09:08Z updated= -->
+<!-- template=planning version=130ac5ea created=2026-05-25T09:08Z updated=2026-05-25 -->
 # Issue #293 — Cycle Boundary Semantics: Boundary-Explicit Gate Runner API
 
 **Status:** DRAFT  
@@ -39,7 +39,7 @@ Replace the single generic resolve/enforce/inspect API with two boundary-explici
 
 ### Cycle 1: C1: Resolver boundary methods
 
-**Goal:** Add resolve_phase_exit() and resolve_cycle_exit() to PhaseContractResolver; update test_phase_contract_resolver.py to cover both new methods. Keep resolve() temporarily until C2 removes it.
+**Goal:** Add resolve_phase_exit() and resolve_cycle_exit() to PhaseContractResolver; update test_phase_contract_resolver.py to cover both new methods. C2 will remove resolve() as part of the full clean-break migration.
 
 **Tests:**
 - test_resolve_phase_exit_returns_exit_requires_plus_cycle_gates_when_cycle_number_present
@@ -50,7 +50,6 @@ Replace the single generic resolve/enforce/inspect API with two boundary-explici
 **Success Criteria:**
 - resolve_phase_exit and resolve_cycle_exit implemented on PhaseContractResolver
 - All new resolver tests pass
-- All existing resolver tests still pass (resolve() still present)
 - Type signatures: `resolve_phase_exit(cycle_number: int | None = None)` vs `resolve_cycle_exit(cycle_number: int)` — pyright must accept both without ignores
 - ruff + pyright pass on phase_contract_resolver.py and test_phase_contract_resolver.py
 
@@ -121,4 +120,4 @@ Replace the single generic resolve/enforce/inspect API with two boundary-explici
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 |  | Agent | Initial draft |
+| 1.0 | 2026-05-25 | Agent | Initial draft |

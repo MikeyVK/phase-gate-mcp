@@ -81,9 +81,9 @@ transition_cycle()
 
 Source: [phase_contract_resolver.py L130–136](../../mcp_server/managers/phase_contract_resolver.py), [phase_state_engine.py L329–334](../../mcp_server/managers/phase_state_engine.py).
 
-### Finding 3 — Bug is active in live repository config
+### Finding 3 — Bug is latent in code path; would activate under non-empty exit_requires config
 
-The `refactor` workflow defines `implementation` as `cycle_based: true`. Any `exit_requires` configured on that phase entry will block ordinary cycle-to-cycle transitions today. This is not a hypothetical failure mode — it is the current production behavior whenever `exit_requires` and `cycle_exit_requires` coexist.
+The `refactor` workflow defines `implementation` as `cycle_based: true`, making it susceptible to the defect. However, the checked-in `contracts.yaml` currently has `exit_requires: []` for all cycle-based implementation phases and no `cycle_exit_requires` entries. Under the current checked-in config the defect is latent: the incorrect code path exists but is not yet triggered. It would activate as soon as any cycle-based phase gains non-empty `exit_requires` or `cycle_exit_requires` entries in `contracts.yaml`.
 
 ### Finding 4 — Phase transitions also receive cycle_number (intended behavior, confirmed)
 
@@ -129,7 +129,7 @@ Add `resolve_phase_exit()` and `resolve_cycle_exit()` to `PhaseContractResolver`
 
 ### Recommendation
 
-Direction B is architecturally superior and aligns with the user's stated preference (Option Y). The method count increase is acceptable because each method has a single, clear semantic. The old `enforce()` / `inspect()` should be retained in the current cycle as the phase-exit path (since `transition()` and `force_transition()` already use them correctly), allowing a clean incremental transition.
+Direction B is architecturally superior and aligns with the user's stated preference (Option Y). The method count increase is acceptable because each method has a single, clear semantic. The Approved Strategy (below) selects this direction as a clean break: old `enforce()` / `inspect()` are removed in the same implementation cycle as `resolve()`, not retained as temporary aliases.
 
 **Issue-specific deliverable routing also splits cleanly:**
 
@@ -149,8 +149,8 @@ Direction B is architecturally superior and aligns with the user's stated prefer
 | `WorkflowGateRunner` | `mcp_server/managers/workflow_gate_runner.py` | Implement the 4 new runner methods |
 | `PhaseStateEngine.transition_cycle()` | `mcp_server/managers/phase_state_engine.py` L329 | Use `enforce_cycle_exit()` |
 | `PhaseStateEngine.force_cycle_transition()` | `mcp_server/managers/phase_state_engine.py` L391 | Use `inspect_cycle_exit()` |
-| `PhaseStateEngine.transition()` | `mcp_server/managers/phase_state_engine.py` L200 | Use `enforce_phase_exit()` (or keep `enforce()` if old method is retained as phase-exit alias) |
-| `PhaseStateEngine.force_transition()` | `mcp_server/managers/phase_state_engine.py` L242 | Use `inspect_phase_exit()` (or keep `inspect()`) |
+| `PhaseStateEngine.transition()` | `mcp_server/managers/phase_state_engine.py` L200 | Use `enforce_phase_exit()` |
+| `PhaseStateEngine.force_transition()` | `mcp_server/managers/phase_state_engine.py` L242 | Use `inspect_phase_exit()` |
 | `test_phase_contract_resolver.py` | `tests/mcp_server/unit/managers/` | Update combined-behavior test; add separate cycle-exit and phase-exit tests |
 | `test_phase_state_engine_c4_issue257.py` | `tests/mcp_server/unit/managers/` | Update gate runner fakes, enforce/inspect call assertions |
 | `test_phase_state_engine_c1.py` | `tests/mcp_server/unit/managers/` | Update direct runner calls at L154, L169, L203 |

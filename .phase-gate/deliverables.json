@@ -27,7 +27,7 @@
               "PhaseContractResolver.resolve_cycle_exit(workflow_name, phase, cycle_number) -> list[CheckSpec]",
               "Tests: test_resolve_phase_exit_* + test_resolve_cycle_exit_* in test_phase_contract_resolver.py"
             ],
-            "exit_criteria": "resolve_phase_exit and resolve_cycle_exit implemented and tested; all existing resolver tests still pass; ruff + pyright green on resolver + resolver test file"
+            "exit_criteria": "resolve_phase_exit and resolve_cycle_exit implemented and tested; ruff + pyright green on resolver + resolver test file"
           },
           {
             "cycle_number": 2,
@@ -43,9 +43,10 @@
               "test_phase_state_engine_c3_issue257.py: PassingGateRunner + ReportingGateRunner updated",
               "test_phase_state_engine_c4_issue257.py: 3 fakes updated to enforce_cycle_exit/inspect_cycle_exit",
               "test_consumers_c4.py: MagicMock patched to enforce_phase_exit",
-              "test_phase_contract_resolver.py: combined test removed"
+              "test_phase_contract_resolver.py: combined test removed",
+              "test_phase_contract_resolver_c3.py: resolver.resolve(\u2026) \u2192 resolver.resolve_phase_exit(\u2026) at L94"
             ],
-            "exit_criteria": "Bug fixed: transition_cycle enforces only cycle_exit_requires[N]; transition enforces exit_requires + cycle_exit_requires[current_cycle]; no resolve/enforce/inspect in production code; full test suite green; ruff + pyright pass on all 4 production files and all 7 test files"
+            "exit_criteria": "Bug fixed: transition_cycle enforces only cycle_exit_requires[N]; transition enforces exit_requires + cycle_exit_requires[current_cycle]; no resolve/enforce/inspect in production code; full test suite green; ruff + pyright pass on all 4 production files and all 8 test files"
           }
         ]
       }
