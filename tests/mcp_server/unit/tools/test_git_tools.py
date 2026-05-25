@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.tools.git_tools import (
     CommitPhaseMismatchError,
@@ -555,19 +555,26 @@ async def test_git_merge_tool(mock_git_manager: MagicMock) -> None:
 async def test_git_delete_branch_tool(mock_git_manager: MagicMock) -> None:
     """Test git delete branch tool."""
     tool = GitDeleteBranchTool(manager=mock_git_manager)
+    mock_git_manager.delete_branch.return_value = BranchDeleteResult(
+        local_status="deleted", remote_status="deleted"
+    )
 
     params = GitDeleteBranchInput(branch="feature/old", force=True)
     result = await tool.execute(params, NoteContext())
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=True, mode="both"
     )
-    assert "feature/old" in result.content[0]["text"]
+    expected = "Deleted branch: feature/old (local: deleted, remote: deleted)"
+    assert result.content[0]["text"] == expected
 
 
 @pytest.mark.asyncio
 async def test_git_delete_branch_mode_local(mock_git_manager: MagicMock) -> None:
     """Test delete branch tool passes mode=local to manager."""
     tool = GitDeleteBranchTool(manager=mock_git_manager)
+    mock_git_manager.delete_branch.return_value = BranchDeleteResult(
+        local_status="deleted", remote_status="skipped"
+    )
 
     params = GitDeleteBranchInput(branch="feature/old", mode="local")
     result = await tool.execute(params, NoteContext())
@@ -575,13 +582,16 @@ async def test_git_delete_branch_mode_local(mock_git_manager: MagicMock) -> None
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=False, mode="local"
     )
-    assert "feature/old" in result.content[0]["text"]
+    assert result.content[0]["text"] == "Deleted branch: feature/old (local: deleted)"
 
 
 @pytest.mark.asyncio
 async def test_git_delete_branch_mode_remote(mock_git_manager: MagicMock) -> None:
     """Test delete branch tool passes mode=remote to manager."""
     tool = GitDeleteBranchTool(manager=mock_git_manager)
+    mock_git_manager.delete_branch.return_value = BranchDeleteResult(
+        local_status="skipped", remote_status="deleted"
+    )
 
     params = GitDeleteBranchInput(branch="feature/old", mode="remote")
     result = await tool.execute(params, NoteContext())
@@ -589,7 +599,7 @@ async def test_git_delete_branch_mode_remote(mock_git_manager: MagicMock) -> Non
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=False, mode="remote"
     )
-    assert "feature/old" in result.content[0]["text"]
+    assert result.content[0]["text"] == "Deleted branch: feature/old (remote: deleted)"
 
 
 @pytest.mark.asyncio
