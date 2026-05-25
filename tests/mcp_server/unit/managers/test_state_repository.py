@@ -172,7 +172,7 @@ class TestAtomicJsonWriter:
         writer = AtomicJsonWriter()
 
         def failing_replace(src: Path, _dst: Path) -> None:
-            if Path(src).name == ".state.tmp":
+            if Path(src).name.startswith(".state.tmp"):
                 raise OSError("simulated rename failure")
             raise AssertionError("Unexpected replace target")
 
