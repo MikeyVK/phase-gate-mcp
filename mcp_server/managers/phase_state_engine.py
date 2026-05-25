@@ -681,11 +681,6 @@ class PhaseStateEngine:
             branch, lambda s: s.with_updates(current_sub_phase=sub_phase)
         )
 
-    def _save_state(self, branch: str, state: BranchState) -> None:
-        """Save branch state to state.json through the configured repository."""
-        validated_state = state if state.branch == branch else state.with_updates(branch=branch)
-        self._state_repository.save(validated_state)
-
     def _transition_to_dict(self, transition: TransitionRecord) -> dict[str, Any]:
         """Convert TransitionRecord to dict for JSON serialization.
 
