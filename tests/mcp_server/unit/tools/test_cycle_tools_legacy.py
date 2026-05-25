@@ -138,10 +138,7 @@ class TestTransitionCycleTool:
         )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=1)
-        state_engine._save_state(  # pyright: ignore[reportPrivateUsage]  # Legacy state fixture setup.
-            "feature/146-tdd-cycle-tracking",
-            state,
-        )
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         return workspace_root, issue_number
 
@@ -190,10 +187,7 @@ class TestTransitionCycleTool:
         state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=2)
-        state_engine._save_state(  # pyright: ignore[reportPrivateUsage]  # Legacy state fixture setup.
-            "feature/146-tdd-cycle-tracking",
-            state,
-        )
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         #  Mock git
         with (
@@ -253,10 +247,7 @@ class TestTransitionCycleTool:
         state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_phase="design")
-        state_engine._save_state(  # pyright: ignore[reportPrivateUsage]  # Legacy state fixture setup.
-            "feature/146-tdd-cycle-tracking",
-            state,
-        )
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         # Mock git
         with (
@@ -358,10 +349,7 @@ class TestForceCycleTransitionTool:
             last_cycle=1,
             cycle_history=[],
         )
-        state_engine._save_state(  # pyright: ignore[reportPrivateUsage]  # Legacy state fixture setup.
-            branch,
-            state,
-        )
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         return workspace_root, issue_number
 
@@ -583,10 +571,7 @@ class TestForceCycleAuditSchema:
             last_cycle=1,
             cycle_history=[],
         )
-        state_engine._save_state(  # pyright: ignore[reportPrivateUsage]  # Legacy state fixture setup.
-            branch,
-            state,
-        )
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         return workspace_root, issue_number
 
@@ -782,10 +767,7 @@ class TestTransitionCycleHistory:
             last_cycle=None,
             cycle_history=[],
         )
-        state_engine._save_state(  # pyright: ignore[reportPrivateUsage]  # Legacy state fixture setup.
-            branch,
-            state,
-        )
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         return workspace_root, issue_number
 
@@ -940,10 +922,7 @@ class TestTransitionCycleExitCriteria:
             last_cycle=None,
             cycle_history=[],
         )
-        state_engine._save_state(  # pyright: ignore[reportPrivateUsage]  # Legacy state fixture setup.
-            branch,
-            state,
-        )
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         return workspace_root
 

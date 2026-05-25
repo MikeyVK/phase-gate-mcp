@@ -694,3 +694,44 @@ class TestRunQualityGatesToolConflictC8:
         notes = context.of_type(RecoveryNote)
         assert len(notes) == 1
         assert "quality" in notes[0].message.lower() or "retry" in notes[0].message.lower()
+
+
+# C3 RED — RunQualityGatesTool catches QualityStateMutationConflictError (issue #292)
+
+
+class TestRunQualityGatesConflictErrorC3:
+    """C3 (#292): RunQualityGatesTool must catch QualityStateMutationConflictError.
+
+    When FileQualityStateRepository raises QualityStateMutationConflictError (lock timeout),
+    the tool must return ToolResult.error(e.diagnostic) and emit RecoveryNote(message=e.recovery).
+    """
+
+    @pytest.mark.asyncio
+    async def test_conflict_error_returns_recovery_note_and_error(self) -> None:
+        """QualityStateMutationConflictError raised by manager -> RecoveryNote + error (C3-D5/6)."""
+        from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
+        from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
+            QualityStateMutationConflictError,
+        )
+
+        mock_manager = MagicMock()
+        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.run_quality_gates.side_effect = QualityStateMutationConflictError(
+            diagnostic="Quality state write failed — lock timeout (5s)",
+            recovery="Retry the quality-gates run once the current run completes.",
+        )
+
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        result = await tool.execute(RunQualityGatesInput(scope="auto"), context)
+
+        assert result.is_error, "must return ToolResult.error on QualityStateMutationConflictError"
+        assert (
+            "lock timeout" in result.content[0]["text"].lower()
+            or "write failed" in result.content[0]["text"].lower()
+        ), f"diagnostic must appear in error content, got: {result.content[0]['text']!r}"
+        notes = context.of_type(RecoveryNote)
+        assert len(notes) == 1, f"must emit exactly one RecoveryNote, got {len(notes)}"
+        assert "retry" in notes[0].message.lower(), (
+            f"recovery hint must mention retry, got: {notes[0].message!r}"
+        )

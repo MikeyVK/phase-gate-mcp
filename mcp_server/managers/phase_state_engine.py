@@ -158,22 +158,25 @@ class PhaseStateEngine:
         if self._has_uncommitted_state_changes():
             warnings.append("state.json has uncommitted local changes")
 
-        state = BranchState(
-            branch=branch,
-            issue_number=issue_number,
-            workflow_name=project["workflow_name"],
-            current_phase=initial_phase,
-            current_cycle=None,
-            last_cycle=None,
-            cycle_history=[],
-            required_phases=project.get("required_phases", []),
-            execution_mode=project.get("execution_mode", "normal"),
-            issue_title=project.get("issue_title"),
-            parent_branch=parent_branch,
-            created_at=datetime.now(UTC).isoformat(),
-            transitions=[],
+        self._workflow_state_mutator.apply(
+            branch,
+            lambda _s: _s.with_updates(
+                branch=branch,
+                issue_number=issue_number,
+                workflow_name=project["workflow_name"],
+                current_phase=initial_phase,
+                current_cycle=None,
+                last_cycle=None,
+                cycle_history=[],
+                required_phases=project.get("required_phases", []),
+                execution_mode=project.get("execution_mode", "normal"),
+                issue_title=project.get("issue_title"),
+                parent_branch=parent_branch,
+                created_at=datetime.now(UTC).isoformat(),
+                transitions=[],
+                reconstructed=False,
+            ),
         )
-        self._apply_state(branch, state)
 
         return {
             "success": True,
@@ -215,12 +218,14 @@ class PhaseStateEngine:
             forced=False,
         )
 
-        updated_state = state.with_updates(
-            current_phase=to_phase,
-            transitions=[*state.transitions, self._transition_to_dict(transition)],
-            current_sub_phase=None,
+        self._workflow_state_mutator.apply(
+            branch,
+            lambda _s: _s.with_updates(
+                current_phase=to_phase,
+                transitions=[*_s.transitions, self._transition_to_dict(transition)],
+                current_sub_phase=None,
+            ),
         )
-        self._apply_state(branch, updated_state)
         self._reset_context_loaded(branch)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
@@ -282,13 +287,15 @@ class PhaseStateEngine:
             skip_reason=skip_reason,
         )
 
-        updated_state = state.with_updates(
-            current_phase=to_phase,
-            transitions=[*state.transitions, self._transition_to_dict(transition)],
-            skip_reason=skip_reason,
-            current_sub_phase=None,
+        self._workflow_state_mutator.apply(
+            branch,
+            lambda _s: _s.with_updates(
+                current_phase=to_phase,
+                transitions=[*_s.transitions, self._transition_to_dict(transition)],
+                skip_reason=skip_reason,
+                current_sub_phase=None,
+            ),
         )
-        self._apply_state(branch, updated_state)
         self._reset_context_loaded(branch)
 
         if self._is_cycle_based_phase(workflow_name, to_phase):
@@ -340,13 +347,15 @@ class PhaseStateEngine:
             "forced": False,
             "entered": datetime.now(UTC).isoformat(),
         }
-        updated_state = state.with_updates(
-            last_cycle=from_cycle,
-            current_cycle=to_cycle,
-            cycle_history=[*state.cycle_history, history_entry],
-            current_sub_phase=None,
+        self._workflow_state_mutator.apply(
+            branch,
+            lambda _s: _s.with_updates(
+                last_cycle=from_cycle,
+                current_cycle=to_cycle,
+                cycle_history=[*_s.cycle_history, history_entry],
+                current_sub_phase=None,
+            ),
         )
-        self._apply_state(branch, updated_state)
         self._reset_context_loaded(branch)
 
         return {
@@ -410,13 +419,15 @@ class PhaseStateEngine:
             "human_approval": human_approval,
             "skipped_cycles": skipped_cycles,
         }
-        updated_state = state.with_updates(
-            last_cycle=from_cycle,
-            current_cycle=to_cycle,
-            cycle_history=[*state.cycle_history, history_entry],
-            current_sub_phase=None,
+        self._workflow_state_mutator.apply(
+            branch,
+            lambda _s: _s.with_updates(
+                last_cycle=from_cycle,
+                current_cycle=to_cycle,
+                cycle_history=[*_s.cycle_history, history_entry],
+                current_sub_phase=None,
+            ),
         )
-        self._apply_state(branch, updated_state)
         self._reset_context_loaded(branch)
 
         return {
@@ -528,7 +539,7 @@ class PhaseStateEngine:
             logger.warning("Invalid or missing state.json, reconstructing", exc_info=True)
 
         reconstructed_state = self._state_reconstructor.reconstruct(branch)
-        self._apply_state(branch, reconstructed_state)
+        self._workflow_state_mutator.apply(branch, lambda _s: reconstructed_state)
         return reconstructed_state
 
     def _require_issue_number(self, branch: str, state: BranchState) -> int:
@@ -675,18 +686,6 @@ class PhaseStateEngine:
             branch, lambda s: s.with_updates(current_sub_phase=sub_phase)
         )
 
-    def _save_state(self, branch: str, state: BranchState) -> None:
-        """Save branch state to state.json through the configured repository."""
-        validated_state = state if state.branch == branch else state.with_updates(branch=branch)
-        self._state_repository.save(validated_state)
-
-    def _apply_state(self, branch: str, state: BranchState) -> None:
-        """Persist branch state through IWorkflowStateMutator.
-
-        Routes the write through the coordinated mutation boundary.
-        """
-        self._workflow_state_mutator.apply(branch, lambda _s: state)
-
     def _transition_to_dict(self, transition: TransitionRecord) -> dict[str, Any]:
         """Convert TransitionRecord to dict for JSON serialization.
 
@@ -719,15 +718,17 @@ class PhaseStateEngine:
             branch: Branch name
             issue_number: GitHub issue number
         """
-        state = self.get_state(branch)
 
-        if state.current_cycle is None:
-            updated_state = state.with_updates(
-                current_cycle=1,
-                last_cycle=0,
-                cycle_history=[*state.cycle_history],
-            )
-            self._apply_state(branch, updated_state)
+        def _enter_lambda(_s: BranchState) -> BranchState:
+            if _s.current_cycle is None:
+                return _s.with_updates(
+                    current_cycle=1,
+                    last_cycle=0,
+                    cycle_history=[*_s.cycle_history],
+                )
+            return _s
+
+        self._workflow_state_mutator.apply(branch, _enter_lambda)
 
         logger.info(f"Entered implementation phase for issue {issue_number} on branch {branch}")
 
@@ -740,10 +741,15 @@ class PhaseStateEngine:
         Args:
             branch: Branch name
         """
-        state = self.get_state(branch)
-        current_cycle = state.current_cycle
 
-        if current_cycle is not None:
-            updated_state = state.with_updates(last_cycle=current_cycle, current_cycle=None)
-            logger.info(f"Exited implementation phase at cycle {current_cycle} on branch {branch}")
-            self._apply_state(branch, updated_state)
+        def _exit_lambda(_s: BranchState) -> BranchState:
+            if _s.current_cycle is not None:
+                logger.info(
+                    "Exited implementation phase at cycle %s on branch %s",
+                    _s.current_cycle,
+                    branch,
+                )
+                return _s.with_updates(last_cycle=_s.current_cycle, current_cycle=None)
+            return _s
+
+        self._workflow_state_mutator.apply(branch, _exit_lambda)

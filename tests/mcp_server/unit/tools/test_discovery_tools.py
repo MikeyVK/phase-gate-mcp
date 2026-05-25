@@ -389,7 +389,7 @@ class TestGetWorkContextTddCycleInfo:
         )
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=2)
-        state_engine._save_state("feature/146-tdd-cycle-tracking", state)
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         # Mock Git and settings
         with (
@@ -598,7 +598,7 @@ class TestTddCycleInfoStatusField:
         # Set current cycle so tdd_cycle_info is populated
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         state = state.with_updates(current_cycle=1)
-        state_engine._save_state("feature/146-tdd-cycle-tracking", state)
+        state_engine._state_repository.save(state)  # pyright: ignore[reportPrivateUsage]  # State fixture injection.
 
         with (
             patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class,

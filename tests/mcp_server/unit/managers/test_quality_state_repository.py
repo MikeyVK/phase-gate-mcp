@@ -165,3 +165,85 @@ class TestFileQualityStateRepositoryApply:
         assert "AtomicJsonWriter" in source, (
             "FileQualityStateRepository must use AtomicJsonWriter for atomic writes"
         )
+
+
+# C3 RED — FileQualityStateRepository lock + QualityStateMutationConflictError (issue #292)
+
+
+class TestFileQualityStateLockC3:
+    """C3 (#292): FileQualityStateRepository.apply() must serialize concurrent access.
+
+    Tests verify:
+    - apply() raises QualityStateMutationConflictError when lock cannot be acquired within 5s
+    - Two concurrent apply() calls both persist their mutations (no lost update under lock)
+    """
+
+    def test_apply_raises_conflict_error_on_timeout(self, tmp_path: Path) -> None:
+        """apply() raises QualityStateMutationConflictError on lock timeout (C3-D1, C3-D2)."""
+        from unittest.mock import MagicMock  # noqa: PLC0415
+
+        import pytest  # noqa: PLC0415
+
+        from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
+            QualityStateMutationConflictError,
+        )
+
+        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        repo = FileQualityStateRepository(backing_file=backing)
+
+        # Replace lock with a mock that simulates timeout (acquire returns False immediately).
+        mock_lock = MagicMock()
+        mock_lock.acquire.return_value = False
+        repo._lock = mock_lock  # pyright: ignore[reportPrivateUsage]  # Test lock injection.
+
+        with pytest.raises(QualityStateMutationConflictError) as exc_info:
+            repo.apply(lambda _s: _s)
+
+        assert exc_info.value.diagnostic, "QualityStateMutationConflictError must have diagnostic"
+        assert exc_info.value.recovery, "QualityStateMutationConflictError must have recovery"
+
+    def test_concurrent_applies_both_land(self, tmp_path: Path) -> None:
+        """Two concurrent apply() calls must both persist mutations (C3-D1, no lost update)."""
+        import threading  # noqa: PLC0415
+        import time  # noqa: PLC0415
+
+        from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
+            QualityStateMutationConflictError,
+        )
+
+        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing.parent.mkdir(parents=True, exist_ok=True)
+        backing.write_text('{"baseline_sha": null, "failed_files": []}', encoding="utf-8")
+        repo = FileQualityStateRepository(backing_file=backing)
+
+        barrier = threading.Barrier(2)
+        errors: list[Exception] = []
+
+        def add_file(name: str) -> None:
+            try:
+                barrier.wait()
+
+                def slow_mutate(s: QualityState) -> QualityState:
+                    time.sleep(0.05)  # Force overlap to expose lost-update without lock.
+                    return QualityState(
+                        baseline_sha=s.baseline_sha,
+                        failed_files=sorted(set(s.failed_files) | {name}),
+                    )
+
+                repo.apply(slow_mutate)
+            except QualityStateMutationConflictError as e:
+                errors.append(e)
+            except Exception as e:  # noqa: BLE001
+                errors.append(e)
+
+        t1 = threading.Thread(target=add_file, args=("a.py",), daemon=True)
+        t2 = threading.Thread(target=add_file, args=("b.py",), daemon=True)
+        t1.start()
+        t2.start()
+        t1.join(timeout=10.0)
+        t2.join(timeout=10.0)
+
+        assert not errors, f"Unexpected errors in concurrent apply(): {errors}"
+        final_state = repo.load()
+        assert "a.py" in final_state.failed_files, "a.py must survive concurrent apply()"
+        assert "b.py" in final_state.failed_files, "b.py must survive concurrent apply()"
