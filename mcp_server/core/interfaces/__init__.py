@@ -10,7 +10,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from mcp_server.config.schemas.contracts_config import CheckSpec
     from mcp_server.managers.pytest_runner import PytestResult
     from mcp_server.managers.state_repository import BranchState
     from mcp_server.state.quality_state import QualityState
@@ -86,23 +85,37 @@ class IStateReconstructor(Protocol):
 
 
 class IWorkflowGateRunner(Protocol):
-    """Evaluate resolved workflow gate checks in enforce or inspect mode."""
+    """Evaluate resolved workflow gate checks via phase or cycle boundary methods."""
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[CheckSpec] | None = None,
     ) -> GateReport:
         raise NotImplementedError
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[CheckSpec] | None = None,
+    ) -> GateReport:
+        raise NotImplementedError
+
+    def enforce_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        raise NotImplementedError
+
+    def inspect_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
     ) -> GateReport:
         raise NotImplementedError
 

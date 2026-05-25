@@ -109,18 +109,16 @@ class PhaseContractResolver:
 
         return phase_entry.commit_type_map[sub_phase]
 
-    def resolve(
+    def resolve_phase_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None,
+        cycle_number: int | None = None,
     ) -> list[CheckSpec]:
-        """Resolve phase and cycle-specific checks for the requested workflow.
+        """Resolve phase-exit checks: exit_requires + cycle_exit_requires[cycle_number] if present.
 
-        A6 merge semantics:
-        - required config gates are immutable
-        - issue-specific gates may override recommended config gates by matching id
-        - issue-specific gates may extend the resolved set with new recommended checks
+        Use for phase transitions. Includes both the phase-level required gates and,
+        when cycle_number is given, the cycle-level gates for that cycle.
         """
         workflow_entry = self._config.contracts.workflows.get(workflow_name)
         if workflow_entry is None:
@@ -134,6 +132,35 @@ class PhaseContractResolver:
         config_checks = [*phase_entry.exit_requires]
         if cycle_number is not None:
             config_checks.extend(phase_entry.cycle_exit_requires.get(cycle_number, []))
+
+        issue_checks = self._resolve_issue_checks(
+            workflow_name=workflow_name,
+            phase=phase,
+            cycle_number=cycle_number,
+        )
+        return self._merge_checks(config_checks=config_checks, issue_checks=issue_checks)
+
+    def resolve_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> list[CheckSpec]:
+        """Resolve cycle-exit checks: cycle_exit_requires[cycle_number] only.
+
+        Use for cycle transitions. Excludes phase-level exit_requires so that gates
+        that belong only to phase transitions are not enforced during cycle advancement.
+        """
+        workflow_entry = self._config.contracts.workflows.get(workflow_name)
+        if workflow_entry is None:
+            return []
+
+        try:
+            phase_entry = workflow_entry.get_phase(phase)
+        except ValueError:
+            return []
+
+        config_checks = [*phase_entry.cycle_exit_requires.get(cycle_number, [])]
 
         issue_checks = self._resolve_issue_checks(
             workflow_name=workflow_name,

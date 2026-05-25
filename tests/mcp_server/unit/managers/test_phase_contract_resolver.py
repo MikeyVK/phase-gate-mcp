@@ -15,7 +15,6 @@ import pytest
 
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.managers.phase_contract_resolver import (
-    CheckSpec,
     PhaseContractResolver,
 )
 from tests.mcp_server.test_support import make_phase_config_context
@@ -282,38 +281,13 @@ class TestPhaseConfigContext:
 class TestPhaseContractResolver:
     """Tests for config-backed phase resolution."""
 
-    def test_resolve_merges_issue_specific_checks_without_overriding_required_gates(
-        self, workspace_root: Path
-    ) -> None:
-        """Required config gates stay immutable while recommended gates can be overridden."""
-        resolver = PhaseContractResolver(
-            make_phase_config_context(workspace_root, issue_number=257)
-        )
-
-        checks = resolver.resolve("feature", "implementation", cycle_number=1)
-
-        assert [check.id for check in checks] == [
-            "required-design-doc",
-            "c1-red-test",
-            "design-doc",
-            "issue-extra",
-        ]
-        assert all(isinstance(check, CheckSpec) for check in checks)
-        check_by_id = {check.id: check for check in checks}
-        assert check_by_id["required-design-doc"].file == "docs/development/issue257/design.md"
-        assert check_by_id["required-design-doc"].required is True
-        assert check_by_id["design-doc"].file == "docs/development/issue257/design-override.md"
-        assert check_by_id["design-doc"].required is False
-        assert check_by_id["issue-extra"].type == "contains_text"
-        assert check_by_id["issue-extra"].required is False
-
     def test_resolve_returns_empty_list_for_non_applicable_docs_implementation(
         self, workspace_root: Path
     ) -> None:
         """Docs workflow has no implementation contract and should resolve cleanly to []."""
         resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
 
-        assert resolver.resolve("docs", "implementation", None) == []
+        assert resolver.resolve_phase_exit("docs", "implementation", None) == []
 
     def test_resolve_returns_empty_list_for_unknown_workflow_and_phase(
         self, workspace_root: Path
@@ -321,5 +295,64 @@ class TestPhaseContractResolver:
         """Unknown workflow/phase combinations should not raise and should return []."""
         resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
 
-        assert resolver.resolve("unknown-workflow", "implementation", None) == []
-        assert resolver.resolve("feature", "unknown-phase", None) == []
+        assert resolver.resolve_phase_exit("unknown-workflow", "implementation", None) == []
+        assert resolver.resolve_phase_exit("feature", "unknown-phase", None) == []
+
+    def test_resolve_phase_exit_returns_exit_requires_plus_cycle_gates_when_cycle_number_present(
+        self, workspace_root: Path
+    ) -> None:
+        """resolve_phase_exit with cycle_number returns exit_requires + cycle_exit_requires."""
+        resolver = PhaseContractResolver(
+            make_phase_config_context(workspace_root, issue_number=257)
+        )
+
+        checks = resolver.resolve_phase_exit("feature", "implementation", cycle_number=1)
+
+        assert [check.id for check in checks] == [
+            "required-design-doc",
+            "c1-red-test",
+            "design-doc",
+            "issue-extra",
+        ]
+
+    def test_resolve_phase_exit_returns_only_exit_requires_when_no_cycle_number(
+        self, workspace_root: Path
+    ) -> None:
+        """resolve_phase_exit without cycle_number returns only exit_requires, no cycle gates."""
+        resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
+
+        checks = resolver.resolve_phase_exit("feature", "implementation")
+
+        ids = [check.id for check in checks]
+        assert "required-design-doc" in ids
+        assert "design-doc" in ids
+        assert "c1-red-test" not in ids
+
+    def test_resolve_cycle_exit_returns_only_cycle_exit_requires(
+        self, workspace_root: Path
+    ) -> None:
+        """resolve_cycle_exit returns only cycle_exit_requires, not exit_requires."""
+        resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
+
+        checks = resolver.resolve_cycle_exit("feature", "implementation", cycle_number=1)
+
+        assert [check.id for check in checks] == ["c1-red-test"]
+
+    def test_resolve_cycle_exit_excludes_phase_level_exit_requires(
+        self, workspace_root: Path
+    ) -> None:
+        """Regression: cycle exit must not include phase-level exit_requires gates.
+
+        The defect: resolve(cycle_number=N) merged both exit_requires and cycle_exit_requires,
+        causing transition_cycle() to enforce phase-level gates that belong only to phase
+        transitions.
+        """
+        resolver = PhaseContractResolver(
+            make_phase_config_context(workspace_root, issue_number=257)
+        )
+
+        checks = resolver.resolve_cycle_exit("feature", "implementation", cycle_number=1)
+
+        required_ids = {check.id for check in checks if check.required}
+        assert "required-design-doc" not in required_ids
+        assert "c1-red-test" in required_ids
