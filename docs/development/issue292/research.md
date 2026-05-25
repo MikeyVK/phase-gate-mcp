@@ -57,7 +57,7 @@ The `_apply_state()` helper in `PhaseStateEngine` was meant to be the single rou
 3. Passes that fresh state to `mutate(state)`
 4. Saves the returned state via `IStateRepository.save()`
 
-All nine production call sites in `PhaseStateEngine` violate this contract:
+All eight production call sites in `PhaseStateEngine` violate this contract:
 
 ```python
 # WRONG — current pattern in all _apply_state() callers:
@@ -84,7 +84,7 @@ Caller A (force_transition):       Caller B (force_cycle_transition):
 
 ### Affected Production Write Paths — `state.json`
 
-All nine `_apply_state()` call sites in `PhaseStateEngine` use the stale lambda pattern:
+All eight `_apply_state()` call sites in `PhaseStateEngine` use the stale lambda pattern:
 
 | Method | Line |
 |---|---|
@@ -103,6 +103,14 @@ All nine `_apply_state()` call sites in `PhaseStateEngine` use the stale lambda 
 
 `FileQualityStateRepository.apply()` (`managers/quality_state_repository.py`) has no `threading.Lock`. It reads current `QualityState`, applies the callback, and writes via `AtomicJsonWriter` — all without serialization. Concurrent callers race on `quality_state.json` independently of the `state.json` lock.
 
+**Live callers in `qa_manager.py`:**
+- `_advance_baseline_on_all_pass()` at L309 — calls `_quality_state_repository.apply(lambda _s: QualityState(baseline_sha=head_sha, failed_files=[]))`
+- `_accumulate_failed_files_on_failure()` at L321 — calls `_quality_state_repository.apply(_union)` to accumulate failed files
+
+**Affected test surfaces:**
+- `tests/mcp_server/unit/managers/test_quality_state_repository.py` — protocol and `apply()` behaviour tests
+- `tests/mcp_server/unit/managers/test_baseline_advance.py` — baseline-advance integration tests
+
 ### Non-Violations Confirmed
 
 - `record_sub_phase()` already uses the correct transformer pattern:
@@ -112,17 +120,20 @@ All nine `_apply_state()` call sites in `PhaseStateEngine` use the stale lambda 
 - `AtomicJsonWriter.write_json()` uses temp-file + `os.replace()` — crash-safe at disk level.
 - `StateMutationConflictError` and `RecoveryNote` infrastructure already exists for operator-facing conflict reporting.
 
-### Affected Tests (Fixture-Only, Not Production Violations)
+### Affected Tests — `_save_state()` call sites
 
-Eleven test locations call `engine._save_state()` as fixture setup to inject pre-canned state:
+Eleven test locations call `engine._save_state()`. They split into two categories:
+
+**Category A — Fixture-injection sites (9 sites):** tests that use `_save_state()` only to inject pre-canned state before exercising unrelated behaviour.
 
 | Test file | Sites |
 |---|---|
 | `tests/mcp_server/unit/tools/test_cycle_tools_legacy.py` | 7 |
 | `tests/mcp_server/unit/tools/test_discovery_tools.py` | 2 |
-| `tests/mcp_server/managers/test_phase_state_engine_async.py` | 2 |
 
-`test_phase_state_engine_async.py` also tests the old direct-write contract from issue #85. These tests will need migration when `_save_state()` is removed.
+Migration: replace each `engine._save_state(branch, state)` call with a direct write through the injected state repository that is already in scope in each test setup.
+
+**Category B — Functional behaviour tests (2 sites):** `tests/mcp_server/managers/test_phase_state_engine_async.py` (L63, L106) test the non-blocking I/O contract of `_save_state()` itself, introduced in issue #85. Once `_save_state()` is deleted, this contract is void. These tests are to be deleted; the underlying atomic-write behaviour is already covered by `AtomicJsonWriter` unit tests.
 
 ---
 
@@ -144,7 +155,7 @@ self._workflow_state_mutator.apply(
 )
 ```
 
-`_save_state()` is formally removed from production. Tests using it for fixture setup migrate to `InMemoryStateRepository.save()` directly.
+`_save_state()` is formally removed from production. Category A fixture-injection sites migrate to use the injected state repository directly; Category B functional behaviour tests are deleted.
 
 No version field / OCC is added to `BranchState`. The lock + transformer pattern is sufficient when callers correctly use `_s`.
 
@@ -156,9 +167,9 @@ Same pattern as `WorkflowStateMutator`: lock → read → apply callback → wri
 
 ### Boundary 3: `_save_state()` dead method
 
-**Fix: remove from production; migrate 11 test fixture sites.**
+**Fix: remove from production; migrate 9 Category A fixture sites; delete 2 Category B behaviour tests.**
 
-The method is deleted from `PhaseStateEngine`. Tests that used it for fixture injection are updated to call `InMemoryStateRepository.save()` directly — which is architecturally the correct fixture pattern anyway (state repository is already injected in those test setups).
+The method is deleted from `PhaseStateEngine`. Category A sites (9 fixture injections in `test_cycle_tools_legacy.py` and `test_discovery_tools.py`) are migrated to write directly through the injected state repository in each test's existing setup. Category B sites (2 behaviour tests in `test_phase_state_engine_async.py`) are deleted — the `_save_state()` non-blocking I/O contract from issue #85 is void once the method is removed.
 
 ### What this does NOT change
 
@@ -178,7 +189,7 @@ None — all strategy-sensitive boundaries resolved at interaction checkpoint.
 
 ## References
 
-- `mcp_server/managers/phase_state_engine.py` (L176, L223, L291, L349, L415, L527, L674, L726, L745)
+- `mcp_server/managers/phase_state_engine.py` (L176, L223, L291, L349, L415, L527, L726, L745)
 - `mcp_server/managers/workflow_state_mutator.py`
 - `mcp_server/managers/quality_state_repository.py`
 - `mcp_server/managers/state_repository.py`
@@ -192,3 +203,4 @@ None — all strategy-sensitive boundaries resolved at interaction checkpoint.
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-05-25 | Agent | Initial research — root cause confirmed, approved strategy captured |
+| 1.1 | 2026-05-25 | Agent | QA NOGO fixes: blast radius count 9→8, test-migration split (fixture vs behaviour), quality_state callers and test surfaces added |

@@ -1,0 +1,19 @@
+{
+  "292": {
+    "issue_title": "Workflow state mutations can lose updates under concurrent transitions",
+    "workflow_name": "bug",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-05-25T13:19:01.584956+00:00"
+  }
+}
