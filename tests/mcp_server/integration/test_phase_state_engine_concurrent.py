@@ -13,15 +13,18 @@ The stale-lambda bug:
 @layer: Tests (Integration)
 @dependencies: [pytest, threading, mcp_server.managers.phase_state_engine]
 """
-
 from __future__ import annotations
 
 import threading
 from pathlib import Path
 
-import pytest
-
-from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+from mcp_server.config.schemas.contracts_config import ContractsConfig
+from mcp_server.core.interfaces import GateReport
+from tests.mcp_server.test_support import (
+    load_contracts_config,
+    make_phase_state_engine,
+    make_project_manager,
+)
 
 _BRANCH_D1 = "feature/292-mixed-concurrent"
 _BRANCH_D2 = "feature/292-homogeneous-concurrent"
@@ -30,13 +33,76 @@ _PLANNING_DELIVERABLES = {
     "tdd_cycles": {
         "total": 4,
         "cycles": [
-            {"cycle_number": 1, "name": "C1", "exit_criteria": "c1 done"},
-            {"cycle_number": 2, "name": "C2", "exit_criteria": "c2 done"},
-            {"cycle_number": 3, "name": "C3", "exit_criteria": "c3 done"},
-            {"cycle_number": 4, "name": "C4", "exit_criteria": "c4 done"},
+            {
+                "cycle_number": 1,
+                "name": "C1",
+                "exit_criteria": "c1 done",
+                "deliverables": [{"id": "C1-D1", "description": "C1 deliverable"}],
+            },
+            {
+                "cycle_number": 2,
+                "name": "C2",
+                "exit_criteria": "c2 done",
+                "deliverables": [{"id": "C2-D1", "description": "C2 deliverable"}],
+            },
+            {
+                "cycle_number": 3,
+                "name": "C3",
+                "exit_criteria": "c3 done",
+                "deliverables": [{"id": "C3-D1", "description": "C3 deliverable"}],
+            },
+            {
+                "cycle_number": 4,
+                "name": "C4",
+                "exit_criteria": "c4 done",
+                "deliverables": [{"id": "C4-D1", "description": "C4 deliverable"}],
+            },
         ],
     }
 }
+
+
+
+class _ConcurrentTestGateRunner:
+    """Gate runner for concurrent tests: always returns one passing gate.
+
+    Returning a non-empty passing tuple prevents _legacy_workphases_gate_summary
+    from being called inside force_transition/force_cycle_transition, avoiding
+    thread-unsafe gitpython calls in WorkflowStatusResolver.resolve_current().
+    is_cycle_based_phase is accurate: reads from the real ContractsConfig.
+    """
+
+    def __init__(self, contracts_config: ContractsConfig) -> None:
+        self._contracts_config = contracts_config
+
+    def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
+        wf = self._contracts_config.workflows.get(workflow_name)
+        if not wf:
+            return False
+        for p in wf.phases:
+            if p.name == phase:
+                return p.cycle_based
+        return False
+
+    def enforce(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+        checks: object = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number, checks
+        return GateReport(passing=("nop",))
+
+    def inspect(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+        checks: object = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number, checks
+        return GateReport(passing=("nop",))
 
 
 def _make_engine(tmp_path: Path, *, branch: str, initial_phase: str):
@@ -51,7 +117,11 @@ def _make_engine(tmp_path: Path, *, branch: str, initial_phase: str):
         issue_number=_ISSUE,
         planning_deliverables=_PLANNING_DELIVERABLES,
     )
-    engine = make_phase_state_engine(tmp_path, project_manager=pm)
+    engine = make_phase_state_engine(
+        tmp_path,
+        project_manager=pm,
+        workflow_gate_runner=_ConcurrentTestGateRunner(load_contracts_config()),
+    )
     engine.initialize_branch(
         branch=branch,
         issue_number=_ISSUE,
@@ -79,7 +149,55 @@ class TestPrimaryMixedConcurrentWritesC4:
         Both use threading.Barrier for synchronized start.
         Final state must contain both mutations (C4-D1).
         """
-        pytest.fail("C4-RED: stub — C4-D1 mixed concurrent writer test not yet implemented")
+        engine = _make_engine(tmp_path, branch=_BRANCH_D1, initial_phase="implementation")
+
+        barrier: threading.Barrier = threading.Barrier(2)
+        errors: list[BaseException] = []
+
+        def run_force_transition() -> None:
+            try:
+                barrier.wait()
+                engine.force_transition(
+                    _BRANCH_D1,
+                    "validation",
+                    skip_reason="C4-D1-thread-A",
+                    human_approval="C4 regression test approved",
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        def run_force_cycle_transition() -> None:
+            try:
+                barrier.wait()
+                engine.force_cycle_transition(
+                    branch=_BRANCH_D1,
+                    to_cycle=2,
+                    skip_reason="C4-D1-thread-B",
+                    human_approval="C4 regression test approved",
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        t_a = threading.Thread(target=run_force_transition)
+        t_b = threading.Thread(target=run_force_cycle_transition)
+        t_a.start()
+        t_b.start()
+        t_a.join()
+        t_b.join()
+
+        if errors:
+            raise AssertionError(
+                f"Concurrent thread raised an unexpected exception: {errors[0]}"
+            ) from errors[0]
+
+        final_state = engine.get_state(_BRANCH_D1)
+        assert len(final_state.transitions) >= 1, (
+            "force_transition() mutation lost: state.transitions is empty after concurrent run"
+        )
+        assert len(final_state.cycle_history) >= 1, (
+            "force_cycle_transition() mutation lost: "
+            "state.cycle_history is empty after concurrent run"
+        )
 
 
 class TestSecondaryHomogeneousConcurrentWritesC4:
@@ -101,6 +219,49 @@ class TestSecondaryHomogeneousConcurrentWritesC4:
         Both start from 'research' phase via threading.Barrier.
         Final state.transitions must contain records from both calls (C4-D2).
         """
-        pytest.fail(
-            "C4-RED: stub — C4-D2 homogeneous concurrent writer test not yet implemented"
+        engine = _make_engine(tmp_path, branch=_BRANCH_D2, initial_phase="research")
+
+        barrier: threading.Barrier = threading.Barrier(2)
+        errors: list[BaseException] = []
+
+        def run_force_transition_a() -> None:
+            try:
+                barrier.wait()
+                engine.force_transition(
+                    _BRANCH_D2,
+                    "design",
+                    skip_reason="C4-D2-thread-A",
+                    human_approval="C4 regression test approved",
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        def run_force_transition_b() -> None:
+            try:
+                barrier.wait()
+                engine.force_transition(
+                    _BRANCH_D2,
+                    "planning",
+                    skip_reason="C4-D2-thread-B",
+                    human_approval="C4 regression test approved",
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        t_a = threading.Thread(target=run_force_transition_a)
+        t_b = threading.Thread(target=run_force_transition_b)
+        t_a.start()
+        t_b.start()
+        t_a.join()
+        t_b.join()
+
+        if errors:
+            raise AssertionError(
+                f"Concurrent thread raised an unexpected exception: {errors[0]}"
+            ) from errors[0]
+
+        final_state = engine.get_state(_BRANCH_D2)
+        assert len(final_state.transitions) == 2, (
+            f"Expected 2 transition records after two concurrent force_transition() calls, "
+            f"got {len(final_state.transitions)}: {final_state.transitions}"
         )
