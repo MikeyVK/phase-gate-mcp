@@ -219,3 +219,4 @@ None — all design-sensitive decisions resolved from the Approved Strategy.
 |---------|------|--------|---------|
 | 0.1 | 2026-05-25 | Agent | Initial draft |
 | 0.2 | 2026-05-25 | Agent | QA NOGO fixes: creation-caller framing removed, mixed-writer proof added, QualityStateMutationConflictError propagation path added |
+| 0.3 | 2026-05-25 | Agent | QA NOGO fix: _load_state_or_reconstruct() now references explicit approved exception in research.md v1.2 |

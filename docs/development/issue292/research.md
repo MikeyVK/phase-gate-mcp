@@ -159,6 +159,8 @@ self._workflow_state_mutator.apply(
 
 No version field / OCC is added to `BranchState`. The lock + transformer pattern is sufficient when callers correctly use `_s`.
 
+**Approved exception — `_load_state_or_reconstruct()`:** This is the only call site where the lambda does not express a delta from `_s`. It is reached only in error-recovery paths (corrupt or missing `state.json`), where `_s` would be a default-empty bootstrap or itself corrupted data. The reconstructed state is derived entirely from authoritative git log history and has no relationship to a pre-lock read of `state.json`. The full-replacement form `lambda _s: reconstructed_state` is the correct form for this path: there is no partial state in `_s` worth preserving, and expressing the reconstruction as `_s.with_updates(ALL_FIELDS)` would risk silently retaining corrupt fields that are not explicitly named. All other seven call sites use the standard delta pattern.
+
 ### Boundary 2: `FileQualityStateRepository` → `quality_state.json`
 
 **Fix: add `threading.Lock` to `FileQualityStateRepository.apply()`.**
@@ -204,3 +206,4 @@ None — all strategy-sensitive boundaries resolved at interaction checkpoint.
 |---------|------|--------|---------|
 | 1.0 | 2026-05-25 | Agent | Initial research — root cause confirmed, approved strategy captured |
 | 1.1 | 2026-05-25 | Agent | QA NOGO fixes: blast radius count 9→8, test-migration split (fixture vs behaviour), quality_state callers and test surfaces added |
+| 1.2 | 2026-05-25 | Agent | Amend Approved Strategy: explicit exception for `_load_state_or_reconstruct()` full-replacement lambda (error-recovery path, git-derived) |
