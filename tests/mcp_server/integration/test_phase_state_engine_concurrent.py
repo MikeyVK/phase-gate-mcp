@@ -13,6 +13,7 @@ The stale-lambda bug:
 @layer: Tests (Integration)
 @dependencies: [pytest, threading, mcp_server.managers.phase_state_engine]
 """
+
 from __future__ import annotations
 
 import threading
@@ -20,6 +21,7 @@ from pathlib import Path
 
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.core.interfaces import GateReport
+from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from tests.mcp_server.test_support import (
     load_contracts_config,
     make_phase_state_engine,
@@ -60,7 +62,6 @@ _PLANNING_DELIVERABLES = {
         ],
     }
 }
-
 
 
 class _ConcurrentTestGateRunner:
@@ -105,7 +106,7 @@ class _ConcurrentTestGateRunner:
         return GateReport(passing=("nop",))
 
 
-def _make_engine(tmp_path: Path, *, branch: str, initial_phase: str):
+def _make_engine(tmp_path: Path, *, branch: str, initial_phase: str) -> PhaseStateEngine:
     """Bootstrap a PhaseStateEngine in tmp_path with a pre-initialized branch."""
     pm = make_project_manager(tmp_path)
     pm.initialize_project(
@@ -139,9 +140,7 @@ class TestPrimaryMixedConcurrentWritesC4:
     writer's entire BranchState, discarding both mutations.
     """
 
-    def test_force_transition_and_force_cycle_transition_concurrent(
-        self, tmp_path: Path
-    ) -> None:
+    def test_force_transition_and_force_cycle_transition_concurrent(self, tmp_path: Path) -> None:
         """C4-D1: Mixed writers do not lose each other's mutations under concurrent access.
 
         Thread A calls force_transition() — appends to state.transitions.
@@ -209,9 +208,7 @@ class TestSecondaryHomogeneousConcurrentWritesC4:
     by writer-2's lambda that captured the original empty state.
     """
 
-    def test_two_concurrent_force_transitions_both_records_present(
-        self, tmp_path: Path
-    ) -> None:
+    def test_two_concurrent_force_transitions_both_records_present(self, tmp_path: Path) -> None:
         """C4-D2: Two concurrent force_transition() calls — both transition records survive.
 
         Thread A calls force_transition(to_phase='design').
