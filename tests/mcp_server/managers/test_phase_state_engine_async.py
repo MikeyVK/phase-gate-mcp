@@ -1,12 +1,13 @@
 # tests/mcp_server/managers/test_phase_state_engine_async.py
 # pyright: reportPrivateUsage=false
 """
-Tests for async-safe state.json operations in PhaseStateEngine.
+Tests for async-safe phase tool operations in PhaseStateEngine.
 
-Issue #85: Blocking I/O in _save_state() causes MCP stream to hang.
-Fix: Use write_text() instead of open()+flush().
-     Use anyio.to_thread.run_sync() instead of asyncio.to_thread() for
+Issue #85: anyio.to_thread.run_sync() for blocking engine calls.
+Fix: phase tools wrap engine calls in anyio.to_thread.run_sync() for
      compatibility with MCP's anyio-based server.
+
+Note: TestSaveStateNonBlocking removed in C2 (#292) — _save_state() deleted.
 
 @layer: Tests
 @issue: #85
@@ -20,7 +21,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
-
 
 
 class TestPhaseToolsAsyncSafe:
