@@ -6,7 +6,7 @@
 @responsibilities:
     - Resolve workflow and cycle gate checks from config
     - Execute checks through DeliverableChecker
-    - Expose enforce and inspect orchestration modes
+    - Expose phase-exit and cycle-exit boundary methods
     - Report whether a workflow phase is cycle_based
 """
 
@@ -37,58 +37,59 @@ class WorkflowGateRunner:
         """Report whether one workflow phase supports TDD cycle transitions."""
         return self._phase_contract_resolver.is_cycle_based_phase(workflow_name, phase)
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[CheckSpec] | None = None,
     ) -> GateReport:
-        """Run blocking gate evaluation and raise with the full blocking report."""
-        return self._run_checks(
-            workflow_name=workflow_name,
-            phase=phase,
-            cycle_number=cycle_number,
-            checks=checks,
-            raise_on_block=True,
+        """Run blocking gate evaluation for a phase exit and raise with the full report."""
+        checks = self._phase_contract_resolver.resolve_phase_exit(
+            workflow_name, phase, cycle_number
         )
+        return self._run_resolved_checks(checks, raise_on_block=True)
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[CheckSpec] | None = None,
     ) -> GateReport:
-        """Run non-blocking gate inspection and return all blocked checks."""
-        return self._run_checks(
-            workflow_name=workflow_name,
-            phase=phase,
-            cycle_number=cycle_number,
-            checks=checks,
-            raise_on_block=False,
+        """Run non-blocking gate inspection for a phase exit and return all blocked checks."""
+        checks = self._phase_contract_resolver.resolve_phase_exit(
+            workflow_name, phase, cycle_number
         )
+        return self._run_resolved_checks(checks, raise_on_block=False)
 
-    def _resolve_checks(
+    def enforce_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None,
-        checks: list[CheckSpec] | None,
-    ) -> list[CheckSpec]:
-        if checks is not None:
-            return list(checks)
-        return self._phase_contract_resolver.resolve(workflow_name, phase, cycle_number)
+        cycle_number: int,
+    ) -> GateReport:
+        """Run blocking gate evaluation for a cycle exit and raise with the full report."""
+        checks = self._phase_contract_resolver.resolve_cycle_exit(
+            workflow_name, phase, cycle_number
+        )
+        return self._run_resolved_checks(checks, raise_on_block=True)
 
-    def _run_checks(
+    def inspect_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None,
-        checks: list[CheckSpec] | None,
+        cycle_number: int,
+    ) -> GateReport:
+        """Run non-blocking gate inspection for a cycle exit and return all blocked checks."""
+        checks = self._phase_contract_resolver.resolve_cycle_exit(
+            workflow_name, phase, cycle_number
+        )
+        return self._run_resolved_checks(checks, raise_on_block=False)
+
+    def _run_resolved_checks(
+        self,
+        resolved_checks: list[CheckSpec],
         raise_on_block: bool,
     ) -> GateReport:
-        resolved_checks = self._resolve_checks(workflow_name, phase, cycle_number, checks)
         passing: list[str] = []
         blocking: list[str] = []
         details: dict[str, str] = {}

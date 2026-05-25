@@ -197,7 +197,7 @@ class PhaseStateEngine:
         if issue_number is None:
             raise ValueError(f"Branch '{branch}' has no issue_number in state")
 
-        self._workflow_gate_runner.enforce(
+        self._workflow_gate_runner.enforce_phase_exit(
             workflow_name=workflow_name,
             phase=from_phase,
             cycle_number=state.current_cycle,
@@ -239,7 +239,7 @@ class PhaseStateEngine:
         if issue_number is None:
             raise ValueError(f"Branch '{branch}' has no issue_number in state")
 
-        report = self._workflow_gate_runner.inspect(
+        report = self._workflow_gate_runner.inspect_phase_exit(
             workflow_name=workflow_name,
             phase=from_phase,
             cycle_number=state.current_cycle,
@@ -326,7 +326,7 @@ class PhaseStateEngine:
         self._validate_current_cycle_exit_criteria(state.current_cycle, cycles)
 
         if state.current_cycle is not None:
-            runner.enforce(
+            runner.enforce_cycle_exit(
                 workflow_name=state.workflow_name,
                 phase=state.current_phase,
                 cycle_number=state.current_cycle,
@@ -388,7 +388,7 @@ class PhaseStateEngine:
         )
         self._validate_cycle_number_range(to_cycle, issue_number)
 
-        report = runner.inspect(
+        report = runner.inspect_cycle_exit(
             workflow_name=state.workflow_name,
             phase=state.current_phase,
             cycle_number=state.current_cycle,
