@@ -14,6 +14,37 @@
     ],
     "skip_reason": null,
     "parent_branch": "main",
-    "created_at": "2026-05-25T19:15:07.932533+00:00"
+    "created_at": "2026-05-25T19:15:07.932533+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "deliverables": [
+              {
+                "description": "new_branch.checkout() removed from GitAdapter.create_branch()",
+                "id": "C1.D1"
+              },
+              {
+                "description": "Tool return text corrected: 'Created branch' (no 'switched')",
+                "id": "C1.D2"
+              },
+              {
+                "description": "Adapter log message corrected: 'Created branch'",
+                "id": "C1.D3"
+              },
+              {
+                "description": "4 tests updated: checkout.assert_not_called() + corrected return text assertion",
+                "id": "C1.D4"
+              }
+            ],
+            "exit_criteria": "new_branch.checkout() absent; return text 'Created branch'; 4 tests green; full suite green; quality gates PASS",
+            "id": "C1",
+            "name": "Remove auto-checkout"
+          }
+        ],
+        "total": 1
+      }
+    }
   }
 }
