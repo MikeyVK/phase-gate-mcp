@@ -1,0 +1,26 @@
+{
+  "branch": "bug/353-create-branch-remove-auto-checkout",
+  "issue_number": 353,
+  "workflow_name": "bug",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "create_branch: remove implicit auto-checkout (SRP violation)",
+  "parent_branch": "main",
+  "created_at": "2026-05-25T19:15:08.025831+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
