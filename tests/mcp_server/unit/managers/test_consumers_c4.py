@@ -94,7 +94,7 @@ class TestPhaseStateEngineTransitionC4:
         state_repository = MagicMock()
         scope_decoder = MagicMock()
         workflow_gate_runner = MagicMock()
-        workflow_gate_runner.enforce = MagicMock(return_value=None)
+        workflow_gate_runner.enforce_phase_exit = MagicMock(return_value=None)
         state_reconstructor = MagicMock()
         workflow_state_mutator = MagicMock()
 

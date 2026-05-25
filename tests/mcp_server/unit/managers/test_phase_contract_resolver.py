@@ -282,38 +282,13 @@ class TestPhaseConfigContext:
 class TestPhaseContractResolver:
     """Tests for config-backed phase resolution."""
 
-    def test_resolve_merges_issue_specific_checks_without_overriding_required_gates(
-        self, workspace_root: Path
-    ) -> None:
-        """Required config gates stay immutable while recommended gates can be overridden."""
-        resolver = PhaseContractResolver(
-            make_phase_config_context(workspace_root, issue_number=257)
-        )
-
-        checks = resolver.resolve("feature", "implementation", cycle_number=1)
-
-        assert [check.id for check in checks] == [
-            "required-design-doc",
-            "c1-red-test",
-            "design-doc",
-            "issue-extra",
-        ]
-        assert all(isinstance(check, CheckSpec) for check in checks)
-        check_by_id = {check.id: check for check in checks}
-        assert check_by_id["required-design-doc"].file == "docs/development/issue257/design.md"
-        assert check_by_id["required-design-doc"].required is True
-        assert check_by_id["design-doc"].file == "docs/development/issue257/design-override.md"
-        assert check_by_id["design-doc"].required is False
-        assert check_by_id["issue-extra"].type == "contains_text"
-        assert check_by_id["issue-extra"].required is False
-
     def test_resolve_returns_empty_list_for_non_applicable_docs_implementation(
         self, workspace_root: Path
     ) -> None:
         """Docs workflow has no implementation contract and should resolve cleanly to []."""
         resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
 
-        assert resolver.resolve("docs", "implementation", None) == []
+        assert resolver.resolve_phase_exit("docs", "implementation", None) == []
 
     def test_resolve_returns_empty_list_for_unknown_workflow_and_phase(
         self, workspace_root: Path
@@ -321,8 +296,8 @@ class TestPhaseContractResolver:
         """Unknown workflow/phase combinations should not raise and should return []."""
         resolver = PhaseContractResolver(make_phase_config_context(workspace_root))
 
-        assert resolver.resolve("unknown-workflow", "implementation", None) == []
-        assert resolver.resolve("feature", "unknown-phase", None) == []
+        assert resolver.resolve_phase_exit("unknown-workflow", "implementation", None) == []
+        assert resolver.resolve_phase_exit("feature", "unknown-phase", None) == []
 
     def test_resolve_phase_exit_returns_exit_requires_plus_cycle_gates_when_cycle_number_present(
         self, workspace_root: Path

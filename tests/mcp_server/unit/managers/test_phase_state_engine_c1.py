@@ -20,7 +20,6 @@ from mcp_server.managers.phase_contract_resolver import (
 )
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
-from mcp_server.schemas import CheckSpec
 from tests.mcp_server.test_support import make_project_manager
 
 
@@ -31,24 +30,40 @@ class FakeGateRunner:
         del workflow_name
         return phase == "implementation"
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport()
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
+        return GateReport()
+
+    def enforce_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return GateReport()
+
+    def inspect_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
         return GateReport()
 
 
@@ -91,6 +106,10 @@ workflows:
               type: file_glob
               dir: docs/development
               pattern: issue*/research_*.md
+            - id: cycle-docs-b
+              type: file_glob
+              dir: docs/development
+              pattern: issue*/missing_b_*.md
         instructions:
           sub_role: test-role
           phase_instructions: Test instructions.
@@ -144,70 +163,61 @@ def test_workflow_gate_runner_exposes_enforce_and_inspect_modes(
     workspace_root: Path,
     workspace_loader: ConfigLoader,
 ) -> None:
-    """WorkflowGateRunner returns GateReport for both enforce and inspect modes."""
+    """WorkflowGateRunner returns GateReport for both enforce_cycle_exit and inspect_cycle_exit."""
     matching_dir = workspace_root / "docs" / "development" / "issue257"
     matching_dir.mkdir(parents=True)
     (matching_dir / "research_cycle1.md").write_text("cycle 1", encoding="utf-8")
+    (matching_dir / "missing_b_cycle1.md").write_text("cycle 1 b", encoding="utf-8")
 
     runner = _make_runner(workspace_root, workspace_loader)
 
-    enforce_report = runner.enforce(workflow_name="feature", phase="implementation", cycle_number=1)
-    inspect_report = runner.inspect(workflow_name="feature", phase="implementation", cycle_number=1)
+    enforce_report = runner.enforce_cycle_exit(
+        workflow_name="feature", phase="implementation", cycle_number=1
+    )
+    inspect_report = runner.inspect_cycle_exit(
+        workflow_name="feature", phase="implementation", cycle_number=1
+    )
 
-    assert enforce_report == GateReport(passing=("cycle-docs",), blocking=(), details={})
-    assert inspect_report == GateReport(passing=("cycle-docs",), blocking=(), details={})
+    assert enforce_report == GateReport(
+        passing=("cycle-docs", "cycle-docs-b"), blocking=(), details={}
+    )
+    assert inspect_report == GateReport(
+        passing=("cycle-docs", "cycle-docs-b"), blocking=(), details={}
+    )
 
 
-def test_workflow_gate_runner_enforce_raises_when_resolved_file_glob_matches_no_files(
+def test_workflow_gate_runner_enforce_cycle_exit_raises_when_no_files_match(
     workspace_root: Path,
     workspace_loader: ConfigLoader,
 ) -> None:
-    """WorkflowGateRunner raises when a resolved file_glob check finds no matching files."""
+    """WorkflowGateRunner raises when resolved file_glob checks find no matching files."""
     runner = _make_runner(workspace_root, workspace_loader)
 
     with pytest.raises(GateViolation) as exc_info:
-        runner.enforce(workflow_name="feature", phase="implementation", cycle_number=1)
-
-    report = exc_info.value.report
-    assert report.passing == ()
-    assert report.blocking == ("cycle-docs",)
-    assert "cycle-docs" in report.details
-
-
-def test_workflow_gate_runner_enforce_reports_all_blocking_checks(
-    workspace_root: Path,
-    workspace_loader: ConfigLoader,
-) -> None:
-    """enforce() raises with a complete GateReport when multiple checks block."""
-    runner = _make_runner(workspace_root, workspace_loader)
-    checks = [
-        CheckSpec.model_validate(
-            {
-                "id": "missing-a",
-                "type": "file_glob",
-                "dir": "docs/development",
-                "pattern": "issue*/missing_a_*.md",
-            }
-        ),
-        CheckSpec.model_validate(
-            {
-                "id": "missing-b",
-                "type": "file_glob",
-                "dir": "docs/development",
-                "pattern": "issue*/missing_b_*.md",
-            }
-        ),
-    ]
-
-    with pytest.raises(GateViolation) as exc_info:
-        runner.enforce(
-            workflow_name="feature",
-            phase="implementation",
-            cycle_number=1,
-            checks=checks,
+        runner.enforce_cycle_exit(
+            workflow_name="feature", phase="implementation", cycle_number=1
         )
 
     report = exc_info.value.report
     assert report.passing == ()
-    assert report.blocking == ("missing-a", "missing-b")
-    assert set(report.details) == {"missing-a", "missing-b"}
+    assert report.blocking == ("cycle-docs", "cycle-docs-b")
+    assert "cycle-docs" in report.details
+    assert "cycle-docs-b" in report.details
+
+
+def test_workflow_gate_runner_enforce_cycle_exit_reports_all_blocking_checks(
+    workspace_root: Path,
+    workspace_loader: ConfigLoader,
+) -> None:
+    """enforce_cycle_exit() raises with a complete GateReport when multiple checks block."""
+    runner = _make_runner(workspace_root, workspace_loader)
+
+    with pytest.raises(GateViolation) as exc_info:
+        runner.enforce_cycle_exit(
+            workflow_name="feature", phase="implementation", cycle_number=1
+        )
+
+    report = exc_info.value.report
+    assert report.passing == ()
+    assert report.blocking == ("cycle-docs", "cycle-docs-b")
+    assert set(report.details) == {"cycle-docs", "cycle-docs-b"}

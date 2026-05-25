@@ -32,14 +32,12 @@ class BlockingCycleGateRunner:
         del workflow_name
         return phase == "implementation"
 
-    def enforce(
+    def enforce_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None = None,
-        checks: list[object] | None = None,
+        cycle_number: int,
     ) -> GateReport:
-        del checks
         self.enforce_calls.append((workflow_name, phase, cycle_number))
         report = GateReport(
             passing=(),
@@ -48,14 +46,13 @@ class BlockingCycleGateRunner:
         )
         raise GateViolation("missing cycle transition evidence", report)
 
-    def inspect(
+    def inspect_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None = None,
-        checks: list[object] | None = None,
+        cycle_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport()
 
 
@@ -69,24 +66,21 @@ class ReportingCycleGateRunner:
         del workflow_name
         return phase == "implementation"
 
-    def enforce(
+    def enforce_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None = None,
-        checks: list[object] | None = None,
+        cycle_number: int,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport()
 
-    def inspect(
+    def inspect_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None = None,
-        checks: list[object] | None = None,
+        cycle_number: int,
     ) -> GateReport:
-        del checks
         self.inspect_calls.append((workflow_name, phase, cycle_number))
         return GateReport(
             passing=("cycle-docs",),
@@ -103,25 +97,21 @@ class ConfigAwareCycleGateRunner:
         self.enforce_calls: list[tuple[str, str, int | None]] = []
         self.inspect_calls: list[tuple[str, str, int | None]] = []
 
-    def enforce(
+    def enforce_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None = None,
-        checks: list[object] | None = None,
+        cycle_number: int,
     ) -> GateReport:
-        del checks
         self.enforce_calls.append((workflow_name, phase, cycle_number))
         return GateReport()
 
-    def inspect(
+    def inspect_cycle_exit(
         self,
         workflow_name: str,
         phase: str,
-        cycle_number: int | None = None,
-        checks: list[object] | None = None,
+        cycle_number: int,
     ) -> GateReport:
-        del checks
         self.inspect_calls.append((workflow_name, phase, cycle_number))
         return GateReport()
 

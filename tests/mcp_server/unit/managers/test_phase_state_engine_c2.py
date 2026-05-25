@@ -37,14 +37,13 @@ class BlockingGateRunner:
         del workflow_name
         return phase == "implementation"
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         report = GateReport(
             passing=(),
             blocking=("research-doc",),
@@ -52,14 +51,13 @@ class BlockingGateRunner:
         )
         raise GateViolation("missing research document", report)
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport()
 
 
@@ -70,24 +68,22 @@ class InspectingGateRunner:
         del workflow_name
         return phase == "implementation"
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport()
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport(
             passing=("design-doc",),
             blocking=("planning-doc",),

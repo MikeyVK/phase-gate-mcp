@@ -86,23 +86,37 @@ class IStateReconstructor(Protocol):
 
 
 class IWorkflowGateRunner(Protocol):
-    """Evaluate resolved workflow gate checks in enforce or inspect mode."""
+    """Evaluate resolved workflow gate checks via phase or cycle boundary methods."""
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[CheckSpec] | None = None,
     ) -> GateReport:
         raise NotImplementedError
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[CheckSpec] | None = None,
+    ) -> GateReport:
+        raise NotImplementedError
+
+    def enforce_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        raise NotImplementedError
+
+    def inspect_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
     ) -> GateReport:
         raise NotImplementedError
 

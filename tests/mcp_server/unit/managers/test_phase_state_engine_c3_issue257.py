@@ -61,38 +61,35 @@ class PassingGateRunner:
         del workflow_name
         return phase == "implementation"
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport()
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport()
 
 
 class ReportingGateRunner(PassingGateRunner):
     """Gate runner fake that reports forced-transition audit information."""
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: list[object] | None = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport(
             passing=("design-doc",),
             blocking=("planning-doc",),

@@ -3,9 +3,16 @@
   "issue_number": 293,
   "workflow_name": "bug",
   "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
-  "cycle_history": [],
+  "current_cycle": 2,
+  "last_cycle": 1,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Full migration \u2014 interface, runner, engine, all test fakes",
+      "forced": false,
+      "entered": "2026-05-25T10:07:14.275585+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -47,5 +54,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
