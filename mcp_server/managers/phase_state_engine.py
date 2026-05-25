@@ -388,11 +388,15 @@ class PhaseStateEngine:
         )
         self._validate_cycle_number_range(to_cycle, issue_number)
 
-        report = runner.inspect_cycle_exit(
-            workflow_name=state.workflow_name,
-            phase=state.current_phase,
-            cycle_number=state.current_cycle,
-        )
+        report: GateReport
+        if state.current_cycle is not None:
+            report = runner.inspect_cycle_exit(
+                workflow_name=state.workflow_name,
+                phase=state.current_phase,
+                cycle_number=state.current_cycle,
+            )
+        else:
+            report = GateReport()
 
         from_cycle = state.current_cycle or 0
         cycle_name = self._get_cycle_name(cycles, to_cycle)

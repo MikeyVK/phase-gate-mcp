@@ -194,9 +194,7 @@ def test_workflow_gate_runner_enforce_cycle_exit_raises_when_no_files_match(
     runner = _make_runner(workspace_root, workspace_loader)
 
     with pytest.raises(GateViolation) as exc_info:
-        runner.enforce_cycle_exit(
-            workflow_name="feature", phase="implementation", cycle_number=1
-        )
+        runner.enforce_cycle_exit(workflow_name="feature", phase="implementation", cycle_number=1)
 
     report = exc_info.value.report
     assert report.passing == ()
@@ -213,9 +211,7 @@ def test_workflow_gate_runner_enforce_cycle_exit_reports_all_blocking_checks(
     runner = _make_runner(workspace_root, workspace_loader)
 
     with pytest.raises(GateViolation) as exc_info:
-        runner.enforce_cycle_exit(
-            workflow_name="feature", phase="implementation", cycle_number=1
-        )
+        runner.enforce_cycle_exit(workflow_name="feature", phase="implementation", cycle_number=1)
 
     report = exc_info.value.report
     assert report.passing == ()

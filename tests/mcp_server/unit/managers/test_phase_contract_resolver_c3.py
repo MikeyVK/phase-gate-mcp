@@ -91,7 +91,9 @@ class TestPhaseContractResolverUsesContracts:
             contracts=_minimal_contracts(),
         )
         resolver = PhaseContractResolver(ctx)
-        result = resolver.resolve_phase_exit(workflow_name="feature", phase="research", cycle_number=None)
+        result = resolver.resolve_phase_exit(
+            workflow_name="feature", phase="research", cycle_number=None
+        )
         assert isinstance(result, list)
 
 
