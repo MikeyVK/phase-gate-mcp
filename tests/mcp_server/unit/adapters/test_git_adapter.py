@@ -548,7 +548,7 @@ class TestGitAdapterCreateBranch:
 
             # Should resolve HEAD to commit and create from it
             mock_repo.create_head.assert_called_once_with("test-branch", mock_commit)
-            mock_new_branch.checkout.assert_called_once()
+            mock_new_branch.checkout.assert_not_called()
 
     def test_create_branch_with_branch_name(self) -> None:
         """RED: Should create from specified branch name."""
@@ -564,7 +564,7 @@ class TestGitAdapterCreateBranch:
 
             # Should pass branch name directly to create_head
             mock_repo.create_head.assert_called_once_with("test-branch", "main")
-            mock_new_branch.checkout.assert_called_once()
+            mock_new_branch.checkout.assert_not_called()
 
     def test_create_branch_with_commit_hash(self) -> None:
         """RED: Should create from specific commit hash."""
@@ -580,7 +580,7 @@ class TestGitAdapterCreateBranch:
 
             # Should pass commit hash directly
             mock_repo.create_head.assert_called_once_with("test-branch", "abc123f")
-            mock_new_branch.checkout.assert_called_once()
+            mock_new_branch.checkout.assert_not_called()
 
     def test_create_branch_already_exists_raises_error(self) -> None:
         """RED: Should fail when branch already exists."""
