@@ -64,7 +64,10 @@ class FileQualityStateRepository:
         acquired = self._lock.acquire(timeout=5.0)
         if not acquired:
             raise QualityStateMutationConflictError(
-                diagnostic="Quality state write failed — lock timeout (5s): another caller is still writing.",
+                diagnostic=(
+                    "Quality state write failed — lock timeout (5s):"
+                    " another caller is still writing."
+                ),
                 recovery="Retry the quality-gates run once the current run completes.",
             )
         try:

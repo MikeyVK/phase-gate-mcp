@@ -179,9 +179,10 @@ class TestFileQualityStateLockC3:
     """
 
     def test_apply_raises_conflict_error_on_timeout(self, tmp_path: Path) -> None:
-        """apply() raises QualityStateMutationConflictError when lock cannot be acquired (C3-D1, C3-D2)."""
-        import pytest  # noqa: PLC0415
+        """apply() raises QualityStateMutationConflictError on lock timeout (C3-D1, C3-D2)."""
         from unittest.mock import MagicMock  # noqa: PLC0415
+
+        import pytest  # noqa: PLC0415
 
         from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
             QualityStateMutationConflictError,
@@ -202,7 +203,7 @@ class TestFileQualityStateLockC3:
         assert exc_info.value.recovery, "QualityStateMutationConflictError must have recovery"
 
     def test_concurrent_applies_both_land(self, tmp_path: Path) -> None:
-        """Two concurrent apply() calls must both persist their mutations (C3-D1, no lost update)."""
+        """Two concurrent apply() calls must both persist mutations (C3-D1, no lost update)."""
         import threading  # noqa: PLC0415
         import time  # noqa: PLC0415
 

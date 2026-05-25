@@ -708,7 +708,7 @@ class TestRunQualityGatesConflictErrorC3:
 
     @pytest.mark.asyncio
     async def test_conflict_error_returns_recovery_note_and_error(self) -> None:
-        """QualityStateMutationConflictError raised by manager -> RecoveryNote + ToolResult.error (C3-D5, C3-D6)."""
+        """QualityStateMutationConflictError raised by manager -> RecoveryNote + error (C3-D5/6)."""
         from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
         from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
             QualityStateMutationConflictError,
