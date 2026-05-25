@@ -33,7 +33,7 @@ The MCP server provides **4 project/phase tools**:
 All tools interact with:
 - **PhaseStateEngine:** Phase state tracking and validation
 - **[.phase-gate/config/workflows.yaml](../../../../.phase-gate/config/workflows.yaml):** Workflow definitions (feature, bug, docs, refactor, hotfix, epic, custom)
-- **[.phase-gate/state.json](../../../../.phase-gate/state.json):** Current branch state (runtime, not committed)
+- **[.phase-gate/state.json](../../../../.phase-gate/state.json):** Current branch state (branch-local artifact, committed with branch history; neutralized by `submit_pr`)
 - **[.phase-gate/deliverables.json](../../../../.phase-gate/deliverables.json):** Workflow definition and planning deliverables (branch-local artifact)
 
 ---

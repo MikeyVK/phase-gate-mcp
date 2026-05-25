@@ -86,6 +86,9 @@ Do not rely on stale memory.
 5. Call `get_project_plan` for the active issue if phase-specific exit criteria are relevant.
 6. Inspect the worktree for existing changes before editing anything.
 7. Inspect the latest QA verdict if one exists, so you do not re-open a previously rejected path by accident.
+8. When reading `.phase-gate/state.json`: it is a branch-local artifact committed with the branch.
+   Do not treat it as runtime-only or ephemeral — it carries the authoritative phase audit trail
+   until `submit_pr` neutralizes it.
 
 Never start implementing from memory alone.
 

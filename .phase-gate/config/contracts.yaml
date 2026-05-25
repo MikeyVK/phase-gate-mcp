@@ -116,6 +116,7 @@ workflows:
                 stop and ask before committing.
 
             [ ] Commit: git_add_or_commit(workflow_phase='research', message='Research findings (#N)')
+            [ ] First push: git_push(set_upstream=True)  # creates remote tracking branch; do once on this branch
             [ ] Produce the hand-over required by the handover_template before ending the session.
           handover_template: |
             ### Research → Design Hand-over
@@ -897,6 +898,7 @@ workflows:
                 broader than filed, stop and ask before committing.
 
             [ ] Commit: git_add_or_commit(workflow_phase='research', message='Research findings (#N)')
+            [ ] First push: git_push(set_upstream=True)  # creates remote tracking branch; do once on this branch
             [ ] Produce the hand-over required by the handover_template before ending the session.
           handover_template: |
             ### Research → Design Hand-over
@@ -1607,6 +1609,8 @@ workflows:
                 issue context, and any available deliverables.
                 Execute only the smallest safe hotfix slice and do not widen scope without explicit approval.
 
+            [ ] First push (cycle 1 only): git_push(set_upstream=True)  # creates remote tracking branch; do once on this branch
+
             [ ] Use explore_subagent to load the pre-implementation context for the active hotfix slice.
                 Ask it to return:
                 - a short orientation for the active hotfix slice, current failure, and prerequisites
@@ -2065,6 +2069,7 @@ workflows:
                 stop and ask before committing.
 
             [ ] Commit: git_add_or_commit(workflow_phase='research', message='Research findings (#N)')
+            [ ] First push: git_push(set_upstream=True)  # creates remote tracking branch; do once on this branch
             [ ] Produce the hand-over required by the handover_template before ending the session.
           handover_template: |
             ### Research → Planning Hand-over
@@ -2700,6 +2705,7 @@ workflows:
                 before committing.
 
             [ ] Commit: git_add_or_commit(workflow_phase='planning', message='Planning for #N')
+            [ ] First push: git_push(set_upstream=True)  # creates remote tracking branch; do once on this branch
             [ ] Produce the hand-over required by the handover_template before ending the session.
           handover_template: |
             ### Planning → Documentation Hand-over

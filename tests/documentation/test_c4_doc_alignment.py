@@ -120,8 +120,8 @@ def test_contracts_yaml_feature_first_push_present() -> None:
         REPO_ROOT / ".phase-gate" / "config" / "contracts.yaml"
     ).read_text(encoding="utf-8")
     # find 'feature:' workflow section — must contain set_upstream
-    feature_idx = content.index("feature:")
-    bug_idx = content.index("bug:")
+    feature_idx = content.index("\n  feature:\n")
+    bug_idx = content.index("\n  bug:\n")
     feature_section = content[feature_idx:bug_idx]
     assert "set_upstream=True" in feature_section
 
@@ -131,7 +131,7 @@ def test_contracts_yaml_bug_first_push_present() -> None:
     content = (
         REPO_ROOT / ".phase-gate" / "config" / "contracts.yaml"
     ).read_text(encoding="utf-8")
-    bug_idx = content.index("bug:")
-    refactor_idx = content.index("refactor:")
+    bug_idx = content.index("\n  bug:\n")
+    refactor_idx = content.index("\n  refactor:\n")
     bug_section = content[bug_idx:refactor_idx]
     assert "set_upstream=True" in bug_section

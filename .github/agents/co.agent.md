@@ -155,6 +155,7 @@ Rebuild state from scratch every time.
 2. Call `list_issues(state="open")` when backlog or dependency context matters.
 3. For tracker sub-role: read epic #320 body via `get_issue(320)`.
 4. For ordinary chat sessions, keep the `get_work_context`-first rule. `open-issue` and `close-issue` are lifecycle-boundary exceptions that follow their own scripted bootstrap or exit sequence before control returns to a normal `@co` session.
+5. When reading `.phase-gate/state.json` on an epic branch: it is a branch-local artifact committed with the branch. Do not treat it as runtime-only or ephemeral — it carries the authoritative phase audit trail until `submit_pr` neutralizes it.
 
 ## Role Boundary
 

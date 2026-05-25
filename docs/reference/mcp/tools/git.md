@@ -348,7 +348,11 @@ Merge a branch into the current branch.
 **Class:** `GitDeleteBranchTool`  
 **File:** [mcp_server/tools/git_tools.py](../../../../mcp_server/tools/git_tools.py)
 
-Delete a local branch (protected branch safety).
+Delete a branch locally, remotely, or both (default). Protected-branch safety always applies.
+
+> **⚠️ Breaking Change (issue #345):** The default deletion scope changed from local-only to
+> `both` (local + remote). Callers that previously relied on the local-only behavior must now
+> pass `mode="local"` explicitly.
 
 #### Parameters
 
@@ -356,22 +360,39 @@ Delete a local branch (protected branch safety).
 |-----------|------|----------|-------------|
 | `branch` | `str` | **Yes** | Branch name to delete |
 | `force` | `bool` | No | Force delete unmerged branch (default: `False`) |
+| `mode` | `str` | No | Deletion scope: `"local"`, `"remote"`, or `"both"` (default: `"both"`) |
 
 #### Returns
 
 ```json
 {
   "success": true,
-  "message": "Branch 'feature/123-oauth' deleted"
+  "message": "Deleted branch: feature/123-oauth (local: deleted, remote: deleted)"
 }
 ```
 
 #### Example Usage
 
-**Delete merged branch:**
+**Delete branch from both local and remote (default):**
 ```json
 {
   "branch": "feature/123-oauth"
+}
+```
+
+**Delete local branch only:**
+```json
+{
+  "branch": "feature/123-oauth",
+  "mode": "local"
+}
+```
+
+**Delete remote branch only:**
+```json
+{
+  "branch": "feature/123-oauth",
+  "mode": "remote"
 }
 ```
 
@@ -386,9 +407,10 @@ Delete a local branch (protected branch safety).
 #### Behavior Notes
 
 - **Protected Branches:** Returns error if attempting to delete protected branches (`main`, `develop`, etc. from [.st3/git.yaml](../../../../.st3/git.yaml))
-- **Unmerged Changes:** Default `force=false` returns error if branch has unmerged commits
-- **Current Branch:** Returns error if attempting to delete current branch
-- **Remote Branch:** Does NOT delete remote branch (only local)
+- **Unmerged Changes:** Default `force=false` returns error if local branch has unmerged commits (applies to `mode="local"` and `mode="both"`)
+- **Current Branch:** Returns error if attempting to delete the current local branch (applies to `mode="local"` and `mode="both"`; skipped for `mode="remote"`)
+- **Remote Absent:** When `mode="remote"` or `mode="both"`, a branch that is not present on the remote is treated as `absent` (not an error)
+- **Migration note:** If you used `git_delete_branch` for local-only cleanup, add `mode="local"` to preserve the old behavior
 
 ---
 
