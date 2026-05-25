@@ -116,7 +116,7 @@ class GitAdapter:
             if branch_name in self.repo.heads:
                 raise ExecutionError(f"Branch {branch_name} already exists")
 
-            new_branch = self.repo.create_head(branch_name, base_ref)
+            self.repo.create_head(branch_name, base_ref)
 
             logger.info(
                 "Created branch",
