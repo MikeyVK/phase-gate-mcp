@@ -85,24 +85,40 @@ class _ConcurrentTestGateRunner:
                 return p.cycle_based
         return False
 
-    def enforce(
+    def enforce_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: object = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
         return GateReport(passing=("nop",))
 
-    def inspect(
+    def inspect_phase_exit(
         self,
         workflow_name: str,
         phase: str,
         cycle_number: int | None = None,
-        checks: object = None,
     ) -> GateReport:
-        del workflow_name, phase, cycle_number, checks
+        del workflow_name, phase, cycle_number
+        return GateReport(passing=("nop",))
+
+    def enforce_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return GateReport(passing=("nop",))
+
+    def inspect_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
         return GateReport(passing=("nop",))
 
 
