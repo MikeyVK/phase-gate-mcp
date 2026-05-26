@@ -36,10 +36,12 @@ All four C1 deliverables are satisfied. The full test suite passes on all branch
 | Test | Status | Notes |
 |---|---|---|
 | All branch-scoped tests | ✅ PASS | |
-| `tests/mcp_server/unit/config/test_settings.py::test_load_from_env` | ❌ pre-existing | Version mismatch `1.0.0` vs `3.0.0`; file not changed on this branch |
-| `tests/mcp_server/unit/test_cli.py::test_cli_version` | ❌ pre-existing | Same version mismatch; file not changed on this branch |
+| `tests/mcp_server/unit/config/test_settings.py::test_load_from_env` | ❌ pre-existing | Version mismatch `1.0.0` vs `3.0.0`; file not changed on this branch — deferred to #359 |
+| `tests/mcp_server/unit/test_cli.py::test_cli_version` | ❌ pre-existing | Same version mismatch; file not changed on this branch — deferred to #359 |
 
 **Pre-existing failure confirmation:** `git log origin/epic/320-production-readiness-tracker..HEAD -- tests/mcp_server/unit/config/test_settings.py tests/mcp_server/unit/test_cli.py` → empty (no changes on this branch).
+
+**Deferred fix:** Root cause is `ServerSettings.version` being a configurable Pydantic field, allowing `mcp_config.yaml` to override it with `"1.0.0"`. When pytest runs via the MCP `run_tests` tool, it inherits `MCP_CONFIG_PATH` from the VS Code MCP server process and loads the stale config value. Fix tracked in issue #359.
 
 ---
 
