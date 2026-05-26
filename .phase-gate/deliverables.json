@@ -30,6 +30,36 @@
     ],
     "skip_reason": null,
     "parent_branch": "epic/320-production-readiness-tracker",
-    "created_at": "2026-05-26T05:43:15.750839+00:00"
+    "created_at": "2026-05-26T05:43:15.750839+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "total": 1,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C1: interface fix + PSE dead-code removal",
+            "exit_criteria": "Both concurrent tests pass; _legacy_workphases_gate_summary absent from PSE; PSE constructor has no workphases_config param; _ConcurrentTestGateRunner returns GateReport() not GateReport(passing=(\"nop\",)); quality gates pass on all changed files",
+            "deliverables": [
+              {
+                "id": "C1-D1",
+                "description": "_ConcurrentTestGateRunner implements enforce_phase_exit, inspect_phase_exit, enforce_cycle_exit, inspect_cycle_exit returning GateReport() (final state after REFACTOR)"
+              },
+              {
+                "id": "C1-D2",
+                "description": "_legacy_workphases_gate_summary method and legacy fallback if-block removed from phase_state_engine.py; workphases_config field and constructor parameter removed"
+              },
+              {
+                "id": "C1-D3",
+                "description": "All four PhaseStateEngine construction sites updated: server.py, test_support.py, test_consumers_c4.py, test_c260_c2_state_root_injection.py"
+              },
+              {
+                "id": "C1-D4",
+                "description": "Both previously failing concurrent tests pass without GateReport(passing=(\"nop\",)) workaround"
+              }
+            ]
+          }
+        ]
+      }
+    }
   }
 }
