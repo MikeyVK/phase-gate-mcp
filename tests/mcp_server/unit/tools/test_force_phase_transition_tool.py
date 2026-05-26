@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pytest
 
+from mcp_server.core.interfaces import GateReport
 from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -23,6 +24,58 @@ from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
 )
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+
+
+class _StaticGateRunner:
+    """Minimal current-interface gate runner for force-transition response tests."""
+
+    def __init__(
+        self,
+        *,
+        blocking: tuple[str, ...] = (),
+        passing: tuple[str, ...] = (),
+    ) -> None:
+        self._report = GateReport(blocking=blocking, passing=passing)
+
+    def enforce_phase_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def inspect_phase_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def enforce_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def inspect_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
+        del workflow_name, phase
+        return False
 
 
 class TestForcePhaseTransitionTool:
@@ -300,6 +353,7 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace_with_gates,
                 project_manager=make_project_manager(workspace_with_gates),
+                workflow_gate_runner=_StaticGateRunner(blocking=("planning_deliverables",)),
             ),
             server_root=workspace_with_gates,
         )
@@ -332,6 +386,7 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace_no_gates,
                 project_manager=make_project_manager(workspace_no_gates),
+                workflow_gate_runner=_StaticGateRunner(),
             ),
             server_root=workspace_no_gates,
         )
@@ -410,6 +465,7 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace,
                 project_manager=make_project_manager(workspace),
+                workflow_gate_runner=_StaticGateRunner(blocking=("planning_deliverables",)),
             ),
             server_root=workspace,
         )
@@ -444,6 +500,7 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace,
                 project_manager=make_project_manager(workspace),
+                workflow_gate_runner=_StaticGateRunner(passing=("planning_deliverables",)),
             ),
             server_root=workspace,
         )
@@ -497,6 +554,7 @@ phases:
             state_engine=make_phase_state_engine(
                 tmp_path,
                 project_manager=make_project_manager(tmp_path),
+                workflow_gate_runner=_StaticGateRunner(),
             ),
             server_root=tmp_path,
         )

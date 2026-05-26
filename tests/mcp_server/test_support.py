@@ -366,7 +366,6 @@ def make_phase_state_engine(
         project_manager=manager,
         git_config=git_config,
         contracts_config=contracts_config,
-        workphases_config=workphases_config,
         state_repository=resolved_state_repository,
         scope_decoder=resolved_scope_decoder,
         workflow_gate_runner=resolved_workflow_gate_runner,

@@ -15,9 +15,63 @@ from pathlib import Path
 
 import pytest
 
+from mcp_server.core.interfaces import GateReport
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+
+
+class _StaticGateRunner:
+    """Minimal current-interface gate runner for force-transition warning tests."""
+
+    def __init__(
+        self,
+        *,
+        blocking: tuple[str, ...] = (),
+        passing: tuple[str, ...] = (),
+    ) -> None:
+        self._report = GateReport(blocking=blocking, passing=passing)
+
+    def enforce_phase_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def inspect_phase_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def enforce_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def inspect_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
+        del workflow_name, phase
+        return False
+
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -87,7 +141,11 @@ def project_manager_with_gates(workspace_root: Path) -> ProjectManager:
 def engine_with_gates(
     workspace_root: Path, project_manager_with_gates: ProjectManager
 ) -> PhaseStateEngine:
-    return make_phase_state_engine(workspace_root, project_manager=project_manager_with_gates)
+    return make_phase_state_engine(
+        workspace_root,
+        project_manager=project_manager_with_gates,
+        workflow_gate_runner=_StaticGateRunner(blocking=("planning_deliverables",)),
+    )
 
 
 @pytest.fixture
@@ -100,7 +158,9 @@ def engine_no_gates(
     workspace_root_no_gates: Path, project_manager_no_gates: ProjectManager
 ) -> PhaseStateEngine:
     return make_phase_state_engine(
-        workspace_root_no_gates, project_manager=project_manager_no_gates
+        workspace_root_no_gates,
+        project_manager=project_manager_no_gates,
+        workflow_gate_runner=_StaticGateRunner(),
     )
 
 
