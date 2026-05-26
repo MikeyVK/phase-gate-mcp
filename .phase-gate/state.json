@@ -2,7 +2,7 @@
   "branch": "bug/355-concurrent-test-gate-runner-interface-gap",
   "issue_number": 355,
   "workflow_name": "bug",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": null,
   "last_cycle": 1,
   "cycle_history": [],
@@ -49,6 +49,14 @@
       "from_phase": "validation",
       "to_phase": "documentation",
       "timestamp": "2026-05-26T12:29:33.450940+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-26T12:44:28.969713+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
