@@ -254,7 +254,6 @@ class MCPServer:
             project_manager=self.project_manager,
             git_config=git_config,
             contracts_config=contracts_config,
-            workphases_config=workphases_config,
             state_repository=self._state_repository,
             scope_decoder=ScopeDecoder(
                 workphases_config=workphases_config,

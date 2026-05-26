@@ -65,11 +65,8 @@ _PLANNING_DELIVERABLES = {
 
 
 class _ConcurrentTestGateRunner:
-    """Gate runner for concurrent tests: always returns one passing gate.
+    """Gate runner for concurrent tests using the current workflow gate interface.
 
-    Returning a non-empty passing tuple prevents _legacy_workphases_gate_summary
-    from being called inside force_transition/force_cycle_transition, avoiding
-    thread-unsafe gitpython calls in WorkflowStatusResolver.resolve_current().
     is_cycle_based_phase is accurate: reads from the real ContractsConfig.
     """
 
@@ -92,7 +89,7 @@ class _ConcurrentTestGateRunner:
         cycle_number: int | None = None,
     ) -> GateReport:
         del workflow_name, phase, cycle_number
-        return GateReport(passing=("nop",))
+        return GateReport()
 
     def inspect_phase_exit(
         self,
@@ -101,7 +98,7 @@ class _ConcurrentTestGateRunner:
         cycle_number: int | None = None,
     ) -> GateReport:
         del workflow_name, phase, cycle_number
-        return GateReport(passing=("nop",))
+        return GateReport()
 
     def enforce_cycle_exit(
         self,
@@ -110,7 +107,7 @@ class _ConcurrentTestGateRunner:
         cycle_number: int,
     ) -> GateReport:
         del workflow_name, phase, cycle_number
-        return GateReport(passing=("nop",))
+        return GateReport()
 
     def inspect_cycle_exit(
         self,
@@ -119,7 +116,7 @@ class _ConcurrentTestGateRunner:
         cycle_number: int,
     ) -> GateReport:
         del workflow_name, phase, cycle_number
-        return GateReport(passing=("nop",))
+        return GateReport()
 
 
 def _make_engine(tmp_path: Path, *, branch: str, initial_phase: str) -> PhaseStateEngine:
