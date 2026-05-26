@@ -16,7 +16,7 @@ Comprehensive git flow automation with TDD phase tracking.
 
 | Tool | Purpose | Parameters | Example |
 |------|---------|------------|---------|
-| **CreateBranchTool** | Create feature/fix/refactor/docs branch | `name` (kebab-case), `branch_type` (default: feature) | `create_feature_branch name=add-metrics` |
+| **CreateBranchTool** | Create feature/bug/docs/refactor/hotfix branch | `name` (kebab-case), `base_branch` (**required**), `branch_type` (default: feature) | `create_branch(name="feature/123-add-metrics", base_branch="main")` |
 | **GitStatusTool** | Show working tree status | None | Returns current branch, staged, unstaged files |
 | **GitCommitTool** | Commit with phase prefix + issue suffix | `message`, `workflow_phase`, `sub_phase`, `cycle_number` | `git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="...")` |
 | **GitCheckoutTool** | Switch branches | `branch` | `checkout main` |
@@ -28,14 +28,15 @@ Comprehensive git flow automation with TDD phase tracking.
 **Workflow Example:**
 ```
 1. create_branch(name="feature/my-feature", base_branch="main")
-2. (Make changes)
-3. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Add feature")
-4. git_push(set_upstream=True)
-5. transition_phase(to_phase="ready")
-6. submit_pr(title="Add feature", head="feature/my-feature", base="main")
-7. (After merge)
-8. git_checkout(branch="main")
-9. git_delete_branch(branch="feature/my-feature")  # mode="both" (default: deletes local + remote)
+2. git_checkout(branch="feature/my-feature")
+3. (Make changes)
+4. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Add feature")
+5. git_push(set_upstream=True)
+6. transition_phase(to_phase="ready")
+7. submit_pr(title="Add feature", head="feature/my-feature", base="main")
+8. (After merge)
+9. git_checkout(branch="main")
+10. git_delete_branch(branch="feature/my-feature")  # mode="both" (default: deletes local + remote)
 ```
 
 **Related:** [TDD_WORKFLOW.md](../../coding_standards/TDD_WORKFLOW.md)

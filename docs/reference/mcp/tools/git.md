@@ -80,6 +80,7 @@ Create a new branch from specified base branch.
 - **Protected Branches:** Validates `base_branch` against protected branch list
 - **Branch Exists:** Returns error if branch already exists
 - **Base Branch Validation:** Returns error if base branch doesn't exist
+- **No Auto-Checkout:** The branch is created but **not** automatically checked out. Call `git_checkout` after creation before making changes or committing.
 
 ---
 
