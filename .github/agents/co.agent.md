@@ -21,6 +21,7 @@ tools:
   - phase-gate-mcp/get_project_plan
   - phase-gate-mcp/list_issues
   - phase-gate-mcp/get_issue
+  - phase-gate-mcp/get_pr
   - phase-gate-mcp/create_issue
   - phase-gate-mcp/update_issue
   - phase-gate-mcp/close_issue
