@@ -1,90 +1,25 @@
 {
-  "branch": "feature/354-get-pr-tool",
-  "issue_number": 354,
-  "workflow_name": "feature",
-  "current_phase": "ready",
+  "branch": "epic/320-production-readiness-tracker",
+  "issue_number": 320,
+  "workflow_name": "epic",
+  "current_phase": "research",
   "current_cycle": null,
-  "last_cycle": 2,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "C2: get_issue clean break to IssueReadModel",
-      "forced": false,
-      "entered": "2026-05-27T11:26:57.065861+00:00"
-    }
-  ],
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
-    "design",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Repair stale branch-local workflow state after remote history advanced beyond implementation without corresponding state.json phase transitions; user explicitly requested alignment to documentation on 2026-05-27.",
-  "issue_title": "Add get_pr tool: narrow GitHub pulls API wrapper for end-issue flow",
-  "parent_branch": "epic/320-production-readiness-tracker",
-  "created_at": "2026-05-26T16:08:30.855961+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-26T19:58:48.725418+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "research",
-      "timestamp": "2026-05-27T06:10:27.135079+00:00",
-      "human_approval": "User explicitly approved on 2026-05-27 to transition back to research and broaden scope.",
-      "forced": true,
-      "skip_reason": "Reopen research because the scope is being explicitly broadened and the approved problem framing must be revised before further design or planning work."
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-27T06:54:48.160427+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-05-27T09:16:07.043921+00:00",
-      "human_approval": "User approved via QA PASS verdict on 2026-05-27",
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-27T09:40:17.907933+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-27T20:03:07.920735+00:00",
-      "human_approval": "User explicitly approved force transition to documentation on 2026-05-27.",
-      "forced": true,
-      "skip_reason": "Repair stale branch-local workflow state after remote history advanced beyond implementation without corresponding state.json phase transitions; user explicitly requested alignment to documentation on 2026-05-27."
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-05-27T20:14:42.677734+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "skip_reason": null,
+  "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
+  "parent_branch": "main",
+  "created_at": "2026-05-25T18:48:22.612710+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
