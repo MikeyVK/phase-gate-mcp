@@ -28,11 +28,6 @@ The MCP server provides **17 GitHub tools** across 4 functional categories:
 | **Pull Requests** | 4 | Create, read single PR, list, merge with draft support and merge strategies |
 | **Labels** | 5 | CRUD operations with LabelConfig validation |
 | **Milestones** | 3 | List, create, close with state filtering |
-|----------|-------|-------------|
-| **Issues** | 5 | Create, read, list, update, close with Unicode support |
-| **Pull Requests** | 3 | Create, list, merge with draft support and merge strategies |
-| **Labels** | 5 | CRUD operations with LabelConfig validation |
-| **Milestones** | 3 | List, create, close with state filtering |
 
 All tools:
 - ✅ Support Unicode content (emojis, non-ASCII characters)
