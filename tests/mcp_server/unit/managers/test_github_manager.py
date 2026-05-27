@@ -11,7 +11,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.managers.github_manager import GitHubManager
-from mcp_server.state.github_read_models import PRReadModel
 from mcp_server.schemas import (
     ContributorConfig,
     GitConfig,
@@ -20,6 +19,7 @@ from mcp_server.schemas import (
     MilestoneConfig,
     ScopeConfig,
 )
+from mcp_server.state.github_read_models import PRReadModel
 
 
 class TestGitHubManager:
