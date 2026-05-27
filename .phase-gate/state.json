@@ -3,9 +3,16 @@
   "issue_number": 354,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
-  "cycle_history": [],
+  "current_cycle": 2,
+  "last_cycle": 1,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "C2: get_issue clean break to IssueReadModel",
+      "forced": false,
+      "entered": "2026-05-27T11:26:57.065861+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -63,5 +70,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
