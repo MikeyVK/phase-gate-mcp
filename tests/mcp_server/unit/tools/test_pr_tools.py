@@ -4,13 +4,17 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.pr_tools]
 """
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.state.github_read_models import PRReadModel
 from mcp_server.tools.pr_tools import (
+    GetPRInput,
+    GetPRTool,
     ListPRsInput,
     ListPRsTool,
     MergePRInput,
@@ -56,9 +60,17 @@ async def test_merge_pr_tool(mock_github_manager: MagicMock, mock_git_config: Ma
         git_config=mock_git_config,
         pr_status_writer=pr_status_writer,
     )
-    mock_pr = MagicMock()
-    mock_pr.head.ref = "feature/20-test"
-    mock_github_manager.adapter.repo.get_pull.return_value = mock_pr
+    mock_pr_model = PRReadModel(
+        pr_number=20,
+        title="Test PR",
+        state="open",
+        base_branch="main",
+        head_branch="feature/20-test",
+        merged_at=None,
+        merge_sha=None,
+        body="",
+    )
+    mock_github_manager.get_pr.return_value = mock_pr_model
     mock_github_manager.merge_pr.return_value = {"sha": "commitsHA123"}
 
     params = MergePRInput(pr_number=20, merge_method="merge")
@@ -80,3 +92,28 @@ def test_merge_pr_input_rejects_rebase() -> None:
     """rebase is no longer a valid merge_method."""
     with pytest.raises(ValidationError):
         MergePRInput(pr_number=1, merge_method="rebase")
+
+
+@pytest.mark.asyncio
+async def test_get_pr_tool(mock_github_manager: MagicMock) -> None:
+    mock_pr_model = PRReadModel(
+        pr_number=42,
+        title="Test PR",
+        state="open",
+        base_branch="main",
+        head_branch="feature/42-test",
+        merged_at=None,
+        merge_sha=None,
+        body="Some body",
+    )
+    mock_github_manager.get_pr.return_value = mock_pr_model
+
+    tool = GetPRTool(manager=mock_github_manager)
+    params = GetPRInput(pr_number=42)
+    result = await tool.execute(params, NoteContext())
+
+    data = json.loads(result.content[0]["text"])
+    assert data["pr_number"] == 42
+    assert data["title"] == "Test PR"
+    assert data["head_branch"] == "feature/42-test"
+    assert data["base_branch"] == "main"

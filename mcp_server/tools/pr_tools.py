@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -104,9 +105,8 @@ class MergePRTool(BaseTool):
     async def execute(self, params: MergePRInput, context: NoteContext) -> ToolResult:
         del context  # Not used
         try:
-            # Resolve head branch before merge so we can clear PRStatus after
-            pr = self.manager.adapter.repo.get_pull(params.pr_number)
-            head_branch = pr.head.ref
+            model = self.manager.get_pr(params.pr_number)
+            head_branch = model.head_branch
             result = self.manager.merge_pr(
                 pr_number=params.pr_number,
                 commit_message=params.commit_message,
@@ -119,6 +119,37 @@ class MergePRTool(BaseTool):
         return ToolResult.text(
             f"Merged PR #{params.pr_number} using {params.merge_method} (SHA {result['sha']})"
         )
+
+
+class GetPRInput(BaseModel):
+    """Input for GetPRTool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pr_number: int = Field(..., description="Pull request number")
+
+
+class GetPRTool(BaseTool):
+    """Tool to get a single pull request."""
+
+    name = "get_pr"
+    description = "Get detailed information about a specific pull request"
+    args_model = GetPRInput
+
+    def __init__(self, manager: GitHubManager) -> None:
+        self.manager = manager
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        return super().input_schema
+
+    async def execute(self, params: GetPRInput, context: NoteContext) -> ToolResult:
+        del context  # Not used
+        try:
+            model = self.manager.get_pr(params.pr_number)
+        except ExecutionError as e:
+            return ToolResult.error(str(e))
+        return ToolResult.text(json.dumps(model.model_dump(), indent=2))
 
 
 class SubmitPRInput(BaseModel):

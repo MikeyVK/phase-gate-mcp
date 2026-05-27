@@ -23,7 +23,7 @@ If `ISSUE_NUMBER` is missing, stop and ask for it. Do not guess from branch name
 Execute in this exact order. Do not skip steps.
 
 1. **Read the issue**
-   `get_issue(ISSUE_NUMBER)` → record the issue title, labels, and stated scope.
+   `get_issue(ISSUE_NUMBER)` → read the result as flat JSON; record the `title` and `labels` fields, plus the stated scope.
 
 2. **Create the branch**
    `create_branch(branch_type=WORKFLOW_TYPE, name="<short-slug-from-title>", base_branch="main")`

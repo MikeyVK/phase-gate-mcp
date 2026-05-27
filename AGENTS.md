@@ -59,6 +59,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Create PR (atomic) | `submit_pr(title, body, head, base, draft)` | `run_in_terminal("gh pr create")` |
 | List PRs | `list_prs(state, base, head)` | `run_in_terminal("gh pr list")` |
 | Merge PR | `merge_pr(pr_number, commit_message, merge_method)` | `run_in_terminal("gh pr merge")` |
+| Get PR | `get_pr(pr_number)` | `run_in_terminal("gh pr view")` |
 | Create label | `create_label(name, color, description)` | Manual GitHub UI |
 | Add labels | `add_labels(issue_number, labels)` | `run_in_terminal("gh issue edit")` |
 | Create milestone | `create_milestone(title, description, due_on)` | Manual GitHub UI |

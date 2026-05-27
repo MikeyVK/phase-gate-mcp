@@ -5,6 +5,7 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.issue_tools]
 """
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -144,24 +145,31 @@ async def test_list_issues_tool(mock_github_manager: MagicMock) -> None:
 async def test_get_issue_tool(mock_github_manager: MagicMock) -> None:
     tool = GetIssueTool(manager=mock_github_manager)
 
-    issue_mock = MagicMock(
-        number=1,
-        title="Bug",
-        body="Fix it",
-        state="open",
-        html_url="url",
-        created_at=MagicMock(isoformat=lambda: "2023-01-01"),
-        assignees=[],
-        labels=[],
-        milestone=None,
-    )
-    mock_github_manager.get_issue.return_value = issue_mock
+    mock_model = MagicMock()
+    mock_model.model_dump.return_value = {
+        "number": 1,
+        "url": "https://github.com/owner/repo/issues/1",
+        "title": "Bug",
+        "body": "Fix it",
+        "state": "open",
+        "labels": [],
+        "milestone": None,
+        "assignees": [],
+        "created_at": "2023-01-01T00:00:00+00:00",
+        "updated_at": "2023-01-01T00:00:00+00:00",
+        "closed_at": None,
+        "author": "alice",
+    }
+    mock_github_manager.get_issue.return_value = mock_model
 
     result = await tool.execute(GetIssueInput(issue_number=1), NoteContext())
 
     mock_github_manager.get_issue.assert_called_with(1)
-    assert "#1: Bug" in result.content[0]["text"]
-    assert "Fix it" in result.content[0]["text"]
+    data = json.loads(result.content[0]["text"])
+    assert data["number"] == 1
+    assert data["title"] == "Bug"
+    assert data["author"] == "alice"
+    assert data["closed_at"] is None
 
 
 @pytest.mark.asyncio

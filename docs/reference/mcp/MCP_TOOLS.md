@@ -61,15 +61,16 @@ Full CRUD for GitHub issues with filtering and updates.
 4. close_issue issue_number=4 comment="Fixed in PR #123"
 ```
 
-### 3. Pull Request Tools (3 tools)
+### 3. Pull Request Tools (4 tools)
 
-Create, list, and merge PRs with merge strategy options.
+Create, list, merge, and inspect PRs with merge strategy options.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **SubmitPRTool** | Create PR (atomic flow) | `title`, `head` (source branch), `body` (optional), `base` (default: main), `draft` (optional) | PR number, URL |
 | **ListPRsTool** | List PRs with filters | `state` (open/closed/all), `base` (optional), `head` (optional) | Formatted list with numbers, titles, status |
 | **MergePRTool** | Merge PR | `pr_number`, `commit_message` (optional), `merge_method` (only `"merge"` is supported) | Merge result, SHA, message |
+| **GetPRTool** | Get PR details | `pr_number` | PR number, title, state, base/head branch, merged_at, merge_sha, body |
 
 > **Note:** `CreatePRTool` has been deleted (issue #283). Use `submit_pr` — it performs an
 > atomically robust submission: preflights before any mutation (dirty-tree + upstream checks),

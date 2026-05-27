@@ -38,30 +38,36 @@ Execute in this exact order. Do not skip steps.
    → this is the authoritative proof that the host-side merge was accepted.
    → do not use `git_diff_stat` as a substitute for merge proof.
 
-3. **Return to parent branch**
-   `git_checkout(branch=<parent_branch from get_work_context>)`
+3. **Verify merged PR**
+   `get_pr(pr_number=PR_NUMBER)`
+   → record `head_branch` and `base_branch` from the result.
+   → verify that `head_branch` matches the `branch` recorded in step 1.
+     If they differ, stop and report the mismatch; do not proceed with checkout or cleanup.
+
+4. **Return to parent branch**
+   `git_checkout(branch=<base_branch from step 3>)`
    → required before local branch cleanup is legal.
 
-4. **Clean up the branch**
+5. **Clean up the branch**
    `git_delete_branch(branch=<closing branch>, mode="both")`
    → removes both local and remote refs in one step.
    → if the remote ref is already absent, `mode="both"` returns `absent` for that
      side rather than an error; no manual retry is needed.
 
-5. **Read the PR body**
+6. **Read the PR body**
    Read the merged PR body as the durable `@imp` → `@co` transfer artifact.
    The PR body carries: delivered scope, `Closes #N` claims, deferred items, and
    tracking state. Use this as the authoritative record of what landed and what
    was intentionally deferred.
 
-6. **Epic-parent update (conditional)**
+7. **Epic-parent update (conditional)**
    Perform this step only when the active workflow is `epic` or when the merged
    branch is a child of a tracked epic.
    `get_project_plan(issue_number=ISSUE_NUMBER)`
    `update_issue(issue_number=<epic_issue_number>, body=<updated coordination state>)`
    → record merged status and the next planned or logically following issue.
 
-7. **Next-issue recommendation (advisory)**
+8. **Next-issue recommendation (advisory)**
    Based on the PR body durable facts and current epic or backlog state,
    recommend the next logically following issue.
    This recommendation is advisory. It is not an automatic priority mutation and

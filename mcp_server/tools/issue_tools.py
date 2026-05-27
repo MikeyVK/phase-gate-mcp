@@ -285,22 +285,9 @@ class GetIssueTool(BaseTool):
         del context  # Not used
         try:
             issue = self.manager.get_issue(params.issue_number)
-
-            assignees_str = ", ".join(a.login for a in issue.assignees) or "none"
-            labels_str = ", ".join(label.name for label in issue.labels) or "none"
-            milestone_str = issue.milestone.title if issue.milestone else "none"
-
-            return ToolResult.text(
-                f"## Issue #{issue.number}: {issue.title}\n\n"
-                f"**State:** {issue.state}\n"
-                f"**Labels:** {labels_str}\n"
-                f"**Assignees:** {assignees_str}\n"
-                f"**Milestone:** {milestone_str}\n"
-                f"**Created:** {issue.created_at.isoformat()}\n\n"
-                f"{issue.body}"
-            )
         except ExecutionError as e:
             return ToolResult.error(str(e))
+        return ToolResult.text(json.dumps(issue.model_dump(), indent=2))
 
 
 class ListIssuesInput(BaseModel):

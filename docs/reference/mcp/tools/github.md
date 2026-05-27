@@ -1,19 +1,18 @@
 <!-- docs/reference/mcp/tools/github.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-02-08 -->
+<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-05-27 -->
 # GitHub Integration Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-05-27  
 
 **Source:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py), [pr_tools.py](../../../../mcp_server/tools/pr_tools.py), [label_tools.py](../../../../mcp_server/tools/label_tools.py), [milestone_tools.py](../../../../mcp_server/tools/milestone_tools.py)  
 **Tests:** [tests/unit/test_github_tools.py](../../../../tests/unit/test_github_tools.py)  
 
 ---
-
 ## Purpose
 
-Complete reference documentation for all 16 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
+Complete reference documentation for all 17 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
 
 All GitHub tools require a `GITHUB_TOKEN` environment variable. Tools are registered even without a token (schema-only), but execution returns errors if the token is missing.
 
@@ -21,12 +20,12 @@ All GitHub tools require a `GITHUB_TOKEN` environment variable. Tools are regist
 
 ## Overview
 
-The MCP server provides **16 GitHub tools** across 4 functional categories:
+The MCP server provides **17 GitHub tools** across 4 functional categories:
 
 | Category | Tools | Key Features |
 |----------|-------|-------------|
 | **Issues** | 5 | Create, read, list, update, close with Unicode support |
-| **Pull Requests** | 3 | Create, list, merge with draft support and merge strategies |
+| **Pull Requests** | 4 | Create, read single PR, list, merge with draft support and merge strategies |
 | **Labels** | 5 | CRUD operations with LabelConfig validation |
 | **Milestones** | 3 | List, create, close with state filtering |
 
@@ -131,25 +130,22 @@ Retrieve detailed information about a specific issue.
 
 ```json
 {
-  "success": true,
-  "issue": {
-    "number": 123,
-    "url": "https://github.com/owner/repo/issues/123",
-    "title": "Feature request: Add user authentication",
-    "body": "## Description\n\nDetailed issue body...",
-    "state": "open",
-    "labels": ["type:feature", "priority:high"],
-    "milestone": {
-      "number": 5,
-      "title": "v2.0",
-      "state": "open"
-    },
-    "assignees": ["username1"],
-    "created_at": "2026-02-01T10:00:00Z",
-    "updated_at": "2026-02-08T12:00:00Z",
-    "closed_at": null,
-    "author": "username2"
-  }
+  "number": 123,
+  "url": "https://github.com/owner/repo/issues/123",
+  "title": "Feature request: Add user authentication",
+  "body": "## Description\n\nDetailed issue body...",
+  "state": "open",
+  "labels": ["type:feature", "priority:high"],
+  "milestone": {
+    "number": 5,
+    "title": "v2.0",
+    "state": "open"
+  },
+  "assignees": ["username1"],
+  "created_at": "2026-02-01T10:00:00+00:00",
+  "updated_at": "2026-02-08T12:00:00+00:00",
+  "closed_at": null,
+  "author": "username2"
 }
 ```
 
@@ -617,6 +613,51 @@ Merge a pull request with specified merge strategy.
 - **Merge Conflicts:** Returns error if conflicts exist (must resolve first)
 - **Branch Protection:** Respects branch protection rules (required reviews, status checks)
 - **Auto-Delete:** Does NOT automatically delete head branch (GitHub repo setting controls this)
+
+---
+
+### get_pr
+
+**MCP Name:** `get_pr`  
+**Class:** `GetPRTool`  
+**File:** [mcp_server/tools/pr_tools.py](../../../../mcp_server/tools/pr_tools.py)
+
+Retrieve detailed information about a specific pull request.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pr_number` | `int` | **Yes** | Pull request number to retrieve |
+
+#### Returns
+
+```json
+{
+  "pr_number": 45,
+  "title": "Feature: Add OAuth2 authentication",
+  "state": "closed",
+  "base_branch": "main",
+  "head_branch": "feature/123-oauth",
+  "merged_at": "2026-05-27T12:00:00+00:00",
+  "merge_sha": "abc123def456",
+  "body": "## Description\n\nThis PR adds OAuth2 authentication support."
+}
+```
+
+#### Example Usage
+
+```json
+{
+  "pr_number": 45
+}
+```
+
+#### Behavior Notes
+
+- `merged_at` is `null` for open or closed-but-not-merged PRs; ISO 8601 string when merged
+- `merge_sha` is `null` when not merged
+- Returns an `"error"` type result when PR is not found (404)
 
 ---
 
