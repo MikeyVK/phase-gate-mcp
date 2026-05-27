@@ -14,5 +14,22 @@
     "skip_reason": null,
     "parent_branch": "main",
     "created_at": "2026-05-25T18:48:22.490083+00:00"
+  },
+  "357": {
+    "issue_title": "Fix agent lifecycle: parent detection, submit_pr base, end-issue safety",
+    "workflow_name": "bug",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/320-production-readiness-tracker",
+    "created_at": "2026-05-27T20:28:58.314766+00:00"
   }
 }
