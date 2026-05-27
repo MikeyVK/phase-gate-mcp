@@ -1,19 +1,18 @@
 <!-- docs/reference/mcp/tools/github.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-02-08 -->
+<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-05-27 -->
 # GitHub Integration Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-05-27  
 
 **Source:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py), [pr_tools.py](../../../../mcp_server/tools/pr_tools.py), [label_tools.py](../../../../mcp_server/tools/label_tools.py), [milestone_tools.py](../../../../mcp_server/tools/milestone_tools.py)  
 **Tests:** [tests/unit/test_github_tools.py](../../../../tests/unit/test_github_tools.py)  
 
 ---
-
 ## Purpose
 
-Complete reference documentation for all 16 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
+Complete reference documentation for all 17 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
 
 All GitHub tools require a `GITHUB_TOKEN` environment variable. Tools are registered even without a token (schema-only), but execution returns errors if the token is missing.
 
@@ -21,9 +20,14 @@ All GitHub tools require a `GITHUB_TOKEN` environment variable. Tools are regist
 
 ## Overview
 
-The MCP server provides **16 GitHub tools** across 4 functional categories:
+The MCP server provides **17 GitHub tools** across 4 functional categories:
 
 | Category | Tools | Key Features |
+|----------|-------|-------------|
+| **Issues** | 5 | Create, read, list, update, close with Unicode support |
+| **Pull Requests** | 4 | Create, read single PR, list, merge with draft support and merge strategies |
+| **Labels** | 5 | CRUD operations with LabelConfig validation |
+| **Milestones** | 3 | List, create, close with state filtering |
 |----------|-------|-------------|
 | **Issues** | 5 | Create, read, list, update, close with Unicode support |
 | **Pull Requests** | 3 | Create, list, merge with draft support and merge strategies |
