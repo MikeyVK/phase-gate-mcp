@@ -100,6 +100,17 @@ def test_merge_pr_tool(mock_adapter: Mock, mock_git_config: Mock) -> None:
     """Test MergePRTool merges PRs and returns confirmation."""
     mock_adapter.merge_pr.return_value = {"merged": True, "sha": "abc123", "message": "Merged"}
 
+    mock_pr = Mock()
+    mock_pr.number = 8
+    mock_pr.title = "Test PR"
+    mock_pr.state = "open"
+    mock_pr.base.ref = "main"
+    mock_pr.head.ref = "feature/branch"
+    mock_pr.merged_at = None
+    mock_pr.merge_commit_sha = None
+    mock_pr.body = ""
+    mock_adapter.get_pr.return_value = mock_pr
+
     manager = GitHubManager(adapter=mock_adapter)
     pr_status_writer = MagicMock()
     tool = MergePRTool(
