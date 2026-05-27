@@ -13,7 +13,7 @@ from mcp_server.schemas import (
     MilestoneConfig,
     ScopeConfig,
 )
-from mcp_server.state.github_read_models import PRReadModel
+from mcp_server.state.github_read_models import IssueReadModel, MilestoneReadModel, PRReadModel
 
 if TYPE_CHECKING:
     from github.Issue import Issue
@@ -162,9 +162,30 @@ class GitHubManager:
         """List issues with optional filtering."""
         return self.adapter.list_issues(state=state, labels=labels)
 
-    def get_issue(self, issue_number: int) -> "Issue":
-        """Get a specific issue by number."""
-        return self.adapter.get_issue(issue_number)
+    def get_issue(self, issue_number: int) -> IssueReadModel:
+        """Get a specific issue and return as a read model."""
+        issue = self.adapter.get_issue(issue_number)
+        milestone: MilestoneReadModel | None = None
+        if issue.milestone is not None:
+            milestone = MilestoneReadModel(
+                number=issue.milestone.number,
+                title=issue.milestone.title,
+                state=issue.milestone.state,
+            )
+        return IssueReadModel(
+            number=issue.number,
+            url=issue.html_url,
+            title=issue.title,
+            body=issue.body if issue.body is not None else "",
+            state=issue.state,
+            labels=[label.name for label in issue.labels],
+            milestone=milestone,
+            assignees=[a.login for a in issue.assignees],
+            created_at=issue.created_at.isoformat(),
+            updated_at=issue.updated_at.isoformat(),
+            closed_at=issue.closed_at.isoformat() if issue.closed_at is not None else None,
+            author=issue.user.login,
+        )
 
     def close_issue(self, issue_number: int, comment: str | None = None) -> "Issue":
         """Close an issue with optional comment."""
