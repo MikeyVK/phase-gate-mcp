@@ -102,9 +102,7 @@ class TestGitHubManager:
         manager.list_issues(state="closed")
         mock_adapter.list_issues.assert_called_with(state="closed", labels=None)
 
-    def test_get_issue_normalization(
-        self, manager: GitHubManager, mock_adapter: MagicMock
-    ) -> None:
+    def test_get_issue_normalization(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
         label_mock = MagicMock()
         label_mock.name = "type:feature"
         assignee_mock = MagicMock()
