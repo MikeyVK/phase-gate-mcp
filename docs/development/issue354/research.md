@@ -1,157 +1,148 @@
 <!-- docs\development\issue354\research.md -->
-<!-- template=research version=research created=2026-05-26 updated=2026-05-26 -->
-# Issue #354 — Add get_pr tool: narrow GitHub pulls API wrapper for end-issue flow
+<!-- template=research version=research created=2026-05-26 updated=2026-05-27 -->
+# Issue #354 — GitHub read-contract refactor for `get_issue` + `get_pr`
 
 **Status:** DRAFT  
-**Version:** 1.0  
-**Last Updated:** 2026-05-26
+**Version:** 1.2  
+**Last Updated:** 2026-05-27
 
 ---
 
 ## Purpose
 
-Establish the exact upstream pull-request response shape, the local blast radius, and the strategy boundary for adding a read-only `get_pr(pr_number)` tool that gives `end-issue` the canonical PR data it actually needs after branch-local state has been neutralized: merge and branch metadata plus the PR body as the durable source for deferred-work follow-up.
+Establish the broadened problem framing, verified architecture gaps, blast radius, and strategy-sensitive boundaries for evolving issue #354 from a narrow `get_pr` addition into a shared GitHub read-contract refactor covering both `get_issue` and `get_pr`.
 
 ## Scope
 
 **In Scope:**
-`mcp_server/adapters/github_adapter.py`; `mcp_server/managers/github_manager.py`; `mcp_server/tools/pr_tools.py`; GitHub tool registration in `mcp_server/server.py`; `.github/prompts/end-issue.prompt.md`; direct unit coverage for adapter, manager, PR tools, and server registration.
+`mcp_server/adapters/github_adapter.py` read fetch surface for issues and PRs; `mcp_server/managers/github_manager.py` read-side normalization policy; `mcp_server/tools/issue_tools.py`; `mcp_server/tools/pr_tools.py`; PR and issue tool registration in `mcp_server/server.py`; public GitHub tool docs in `docs/reference/mcp/tools/github.md`; direct unit coverage for adapter, manager, tools, server, and any new read-contract models; the existing `MergePRTool` Law of Demeter violation that becomes directly fixable if `get_pr` is added.
 
 **Out of Scope:**
-`merge_pr` behavior changes; `submit_pr` transaction changes; changing `get_work_context()` semantics; widening GitHub tooling availability without token; redesigning unrelated PR tooling; any compatibility bridge that keeps `parent_branch` on `get_work_context()` as the authoritative source after cleanup.
+`list_issues` / `list_prs` normalization; `close_issue` / `update_issue` / other command return-type normalization; no-token PR-tool registration changes; generic MCP transport redesign; introducing an `IGitHubReader` abstraction across the entire GitHub stack; generic GitHub-stack cleanup beyond the single-item read paths and the direct `MergePRTool` bypass.
+
+## Prerequisites
+
+1. The current GitHub issue body for issue #354 still describes the older narrow `get_pr` scope and does not yet capture the broadened `get_issue` refactor.
+2. The branch was explicitly forced back from `design` to `research` on 2026-05-27 because scope broadening invalidated the prior narrow design as the active planning input.
+3. QA plan-verifier gap-analysis input dated 2026-05-27 was accepted as preliminary research input; findings below record the repo-verified parts of that analysis plus explicitly marked recommendations.
 
 ---
 
 ## Problem Statement
 
-`.github/prompts/end-issue.prompt.md` currently loads `parent_branch` from `get_work_context()` before merge and stops if `parent_branch` is missing. That is fragile once branch-local state has been neutralized, because `parent_branch` is phase-state derived rather than host-side PR metadata. The codebase already has local access to PyGithub `PullRequest` objects, but there is no dedicated `get_pr` tool exposing the narrow PR metadata the prompt needs.
+The GitHub read side is currently inconsistent and architecture-hostile in exactly the place where issue #354 first surfaced. `get_issue` is a read query but returns a mutable PyGithub `Issue` object from the manager, `GetIssueTool` performs host-object normalization inside the tool layer, public docs already claim a JSON-like `get_issue` contract that implementation does not honor, `get_pr` does not exist yet, and `MergePRTool` bypasses the manager boundary entirely via `self.manager.adapter.repo.get_pull(...)`.
+
+A narrow additive `get_pr` would solve the immediate `end-issue` parent-branch problem, but it would leave the existing read-contract inconsistency intact and preserve the current tool-layer leakage for `get_issue`.
 
 ## Research Goals
 
-- Confirm the exact GitHub pulls API response fields needed for a narrow `get_pr` tool.
-- Map the production and test blast radius for adding `get_pr` and updating the `end-issue` flow.
-- Identify the closest existing repo patterns for adapter, manager, tool, and server registration.
-- Establish the Approved Strategy for the parent-branch retrieval boundary and surface any remaining strategy-sensitive gaps.
+- Validate whether issue #354 should explicitly broaden from `get_pr` only to a shared read-contract refactor for `get_issue` + `get_pr`.
+- Confirm the actual repo blast radius across adapter, manager, tools, docs, and tests.
+- Identify the strategy-sensitive boundary or boundaries that require explicit human approval before design.
+- Separate the minimum coherent refactor from adjacent GitHub-stack cleanup that should stay out of scope.
 
 ---
 
 ## Findings
 
-### Finding 1 — The upstream pull-request resource already contains the required branch and merge metadata
+### Finding 1 — The current GitHub issue body is now narrower than the active research scope
 
-The GitHub REST pulls docs page for API version `2026-03-10` includes the single-PR resource in the same endpoint family as `List pull requests`, `List commits on a pull request`, and `Merge a pull request`. The fetched docs content confirms that the pull-request resource shape contains the fields this issue expects, including:
+The live GitHub issue for #354 still describes a narrow `get_pr(pr_number)` addition for `end-issue`: `pr_number`, `title`, `state`, `base_branch`, `head_branch`, `merged_at`, `merge_sha`, and prompt migration away from `get_work_context()` for the parent branch.
 
-- `number`
-- `title`
-- `state`
-- `base` object, including `base.ref`
-- `head` object, including `head.ref`
-- `merged_at`
-- `merge_commit_sha`
-- `body`
+That description no longer matches the active branch scope after the explicit return to research on 2026-05-27. The branch is now investigating a wider read-contract problem: `get_issue` and `get_pr` should likely be designed together rather than treating `get_pr` as an isolated exception.
 
-The docs payload also shows that the pull-request resource schema requires `base`, `head`, `merged_at`, `number`, `state`, `title`, and `body`. This means the host-side PR resource already carries both the branch metadata needed for checkout and the body needed by the durable handover step in `end-issue`.
+### Finding 2 — The adapter fetch layer is mostly acceptable; the inconsistency starts at manager and tool level
 
-**Repo-local semantic mapping:**
+Repo reads confirm a mixed normalization policy across the GitHub stack.
 
-| Upstream PR resource | Narrow local field |
-|---|---|
-| `number` | `pr_number` |
-| `title` | `title` |
-| `state` | `state` |
-| `base.ref` | `base_branch` |
-| `head.ref` | `head_branch` |
-| `merged_at` | `merged_at` |
-| `merge_commit_sha` | `merge_sha` |
-| `body` | `body` |
+| Layer | Read path today | Verified behavior | Architectural implication |
+|---|---|---|---|
+| Adapter | `GitHubAdapter.get_issue()` | fetches and returns raw PyGithub `Issue` | acceptable fetch boundary |
+| Adapter | `GitHubAdapter.list_issues()` | returns raw `list[Issue]` | same raw fetch pattern |
+| Adapter | `GitHubAdapter.list_prs()` | returns raw `list[PullRequest]` | same raw fetch pattern |
+| Adapter | `GitHubAdapter.merge_pr()` | returns normalized `dict[str, Any]` | command path already normalizes |
+| Manager | `GitHubManager.get_issue()` | pass-through raw `Issue` | query returns mutable host object |
+| Manager | `GitHubManager.create_issue()` / `create_pr()` / `merge_pr()` | normalized `dict` output | commands already use narrow results |
 
-`state` alone is not sufficient to distinguish merged vs closed-unmerged PRs. `merged_at` must remain nullable and preserved in the local contract.
+This means the biggest architectural inconsistency is not at fetch time. It is at the read-query boundary above the adapter: commands normalize, but `get_issue()` does not.
 
-### Finding 2 — The repo already has the adapter seam, but not the read-only tool surface
+### Finding 3 — `GetIssueTool` currently performs host-object normalization in the tool layer
 
-`GitHubAdapter` already wraps GitHub PR operations for:
+`GetIssueTool.execute()` currently receives the raw `Issue` from `GitHubManager.get_issue()` and directly reads host-specific fields such as:
 
-- `create_pr(...)`
-- `list_prs(...)`
-- `merge_pr(...)`
+- `issue.assignees` and `a.login`
+- `issue.labels` and `label.name`
+- `issue.milestone.title`
+- `issue.created_at.isoformat()`
 
-There is no `get_pr(...)` adapter method today, but the codebase already reaches the underlying PyGithub seam directly in existing PR code. `MergePRTool.execute()` currently does:
+This is a direct cohesion and interface-segregation problem:
+
+- the tool knows PyGithub field names and nested shape
+- the tool performs normalization that belongs closer to the read-contract boundary
+- a read-only tool receives a write-capable object with methods and mutable host-side behavior not needed for this query
+
+The current unit test in `tests/mcp_server/unit/tools/test_issue_tools.py` mirrors that same host shape by mocking `created_at`, `assignees`, `labels`, and `milestone` directly on the returned issue object.
+
+### Finding 4 — `MergePRTool` currently bypasses the manager boundary
+
+`MergePRTool.execute()` still resolves the head branch by reaching through multiple layers:
 
 - `self.manager.adapter.repo.get_pull(params.pr_number)`
 
-before calling `manager.merge_pr(...)`, in order to resolve `head.ref` for PR-status cleanup. This confirms that the local integration already trusts PyGithub `PullRequest` objects as the host-side source of truth.
+This is a direct Law of Demeter violation and a strong signal that a first-class single-PR read seam is missing. If issue #354 grows to include `get_pr`, this one-line bypass becomes directly fixable inside the same scope.
 
-The missing piece is not host capability. The missing piece is a first-class read-only path that narrows the upstream PR object into a stable tool contract.
+### Finding 5 — Public docs already claim a structured `get_issue` contract that implementation does not honor
 
-### Finding 3 — The local layering pattern is mixed, but there is a coherent narrow-contract path
+`docs/reference/mcp/tools/github.md` documents `get_issue` as if it returns a JSON-style issue payload including fields such as:
 
-Relevant existing patterns:
+- `url`
+- `body`
+- `state`
+- `labels`
+- `milestone`
+- `assignees`
+- `created_at`
+- `updated_at`
+- `closed_at`
+- `author`
 
-- `GetIssueTool` is the nearest read-only GitHub tool pattern. It calls `manager.get_issue(...)` and renders a human-readable text result.
-- `ListPRsTool` renders text directly from raw PyGithub PR objects and already reads `pr.base.ref` and `pr.head.ref`.
-- `GitHubManager.create_pr(...)` already normalizes a raw PR object into a narrow dict containing only `number`, `url`, and `title`.
+The current tool implementation does not return that documented shape. It emits prose text with headings and labeled lines.
 
-This issue is closer to `create_pr(...)` than to `list_prs(...)`: the request is explicitly for a narrow, stable response shape rather than a raw PyGithub surface. The cleanest layering is therefore:
+This matters because it weakens the argument for treating the current prose output as a normative public contract. Repo search found semantic consumers of `get_issue` in:
 
-1. adapter fetches the raw `PullRequest`
-2. manager narrows it to a small dict contract
-3. tool renders only the supported fields from that dict
+- `.github/prompts/start-issue.prompt.md`
+- `.github/agents/co.agent.md`
 
-That keeps PyGithub object knowledge out of the prompt-facing tool contract.
+Those consumers describe `get_issue` as a source of issue context, title, labels, scope, or body, but repo evidence did **not** show a downstream parser depending on the current `**Labels:**` / `**Assignees:**` / `**Milestone:**` prose markers. The clearest coupling to the current prose formatting is in the direct tool unit test and in the mismatch with the published docs.
 
-### Finding 4 — Server registration and auth policy are part of the boundary
+### Finding 6 — There is already a local precedent for a frozen read-side DTO under `mcp_server/state`
 
-`mcp_server/server.py` currently registers PR tools only when a GitHub token is configured:
+`mcp_server/state/workflow_status.py` defines `WorkflowStatusDTO` as:
 
-- `list_prs`
-- `merge_pr`
-- `submit_pr`
+- `ConfigDict(frozen=True, extra="forbid")`
+- a read-side model used as a stable immutable query result
 
-Without a token, the server still registers issue tools, but not PR tools.
+That does not prove the exact final home or name for GitHub read models, but it does provide a strong local precedent for the missing pattern: a frozen read-side DTO living under `mcp_server/state` instead of a raw host object flowing into the tool layer.
 
-The upstream GitHub docs note that some pull-read endpoints can read public resources without authentication. That does **not** imply this repo should change its local tool-registration policy in issue #354. Doing so would widen the auth model beyond the existing PR-tool boundary and is out of scope for this issue.
+### Finding 7 — The coherent minimum scope is broader than `get_pr`, but still narrower than a full GitHub-stack cleanup
 
-### Finding 5 — The prompt consumer change is narrow, but it does not eliminate `get_work_context()` entirely
+Current repo evidence supports a bounded scope expansion instead of a generic cleanup campaign.
 
-`.github/prompts/end-issue.prompt.md` currently does this in step 1:
-
-- call `get_work_context()`
-- record `branch`, `workflow`, `issue_number`, and `parent_branch`
-- stop if `parent_branch` is missing
-
-For issue #354, only the **source of truth** for the parent branch needs to move. The most coherent consumer change is:
-
-- `get_pr(pr_number=PR_NUMBER)` becomes the authoritative source for `base_branch`
-- `get_work_context()` remains available for `branch`, `workflow`, and fallback `issue_number` derivation when the invocation omitted it
-- `merge_pr(...)` remains the authoritative merge proof; `get_pr(...)` must not replace it
-
-This keeps the change additive instead of silently redefining `get_work_context()`.
-
-### Finding 6 — The PR body belongs in the `get_pr(...)` contract for this workflow
-
-Step 5 of `.github/prompts/end-issue.prompt.md` says:
-
-- read the PR body as the durable `@imp` -> `@co` transfer artifact
-
-For this workflow, that is not incidental metadata. The PR body is the operational handover surface used to inspect delivered scope, deferred work, and any follow-up issue creation that may still be required after merge.
-
-That makes the contract boundary explicit:
-
-- the upstream PR resource already exposes `body`
-- the `end-issue` consumer needs `body`
-- the issue being closed is no longer the authoritative source at that point in the lifecycle
-
-For issue #354, `get_pr(...)` should therefore include `body` as part of the supported contract rather than forcing a second tool lookup against the issue surface.
-
-### Finding 7 — Validation blast radius is straightforward and already has local precedents
-
-| Layer | Existing precedent | Expected new coverage |
+| Surface | Why it now belongs in scope | Risk |
 |---|---|---|
-| Adapter | `test_github_adapter.py` already covers `list_prs(...)` and `merge_pr(...)` | add `get_pr(...)` success, 404, and generic API error cases |
-| Manager | `test_github_manager.py` already covers `create_pr(...)`, `list_prs(...)`, and `merge_pr(...)` | add `get_pr(...)` delegation and narrow-field normalization |
-| Tool | `test_pr_tools.py` already covers `list_prs` and `merge_pr` | add `GetPRTool` happy-path and not-found formatting |
-| Server | `test_server.py` already checks GitHub tool registration | add `get_pr` registration alongside other PR tools |
-| Prompt | no automated `end-issue` prompt coverage exists | manual prompt review is required unless prompt-test infrastructure is added separately |
+| `GitHubManager.get_issue()` | current query-return inconsistency is part of the same read-contract problem | medium |
+| `GetIssueTool` | today leaks PyGithub shape and contradicts docs contract | medium |
+| `GetPRTool` | missing tool is still the original issue trigger | low |
+| `MergePRTool` head-branch fetch | direct consequence of the absence of `get_pr` | low |
+| GitHub docs reference page | current public contract is false for `get_issue` | low |
+| Adapter/manager/tool/server tests | must shift from raw host-shape assumptions to read-contract assertions | low |
+
+Adjacent gaps remain real but are still separate concerns for now:
+
+- list-query normalization
+- command return normalization
+- whole-stack `IGitHubReader` abstraction
+- transport-layer redesign so MCP-visible tool results are not text-based
 
 ---
 
@@ -159,66 +150,73 @@ For issue #354, `get_pr(...)` should therefore include `body` as part of the sup
 
 | Constraint | Source / rationale |
 |---|---|
-| Keep `merge_pr(...)` as the authoritative merge proof | `end-issue.prompt.md` guardrails and current workflow contract |
-| Do not repurpose `get_work_context()` into host-side PR lookup | issue scope is additive tooling, not lifecycle-state semantic rewrite |
-| Do not widen no-token PR tool availability in this issue | current server registration policy keeps PR tools token-gated |
-| Avoid leaking raw PyGithub `PullRequest` objects into the tool contract | narrow response shape is the point of the issue |
-| No compatibility bridge that keeps `parent_branch` from phase state as co-equal authority | issue exists because the prompt needs canonical PR metadata |
-
----
-
-## Supported Contract For This Issue
-
-For the parent-branch boundary, the stable semantic contract is:
-
-```json
-{
-  "pr_number": 412,
-  "title": "Close issue branch cleanly",
-  "state": "closed",
-  "base_branch": "epic/341-coordination",
-  "head_branch": "feature/354-get-pr-tool",
-  "merged_at": "2026-05-26T16:12:00Z",
-  "merge_sha": "abc123...",
-  "body": "Delivered scope...\nDeferred work...\nCloses #354"
-}
-```
-
-Field constraints:
-
-- `base_branch` comes from `base.ref`
-- `head_branch` comes from `head.ref`
-- `merged_at` is nullable
-- `merge_sha` is nullable and maps from upstream `merge_commit_sha`
-- `body` is the canonical PR handover text used by `end-issue` for deferred-work follow-up and closeout reasoning
-- `state` is preserved as returned by GitHub; callers must not infer merged-vs-closed from `state` alone
+| Read queries should not expose mutable host objects | `ARCHITECTURE_PRINCIPLES.md` §1.4 ISP and §5 CQS |
+| Tool layer should not know nested host-object field shape | `ARCHITECTURE_PRINCIPLES.md` §7 Law of Demeter and §10 Cohesion |
+| No broad abstraction layer just because the GitHub stack is imperfect today | `ARCHITECTURE_PRINCIPLES.md` §9 YAGNI |
+| Keep scope bounded to the immediate read-contract problem | explicit issue-354 scope broadening, not whole-stack redesign |
+| Public docs and actual tool contract should not silently diverge | `ARCHITECTURE_PRINCIPLES.md` §8 Explicit over Implicit |
 
 ---
 
 ## Approved Strategy
 
-**Boundary / consumer scope:**
+### Boundary 1 — `get_issue` visible output contract
 
-- add a new read-only `get_pr(pr_number)` path in adapter -> manager -> tool -> server registration
-- keep `get_work_context()` unchanged
-- update `.github/prompts/end-issue.prompt.md` so `get_pr(...)` is the authoritative source for `base_branch`
-- include `body` in `get_pr(...)` because the PR body is the durable closeout handover used to inspect deferred work after merge
-- keep `merge_pr(...)` as the authoritative merge proof
-- keep PR tools under the existing token-gated registration policy
+**Selected strategy:** clean break
 
-**Selected strategy:**
-Additive PR tool, no compatibility bridge, no `get_work_context()` fallback as authoritative parent source, and no separate issue-surface lookup for closeout body inspection.
+**Approved by:** user decision on 2026-05-27
 
-**Implementation-shaping constraint for later phases:**
-The supported contract is the narrow semantic payload above, including `body`, not a raw PyGithub object. If the tool renders text, that text must still faithfully expose those fields.
+**Decision:** change `get_issue` visible output from prose to deterministic JSON text.
+
+**Rationale:**
+- the public docs already describe a structured issue payload rather than the current prose format
+- repo evidence did not find a downstream parser depending on the current prose markers
+- the direct blast radius appears bounded to docs, direct tool tests, and human/agent expectations rather than production code parsers
+- a shared visible pattern for `get_issue` and `get_pr` reduces special cases in later phases
+
+**Constraints for later phases:**
+- do not build a prose/JSON bridge for `get_issue`
+- design and planning must treat deterministic JSON text as the visible contract for both `get_issue` and `get_pr` under the current MCP transport
+- docs, tests, and prompt expectations must be updated as part of the same coherent refactor
+
+### Boundary 2 — `get_pr` addition
+
+**Selected strategy:** additive, no compatibility bridge
+
+**Rationale:**
+- this is additive behavior
+- the original issue already justified a narrow PR-read tool
+- the broadened scope only changes the fact that `get_pr` should be designed as part of a shared read-contract family instead of as a one-off exception
+
+**Constraints for later phases:**
+- keep `get_pr` inside the same shared read-contract family as `get_issue`
+- do not widen scope into generic GitHub browsing or no-token PR reads
+
+### Boundary 3 — `MergePRTool` Demeter fix
+
+**Selected strategy:** include in issue #354 as an internal follow-on refactor
+
+**Rationale:**
+- the existing direct traversal in `MergePRTool` is already an architectural defect
+- if a single-PR read seam is added, fixing that traversal is a natural internal follow-on rather than an independent feature scope
+
+**Constraints for later phases:**
+- the fix must remain bounded to removing the direct manager→adapter→repo traversal
+- do not use this as a reason to broaden issue #354 into wider merge-flow redesign
+
+---
+
+## Open Questions
+
+- Should the GitHub issue body for #354 be updated to reflect the broadened `get_issue` + `get_pr` scope before design starts?
 
 ---
 
 ## Assumptions
 
-- PyGithub `PullRequest` exposes `base.ref`, `head.ref`, `merged_at`, and `merge_commit_sha` consistently for the existing repo integration.
-- `end-issue` will continue to accept explicit `ISSUE_NUMBER` and `PR_NUMBER` from the human invocation, using `get_work_context()` only for branch/workflow context and issue-number fallback.
-- No other prompt or tool currently depends on a `get_pr(...)` contract, so the consumer blast radius remains local to issue #354.
+- The broadened scope is intended to remain bounded to single-item read queries and the directly related `MergePRTool` bypass, not to all GitHub query surfaces.
+- The current text-based MCP result transport remains in place; research is not reopening server transport behavior in issue #354.
+- `WorkflowStatusDTO` is precedent for model style and package placement direction, not yet a binding decision on final file path or class names for GitHub read contracts.
 
 ---
 
@@ -226,10 +224,22 @@ The supported contract is the narrow semantic payload above, including `body`, n
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| Caller treats `state="closed"` as proof of merge | Medium | preserve `merged_at` and document that merge proof stays with `merge_pr(...)` |
-| Tool registration drifts from existing token-gated PR policy | Low | add server registration coverage alongside existing PR tool assertions |
-| Prompt is partially migrated and still blocks on `parent_branch` from `get_work_context()` | Medium | update prompt step ordering explicitly and review the stop condition |
-| `body` semantics drift between `get_pr(...)` and prompt expectations | Medium | keep `body` explicitly in the supported contract and validate prompt usage against that contract |
+| Hidden consumer expects current `get_issue` prose shape | Medium | explicit approval on Boundary 1 before design; targeted repo search and direct test updates |
+| Scope balloons into generic GitHub-stack redesign | Medium | keep list queries, command returns, and `IGitHubReader` explicitly out of scope |
+| Docs and implementation drift again during refactor | Medium | treat `docs/reference/mcp/tools/github.md` as part of the same scoped change |
+| `get_pr` ships but `MergePRTool` keeps the manager bypass | Low | keep the Demeter fix explicitly in scope with the new PR read seam |
+
+---
+
+## Expected Results For Design And Planning
+
+Design should answer the following with the broadened scope now explicit:
+
+- what the shared read-contract family for `get_issue` and `get_pr` should look like
+- where the frozen read models belong in the codebase
+- what the visible tool contract should be under the current text-only MCP transport
+- how `GetIssueTool`, `GetPRTool`, and `MergePRTool` should align to the same layering rules
+- how tests and docs move from host-shape or prose assumptions to stable read-contract assertions
 
 ---
 
@@ -237,4 +247,6 @@ The supported contract is the narrow semantic payload above, including `body`, n
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-05-26 | Agent | Initial research draft with upstream PR-shape evidence, blast radius, and strategy checkpoint |
+| 1.0 | 2026-05-26 | Agent | Initial narrow research draft for `get_pr` only |
+| 1.1 | 2026-05-27 | Agent | Broadened research scope to shared `get_issue` + `get_pr` read-contract refactor using repo-verified QA preliminary analysis |
+| 1.2 | 2026-05-27 | Agent | Recorded approved clean-break strategy for `get_issue` visible output and finalized research decision boundary |
