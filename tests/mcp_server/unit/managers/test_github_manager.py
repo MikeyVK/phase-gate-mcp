@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.managers.github_manager import GitHubManager
+from mcp_server.state.github_read_models import PRReadModel
 from mcp_server.schemas import (
     ContributorConfig,
     GitConfig,
@@ -158,6 +159,30 @@ class TestGitHubManager:
         mock_adapter.merge_pr.assert_called_with(
             pr_number=1, commit_message="Merged", merge_method="merge"
         )
+
+    def test_get_pr_normalization(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
+        mock_pr = MagicMock()
+        mock_pr.number = 42
+        mock_pr.title = "Test PR"
+        mock_pr.state = "open"
+        mock_pr.base.ref = "main"
+        mock_pr.head.ref = "feature/42-test"
+        mock_pr.merged_at = None
+        mock_pr.merge_commit_sha = None
+        mock_pr.body = "PR body"
+        mock_adapter.get_pr.return_value = mock_pr
+
+        result = manager.get_pr(42)
+
+        assert isinstance(result, PRReadModel)
+        assert result.pr_number == 42
+        assert result.title == "Test PR"
+        assert result.state == "open"
+        assert result.base_branch == "main"
+        assert result.head_branch == "feature/42-test"
+        assert result.merged_at is None
+        assert result.merge_sha is None
+        assert result.body == "PR body"
 
 
 class TestGitHubManagerValidateIssueParams:
