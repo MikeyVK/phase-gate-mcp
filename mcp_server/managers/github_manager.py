@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from mcp_server.adapters.github_adapter import GitHubAdapter
 from mcp_server.core.interfaces import PRStatus
+from mcp_server.state.github_read_models import PRReadModel
 from mcp_server.schemas import (
     ContributorConfig,
     GitConfig,
@@ -239,6 +240,20 @@ class GitHubManager:
             pr_number=pr_number,
             commit_message=commit_message,
             merge_method=merge_method,
+        )
+
+    def get_pr(self, pr_number: int) -> PRReadModel:
+        """Get a pull request and return as a read model."""
+        pr = self.adapter.get_pr(pr_number)
+        return PRReadModel(
+            pr_number=pr.number,
+            title=pr.title,
+            state=pr.state,
+            base_branch=pr.base.ref,
+            head_branch=pr.head.ref,
+            merged_at=pr.merged_at.isoformat() if pr.merged_at is not None else None,
+            merge_sha=pr.merge_commit_sha,
+            body=pr.body if pr.body is not None else "",
         )
 
     def get_pr_status(self, branch: str) -> PRStatus:

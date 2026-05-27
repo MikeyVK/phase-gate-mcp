@@ -67,6 +67,15 @@ class GitHubAdapter:
                 raise ExecutionError(f"Issue #{issue_number} not found") from e
             raise MCPSystemError(f"GitHub API error: {e}") from e
 
+    def get_pr(self, pr_number: int) -> PullRequest:
+        """Get a pull request by number."""
+        try:
+            return self.repo.get_pull(pr_number)
+        except GithubException as e:
+            if e.status == 404:
+                raise ExecutionError(f"Pull request #{pr_number} not found") from e
+            raise MCPSystemError(f"GitHub API error: {e}") from e
+
     def create_issue(
         self,
         title: str,
