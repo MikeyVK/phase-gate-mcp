@@ -131,25 +131,22 @@ Retrieve detailed information about a specific issue.
 
 ```json
 {
-  "success": true,
-  "issue": {
-    "number": 123,
-    "url": "https://github.com/owner/repo/issues/123",
-    "title": "Feature request: Add user authentication",
-    "body": "## Description\n\nDetailed issue body...",
-    "state": "open",
-    "labels": ["type:feature", "priority:high"],
-    "milestone": {
-      "number": 5,
-      "title": "v2.0",
-      "state": "open"
-    },
-    "assignees": ["username1"],
-    "created_at": "2026-02-01T10:00:00Z",
-    "updated_at": "2026-02-08T12:00:00Z",
-    "closed_at": null,
-    "author": "username2"
-  }
+  "number": 123,
+  "url": "https://github.com/owner/repo/issues/123",
+  "title": "Feature request: Add user authentication",
+  "body": "## Description\n\nDetailed issue body...",
+  "state": "open",
+  "labels": ["type:feature", "priority:high"],
+  "milestone": {
+    "number": 5,
+    "title": "v2.0",
+    "state": "open"
+  },
+  "assignees": ["username1"],
+  "created_at": "2026-02-01T10:00:00+00:00",
+  "updated_at": "2026-02-08T12:00:00+00:00",
+  "closed_at": null,
+  "author": "username2"
 }
 ```
 
@@ -617,6 +614,51 @@ Merge a pull request with specified merge strategy.
 - **Merge Conflicts:** Returns error if conflicts exist (must resolve first)
 - **Branch Protection:** Respects branch protection rules (required reviews, status checks)
 - **Auto-Delete:** Does NOT automatically delete head branch (GitHub repo setting controls this)
+
+---
+
+### get_pr
+
+**MCP Name:** `get_pr`  
+**Class:** `GetPRTool`  
+**File:** [mcp_server/tools/pr_tools.py](../../../../mcp_server/tools/pr_tools.py)
+
+Retrieve detailed information about a specific pull request.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pr_number` | `int` | **Yes** | Pull request number to retrieve |
+
+#### Returns
+
+```json
+{
+  "pr_number": 45,
+  "title": "Feature: Add OAuth2 authentication",
+  "state": "closed",
+  "base_branch": "main",
+  "head_branch": "feature/123-oauth",
+  "merged_at": "2026-05-27T12:00:00+00:00",
+  "merge_sha": "abc123def456",
+  "body": "## Description\n\nThis PR adds OAuth2 authentication support."
+}
+```
+
+#### Example Usage
+
+```json
+{
+  "pr_number": 45
+}
+```
+
+#### Behavior Notes
+
+- `merged_at` is `null` for open or closed-but-not-merged PRs; ISO 8601 string when merged
+- `merge_sha` is `null` when not merged
+- Returns an `"error"` type result when PR is not found (404)
 
 ---
 
