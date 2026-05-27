@@ -72,6 +72,14 @@
               {
                 "description": "tests/mcp_server/unit/test_server.py \u2014 assert GetPRTool registered when token present; assert NOT registered when token absent",
                 "id": "C1.9"
+              },
+              {
+                "description": "test_github_adapter.py: test_get_pr_success, test_get_pr_not_found, test_get_pr_api_error \u2014 stop-go proof for adapter layer (design \u00a73.10)",
+                "id": "C1.10"
+              },
+              {
+                "description": "test_github_manager.py: test_get_pr_normalization \u2014 mock PullRequest host object, assert PRReadModel field mapping (stop-go proof for manager layer, design \u00a73.10)",
+                "id": "C1.11"
               }
             ],
             "exit_criteria": "GetPRTool registered and returns JSON text; MergePRTool.execute() has zero self.manager.adapter references; test_merge_pr_tool uses PRReadModel fixture with no legacy adapter mock; PRReadModel frozen; quality gates pass.",

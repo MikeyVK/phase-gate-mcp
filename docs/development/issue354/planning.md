@@ -50,9 +50,10 @@ Three TDD cycles implementing the approved three-change design: (C1) get_pr full
 - GetPRTool registered and returns ToolResult.text(json.dumps(model.model_dump(), indent=2))
 - MergePRTool.execute() has zero references to self.manager.adapter
 - test_merge_pr_tool uses PRReadModel fixture — no legacy adapter.repo.get_pull mock remains
-- PRReadModel is frozen (ConfigDict frozen=True, extra='forbid'))
+- PRReadModel is frozen (ConfigDict frozen=True, extra='forbid')
+- test_get_pr_success / test_get_pr_not_found / test_get_pr_api_error present in test_github_adapter.py (stop-go proof for adapter layer, design §3.10)
+- test_get_pr_normalization present in test_github_manager.py asserting PRReadModel field mapping (stop-go proof for manager layer, design §3.10)
 - Quality gates pass (pylint 10.00/10 + Pyright strict) on all C1 changed files
-
 
 
 ### Cycle 2: C2: get_issue clean break to IssueReadModel
@@ -125,3 +126,4 @@ _Note: start-issue.prompt.md is included because it is a semantic consumer of ge
 |---------|------|--------|---------|
 | 1.0 | 2026-05-27 | Agent | Initial draft |
 | 1.1 | 2026-05-27 | Agent | Fix F1 (get_pr post-merge per design §3.8); fix F2 (add no-token server test); fix F3 (name test_server.py); fix F4 (start-issue note); fix F5 (Pyright annotation risk); fix F6 (REPLACE TestGetIssueTool class) |
+| 1.2 | 2026-05-27 | Agent | Add C1.10 (adapter test_get_pr_*) and C1.11 (manager test_get_pr_normalization) as explicit deliverables per design §3.10 and QA CONDITIONAL GO |
