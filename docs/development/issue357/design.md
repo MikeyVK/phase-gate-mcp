@@ -3,7 +3,7 @@
 # Fix agent lifecycle: @co-owns-init contract, IBranchParentReader, bootstrap predicate, end-issue safety
 
 **Status:** DRAFT  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-05-28
 
 ---
@@ -139,6 +139,7 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | `end-issue`: `git_pull` after checkout, then `merge_commit_sha` reachability check, then delete | `get_pr()` returns `merge_commit_sha` for merged PRs. After `git_pull` on the base branch, that SHA being present in `git log` confirms the merged content is locally reachable before destructive cleanup. |
 | `imp.agent.md` precondition is a paragraph before step 1, not a numbered startup step | A precondition is a prerequisite that must be true before the protocol runs — not a runtime action. Placing it as a step would imply `@imp` should check or fix it, which contradicts the `@co`-owns-init model. |
 | No backward-compatibility shims; test helpers and call sites updated to new signatures | No compat needed. Clean interface contracts in tests reflect actual production wiring and prevent false confidence from tests covering stale behavior. |
+| `default_base_branch` standalone param retired from `EnforcementRunner` when `git_config` is injected | `self.default_base_branch` is stored but never read by any `EnforcementRunner` method — dead code in the class body. `server.py` currently passes `git_config.default_base_branch` as a plain string — DRY duplication. Once `GitConfig` is injected, the standalone param is removed; any internal use reads `self._git_config.default_base_branch` directly. |
 
 ---
 
@@ -150,7 +151,7 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | `BranchStateParentReader` | New implementation class | `mcp_server/managers/branch_parent_reader.py` (new) |
 | `SubmitPRTool.__init__` | New required 5th param: `branch_parent_reader: IBranchParentReader` | `mcp_server/tools/pr_tools.py` |
 | `SubmitPRTool` composition root | Wire `BranchStateParentReader` | `mcp_server/server.py` |
-| `EnforcementRunner.__init__` | New required param: `git_config: GitConfig` | `mcp_server/managers/enforcement_runner.py` |
+| `EnforcementRunner.__init__` | Add required param `git_config: GitConfig`; retire `default_base_branch` standalone param (stored but never read — dead code) | `mcp_server/managers/enforcement_runner.py` |
 | `EnforcementRunner._handle_check_context_loaded` | Extend bootstrap predicate with mismatch bypass | `mcp_server/managers/enforcement_runner.py` |
 | `start-issue.prompt.md` | Non-epic section: clarify `@co`-owns-init; `@imp` starts on pre-initialized branch | `.github/prompts/start-issue.prompt.md` |
 | `end-issue.prompt.md` | Insert `git_pull` + SHA verification before branch delete | `.github/prompts/end-issue.prompt.md` |
@@ -165,7 +166,7 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | `tests/mcp_server/integration/test_submit_pr_atomic_flow.py` | `_make_submit_pr_tool` helper: new required param | Update helper; wire a test fake for `IBranchParentReader` |
 | `tests/mcp_server/unit/tools/test_submit_pr_tool.py` | `_make_tool_for_lod` helper: new required param | Update helper same way |
 | `tests/mcp_server/integration/test_context_loaded_enforcement.py` | Missing test for issue-number mismatch scenario | Add new test; `test_gate_inactive_on_bootstrap_no_state_json` must still pass |
-| Any file constructing `EnforcementRunner(...)` directly | `git_config` required param | Update all `EnforcementRunner` call sites in tests |
+| Any file constructing `EnforcementRunner(...)` directly | `git_config` required param added; `default_base_branch` param removed | Update all `EnforcementRunner` call sites in tests (add `git_config` fake; drop `default_base_branch` kwarg where present) |
 | Prompt / agent doc files (F2, F3, F5) | Not pytest-covered | Human review; treat as first-class deliverables per research F8 |
 
 ---
@@ -188,8 +189,8 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 
 | # | Question | Direction |
 |---|---|---|
-| 1 | Does `EnforcementRunner` already receive `GitConfig` at its composition root in `server.py`, or is a new wiring step needed? | Planning must verify by reading `EnforcementRunner.__init__` full signature and `server.py` wiring block before cycle design. |
-| 2 | Should `BranchStateParentReader` live in `mcp_server/managers/` or alongside `SubmitPRTool` in `mcp_server/tools/`? | Consistent with all other interface implementations (`IStateReader` → `FileStateRepository` in `managers/`), it should live in `managers/`. Confirm in planning. |
+| 1 | Does `EnforcementRunner` already receive `GitConfig` at its composition root in `server.py`, or is a new wiring step needed? | **RESOLVED** — `EnforcementRunner.__init__` has no `git_config` param today; `server.py` passes only `git_config.default_base_branch` as a string. New wiring needed: add `git_config=git_config` to `EnforcementRunner(...)` in `server.py` and retire the `default_base_branch` kwarg there. |
+| 2 | Should `BranchStateParentReader` live in `mcp_server/managers/` or alongside `SubmitPRTool` in `mcp_server/tools/`? | **RESOLVED** — `mcp_server/managers/` confirmed. Consistent with `IStateReader` → `FileStateRepository` pattern; all interface implementations live in `managers/`. |
 
 ## Related Documentation
 - **[Research — issue #357](docs/development/issue357/research.md)**
@@ -204,3 +205,4 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-05-28 | Agent | Initial draft — five fix surfaces, IBranchParentReader, GitConfig injection, prompt/doc fixes |
+| 1.1 | 2026-05-28 | Agent | Address QA aandachtspunten: OQ1+OQ2 resolved, `default_base_branch` retirement decision added |
