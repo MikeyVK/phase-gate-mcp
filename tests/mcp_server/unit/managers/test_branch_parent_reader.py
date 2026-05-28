@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from mcp_server.config.schemas.git_config import GitConfig
 from mcp_server.core.interfaces import IStateReader
@@ -43,9 +44,7 @@ class TestBranchStateParentReader:
         assert result == "epic/320-production-readiness"
         mock_reader.load.assert_called_once_with("bug/357-fix-test")
 
-    def test_get_parent_branch_returns_none_on_issue_mismatch(
-        self, git_config: GitConfig
-    ) -> None:
+    def test_get_parent_branch_returns_none_on_issue_mismatch(self, git_config: GitConfig) -> None:
         """Mismatch guard: state.issue_number != extracted issue -> return None."""
         mock_reader = MagicMock(spec=IStateReader)
         mock_reader.load.return_value = BranchState(
@@ -81,9 +80,7 @@ class TestBranchStateParentReader:
         result = reader.get_parent_branch("bug/357-fix-test")
         assert result is None
 
-    def test_get_parent_branch_returns_none_on_state_not_found(
-        self, git_config: GitConfig
-    ) -> None:
+    def test_get_parent_branch_returns_none_on_state_not_found(self, git_config: GitConfig) -> None:
         """Resilience: state.json absent (StateNotFoundError) -> return None."""
         mock_reader = MagicMock(spec=IStateReader)
         mock_reader.load.side_effect = StateNotFoundError("state.json absent")
