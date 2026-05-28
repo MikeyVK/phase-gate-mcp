@@ -135,6 +135,14 @@ class IGitContextReader(Protocol):
 
 
 @runtime_checkable
+class IBranchParentReader(Protocol):
+    """Read the parent branch for a given branch from persisted state."""
+
+    def get_parent_branch(self, branch: str) -> str | None:
+        raise NotImplementedError
+
+
+@runtime_checkable
 class IQualityStateRepository(Protocol):
     """Read/apply access to persisted quality-gate baseline state."""
 
