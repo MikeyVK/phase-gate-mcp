@@ -33,6 +33,7 @@ from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.artifact_manager import ArtifactManager
+from mcp_server.managers.branch_parent_reader import BranchStateParentReader
 from mcp_server.managers.deliverable_checker import DeliverableChecker
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -446,6 +447,10 @@ class MCPServer:
                         github_manager=self.github_manager,
                         pr_status_writer=self.pr_status_cache,
                         merge_readiness_context=_merge_readiness_context,
+                        branch_parent_reader=BranchStateParentReader(
+                            state_reader=self._state_repository,
+                            git_config=git_config,
+                        ),
                     ),
                     AddLabelsTool(
                         manager=self.github_manager,

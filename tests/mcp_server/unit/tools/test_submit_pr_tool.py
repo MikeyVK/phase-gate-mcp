@@ -71,6 +71,7 @@ def _make_tool_for_lod(
         github_manager=github_manager,
         pr_status_writer=pr_status_writer,
         merge_readiness_context=merge_readiness_context,
+        branch_parent_reader=MagicMock(spec=IBranchParentReader),
     )
 
 
@@ -184,7 +185,7 @@ class TestSubmitPRToolBaseResolution:
         assert kwargs["base"] == "epic/320-production-readiness"
 
     def test_fallback_to_default_when_reader_returns_none(self) -> None:
-        """C4.D3: git_config.default_base_branch used when both params.base and reader return None."""
+        """C4.D3: default_base_branch used when params.base and reader both return None."""
         git_manager = self._make_git_manager(default_base="main")
         github_manager = self._make_github_manager()
         reader = MagicMock(spec=IBranchParentReader)

@@ -41,7 +41,7 @@ import yaml
 import mcp_server.server as server_module
 from mcp_server.config.schemas.contracts_config import BranchLocalArtifact
 from mcp_server.core.exceptions import ExecutionError, PreflightError
-from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
+from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
@@ -75,6 +75,7 @@ def _make_submit_pr_tool(
         github_manager=github_manager,
         pr_status_writer=pr_status_writer,
         merge_readiness_context=merge_readiness_context,
+        branch_parent_reader=MagicMock(spec=IBranchParentReader),
     )
 
 
