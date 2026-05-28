@@ -76,6 +76,7 @@ def _make_runner(cache: ContextLoadedCache, server_root: Path) -> EnforcementRun
     return EnforcementRunner(
         workspace_root=_REPO_ROOT,
         config=config,
+        git_config=loader.load_git_config(),
         pr_status_reader=_make_pr_reader(),
         server_root=server_root,
         context_loaded_reader=cache,
@@ -169,7 +170,6 @@ class TestContextLoadedGate:
             NoteContext(),
             tool_category="branch_mutating",
         )
-
 
     def test_gate_inactive_when_issue_number_mismatches_branch(self, tmp_path: Path) -> None:
         """C3.D5: gate inactive when state.json present but issue_number mismatches branch."""

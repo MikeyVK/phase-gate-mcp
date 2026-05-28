@@ -300,7 +300,7 @@ class MCPServer:
         self.enforcement_runner = EnforcementRunner(
             workspace_root=workspace_root,
             config=enforcement_config,
-            default_base_branch=git_config.default_base_branch,
+            git_config=git_config,
             pr_status_reader=self.pr_status_cache,
             server_root=server_root,
             context_loaded_reader=self._context_loaded_cache,

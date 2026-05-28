@@ -195,6 +195,7 @@ class TestEnforcementRunnerStateRoot:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             server_root=state_root,
+            git_config=MagicMock(),
             config=MagicMock(),
         )
         assert runner.server_root == state_root
@@ -492,6 +493,7 @@ class TestEnforcementRunnerNoFallback:
             EnforcementRunner(
                 workspace_root=Path("/some/workspace"),
                 config=EnforcementConfig(enforcement=[]),
+                git_config=MagicMock(),
                 # server_root omitted — must raise, not default to workspace/.phase-gate
             )
 

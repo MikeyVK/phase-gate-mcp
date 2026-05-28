@@ -134,6 +134,7 @@ def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        git_config=loader.load_git_config(),
         pr_status_reader=_make_pr_reader(pr_status),
         server_root=tmp_path,
     )
