@@ -2,9 +2,9 @@
   "branch": "bug/357-fix-agent-lifecycle",
   "issue_number": 357,
   "workflow_name": "bug",
-  "current_phase": "implementation",
-  "current_cycle": 3,
-  "last_cycle": 2,
+  "current_phase": "validation",
+  "current_cycle": null,
+  "last_cycle": 5,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -17,6 +17,18 @@
       "name": "Unknown",
       "forced": false,
       "entered": "2026-05-28T19:28:07.082686+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "Unknown",
+      "forced": false,
+      "entered": "2026-05-28T19:50:02.775545+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "Unknown",
+      "forced": false,
+      "entered": "2026-05-28T20:03:05.710740+00:00"
     }
   ],
   "required_phases": [
@@ -57,8 +69,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-28T20:17:19.047052+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
