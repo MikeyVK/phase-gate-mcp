@@ -1,100 +1,25 @@
 {
-  "branch": "bug/357-fix-agent-lifecycle",
-  "issue_number": 357,
-  "workflow_name": "bug",
-  "current_phase": "ready",
+  "branch": "epic/320-production-readiness-tracker",
+  "issue_number": 320,
+  "workflow_name": "epic",
+  "current_phase": "research",
   "current_cycle": null,
-  "last_cycle": 5,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "Unknown",
-      "forced": false,
-      "entered": "2026-05-28T19:15:50.892111+00:00"
-    },
-    {
-      "cycle_number": 3,
-      "name": "Unknown",
-      "forced": false,
-      "entered": "2026-05-28T19:28:07.082686+00:00"
-    },
-    {
-      "cycle_number": 4,
-      "name": "Unknown",
-      "forced": false,
-      "entered": "2026-05-28T19:50:02.775545+00:00"
-    },
-    {
-      "cycle_number": 5,
-      "name": "Unknown",
-      "forced": false,
-      "entered": "2026-05-28T20:03:05.710740+00:00"
-    }
-  ],
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
-    "design",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
   "skip_reason": null,
-  "issue_title": "Fix agent lifecycle: parent detection, submit_pr base, end-issue safety",
-  "parent_branch": "epic/320-production-readiness-tracker",
-  "created_at": "2026-05-27T20:28:58.410704+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-28T13:25:40.060911+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-05-28T18:43:13.476947+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-28T19:05:46.540107+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-05-28T20:17:19.047052+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-28T20:34:43.058737+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-05-28T20:57:31.900728+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
+  "parent_branch": "main",
+  "created_at": "2026-05-25T18:48:22.612710+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
