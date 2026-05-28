@@ -308,10 +308,13 @@ On @imp invocation:
   .github/agents/imp.agent.md    \u2190 role persona, full MCP tool access
 
 Startup sequence (per imp.agent.md):
+  Precondition: branch must be pre-initialized by @co
+  └─ create_branch + git_checkout + initialize_project already done
+  └─ if .phase-gate/state.json absent → stop and report; do NOT call initialize_project
   1. get_work_context
-     \u2514\u2500 if phase_instructions present \u2192 follow it as operational script
-     \u2514\u2500 if absent \u2192 read AGENTS.md, then proceed
-  2. ARCHITECTURE_PRINCIPLES.md  \u2190 always binding
+     └─ if phase_instructions present → follow it as operational script
+     └─ if absent → read AGENTS.md, then proceed
+  2. ARCHITECTURE_PRINCIPLES.md  ← always binding
   3. [conditional] get_project_plan
   4. Inspect worktree for existing changes
   5. Inspect latest QA verdict
@@ -324,10 +327,10 @@ Always loaded:
   AGENTS.md
 
 On @qa invocation:
-  .github/agents/qa.agent.md     \u2190 role persona, read-only tool allowlist
+  .github/agents/qa.agent.md     ← role persona, read-only tool allowlist
 
 Startup sequence (per qa.agent.md):
-  1. AGENTS.md                        \u2190 always read first
+  1. AGENTS.md                        ← always read first
   2. ARCHITECTURE_PRINCIPLES.md
   3. get_work_context
   4. get_project_plan for active issue

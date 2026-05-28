@@ -375,8 +375,18 @@ cache update in a single operation.
 | `title` | `str` | **Yes** | PR title (Unicode-safe) |
 | `body` | `str` | No | PR description (supports Markdown and Unicode) |
 | `head` | `str` | **Yes** | Source branch (e.g., `"feature/123-my-feature"`) |
-| `base` | `str` | No | Target branch (default: `"main"`) |
+| `base` | `str` | No | Target branch. Resolution chain when omitted: (1) detected parent branch from `.phase-gate/state.json`, (2) `git_config.default_base_branch` (typically `"main"`). Pass explicitly to override. |
 | `draft` | `bool` | No | Create as draft PR (default: `False`) |
+
+
+#### Base Branch Resolution
+
+When `base` is omitted, `submit_pr` resolves the target branch in this order:
+
+1. **Parent branch detection:** Look up the parent branch for the source branch from `.phase-gate/state.json` via `IBranchParentReader`.
+2. **Fallback:** Use `git_config.default_base_branch` (typically `"main"`).
+
+This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...`) to automatically target their epic parent rather than `main`. Pass `base` explicitly to override the entire chain.
 
 #### Atomic Execution Flow
 
