@@ -1,10 +1,10 @@
 <!-- docs\development\issue357\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-05-27T20:33Z updated= -->
+<!-- template=research version=8b7bb3ab created=2026-05-27T20:33Z updated=2026-05-28T00:00Z -->
 # Fix agent lifecycle: parent detection, submit_pr base, end-issue safety
 
 **Status:** DRAFT  
-**Version:** 1.1  
-**Last Updated:** 2026-05-27
+**Version:** 1.2  
+**Last Updated:** 2026-05-28
 
 ---
 
@@ -97,19 +97,22 @@ Although the explicit parent override is gone, the prompt still runs `initialize
 **Consequence:**
 - the prompt currently encodes two different ownership models in one flow
 - the live defect is a lifecycle-boundary contract mismatch, not a missing tool capability
+- `initialize_project` is a `BranchMutatingTool` and is not exempt from the `check_context_loaded` gate; `@imp` cannot supply the required `issue_number`, `issue_title`, and `workflow_name` inputs without the `start-issue` context that `@co` holds; therefore `@co` is the architecturally required initialization owner, not a style preference
 
-### F3 - `@imp` startup remains logically wrong for fresh branches, even though `get_work_context()` no longer crashes
+### F3 - `@imp` startup precondition is not explicit: the `@co`-must-initialize contract is missing
 
-`@imp` startup still mandates `get_work_context()` as the first action for every session. Current tool behavior no longer hard-fails on a fresh branch because `GetWorkContextTool.execute()` catches missing-state errors and degrades gracefully. But that only softens the failure mode; it does not make the startup sequence coherent. On a fresh branch there is no initialized workflow state yet, so a graceful empty response is still the wrong control surface for bootstrap.
+`@imp` startup correctly mandates `get_work_context()` as the first action for every session. The startup design is not the bug. The bug is that neither `imp.agent.md` nor any lifecycle prompt states the precondition: the branch must already be initialized by `@co` before `@imp` starts. Without that precondition, the startup rule silently appears to tolerate uninitialized branches via graceful degradation, but graceful degradation is a silent failure, not correct behavior.
+
+The `@co`-owns-init constraint is architecturally required: `initialize_project` is a `BranchMutatingTool` subject to the `check_context_loaded` gate, is not in the exempt list, and requires inputs (`issue_number`, `issue_title`, `workflow_name`) that `@co` holds from the `start-issue` flow and that `@imp` cannot supply reliably without user input or branch-name inference. Once `@co` has initialized and F6 is fixed, `@imp`'s unconditional `get_work_context()` at Go is architecturally valid.
 
 **Evidence:**
-- `.github/agents/imp.agent.md` startup protocol still requires `get_work_context` first
-- `mcp_server/tools/discovery_tools.py` catches state-read failure and returns empty workflow/phase rather than failing
-- `docs/development/issue268/research.md` explicitly defines branch start as a lifecycle-boundary exception where no machine state exists yet to query
+- `.github/agents/imp.agent.md` startup protocol requires `get_work_context` first but states no `@co`-must-initialize precondition
+- `mcp_server/tools/project_tools.py` `InitializeProjectTool` inherits `BranchMutatingTool` and is not exempt from `check_context_loaded`
+- `docs/development/issue268/research.md` defines branch start as a lifecycle-boundary exception; the corollary is that `@co` owns that boundary, not `@imp`
 
 **Consequence:**
-- the live defect is now a contract mismatch between startup instructions and the lifecycle model from issue `#268`
-- later phases should fix the startup contract, not treat graceful degradation as sufficient behavior
+- later phases should add an explicit `@co`-must-initialize precondition to `imp.agent.md` and any relevant lifecycle prompt
+- do not add a recovery path in `@imp` startup for uninitialized branches; an uninitialized branch reaching `@imp` is a process violation, not a tool robustness problem
 
 ### F4 - `submit_pr` still ignores branch-local parent state when `base` is omitted
 
@@ -151,8 +154,9 @@ The current `end-issue.prompt.md` already includes the `get_pr()` step introduce
 
 **Consequence:**
 - issue `#357` is correct that the bootstrap predicate is too weak
-- later phases should prefer the existing branch issue-extraction helper over inventing a second parser
+- later phases should treat structured branch state as the primary source when it is trusted; if bootstrap mismatch logic must infer branch identity before state is trusted, reuse the existing `GitConfig.extract_issue_number()` helper rather than inventing a second parser
 - affected regression surface includes `tests/mcp_server/integration/test_context_loaded_enforcement.py`
+- F6 also blocks `@co`'s own `initialize_project` call when creating an epic-child branch whose inherited `state.json` comes from a parent with committed state; the fix (extending the bootstrap predicate to bypass when state belongs to a different issue) is the enabler for the `@co`-always-initializes model to function correctly on epic-child branches
 
 ### F7 - The strongest prior art already defines the supported lifecycle contract
 
@@ -189,7 +193,7 @@ This bug family spans multiple validation styles:
 | Boundary | Supported contract to preserve | Faulty behavior that may be corrected |
 |---|---|---|
 | branch start | bootstrap is a lifecycle-boundary exception, not a normal in-phase `get_work_context()` moment | treating fresh branches as if they already have valid phase context |
-| child-branch ownership | `@co` stops at the documented hand-off boundary for non-epic branches | `@co` performing child initialization as part of the common flow |
+| child-branch ownership | `@co` always initializes the branch before the `@imp` handoff; `initialize_project` belongs to `@co`'s lifecycle entry sequence | prompt encoding two competing ownership models: `initialize_project` in the common flow while simultaneously stating `@imp` calls `get_work_context()` before any write action |
 | parent-branch truth | branch-local `parent_branch` is authoritative when present | silent fallback to repo-wide default base on non-main child branches |
 | post-merge cleanup | destructive cleanup should follow authoritative merge verification | deleting branches immediately after merge acceptance without local parent verification |
 | issue-number parsing | reuse existing branch-convention parser where already available | introducing duplicate branch-name parsing logic for the same convention |
@@ -211,18 +215,20 @@ This bug family spans multiple validation styles:
 **Constraints for later phases:**
 - do not broaden issue `#357` into a generic workflow redesign or new merge orchestration system
 - do not reintroduce explicit `parent_branch` overrides into `start-issue`
-- prefer the existing `GitConfig.extract_issue_number()` helper over adding new branch issue parsers
+- if bootstrap mismatch logic must infer branch identity before structured state is trusted, reuse the existing `GitConfig.extract_issue_number()` helper rather than adding a second branch parser
 - treat prompt and agent-instruction edits as first-class deliverables, not mere documentation afterthoughts
 - keep `end-issue` human-invoked and `@co`-owned; this issue does not authorize automated merge flow
+- `@co` must always call `initialize_project` before the `@imp` handoff on all child branches; design must not add an `@imp`-side recovery path for uninitialized branches
+- `submit_pr` base resolution must inject a narrow `IBranchParentReader` interface via constructor; do not inject `PhaseStateEngine` or `IStateRepository` for this read-only lookup; fall back to `default_base_branch` on state-mismatch or absent state
 
 ---
 
 ## Open Questions
 
-- How should design model `@imp` startup so fresh branches respect the lifecycle-boundary exception while already-initialized branches still remain `get_work_context()`-first?
-- Which boundary should own the `submit_pr` fallback read of `parent_branch`: direct state read, an injected state-engine query, or another existing abstraction?
-- What is the narrowest safe verification step for `end-issue` cleanup under the current tool set: exact merge-SHA reachability only, or a broader local-sync proof?
-- Should the issue body for `#357` be narrowed to reflect that the explicit `parent_branch` override in `start-issue` is already gone, while the child-init ownership problem remains live?
+- **[Resolved]** `@imp` startup design — `@co`-owns-init model: `@imp` startup correctly calls `get_work_context()` first; the missing piece is an explicit precondition in `imp.agent.md` stating the branch must already be co-initialized; once F6 is fixed, `@imp` can rely on `get_work_context()` unconditionally at Go
+- **[Resolved]** `submit_pr` fallback read of `parent_branch` — inject a narrow `IBranchParentReader` interface (ISP §1.4/§6, DIP §1.5/§11, CQS §5); do not inject `PhaseStateEngine`; back with identity validation; fall back to `default_base_branch` on state-mismatch or absent state
+- **[Resolved]** narrowest safe `end-issue` verification step — checkout of parent branch, then `git_pull`, then verify the merged SHA is reachable before branch deletion
+- **[Resolved]** issue body narrowing for `#357` — lightly correct scope; record that the explicit `parent_branch` override in `start-issue` is already gone (F1) so design does not target a stale sub-problem; the live defect is child-init ownership and the `@co`-must-initialize contract
 
 ---
 
@@ -240,9 +246,11 @@ This bug family spans multiple validation styles:
 |---|---|---|
 | design accidentally re-fixes already-closed `get_pr` parent-source behavior from issue `#354` | Medium | keep the research explicit that `end-issue` already uses `get_pr()` for `base_branch` |
 | design treats graceful `get_work_context()` degradation as sufficient bootstrap behavior | Medium | anchor startup reasoning to issue `#268` lifecycle-boundary model |
-| implementation duplicates branch issue-number parsing logic | Medium | cite and reuse `GitConfig.extract_issue_number()` |
+| implementation duplicates bootstrap branch issue-number parsing logic | Medium | keep trusted structured state as primary; if bootstrap inference is still needed, cite and reuse `GitConfig.extract_issue_number()` |
 | prompt fixes land without corresponding code-side enforcement changes, or vice versa | High | keep prompt, startup, tool, and enforcement surfaces in the same bug family during design/planning |
 | validation ignores prompt-level behavior because prompts are not primarily pytest-covered | High | treat human-reviewed prompt contracts as part of the authoritative blast radius |
+| F6 fix must not accidentally remove the bootstrap bypass for branches with truly no state; the extended predicate must check `absent OR mismatch`, not replace `absent` with `mismatch` | Medium | ensure the predicate is extended, not replaced; existing bypass for stateless branches must remain |
+| `@co`-owns-init assumption breaks silently if `start-issue` is bypassed or a branch is created outside that prompt | Medium | treat `start-issue` as the single authoritative branch-entry point; document that `@imp` starting on an uninitialized branch is a process violation |
 
 ---
 
@@ -250,11 +258,50 @@ This bug family spans multiple validation styles:
 
 Design and planning should work toward the following corrected behavior framing:
 
-- child-branch bootstrap and child-branch hand-off follow one coherent ownership model
-- `submit_pr` respects the actual branch parent before defaulting to repo-wide configuration
+- `@co` owns all `initialize_project` calls; `@imp` always starts on a pre-initialized branch and can rely unconditionally on `get_work_context()` at session start once F6 is fixed
+- `submit_pr` resolves the target base via a narrow `IBranchParentReader` interface before defaulting to repo-wide configuration; the tool does not query the full state engine for this read-only lookup
 - post-merge branch cleanup does not run until the parent branch is locally updated and the merged content is verifiably reachable
 - inherited parent state does not block initialization of a different child issue branch
 - prior fixes from issues `#268`, `#345`, and `#354` are treated as binding constraints, not re-opened by accident
+
+## Operating Modes For Agent Use
+
+Current repo evidence supports two practical operating variants for agents, but this is an operating-model distinction rather than a schema-level mode switch. `contracts.yaml` still requires `instructions`, so the difference is created by enforcement and prompt pressure, not by removing the field.
+
+### Variant A - Orchestrated workflow mode
+
+Use this mode when the branch should actively steer the agent through workflow state.
+
+**Setup actions:**
+1. Keep `check_context_loaded` enabled in `.phase-gate/config/enforcement.yaml` for `branch_mutating` tools.
+2. Keep `.github/agents/*.agent.md` and lifecycle prompts explicit that `get_work_context()` is the required first in-phase read.
+3. Keep phase `instructions` present and directive enough to drive session behavior.
+4. Preserve lifecycle-boundary exceptions from issue `#268`; do not force fresh-branch bootstrap through fake in-phase context.
+
+**Usage pattern:**
+1. Initialize the branch or transition through the correct lifecycle boundary.
+2. Call `get_work_context()` at session start for in-phase work.
+3. Follow the returned `sub_role_hint`, `phase_instructions`, and hand-over contract before branch-mutating actions.
+4. Rely on enforcement to block writes until context is loaded.
+
+### Variant B - Gated non-enforced workflow mode
+
+Use this mode when the repo should retain workflow guardrails without forcing agent orchestration.
+
+**Setup actions:**
+1. Disable the `check_context_loaded` action, for example by setting `enabled: false`, while retaining other policy gates such as `check_branch_policy`, `check_pr_status`, and `check_phase_readiness` as desired.
+2. Keep `instructions` present in `contracts.yaml`, because schema requires them, but make them compact, informational, and non-prescriptive rather than imperative session scripts.
+3. Rewrite `.github/agents/*.agent.md` and lifecycle prompts so `get_work_context()` is optional or situational, not a hard first step.
+4. Treat `get_work_context()` as an operator aid for context lookup, not as a mandatory bootstrap barrier.
+
+**Usage pattern:**
+1. Work may start from the local task anchor without first calling `get_work_context()`.
+2. Agents call `get_work_context()` only when workflow state, phase guidance, or hand-over context is actually needed.
+3. Branch-mutating tools remain governed by the remaining enforcement rules, but not by context-loaded bootstrap gating.
+4. This mode is practically orchestration-agnostic for agents, but it is not an instructions-free product mode because schema still requires phase instructions to exist.
+
+**Boundary note:**
+Treat this distinction in later phases as an operating method and configuration posture, not as proof that the current repo already has a first-class `without_orchestration` config switch.
 
 ## Related Documentation
 - **[.github/prompts/start-issue.prompt.md][related-1]**
@@ -297,3 +344,5 @@ Design and planning should work toward the following corrected behavior framing:
 |---------|------|--------|---------|
 | 1.0 | 2026-05-27 | Agent | Initial scaffolded draft |
 | 1.1 | 2026-05-27 | Agent | Replaced scaffold with evidence-backed lifecycle bug research, narrowed stale sub-gap, and recorded no-bridge strategy |
+| 1.2 | 2026-05-28 | Agent | Added explicit operating-mode guidance for orchestrated versus gated non-enforced workflow use |
+| 1.3 | 2026-05-28 | Agent | Updated F2/F3 to reflect @co-owns-init model; expanded F6 to include @co initialization blocker; resolved all open questions; added constraints and corrected behavior for @co-init and IBranchParentReader |
