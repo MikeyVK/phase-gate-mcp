@@ -2,7 +2,7 @@
   "branch": "bug/357-fix-agent-lifecycle",
   "issue_number": 357,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -20,7 +20,16 @@
   "issue_title": "Fix agent lifecycle: parent detection, submit_pr base, end-issue safety",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-05-27T20:28:58.410704+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-28T13:25:40.060911+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
