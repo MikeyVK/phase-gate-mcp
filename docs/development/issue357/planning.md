@@ -63,7 +63,7 @@ BranchStateParentReader.get_parent_branch() returns parent_branch when issue mat
 
 ### Cycle 3: EnforcementRunner F6: GitConfig injection + bootstrap predicate + blast radius
 
-**Goal:** Add git_config as a required constructor param to EnforcementRunner, retire default_base_branch standalone param, extend _handle_check_context_loaded with issue-number mismatch bypass, update server.py wiring, and update all 9 EnforcementRunner test call sites — all in one atomic GREEN step.
+**Goal:** Add git_config as a required constructor param to EnforcementRunner, retire default_base_branch standalone param, extend _handle_check_context_loaded with issue-number mismatch bypass, update server.py wiring, and update all 12 EnforcementRunner test call sites (7 test files) — all in one atomic GREEN step.
 
 **Tests:**
 - Unit: gate inactive when state.json absent (existing test_gate_inactive_on_bootstrap_no_state_json must still pass)
@@ -72,7 +72,7 @@ BranchStateParentReader.get_parent_branch() returns parent_branch when issue mat
 - All existing EnforcementRunner tests in 7 files must pass with updated constructor call sites
 
 **Success Criteria:**
-EnforcementRunner.__init__ accepts git_config: GitConfig (required) and no longer has default_base_branch param. _handle_check_context_loaded bypasses gate on absent state.json OR issue_number mismatch. server.py passes git_config=git_config and omits default_base_branch kwarg. All 9 test call sites updated (add git_config, drop default_base_branch where present). All EnforcementRunner tests pass. mypy passes. Quality gates pass.
+EnforcementRunner.__init__ accepts git_config: GitConfig (required) and no longer has default_base_branch param. _handle_check_context_loaded bypasses gate on absent state.json OR issue_number mismatch. server.py passes git_config=git_config and omits default_base_branch kwarg. All 12 test call sites in 7 files updated (add git_config, drop default_base_branch where present). All EnforcementRunner tests pass. mypy passes. Quality gates pass.
 
 **Dependencies:** No dependency on C1 or C2 — this cycle is independent and can run in parallel in theory, but runs sequentially after C2 for safety
 
