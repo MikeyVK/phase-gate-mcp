@@ -64,6 +64,7 @@ def _make_submit_pr_tool(
     github_manager: GitHubManager,
     pr_status_writer: IPRStatusWriter,
     artifacts: tuple[BranchLocalArtifact, ...] = (_STATE_ARTIFACT,),
+    branch_parent_reader: IBranchParentReader | None = None,
 ) -> SubmitPRTool:
     merge_readiness_context = MergeReadinessContext(
         terminal_phase="ready",
@@ -75,7 +76,7 @@ def _make_submit_pr_tool(
         github_manager=github_manager,
         pr_status_writer=pr_status_writer,
         merge_readiness_context=merge_readiness_context,
-        branch_parent_reader=MagicMock(spec=IBranchParentReader),
+        branch_parent_reader=branch_parent_reader or MagicMock(spec=IBranchParentReader),
     )
 
 
@@ -455,3 +456,34 @@ class TestSubmitPRAtomicRefactored:
         assert artifact_paths_arg == frozenset(
             {".phase-gate/state.json", ".phase-gate/deliverables.json"}
         )
+
+
+class TestSubmitPRBaseFromReader:
+    """C4.D7: SubmitPRTool uses reader-provided parent branch as base when params.base is None."""
+
+    def test_pr_opened_against_reader_provided_parent_branch(self) -> None:
+        """When params.base is None and reader returns a branch, create_pr uses that branch."""
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = False
+        github_manager = MagicMock(spec=GitHubManager)
+        github_manager.create_pr.return_value = {
+            "number": 7,
+            "url": "https://github.com/x/y/pull/7",
+        }
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+
+        reader = MagicMock(spec=IBranchParentReader)
+        reader.get_parent_branch.return_value = "epic/320-production-readiness-tracker"
+
+        tool = _make_submit_pr_tool(
+            git_manager, github_manager, pr_status_writer, branch_parent_reader=reader
+        )
+
+        params = SubmitPRInput(head="feature/42-test", title="Test PR")  # no base
+
+        asyncio.run(tool.execute(params, NoteContext()))
+
+        reader.get_parent_branch.assert_called_once_with("feature/42-test")
+        _, kwargs = github_manager.create_pr.call_args
+        assert kwargs["base"] == "epic/320-production-readiness-tracker"
