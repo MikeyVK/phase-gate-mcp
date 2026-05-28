@@ -1,25 +1,35 @@
 {
-  "branch": "epic/320-production-readiness-tracker",
-  "issue_number": 320,
-  "workflow_name": "epic",
-  "current_phase": "research",
+  "branch": "bug/357-fix-agent-lifecycle",
+  "issue_number": 357,
+  "workflow_name": "bug",
+  "current_phase": "documentation",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
   "required_phases": [
     "research",
-    "planning",
     "design",
-    "coordination",
+    "planning",
+    "implementation",
+    "validation",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
-  "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
-  "parent_branch": "main",
-  "created_at": "2026-05-25T18:48:22.612710+00:00",
-  "transitions": [],
+  "skip_reason": "Branch re-initialized after PR submission; jumping to documentation to complete end-issue prompt alignment with design",
+  "issue_title": "Fix agent lifecycle: parent detection, submit_pr base, end-issue safety",
+  "parent_branch": "epic/320-production-readiness-tracker",
+  "created_at": "2026-05-28T21:36:22.692428+00:00",
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-28T21:40:03.514906+00:00",
+      "human_approval": "User approved on 2026-05-28",
+      "forced": true,
+      "skip_reason": "Branch re-initialized after PR submission; jumping to documentation to complete end-issue prompt alignment with design"
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }

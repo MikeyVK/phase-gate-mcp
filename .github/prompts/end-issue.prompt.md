@@ -40,7 +40,7 @@ Execute in this exact order. Do not skip steps.
 
 3. **Verify merged PR**
    `get_pr(pr_number=PR_NUMBER)`
-   → record `head_branch` and `base_branch` from the result.
+   → record `head_branch`, `base_branch`, and `merge_commit_sha` from the result.
    → verify that `head_branch` matches the `branch` recorded in step 1.
      If they differ, stop and report the mismatch; do not proceed with checkout or cleanup.
 
