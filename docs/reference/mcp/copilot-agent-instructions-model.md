@@ -381,7 +381,58 @@ Startup sequence (per qa.agent.md):
 
 ---
 
-## 7. Design Decisions and Rationale
+## 7. Operating Modes For Agent Use
+
+The repo supports two practical operating variants for agents. This is a **configuration and prompt posture** distinction, not a schema-level mode switch. `contracts.yaml` still requires `instructions` in both variants — the difference is created by enforcement configuration and agent prompt pressure.
+
+### Variant A — Orchestrated Workflow Mode
+
+Use this mode when the branch should actively steer the agent through workflow state.
+
+**Setup actions:**
+1. Keep `check_context_loaded` enabled in `.phase-gate/config/enforcement.yaml` for `branch_mutating` tools.
+2. Keep `.github/agents/*.agent.md` and lifecycle prompts explicit that `get_work_context()` is the required first in-phase read.
+3. Keep phase `instructions` present and directive enough to drive session behavior.
+4. Preserve lifecycle-boundary exceptions (issue #268 — open-issue and end-issue are explicit lifecycle boundaries that run before the normal `get_work_context`-first session).
+
+**Usage pattern:**
+1. Initialize the branch or transition through the correct lifecycle boundary.
+2. Call `get_work_context()` at session start for in-phase work.
+3. Follow the returned `sub_role_hint`, `phase_instructions`, and hand-over contract before branch-mutating actions.
+4. Rely on enforcement to block writes until context is loaded.
+
+This is the current default operating mode for this repository.
+
+### Variant B — Gated Non-Enforced Workflow Mode
+
+Use this mode when the repo should retain workflow guardrails without forcing agent orchestration.
+
+**Setup actions:**
+1. Disable `check_context_loaded` (e.g., `enabled: false` in `enforcement.yaml`) while retaining other policy gates (`check_branch_policy`, `check_pr_status`, `check_phase_readiness`) as desired.
+2. Keep `instructions` present in `contracts.yaml` (schema requires it), but make them compact, informational, and non-prescriptive rather than imperative session scripts.
+3. Rewrite `.github/agents/*.agent.md` and lifecycle prompts so `get_work_context()` is optional or situational, not a hard first step.
+4. Treat `get_work_context()` as an operator aid for context lookup, not as a mandatory bootstrap barrier.
+
+**Usage pattern:**
+1. Work may start from the local task anchor without first calling `get_work_context()`.
+2. Agents call `get_work_context()` only when workflow state, phase guidance, or hand-over context is actually needed.
+3. Branch-mutating tools remain governed by the remaining enforcement rules, but not by context-loaded bootstrap gating.
+
+> **Boundary note:** Treat this distinction as an operating method and configuration posture, not as proof that the current repo already has a first-class `without_orchestration` config switch. No such switch exists; switching modes requires manual changes to `enforcement.yaml` and agent instruction files.
+
+### How `check_context_loaded` and `contracts.yaml` interact in these modes
+
+| Component | Variant A (Orchestrated) | Variant B (Gated non-enforced) |
+|-----------|--------------------------|--------------------------------|
+| `check_context_loaded` in `enforcement.yaml` | Enabled for `branch_mutating` tools | Disabled |
+| `instructions` in `contracts.yaml` | Directive, drives session | Present (schema required), but non-prescriptive |
+| `get_work_context()` call | Mandatory first action | Optional |
+| Agent prompt posture | `*.agent.md` enforces startup protocol | `*.agent.md` makes it situational |
+| Enforcement blocks | Write-blocked until context loaded | Only `check_branch_policy`, `check_pr_status`, `check_phase_readiness` |
+
+---
+
+## 8. Design Decisions and Rationale
 
 ### Why AGENTS.md as the single always-on file?
 
@@ -429,7 +480,7 @@ by the `.agent.md` body instructions and by QA review \u2014 not by tool restric
 
 ---
 
-## 8. Adding a New Workflow Phase
+## 9. Adding a New Workflow Phase
 
 If a workflow gains a new phase, update the contract layer that `get_work_context` reads:
 
