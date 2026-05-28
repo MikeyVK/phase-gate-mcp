@@ -48,26 +48,38 @@ Execute in this exact order. Do not skip steps.
    `git_checkout(branch=<base_branch from step 3>)`
    → required before local branch cleanup is legal.
 
-5. **Clean up the branch**
+5. **Pull parent branch**
+   `git_pull()`
+   → updates the local parent branch so the merged content is present locally.
+   → do not proceed to branch cleanup until pull completes without error.
+
+6. **Verify merge SHA is reachable**
+   Record `merge_commit_sha` from the `get_pr` result in step 3.
+   Run: `git merge-base --is-ancestor <merge_commit_sha> HEAD && echo reachable || echo BLOCKED`
+   → if the output is `BLOCKED`, the merged commit is not yet in the local parent branch.
+     Stop and report the blocker; do not delete the branch.
+   → proceed only when output is `reachable`.
+
+7. **Clean up the branch**
    `git_delete_branch(branch=<closing branch>, mode="both")`
    → removes both local and remote refs in one step.
    → if the remote ref is already absent, `mode="both"` returns `absent` for that
      side rather than an error; no manual retry is needed.
 
-6. **Read the PR body**
+8. **Read the PR body**
    Read the merged PR body as the durable `@imp` → `@co` transfer artifact.
    The PR body carries: delivered scope, `Closes #N` claims, deferred items, and
    tracking state. Use this as the authoritative record of what landed and what
    was intentionally deferred.
 
-7. **Epic-parent update (conditional)**
+9. **Epic-parent update (conditional)**
    Perform this step only when the active workflow is `epic` or when the merged
    branch is a child of a tracked epic.
    `get_project_plan(issue_number=ISSUE_NUMBER)`
    `update_issue(issue_number=<epic_issue_number>, body=<updated coordination state>)`
    → record merged status and the next planned or logically following issue.
 
-8. **Next-issue recommendation (advisory)**
+10. **Next-issue recommendation (advisory)**
    Based on the PR body durable facts and current epic or backlog state,
    recommend the next logically following issue.
    This recommendation is advisory. It is not an automatic priority mutation and

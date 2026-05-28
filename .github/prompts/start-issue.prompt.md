@@ -63,9 +63,10 @@ Use this path for `feature`, `bug`, `refactor`, `docs`, and `hotfix` workflows.
    `get_project_plan(issue_number=ISSUE_NUMBER)`
    → if the initialized plan is missing or inconsistent, stop and report the blocker.
 
-6. **Hand off at the issue268 boundary**
-   `@co` owns lifecycle entry through `get_project_plan`, then stops.
-   `@imp` becomes the first agent to call `get_work_context` before the first commit or any further write action on the new branch.
+6. **Hand off to @imp at the initialized-branch boundary**
+   `@co` owns lifecycle entry through steps 1–5 (branch creation, checkout, project initialization, and plan verification), then stops.
+   The branch is fully initialized by the time `@co` stops: `create_branch`, `git_checkout`, and `initialize_project` have all completed.
+   `@imp` starts on an already-initialized branch and can call `get_work_context()` unconditionally as its first action.
    Do not make the first commit or push on the non-epic path from `@co`.
 
 ## Guardrails
