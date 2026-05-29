@@ -1193,15 +1193,16 @@ async def test_check_merge_sha_not_ancestor(mock_git_manager: MagicMock) -> None
 
 @pytest.mark.asyncio
 async def test_check_merge_git_error_raises(mock_git_manager: MagicMock) -> None:
-    """Git command fails with status >=2 -> ExecutionError propagates."""
+    """Git command fails with status >=2 -> execute returns ToolResult.error (error_handling decorator catches it)."""
     from mcp_server.core.exceptions import ExecutionError
 
     mock_git_manager.is_ancestor.side_effect = ExecutionError("git error status 2")
     tool = CheckMergeTool(manager=mock_git_manager)
 
     params = CheckMergeInput(merge_sha="abc1234")
-    with pytest.raises(ExecutionError):
-        await tool.execute(params, NoteContext())
+    result = await tool.execute(params, NoteContext())
+
+    assert result.is_error
 
 
 @pytest.mark.asyncio
@@ -1216,14 +1217,11 @@ async def test_check_merge_manager_delegates_to_adapter(
     mock_adapter.is_ancestor.return_value = True
     mock_adapter.get_current_branch.return_value = "bug/357-fix-agent-lifecycle"
 
-    mock_settings = MagicMock()
-    mock_settings.workspace_root = Path("/workspace")
-
     mock_git_config = MagicMock()
     mock_git_config.default_base_branch = "main"
 
     real_manager = GitManager(
-        adapter=mock_adapter, settings=mock_settings, git_config=mock_git_config
+        git_config=mock_git_config, adapter=mock_adapter
     )
     result = real_manager.is_ancestor("abc1234")
 

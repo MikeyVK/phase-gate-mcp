@@ -21,7 +21,7 @@ git restore --staged before index.commit().
 from pathlib import Path
 from typing import Any, Literal
 
-from git import InvalidGitRepositoryError, Repo
+from git import GitCommandError, InvalidGitRepositoryError, Repo
 
 from mcp_server.config.settings import Settings
 from mcp_server.core import logging as core_logging
@@ -391,6 +391,24 @@ class GitAdapter:
             self.repo.git.stash("pop")
         except Exception as e:
             raise ExecutionError(f"Failed to pop stash: {e}") from e
+
+    def is_ancestor(self, sha: str) -> bool:
+        """Return True if sha is an ancestor of HEAD.
+
+        Uses `git merge-base --is-ancestor <sha> HEAD`.
+        Exit 0 -> ancestor (True).
+        Exit 1 -> not an ancestor (False) — expected non-error case.
+        Exit >=2 -> git error -> raises ExecutionError.
+        """
+        try:
+            self.repo.git.merge_base("--is-ancestor", sha, "HEAD")
+            return True
+        except GitCommandError as exc:
+            if exc.status == 1:
+                return False
+            raise ExecutionError(
+                f"git merge-base --is-ancestor failed with status {exc.status}: {exc}"
+            ) from exc
 
     def stash_list(self) -> list[str]:
         """List all stash entries."""

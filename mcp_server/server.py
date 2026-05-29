@@ -72,6 +72,7 @@ from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
 from mcp_server.tools.git_fetch_tool import GitFetchTool
 from mcp_server.tools.git_pull_tool import GitPullTool
 from mcp_server.tools.git_tools import (
+    CheckMergeTool,
     CreateBranchTool,
     GetParentBranchTool,
     GitCheckoutTool,
@@ -348,6 +349,7 @@ class MCPServer:
             GitListBranchesTool(manager=self.git_manager),
             GitDiffTool(manager=self.git_manager),
             GetParentBranchTool(manager=self.git_manager, state_engine=self.phase_state_engine),
+            CheckMergeTool(manager=self.git_manager),
             # Quality tools
             RunQualityGatesTool(manager=self.qa_manager),
             ValidationTool(manager=self.qa_manager),
