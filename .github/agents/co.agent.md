@@ -51,6 +51,7 @@ tools:
   - phase-gate-mcp/git_delete_branch
   - phase-gate-mcp/git_stash
   - phase-gate-mcp/git_pull
+  - phase-gate-mcp/check_merge
   - phase-gate-mcp/submit_pr
   - phase-gate-mcp/merge_pr
 handoffs:
