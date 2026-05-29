@@ -10,7 +10,9 @@ from unittest.mock import ANY, MagicMock
 import pytest
 from pydantic import ValidationError
 
+from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
+from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
@@ -41,6 +43,7 @@ from mcp_server.tools.git_tools import (
     GitStatusTool,
 )
 from mcp_server.tools.tool_result import ToolResult
+
 
 @pytest.fixture
 def mock_git_manager() -> MagicMock:
@@ -1193,9 +1196,7 @@ async def test_check_merge_sha_not_ancestor(mock_git_manager: MagicMock) -> None
 
 @pytest.mark.asyncio
 async def test_check_merge_git_error_raises(mock_git_manager: MagicMock) -> None:
-    """Git command fails with status >=2 -> execute returns ToolResult.error (error_handling decorator catches it)."""
-    from mcp_server.core.exceptions import ExecutionError
-
+    """Git command fails (status >=2) -> execute returns ToolResult.error via error_handling."""
     mock_git_manager.is_ancestor.side_effect = ExecutionError("git error status 2")
     tool = CheckMergeTool(manager=mock_git_manager)
 
@@ -1206,13 +1207,8 @@ async def test_check_merge_git_error_raises(mock_git_manager: MagicMock) -> None
 
 
 @pytest.mark.asyncio
-async def test_check_merge_manager_delegates_to_adapter(
-    mock_git_manager: MagicMock,
-) -> None:
+async def test_check_merge_manager_delegates_to_adapter() -> None:
     """GitManager.is_ancestor delegates to GitAdapter.is_ancestor and propagates value."""
-    from mcp_server.adapters.git_adapter import GitAdapter
-    from mcp_server.managers.git_manager import GitManager
-
     mock_adapter = MagicMock(spec=GitAdapter)
     mock_adapter.is_ancestor.return_value = True
     mock_adapter.get_current_branch.return_value = "bug/357-fix-agent-lifecycle"
@@ -1220,9 +1216,7 @@ async def test_check_merge_manager_delegates_to_adapter(
     mock_git_config = MagicMock()
     mock_git_config.default_base_branch = "main"
 
-    real_manager = GitManager(
-        git_config=mock_git_config, adapter=mock_adapter
-    )
+    real_manager = GitManager(git_config=mock_git_config, adapter=mock_adapter)
     result = real_manager.is_ancestor("abc1234")
 
     assert result is True
