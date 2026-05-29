@@ -1,5 +1,5 @@
 <!-- docs\development\issue357\planning.md -->
-<!-- template=planning version=130ac5ea created=2026-05-28T18:55Z updated= -->
+<!-- template=planning version=130ac5ea created=2026-05-28T18:55Z updated=2026-05-29T00:00Z -->
 # Fix agent lifecycle: @co-owns-init contract, IBranchParentReader, bootstrap predicate, end-issue safety
 
 **Status:** DRAFT  
@@ -26,7 +26,7 @@ Read these first:
 
 ## Summary
 
-Five targeted bug-fixes across agent lifecycle coordination surfaces. C1-C2 establish the IBranchParentReader Protocol and BranchStateParentReader implementation. C3 injects GitConfig into EnforcementRunner and extends the bootstrap predicate with issue-number mismatch bypass. C4 adds IBranchParentReader as a required SubmitPRTool constructor param and updates base resolution. C3 and C4 each include their full blast-radius test updates and server.py wiring in the same atomic GREEN step. C5 updates the three prompt/agent doc files (F2, F3, F5) with no pytest coverage.
+Six targeted bug-fixes across agent lifecycle coordination surfaces. C1-C2 establish the IBranchParentReader Protocol and BranchStateParentReader implementation. C3 injects GitConfig into EnforcementRunner and extends the bootstrap predicate with issue-number mismatch bypass. C4 adds IBranchParentReader as a required SubmitPRTool constructor param and updates base resolution. C3 and C4 each include their full blast-radius test updates and server.py wiring in the same atomic GREEN step. C6 adds CheckMergeTool, GitAdapter.is_ancestor, and GitManager.is_ancestor with server.py registration (F9); C6 must complete before C5. C5 updates the three prompt/agent doc files (F2, F3, F5) with no pytest coverage.
 
 ---
 
@@ -105,7 +105,24 @@ SubmitPRTool.__init__ accepts branch_parent_reader: IBranchParentReader as requi
 **Success Criteria:**
 start-issue.prompt.md non-epic section step 6 explicitly states the branch is pre-initialized and @imp starts on an already-initialized branch. imp.agent.md contains a precondition paragraph before startup step 1 stating @co must initialize the branch and an uninitialized branch reaching @imp is a process violation. end-issue.prompt.md inserts git_pull after git_checkout(base_branch) and a merge_commit_sha reachability verification step before git_delete_branch. Human review confirms all three files against research.md Corrected Behavior section.
 
-**Dependencies:** No code dependencies — can run in any order relative to C1-C4
+**Dependencies:** C6 must complete before C5 — end-issue.prompt.md step 6 references `check_merge(merge_sha=MERGE_SHA)` and C5 must reference a registered tool. No other code dependencies relative to C1–C4.
+
+---
+
+### Cycle 6: CheckMergeTool + GitAdapter.is_ancestor + server.py registration (F9)
+
+**Goal:** Add `CheckMergeInput` + `CheckMergeTool` (read-only `BaseTool`) in `mcp_server/tools/git_tools.py`, implement `GitAdapter.is_ancestor(sha: str) -> bool` (catches `GitCommandError.status == 1` → `False`; status ≥2 → `ExecutionError`), add `GitManager.is_ancestor(sha: str) -> bool` delegating to the adapter, and register `CheckMergeTool(manager=self.git_manager)` in `server.py` — all in one atomic GREEN step.
+
+**Tests:**
+- Unit: SHA is an ancestor of HEAD → `ToolResult.text` returned (reachable message)
+- Unit: SHA is not an ancestor (`GitCommandError.status == 1`) → `ToolResult.error` returned (not reachable)
+- Unit: Git command fails with status ≥2 (`GitCommandError.status == 2`) → `ExecutionError` raised
+- Unit: `GitManager.is_ancestor` delegates to `GitAdapter.is_ancestor` and propagates return value
+
+**Success Criteria:**
+`CheckMergeTool` inherits `BaseTool`; `enforcement_event = None`. `CheckMergeInput` has a single field `merge_sha: str`. `GitAdapter.is_ancestor` uses `self.repo.git.merge_base("--is-ancestor", sha, "HEAD")`, catches `GitCommandError`, returns `False` on `status == 1`, raises `ExecutionError` on status ≥2. `GitManager.is_ancestor` delegates to `self._adapter.is_ancestor(sha)`. `CheckMergeTool` registered in `server.py`. All 4 new tests pass. mypy passes on changed files. Quality gates pass on changed files.
+
+**Dependencies:** No code dependency on C1–C4; must complete before C5 so end-issue.prompt.md references a registered tool
 
 ---
 
@@ -117,6 +134,8 @@ start-issue.prompt.md non-epic section step 6 explicitly states the branch is pr
   - **Mitigation:** Move branch resolution before the new mismatch predicate; test both bypass paths (absent, mismatch) and the active path
 - **Risk:** Prompt/agent files have no pytest coverage — correctness cannot be verified by test suite
   - **Mitigation:** Human review of all three files against corrected behavior framing in research.md section Corrected Behavior
+- **Risk:** `GitCommandError.status` distinction — status 1 vs ≥2 conflation would silently mask real git errors
+  - **Mitigation:** Test all three `is_ancestor` paths explicitly (ancestor, not-ancestor, git error); verify status check logic in implementation
 
 ## Related Documentation
 - **[docs/development/issue357/research.md][related-1]**
@@ -135,4 +154,5 @@ start-issue.prompt.md non-epic section step 6 explicitly states the branch is pr
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 |  | Agent | Initial draft |
+| 1.0 | 2026-05-28 | Agent | Initial draft |
+| 1.1 | 2026-05-29 | Agent | Added C6: CheckMergeTool (F9); updated C5 dependency; updated risks |

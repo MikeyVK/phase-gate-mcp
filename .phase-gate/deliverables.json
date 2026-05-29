@@ -30,6 +30,74 @@
     ],
     "skip_reason": null,
     "parent_branch": "epic/320-production-readiness-tracker",
-    "created_at": "2026-05-28T21:36:22.571740+00:00"
+    "created_at": "2026-05-28T21:36:22.571740+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "deliverables": [
+              "IBranchParentReader Protocol in core/interfaces/__init__.py"
+            ],
+            "exit_criteria": "IBranchParentReader(Protocol) with get_parent_branch(branch: str) -> str | None exists; mypy passes",
+            "title": "IBranchParentReader Protocol"
+          },
+          {
+            "cycle_number": 2,
+            "deliverables": [
+              "mcp_server/managers/branch_parent_reader.py",
+              "4 unit tests for BranchStateParentReader"
+            ],
+            "exit_criteria": "All 4 unit tests pass; mypy passes on module; quality gates pass",
+            "title": "BranchStateParentReader implementation"
+          },
+          {
+            "cycle_number": 3,
+            "deliverables": [
+              "EnforcementRunner.__init__ with git_config param",
+              "bootstrap predicate mismatch bypass",
+              "server.py wiring",
+              "12 test call sites updated"
+            ],
+            "exit_criteria": "All EnforcementRunner tests pass; mypy passes; quality gates pass",
+            "title": "EnforcementRunner GitConfig injection + bootstrap predicate"
+          },
+          {
+            "cycle_number": 4,
+            "deliverables": [
+              "SubmitPRTool 5th constructor param branch_parent_reader",
+              "base resolution chain",
+              "server.py BranchStateParentReader wiring",
+              "test helpers updated"
+            ],
+            "exit_criteria": "All SubmitPRTool tests pass; mypy passes; quality gates pass",
+            "title": "SubmitPRTool IBranchParentReader param + base resolution"
+          },
+          {
+            "cycle_number": 5,
+            "deliverables": [
+              "start-issue.prompt.md non-epic @co-owns-init clarification",
+              "imp.agent.md precondition paragraph",
+              "end-issue.prompt.md git_pull + check_merge step"
+            ],
+            "exit_criteria": "Human review confirms all three files against research.md Corrected Behavior section",
+            "title": "Prompt and agent doc fixes (F2 F3 F5)"
+          },
+          {
+            "cycle_number": 6,
+            "deliverables": [
+              "GitAdapter.is_ancestor(sha) in git_adapter.py",
+              "GitManager.is_ancestor(sha) in git_manager.py",
+              "CheckMergeInput + CheckMergeTool in git_tools.py",
+              "CheckMergeTool registered in server.py",
+              "4 unit tests"
+            ],
+            "exit_criteria": "All 4 unit tests pass; mypy passes on changed files; quality gates pass; CheckMergeTool registered in server.py",
+            "title": "CheckMergeTool + GitAdapter.is_ancestor + server.py registration (F9)"
+          }
+        ],
+        "total": 6
+      }
+    }
   }
 }
