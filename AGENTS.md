@@ -47,6 +47,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Pull | `git_pull(remote, rebase)` | `run_in_terminal("git pull")` |
 | List branches | `git_list_branches(verbose, remote)` | `run_in_terminal("git branch -a")` |
 | Diff stats | `git_diff_stat(target_branch, source_branch)` | `run_in_terminal("git diff --stat")` |
+| Verify merge reachability | `check_merge(merge_sha)` | `run_in_terminal("git merge-base --is-ancestor")` |
 
 ### GitHub Operations
 | Action | ✅ USE THIS | ❌ NEVER USE |
