@@ -49,6 +49,7 @@ def _make_runner(
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        git_config=MagicMock(),
         pr_status_reader=pr_status_reader,
         server_root=tmp_path / ".phase-gate",
     )
@@ -137,6 +138,7 @@ class TestToolCategoryDispatch:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             registry={"check_phase_readiness": fake_handler},
             server_root=tmp_path,
         )
@@ -425,6 +427,7 @@ class TestColdStartWiring:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             pr_status_reader=cache,
             server_root=tmp_path,
         )
@@ -457,6 +460,7 @@ class TestColdStartWiring:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             pr_status_reader=cache,
             server_root=tmp_path,
         )

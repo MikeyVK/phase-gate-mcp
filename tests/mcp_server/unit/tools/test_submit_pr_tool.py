@@ -11,7 +11,7 @@ import asyncio
 import inspect
 from unittest.mock import MagicMock
 
-from mcp_server.core.interfaces import IPRStatusWriter
+from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
@@ -71,6 +71,7 @@ def _make_tool_for_lod(
         github_manager=github_manager,
         pr_status_writer=pr_status_writer,
         merge_readiness_context=merge_readiness_context,
+        branch_parent_reader=MagicMock(spec=IBranchParentReader),
     )
 
 
@@ -110,3 +111,91 @@ class TestSubmitPRToolLoD:
             "SubmitPRTool.execute() must not access GitAdapter directly. "
             "Use GitManager methods instead (Law of Demeter)."
         )
+
+
+def _make_tool_with_reader(
+    git_manager: GitManager,
+    github_manager: GitHubManager,
+    pr_status_writer: IPRStatusWriter,
+    branch_parent_reader: IBranchParentReader,
+) -> SubmitPRTool:
+    """Build SubmitPRTool with branch_parent_reader for C4 base-resolution tests."""
+    merge_readiness_context = MergeReadinessContext(
+        terminal_phase="ready",
+        pr_allowed_phase="ready",
+        branch_local_artifacts=[],
+    )
+    return SubmitPRTool(
+        git_manager=git_manager,
+        github_manager=github_manager,
+        pr_status_writer=pr_status_writer,
+        merge_readiness_context=merge_readiness_context,
+        branch_parent_reader=branch_parent_reader,
+    )
+
+
+class TestSubmitPRToolBaseResolution:
+    """C4: SubmitPRTool.execute() resolves base via params.base → reader → default."""
+
+    def _make_git_manager(self, default_base: str = "main") -> MagicMock:
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = False
+        git_manager.git_config = MagicMock()
+        git_manager.git_config.default_base_branch = default_base
+        return git_manager
+
+    def _make_github_manager(self) -> MagicMock:
+        github_manager = MagicMock(spec=GitHubManager)
+        github_manager.create_pr.return_value = {
+            "number": 1,
+            "url": "https://github.com/x/y/pull/1",
+        }
+        return github_manager
+
+    def test_params_base_wins_over_reader(self) -> None:
+        """C4.D3: params.base takes priority; reader.get_parent_branch is not called."""
+        git_manager = self._make_git_manager()
+        github_manager = self._make_github_manager()
+        reader = MagicMock(spec=IBranchParentReader)
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_tool_with_reader(git_manager, github_manager, pr_status_writer, reader)
+        params = SubmitPRInput(head="feature/42-test", base="my-explicit-base", title="Test PR")
+
+        asyncio.run(tool.execute(params, NoteContext()))
+
+        reader.get_parent_branch.assert_not_called()
+        _, kwargs = github_manager.create_pr.call_args
+        assert kwargs["base"] == "my-explicit-base"
+
+    def test_reader_used_when_params_base_none(self) -> None:
+        """C4.D3: reader.get_parent_branch result used when params.base is None."""
+        git_manager = self._make_git_manager()
+        github_manager = self._make_github_manager()
+        reader = MagicMock(spec=IBranchParentReader)
+        reader.get_parent_branch.return_value = "epic/320-production-readiness"
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_tool_with_reader(git_manager, github_manager, pr_status_writer, reader)
+        params = SubmitPRInput(head="feature/42-test", title="Test PR")
+
+        asyncio.run(tool.execute(params, NoteContext()))
+
+        reader.get_parent_branch.assert_called_once_with("feature/42-test")
+        _, kwargs = github_manager.create_pr.call_args
+        assert kwargs["base"] == "epic/320-production-readiness"
+
+    def test_fallback_to_default_when_reader_returns_none(self) -> None:
+        """C4.D3: default_base_branch used when params.base and reader both return None."""
+        git_manager = self._make_git_manager(default_base="main")
+        github_manager = self._make_github_manager()
+        reader = MagicMock(spec=IBranchParentReader)
+        reader.get_parent_branch.return_value = None
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_tool_with_reader(git_manager, github_manager, pr_status_writer, reader)
+        params = SubmitPRInput(head="feature/42-test", title="Test PR")
+
+        asyncio.run(tool.execute(params, NoteContext()))
+
+        reader.get_parent_branch.assert_called_once_with("feature/42-test")
+        _, kwargs = github_manager.create_pr.call_args
+        assert kwargs["base"] == "main"

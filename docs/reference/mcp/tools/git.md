@@ -3,8 +3,8 @@
 # Git Workflow & Analysis Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-05-29  
 
 **Source:** [mcp_server/tools/git_tools.py](../../../../mcp_server/tools/git_tools.py), [git_fetch_tool.py](../../../../mcp_server/tools/git_fetch_tool.py), [git_pull_tool.py](../../../../mcp_server/tools/git_pull_tool.py), [git_analysis_tools.py](../../../../mcp_server/tools/git_analysis_tools.py)  
 **Tests:** [tests/unit/test_git_tools.py](../../../../tests/unit/test_git_tools.py)  
@@ -13,21 +13,20 @@
 
 ## Purpose
 
-Complete reference documentation for all 14 Git automation tools covering branch management, commit workflow, merge operations, stash management, repository synchronization, and analysis. These tools provide full Git workflow automation with phase state synchronization, thread-safe operations, and TDD cycle integration.
+Complete reference documentation for all 15 Git automation tools provided by the Phase-Gate MCP Server.
 
 ---
 
 ## Overview
 
-The MCP server provides **14 Git tools** across 4 functional categories:
+The MCP server provides **15 Git tools** across 4 functional categories:
 
 | Category | Tools | Key Features |
 |----------|-------|-------------|
-| **Git Workflow** | 10 | Branch CRUD, commits with TDD phases, checkout with phase sync, merge, stash, restore, parent detection |
+| **Git Workflow** | 11 | Branch CRUD, commits with TDD phases, checkout, merge, stash, restore, push, delete, parent detection, reachability gate |
 | **Git Sync** | 2 | Thread-safe fetch/pull with lock files |
 | **Git Analysis** | 2 | Branch listing with verbose info, diff statistics |
-| **TOTAL** | 14 | — |
-
+| **TOTAL** | **15** | — |
 All tools:
 - ✅ Execute in workspace root (detected from environment)
 - ✅ Return structured responses with `success` boolean
@@ -850,6 +849,57 @@ Get diff statistics between two branches.
 - **File-Level Stats:** Includes per-file addition/deletion counts
 - **Branch Validation:** Returns error if either branch doesn't exist
 - **Empty Diff:** Returns `files_changed: 0` if branches are identical
+
+---
+
+### check_merge
+
+**MCP Name:** `check_merge`  
+**Class:** `CheckMergeTool`  
+**File:** [mcp_server/tools/git_tools.py](../../../../mcp_server/tools/git_tools.py)
+
+Verify that a merge commit SHA is reachable from the current HEAD. Wraps `git merge-base --is-ancestor <sha> HEAD`. Use this as the reachability gate in end-issue cleanup before deleting a merged branch.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `merge_sha` | `str` | **Yes** | The merge commit SHA to verify (e.g., the SHA returned by `merge_pr`) |
+
+#### Returns
+
+On success (SHA is reachable):
+```
+SHA <sha> is reachable from HEAD (merge confirmed)
+```
+
+On failure (SHA not reachable — `is_error: true`):
+```
+SHA <sha> is NOT reachable from HEAD — merge may not have landed yet
+```
+
+On git error (status ≥2 — `is_error: true`):
+```
+ExecutionError surfaced via error_handling decorator
+```
+
+#### Example Usage
+
+**Verify merge commit reachability after git_pull:**
+```json
+{
+  "merge_sha": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+}
+```
+
+#### Behavior Notes
+
+- **Exit 0:** SHA is an ancestor of HEAD → returns success text result
+- **Exit 1:** SHA is not an ancestor → returns `is_error: true` (expected non-error case — branch cleanup must not proceed)
+- **Exit ≥2:** Git command failed → `ExecutionError` surfaced via `error_handling` decorator → `is_error: true` result
+- **Read-only:** No state mutations; safe to call multiple times
+- **Use case:** Call after `git_pull()` in end-issue cleanup (step 6 of `end-issue.prompt.md`) before calling `git_delete_branch`
+- **Enforcement:** `enforcement_event = None` — this tool has no phase gate; callable in any phase
 
 ---
 

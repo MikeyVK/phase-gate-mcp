@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError, PreflightError
-from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
+from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
@@ -185,11 +185,13 @@ class SubmitPRTool(BranchMutatingTool):
         github_manager: GitHubManager,
         pr_status_writer: IPRStatusWriter,
         merge_readiness_context: MergeReadinessContext,
+        branch_parent_reader: IBranchParentReader,
     ) -> None:
         self._git_manager = git_manager
         self._github_manager = github_manager
         self._pr_status_writer = pr_status_writer
         self._merge_readiness_context = merge_readiness_context
+        self._branch_parent_reader = branch_parent_reader
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -197,7 +199,11 @@ class SubmitPRTool(BranchMutatingTool):
 
     async def execute(self, params: SubmitPRInput, context: NoteContext) -> ToolResult:
         branch = self._git_manager.get_current_branch()
-        base = params.base or self._git_manager.git_config.default_base_branch
+        base = (
+            params.base
+            or self._branch_parent_reader.get_parent_branch(branch)
+            or self._git_manager.git_config.default_base_branch
+        )
         artifact_paths = frozenset(
             a.path for a in self._merge_readiness_context.branch_local_artifacts
         )

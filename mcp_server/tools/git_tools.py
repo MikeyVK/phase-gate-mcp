@@ -756,3 +756,50 @@ class GetParentBranchTool(BaseTool):
             StateBranchMismatchError,
         ) as exc:
             return ToolResult.error(f"Failed to get parent branch: {exc}")
+
+
+class CheckMergeInput(BaseModel):
+    """Input for CheckMergeTool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    merge_sha: str = Field(
+        ...,
+        description="Merge commit SHA to verify reachability from HEAD",
+    )
+
+
+class CheckMergeTool(BaseTool):
+    """Read-only tool to verify a merge commit SHA is reachable from HEAD.
+
+    Wraps `git merge-base --is-ancestor <sha> HEAD`.
+    Returns ToolResult.text when the SHA is reachable, ToolResult.error when not.
+    Raises ExecutionError on git failures (status >=2).
+    """
+
+    name = "check_merge"
+    description = (
+        "Verify that a merge commit SHA is reachable from HEAD (git merge-base --is-ancestor)"
+    )
+    args_model = CheckMergeInput
+    enforcement_event: str | None = None
+
+    def __init__(self, manager: GitManager | None = None) -> None:
+        if manager is None:
+            raise ValueError("GitManager must be injected")
+        self.manager = manager
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        return _input_schema(self.args_model)
+
+    async def execute(self, params: CheckMergeInput, context: NoteContext) -> ToolResult:
+        del context
+        reachable = self.manager.is_ancestor(params.merge_sha)
+        if reachable:
+            return ToolResult.text(
+                f"SHA {params.merge_sha} is reachable from HEAD (merge confirmed)"
+            )
+        return ToolResult.error(
+            f"SHA {params.merge_sha} is NOT reachable from HEAD — merge may not have landed yet"
+        )

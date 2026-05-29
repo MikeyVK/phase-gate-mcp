@@ -10,12 +10,16 @@ from unittest.mock import ANY, MagicMock
 import pytest
 from pydantic import ValidationError
 
+from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
+from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.tools.git_tools import (
+    CheckMergeInput,
+    CheckMergeTool,
     CommitPhaseMismatchError,
     CreateBranchInput,
     CreateBranchTool,
@@ -1157,3 +1161,63 @@ async def test_git_checkout_no_reset_when_writer_none(
     result = await tool.execute(params, NoteContext())
 
     assert not result.is_error
+
+
+# ---------------------------------------------------------------------------
+# CheckMergeTool tests (C6 RED)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_check_merge_sha_is_ancestor(mock_git_manager: MagicMock) -> None:
+    """SHA is an ancestor of HEAD -> ToolResult.text returned."""
+    mock_git_manager.is_ancestor.return_value = True
+    tool = CheckMergeTool(manager=mock_git_manager)
+
+    params = CheckMergeInput(merge_sha="abc1234")
+    result = await tool.execute(params, NoteContext())
+
+    assert not result.is_error
+    mock_git_manager.is_ancestor.assert_called_once_with("abc1234")
+
+
+@pytest.mark.asyncio
+async def test_check_merge_sha_not_ancestor(mock_git_manager: MagicMock) -> None:
+    """SHA is not an ancestor (status 1) -> ToolResult.error returned."""
+    mock_git_manager.is_ancestor.return_value = False
+    tool = CheckMergeTool(manager=mock_git_manager)
+
+    params = CheckMergeInput(merge_sha="abc1234")
+    result = await tool.execute(params, NoteContext())
+
+    assert result.is_error
+    mock_git_manager.is_ancestor.assert_called_once_with("abc1234")
+
+
+@pytest.mark.asyncio
+async def test_check_merge_git_error_raises(mock_git_manager: MagicMock) -> None:
+    """Git command fails (status >=2) -> execute returns ToolResult.error via error_handling."""
+    mock_git_manager.is_ancestor.side_effect = ExecutionError("git error status 2")
+    tool = CheckMergeTool(manager=mock_git_manager)
+
+    params = CheckMergeInput(merge_sha="abc1234")
+    result = await tool.execute(params, NoteContext())
+
+    assert result.is_error
+
+
+@pytest.mark.asyncio
+async def test_check_merge_manager_delegates_to_adapter() -> None:
+    """GitManager.is_ancestor delegates to GitAdapter.is_ancestor and propagates value."""
+    mock_adapter = MagicMock(spec=GitAdapter)
+    mock_adapter.is_ancestor.return_value = True
+    mock_adapter.get_current_branch.return_value = "bug/357-fix-agent-lifecycle"
+
+    mock_git_config = MagicMock()
+    mock_git_config.default_base_branch = "main"
+
+    real_manager = GitManager(git_config=mock_git_config, adapter=mock_adapter)
+    result = real_manager.is_ancestor("abc1234")
+
+    assert result is True
+    mock_adapter.is_ancestor.assert_called_once_with("abc1234")

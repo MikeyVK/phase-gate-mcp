@@ -126,6 +126,13 @@ Initialize project with phase plan selection. Human selects workflow_name (featu
 - **Branch Validation:** Current branch must match pattern `<type>/<issue_number>-*`
 - **Idempotency:** Re-running on same branch returns error (project already initialized)
 
+#### Workflow Responsibility
+
+`initialize_project` **must be called by `@co` (coordination role)** as part of the start-issue lifecycle, always after `create_branch` and `git_checkout`.
+
+`@imp` (implementation role) always inherits a branch where `initialize_project` has already completed. If `@imp` reaches a branch without `.phase-gate/state.json`, this is a process violation — `@imp` must **not** call `initialize_project` as recovery; it must stop and report the blocker so `@co` can correct the lifecycle.
+
+
 ---
 
 ### get_project_plan
