@@ -1,20 +1,19 @@
 <!-- docs\development\issue357\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-05-27T20:33Z updated=2026-05-28T00:00Z -->
+<!-- template=research version=8b7bb3ab created=2026-05-27T20:33Z updated=2026-05-29T00:00Z -->
 # Fix agent lifecycle: parent detection, submit_pr base, end-issue safety
-
 **Status:** DRAFT  
-**Version:** 1.2  
+**Version:** 1.3  
+**Last Updated:** 2026-05-29
 **Last Updated:** 2026-05-28
 
 ---
 
 ## Purpose
-
-Establish the current defect framing, verified blast radius, root-cause areas, and contract boundaries for issue #357 before design or planning.
-
-## Scope
-
 **In Scope:**
+Lifecycle coordination surfaces for `start-issue`, `end-issue`, `@imp` startup, `submit_pr` base resolution, and `context_loaded` bootstrap behavior on child branches that inherit parent state. Also in scope: the `check_merge` MCP tool — a new thin read-only tool required by the post-merge verification step in `end-issue`.
+
+**Out of Scope:**
+Production feature work outside lifecycle coordination; generic git safety redesign unrelated to the reported bug family; implementation planning, TDD cycles, or exact patch sequencing.
 Lifecycle coordination surfaces for `start-issue`, `end-issue`, `@imp` startup, `submit_pr` base resolution, and `context_loaded` bootstrap behavior on child branches that inherit parent state.
 
 **Out of Scope:**
@@ -186,6 +185,41 @@ This bug family spans multiple validation styles:
 - design and planning must account for both code-test blast radius and prompt/document review surfaces
 - success cannot be judged only by pytest; the prompt contracts themselves are part of the bug surface
 
+### F9 - The `end-issue` cleanup gate references a non-existent `check_merge` MCP tool
+
+The redesigned `end-issue.prompt.md` (step 6) mandates `check_merge(merge_sha=MERGE_SHA)` as the
+reachability gate before branch deletion. No such tool exists in the MCP server. When `@co`
+executes the `end-issue` flow, step 6 fails with "tool not found."
+
+**Evidence:**
+- `.github/prompts/end-issue.prompt.md` step 6 calls `check_merge(merge_sha=MERGE_SHA)` (committed on this branch)
+- `.github/agents/co.agent.md` lists `phase-gate-mcp/check_merge` in its `tools:` allowlist
+- `mcp_server/tools/git_tools.py` contains no `CheckMergeTool` class
+- `mcp_server/adapters/git_adapter.py` has no `is_ancestor` method; existing `merge_base` calls compute common ancestors, not reachability from HEAD
+- `mcp_server/managers/git_manager.py` has no `is_ancestor` delegation
+- `mcp_server/server.py` has no `CheckMergeTool` registration in its `tools` list
+
+**Git primitive:** `git merge-base --is-ancestor <sha> HEAD`
+- Exit 0: SHA is a reachable ancestor of HEAD → reachable
+- Exit 1: SHA is not reachable → not reachable (expected outcome, not an error)
+- Exit ≥2: git internal error → `ExecutionError`
+
+GitPython raises `GitCommandError` on any non-zero exit. `GitAdapter.is_ancestor` must explicitly
+check `GitCommandError.status == 1` to distinguish the "not an ancestor" case from a real git error.
+
+**Architectural fit (confirmed from codebase evidence):**
+- Read-only: inherits `BaseTool`, not `BranchMutatingTool`; `enforcement_event = None`
+- Constructor: `CheckMergeTool(manager: GitManager)` — no additional dependencies
+- Input: `CheckMergeInput(merge_sha: str)` — single required field
+- Placement: addition to `mcp_server/tools/git_tools.py` (consistent with other thin git tools; no new file needed)
+- Layer additions: `GitAdapter.is_ancestor`, `GitManager.is_ancestor`, `CheckMergeTool`, `server.py` registration
+- No new interface needed: `GitManager` is already the abstraction boundary for simple git tools at the tool layer
+
+**Consequence:**
+- `end-issue` step 6 is broken until this tool is shipped
+- the fix is the narrowest possible addition: one read-only method per layer, no new dependencies, no enforcement events
+- F9 is explicitly within the confirmed scope of issue `#357`; it is the implementation counterpart of the F5 corrected behavior
+
 ---
 
 ## Supported Contract vs Defect Dependence
@@ -202,7 +236,7 @@ This bug family spans multiple validation styles:
 
 ## Approved Strategy
 
-**Boundary / consumer scope:** internal lifecycle coordination surfaces only: prompt contracts, agent startup instructions, `submit_pr` base selection, and enforcement bootstrap behavior.
+**Boundary / consumer scope:** internal lifecycle coordination surfaces only: prompt contracts, agent startup instructions, `submit_pr` base selection, enforcement bootstrap behavior, and the `check_merge` read-only MCP tool that implements the `end-issue` reachability gate.
 
 **Selected strategy:** no special migration policy required.
 
@@ -220,6 +254,7 @@ This bug family spans multiple validation styles:
 - keep `end-issue` human-invoked and `@co`-owned; this issue does not authorize automated merge flow
 - `@co` must always call `initialize_project` before the `@imp` handoff on all child branches; design must not add an `@imp`-side recovery path for uninitialized branches
 - `submit_pr` base resolution must inject a narrow `IBranchParentReader` interface via constructor; do not inject `PhaseStateEngine` or `IStateRepository` for this read-only lookup; fall back to `default_base_branch` on state-mismatch or absent state
+- `check_merge` must be a thin read-only `BaseTool`; do not inherit `BranchMutatingTool`, do not add enforcement events; `GitAdapter.is_ancestor` must distinguish exit code 1 (not reachable, return `False`) from exit ≥2 (git error, raise `ExecutionError`) via `GitCommandError.status`
 
 ---
 
@@ -229,6 +264,7 @@ This bug family spans multiple validation styles:
 - **[Resolved]** `submit_pr` fallback read of `parent_branch` — inject a narrow `IBranchParentReader` interface (ISP §1.4/§6, DIP §1.5/§11, CQS §5); do not inject `PhaseStateEngine`; back with identity validation; fall back to `default_base_branch` on state-mismatch or absent state
 - **[Resolved]** narrowest safe `end-issue` verification step — checkout of parent branch, then `git_pull`, then verify the merged SHA is reachable before branch deletion
 - **[Resolved]** issue body narrowing for `#357` — lightly correct scope; record that the explicit `parent_branch` override in `start-issue` is already gone (F1) so design does not target a stale sub-problem; the live defect is child-init ownership and the `@co`-must-initialize contract
+- **[Resolved]** `check_merge` implementation fit — thin read-only `BaseTool`; `GitAdapter.is_ancestor` uses `merge_base("--is-ancestor", sha, "HEAD")` with `GitCommandError.status == 1` returning `False`; `GitManager.is_ancestor` delegates; `CheckMergeTool` placed in `git_tools.py`; registered in `server.py`
 
 ---
 
@@ -251,6 +287,7 @@ This bug family spans multiple validation styles:
 | validation ignores prompt-level behavior because prompts are not primarily pytest-covered | High | treat human-reviewed prompt contracts as part of the authoritative blast radius |
 | F6 fix must not accidentally remove the bootstrap bypass for branches with truly no state; the extended predicate must check `absent OR mismatch`, not replace `absent` with `mismatch` | Medium | ensure the predicate is extended, not replaced; existing bypass for stateless branches must remain |
 | `@co`-owns-init assumption breaks silently if `start-issue` is bypassed or a branch is created outside that prompt | Medium | treat `start-issue` as the single authoritative branch-entry point; document that `@imp` starting on an uninitialized branch is a process violation |
+| `check_merge` `GitAdapter.is_ancestor` conflates exit code 1 (not ancestor) with real git errors | Medium | check `GitCommandError.status == 1` explicitly; test both the reachable and not-reachable paths in unit tests |
 
 ---
 
@@ -262,6 +299,7 @@ Design and planning should work toward the following corrected behavior framing:
 - `submit_pr` resolves the target base via a narrow `IBranchParentReader` interface before defaulting to repo-wide configuration; the tool does not query the full state engine for this read-only lookup
 - post-merge branch cleanup does not run until the parent branch is locally updated and the merged content is verifiably reachable
 - inherited parent state does not block initialization of a different child issue branch
+- `check_merge` tool is present in the MCP server, registered in `server.py`, and callable by `@co` in the `end-issue` flow
 - prior fixes from issues `#268`, `#345`, and `#354` are treated as binding constraints, not re-opened by accident
 
 ## Operating Modes For Agent Use
@@ -318,6 +356,9 @@ Treat this distinction in later phases as an operating method and configuration 
 - **[tests/mcp_server/integration/test_ready_phase_enforcement.py][related-12]**
 - **[tests/mcp_server/integration/test_context_loaded_enforcement.py][related-13]**
 - **[tests/mcp_server/unit/tools/test_discovery_tools.py][related-14]**
+- **[mcp_server/tools/git_tools.py][related-15]**
+- **[mcp_server/adapters/git_adapter.py][related-16]**
+- **[mcp_server/managers/git_manager.py][related-17]**
 
 <!-- Link definitions -->
 
@@ -335,6 +376,9 @@ Treat this distinction in later phases as an operating method and configuration 
 [related-12]: tests/mcp_server/integration/test_ready_phase_enforcement.py
 [related-13]: tests/mcp_server/integration/test_context_loaded_enforcement.py
 [related-14]: tests/mcp_server/unit/tools/test_discovery_tools.py
+[related-15]: mcp_server/tools/git_tools.py
+[related-16]: mcp_server/adapters/git_adapter.py
+[related-17]: mcp_server/managers/git_manager.py
 
 ---
 

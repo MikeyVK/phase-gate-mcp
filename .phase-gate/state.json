@@ -2,7 +2,7 @@
   "branch": "bug/357-fix-agent-lifecycle",
   "issue_number": 357,
   "workflow_name": "bug",
-  "current_phase": "documentation",
+  "current_phase": "research",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Branch re-initialized after PR submission; jumping to documentation to complete end-issue prompt alignment with design",
+  "skip_reason": "Reopening issue #357 to add thin check_merge MCP tool as the destructive cleanup gate for end-issue flow; end-issue prompt redesign is committed, now need to research and implement the tool",
   "issue_title": "Fix agent lifecycle: parent detection, submit_pr base, end-issue safety",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-05-28T21:36:22.692428+00:00",
@@ -28,6 +28,14 @@
       "human_approval": "User approved on 2026-05-28",
       "forced": true,
       "skip_reason": "Branch re-initialized after PR submission; jumping to documentation to complete end-issue prompt alignment with design"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "research",
+      "timestamp": "2026-05-29T06:04:33.055144+00:00",
+      "human_approval": "User approved on 2026-05-29",
+      "forced": true,
+      "skip_reason": "Reopening issue #357 to add thin check_merge MCP tool as the destructive cleanup gate for end-issue flow; end-issue prompt redesign is committed, now need to research and implement the tool"
     }
   ],
   "reconstructed": false,
