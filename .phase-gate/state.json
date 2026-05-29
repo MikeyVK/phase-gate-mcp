@@ -2,7 +2,7 @@
   "branch": "bug/357-fix-agent-lifecycle",
   "issue_number": 357,
   "workflow_name": "bug",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": null,
   "last_cycle": 6,
   "cycle_history": [
@@ -88,6 +88,14 @@
       "from_phase": "validation",
       "to_phase": "documentation",
       "timestamp": "2026-05-29T11:31:27.351551+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-29T12:14:42.053498+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
