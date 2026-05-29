@@ -1,106 +1,25 @@
 {
-  "branch": "bug/357-fix-agent-lifecycle",
-  "issue_number": 357,
-  "workflow_name": "bug",
-  "current_phase": "ready",
+  "branch": "epic/320-production-readiness-tracker",
+  "issue_number": 320,
+  "workflow_name": "epic",
+  "current_phase": "research",
   "current_cycle": null,
-  "last_cycle": 6,
-  "cycle_history": [
-    {
-      "cycle_number": 6,
-      "name": "Unknown",
-      "entered": "2026-05-29T09:57:24.913495+00:00",
-      "forced": true,
-      "skip_reason": "C1-C5 were already implemented and committed on this branch from a previous session on another machine. Only C6 (CheckMergeTool F9) remains to be executed.",
-      "human_approval": "User approved on 2026-05-29: 'naar implementatie en cycle 6 doorlopen'",
-      "skipped_cycles": [
-        2,
-        3,
-        4,
-        5
-      ]
-    }
-  ],
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
-    "design",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Reopening issue #357 to add thin check_merge MCP tool as the destructive cleanup gate for end-issue flow; end-issue prompt redesign is committed, now need to research and implement the tool",
-  "issue_title": "Fix agent lifecycle: parent detection, submit_pr base, end-issue safety",
-  "parent_branch": "epic/320-production-readiness-tracker",
-  "created_at": "2026-05-28T21:36:22.692428+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-28T21:40:03.514906+00:00",
-      "human_approval": "User approved on 2026-05-28",
-      "forced": true,
-      "skip_reason": "Branch re-initialized after PR submission; jumping to documentation to complete end-issue prompt alignment with design"
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "research",
-      "timestamp": "2026-05-29T06:04:33.055144+00:00",
-      "human_approval": "User approved on 2026-05-29",
-      "forced": true,
-      "skip_reason": "Reopening issue #357 to add thin check_merge MCP tool as the destructive cleanup gate for end-issue flow; end-issue prompt redesign is committed, now need to research and implement the tool"
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-05-29T06:17:32.857540+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-05-29T09:45:21.680362+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-29T09:56:49.264599+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-05-29T11:21:39.213096+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-29T11:31:27.351551+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-05-29T12:14:42.053498+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "skip_reason": null,
+  "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
+  "parent_branch": "main",
+  "created_at": "2026-05-25T18:48:22.612710+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
