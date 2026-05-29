@@ -50,6 +50,7 @@ Full mapping of all tool files. ⚠ marks known inconsistencies.
 | `git_tools.py` | `GitDeleteBranchTool` | `git_delete_branch` | — |
 | `git_tools.py` | `GitStashTool` | `git_stash` | — |
 | `git_tools.py` | `GetParentBranchTool` | `get_parent_branch` | — |
+| `git_tools.py` | `CheckMergeTool` | `check_merge` | — |
 | `git_analysis_tools.py` | `GitListBranchesTool` | `git_list_branches` | — |
 | `git_analysis_tools.py` | `GitDiffTool` | `git_diff_stat` | Class name differs from MCP name suffix |
 | `git_fetch_tool.py` ⚠ | `GitFetchTool` | `git_fetch` | Singular filename |

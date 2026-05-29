@@ -3,8 +3,8 @@
 # Git Workflow & Analysis Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-05-29  
 
 **Source:** [mcp_server/tools/git_tools.py](../../../../mcp_server/tools/git_tools.py), [git_fetch_tool.py](../../../../mcp_server/tools/git_fetch_tool.py), [git_pull_tool.py](../../../../mcp_server/tools/git_pull_tool.py), [git_analysis_tools.py](../../../../mcp_server/tools/git_analysis_tools.py)  
 **Tests:** [tests/unit/test_git_tools.py](../../../../tests/unit/test_git_tools.py)  
