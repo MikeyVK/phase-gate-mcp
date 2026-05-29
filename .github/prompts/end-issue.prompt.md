@@ -59,10 +59,11 @@ Execute in this exact order. Do not skip steps.
    → if the tool is unavailable on this branch, stop and report the blocker; do not substitute raw terminal git commands.
    → if the result says the merge SHA is not reachable from `HEAD`, stop and report the blocker; do not delete the branch.
 
-7. **Load parent-branch context**
+7. **Load parent-branch context (best-effort)**
    `get_work_context()`
    → call this only after checkout to the parent branch.
-   → record `workflow`, `issue_number`, and `parent_branch` for epic-parent coordination when needed.
+   → if the checked-out parent branch is a tracked workflow branch, record `workflow`, `issue_number`, and `parent_branch` for coordination that depends on parent state.
+   → if the checked-out parent branch is `main` or another stateless non-epic branch and phase or workflow context does not load cleanly, treat that as expected and continue.
    → do not use `get_work_context()` as the source of child-branch merge metadata.
 
 8. **Clean up the branch**
@@ -76,9 +77,10 @@ Execute in this exact order. Do not skip steps.
    Use this as the authoritative record of what landed and what was intentionally deferred.
 
 10. **Epic-parent update (conditional)**
-   Perform this step only when the checked-out parent branch is a tracked epic branch or the parent context from step 7 says the active workflow is `epic`.
+   Perform this step only when step 7 confirms that the checked-out parent branch is a tracked epic branch.
    `update_issue(issue_number=<issue_number from step 7>, body=<updated coordination state>)`
-   → if epic coordination is required but the checked-out parent branch has no issue number in step 7, stop and report the blocker instead of guessing.
+   → if step 7 returned no meaningful workflow context on `main` or another stateless non-epic branch, skip this step.
+   → if epic coordination is required but the checked-out parent branch still has no issue number in step 7, stop and report the blocker instead of guessing.
    → record merged status and the next planned or logically following issue.
 
 11. **Next-issue recommendation (advisory)**
