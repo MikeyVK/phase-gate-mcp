@@ -2,7 +2,7 @@
   "branch": "bug/357-fix-agent-lifecycle",
   "issue_number": 357,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -36,6 +36,14 @@
       "human_approval": "User approved on 2026-05-29",
       "forced": true,
       "skip_reason": "Reopening issue #357 to add thin check_merge MCP tool as the destructive cleanup gate for end-issue flow; end-issue prompt redesign is committed, now need to research and implement the tool"
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-05-29T06:17:32.857540+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

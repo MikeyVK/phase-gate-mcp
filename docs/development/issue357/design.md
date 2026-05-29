@@ -15,7 +15,7 @@ Define the fix direction and interface contracts for the five lifecycle coordina
 ## Scope
 
 **In Scope:**
-Prompt files (start-issue, end-issue), agent instruction files (imp.agent.md), SubmitPRTool base resolution, and check_context_loaded bootstrap predicate in EnforcementRunner.
+Prompt files (start-issue, end-issue), agent instruction files (imp.agent.md), SubmitPRTool base resolution, check_context_loaded bootstrap predicate in EnforcementRunner, and the `check_merge` MCP tool — the new read-only tool that implements the reachability gate referenced in `end-issue` step 6 (F9).
 
 **Out of Scope:**
 Epic workflow redesign, new merge orchestration, automated end-issue execution, changes to issues #268/#345/#354 contracts, get_work_context bootstrap degradation behavior beyond the F6 predicate fix.
@@ -32,7 +32,7 @@ Read these first:
 
 ### 1.1. Problem Statement
 
-Five lifecycle coordination surfaces contain defects that interact: (1) start-issue.prompt.md encodes two competing ownership models (F2); (2) imp.agent.md startup protocol has no precondition that the branch is pre-initialized by @co (F3); (3) SubmitPRTool.execute() falls back directly to git_config.default_base_branch without reading state.json.parent_branch (F4); (4) end-issue.prompt.md deletes the child branch immediately after checkout without verifying the parent has received the merged content (F5); (5) _handle_check_context_loaded bootstrap predicate only checks state.json absence, not whether the stored issue_number matches the current branch (F6). F6 is the enabler: without it the @co-always-initializes model cannot function on epic-child branches.
+Five lifecycle coordination surfaces contain defects that interact: (1) start-issue.prompt.md encodes two competing ownership models (F2); (2) imp.agent.md startup protocol has no precondition that the branch is pre-initialized by @co (F3); (3) SubmitPRTool.execute() falls back directly to git_config.default_base_branch without reading state.json.parent_branch (F4); (4) end-issue.prompt.md deletes the child branch immediately after checkout without verifying the parent has received the merged content (F5); (5) _handle_check_context_loaded bootstrap predicate only checks state.json absence, not whether the stored issue_number matches the current branch (F6); (6) end-issue.prompt.md step 6 calls check_merge(merge_sha=MERGE_SHA) as the reachability gate before branch deletion, but no such tool exists in the MCP server (F9). F6 is the enabler: without it the @co-always-initializes model cannot function on epic-child branches.
 
 ### 1.2. Requirements
 
@@ -42,6 +42,7 @@ Five lifecycle coordination surfaces contain defects that interact: (1) start-is
 - [ ] F4 — SubmitPRTool resolves the PR base via IBranchParentReader.get_parent_branch() before falling back to default_base_branch; caller-supplied params.base still takes priority
 - [ ] F5 — end-issue.prompt.md inserts git_pull and merge-SHA reachability verification between git_checkout(base_branch) and git_delete_branch
 - [ ] F6 — _handle_check_context_loaded bootstrap predicate bypasses the gate when state.json is absent OR when the stored issue_number does not match the current branch's issue number
+- [ ] F9 — `CheckMergeTool` (read-only, `BaseTool`) added to `mcp_server/tools/git_tools.py`; `GitAdapter.is_ancestor(sha: str) -> bool` and `GitManager.is_ancestor(sha: str) -> bool` added; tool registered in `server.py`; `end-issue` step 6 `check_merge(merge_sha=MERGE_SHA)` call is fulfilled
 
 **Non-Functional:**
 - [ ] IBranchParentReader is a narrow Protocol (one method) in core/interfaces/ — not IStateReader, not PhaseStateEngine (ISP §1.4/§6, DIP §1.5/§11, CQS §5)
@@ -49,6 +50,7 @@ Five lifecycle coordination surfaces contain defects that interact: (1) start-is
 - [ ] GitConfig injected into EnforcementRunner via constructor following the StateReconstructor pattern (DIP, DRY §2, §10 Cohesion)
 - [ ] No backward-compatibility shims; test helpers updated to new signatures
 - [ ] IBranchParentReader is a required constructor parameter in SubmitPRTool (not optional with None default)
+- [ ] CheckMergeTool inherits BaseTool (not BranchMutatingTool); enforcement_event = None; no new Protocol interface needed
 
 ### 1.3. Constraints
 
@@ -106,7 +108,37 @@ Add `git_config: GitConfig` as a required constructor parameter to `EnforcementR
 - ❌ `EnforcementRunner` constructor gains a new required param — composition root and test setup updated
 - ❌ Branch name resolution must move before the predicate (minor reorder in the method)
 
-### 2.4. F6 — IStateReader injection for issue_number lookup (rejected)
+### 2.4. F9 — Thin read-only CheckMergeTool in git_tools.py (chosen)
+
+New `CheckMergeInput(merge_sha: str)` and `CheckMergeTool(BaseTool)` placed in `mcp_server/tools/git_tools.py`.
+`GitAdapter.is_ancestor(sha: str) -> bool` calls `self.repo.git.merge_base("--is-ancestor", sha, "HEAD")`.
+GitPython raises `GitCommandError` on any non-zero exit. The method catches `GitCommandError` and checks
+`exc.status == 1` to return `False` (not ancestor, expected case). Status ≥2 raises `ExecutionError`.
+`GitManager.is_ancestor(sha: str) -> bool` delegates to `self._adapter.is_ancestor(sha)`.
+`CheckMergeTool.execute()` calls `self._manager.is_ancestor(params.merge_sha)` and returns
+`ToolResult.text` (reachable) or `ToolResult.error` (not reachable). Registered in `server.py` as
+`CheckMergeTool(manager=self.git_manager)`.
+
+**Pros:**
+- ✅ No new Protocol needed — `GitManager` is already the correct abstraction boundary (YAGNI §9)
+- ✅ Inherits `BaseTool`; `enforcement_event = None`; no enforcement registration required
+- ✅ `GitAdapter.is_ancestor` introduces a new `GitCommandError` import and selective status check: `status == 1` returns `False` (not ancestor, expected case); status ≥2 raises `ExecutionError`. This pattern does NOT currently exist in `git_adapter.py` — all existing error handling uses `except Exception as e:` — and must be added explicitly in implementation.
+- ✅ `anyio.to_thread.run_sync` not needed for a fast boolean read; direct synchronous call is acceptable
+- ✅ Placement in `git_tools.py` avoids new file for a thin tool (YAGNI §9)
+- ✅ Constructor injection: `CheckMergeTool(manager: GitManager)` — single dependency
+
+**Cons:**
+- ❌ `CheckMergeTool` tests live alongside other git tool tests in `test_git_tools.py` — acceptable, same pattern
+
+### 2.5. F9 — New git_adapter_reader interface + dedicated CheckMergeManager (rejected)
+
+Extract `IGitAncestorReader` Protocol for `is_ancestor`, implement a dedicated `GitAncestorManager`.
+
+**Cons:**
+- ❌ YAGNI violation — one thin boolean method does not justify a new Protocol + manager pair
+- ❌ `GitManager` already wraps `GitAdapter`; a second manager wrapping the same adapter creates DRY/SSOT violation
+
+### 2.6. F6 — IStateReader injection for issue_number lookup (rejected)
 
 Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` in the bootstrap predicate.
 
@@ -123,7 +155,7 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 
 ## 3. Chosen Design
 
-**Decision:** Five targeted fixes, each at the narrowest surface: (A) New `IBranchParentReader` Protocol in `core/interfaces/` + `BranchStateParentReader` implementation in `managers/` injected as required param into `SubmitPRTool`. (B) `GitConfig` injected into `EnforcementRunner`; bootstrap predicate extended with issue-number mismatch check reading `state.json` directly. (C) `end-issue.prompt.md`: add `git_pull` after `git_checkout(base_branch)`, then verify `merge_commit_sha` reachability via `get_pr` before `git_delete_branch`. (D) `start-issue.prompt.md` non-epic section: explicit statement that branch is pre-initialized and `@imp` starts on an already-initialized branch. (E) `imp.agent.md`: explicit `@co`-must-initialize precondition paragraph before startup step 1.
+**Decision:** Six targeted fixes, each at the narrowest surface: (A) New `IBranchParentReader` Protocol in `core/interfaces/` + `BranchStateParentReader` implementation in `managers/` injected as required param into `SubmitPRTool`. (B) `GitConfig` injected into `EnforcementRunner`; bootstrap predicate extended with issue-number mismatch check reading `state.json` directly. (C) `end-issue.prompt.md`: `git_pull` after `git_checkout(base_branch)`, then `check_merge(merge_sha=MERGE_SHA)` as the reachability gate before `git_delete_branch`. (D) `start-issue.prompt.md` non-epic section: explicit statement that branch is pre-initialized and `@imp` starts on an already-initialized branch. (E) `imp.agent.md`: explicit `@co`-must-initialize precondition paragraph before startup step 1. (F) New `CheckMergeTool` + `GitAdapter.is_ancestor` + `GitManager.is_ancestor` + `server.py` registration.
 
 **Rationale:** Each fix targets the narrowest surface that satisfies the corrected behavior without broadening scope. `IBranchParentReader` follows ISP (one method, read-only) and DIP (abstract Protocol) and avoids Law of Demeter violations. `GitConfig` injection into `EnforcementRunner` follows the `StateReconstructor` pattern already established in the codebase. Prompt-only fixes (C, D, E) have no code blast radius. No backward-compatibility shims; test helpers are updated to reflect the actual interface contracts.
 
@@ -136,7 +168,10 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | Base resolution chain: `params.base → reader.get_parent_branch() → default_base_branch` | `params.base` preserves caller override. `reader.get_parent_branch()` consults branch-local state. `default_base_branch` is the repo-wide last resort. |
 | `GitConfig` injected into `EnforcementRunner` via constructor; `state.json` read directly in predicate | Follows the `StateReconstructor` pattern. Avoids circular dependency on `IStateReader` in a context where state trust is the thing being established. |
 | Bootstrap predicate extended: both `absent` and issue-number `mismatch` bypass the gate | The `absent` case must be preserved — stateless branches still bootstrap freely. The `mismatch` case is the new bypass. Predicate is extended, not replaced, per the research Approved Strategy. |
-| `end-issue`: `git_pull` after checkout, then `merge_commit_sha` reachability check, then delete | `get_pr()` returns `merge_commit_sha` for merged PRs. After `git_pull` on the base branch, that SHA being present in `git log` confirms the merged content is locally reachable before destructive cleanup. |
+| `end-issue`: `git_pull` after checkout, then `check_merge(merge_sha=MERGE_SHA)` reachability gate, then delete | `check_merge` is the authoritative tool gate per F9 decision; it wraps `git merge-base --is-ancestor` so `@co` never executes raw git commands. After `git_pull` on the base branch, the SHA being reachable confirms the merged content is locally present before destructive cleanup. |
+| `CheckMergeTool` inherits `BaseTool`, not `BranchMutatingTool`; `enforcement_event = None` | Read-only operation; must not trigger enforcement events; `BaseTool` is the correct base. |
+| `GitAdapter.is_ancestor` distinguishes `GitCommandError.status == 1` from status ≥2 | Exit 1 from `merge-base --is-ancestor` means "not an ancestor" — expected, return `False`. Exit ≥2 is a real git error — raise `ExecutionError`. Conflating them would make all unreachable SHAs appear as git errors. |
+| No new `IGitAncestorReader` Protocol | One thin boolean method on an already-injected `GitManager` does not justify a new Protocol + manager pair (YAGNI §9). |
 | `imp.agent.md` precondition is a paragraph before step 1, not a numbered startup step | A precondition is a prerequisite that must be true before the protocol runs — not a runtime action. Placing it as a step would imply `@imp` should check or fix it, which contradicts the `@co`-owns-init model. |
 | No backward-compatibility shims; test helpers and call sites updated to new signatures | No compat needed. Clean interface contracts in tests reflect actual production wiring and prevent false confidence from tests covering stale behavior. |
 | `default_base_branch` standalone param retired from `EnforcementRunner` when `git_config` is injected | `self.default_base_branch` is stored but never read by any `EnforcementRunner` method — dead code in the class body. `server.py` currently passes `git_config.default_base_branch` as a plain string — DRY duplication. Once `GitConfig` is injected, the standalone param is removed; any internal use reads `self._git_config.default_base_branch` directly. |
@@ -156,6 +191,10 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | `start-issue.prompt.md` | Non-epic section: clarify `@co`-owns-init; `@imp` starts on pre-initialized branch | `.github/prompts/start-issue.prompt.md` |
 | `end-issue.prompt.md` | Insert `git_pull` + SHA verification before branch delete | `.github/prompts/end-issue.prompt.md` |
 | `imp.agent.md` | Add `@co`-must-initialize precondition paragraph before startup step 1 | `.github/agents/imp.agent.md` |
+| `GitAdapter.is_ancestor` | New method: `is_ancestor(sha: str) -> bool` | `mcp_server/adapters/git_adapter.py` |
+| `GitManager.is_ancestor` | New delegating method: `is_ancestor(sha: str) -> bool` | `mcp_server/managers/git_manager.py` |
+| `CheckMergeInput` + `CheckMergeTool` | New input model + read-only tool | `mcp_server/tools/git_tools.py` |
+| `CheckMergeTool` composition root | Register `CheckMergeTool(manager=self.git_manager)` | `mcp_server/server.py` |
 
 ---
 
@@ -168,6 +207,7 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | `tests/mcp_server/integration/test_context_loaded_enforcement.py` | Missing test for issue-number mismatch scenario | Add new test; `test_gate_inactive_on_bootstrap_no_state_json` must still pass |
 | Any file constructing `EnforcementRunner(...)` directly | `git_config` required param added; `default_base_branch` param removed | Update all `EnforcementRunner` call sites in tests (add `git_config` fake; drop `default_base_branch` kwarg where present) |
 | Prompt / agent doc files (F2, F3, F5) | Not pytest-covered | Human review; treat as first-class deliverables per research F8 |
+| `tests/mcp_server/unit/tools/test_git_tools.py` | New tests needed for `CheckMergeTool` | Add: reachable case, not-reachable case, git-error case (status ≥2) |
 
 ---
 
@@ -182,6 +222,10 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 | F6: Gate inactive when issue-number mismatch | New test: `state.json` present with `issue_number=1`, branch is `feature/2-other`; `initialize_project` must not be blocked |
 | F6: Gate active when issue-number matches | Existing `test_gate_blocks_tool_when_context_not_loaded` must still pass |
 | F2, F3, F5: Prompt and doc correctness | Human review of updated files against corrected behavior framing in research.md |
+| F9: `CheckMergeTool` returns reachable for a reachable SHA | Unit test: mock `GitManager.is_ancestor` returns `True`; assert `ToolResult` is not error and text contains "reachable" |
+| F9: `CheckMergeTool` returns error for unreachable SHA | Unit test: mock returns `False`; assert `ToolResult.is_error` is `True` |
+| F9: `GitAdapter.is_ancestor` exit 1 returns False, not exception | Unit test: mock `repo.git.merge_base` raises `GitCommandError(status=1)`; assert method returns `False` |
+| F9: `GitAdapter.is_ancestor` exit ≥2 raises `ExecutionError` | Unit test: mock raises `GitCommandError(status=2)`; assert `ExecutionError` is raised |
 
 ---
 
@@ -206,3 +250,4 @@ Inject `IStateReader` into `EnforcementRunner` and use it to load `BranchState` 
 |---------|------|--------|---------|
 | 1.0 | 2026-05-28 | Agent | Initial draft — five fix surfaces, IBranchParentReader, GitConfig injection, prompt/doc fixes |
 | 1.1 | 2026-05-28 | Agent | Address QA aandachtspunten: OQ1+OQ2 resolved, `default_base_branch` retirement decision added |
+| 1.2 | 2026-05-29 | Agent | Add F9: CheckMergeTool design — options 2.4/2.5, decision update, affected interfaces, test blast radius, validation strategy |
