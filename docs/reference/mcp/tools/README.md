@@ -76,13 +76,14 @@ Full GitHub API integration for issues, pull requests, labels, and milestones. R
 | `update_issue` | Update issue fields | `issue_number`, `title`, `body`, `state`, `labels`, `milestone`, `assignees` |
 | `close_issue` | Close issue with optional comment | `issue_number`, `comment` |
 
-#### Pull Requests (3 tools)
+#### Pull Requests (4 tools)
 
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `submit_pr` | Atomically neutralize, commit, push, and create PR | `head`, `title`, `base`, `body`, `draft` |
 | `list_prs` | List PRs with filters | `state`, `head`, `base` |
 | `merge_pr` | Merge PR with strategy | `pr_number`, `merge_method`, `commit_message` |
+| `get_pr` | Get detailed information about a specific PR | `pr_number` |
 
 #### Labels (5 tools)
 

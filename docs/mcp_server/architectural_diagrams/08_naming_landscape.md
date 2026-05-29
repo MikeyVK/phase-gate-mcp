@@ -79,6 +79,7 @@ Full mapping of all tool files. ⚠ marks known inconsistencies.
 | `pr_tools.py` | `SubmitPRTool` | `submit_pr` | Replaced deleted public `create_pr` path |
 | `pr_tools.py` | `ListPRsTool` | `list_prs` | — |
 | `pr_tools.py` | `MergePRTool` | `merge_pr` | — |
+| `pr_tools.py` | `GetPRTool` | `get_pr` | — |
 | `quality_tools.py` | `RunQualityGatesTool` | `run_quality_gates` | — |
 | `test_tools.py` | `RunTestsTool` | `run_tests` | — |
 | `validation_tools.py` | `ValidationTool` | `validate_architecture` | Class name is broader than MCP tool name |
