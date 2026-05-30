@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
+import mcp_server.tools.validation_tools as validation_module
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.validation_tools import (
     ValidateDTOInput,
@@ -16,12 +17,11 @@ from mcp_server.tools.validation_tools import (
 
 
 def test_validation_tool_class_removed() -> None:
-    """Invariant: ValidationTool stub must be absent; it always returned success without validation."""
-    import mcp_server.tools.validation_tools as vt
+    """Invariant: ValidationTool stub must be absent.
 
-    assert not hasattr(vt, "ValidationTool"), (
-        "ValidationTool stub must be removed — it always returns success without performing validation"
-    )
+    The stub unconditionally returned success without performing any validation.
+    """
+    assert not hasattr(validation_module, "ValidationTool"), "ValidationTool stub must be removed"
 
 
 @pytest.mark.asyncio
