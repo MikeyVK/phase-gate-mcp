@@ -10,7 +10,7 @@
 
 ## Purpose
 
-Show the tool layer: all 50 MCP tools grouped by file, their base class hierarchy, naming
+Show the tool layer: all 49 MCP tools grouped by file, their base class hierarchy, naming
 conventions, and existing inconsistencies.
 
 ## Scope
@@ -54,7 +54,7 @@ a visibility mismatch (see Known Issues).
 
 ## 2. Tool Groups by File
 
-All 50 tools grouped by source file. Files marked (⚠) have naming convention violations.
+All 49 tools grouped by source file. Files marked (⚠) have naming convention violations.
 
 ```mermaid
 graph LR

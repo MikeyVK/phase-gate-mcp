@@ -119,7 +119,7 @@ Organize issues into release milestones.
 
 **ISO 8601 Format:** `2025-12-31T00:00:00Z` or `2025-12-31T00:00:00+00:00`
 
-### 6. Quality & Testing Tools (5 tools)
+### 6. Quality & Testing Tools (4 tools)
 
 Run quality gates, tests, and code validation.
 

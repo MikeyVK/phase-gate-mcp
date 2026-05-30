@@ -15,7 +15,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "QA NOGO in documentation phase: 4 gaps found (PHASE_WORKFLOWS.md, VSCODE_AGENT_ORCHESTRATION.md, MCP_TOOLS.md count, 03_tool_layer.md count). Re-entering documentation to apply fixes before re-transitioning to ready.",
   "issue_title": "Remove validate_architecture stub tool from MCP server",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-05-29T13:03:59.436353+00:00",
@@ -51,6 +51,22 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-30T09:51:47.208971+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-30T10:03:26.467456+00:00",
+      "human_approval": "User approved on 2026-05-30 by requesting @imp to apply the 4 QA fixes",
+      "forced": true,
+      "skip_reason": "QA NOGO in documentation phase: 4 gaps found (PHASE_WORKFLOWS.md, VSCODE_AGENT_ORCHESTRATION.md, MCP_TOOLS.md count, 03_tool_layer.md count). Re-entering documentation to apply fixes before re-transitioning to ready."
     }
   ],
   "reconstructed": false,
