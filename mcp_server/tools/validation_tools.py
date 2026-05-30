@@ -6,42 +6,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.qa_manager import QAManager
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
-
-
-class ValidationInput(BaseModel):
-    """Input for ValidationTool."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    scope: str = Field(
-        default="all",
-        description="Validation scope (all, dtos, workers, platform)",
-        pattern="^(all|dtos|workers|platform)$",
-    )
-
-
-class ValidationTool(BaseTool):
-    """Tool to validate code against architectural patterns."""
-
-    name = "validate_architecture"
-    description = "Validate code against architectural patterns"
-    args_model = ValidationInput
-
-    def __init__(self, manager: QAManager) -> None:
-        self.manager = manager
-
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        assert self.args_model is not None
-        return self.args_model.model_json_schema()
-
-    async def execute(self, params: ValidationInput, context: NoteContext) -> ToolResult:
-        del context  # Stub — not used yet
-        # Stub implementation. In reality, this would use QAManager to scan code.
-        return ToolResult.text(f"Architecture validation passed for scope: {params.scope}")
 
 
 class ValidateDTOInput(BaseModel):

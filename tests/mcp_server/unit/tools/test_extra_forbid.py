@@ -52,7 +52,7 @@ from mcp_server.tools.safe_edit_tool import LineEdit, SafeEditInput
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
 from mcp_server.tools.template_validation_tool import TemplateValidationInput
 from mcp_server.tools.test_tools import RunTestsInput
-from mcp_server.tools.validation_tools import ValidateDTOInput, ValidationInput
+from mcp_server.tools.validation_tools import ValidateDTOInput
 
 
 class TestExtraForbidOnAllInputModels:
@@ -142,7 +142,6 @@ class TestExtraForbidOnAllInputModels:
             # test_tools
             (RunTestsInput, {"path": "tests/"}),
             # validation
-            (ValidationInput, {}),
             (ValidateDTOInput, {"file_path": "/tmp/f.py"}),
         ],
     )

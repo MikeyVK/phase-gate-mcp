@@ -4,7 +4,7 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.validation_tools]
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -12,26 +12,16 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.validation_tools import (
     ValidateDTOInput,
     ValidateDTOTool,
-    ValidationInput,
-    ValidationTool,
 )
 
 
 def test_validation_tool_class_removed() -> None:
-    """RED: fails while ValidationTool exists; passes after stub deletion."""
+    """Invariant: ValidationTool stub must be absent; it always returned success without validation."""
     import mcp_server.tools.validation_tools as vt
 
     assert not hasattr(vt, "ValidationTool"), (
         "ValidationTool stub must be removed — it always returns success without performing validation"
     )
-
-
-@pytest.mark.asyncio
-async def test_validation_tool() -> None:
-    """Test ValidationTool returns pass status for architecture validation."""
-    tool = ValidationTool(manager=MagicMock())
-    result = await tool.execute(ValidationInput(scope="dtos"), NoteContext())
-    assert "Architecture validation passed" in result.content[0]["text"]
 
 
 @pytest.mark.asyncio
