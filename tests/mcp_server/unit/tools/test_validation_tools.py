@@ -17,6 +17,15 @@ from mcp_server.tools.validation_tools import (
 )
 
 
+def test_validation_tool_class_removed() -> None:
+    """RED: fails while ValidationTool exists; passes after stub deletion."""
+    import mcp_server.tools.validation_tools as vt
+
+    assert not hasattr(vt, "ValidationTool"), (
+        "ValidationTool stub must be removed — it always returns success without performing validation"
+    )
+
+
 @pytest.mark.asyncio
 async def test_validation_tool() -> None:
     """Test ValidationTool returns pass status for architecture validation."""
