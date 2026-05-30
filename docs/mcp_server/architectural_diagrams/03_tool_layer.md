@@ -10,7 +10,7 @@
 
 ## Purpose
 
-Show the tool layer: all 51 MCP tools grouped by file, their base class hierarchy, naming
+Show the tool layer: all 50 MCP tools grouped by file, their base class hierarchy, naming
 conventions, and existing inconsistencies.
 
 ## Scope
@@ -54,7 +54,7 @@ a visibility mismatch (see Known Issues).
 
 ## 2. Tool Groups by File
 
-All 51 tools grouped by source file. Files marked (⚠) have naming convention violations.
+All 50 tools grouped by source file. Files marked (⚠) have naming convention violations.
 
 ```mermaid
 graph LR
@@ -78,7 +78,7 @@ graph LR
     subgraph Quality
         QT["quality_tools.py<br/>1 tool"]
         TT["test_tools.py<br/>1 tool"]
-        VT["validation_tools.py<br/>2 tools"]
+        VT["validation_tools.py<br/>1 tool"]
         TV["template_validation_tool.py ⚠<br/>1 tool"]
     end
 ```

@@ -82,7 +82,6 @@ Full mapping of all tool files. ⚠ marks known inconsistencies.
 | `pr_tools.py` | `GetPRTool` | `get_pr` | — |
 | `quality_tools.py` | `RunQualityGatesTool` | `run_quality_gates` | — |
 | `test_tools.py` | `RunTestsTool` | `run_tests` | — |
-| `validation_tools.py` | `ValidationTool` | `validate_architecture` | Class name is broader than MCP tool name |
 | `validation_tools.py` | `ValidateDTOTool` | `validate_dto` | — |
 | `template_validation_tool.py` ⚠ | `ValidateTemplateTool` | `validate_template` | Singular filename |
 | `scaffold_artifact.py` ⚠ | `ScaffoldArtifactTool` | `scaffold_artifact` | No `_tool` suffix |

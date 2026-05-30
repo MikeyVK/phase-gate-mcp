@@ -2,7 +2,7 @@
 
 ## Overview
 
-The S1mpleTrader V3 MCP Server provides **31 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
+The S1mpleTrader V3 MCP Server provides **30 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
 
 **Server Location:** `mcp_server/`
 **Configuration:** `.vscode/mcp.json` → `st3-workflow`
@@ -126,7 +126,6 @@ Run quality gates, tests, and code validation.
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **RunQualityGatesTool** | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required + non-empty only when `scope="files"`) | `content[0]=text` summary line, `content[1]=json` compact payload `{overall_pass,gates}` |
-| **ValidationTool** | Generic code validation | `scope` (all/dtos/workers/platform) | Validation report |
 | **ValidateDTOTool** | Validate DTO schema | `file_path` | DTO structure validation |
 | **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` | `content[0]=text` (summary line + per-failure `FAILED test_id — reason` for exit 1; summary + stderr hint for exit 2/3/4), `content[1]=json` `{exit_code, summary, summary_line, failures[], coverage_pct, lf_cache_was_empty, stderr}` |
 | **HealthCheckTool** | Server health status | None | OK/ERROR |
@@ -191,7 +190,7 @@ All tools are registered in `mcp_server/server.py`:
 
 **Always Available (8 tools):**
 - Git tools (8)
-- Quality tools (4)
+- Quality tools (3)
 - Development tools (2)
 - Scaffold tools (2)
 - Discovery tools (2)
@@ -202,7 +201,7 @@ All tools are registered in `mcp_server/server.py`:
 - Label tools (5)
 - Milestone tools (3)
 
-**Total: 31 tools**
+**Total: 30 tools**
 
 ### Execution Flow
 

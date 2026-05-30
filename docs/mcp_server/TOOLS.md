@@ -20,9 +20,9 @@ public server surface.
 
 The server exposes:
 
-- **34 always-available tools**
+- **33 always-available tools**
 - **16 GitHub-dependent tools** when `GITHUB_TOKEN` is configured
-- **50 total tools** when GitHub integration is active
+- **49 total tools** when GitHub integration is active
 
 GitHub issue tools are registered only when GitHub integration is available. `submit_pr`,
 `list_prs`, and `merge_pr` are the public PR tools.
@@ -136,7 +136,6 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 |------|---------|----------------|
 | `run_quality_gates` | Run quality gates | `scope`, `files` |
 | `run_tests` | Run pytest | `path`, `scope`, `markers`, `timeout`, `last_failed_only`, `coverage` |
-| `validate_architecture` | Validate architecture rules | `scope` |
 | `validate_dto` | Validate DTO definitions | `file_path` |
 | `validate_template` | Validate template/file structure | `path`, `template_type` |
 
