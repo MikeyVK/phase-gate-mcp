@@ -2,7 +2,7 @@
   "branch": "refactor/346-remove-validate-architecture-stub",
   "issue_number": 346,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -19,7 +19,16 @@
   "issue_title": "Remove validate_architecture stub tool from MCP server",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-05-29T13:03:59.436353+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-05-30T06:09:42.617909+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
