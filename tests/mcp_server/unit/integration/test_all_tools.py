@@ -50,8 +50,6 @@ from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.tools.validation_tools import (
     ValidateDTOInput,
     ValidateDTOTool,
-    ValidationInput,
-    ValidationTool,
 )
 
 
@@ -169,10 +167,6 @@ def make_run_quality_gates_tool(manager: MagicMock | None = None) -> RunQualityG
     return RunQualityGatesTool(manager=manager or make_mock_qa_manager())
 
 
-def make_validation_tool(manager: MagicMock | None = None) -> ValidationTool:
-    return ValidationTool(manager=manager or make_mock_qa_manager())
-
-
 def make_create_issue_tool(manager: MagicMock) -> CreateIssueTool:
     issue_config = MagicMock()
     issue_config.has_issue_type.return_value = True
@@ -220,7 +214,6 @@ def make_core_tools() -> list[object]:
         make_git_push_tool(),
         make_git_delete_branch_tool(),
         make_run_quality_gates_tool(),
-        make_validation_tool(),
         ValidateDTOTool(),
         HealthCheckTool(),
         RunTestsTool(runner=PytestRunner()),
@@ -418,14 +411,6 @@ class TestQualityToolsIntegration:
         assert data["gates"][0]["passed"] is True
 
     @pytest.mark.asyncio
-    async def test_validation_tool_flow(self) -> None:
-        """Test architecture validation tool complete flow."""
-        tool = make_validation_tool()
-        result = await tool.execute(ValidationInput(scope="all"), NoteContext())
-
-        assert result.content is not None
-
-    @pytest.mark.asyncio
     async def test_validate_dto_tool_flow(self) -> None:
         """Test DTO validation tool complete flow."""
         mock_content = (
@@ -535,7 +520,6 @@ class TestToolSchemas:
         """Verify all Quality tools have input schemas."""
         tools = [
             make_run_quality_gates_tool(),
-            make_validation_tool(),
             ValidateDTOTool(),
         ]
 

@@ -204,7 +204,7 @@ The MCP Server operates across three distinct domains with **fundamentally diffe
 
 **Mechanisms**:
 - `scaffold_artifact` generates compliant code from templates
-- `validate_architecture` checks DTO/Worker structure
+- `validate_dto` checks DTO schema structure
 - Quality gates enforce style/typing
 - PolicyEngine **BLOCKS** non-scaffolded creation in backend/
 

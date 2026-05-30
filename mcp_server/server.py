@@ -126,7 +126,7 @@ from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
 from mcp_server.tools.template_validation_tool import TemplateValidationTool
 from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.tools.tool_result import ToolResult
-from mcp_server.tools.validation_tools import ValidateDTOTool, ValidationTool
+from mcp_server.tools.validation_tools import ValidateDTOTool
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
@@ -352,7 +352,6 @@ class MCPServer:
             CheckMergeTool(manager=self.git_manager),
             # Quality tools
             RunQualityGatesTool(manager=self.qa_manager),
-            ValidationTool(manager=self.qa_manager),
             ValidateDTOTool(),
             SafeEditTool(),
             TemplateValidationTool(),

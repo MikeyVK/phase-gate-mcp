@@ -696,7 +696,6 @@ tools:
   - mcp_st3-workflow_get_project_plan
   - mcp_st3-workflow_save_planning_deliverables
   - mcp_st3-workflow_update_planning_deliverables
-  - mcp_st3-workflow_validate_architecture
   - mcp_st3-workflow_search_documentation
   - mcp_st3-workflow_health_check
   - mcp_st3-workflow_create_issue
@@ -827,7 +826,6 @@ tools:
   - mcp_st3-workflow_get_work_context
   - mcp_st3-workflow_get_issue
   - mcp_st3-workflow_get_project_plan
-  - mcp_st3-workflow_validate_architecture
   - mcp_st3-workflow_search_documentation
   - mcp_st3-workflow_health_check
   - mcp_st3-workflow_create_issue
@@ -913,7 +911,6 @@ tools:
   - mcp_st3-workflow_get_work_context
   - mcp_st3-workflow_get_issue
   - mcp_st3-workflow_get_project_plan
-  - mcp_st3-workflow_validate_architecture
   - mcp_st3-workflow_validate_dto
   - mcp_st3-workflow_validate_template
   - mcp_st3-workflow_search_documentation
@@ -992,7 +989,7 @@ Bij elke sessie (inclusief na compaction):
 | Design document compleet | File check | design.md bevat contracts, flows, schemas |
 | Interface contracts verifieerbaar | Lees document | Contracts bevatten method signatures, types, pre/postcondities |
 | Data flows compleet | Lees document | Alle entry/exit punten beschreven |
-| Architectuur alignment | `validate_architecture` + cross-check | Geen DIP/SRP/ISP violations in ontwerp |
+| Architectuur alignment | Cross-check tegen ARCHITECTURE_PRINCIPLES.md | Geen DIP/SRP/ISP violations in ontwerp |
 | Backward compatibility | Lees document | Breaking changes expliciet benoemd |
 | Design volgt planning | Cross-check planning.md | Design dekt alle geplande cycles |
 
@@ -1248,7 +1245,6 @@ tools:
   - mcp_st3-workflow_get_work_context
   - mcp_st3-workflow_get_issue
   - mcp_st3-workflow_get_project_plan
-  - mcp_st3-workflow_validate_architecture
   - mcp_st3-workflow_validate_dto
   - mcp_st3-workflow_validate_template
   - mcp_st3-workflow_search_documentation
@@ -1319,7 +1315,6 @@ tools:
   - mcp_st3-workflow_get_work_context
   - mcp_st3-workflow_get_issue
   - mcp_st3-workflow_get_project_plan
-  - mcp_st3-workflow_validate_architecture
   - mcp_st3-workflow_validate_dto
   - mcp_st3-workflow_validate_template
   - mcp_st3-workflow_search_documentation
