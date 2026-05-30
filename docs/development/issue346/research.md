@@ -1,18 +1,21 @@
 <!-- docs\development\issue346\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-05-29T13:59Z updated= -->
+<!-- template=research version=8b7bb3ab created=2026-05-29T13:59Z updated=2026-05-30T00:00Z -->
 # Remove validate_architecture stub tool from MCP server
 
 **Status:** DRAFT  
 **Version:** 1.0  
-**Last Updated:** 2026-05-29
+**Last Updated:** 2026-05-30
 
 ---
 
 ## Purpose
 
 Establish the full evidence base for a clean stub removal with zero production risk.
+**In Scope:**
+ValidationTool + ValidationInput classes; server.py import/registration; stub test in test_validation_tools.py; make_validation_tool in test_all_tools.py; qa.agent.md allowed tool entry; active docs (quality.md, README.md, 03_tool_layer.md, 08_naming_landscape.md, TOOLS.md, MCP_TOOLS.md, ARCHITECTURE.md, mcp_vision_reference.md)
 
-## Scope
+**Out of Scope:**
+ValidateDTOTool and ValidateDTOInput (no changes); QAManager itself; backend/ modules; archive docs (VSCODE_AGENT_ORCHESTRATION.md, PHASE_WORKFLOWS.md, GAP_ANALYSIS_IMPLEMENTATION_PLAN.md, docs/development/archive/) — archive docs are explicitly excluded per project scope decision
 
 **In Scope:**
 ValidationTool + ValidationInput classes; server.py import/registration; stub test in test_validation_tools.py; make_validation_tool in test_all_tools.py; qa.agent.md allowed tool entry; active docs (quality.md, README.md, 03_tool_layer.md, 08_naming_landscape.md, TOOLS.md); archive docs with active references (VSCODE_AGENT_ORCHESTRATION.md, PHASE_WORKFLOWS.md, GAP_ANALYSIS_IMPLEMENTATION_PLAN.md)
@@ -64,41 +67,43 @@ None. The tool count assertion question was resolved during research: `test_all_
 **Constraints for later phases:**
 - `ValidateDTOTool` and its tests must remain fully intact.
 - `QAManager` itself is not in scope; only its import in `validation_tools.py` is removed.
-- Archive docs under `docs/development/archive/` are out of scope; only active and currently referenced docs require updates.
+- Archive docs (`VSCODE_AGENT_ORCHESTRATION.md`, `PHASE_WORKFLOWS.md`, `GAP_ANALYSIS_IMPLEMENTATION_PLAN.md`, and any historical docs under `docs/development/archive/`) are explicitly out of scope; they will not be updated.
 - `test_validation_tools.py` must not be deleted; only the stub test and its stub-specific imports are removed.
 - Tool count references in active docs must be updated: 50 → 49 total; Quality 4 → 3.
 
 
 ## Related Documentation
 - **[mcp_server/tools/validation_tools.py][related-1]**
-- **[mcp_server/server.py lines 129 and 355][related-2]**
+- **[mcp_server/server.py][related-2]**
 - **[tests/mcp_server/unit/tools/test_validation_tools.py][related-3]**
-- **[tests/mcp_server/unit/integration/test_all_tools.py lines 54 and 172-173][related-4]**
-- **[.github/agents/qa.agent.md line 25][related-5]**
-- **[docs/reference/mcp/tools/quality.md][related-6]**
-- **[docs/reference/mcp/tools/README.md][related-7]**
-- **[docs/mcp_server/architectural_diagrams/03_tool_layer.md line 81][related-8]**
-- **[docs/mcp_server/architectural_diagrams/08_naming_landscape.md line 85][related-9]**
+- **[tests/mcp_server/unit/integration/test_all_tools.py][related-4]**
+- **[tests/mcp_server/unit/tools/test_extra_forbid.py][related-5]**
+- **[.github/agents/qa.agent.md][related-6]**
+- **[docs/reference/mcp/tools/quality.md][related-7]**
+- **[docs/reference/mcp/MCP_TOOLS.md][related-8]**
+- **[docs/mcp_server/README.md][related-9]**
 - **[docs/mcp_server/TOOLS.md][related-10]**
-- **[docs/architecture/VSCODE_AGENT_ORCHESTRATION.md][related-11]**
-- **[docs/mcp_server/PHASE_WORKFLOWS.md][related-12]**
-- **[docs/mcp_server/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md][related-13]**
+- **[docs/mcp_server/ARCHITECTURE.md][related-11]**
+- **[docs/mcp_server/architectural_diagrams/03_tool_layer.md][related-12]**
+- **[docs/mcp_server/architectural_diagrams/08_naming_landscape.md][related-13]**
+- **[docs/reference/mcp/mcp_vision_reference.md][related-14]**
 
 <!-- Link definitions -->
 
-[related-1]: mcp_server/tools/validation_tools.py
-[related-2]: mcp_server/server.py lines 129 and 355
-[related-3]: tests/mcp_server/unit/tools/test_validation_tools.py
-[related-4]: tests/mcp_server/unit/integration/test_all_tools.py lines 54 and 172-173
-[related-5]: .github/agents/qa.agent.md line 25
-[related-6]: docs/reference/mcp/tools/quality.md
-[related-7]: docs/reference/mcp/tools/README.md
-[related-8]: docs/mcp_server/architectural_diagrams/03_tool_layer.md line 81
-[related-9]: docs/mcp_server/architectural_diagrams/08_naming_landscape.md line 85
-[related-10]: docs/mcp_server/TOOLS.md
-[related-11]: docs/architecture/VSCODE_AGENT_ORCHESTRATION.md
-[related-12]: docs/mcp_server/PHASE_WORKFLOWS.md
-[related-13]: docs/mcp_server/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md
+[related-1]: ../../mcp_server/tools/validation_tools.py
+[related-2]: ../../mcp_server/server.py
+[related-3]: ../../tests/mcp_server/unit/tools/test_validation_tools.py
+[related-4]: ../../tests/mcp_server/unit/integration/test_all_tools.py
+[related-5]: ../../tests/mcp_server/unit/tools/test_extra_forbid.py
+[related-6]: ../../.github/agents/qa.agent.md
+[related-7]: ../../docs/reference/mcp/tools/quality.md
+[related-8]: ../../docs/reference/mcp/MCP_TOOLS.md
+[related-9]: ../../docs/mcp_server/README.md
+[related-10]: ../../docs/mcp_server/TOOLS.md
+[related-11]: ../../docs/mcp_server/ARCHITECTURE.md
+[related-12]: ../../docs/mcp_server/architectural_diagrams/03_tool_layer.md
+[related-13]: ../../docs/mcp_server/architectural_diagrams/08_naming_landscape.md
+[related-14]: ../../docs/reference/mcp/mcp_vision_reference.md
 
 ---
 
@@ -106,4 +111,4 @@ None. The tool count assertion question was resolved during research: `test_all_
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 |  | Agent | Initial draft |
+| 1.0 | 2026-05-30 | Agent | Initial draft — full blast radius, Approved Strategy, archive docs excluded |
