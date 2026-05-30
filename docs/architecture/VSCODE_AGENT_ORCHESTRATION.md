@@ -989,7 +989,7 @@ Bij elke sessie (inclusief na compaction):
 | Design document compleet | File check | design.md bevat contracts, flows, schemas |
 | Interface contracts verifieerbaar | Lees document | Contracts bevatten method signatures, types, pre/postcondities |
 | Data flows compleet | Lees document | Alle entry/exit punten beschreven |
-| Architectuur alignment | `validate_dto` + cross-check | Geen DIP/SRP/ISP violations in ontwerp |
+| Architectuur alignment | Cross-check tegen ARCHITECTURE_PRINCIPLES.md | Geen DIP/SRP/ISP violations in ontwerp |
 | Backward compatibility | Lees document | Breaking changes expliciet benoemd |
 | Design volgt planning | Cross-check planning.md | Design dekt alle geplande cycles |
 

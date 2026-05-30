@@ -15,7 +15,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "QA NOGO in documentation phase: 4 gaps found (PHASE_WORKFLOWS.md, VSCODE_AGENT_ORCHESTRATION.md, MCP_TOOLS.md count, 03_tool_layer.md count). Re-entering documentation to apply fixes before re-transitioning to ready.",
+  "skip_reason": "QA requested 2 additional doc corrections after second NOGO: fix validate_dto as architecture-alignment method (VSCODE_AGENT_ORCHESTRATION.md) and fix validate_dto as Architectural phase tool (PHASE_WORKFLOWS.md).",
   "issue_title": "Remove validate_architecture stub tool from MCP server",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-05-29T13:03:59.436353+00:00",
@@ -67,6 +67,22 @@
       "human_approval": "User approved on 2026-05-30 by requesting @imp to apply the 4 QA fixes",
       "forced": true,
       "skip_reason": "QA NOGO in documentation phase: 4 gaps found (PHASE_WORKFLOWS.md, VSCODE_AGENT_ORCHESTRATION.md, MCP_TOOLS.md count, 03_tool_layer.md count). Re-entering documentation to apply fixes before re-transitioning to ready."
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-05-30T10:03:44.289171+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "documentation",
+      "timestamp": "2026-05-30T10:07:09.964516+00:00",
+      "human_approval": "User approved on 2026-05-30 by requesting @imp documenter to apply 2 remaining doc fixes",
+      "forced": true,
+      "skip_reason": "QA requested 2 additional doc corrections after second NOGO: fix validate_dto as architecture-alignment method (VSCODE_AGENT_ORCHESTRATION.md) and fix validate_dto as Architectural phase tool (PHASE_WORKFLOWS.md)."
     }
   ],
   "reconstructed": false,

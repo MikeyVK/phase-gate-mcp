@@ -71,7 +71,7 @@ This document defines the 7 development phases that ST3 follows, including entry
 |-------|------|---------|----------------------|---------------|
 | 0 | Discovery | Problem exploration | `type:discussion` | `search_documentation` |
 | 1 | Planning | Work breakdown | `type:feature` | `create_issue` |
-| 2 | Architectural | System design | Architecture Design | `scaffold_artifact`, `validate_dto` |
+| 2 | Architectural | System design | Architecture Design | `scaffold_artifact`, `search_documentation` |
 | 3 | Component | Detailed design | Component Design | `scaffold_artifact`, `validate_dto` |
 | 4 | TDD | Implementation | TDD Task | `run_quality_gates`, `run_tests` |
 | 5 | Integration | Wiring & testing | TDD Task | `run_tests` |
