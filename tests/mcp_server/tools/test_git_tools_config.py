@@ -1,87 +1,88 @@
-"""Integration tests for git_tools Pydantic validators using GitConfig.
+"""Tests for C1 A4 schema overrides: CreateBranchTool and GitCommitTool.input_schema.
 
-Cycle 8-9 follow-up: Verify field validators derive from GitConfig.
+Verifies that input_schema enums and patterns reflect git_config values (not hardcoded).
 
 Conventions tested:
-- #7: Branch type validation pattern
+- #7: branch_type.enum adapts to git.yaml branch_types
+- #8: name.pattern adapts to git.yaml branch_name_pattern
+- A4: commit_type.enum adapts to git.yaml commit_types
 
 @layer: Tests (Unit)
-@dependencies: pytest, yaml, mcp_server.tools.git_tools
+@dependencies: pytest, mcp_server.tools.git_tools
 """
 
-import tempfile
-from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
-import yaml  # type: ignore[import-untyped]
-from pydantic import ValidationError
 
-from mcp_server.config.loader import ConfigLoader
-from mcp_server.tools.git_tools import CreateBranchInput
-
-# config_path is always passed explicitly; config_root is only used as a required
-# constructor argument. Use the real .phase-gate/config dir (name=="config" satisfies
-# normalize_config_root) to avoid coupling to arbitrary temp directories.
-_ST3_CONFIG = Path(__file__).resolve().parents[3] / ".phase-gate" / "config"
+from mcp_server.tools.git_tools import CreateBranchTool, GitCommitTool
 
 
-class TestGitToolsConfigIntegration:
-    """Test git_tools Field validators use GitConfig (Conventions #7-8)."""
+def _make_manager(
+    branch_types: list[str] | None = None,
+    commit_types: list[str] | None = None,
+    branch_name_pattern: str = "^[a-z][a-z0-9/-]*$",
+) -> MagicMock:
+    """Build a mock GitManager with the given config values."""
+    manager = MagicMock()
+    git_config = MagicMock()
+    git_config.branch_types = branch_types or ["feature", "bug", "docs"]
+    git_config.commit_types = commit_types or ["feat", "fix", "docs", "chore"]
+    git_config.branch_name_pattern = branch_name_pattern
+    manager.git_config = git_config
+    return manager
 
-    def test_create_branch_respects_custom_branch_types(self) -> None:
-        """Convention #7: CreateBranchInput.branch_type adapts to git.yaml.
 
-        Verifies DRY fix: When git.yaml defines custom branch types,
-        the Field pattern validator should accept them (not hardcoded).
-        """
-        # Create custom git.yaml with "epic" and "hotfix" (no "feature")
-        custom_config = {
-            "branch_types": ["epic", "hotfix"],
-            "protected_branches": ["main"],
-            "branch_name_pattern": "^[a-z0-9-]+$",
-            "commit_types": [
-                "feat",
-                "fix",
-                "docs",
-                "style",
-                "refactor",
-                "test",
-                "chore",
-                "perf",
-                "ci",
-                "build",
-                "revert",
-            ],
-            "default_base_branch": "main",
-            "issue_title_max_length": 72,
-        }
+class TestCreateBranchToolSchema:
+    """A4 schema override: CreateBranchTool.input_schema reflects git_config values."""
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as temp_file:
-            yaml.dump(custom_config, temp_file)
-            temp_path = temp_file.name
+    def test_branch_type_enum_matches_config(self) -> None:
+        """input_schema.properties.branch_type.enum == git_config.branch_types."""
+        custom_types = ["epic", "hotfix"]
+        manager = _make_manager(branch_types=custom_types)
+        tool = CreateBranchTool(manager=manager)
 
-        try:
-            # Load custom config and inject it into the input validator
-            git_config = ConfigLoader(_ST3_CONFIG).load_git_config(config_path=Path(temp_path))
-            CreateBranchInput.configure(git_config)
+        schema = tool.input_schema
+        assert "enum" in schema["properties"]["branch_type"]
+        assert schema["properties"]["branch_type"]["enum"] == custom_types
 
-            # "hotfix" should pass (in custom config)
-            input_hotfix = CreateBranchInput(
-                name="test-branch", branch_type="hotfix", base_branch="main"
-            )
-            assert input_hotfix.branch_type == "hotfix"
+    def test_branch_type_enum_excludes_types_not_in_config(self) -> None:
+        """branch_type.enum does not contain types outside git_config.branch_types."""
+        custom_types = ["epic", "hotfix"]
+        manager = _make_manager(branch_types=custom_types)
+        tool = CreateBranchTool(manager=manager)
 
-            # "feature" should FAIL (NOT in custom config)
-            with pytest.raises(ValidationError) as exc_info:
-                CreateBranchInput(
-                    name="test-branch",
-                    branch_type="feature",  # Not in custom config
-                    base_branch="main",
-                )
-            # Validator uses GitConfig, rejects "feature"
-            error_str = str(exc_info.value)
-            assert "Invalid branch_type 'feature'" in error_str
-            assert "Valid types from git.yaml: epic, hotfix" in error_str
+        enum_values = tool.input_schema["properties"]["branch_type"]["enum"]
+        assert "feature" not in enum_values
 
-        finally:
-            Path(temp_path).unlink(missing_ok=True)
+    def test_name_pattern_matches_config(self) -> None:
+        """input_schema.properties.name.pattern == git_config.branch_name_pattern."""
+        pattern = "^[a-z][a-z0-9/-]*$"
+        manager = _make_manager(branch_name_pattern=pattern)
+        tool = CreateBranchTool(manager=manager)
+
+        schema = tool.input_schema
+        assert "pattern" in schema["properties"]["name"]
+        assert schema["properties"]["name"]["pattern"] == pattern
+
+
+class TestGitCommitToolSchema:
+    """A4 schema override: GitCommitTool.input_schema reflects git_config values."""
+
+    def test_commit_type_enum_matches_config(self) -> None:
+        """input_schema.properties.commit_type.enum == git_config.commit_types."""
+        custom_types = ["feat", "fix", "hotfix"]
+        manager = _make_manager(commit_types=custom_types)
+        tool = GitCommitTool(manager=manager)
+
+        schema = tool.input_schema
+        assert "enum" in schema["properties"]["commit_type"]
+        assert schema["properties"]["commit_type"]["enum"] == custom_types
+
+    def test_commit_type_enum_excludes_invalid_types(self) -> None:
+        """commit_type.enum does not contain unknown types."""
+        manager = _make_manager(commit_types=["feat", "fix"])
+        tool = GitCommitTool(manager=manager)
+
+        enum_values = tool.input_schema["properties"]["commit_type"]["enum"]
+        assert "invalid_type" not in enum_values
