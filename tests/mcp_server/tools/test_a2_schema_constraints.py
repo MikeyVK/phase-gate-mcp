@@ -57,7 +57,17 @@ class TestCreateLabelInputConstraints:
         assert label.color == "1D76DB"
 
     def test_all_valid_categories_accepted(self) -> None:
-        for category in ("type", "priority", "status", "phase", "scope", "component", "effort", "parent"):
+        categories = (
+            "type",
+            "priority",
+            "status",
+            "phase",
+            "scope",
+            "component",
+            "effort",
+            "parent",
+        )
+        for category in categories:
             label = CreateLabelInput(name=f"{category}:value", color="0e8a16")
             assert label.name.startswith(category)
 
