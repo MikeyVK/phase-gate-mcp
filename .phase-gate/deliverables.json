@@ -32,7 +32,7 @@
     "created_at": "2026-05-30T10:20:58.762356+00:00",
     "planning_deliverables": {
       "tdd_cycles": {
-        "total": 4,
+        "total": 5,
         "cycles": [
           {
             "cycle_number": 1,
@@ -161,6 +161,45 @@
               }
             ],
             "exit_criteria": "All 8 A1 description gaps resolved; all 14 modified tools have updated reference docs; no test changes required; quality gates green on all changed files"
+          },
+          {
+            "cycle_number": 5,
+            "name": "C5 \u2014 Q9 config-driven cycle_number enforcement",
+            "deliverables": [
+              {
+                "id": "C5.D1",
+                "description": "GitCommitInput.require_cycle_number_for_implementation @model_validator removed"
+              },
+              {
+                "id": "C5.D2",
+                "description": "GitCommitTool.__init__ accepts phase_contract_resolver: IPhaseContractResolver | None = None"
+              },
+              {
+                "id": "C5.D3",
+                "description": "execute() runtime guard: after workflow_phase is resolved (both paths), load state via get_state() if not already loaded; call phase_contract_resolver.is_cycle_based_phase(state.workflow_name, workflow_phase); if True and cycle_number is None return ToolResult.error with actionable message. Guard is skipped silently when _phase_contract_resolver or _state_engine is None."
+              },
+              {
+                "id": "C5.D4",
+                "description": "GitCommitInput.cycle_number field description updated to: 'Cycle number (e.g., 1, 2, 3). Required when the active phase is cycle-based (e.g. implementation). Optional otherwise.'"
+              },
+              {
+                "id": "C5.D5",
+                "description": "server.py GitCommitTool constructor call updated: phase_contract_resolver=self.phase_contract_resolver added"
+              },
+              {
+                "id": "C5.D6",
+                "description": "docs/reference/mcp/tools/git.md cycle_number description updated to match new A1 wording"
+              },
+              {
+                "id": "C5.D7",
+                "description": "Regression test (auto-detect path): state.json current_phase='implementation', workflow_phase omitted, cycle_number omitted \u2192 ToolResult.error (not a commit)"
+              },
+              {
+                "id": "C5.D8",
+                "description": "Regression test (explicit path): workflow_phase='implementation' passed explicitly, cycle_number omitted, state.json has workflow_name='feature' \u2192 ToolResult.error"
+              }
+            ],
+            "exit_criteria": "@model_validator removed; PhaseContractResolver injected; runtime guard fires on both explicit and auto-detect paths when phase is cycle-based and cycle_number is None; guard is absent (no error) on non-cycle-based phases; field description updated; server.py wired; reference docs updated; quality gates green"
           }
         ]
       }
