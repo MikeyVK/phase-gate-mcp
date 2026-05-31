@@ -1,122 +1,25 @@
 {
-  "branch": "refactor/358-mcp-tool-schema-audit",
-  "issue_number": 358,
-  "workflow_name": "refactor",
-  "current_phase": "ready",
+  "branch": "epic/320-production-readiness-tracker",
+  "issue_number": 320,
+  "workflow_name": "epic",
+  "current_phase": "research",
   "current_cycle": null,
-  "last_cycle": 5,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "C2 \u2014 A2 static Pydantic constraints",
-      "forced": false,
-      "entered": "2026-05-31T15:34:25.422741+00:00"
-    },
-    {
-      "cycle_number": 3,
-      "name": "C3 \u2014 A4 config-driven schema overrides + constructor injection",
-      "forced": false,
-      "entered": "2026-05-31T15:51:04.283354+00:00"
-    },
-    {
-      "cycle_number": 4,
-      "name": "C4 \u2014 A1 description enrichments + reference docs",
-      "forced": false,
-      "entered": "2026-05-31T16:14:59.805150+00:00"
-    },
-    {
-      "cycle_number": 5,
-      "name": "C5 \u2014 Q9 config-driven cycle_number enforcement",
-      "entered": "2026-05-31T18:29:08.468369+00:00",
-      "forced": true,
-      "skip_reason": "C1-C4 completed in previous implementation phase session; state.json current_cycle still at 1 from that phase; C5 is a new cycle added post-QA-NOGO for config-driven cycle enforcement fix",
-      "human_approval": "User approved on 2026-05-31: C1-C4 completed in previous implementation phase; C5 is new cycle for Q9 fix",
-      "skipped_cycles": [
-        2,
-        3,
-        4
-      ]
-    }
-  ],
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "QA NOGO: C1 introduced behavioral regression \u2014 cycle_number enforcement in GitCommitTool is only enforced on the explicit workflow_phase path (Pydantic validator), not on the auto-detect path. The current hardcoded 'implementation' string check is architecturally wrong; cycle enforcement must be config-driven via is_cycle_based_phase(workflow_name, phase). Returning to research to document the correct config-driven fix strategy before planning and implementation.",
-  "issue_title": "MCP tool schema audit: surface constraints to prevent first-use errors",
-  "parent_branch": "epic/320-production-readiness-tracker",
-  "created_at": "2026-05-30T10:20:58.855128+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-05-31T13:44:16.748692+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-31T15:05:46.003607+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "research",
-      "timestamp": "2026-05-31T18:07:45.478187+00:00",
-      "human_approval": "User approved on 2026-05-31: explicitly requested return to research phase to document config-driven cycle enforcement fix; approved out-of-scope expansion via extra workflow run",
-      "forced": true,
-      "skip_reason": "QA NOGO: C1 introduced behavioral regression \u2014 cycle_number enforcement in GitCommitTool is only enforced on the explicit workflow_phase path (Pydantic validator), not on the auto-detect path. The current hardcoded 'implementation' string check is architecturally wrong; cycle enforcement must be config-driven via is_cycle_based_phase(workflow_name, phase). Returning to research to document the correct config-driven fix strategy before planning and implementation."
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-05-31T18:20:09.488045+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-05-31T18:25:48.387444+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-05-31T18:49:27.824328+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-05-31T18:58:32.795001+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-05-31T19:20:44.679012+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "skip_reason": null,
+  "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
+  "parent_branch": "main",
+  "created_at": "2026-05-25T18:48:22.612710+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
