@@ -99,7 +99,7 @@ class TestExtraForbidOnAllInputModels:
             (CloseIssueInput, {"issue_number": 1}),
             # label
             (ListLabelsInput, {}),
-            (CreateLabelInput, {"name": "bug", "color": "ff0000"}),
+            (CreateLabelInput, {"name": "type:bug", "color": "ff0000"}),
             (DeleteLabelInput, {"name": "bug"}),
             (RemoveLabelsInput, {"issue_number": 1, "labels": ["bug"]}),
             (AddLabelsInput, {"issue_number": 1, "labels": ["bug"]}),
