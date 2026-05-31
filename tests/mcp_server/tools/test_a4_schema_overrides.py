@@ -14,9 +14,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from mcp_server.tools.issue_tools import CreateIssueTool
 from mcp_server.tools.phase_tools import ForcePhaseTransitionTool, TransitionPhaseTool
 from mcp_server.tools.project_tools import InitializeProjectTool
-from mcp_server.tools.issue_tools import CreateIssueTool
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
 
 
@@ -36,7 +36,7 @@ def _make_issue_config(issue_type_names: list[str] | None = None) -> MagicMock:
     config = MagicMock()
     names = issue_type_names or ["feature", "bug", "hotfix", "chore", "docs", "epic"]
     config.issue_types = [MagicMock(name=n) for n in names]
-    for mock_type, name in zip(config.issue_types, names):
+    for mock_type, name in zip(config.issue_types, names, strict=True):
         mock_type.name = name
     return config
 
@@ -45,7 +45,7 @@ def _make_label_config(priority_values: list[str] | None = None) -> MagicMock:
     label_config = MagicMock()
     values = priority_values or ["critical", "high", "medium", "low"]
     priority_labels = [MagicMock() for _ in values]
-    for mock_label, val in zip(priority_labels, values):
+    for mock_label, val in zip(priority_labels, values, strict=True):
         mock_label.name = f"priority:{val}"
     label_config.get_labels_by_category.return_value = priority_labels
     return label_config
@@ -72,8 +72,12 @@ def _make_artifact_manager(type_ids: list[str] | None = None) -> MagicMock:
 class TestTransitionPhaseToolSchema:
     """C3: TransitionPhaseTool.input_schema injects to_phase.enum from WorkphasesConfig."""
 
-    def test_to_phase_has_enum_from_workphases_config(self, tmp_path: pytest.TempPathFactory) -> None:
-        workphases_config = _make_workphases_config({"research": None, "design": None, "planning": None})
+    def test_to_phase_has_enum_from_workphases_config(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        workphases_config = _make_workphases_config(
+            {"research": None, "design": None, "planning": None}
+        )
         tool = TransitionPhaseTool(
             workspace_root=tmp_path,
             server_root=tmp_path,
@@ -87,7 +91,9 @@ class TestTransitionPhaseToolSchema:
 class TestForcePhaseTransitionToolSchema:
     """C3: ForcePhaseTransitionTool.input_schema injects to_phase.enum from WorkphasesConfig."""
 
-    def test_to_phase_has_enum_from_workphases_config(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_to_phase_has_enum_from_workphases_config(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
         workphases_config = _make_workphases_config({"research": None, "planning": None})
         tool = ForcePhaseTransitionTool(
             workspace_root=tmp_path,
@@ -102,7 +108,9 @@ class TestForcePhaseTransitionToolSchema:
 class TestInitializeProjectToolSchema:
     """C3: InitializeProjectTool.input_schema injects workflow_name.enum from ContractsConfig."""
 
-    def test_workflow_name_has_enum_from_contracts_config(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_workflow_name_has_enum_from_contracts_config(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
         contracts_config = _make_contracts_config({"feature": None, "bug": None, "custom": None})
         tool = InitializeProjectTool(
             workspace_root=tmp_path,
@@ -135,21 +143,31 @@ class TestCreateIssueToolSchema:
         schema = tool.input_schema
         assert "enum" in schema["properties"]["issue_type"]
         assert set(schema["properties"]["issue_type"]["enum"]) == {
-            "feature", "bug", "hotfix", "chore", "docs", "epic"
+            "feature",
+            "bug",
+            "hotfix",
+            "chore",
+            "docs",
+            "epic",
         }
 
     def test_priority_has_enum(self, tool: CreateIssueTool) -> None:
         schema = tool.input_schema
         assert "enum" in schema["properties"]["priority"]
         assert set(schema["properties"]["priority"]["enum"]) == {
-            "critical", "high", "medium", "low"
+            "critical",
+            "high",
+            "medium",
+            "low",
         }
 
     def test_scope_has_enum(self, tool: CreateIssueTool) -> None:
         schema = tool.input_schema
         assert "enum" in schema["properties"]["scope"]
         assert set(schema["properties"]["scope"]["enum"]) == {
-            "architecture", "mcp-server", "platform"
+            "architecture",
+            "mcp-server",
+            "platform",
         }
 
     def test_title_has_max_length(self, tool: CreateIssueTool) -> None:

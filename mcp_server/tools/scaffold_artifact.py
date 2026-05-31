@@ -62,9 +62,7 @@ class ScaffoldArtifactTool(BranchMutatingTool):
     @property
     def input_schema(self) -> dict[str, Any]:
         schema = super().input_schema
-        schema["properties"]["artifact_type"]["enum"] = (
-            self.manager.registry.list_type_ids()
-        )
+        schema["properties"]["artifact_type"]["enum"] = self.manager.registry.list_type_ids()
         return schema
 
     async def execute(self, params: ScaffoldArtifactInput, context: NoteContext) -> ToolResult:

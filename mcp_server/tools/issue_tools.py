@@ -190,9 +190,7 @@ class CreateIssueTool(BaseTool):
         if self._scope_config is not None:
             schema["properties"]["scope"]["enum"] = self._scope_config.scopes
         if self._git_config is not None:
-            schema["properties"]["title"]["maxLength"] = (
-                self._git_config.issue_title_max_length
-            )
+            schema["properties"]["title"]["maxLength"] = self._git_config.issue_title_max_length
         return schema
 
     def _render_body(self, body: IssueBody, title: str = "") -> str:

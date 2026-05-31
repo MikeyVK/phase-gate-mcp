@@ -13,6 +13,7 @@ from unittest.mock import Mock
 
 # Third-party
 import pytest
+from pydantic import ValidationError
 
 # Local
 from mcp_server.config.loader import ConfigLoader
@@ -54,38 +55,16 @@ class TestCreateLabelToolValidation:
     """Tests for CreateLabelTool validation hooks."""
 
     @pytest.mark.asyncio
-    async def test_create_label_validates_name_pattern(self, tmp_path: Path) -> None:
-        """CreateLabelTool rejects invalid label name pattern."""
-        yaml_content = """version: "1.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
-        label_config = _load_label_config(tmp_path, yaml_content)
-
-        tool = CreateLabelTool(manager=Mock(), label_config=label_config, workphases_config=Mock())
-        params = CreateLabelInput(name="invalid-name", color="FF0000")
-
-        result = await tool.execute(params, NoteContext())
-        assert "does not match required pattern" in result.content[0]["text"]
+    async def test_create_label_validates_name_pattern(self) -> None:
+        """Invalid label name pattern is rejected at schema validation level (Pydantic)."""
+        with pytest.raises(ValidationError, match="string_pattern_mismatch"):
+            CreateLabelInput(name="invalid-name", color="FF0000")
 
     @pytest.mark.asyncio
-    async def test_create_label_rejects_hash_prefix(self, tmp_path: Path) -> None:
-        """CreateLabelTool rejects color with # prefix."""
-        yaml_content = """version: "1.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
-        label_config = _load_label_config(tmp_path, yaml_content)
-
-        tool = CreateLabelTool(manager=Mock(), label_config=label_config, workphases_config=Mock())
-        params = CreateLabelInput(name="type:bug", color="#FF0000")
-
-        result = await tool.execute(params, NoteContext())
-        result_text = result.content[0]["text"]
-        assert "must not include # prefix" in result_text.lower()
-        assert "FF0000" in result_text
+    async def test_create_label_rejects_hash_prefix(self) -> None:
+        """Color with # prefix is rejected at schema validation level (Pydantic)."""
+        with pytest.raises(ValidationError, match="string_pattern_mismatch"):
+            CreateLabelInput(name="type:bug", color="#FF0000")
 
     @pytest.mark.asyncio
     async def test_create_label_valid_succeeds(self, tmp_path: Path) -> None:
@@ -112,31 +91,15 @@ labels:
         mock_manager.create_label.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_create_label_freeform_exception_allowed(self, tmp_path: Path) -> None:
-        """CreateLabelTool allows freeform exceptions like 'good first issue'."""
-        yaml_content = """version: "1.0"
-freeform_exceptions:
-  - "good first issue"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
-        label_config = _load_label_config(tmp_path, yaml_content)
+    async def test_create_label_freeform_exception_allowed(self) -> None:
+        """Freeform label names are rejected at schema validation level (Pydantic).
 
-        mock_manager = Mock()
-        mock_manager.create_label = Mock(
-            return_value=_MockLabel(name="good first issue", color="7057FF")
-        )
+        The CreateLabelInput.name pattern enforces 'category:value' format.
+        Freeform exceptions configured in labels.yaml cannot bypass this boundary.
+        """
+        with pytest.raises(ValidationError, match="string_pattern_mismatch"):
+            CreateLabelInput(name="good first issue", color="7057FF")
 
-        tool = CreateLabelTool(
-            manager=mock_manager,
-            label_config=label_config,
-            workphases_config=Mock(),
-        )
-        params = CreateLabelInput(name="good first issue", color="7057FF")
-
-        result = await tool.execute(params, NoteContext())
-        assert "Created label" in result.content[0]["text"]
 
 
 class TestAddLabelsToolValidation:

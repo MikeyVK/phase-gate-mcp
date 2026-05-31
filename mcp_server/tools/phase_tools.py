@@ -118,11 +118,8 @@ class TransitionPhaseTool(_BaseTransitionTool):
     def input_schema(self) -> dict[str, Any]:
         schema = super().input_schema
         if self._workphases_config is not None:
-            schema["properties"]["to_phase"]["enum"] = list(
-                self._workphases_config.phases.keys()
-            )
+            schema["properties"]["to_phase"]["enum"] = list(self._workphases_config.phases.keys())
         return schema
-
 
     async def execute(self, params: TransitionPhaseInput, context: NoteContext) -> ToolResult:
         """Execute standard phase transition.
@@ -176,11 +173,8 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
     def input_schema(self) -> dict[str, Any]:
         schema = super().input_schema
         if self._workphases_config is not None:
-            schema["properties"]["to_phase"]["enum"] = list(
-                self._workphases_config.phases.keys()
-            )
+            schema["properties"]["to_phase"]["enum"] = list(self._workphases_config.phases.keys())
         return schema
-
 
     async def execute(self, params: ForcePhaseTransitionInput, context: NoteContext) -> ToolResult:
         """Execute forced phase transition.
