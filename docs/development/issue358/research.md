@@ -162,7 +162,7 @@ Tools are grouped by file. Each entry shows the input model, the gap found (if a
 |------|-----|----------|---------|-----------------|
 | `CreateBranchTool` (`create_branch`) | `name` field: no pattern constraint in Pydantic model. Runtime enforces via `git_config.branch_name_pattern`. `branch_type` validator uses ClassVar-injected `GitConfig` (latent A3 pattern). | 🔴 A (name — config-driven) + latent A3 (branch_type) | `CreateBranchInput.name` has only `description="Branch name (kebab-case)"` | A4: inject `name.pattern` from `git_config.branch_name_pattern` via `input_schema` override. Do NOT extend ClassVar pattern to other fields. |
 | `GitStatusTool` (`git_status`) | — | ✅ | Empty model | — |
-| `GitCommitTool` (`git_add_or_commit`) | `cycle_number`: required when `workflow_phase="implementation"` — enforced only in `execute()`, not in model_validator. | 🔴 B | `git_tools.py:388-390`: `if workflow_phase == "implementation" and params.cycle_number is None: raise ValueError(...)` | A2: add `@model_validator(mode="after")` enforcing `cycle_number is not None` when `workflow_phase == "implementation"`. Also add A1: describe constraint in field description. |
+| `GitCommitTool` (`git_add_or_commit`) | `cycle_number`: required when the current phase is cycle-based — this is not statically `"implementation"`, it is config-driven via `cycle_based: true` in `contracts.yaml`. C1 added a Pydantic `@model_validator` that hardcodes `== "implementation"`, which (a) violates Config-First and (b) only fires when `workflow_phase` is passed explicitly. When `workflow_phase` is auto-detected from `state.json` in `execute()`, Pydantic has already passed and the check never runs. Pre-C1 runtime check in `execute()` was removed by C1, creating a behavioral regression on the auto-detect path. | 🔴 A → reclassified | Pre-C1: `git_tools.py` execute-time `if workflow_phase == "implementation" and params.cycle_number is None`. C1 replacement: `GitCommitInput.@model_validator` with hardcoded `"implementation"`. Auto-detect path in `execute()` (lines 289–304) resolves `workflow_phase` after Pydantic, no guard present. `PhaseContractResolver.is_cycle_based_phase(workflow_name, phase)` is the config-correct API already used by `PhaseStateEngine`, `WorkflowGateRunner`. | **Reclassified: A4+runtime.** Remove the hardcoded Pydantic validator. Add runtime guard in `execute()` after `workflow_phase` is resolved (both paths), using `self._phase_contract_resolver.is_cycle_based_phase(workflow_name, resolved_phase)`. Requires injecting `PhaseContractResolver` into `GitCommitTool.__init__`. Field description (A1) updated accordingly. See Q9. |
 | `GitRestoreTool` (`git_restore`) | — | ✅ | `files: list[str]` has `min_length=1` in Field | — |
 | `GitCheckoutTool` (`git_checkout`) | — | ✅ | — | — |
 | `GitPushTool` (`git_push`) | — | ✅ | — | — |
@@ -420,7 +420,7 @@ These constraints have a fixed value known at code-write time, independent of an
 | Field | Constraint | Current State | Fix |
 |-------|-----------|--------------|-----|
 | `create_branch.name` | `git_config.branch_name_pattern` | Description only ("kebab-case") | A4: inject `pattern` from `self.manager.git_config.branch_name_pattern` in `input_schema` override |
-| `git_add_or_commit.cycle_number` | Required when `workflow_phase="implementation"` | Execute-time check only | A2: `@model_validator(mode="after")` |
+| `git_add_or_commit.cycle_number` | ~~Required when `workflow_phase="implementation"`~~ **Required when the resolved phase is `cycle_based: true` in `contracts.yaml`** | C1 Pydantic validator hardcodes `"implementation"` and only fires on explicit path; auto-detect path unguarded; Config-First violation | **Reclassified A4+runtime (see Q9):** Remove hardcoded Pydantic validator. Inject `PhaseContractResolver` into `GitCommitTool`; add config-driven runtime guard in `execute()` after phase resolution. |
 | `force_phase_transition.skip_reason` | Non-empty string | Validator strips and checks, but no `min_length` in Field | A2: `Field(..., min_length=1)` |
 | `force_phase_transition.human_approval` | Non-empty string | Same | A2: `Field(..., min_length=1)` |
 | `create_label.name` | Validated by `LabelConfig.validate_label_name()` | No model constraint | A2: add `pattern` matching LabelConfig logic |
@@ -486,13 +486,30 @@ The existing ClassVar injection pattern for `branch_type` validation in `CreateB
 
 **Q8: ClassVar removal atomicity**
 
-**✅ APPROVED as research finding:** `CreateBranchInput` ClassVar removal and its replacement A4 `input_schema` override must land in the same commit. Splitting them creates a window where `branch_type` has no validation at all (Pydantic validator is gone, schema enum not yet added). The same applies to `GitCommitInput`. Planning must enforce this as a one-cycle atomicity requirement — not a sequencing preference.
+**✅ APPROVED as research finding:** `CreateBranchInput` ClassVar removal and its replacement A4 `input_schema` override must land in the same commit. Splitting them creates a window where `branch_type` has no validation at all (Pydantic validator is gone, schema enum not yet added). The same applies to any remaining `GitCommitInput` ClassVar. Planning must enforce this as a one-cycle atomicity requirement — not a sequencing preference.
+
+**Q9: `GitCommitTool.cycle_number` — config-driven enforcement strategy**
+
+C1 introduced a `@model_validator` in `GitCommitInput` that hardcodes `workflow_phase == "implementation"` to enforce `cycle_number is not None`. This has two problems:
+
+1. **Config-First violation:** `contracts.yaml` is the single source of truth for which phases are cycle-based (`cycle_based: true`). Hardcoding `"implementation"` in Python duplicates this config knowledge and will silently fail if any other phase ever becomes `cycle_based: true`.
+2. **Behavioral regression (auto-detect path):** `GitCommitTool.execute()` auto-detects `workflow_phase` from `state.json` *after* Pydantic validation has already completed. A caller on an implementation branch who omits both `workflow_phase` and `cycle_number` passes Pydantic (validator sees `workflow_phase=None`), gets auto-detected to `"implementation"`, and the commit proceeds without cycle binding. The pre-C1 runtime guard in `execute()` was removed by C1; C1 did not add an equivalent guard on the auto-detect path.
+
+`PhaseContractResolver.is_cycle_based_phase(workflow_name, phase)` is the config-correct API for this query. It is already used by `PhaseStateEngine` and `WorkflowGateRunner`. `GitCommitTool` already receives `state_engine` by injection and has access to commit-type resolution via `commit_type_resolver`.
+
+**Approved strategy for Q9:**
+
+**✅ APPROVED:** Remove the hardcoded `@model_validator` from `GitCommitInput`. Inject `PhaseContractResolver` (or an `IPhaseContractResolver` interface) into `GitCommitTool.__init__`. After `workflow_phase` is fully resolved in `execute()` (after both the explicit and auto-detect paths converge), call `is_cycle_based_phase(workflow_name, resolved_phase)` and return `ToolResult.error(...)` if `cycle_number is None`. This restores enforcement on both paths, makes the check config-driven, and does not add loader responsibility to the Pydantic model.
+
+- The Pydantic field description (A1) must be updated to reflect the general "required for cycle-based phases" constraint rather than the hardcoded `"implementation"` name.
+- A regression test must cover the auto-detect path: state.json `current_phase="implementation"`, `workflow_phase` omitted, `cycle_number` omitted → `ToolResult.error`.
+- `workflow_name` is available from `state.current_workflow` on the auto-detect path and from `git_config.extract_workflow_name(branch)` (or equivalent) on the explicit path.
+
 
 
 ---
 
 ## Approved Strategy
-
 | Boundary | Strategy | Notes |
 |----------|----------|---------|
 | Grens A: config-driven enums/maxLength | **A4** (A4 per architecture; A2 forbidden) | Q1 ✅ |
@@ -504,6 +521,7 @@ The existing ClassVar injection pattern for `branch_type` validation in `CreateB
 | ValidateDTOTool | **A1** (description fix only; nominated for removal) | Q5 ✅ |
 | A4 implementation pattern | **Per-tool `@property input_schema` override** (no mixin; shared convention: always `schema = super().input_schema`, mutate, return) | Q6 ✅ |
 | ClassVar removal + A4 override in `git_tools.py` | **Atomically in one cycle** — `CreateBranchInput` ClassVar removal and its A4 `input_schema` override must land in the same commit; splitting creates a window with no branch_type validation at all | Q8 ✅ |
+| `git_add_or_commit.cycle_number` enforcement | **Config-driven runtime guard in `execute()`** — remove hardcoded `@model_validator`; inject `PhaseContractResolver`; call `is_cycle_based_phase(workflow_name, resolved_phase)` after both explicit and auto-detect paths converge; return `ToolResult.error` if `cycle_number is None` | Q9 ✅ |
 
 ---
 
@@ -513,7 +531,7 @@ The existing ClassVar injection pattern for `branch_type` validation in `CreateB
 
 | File | Tools Affected | Change Type | Notes |
 |------|---------------|-------------|-------|
-| `mcp_server/tools/git_tools.py` | `CreateBranchTool`, `GitCommitTool` | A2 + A4 (ClassVar removal × 2) | `CreateBranchInput` ClassVar removed + A4 `input_schema` override for `branch_type`; `GitCommitInput` ClassVar removed, `commit_type` field_validator removed, A4 enriches schema |
+| `mcp_server/tools/git_tools.py` | `CreateBranchTool`, `GitCommitTool` | A4 + runtime (ClassVar removal + Q9) | `CreateBranchInput` ClassVar removed + A4 `input_schema` override for `branch_type`; `GitCommitInput` `@model_validator` removed; `GitCommitTool.__init__` receives injected `PhaseContractResolver`; runtime guard added in `execute()` using `is_cycle_based_phase()`; `commit_type` field_validator removed; A4 enriches `commit_type` schema |
 | `mcp_server/tools/issue_tools.py` | `CreateIssueTool` | A4 | Override `input_schema` to inject `maxLength` for `title`; `enum` for `issue_type`, `priority`, `scope` |
 | `mcp_server/tools/project_tools.py` | `InitializeProjectTool`, `SavePlanningDeliverablesTool`, `UpdatePlanningDeliverablesTool` | A4 + A2 + A1 | A4 `input_schema` for `workflow_name` enum; A2 `@model_validator` for `custom_phases` conditional; A1 description for planning deliverables fields |
 | `mcp_server/tools/phase_tools.py` | `TransitionPhaseTool`, `ForcePhaseTransitionTool` | A4 + A2 + A1 | A4 `input_schema` for `to_phase` (two-part: enum + description); A2 `min_length=1` on `skip_reason`/`human_approval` |
@@ -522,20 +540,18 @@ The existing ClassVar injection pattern for `branch_type` validation in `CreateB
 | `mcp_server/tools/pr_tools.py` | `SubmitPRTool` | A1 | Rewrite `base` field description (3-tier cascade) |
 | `mcp_server/tools/scaffold_artifact.py` | `ScaffoldArtifactTool` | A4 | Override `input_schema` to inject `enum` from TemplateRegistry |
 | `mcp_server/tools/validation_tools.py` | `ValidateDTOTool` | A1 | Correct tool description |
-| `mcp_server/server.py` | — | Cleanup | Remove `CreateBranchInput.configure(...)` call (line 140 in `CreateBranchTool.__init__`) and `GitCommitInput.configure(...)` call (line 312 in `GitCommitTool.__init__`) |
+| `mcp_server/server.py` | — | Cleanup + Q9 wiring | Remove `CreateBranchInput.configure(...)` call; remove `GitCommitInput.configure(...)` call; add `phase_contract_resolver=self.phase_contract_resolver` to `GitCommitTool(...)` constructor call |
 
 **Total: 10 production files changed.** 38 of 52 tools are confirmed clean (no changes needed).
 
 ### Test Files With Changes (4 files)
-
-| File | Impact | Type |
-|------|--------|------|
 | `tests/mcp_server/tools/test_git_tools_config.py` | **Full rewrite** | Tests the ClassVar pattern for `CreateBranchInput.configure()` — entire test file tests behavior that disappears. Must be replaced with A4 `input_schema` tests that verify branch_type enum is injected from config |
 | `tests/mcp_server/test_support.py` (line 222) | Remove `CreateBranchInput.configure(git_config)` call in `configure_create_branch_input()` helper | Cleanup |
-| `tests/mcp_server/unit/tools/test_git_tools.py` (line 351) | Remove `GitCommitInput.configure(mock_git_manager.git_config)` call; update `test_git_commit_tool_with_invalid_commit_type` (tests Pydantic-level rejection that disappears when ClassVar is removed); update `test_git_commit_tool_commit_type_case_insensitive` (tests `.lower()` normalization in the field_validator that disappears) | Rewrite 2 tests |
+| `tests/mcp_server/unit/tools/test_git_tools.py` (line 351) | Remove `GitCommitInput.configure(mock_git_manager.git_config)` call; update `test_git_commit_tool_with_invalid_commit_type` (tests Pydantic-level rejection that disappears); update `test_git_commit_tool_commit_type_case_insensitive` (tests `.lower()` normalization that disappears); **add new regression test for auto-detect path** (state.json `current_phase="implementation"`, `workflow_phase` omitted, `cycle_number` omitted → `ToolResult.error`) | Rewrite + new regression test |
 | `tests/mcp_server/unit/tools/test_scaffold_artifact.py` | Currently tests `ScaffoldArtifactInput(artifact_type="dto")` which remains valid; A4 adds a new `input_schema` property that may need new test coverage for schema content | Additive (new tests, no breaks) |
 
-**Total: 4 test files changed.** Of these, 1 is a full rewrite (`test_git_tools_config.py`), 2 are cleanup/minor updates, and 1 is additive.
+**Total: 4 test files changed.** Of these, 1 is a full rewrite (`test_git_tools_config.py`), 2 are cleanup/rewrite, and 1 is additive.
+
 
 ### Test Files Confirmed Stable (no changes needed)
 
@@ -598,3 +614,4 @@ Description-only changes (A1) in `SubmitPRTool`, `SavePlanningDeliverablesTool`,
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-05-30 | Agent | Initial research — exhaustive 52-tool audit; strategy taxonomy; boundary classification; open questions for Approved Strategy |
+| 1.1 | 2026-05-31 | Agent | QA-driven amendment: reclassified `GitCommitTool.cycle_number` from 🔴 B (A2) to 🔴 A (config-driven runtime guard). C1 `@model_validator` hardcodes `"implementation"` in violation of Config-First; auto-detect path in `execute()` unguarded after C1 removed pre-C1 execute-time check. Q9 added and approved: inject `PhaseContractResolver`, guard in `execute()` via `is_cycle_based_phase()`. Blast Radius and Approved Strategy table updated accordingly. |

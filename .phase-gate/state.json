@@ -2,9 +2,9 @@
   "branch": "refactor/358-mcp-tool-schema-audit",
   "issue_number": 358,
   "workflow_name": "refactor",
-  "current_phase": "implementation",
-  "current_cycle": 4,
-  "last_cycle": 3,
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": 4,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -34,7 +34,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "QA NOGO: C1 introduced behavioral regression \u2014 cycle_number enforcement in GitCommitTool is only enforced on the explicit workflow_phase path (Pydantic validator), not on the auto-detect path. The current hardcoded 'implementation' string check is architecturally wrong; cycle enforcement must be config-driven via is_cycle_based_phase(workflow_name, phase). Returning to research to document the correct config-driven fix strategy before planning and implementation.",
   "issue_title": "MCP tool schema audit: surface constraints to prevent first-use errors",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-05-30T10:20:58.855128+00:00",
@@ -54,8 +54,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-05-31T18:07:45.478187+00:00",
+      "human_approval": "User approved on 2026-05-31: explicitly requested return to research phase to document config-driven cycle enforcement fix; approved out-of-scope expansion via extra workflow run",
+      "forced": true,
+      "skip_reason": "QA NOGO: C1 introduced behavioral regression \u2014 cycle_number enforcement in GitCommitTool is only enforced on the explicit workflow_phase path (Pydantic validator), not on the auto-detect path. The current hardcoded 'implementation' string check is architecturally wrong; cycle enforcement must be config-driven via is_cycle_based_phase(workflow_name, phase). Returning to research to document the correct config-driven fix strategy before planning and implementation."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
