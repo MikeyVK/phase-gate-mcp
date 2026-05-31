@@ -17,7 +17,6 @@ from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.schemas import GitConfig
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 

@@ -13,8 +13,6 @@ Conventions tested:
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from mcp_server.tools.git_tools import CreateBranchTool, GitCommitTool
 
 
