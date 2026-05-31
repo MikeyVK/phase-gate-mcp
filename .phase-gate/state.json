@@ -2,7 +2,7 @@
   "branch": "refactor/358-mcp-tool-schema-audit",
   "issue_number": 358,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -19,7 +19,16 @@
   "issue_title": "MCP tool schema audit: surface constraints to prevent first-use errors",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-05-30T10:20:58.855128+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-05-31T13:44:16.748692+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
