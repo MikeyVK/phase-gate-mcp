@@ -38,7 +38,7 @@ Concretely: the MCP protocol exposes `inputSchema` during tool discovery (`list_
 - Internal manager logic and business rule changes
 - New tool functionality
 - Changes to output schemas or ToolResult structure
-- Reference documentation updates (tracked separately — confirm with user)
+- Reference documentation updates in `docs/reference/mcp/tools/` — **later approved in scope via Q4** (see Approved Strategy table)
 
 ---
 
@@ -160,7 +160,7 @@ Tools are grouped by file. Each entry shows the input model, the gap found (if a
 
 | Tool | Gap | Category | Evidence | Recommended Fix |
 |------|-----|----------|---------|-----------------|
-| `CreateBranchTool` (`create_branch`) | `name` field: no pattern constraint in Pydantic model. Runtime enforces `^[a-z0-9-]+$` in `GitManager`. `branch_type` validator uses ClassVar-injected `GitConfig` (latent A3 pattern). | 🔴 B (name) + latent A3 (branch_type) | `CreateBranchInput.name` has only `description="Branch name (kebab-case)"` | A2: add `pattern="^[a-z0-9-]+$"` to `name` field. Do NOT extend ClassVar pattern to other fields. |
+| `CreateBranchTool` (`create_branch`) | `name` field: no pattern constraint in Pydantic model. Runtime enforces via `git_config.branch_name_pattern`. `branch_type` validator uses ClassVar-injected `GitConfig` (latent A3 pattern). | 🔴 A (name — config-driven) + latent A3 (branch_type) | `CreateBranchInput.name` has only `description="Branch name (kebab-case)"` | A4: inject `name.pattern` from `git_config.branch_name_pattern` via `input_schema` override. Do NOT extend ClassVar pattern to other fields. |
 | `GitStatusTool` (`git_status`) | — | ✅ | Empty model | — |
 | `GitCommitTool` (`git_add_or_commit`) | `cycle_number`: required when `workflow_phase="implementation"` — enforced only in `execute()`, not in model_validator. | 🔴 B | `git_tools.py:388-390`: `if workflow_phase == "implementation" and params.cycle_number is None: raise ValueError(...)` | A2: add `@model_validator(mode="after")` enforcing `cycle_number is not None` when `workflow_phase == "implementation"`. Also add A1: describe constraint in field description. |
 | `GitRestoreTool` (`git_restore`) | — | ✅ | `files: list[str]` has `min_length=1` in Field | — |
@@ -360,9 +360,9 @@ Tools are grouped by file. Each entry shows the input model, the gap found (if a
 | Category | Count | Tools |
 |----------|-------|-------|
 | ✅ No gap | 38 | (see table above) |
-| ⚠️ Description fix | 7 | SubmitPRTool, SavePlanningDeliverablesTool, UpdatePlanningDeliverablesTool, AddLabelsTool, CreateMilestoneTool, ValidateDTOTool, (GitPullTool — design decision) |
-| 🔴 B Static schema (A2) | 4 | CreateBranchTool (name), GitCommitTool (cycle_number conditional), ForcePhaseTransitionTool (skip_reason/human_approval), CreateLabelTool (name+color) |
-| 🔴 A Config-driven schema (A4) | 4 | CreateIssueTool (title/issue_type/priority/scope), InitializeProjectTool (workflow_name), ScaffoldArtifactTool (artifact_type), + InitializeProjectTool (custom_phases: A2 conditional validator) |
+| ⚠️ Description fix | 6 | SubmitPRTool, SavePlanningDeliverablesTool, UpdatePlanningDeliverablesTool, AddLabelsTool, CreateMilestoneTool, ValidateDTOTool |
+| 🔴 B Static schema (A2) | 3 | GitCommitTool (cycle_number conditional), ForcePhaseTransitionTool (skip_reason/human_approval), CreateLabelTool (name+color) |
+| 🔴 A Config-driven schema (A4) | 5 | CreateBranchTool (name.pattern), CreateIssueTool (title/issue_type/priority/scope), InitializeProjectTool (workflow_name), ScaffoldArtifactTool (artifact_type), + InitializeProjectTool (custom_phases: A2 conditional validator) |
 | 🔴 C Behavioral (A1 only) | 2 | TransitionPhaseTool (to_phase), ForcePhaseTransitionTool (to_phase) |
 
 **Total gaps: 14** (across 52 tools, 38 need no changes)
@@ -419,7 +419,7 @@ These constraints have a fixed value known at code-write time, independent of an
 
 | Field | Constraint | Current State | Fix |
 |-------|-----------|--------------|-----|
-| `create_branch.name` | `^[a-z0-9-]+$` | Description only ("kebab-case") | A2: `pattern="^[a-z0-9-]+$"` in Field |
+| `create_branch.name` | `git_config.branch_name_pattern` | Description only ("kebab-case") | A4: inject `pattern` from `self.manager.git_config.branch_name_pattern` in `input_schema` override |
 | `git_add_or_commit.cycle_number` | Required when `workflow_phase="implementation"` | Execute-time check only | A2: `@model_validator(mode="after")` |
 | `force_phase_transition.skip_reason` | Non-empty string | Validator strips and checks, but no `min_length` in Field | A2: `Field(..., min_length=1)` |
 | `force_phase_transition.human_approval` | Non-empty string | Same | A2: `Field(..., min_length=1)` |
@@ -452,7 +452,7 @@ These questions require human decision before planning can begin:
 
 **Note — A2 is architecturally forbidden for config-driven values:** §2 DRY/SSOT: "Any config file defining a list of valid values is the SSOT. Duplicating that list as a regex alternation or hardcoded set elsewhere is a violation." §3 Config-First: "workflow names, branch types: always in config, never as string literals in Python." Hardcoding `Literal["feature","bug",...]` in Python is a Config-First violation.
 
-**Design requirement:** The A4 implementation pattern must be established during the design phase, aligned with existing composition patterns in the codebase. No ad-hoc per-tool `input_schema` overrides without a shared, coherent abstraction.
+**Pattern note:** The A4 implementation pattern (per-tool `input_schema` override; `schema = super().input_schema` → mutate → return; no mixin) must be established before implementation starts. This is satisfied by the planning document's Config Access Map and Architecture Obligations sections — no separate design phase is required for this refactor.
 
 **Q2: `CreateBranchInput.branch_type` ClassVar pattern — address or defer?**
 The existing ClassVar injection pattern for `branch_type` validation in `CreateBranchInput` is architecturally inconsistent with the A3=forbidden ruling (it is a pre-C_LOADER legacy pattern). Options: (a) refactor to A4 within this issue, or (b) defer to a separate issue.
