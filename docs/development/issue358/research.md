@@ -457,20 +457,19 @@ These questions require human decision before planning can begin:
 **Q2: `CreateBranchInput.branch_type` ClassVar pattern — address or defer?**
 The existing ClassVar injection pattern for `branch_type` validation in `CreateBranchInput` is architecturally inconsistent with the A3=forbidden ruling (it is a pre-C_LOADER legacy pattern). Options: (a) refactor to A4 within this issue, or (b) defer to a separate issue.
 
-**Q3: `to_phase` — A4 two-part approach**
+**Q3: `to_phase` — strategy revised after token budget analysis**
 
-**✅ APPROVED: A4 two-part** — Strategy is twofold:
-1. **Enum injection (machine-readable):** Override `input_schema` to inject the union of all known phases from `workphases.yaml` as a JSON Schema `enum`. This gives the MCP client a machine-readable constraint on the universe of possible phases, while the engine still enforces the workflow-specific valid subset at runtime.
-2. **Description enrichment (context):** Enrich the field description with the exact workflow→phase combinations from `contracts.yaml`, so an agent understands which phases are valid for which workflow without a round-trip.
+**✅ APPROVED (revised): A4 enum-only + A1 compact pointer** — Original Q3 approval included a workflow×phase matrix in the description. This is withdrawn after analysis:
 
-**Open design constraint — description token budget:**
-The description enrichment approach raises a cross-cutting design question: if multiple tools carry enriched descriptions (workflow×phase matrices, enum lists, constraint prose), the cumulative token cost of `list_tools` grows with every tool. The MCP client sends the full tool schema in every context window. There is a practical ceiling beyond which description enrichment causes more harm (context overload) than it prevents (round-trip errors).
+- `workphases.yaml` defines 8 phases; `contracts.yaml` shows 6 workflows with 3–7 phases each. A full matrix would be ~320 chars (~80 tokens) per tool, duplicated across `TransitionPhaseTool` and `ForcePhaseTransitionTool` = ~160 tokens added for information already returned by `get_work_context()`.
+- The matrix would become stale when a new workflow is added to `contracts.yaml` — config-drift in a description string.
+- Agents that call `get_work_context()` first (as required by startup protocol) already receive the valid next phase for their current workflow and state. A matrix in the description adds no decision value.
 
-**This must be quantified in the design phase before any descriptions are written:**
-- Measure current total token cost of all 52 tool descriptions (baseline)
-- Establish a per-field description budget (e.g., max N tokens per enriched field)
-- Apply the budget as a design constraint on all A1 and A4 description changes in this issue
-- The workflow×phase matrix for `to_phase` should be the test case for this budget
+**Approved approach:**
+1. **Enum injection (A4):** Override `input_schema` to inject the union of all phase names from `workphases.yaml` as a JSON Schema `enum`. Machine-readable, compact (~20 tokens), config-accurate.
+2. **Compact pointer (A1):** Replace the current description with: *"Call `get_work_context()` first — it returns the valid next phase for your current workflow and state."* (~20 tokens). No matrix.
+
+**Token budget conclusion:** No hard per-field token budget is required. The description drafting principle is: descriptions must be navigable, not exhaustive. Any single enriched field description approaching 200 tokens is a signal to redirect to `get_work_context()` rather than embed the content inline.
 
 **Q4: Reference documentation scope — in this branch or separate issue?**
 `docs/reference/mcp/tools/` contains per-tool reference pages. Should constraint documentation updates be in scope for this branch, or tracked as a follow-up issue?
@@ -478,6 +477,16 @@ The description enrichment approach raises a cross-cutting design question: if m
 **Q5: `ValidateDTOTool` — description fix only, or implement real validation?**
 
 **✅ APPROVED: A1** — Correct the description only. Tool is nominated for removal; no further investment warranted.
+
+**Q6: A4 implementation pattern — shared mixin or per-tool override?**
+
+**✅ APPROVED: Per-tool `@property input_schema` override, no mixin.** Rationale: 7 tools need A4, each with a different injected config source. A mixin would add a class hierarchy layer across all 52 tools for behavior used by 7. The shared convention is a code comment, not a class: always call `schema = super().input_schema`, mutate the returned dict in-place, return schema. This matches the existing precedent in `MockIntegrationTool` in the test suite.
+
+**Q7 (token budget): confirmed no hard budget needed.** Description drafting principle: navigable, not exhaustive. Any enriched field description approaching 200 tokens should redirect to `get_work_context()` rather than embed config content inline.
+
+**Q8: ClassVar removal atomicity**
+
+**✅ APPROVED as research finding:** `CreateBranchInput` ClassVar removal and its replacement A4 `input_schema` override must land in the same commit. Splitting them creates a window where `branch_type` has no validation at all (Pydantic validator is gone, schema enum not yet added). The same applies to `GitCommitInput`. Planning must enforce this as a one-cycle atomicity requirement — not a sequencing preference.
 
 
 ---
@@ -490,9 +499,11 @@ The description enrichment approach raises a cross-cutting design question: if m
 | Grens B: static constraints | A2 (direct Pydantic) | No config dependency |
 | Grens C: stateful constraints | A1 (description only) | Cannot be schema constraints |
 | CreateBranchInput.branch_type ClassVar | **A4** (refactor ClassVar away; in scope) | Q2 ✅ |
-| to_phase descriptions | **A4 two-part** (enum from workphases.yaml + description from contracts.yaml; design-phase token budget required) | Q3 ✅ |
+| to_phase descriptions | **A4 enum-only + A1 pointer** (enum from `workphases.yaml`; compact `get_work_context()` pointer; no workflow×phase matrix) | Q3 revised ✅ |
 | Reference doc updates | **In scope** (docs/reference/mcp/tools/ updated alongside schema changes) | Q4 ✅ |
 | ValidateDTOTool | **A1** (description fix only; nominated for removal) | Q5 ✅ |
+| A4 implementation pattern | **Per-tool `@property input_schema` override** (no mixin; shared convention: always `schema = super().input_schema`, mutate, return) | Q6 ✅ |
+| ClassVar removal + A4 override in `git_tools.py` | **Atomically in one cycle** — `CreateBranchInput` ClassVar removal and its A4 `input_schema` override must land in the same commit; splitting creates a window with no branch_type validation at all | Q8 ✅ |
 
 ---
 
