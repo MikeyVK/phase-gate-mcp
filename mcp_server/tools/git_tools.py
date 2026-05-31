@@ -232,7 +232,11 @@ class GitCommitInput(BaseModel):
     )
     cycle_number: int | None = Field(
         default=None,
-        description="Cycle number (e.g., 1, 2, 3). Optional, used in multi-cycle TDD.",
+        description=(
+            "Cycle number (e.g., 1, 2, 3). "
+            "Required when the active phase is cycle-based (e.g. implementation). "
+            "Optional otherwise."
+        ),
     )
     commit_type: str | None = Field(
         default=None,
@@ -241,16 +245,6 @@ class GitCommitInput(BaseModel):
             "Auto-determined from workphases.yaml if omitted."
         ),
     )
-
-    @model_validator(mode="after")
-    def require_cycle_number_for_implementation(self) -> "GitCommitInput":
-        if self.workflow_phase == "implementation" and self.cycle_number is None:
-            raise ValueError(
-                "cycle_number is required for TDD phase commits. "
-                "All TDD work belongs to a specific cycle. "
-                "Use: git_add_or_commit(workflow_phase='implementation', cycle_number=N, ...)"
-            )
-        return self
 
 
 class GitCommitTool(BranchMutatingTool):
@@ -267,6 +261,7 @@ class GitCommitTool(BranchMutatingTool):
         phase_guard: Callable[[str, str, int | None], None] | None = None,
         commit_type_resolver: Callable[[str, str, str | None], str | None] | None = None,
         state_engine: phase_state_engine.PhaseStateEngine | None = None,
+        phase_contract_resolver: PhaseContractResolver | None = None,
     ) -> None:
         if manager is None:
             raise ValueError("GitManager must be injected")
@@ -274,6 +269,7 @@ class GitCommitTool(BranchMutatingTool):
         self._phase_guard = phase_guard
         self._commit_type_resolver = commit_type_resolver
         self._state_engine = state_engine
+        self._phase_contract_resolver = phase_contract_resolver
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -306,9 +302,28 @@ class GitCommitTool(BranchMutatingTool):
             )
         else:
             issue_number = self.manager.git_config.extract_issue_number(current_branch)
-
         if self._phase_guard is not None:
             self._phase_guard(current_branch, workflow_phase, params.cycle_number)
+
+        if self._phase_contract_resolver is not None and self._state_engine is not None:
+            if params.workflow_phase is None:
+                # auto-detect path: state already loaded above
+                guard_workflow_name = state.workflow_name  # type: ignore[possibly-undefined]
+            else:
+                # explicit path: load state for workflow_name only
+                guard_state = self._state_engine.get_state(current_branch)
+                guard_workflow_name = guard_state.workflow_name
+            if (
+                self._phase_contract_resolver.is_cycle_based_phase(guard_workflow_name, workflow_phase)
+                and params.cycle_number is None
+            ):
+                return ToolResult.error(
+                    f"cycle_number is required when committing in a cycle-based phase "
+                    f"('{workflow_phase}'). "
+                    "Use: git_add_or_commit(..., cycle_number=N)"
+                )
+
+
 
         commit_type = params.commit_type
         if commit_type is None and self._commit_type_resolver is not None:

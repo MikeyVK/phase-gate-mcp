@@ -329,6 +329,7 @@ class MCPServer:
                     self.phase_contract_resolver,
                 ),
                 state_engine=self.phase_state_engine,
+                phase_contract_resolver=self.phase_contract_resolver,
             ),
             GitCheckoutTool(
                 manager=self.git_manager,

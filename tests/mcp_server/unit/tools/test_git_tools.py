@@ -784,32 +784,32 @@ async def test_get_parent_branch_not_set() -> None:
 
 # ===== Cycle Number Enforcement Tests (Issue #146 Cycle 5) =====
 
-
 def test_git_commit_tdd_requires_cycle_number() -> None:
-    """Test that TDD phase commits REQUIRE cycle_number (Issue #146).
+    """C5: model_validator removed; construction with implementation phase succeeds.
 
-    Enforcement moved from execute() to GitCommitInput model_validator (Issue #358 C1).
+    Enforcement moved back to execute() (runtime guard via PhaseContractResolver).
     """
-    with pytest.raises(ValidationError, match="cycle_number"):
-        GitCommitInput(
-            message="update documentation",
-            workflow_phase="implementation",
-            # cycle_number is MISSING - should raise ValidationError at model level
-        )
+    params = GitCommitInput(
+        message="update documentation",
+        workflow_phase="implementation",
+        # cycle_number is MISSING - must not raise at model level after C5
+    )
+    assert params.cycle_number is None
 
 
 def test_git_commit_tdd_subphase_requires_cycle_number() -> None:
-    """Test that TDD sub-phase commits REQUIRE cycle_number (Issue #146).
+    """C5: model_validator removed; construction with implementation sub-phase succeeds.
 
-    Enforcement moved from execute() to GitCommitInput model_validator (Issue #358 C1).
+    Enforcement moved back to execute() (runtime guard via PhaseContractResolver).
     """
-    with pytest.raises(ValidationError, match="cycle_number"):
-        GitCommitInput(
-            message="implement feature",
-            workflow_phase="implementation",
-            sub_phase="green",
-            # cycle_number is MISSING - should raise ValidationError at model level
-        )
+    params = GitCommitInput(
+        message="implement feature",
+        workflow_phase="implementation",
+        sub_phase="green",
+        # cycle_number is MISSING - must not raise at model level after C5
+    )
+    assert params.cycle_number is None
+
 
 
 @pytest.mark.asyncio
