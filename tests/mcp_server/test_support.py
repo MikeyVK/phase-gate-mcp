@@ -45,7 +45,6 @@ from mcp_server.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-from mcp_server.tools.git_tools import CreateBranchInput
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
@@ -214,12 +213,11 @@ def load_issue_tool_dependencies(workspace_root: Path | str | None = None) -> di
 
 
 def configure_create_branch_input(workspace_root: Path | str | None = None) -> GitConfig:
-    """Configure CreateBranchInput validators with explicit git config."""
+    """Load GitConfig (previously also configured CreateBranchInput validators)."""
     git_config = cast(
         GitConfig,
         _load_config(workspace_root, "git.yaml", "load_git_config"),
     )
-    CreateBranchInput.configure(git_config)
     return git_config
 
 

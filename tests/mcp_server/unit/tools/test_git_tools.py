@@ -711,44 +711,31 @@ async def test_get_parent_branch_not_set() -> None:
 # ===== Cycle Number Enforcement Tests (Issue #146 Cycle 5) =====
 
 
-@pytest.mark.asyncio
-async def test_git_commit_tdd_requires_cycle_number(mock_git_manager: MagicMock) -> None:
-    """Test that TDD phase commits REQUIRE cycle_number (Issue #146)."""
-    tool = GitCommitTool(manager=mock_git_manager)
+def test_git_commit_tdd_requires_cycle_number() -> None:
+    """Test that TDD phase commits REQUIRE cycle_number (Issue #146).
 
-    # Attempt to commit in TDD phase without cycle_number
-    params = GitCommitInput(
-        message="update documentation",
-        workflow_phase="implementation",
-        # cycle_number is MISSING - should return error result
-    )
-
-    result = await tool.execute(params, NoteContext())
-
-    assert result.is_error, "Expected error when cycle_number missing for TDD"
-    error_text = result.content[0]["text"]
-    assert "cycle_number" in error_text
-    assert "TDD" in error_text or "tdd" in error_text.lower()
+    Enforcement moved from execute() to GitCommitInput model_validator (Issue #358 C1).
+    """
+    with pytest.raises(ValidationError, match="cycle_number"):
+        GitCommitInput(
+            message="update documentation",
+            workflow_phase="implementation",
+            # cycle_number is MISSING - should raise ValidationError at model level
+        )
 
 
-@pytest.mark.asyncio
-async def test_git_commit_tdd_subphase_requires_cycle_number(mock_git_manager: MagicMock) -> None:
-    """Test that TDD sub-phase commits REQUIRE cycle_number (Issue #146)."""
-    tool = GitCommitTool(manager=mock_git_manager)
+def test_git_commit_tdd_subphase_requires_cycle_number() -> None:
+    """Test that TDD sub-phase commits REQUIRE cycle_number (Issue #146).
 
-    # Attempt to commit in TDD sub-phase without cycle_number
-    params = GitCommitInput(
-        message="implement feature",
-        workflow_phase="implementation",
-        sub_phase="green",
-        # cycle_number is MISSING - should return error result
-    )
-
-    result = await tool.execute(params, NoteContext())
-
-    assert result.is_error, "Expected error when cycle_number missing for TDD sub-phase"
-    error_text = result.content[0]["text"]
-    assert "cycle_number" in error_text
+    Enforcement moved from execute() to GitCommitInput model_validator (Issue #358 C1).
+    """
+    with pytest.raises(ValidationError, match="cycle_number"):
+        GitCommitInput(
+            message="implement feature",
+            workflow_phase="implementation",
+            sub_phase="green",
+            # cycle_number is MISSING - should raise ValidationError at model level
+        )
 
 
 @pytest.mark.asyncio

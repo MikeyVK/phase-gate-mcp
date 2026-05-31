@@ -4,10 +4,10 @@ import json
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 import anyio
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces import IContextLoadedWriter
@@ -90,34 +90,11 @@ class CreateBranchInput(BaseModel):
 
     name: str = Field(..., description="Branch name (kebab-case)")
     branch_type: str = Field(default="feature", description="Branch type")
-    _git_config: ClassVar[GitConfig | None] = None
-
-    @classmethod
-    def configure(cls, git_config: GitConfig) -> None:
-        cls._git_config = git_config
-
-    @classmethod
-    def _require_git_config(cls) -> GitConfig:
-        if cls._git_config is None:
-            raise ValueError("GitConfig must be injected before branch input validation")
-        return cls._git_config
 
     base_branch: str = Field(
         ...,
         description="Base branch to create from (e.g., 'HEAD', 'main', 'refactor/51-labels-yaml')",
     )
-
-    @field_validator("branch_type")
-    @classmethod
-    def validate_branch_type(cls, value: str) -> str:
-        """Validate branch_type against GitConfig (Convention #7)."""
-        git_config = cls._require_git_config()
-        if not git_config.has_branch_type(value):
-            valid_types = ", ".join(git_config.branch_types)
-            raise ValueError(
-                f"Invalid branch_type '{value}'. Valid types from git.yaml: {valid_types}"
-            )
-        return value
 
 
 class CreateBranchTool(BranchMutatingTool):
@@ -137,7 +114,6 @@ class CreateBranchTool(BranchMutatingTool):
             raise ValueError("GitManager must be injected")
         self.manager = manager
         self._state_engine = state_engine
-        CreateBranchInput.configure(self.manager.git_config)
 
     def _get_state_engine(self) -> phase_state_engine.PhaseStateEngine:
         if self._state_engine is None:
@@ -146,7 +122,10 @@ class CreateBranchTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        schema = super().input_schema
+        schema["properties"]["branch_type"]["enum"] = list(self.manager.git_config.branch_types)
+        schema["properties"]["name"]["pattern"] = self.manager.git_config.branch_name_pattern
+        return schema
 
     async def execute(self, params: CreateBranchInput, context: NoteContext) -> ToolResult:
         logger.info(
@@ -227,12 +206,6 @@ class GitStatusTool(BaseTool):
 class GitCommitInput(BaseModel):
     """Input for GitCommitTool."""
 
-    _git_config: ClassVar[GitConfig | None] = None
-
-    @classmethod
-    def configure(cls, git_config: GitConfig) -> None:
-        cls._git_config = git_config
-
     model_config = ConfigDict(extra="forbid")
 
     message: str = Field(..., description="Commit message (without type/scope prefix)")
@@ -270,25 +243,15 @@ class GitCommitInput(BaseModel):
         ),
     )
 
-    @field_validator("commit_type")
-    @classmethod
-    def validate_commit_type(cls, value: str | None) -> str | None:
-        """Validate commit_type against GitConfig (Convention #6). Only if provided."""
-        if value is None:
-            return None
-
-        git_config = cls._git_config
-        if git_config is None:
-            raise ValueError("GitConfig must be injected before validation")
-        if not git_config.has_commit_type(value):
-            valid_types = ", ".join(git_config.commit_types)
+    @model_validator(mode="after")
+    def require_cycle_number_for_implementation(self) -> "GitCommitInput":
+        if self.workflow_phase == "implementation" and self.cycle_number is None:
             raise ValueError(
-                f"Invalid commit_type '{value}'. "
-                f"Valid types from git.yaml: {valid_types}. "
-                f"See: https://www.conventionalcommits.org/"
+                "cycle_number is required for TDD phase commits. "
+                "All TDD work belongs to a specific cycle. "
+                "Use: git_add_or_commit(workflow_phase='implementation', cycle_number=N, ...)"
             )
-
-        return value.lower()  # Normalize to lowercase
+        return self
 
 
 class GitCommitTool(BranchMutatingTool):
@@ -309,14 +272,15 @@ class GitCommitTool(BranchMutatingTool):
         if manager is None:
             raise ValueError("GitManager must be injected")
         self.manager = manager
-        GitCommitInput.configure(self.manager.git_config)
         self._phase_guard = phase_guard
         self._commit_type_resolver = commit_type_resolver
         self._state_engine = state_engine
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        schema = super().input_schema
+        schema["properties"]["commit_type"]["enum"] = list(self.manager.git_config.commit_types)
+        return schema
 
     async def execute(self, params: GitCommitInput, context: NoteContext) -> ToolResult:
         workflow_phase = params.workflow_phase
@@ -343,13 +307,6 @@ class GitCommitTool(BranchMutatingTool):
             )
         else:
             issue_number = self.manager.git_config.extract_issue_number(current_branch)
-
-        if workflow_phase == "implementation" and params.cycle_number is None:
-            raise ValueError(
-                "cycle_number is required for TDD phase commits. "
-                "All TDD work belongs to a specific cycle. "
-                "Use: git_add_or_commit(workflow_phase='implementation', cycle_number=N, ...)"
-            )
 
         if self._phase_guard is not None:
             self._phase_guard(current_branch, workflow_phase, params.cycle_number)
