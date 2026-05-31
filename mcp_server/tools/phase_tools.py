@@ -39,7 +39,12 @@ class TransitionPhaseInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     branch: str = Field(description="Branch name (e.g., 'feature/123-name')")
-    to_phase: str = Field(description="Target phase to transition to")
+    to_phase: str = Field(
+        description=(
+            "Target phase to transition to. "
+            "Call get_work_context() to see the valid phase list for this branch."
+        )
+    )
     human_approval: str | None = Field(default=None, description="Optional human approval message")
 
 
@@ -52,7 +57,12 @@ class ForcePhaseTransitionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     branch: str = Field(description="Branch name (e.g., 'feature/123-name')")
-    to_phase: str = Field(description="Target phase (can skip phases)")
+    to_phase: str = Field(
+        description=(
+            "Target phase (can skip phases). "
+            "Call get_work_context() to see the valid phase list for this branch."
+        )
+    )
     skip_reason: str = Field(description="Reason for skipping validation (audit)", min_length=1)
     human_approval: str = Field(description="Human approval message (required)", min_length=1)
 

@@ -63,7 +63,10 @@ class CreateMilestoneInput(BaseModel):
 
     title: str = Field(..., description="Milestone title")
     description: str | None = Field(default=None, description="Optional milestone description")
-    due_on: str | None = Field(default=None, description="Optional due date (ISO 8601 string)")
+    due_on: str | None = Field(
+        default=None,
+        description="Optional due date (ISO 8601 string, e.g. YYYY-MM-DDTHH:MM:SSZ)",
+    )
 
 
 class CreateMilestoneTool(BaseTool):

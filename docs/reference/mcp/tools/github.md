@@ -110,6 +110,9 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
 - **Assignee Validation:** Usernames must be valid collaborators
 - **Default State:** Issues always created in `open` state
 
+> **Schema Note (C3):** The structured `CreateIssueInput` schema used by this tool includes `issue_type`, `priority`, and `scope` fields in addition to the flat parameters shown above. The enum values for these fields are populated at runtime from injected `LabelConfig` and `ScopeConfig` instances (A4 schema override). Call `get_work_context()` or inspect the tool schema to see the current valid values.
+
+
 ---
 
 ### get_issue
@@ -824,7 +827,7 @@ Add labels to an issue or pull request. Validates label existence before applyin
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | Issue or PR number |
-| `labels` | `list[str]` | **Yes** | List of label names to add |
+| `labels` | `list[str]` | **Yes** | List of label names to add. Labels must follow the `category:value` naming pattern (e.g., `"priority:high"`, `"type:feature"`). |
 
 #### Returns
 

@@ -52,7 +52,7 @@ Generate any artifact type (code or document) from unified registry.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `"dto"`, `"design"`, `"worker"`) |
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `"dto"`, `"design"`, `"worker"`). The available enum values are populated at runtime from `artifacts.yaml` via the registry. |
 | `name` | `str` | **Yes** | Artifact name — PascalCase for code, kebab-case for docs |
 | `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.phase-gate/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |

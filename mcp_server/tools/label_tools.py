@@ -192,7 +192,10 @@ class AddLabelsInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="Issue/PR number")
-    labels: list[str] = Field(..., description="List of labels to add")
+    labels: list[str] = Field(
+        ...,
+        description="List of labels to add. Labels must follow the category:value naming pattern.",
+    )
 
 
 class AddLabelsTool(BaseTool):

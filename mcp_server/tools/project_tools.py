@@ -499,7 +499,8 @@ class UpdatePlanningDeliverablesInput(BaseModel):
         ...,
         description=(
             "Partial or full planning deliverables to merge into the existing entry. "
-            "New cycles are appended; existing cycles have deliverables merged by id."
+            "New cycles are appended; existing cycles have deliverables merged by id. "
+            "Deliverable entries may include a 'validates' spec with type + required fields."
         ),
     )
 
