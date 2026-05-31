@@ -98,20 +98,27 @@ Resolved config access paths for all A4 tools. Implementation must follow these 
 |------|--------------|
 | `tests/mcp_server/unit/tools/test_extra_forbid.py` | Does not include modified models |
 | `tests/mcp_server/unit/tools/test_base_tool_input_schema.py` | Tests `BaseTool` base class only |
-| `tests/mcp_server/unit/tools/test_force_phase_transition_tool.py` | Tests execute behavior; non-empty strings pass `min_length=1` |
 
 **C3-affected test files (requires changes in C3):**
 
 | File | Impact |
 |------|---------|
 | `tests/mcp_server/unit/tools/test_create_issue_schema.py` | Uses `__new__` bypass — breaks when `input_schema` reads instance attrs; must construct tool fully or mock attributes |
-| `tests/mcp_server/unit/tools/test_initialize_project_tool.py` | Fixture missing new `contracts_config` param → `TypeError`; fixture update required |
+| `tests/mcp_server/unit/tools/test_initialize_project_tool.py` | Fixture (line 44) missing new `contracts_config` param → `TypeError` |
 | `tests/mcp_server/unit/tools/test_scaffold_artifact.py` | Additive new tests for `artifact_type.enum` schema content |
-| `tests/mcp_server/unit/integration/test_all_tools.py` | `make_create_issue_tool` missing `label_config`, `scope_config`, `git_config` → `TypeError` |
-| `tests/mcp_server/test_support.py` | `make_create_issue_tool` same gap as test_all_tools.py |
-| `tests/mcp_server/unit/tools/test_project_tools.py` | `tool` fixture missing `contracts_config` → `TypeError` |
-| `tests/mcp_server/unit/tools/test_c7_tool_conflict_handling.py` | Fixtures for `TransitionPhaseTool` and `ForcePhaseTransitionTool` missing `workphases_config` → `TypeError` |
-| `tests/mcp_server/managers/test_phase_state_engine_async.py` | Tool construction without `workphases_config` for both `ForcePhaseTransitionTool` and `TransitionPhaseTool` → `TypeError` |
+| `tests/mcp_server/unit/integration/test_all_tools.py` | `make_create_issue_tool` (line 189) missing `label_config`, `scope_config`, `git_config` → `TypeError` |
+| `tests/mcp_server/test_support.py` | `make_create_issue_tool` (line 558) same gap as test_all_tools.py |
+| `tests/mcp_server/unit/tools/test_project_tools.py` | `tool` fixture (line 68) missing `contracts_config` → `TypeError` |
+| `tests/mcp_server/unit/tools/test_c7_tool_conflict_handling.py` | `TransitionPhaseTool` (line 78) and `ForcePhaseTransitionTool` (line 130) fixtures missing `workphases_config` → `TypeError` |
+| `tests/mcp_server/managers/test_phase_state_engine_async.py` | `ForcePhaseTransitionTool` (line 45) and `TransitionPhaseTool` (line 98) missing `workphases_config` → `TypeError` |
+| `tests/mcp_server/unit/tools/test_force_phase_transition_tool.py` | Multiple fixtures and inline constructions (lines 106, 350, 383, 462, 497, 551) missing `workphases_config` → `TypeError` |
+| `tests/mcp_server/unit/tools/test_transition_phase_tool.py` | `tool` fixture (line 51) missing `workphases_config` → `TypeError` |
+| `tests/mcp_server/unit/test_server.py` | `TransitionPhaseTool` (lines 391, 510) and `ForcePhaseTransitionTool` (lines 441, 557) constructed without `workphases_config` → `TypeError` |
+| `tests/mcp_server/integration/test_create_issue_e2e.py` | `CreateIssueTool` (lines 50, 171) missing `label_config`, `scope_config`, `git_config` → `TypeError` |
+| `tests/mcp_server/unit/managers/test_consumers_c4.py` | `CreateIssueTool` (line 219) missing `label_config`, `scope_config`, `git_config` → `TypeError` |
+
+---
+
 ## Architecture and Typing Obligations
 
 - **A3 is forbidden in all cycles.** No Pydantic model may import or call config loaders, `ClassVar`, or any infrastructure object. Violations are rejected regardless of green tests.
@@ -205,14 +212,19 @@ Read these first:
 - tests/mcp_server/test_support.py: **requires update** — `make_create_issue_tool` (line ~558) same gap as test_all_tools.py
 - tests/mcp_server/unit/tools/test_project_tools.py: **requires update** — `tool` fixture (line ~68) constructs `InitializeProjectTool` without `contracts_config`; `TypeError` after C3
 - tests/mcp_server/unit/tools/test_c7_tool_conflict_handling.py: **requires update** — `conflict_tool` fixtures for `TransitionPhaseTool` (line ~78) and `ForcePhaseTransitionTool` (line ~130) construct tools without `workphases_config`; `TypeError` after C3
-- tests/mcp_server/managers/test_phase_state_engine_async.py: **requires update** — `ForcePhaseTransitionTool(workspace_root=Path("."), server_root=Path("."))` (line ~45) and `TransitionPhaseTool(workspace_root=Path("."), server_root=Path("."))` (line ~98) omit `workphases_config`; `TypeError` after C3
+- tests/mcp_server/managers/test_phase_state_engine_async.py: **requires update** — `ForcePhaseTransitionTool` (line 45) and `TransitionPhaseTool` (line 98) omit `workphases_config` → `TypeError` after C3
+- tests/mcp_server/unit/tools/test_force_phase_transition_tool.py: **requires update** — 6 call sites (lines 106, 350, 383, 462, 497, 551) missing `workphases_config` → `TypeError` after C3
+- tests/mcp_server/unit/tools/test_transition_phase_tool.py: **requires update** — `tool` fixture (line 51) missing `workphases_config` → `TypeError` after C3
+- tests/mcp_server/unit/test_server.py: **requires update** — `TransitionPhaseTool` (lines 391, 510) and `ForcePhaseTransitionTool` (lines 441, 557) missing `workphases_config` → `TypeError` after C3
+- tests/mcp_server/integration/test_create_issue_e2e.py: **requires update** — `CreateIssueTool` (lines 50, 171) missing `label_config`, `scope_config`, `git_config` → `TypeError` after C3
+- tests/mcp_server/unit/managers/test_consumers_c4.py: **requires update** — `CreateIssueTool` (line 219) missing `label_config`, `scope_config`, `git_config` → `TypeError` after C3
 **Success Criteria:**
 - _BaseTransitionTool.__init__ accepts workphases_config: WorkphasesConfig; to_phase.enum injected in both TransitionPhaseTool and ForcePhaseTransitionTool from workphases_config.phases.keys()
 - InitializeProjectTool.__init__ accepts contracts_config: ContractsConfig; workflow_name.enum injected from contracts_config.workflows.keys(); existing manual schema property refactored to super().input_schema pattern
 - CreateIssueTool.__init__ accepts label_config: LabelConfig, scope_config: ScopeConfig, git_config: GitConfig; issue_type.enum from issue_config, priority.enum from label_config, scope.enum from scope_config, title.maxLength from git_config
 - ScaffoldArtifactTool.input_schema returns artifact_type.enum from self.manager.registry.list_type_ids()
 - server.py updated: CreateIssueTool x2 call sites, _BaseTransitionTool x2, InitializeProjectTool x1 all pass new params
-- All constructor call sites in tests updated: test_all_tools.py, test_support.py, test_project_tools.py, test_c7_tool_conflict_handling.py, test_phase_state_engine_async.py
+- All constructor call sites in tests updated: test_all_tools.py, test_support.py, test_project_tools.py, test_c7_tool_conflict_handling.py, test_phase_state_engine_async.py, test_force_phase_transition_tool.py, test_transition_phase_tool.py, test_server.py, test_create_issue_e2e.py, test_consumers_c4.py
 - All existing and new tests pass; quality gates green
 
 
