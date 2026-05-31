@@ -232,6 +232,29 @@ Read these first:
 
 ---
 
+## Deferred Items
+
+### D1 — `workflow_phase` field redundancy in `GitCommitInput`
+
+**Status:** Deferred — out of scope for #358. Requires separate issue.
+
+**Finding:** During research for #358, `workflow_phase` on `GitCommitInput` was audited. The field accepts `str | None` with no enum constraint. The question was whether to add an A4 enum from `workphases.yaml`.
+
+**Analysis:** The field is functionally constrained to exactly one value at any given moment — the value stored in `state.json` `current_phase`. Both code paths enforce this:
+
+- **Pad A (`workflow_phase=None`, auto-detect):** `state_engine.get_state(branch)` reads `server_root/state.json` and sets `workflow_phase = state.current_phase`.
+- **Pad B (explicit value):** `build_phase_guard` reads the same `server_root/state.json`; if `workflow_phase != current_phase`, raises `CommitPhaseMismatchError`.
+
+The only exceptions are when `state.json` is absent or belongs to a different branch — in those cases the guard returns early and an explicit value is accepted unchecked.
+
+**Why A4 is not the right fix:** An enum constraint would list all valid phase names (e.g. `research`, `planning`, `implementation`, …), but the semantically valid value at any moment is determined by `state.json`, not the schema. An AI-client cannot use the enum to make the right choice — it must call `get_work_context()` instead. The enum would add noise without providing real guidance.
+
+**Deeper issue:** The `workflow_phase` field may be structurally redundant in the presence of `_phase_guard`. The right resolution may be to remove the field entirely (the tool always auto-detects and the guard enforces state-machine correctness), or to rename it to make the "must match state" constraint explicit. This is an architectural question beyond the schema-audit scope.
+
+**For `@co`:** Create a follow-up issue with scope `mcp-server`, type `refactor`, priority `low`. Proposed title: `"Remove or constrain workflow_phase field in GitCommitInput — structurally redundant with phase guard"`. Link to research: `docs/development/issue358/research.md`.
+
+---
+
 ## Risks & Mitigation
 
 - **Risk:** ClassVar removal (C1) creates a no-validation window if split across commits
