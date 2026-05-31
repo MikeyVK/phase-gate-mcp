@@ -212,14 +212,6 @@ def load_issue_tool_dependencies(workspace_root: Path | str | None = None) -> di
     }
 
 
-def configure_create_branch_input(workspace_root: Path | str | None = None) -> GitConfig:
-    """Load GitConfig (previously also configured CreateBranchInput validators)."""
-    return cast(
-        GitConfig,
-        _load_config(workspace_root, "git.yaml", "load_git_config"),
-    )
-
-
 def make_git_manager(workspace_root: Path | str | None = None) -> GitManager:
     """Build a GitManager with explicit GitConfig."""
     git_config = cast(
