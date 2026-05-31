@@ -117,6 +117,15 @@ Resolved config access paths for all A4 tools. Implementation must follow these 
 | `tests/mcp_server/integration/test_create_issue_e2e.py` | `CreateIssueTool` (lines 50, 171) missing `label_config`, `scope_config`, `git_config` → `TypeError` |
 | `tests/mcp_server/unit/managers/test_consumers_c4.py` | `CreateIssueTool` (line 219) missing `label_config`, `scope_config`, `git_config` → `TypeError` |
 
+
+### C5 — Q9 config-driven cycle_number enforcement (regression fix)
+
+| File | Type | Change |
+|------|------|--------|
+| `mcp_server/tools/git_tools.py` | Production | Remove `@model_validator require_cycle_number_for_implementation` from `GitCommitInput`; add `phase_contract_resolver: PhaseContractResolver | None = None` to `GitCommitTool.__init__`; add runtime guard in `execute()` after `workflow_phase` resolution; update `cycle_number` field description |
+| `mcp_server/server.py` | Production | Add `phase_contract_resolver=self.phase_contract_resolver` to `GitCommitTool` constructor call |
+| `tests/mcp_server/unit/tools/test_git_tools.py` | Test | Rename test that expected model-level validation; add 2 regression tests for auto-detect and explicit paths |
+| `docs/reference/mcp/tools/git.md` | Docs | Update `cycle_number` description and Notes section to match new A1 wording |
 ---
 
 ## Architecture and Typing Obligations
@@ -146,7 +155,7 @@ Read these first:
 
 ## Summary
 
-4-cycle plan to implement A1/A2/A4 schema fixes for 14 gaps across 52 MCP tool input models, eliminating first-use errors where agents discover constraints only via round-trip failures.
+5-cycle plan to implement A1/A2/A4 schema fixes for 14 gaps across 52 MCP tool input models, eliminating first-use errors where agents discover constraints only via round-trip failures. A post-QA regression fix (C5) replaced a hardcoded `@model_validator` with a config-driven runtime guard.
 
 ---
 
@@ -244,6 +253,30 @@ Read these first:
 - docs/reference/mcp/tools/ updated for all 14 modified tools
 - All tests pass; quality gates green on all changed files
 
+
+---
+
+
+### Cycle 5: C5 — Q9 config-driven cycle_number enforcement (regression fix)
+
+**Goal:** Remove the hardcoded `@model_validator` on `GitCommitInput` that only guarded the explicit path and replace it with a config-driven runtime guard in `GitCommitTool.execute()` via `PhaseContractResolver.is_cycle_based_phase()`, covering both the auto-detect and explicit paths.
+
+**Context:** C1 introduced `GitCommitInput.require_cycle_number_for_implementation` (`@model_validator`), which hardcoded `workflow_phase == "implementation"` and fired only when `workflow_phase` was passed explicitly. The auto-detect path (where `workflow_phase=None` at construction) bypassed the validator entirely — a behavioral regression. The guard must use `is_cycle_based_phase(workflow_name, workflow_phase)` from `contracts.yaml` (Config-First principle) and fire on both paths.
+
+**Tests:**
+- `test_git_commit_input_allows_implementation_without_cycle_number`: confirms `GitCommitInput` no longer raises at construction (guard moved to `execute()`)
+- `test_git_commit_cycle_number_required_auto_detect_path`: auto-detect path with `state.current_phase="implementation"` and no `cycle_number` → `ToolResult.error`
+- `test_git_commit_cycle_number_required_explicit_path`: explicit `workflow_phase="implementation"` and no `cycle_number` → `ToolResult.error`
+
+**Success Criteria:**
+- `GitCommitInput.require_cycle_number_for_implementation` `@model_validator` removed; no hardcoded phase name in the model
+- `GitCommitTool.__init__` accepts `phase_contract_resolver: PhaseContractResolver | None = None`
+- `execute()` runtime guard fires on both auto-detect and explicit paths when `is_cycle_based_phase(workflow_name, workflow_phase)` is True and `cycle_number is None`; returns `ToolResult.error` with actionable message
+- `workflow_name` sourced from `BranchState.workflow_name` (auto-detect: state already loaded; explicit: extra `get_state()` call)
+- `server.py` `GitCommitTool` constructor call updated with `phase_contract_resolver=self.phase_contract_resolver`
+- `GitCommitInput.cycle_number` description updated to: `"Cycle number (e.g., 1, 2, 3). Required when the active phase is cycle-based (e.g. implementation). Optional otherwise."`
+- `docs/reference/mcp/tools/git.md` `cycle_number` entry updated to match new A1 wording
+- All 56 tests in `test_git_tools.py` pass; quality gates green
 
 ---
 
