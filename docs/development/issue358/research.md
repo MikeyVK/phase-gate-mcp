@@ -476,7 +476,8 @@ The description enrichment approach raises a cross-cutting design question: if m
 `docs/reference/mcp/tools/` contains per-tool reference pages. Should constraint documentation updates be in scope for this branch, or tracked as a follow-up issue?
 
 **Q5: `ValidateDTOTool` — description fix only, or implement real validation?**
-The tool currently only checks file exists + not empty. Options: (a) A1: correct the description to match actual behavior, or (b) implement real DTO structural validation (likely out of scope for this issue).
+
+**✅ APPROVED: A1** — Correct the description only. Tool is nominated for removal; no further investment warranted.
 
 
 ---
@@ -491,7 +492,79 @@ The tool currently only checks file exists + not empty. Options: (a) A1: correct
 | CreateBranchInput.branch_type ClassVar | **A4** (refactor ClassVar away; in scope) | Q2 ✅ |
 | to_phase descriptions | **A4 two-part** (enum from workphases.yaml + description from contracts.yaml; design-phase token budget required) | Q3 ✅ |
 | Reference doc updates | **In scope** (docs/reference/mcp/tools/ updated alongside schema changes) | Q4 ✅ |
-| ValidateDTOTool | *TBD* | Q5 |
+| ValidateDTOTool | **A1** (description fix only; nominated for removal) | Q5 ✅ |
+
+---
+
+## Blast Radius
+
+### Production Files With Code Changes (10 files)
+
+| File | Tools Affected | Change Type | Notes |
+|------|---------------|-------------|-------|
+| `mcp_server/tools/git_tools.py` | `CreateBranchTool`, `GitCommitTool` | A2 + A4 (ClassVar removal × 2) | `CreateBranchInput` ClassVar removed + A4 `input_schema` override for `branch_type`; `GitCommitInput` ClassVar removed, `commit_type` field_validator removed, A4 enriches schema |
+| `mcp_server/tools/issue_tools.py` | `CreateIssueTool` | A4 | Override `input_schema` to inject `maxLength` for `title`; `enum` for `issue_type`, `priority`, `scope` |
+| `mcp_server/tools/project_tools.py` | `InitializeProjectTool`, `SavePlanningDeliverablesTool`, `UpdatePlanningDeliverablesTool` | A4 + A2 + A1 | A4 `input_schema` for `workflow_name` enum; A2 `@model_validator` for `custom_phases` conditional; A1 description for planning deliverables fields |
+| `mcp_server/tools/phase_tools.py` | `TransitionPhaseTool`, `ForcePhaseTransitionTool` | A4 + A2 + A1 | A4 `input_schema` for `to_phase` (two-part: enum + description); A2 `min_length=1` on `skip_reason`/`human_approval` |
+| `mcp_server/tools/label_tools.py` | `CreateLabelTool`, `AddLabelsTool` | A2 + A1 | A2 `pattern` on `name` and `color` in `CreateLabelInput`; A1 description for `AddLabelsTool.labels` |
+| `mcp_server/tools/milestone_tools.py` | `CreateMilestoneTool` | A1 | Clarify `due_on` description |
+| `mcp_server/tools/pr_tools.py` | `SubmitPRTool` | A1 | Rewrite `base` field description (3-tier cascade) |
+| `mcp_server/tools/scaffold_artifact.py` | `ScaffoldArtifactTool` | A4 | Override `input_schema` to inject `enum` from TemplateRegistry |
+| `mcp_server/tools/validation_tools.py` | `ValidateDTOTool` | A1 | Correct tool description |
+| `mcp_server/server.py` | — | Cleanup | Remove `CreateBranchInput.configure(...)` call (line 140 in `CreateBranchTool.__init__`) and `GitCommitInput.configure(...)` call (line 312 in `GitCommitTool.__init__`) |
+
+**Total: 10 production files changed.** 38 of 52 tools are confirmed clean (no changes needed).
+
+### Test Files With Changes (4 files)
+
+| File | Impact | Type |
+|------|--------|------|
+| `tests/mcp_server/tools/test_git_tools_config.py` | **Full rewrite** | Tests the ClassVar pattern for `CreateBranchInput.configure()` — entire test file tests behavior that disappears. Must be replaced with A4 `input_schema` tests that verify branch_type enum is injected from config |
+| `tests/mcp_server/test_support.py` (line 222) | Remove `CreateBranchInput.configure(git_config)` call in `configure_create_branch_input()` helper | Cleanup |
+| `tests/mcp_server/unit/tools/test_git_tools.py` (line 351) | Remove `GitCommitInput.configure(mock_git_manager.git_config)` call; update `test_git_commit_tool_with_invalid_commit_type` (tests Pydantic-level rejection that disappears when ClassVar is removed); update `test_git_commit_tool_commit_type_case_insensitive` (tests `.lower()` normalization in the field_validator that disappears) | Rewrite 2 tests |
+| `tests/mcp_server/unit/tools/test_scaffold_artifact.py` | Currently tests `ScaffoldArtifactInput(artifact_type="dto")` which remains valid; A4 adds a new `input_schema` property that may need new test coverage for schema content | Additive (new tests, no breaks) |
+
+**Total: 4 test files changed.** Of these, 1 is a full rewrite (`test_git_tools_config.py`), 2 are cleanup/minor updates, and 1 is additive.
+
+### Test Files Confirmed Stable (no changes needed)
+
+| File | Why Stable |
+|------|-----------|
+| `tests/mcp_server/unit/tools/test_extra_forbid.py` | Parametrized over many Input models; does NOT include `CreateBranchInput`, `GitCommitInput`, or `InitializeProjectInput`. Adding A2 constraints to these models does not affect the test — the valid kwargs still pass, and extra-field rejection is already present |
+| `tests/mcp_server/unit/tools/test_base_tool_input_schema.py` | Tests `BaseTool` base class behavior only; unaffected by per-tool overrides |
+| `tests/mcp_server/unit/tools/test_create_issue_schema.py` | Tests `CreateIssueTool.input_schema` for `$ref`/`$defs` absence (already fixed). A4 additions are additive; existing assertions on `$ref` absence remain valid |
+| `tests/mcp_server/unit/tools/test_initialize_project_tool.py` | Tests execute behavior; `workflow_name` validation moves to schema (A4 enum) not Pydantic. Existing tests pass valid `workflow_name` values — stable |
+| `tests/mcp_server/unit/integration/test_all_tools.py` | Asserts only `schema is not None` and `isinstance(schema, dict)`; A4 overrides return valid dicts. Stable |
+| `tests/mcp_server/unit/tools/test_force_phase_transition_tool.py` | Tests execute behavior; A2 additions to `skip_reason`/`human_approval` min_length are additive (current tests pass non-empty strings) |
+
+### ClassVar Removal — Call Site Inventory
+
+Both ClassVar patterns in `git_tools.py` have call sites that must be cleaned up:
+
+**`CreateBranchInput.configure(git_config)` — 3 call sites:**
+1. `mcp_server/tools/git_tools.py:140` — production, in `CreateBranchTool.__init__`
+2. `tests/mcp_server/test_support.py:222` — test helper `configure_create_branch_input()`
+3. `tests/mcp_server/tools/test_git_tools_config.py:66` — integration test (full rewrite)
+
+**`GitCommitInput.configure(git_config)` — 2 call sites:**
+1. `mcp_server/tools/git_tools.py:312` — production, in `GitCommitTool.__init__`
+2. `tests/mcp_server/unit/tools/test_git_tools.py:351` — test, in `test_git_commit_tool_with_invalid_commit_type`
+
+### A1-Only Changes — Zero Test Impact
+
+Description-only changes (A1) in `SubmitPRTool`, `SavePlanningDeliverablesTool`, `UpdatePlanningDeliverablesTool`, `AddLabelsTool`, `CreateMilestoneTool`, and `ValidateDTOTool` require no test changes: string values in tool descriptions have no test assertions in the current suite.
+
+### Blast Radius Summary
+
+| Dimension | Count |
+|-----------|-------|
+| Production files changed | 10 |
+| Test files requiring changes | 4 |
+| Test files requiring full rewrite | 1 (`test_git_tools_config.py`) |
+| ClassVar call sites to remove | 5 (2 production + 3 test) |
+| New tests to write (A4 schema content) | To be specified in planning |
+| Tools with changes | 14 of 52 |
+| Tools confirmed clean | 38 of 52 |
 
 ---
 
