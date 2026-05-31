@@ -387,10 +387,84 @@ async def test_git_commit_tool_execute_with_valid_commit_type(mock_git_manager: 
     assert "Committed: case123" in result.content[0]["text"]
 
 
-def test_git_commit_input_rejects_missing_cycle_number_for_implementation() -> None:
-    """GitCommitInput model_validator rejects workflow_phase=implementation without cycle_number."""
-    with pytest.raises(ValidationError, match="cycle_number"):
-        GitCommitInput(workflow_phase="implementation", message="test commit")
+def test_git_commit_input_allows_implementation_without_cycle_number() -> None:
+    """C5: @model_validator removed; GitCommitInput allows implementation phase without cycle_number.
+
+    The enforcement moved to execute(). Model construction must not raise.
+    """
+    params = GitCommitInput(workflow_phase="implementation", message="test commit")
+    assert params.workflow_phase == "implementation"
+    assert params.cycle_number is None
+
+
+@pytest.mark.asyncio
+async def test_git_commit_cycle_number_required_auto_detect_path(
+    mock_git_manager: MagicMock,
+) -> None:
+    """C5 regression: auto-detect path resolves cycle-based phase → error when cycle_number omitted.
+
+    workflow_phase is not passed by the caller; execute() loads state.json and resolves
+    current_phase='implementation'. Because the phase is cycle-based, the runtime guard must
+    return ToolResult.error before attempting the commit.
+    """
+    mock_state = MagicMock()
+    mock_state.current_phase = "implementation"
+    mock_state.workflow_name = "feature"
+    mock_state.issue_number = 42
+
+    mock_state_engine = MagicMock()
+    mock_state_engine.get_state.return_value = mock_state
+
+    mock_resolver = MagicMock()
+    mock_resolver.is_cycle_based_phase.return_value = True
+
+    tool = GitCommitTool(
+        manager=mock_git_manager,
+        state_engine=mock_state_engine,
+        phase_contract_resolver=mock_resolver,
+    )
+
+    params = GitCommitInput(message="commit without cycle")
+    result = await tool.execute(params, NoteContext())
+
+    assert result.is_error
+    assert "cycle_number" in result.content[0]["text"].lower()
+    mock_git_manager.commit_with_scope.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_git_commit_cycle_number_required_explicit_path(
+    mock_git_manager: MagicMock,
+) -> None:
+    """C5 regression: explicit cycle-based phase with no cycle_number → execute-level error.
+
+    The caller passes workflow_phase='implementation' explicitly, but omits cycle_number.
+    The runtime guard in execute() must return ToolResult.error regardless of the path.
+    """
+    mock_state = MagicMock()
+    mock_state.workflow_name = "feature"
+    mock_state.issue_number = 99
+
+    mock_state_engine = MagicMock()
+    mock_state_engine.get_state.return_value = mock_state
+
+    mock_resolver = MagicMock()
+    mock_resolver.is_cycle_based_phase.return_value = True
+
+    tool = GitCommitTool(
+        manager=mock_git_manager,
+        state_engine=mock_state_engine,
+        phase_contract_resolver=mock_resolver,
+    )
+
+    params = GitCommitInput(workflow_phase="implementation", message="explicit no cycle")
+    result = await tool.execute(params, NoteContext())
+
+    assert result.is_error
+    assert "cycle_number" in result.content[0]["text"].lower()
+    mock_git_manager.commit_with_scope.assert_not_called()
+
+
 
 
 @pytest.mark.asyncio
