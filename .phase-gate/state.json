@@ -2,9 +2,9 @@
   "branch": "refactor/358-mcp-tool-schema-audit",
   "issue_number": 358,
   "workflow_name": "refactor",
-  "current_phase": "implementation",
-  "current_cycle": 5,
-  "last_cycle": 1,
+  "current_phase": "validation",
+  "current_cycle": null,
+  "last_cycle": 5,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -91,8 +91,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-05-31T18:49:27.824328+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": null
 }
