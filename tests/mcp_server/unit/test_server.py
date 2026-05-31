@@ -393,6 +393,7 @@ class TestServerToolRegistration:
                     project_manager=project_manager,
                     state_engine=state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -443,6 +444,7 @@ class TestServerToolRegistration:
                     project_manager=server.project_manager,
                     state_engine=server.phase_state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -512,6 +514,7 @@ class TestServerToolRegistration:
                     project_manager=project_manager,
                     state_engine=state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -559,6 +562,7 @@ class TestServerToolRegistration:
                     project_manager=server.project_manager,
                     state_engine=server.phase_state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]

@@ -61,17 +61,32 @@ All tools:
 **Class:** `CreateIssueTool`  
 **File:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py)
 
-Create a new GitHub issue with optional labels, milestone, and assignees.
+Create a new GitHub issue. Uses a structured input contract: `issue_type`, `priority`, and `scope` are required top-level fields with config-driven enum values (A4 schema override); free-form `labels` are assembled internally from those values.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `title` | `str` | **Yes** | Issue title (Unicode-safe) |
-| `body` | `str` | **Yes** | Issue description (supports Markdown and Unicode) |
-| `labels` | `list[str]` | No | List of label names to apply (validates against existing labels) |
-| `milestone` | `int` | No | Milestone number (not title) |
+| `issue_type` | `str` | **Yes** | Issue type enum — valid values injected at runtime from `LabelConfig` (e.g. `feature`, `bug`, `hotfix`, `chore`, `docs`, `epic`) |
+| `title` | `str` | **Yes** | Issue title (Unicode-safe, maximum 72 characters) |
+| `priority` | `str` | **Yes** | Priority enum — valid values injected at runtime from `LabelConfig` (e.g. `critical`, `high`, `medium`, `low`, `triage`) |
+| `scope` | `str` | **Yes** | Scope enum — valid values injected at runtime from `ScopeConfig` (e.g. `architecture`, `mcp-server`, `platform`, `tooling`, `workflow`, `documentation`) |
+| `body` | `IssueBody` | **Yes** | Structured body object — see IssueBody fields below |
+| `is_epic` | `bool` | No | Mark issue as an epic (default: `false`) |
+| `parent_issue` | `int` | No | Parent issue number (positive integer) for child issues |
+| `milestone` | `str` | No | Milestone **title** (string, not number) |
 | `assignees` | `list[str]` | No | List of GitHub usernames to assign |
+
+##### IssueBody fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `problem` | `str` | **Yes** | Clear description of the problem or feature request |
+| `expected` | `str` | No | Expected behavior |
+| `actual` | `str` | No | Actual behavior observed |
+| `context` | `str` | No | Relevant background or environment info |
+| `steps_to_reproduce` | `str` | No | Numbered steps to reproduce the issue |
+| `related_docs` | `list[str]` | No | List of related documentation paths or URLs |
 
 #### Returns
 
@@ -81,11 +96,11 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
   "issue": {
     "number": 123,
     "url": "https://github.com/owner/repo/issues/123",
-    "title": "Feature request: Add user authentication",
+    "title": "Add structured issue creation",
     "state": "open",
-    "labels": ["type:feature", "priority:high"],
-    "milestone": 5,
-    "assignees": ["username1", "username2"]
+    "labels": ["type:feature", "priority:medium", "scope:mcp-server"],
+    "milestone": null,
+    "assignees": []
   }
 }
 ```
@@ -94,21 +109,46 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
 
 ```json
 {
-  "title": "Feature: Add OAuth2 authentication 🔐",
-  "body": "## Description\n\nImplement OAuth2 authentication with Google and GitHub providers.\n\n## Acceptance Criteria\n- [ ] Google OAuth2 integration\n- [ ] GitHub OAuth2 integration\n- [ ] Token refresh logic",
-  "labels": ["type:feature", "priority:high"],
-  "milestone": 5,
-  "assignees": ["developer1"]
+  "issue_type": "feature",
+  "title": "Add structured issue creation",
+  "priority": "medium",
+  "scope": "mcp-server",
+  "body": {
+    "problem": "The create_issue tool lacks validation."
+  }
+}
+```
+
+```json
+{
+  "issue_type": "bug",
+  "title": "Login fails on Windows when username contains spaces",
+  "priority": "high",
+  "scope": "platform",
+  "body": {
+    "problem": "Login fails with 500 error.",
+    "expected": "Redirect to dashboard.",
+    "actual": "500 Internal Server Error.",
+    "context": "Windows 11, Python 3.13.",
+    "steps_to_reproduce": "1. Enter username with space\n2. Click Login",
+    "related_docs": ["docs/development/issue149/research.md"]
+  },
+  "is_epic": false,
+  "parent_issue": 91,
+  "milestone": "v2.0",
+  "assignees": ["alice"]
 }
 ```
 
 #### Behavior Notes
 
-- **Unicode Support:** Title and body support full Unicode including emojis (no stripping)
-- **Label Validation:** If label doesn't exist, GitHub API returns error
-- **Milestone Validation:** Must use milestone **number** (not title)
-- **Assignee Validation:** Usernames must be valid collaborators
-- **Default State:** Issues always created in `open` state
+- **Structured input:** `issue_type`, `priority`, and `scope` are required; free-form `labels` are not accepted — they are assembled internally by the tool
+- **Milestone:** Pass the milestone **title** (string), not the milestone number
+- **Label assembly:** Labels are derived from `issue_type`, `priority`, and `scope`
+- **Assignee validation:** Usernames must be valid collaborators
+- **Default state:** Issues always created in `open` state
+- **Enum values:** `issue_type`, `priority`, and `scope` enums are injected at runtime from config (A4 pattern) — inspect the tool schema for current valid values
+
 
 ---
 
@@ -737,8 +777,8 @@ Create a new label in the repository. Validates against `LabelConfig` patterns.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `name` | `str` | **Yes** | Label name (e.g., `"type:feature"`) — validates against patterns |
-| `color` | `str` | **Yes** | Color hex code WITHOUT `#` (e.g., `"0e8a16"`) |
+| `name` | `str` | **Yes** | Label name in `category:value` format. Allowed categories: `type`, `priority`, `status`, `phase`, `scope`, `component`, `effort`, `parent`. Value: lowercase letters, digits, hyphens only. Example: `"type:feature"`. |
+| `color` | `str` | **Yes** | Hex color code WITHOUT `#` prefix — exactly 6 characters (0-9, A-F, case-insensitive). Example: `"0e8a16"`. Pattern: `^[0-9A-Fa-f]{6}$` |
 | `description` | `str` | No | Label description (default: empty string) |
 
 #### Returns
@@ -824,7 +864,7 @@ Add labels to an issue or pull request. Validates label existence before applyin
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | Issue or PR number |
-| `labels` | `list[str]` | **Yes** | List of label names to add |
+| `labels` | `list[str]` | **Yes** | List of label names to add. Labels must follow the `category:value` naming pattern (e.g., `"priority:high"`, `"type:feature"`). |
 
 #### Returns
 

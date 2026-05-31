@@ -22,7 +22,7 @@ class ValidateDTOTool(BaseTool):
     """Tool to validate DTO definitions."""
 
     name = "validate_dto"
-    description = "Validate DTO definition"
+    description = "Validate DTO definition. Checks that the file path exists before parsing."
     args_model = ValidateDTOInput
 
     @property

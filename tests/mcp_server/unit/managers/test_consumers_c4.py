@@ -221,8 +221,10 @@ class TestCreateIssueToolFirstPhaseC4:
             issue_config=issue_config,
             milestone_config=MagicMock(spec=MilestoneConfig),
             contracts_config=_minimal_contracts(first_phase="research"),
+            label_config=None,
+            scope_config=None,
+            git_config=None,
         )
-
         params = MagicMock(spec=CreateIssueInput)
         params.is_epic = False
         params.issue_type = "feature"

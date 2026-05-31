@@ -346,50 +346,125 @@ async def test_git_commit_tool_with_commit_type_override(mock_git_manager: Magic
 
 
 @pytest.mark.asyncio
-async def test_git_commit_tool_with_invalid_commit_type(mock_git_manager: MagicMock) -> None:
-    """Test that invalid commit_type raises ValueError."""
-    GitCommitInput.configure(mock_git_manager.git_config)
-    with pytest.raises(ValueError, match="Invalid commit_type 'invalid_type'"):
-        GitCommitInput(
-            workflow_phase="implementation",
-            sub_phase="red",
-            commit_type="invalid_type",  # Invalid type
-            message="test commit",
-        )
+async def test_git_commit_tool_schema_excludes_invalid_commit_type(
+    mock_git_manager: MagicMock,
+) -> None:
+    """A4 schema: commit_type.enum from git_config does not include unknown types."""
+    tool = GitCommitTool(manager=mock_git_manager)
+    schema = tool.input_schema
+    enum_values = schema["properties"]["commit_type"]["enum"]
+    assert "invalid_type" not in enum_values
+    assert "feat" in enum_values  # from mock_git_manager fixture
 
 
 @pytest.mark.asyncio
-async def test_git_commit_tool_commit_type_case_insensitive(mock_git_manager: MagicMock) -> None:
-    """Test that commit_type is normalized to lowercase."""
+async def test_git_commit_tool_execute_with_valid_commit_type(mock_git_manager: MagicMock) -> None:
+    """Tool executes correctly when commit_type is a valid enum value."""
     tool = GitCommitTool(manager=mock_git_manager)
     mock_git_manager.commit_with_scope.return_value = "case123"
 
     params = GitCommitInput(
         workflow_phase="implementation",
         sub_phase="red",
-        commit_type="FEAT",  # Uppercase should be normalized
+        commit_type="feat",
         message="add feature",
         cycle_number=1,
     )
 
-    # Should be normalized to lowercase by validator
-    assert params.commit_type == "feat"
-
     result = await tool.execute(params, NoteContext())
 
-    # Should pass normalized commit_type
     mock_git_manager.commit_with_scope.assert_called_once_with(
         workflow_phase="implementation",
         message="add feature",
         note_context=ANY,
         sub_phase="red",
         cycle_number=1,
-        commit_type="feat",  # Normalized to lowercase
+        commit_type="feat",
         files=None,
         skip_paths=frozenset(),
         issue_number=999,
     )
     assert "Committed: case123" in result.content[0]["text"]
+
+
+def test_git_commit_input_allows_implementation_without_cycle_number() -> None:
+    """C5: @model_validator removed; GitCommitInput allows implementation phase
+    without cycle_number.
+
+
+    The enforcement moved to execute(). Model construction must not raise.
+    """
+    params = GitCommitInput(workflow_phase="implementation", message="test commit")
+    assert params.workflow_phase == "implementation"
+    assert params.cycle_number is None
+
+
+@pytest.mark.asyncio
+async def test_git_commit_cycle_number_required_auto_detect_path(
+    mock_git_manager: MagicMock,
+) -> None:
+    """C5 regression: auto-detect path resolves cycle-based phase → error when cycle_number omitted.
+
+    workflow_phase is not passed by the caller; execute() loads state.json and resolves
+    current_phase='implementation'. Because the phase is cycle-based, the runtime guard must
+    return ToolResult.error before attempting the commit.
+    """
+    mock_state = MagicMock()
+    mock_state.current_phase = "implementation"
+    mock_state.workflow_name = "feature"
+    mock_state.issue_number = 42
+
+    mock_state_engine = MagicMock()
+    mock_state_engine.get_state.return_value = mock_state
+
+    mock_resolver = MagicMock()
+    mock_resolver.is_cycle_based_phase.return_value = True
+
+    tool = GitCommitTool(
+        manager=mock_git_manager,
+        state_engine=mock_state_engine,
+        phase_contract_resolver=mock_resolver,
+    )
+
+    params = GitCommitInput(message="commit without cycle")
+    result = await tool.execute(params, NoteContext())
+
+    assert result.is_error
+    assert "cycle_number" in result.content[0]["text"].lower()
+    mock_git_manager.commit_with_scope.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_git_commit_cycle_number_required_explicit_path(
+    mock_git_manager: MagicMock,
+) -> None:
+    """C5 regression: explicit cycle-based phase with no cycle_number → execute-level error.
+
+    The caller passes workflow_phase='implementation' explicitly, but omits cycle_number.
+    The runtime guard in execute() must return ToolResult.error regardless of the path.
+    """
+    mock_state = MagicMock()
+    mock_state.workflow_name = "feature"
+    mock_state.issue_number = 99
+
+    mock_state_engine = MagicMock()
+    mock_state_engine.get_state.return_value = mock_state
+
+    mock_resolver = MagicMock()
+    mock_resolver.is_cycle_based_phase.return_value = True
+
+    tool = GitCommitTool(
+        manager=mock_git_manager,
+        state_engine=mock_state_engine,
+        phase_contract_resolver=mock_resolver,
+    )
+
+    params = GitCommitInput(workflow_phase="implementation", message="explicit no cycle")
+    result = await tool.execute(params, NoteContext())
+
+    assert result.is_error
+    assert "cycle_number" in result.content[0]["text"].lower()
+    mock_git_manager.commit_with_scope.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -710,44 +785,31 @@ async def test_get_parent_branch_not_set() -> None:
 # ===== Cycle Number Enforcement Tests (Issue #146 Cycle 5) =====
 
 
-@pytest.mark.asyncio
-async def test_git_commit_tdd_requires_cycle_number(mock_git_manager: MagicMock) -> None:
-    """Test that TDD phase commits REQUIRE cycle_number (Issue #146)."""
-    tool = GitCommitTool(manager=mock_git_manager)
+def test_git_commit_tdd_requires_cycle_number() -> None:
+    """C5: model_validator removed; construction with implementation phase succeeds.
 
-    # Attempt to commit in TDD phase without cycle_number
+    Enforcement moved back to execute() (runtime guard via PhaseContractResolver).
+    """
     params = GitCommitInput(
         message="update documentation",
         workflow_phase="implementation",
-        # cycle_number is MISSING - should return error result
+        # cycle_number is MISSING - must not raise at model level after C5
     )
-
-    result = await tool.execute(params, NoteContext())
-
-    assert result.is_error, "Expected error when cycle_number missing for TDD"
-    error_text = result.content[0]["text"]
-    assert "cycle_number" in error_text
-    assert "TDD" in error_text or "tdd" in error_text.lower()
+    assert params.cycle_number is None
 
 
-@pytest.mark.asyncio
-async def test_git_commit_tdd_subphase_requires_cycle_number(mock_git_manager: MagicMock) -> None:
-    """Test that TDD sub-phase commits REQUIRE cycle_number (Issue #146)."""
-    tool = GitCommitTool(manager=mock_git_manager)
+def test_git_commit_tdd_subphase_requires_cycle_number() -> None:
+    """C5: model_validator removed; construction with implementation sub-phase succeeds.
 
-    # Attempt to commit in TDD sub-phase without cycle_number
+    Enforcement moved back to execute() (runtime guard via PhaseContractResolver).
+    """
     params = GitCommitInput(
         message="implement feature",
         workflow_phase="implementation",
         sub_phase="green",
-        # cycle_number is MISSING - should return error result
+        # cycle_number is MISSING - must not raise at model level after C5
     )
-
-    result = await tool.execute(params, NoteContext())
-
-    assert result.is_error, "Expected error when cycle_number missing for TDD sub-phase"
-    error_text = result.content[0]["text"]
-    assert "cycle_number" in error_text
+    assert params.cycle_number is None
 
 
 @pytest.mark.asyncio

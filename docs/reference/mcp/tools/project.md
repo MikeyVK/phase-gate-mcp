@@ -54,7 +54,7 @@ Initialize project with phase plan selection. Human selects workflow_name (featu
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 | `issue_title` | `str` | **Yes** | Issue title |
-| `workflow_name` | `str` | **Yes** | Workflow from workflows.yaml: `"feature"`, `"bug"`, `"docs"`, `"refactor"`, `"hotfix"`, `"epic"`, `"custom"` |
+| `workflow_name` | `str` | **Yes** | Workflow name. Valid values are populated at runtime from `contracts.yaml` via enum injection (C3 A4 override). Examples: `"feature"`, `"bug"`, `"docs"`, `"refactor"`, `"hotfix"`, `"epic"`, `"custom"`. |
 | `parent_branch` | `str` | No | Parent branch this feature/bug branches from (auto-detected from git reflog if not provided) |
 | `custom_phases` | `list[str]` | **Conditional** | Custom phase list (REQUIRED if `workflow_name="custom"`) |
 | `skip_reason` | `str` | No | Reason for custom phases (audit trail) |
@@ -203,7 +203,7 @@ Transition branch to next phase (strict sequential validation).
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `branch` | `str` | **Yes** | Branch name (e.g., `"feature/123-oauth"`) |
-| `to_phase` | `str` | **Yes** | Target phase to transition to |
+| `to_phase` | `str` | **Yes** | Target phase to transition to. Run `get_work_context()` to see valid phases for the current branch; enum is injected at runtime from `workphases.yaml`. |
 | `human_approval` | `str` | No | Optional human approval message (audit trail) |
 
 #### Returns
@@ -281,9 +281,9 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `branch` | `str` | **Yes** | Branch name (e.g., `"feature/123-oauth"`) |
-| `to_phase` | `str` | **Yes** | Target phase to transition to (can skip phases) |
-| `skip_reason` | `str` | **Yes** | Reason for skipping validation (audit trail) |
-| `human_approval` | `str` | **Yes** | Human approval message (REQUIRED for forced transitions) |
+| `to_phase` | `str` | **Yes** | Target phase to transition to (can skip phases). Run `get_work_context()` to see valid phases for the current branch; enum is injected at runtime from `workphases.yaml`. |
+| `skip_reason` | `str` | **Yes** | Reason for skipping validation (audit trail) — must be non-empty (min_length=1) |
+| `human_approval` | `str` | **Yes** | Human approval message (REQUIRED for forced transitions) — must be non-empty (min_length=1) |
 
 #### Returns
 
@@ -325,6 +325,52 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 ---
 
 ## State Management
+
+### save_planning_deliverables
+
+**MCP Name:** `save_planning_deliverables`  
+**Class:** `SavePlanningDeliverablesTool`  
+**File:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py)
+
+Save TDD cycle planning deliverables for an issue to deliverables.json. Validates each `validates` entry schema before persisting.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `issue_number` | `int` | **Yes** | GitHub issue number |
+| `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `tdd_cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
+
+#### Behavior Notes
+
+- **Write-Once:** Raises an error if deliverables already exist for the issue (use `update_planning_deliverables` to extend)
+- **Layer 2 Validation:** Every `validates` entry is validated before writing
+
+---
+
+### update_planning_deliverables
+
+**MCP Name:** `update_planning_deliverables`  
+**Class:** `UpdatePlanningDeliverablesTool`  
+**File:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py)
+
+Merge-update TDD cycle planning deliverables for an issue in deliverables.json. Must be preceded by `save_planning_deliverables`. New cycles are appended; deliverables within existing cycles are merged by id.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `issue_number` | `int` | **Yes** | GitHub issue number |
+| `planning_deliverables` | `dict` | **Yes** | Partial or full planning deliverables to merge. New cycles are appended; existing cycles have deliverables merged by id. Deliverable entries may include a `validates` spec with `type` + required fields (Layer 2 validation). |
+
+#### Behavior Notes
+
+- **Requires Prior Save:** Returns error if `save_planning_deliverables` was not called first (write-once guard)
+- **Merge Strategy:** New cycle → append; existing cycle + new id → append; existing id → overwrite
+- **Layer 2 Validation:** Every `validates` entry is validated before writing
+
+---
+
 
 ### .st3/state.json
 

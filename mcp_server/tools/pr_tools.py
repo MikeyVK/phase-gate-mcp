@@ -159,7 +159,13 @@ class SubmitPRInput(BaseModel):
 
     head: str = Field(..., description="Source branch name (e.g. feature/42-name)")
     title: str = Field(..., description="PR title")
-    base: str | None = Field(default=None, description="Target branch (defaults to main)")
+    base: str | None = Field(
+        default=None,
+        description=(
+            "Target branch (defaults to main). "
+            "Cascade: explicit value → state.json parent_branch → git_config.default_base_branch."
+        ),
+    )
     body: str | None = Field(default=None, description="PR description (markdown)")
     draft: bool = Field(default=False, description="Create as draft PR")
 

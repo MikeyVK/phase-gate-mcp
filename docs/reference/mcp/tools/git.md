@@ -51,7 +51,7 @@ Create a new branch from specified base branch.
 |-----------|------|----------|-------------|
 | `name` | `str` | **Yes** | Branch name (kebab-case) — e.g., `"feature/123-my-feature"` |
 | `base_branch` | `str` | **Yes** | Base branch to create from (e.g., `"HEAD"`, `"main"`, `"develop"`) |
-| `branch_type` | `str` | No | Branch type: `"feature"`, `"bug"`, `"docs"`, `"refactor"`, `"hotfix"` (default: `"feature"`) |
+| `branch_type` | `str` | No | Branch type (default: `"feature"`). Valid values are populated at runtime from `git.yaml` via the `branch_types` config; enum is injected via A4 schema override. |
 
 #### Returns
 
@@ -138,10 +138,10 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `message` | `str` | **Yes** | Commit message (WITHOUT prefix — prefix is auto-added) |
-| `workflow_phase` | `str` | No | Phase override (e.g. `"implementation"`, `"documentation"`) — auto-detected from `.st3/state.json` if omitted |
-| `sub_phase` | `str` | No | Sub-phase for `implementation`: `"red"`, `"green"`, `"refactor"` |
-| `cycle_number` | `int` | No | **Required when `workflow_phase="implementation"`** — TDD cycle number (e.g. `1`, `2`, `3`) |
-| `commit_type` | `str` | No | Override commit type (e.g. `"feat"`, `"fix"`, `"docs"`) — use only as explicit override |
+| `workflow_phase` | `str` | No | Phase override (e.g. `"implementation"`, `"documentation"`) — auto-detected from `.st3/state.json` if omitted. Valid values populated at runtime from `workphases.yaml`. |
+| `sub_phase` | `str` | No | Sub-phase for `implementation`: `"red"`, `"green"`, `"refactor"`. Valid values populated at runtime from `workphases.yaml`. |
+| `cycle_number` | `int` | No | **Required when the active phase is cycle-based (e.g. implementation).** TDD cycle number (e.g. `1`, `2`, `3`). Optional otherwise. |
+| `commit_type` | `str` | No | Override commit type (e.g. `"feat"`, `"fix"`, `"docs"`). Valid values populated at runtime from `git.yaml` via the `commit_types` config. Use only as explicit override. |
 | `files` | `list[str]` | No | Specific file paths to stage — default: stage all changed files |
 | `skip_paths` | `frozenset[str]` | No | File paths to exclude from staging (advanced use) |
 
@@ -205,7 +205,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 - **No Changes:** Returns error if no changes to commit
 - **Issue suffix auto-append (#228):** The active issue number is extracted from the current branch name via `extract_issue_number()` and appended to the commit message as ` (#NNN)`. For branches without a parseable issue number (e.g. `main`, `feature/no-number`), no suffix is added. This happens transparently — no parameter needed.
 - **`phase` parameter:** Does NOT exist — `GitCommitInput` uses `extra="forbid"`. Passing `phase` crashes with a validation error.
-- **`cycle_number`:** Required when `workflow_phase="implementation"` — omitting it causes a validation error
+- **`cycle_number`:** Required when the active phase is cycle-based (e.g. `implementation`) — omitting it causes an error
 - **Ready-phase auto-exclude (#283):** When in `ready` phase, `.st3/state.json` and `.st3/deliverables.json` are automatically removed from the commit index before committing
 
 ---

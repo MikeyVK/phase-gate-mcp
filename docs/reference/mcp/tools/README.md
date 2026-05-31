@@ -70,7 +70,7 @@ Full GitHub API integration for issues, pull requests, labels, and milestones. R
 
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
-| `create_issue` | Create new issue (Unicode-safe) | `title`, `body`, `labels`, `milestone`, `assignees` |
+| `create_issue` | Create new issue with structured input (`issue_type`, `priority`, `scope`, `body`) | `issue_type`, `title`, `priority`, `scope`, `body` |
 | `get_issue` | Get detailed issue information | `issue_number` |
 | `list_issues` | List issues with filters | `state`, `labels` |
 | `update_issue` | Update issue fields | `issue_number`, `title`, `body`, `state`, `labels`, `milestone`, `assignees` |
@@ -159,7 +159,7 @@ Automated quality gates, test execution, and architectural validation.
 |------|---------|----------------|
 | `run_quality_gates` | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required only with `scope="files"`) |
 | `run_tests` | Run pytest — structured output: per-failure lines in `content[0]` text + full JSON payload in `content[1]` | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` |
-| `validate_dto` | Validate DTO definition | `file_path` |
+| `validate_dto` | Check that a DTO file path exists and is non-empty (does not validate DTO structure) | `file_path` |
 | `validate_template` | Validate file structure vs template | `path`, `template_type` |
 
 **📖 See:** [quality.md](quality.md) for quality gate configuration, test markers, and validation rule details.

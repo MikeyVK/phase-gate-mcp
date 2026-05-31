@@ -191,6 +191,9 @@ def make_create_issue_tool(manager: MagicMock) -> CreateIssueTool:
         issue_config=issue_config,
         milestone_config=milestone_config,
         contracts_config=contracts_config,
+        label_config=MagicMock(),
+        scope_config=scope_config,
+        git_config=MagicMock(),
     )
 
 
