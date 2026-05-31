@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import anyio
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.git_manager import GitManager
@@ -56,6 +56,16 @@ class InitializeProjectInput(BaseModel):
         default=None, description="Custom phase list (required if workflow_name=custom)"
     )
     skip_reason: str | None = Field(default=None, description="Reason for custom phases")
+
+    @model_validator(mode="after")
+    def require_custom_phases_for_custom_workflow(self) -> "InitializeProjectInput":
+        """Require custom_phases when workflow_name is 'custom'."""
+        if self.workflow_name == "custom" and not self.custom_phases:
+            raise ValueError(
+                "custom_phases is required when workflow_name='custom'. "
+                "Provide a non-empty list of phase names."
+            )
+        return self
 
 
 class InitializeProjectTool(BranchMutatingTool):

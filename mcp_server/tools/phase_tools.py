@@ -52,8 +52,8 @@ class ForcePhaseTransitionInput(BaseModel):
 
     branch: str = Field(description="Branch name (e.g., 'feature/123-name')")
     to_phase: str = Field(description="Target phase (can skip phases)")
-    skip_reason: str = Field(description="Reason for skipping validation (audit)")
-    human_approval: str = Field(description="Human approval message (required)")
+    skip_reason: str = Field(description="Reason for skipping validation (audit)", min_length=1)
+    human_approval: str = Field(description="Human approval message (required)", min_length=1)
 
     @field_validator("skip_reason", "human_approval")
     @classmethod

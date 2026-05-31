@@ -14,6 +14,8 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
+
 
 from mcp_server.core.interfaces import GateReport
 from mcp_server.core.operation_notes import InfoNote, NoteContext
@@ -196,8 +198,8 @@ class TestForcePhaseTransitionTool:
         self, initialized_branch: str, feature_phases: list[str]
     ) -> None:
         """Test tool requires skip_reason parameter."""
-        # Empty skip_reason should be rejected
-        with pytest.raises(ValueError, match="cannot be empty"):
+        # Empty skip_reason should be rejected (min_length=1 or field_validator)
+        with pytest.raises(ValidationError):
             ForcePhaseTransitionInput(
                 branch=initialized_branch,
                 to_phase=feature_phases[2],  # design
@@ -209,7 +211,7 @@ class TestForcePhaseTransitionTool:
         self, initialized_branch: str, feature_phases: list[str]
     ) -> None:
         """Test tool requires human_approval parameter."""
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(ValidationError):
             ForcePhaseTransitionInput(
                 branch=initialized_branch,
                 to_phase=feature_phases[2],  # design

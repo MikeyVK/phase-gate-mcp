@@ -57,8 +57,16 @@ class CreateLabelInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(..., description="Label name (e.g., 'type:feature')")
-    color: str = Field(..., description="Color hex code without # (e.g., '0e8a16')")
+    name: str = Field(
+        ...,
+        description="Label name (e.g., 'type:feature')",
+        pattern=r"^(type|priority|status|phase|scope|component|effort|parent):[a-z0-9-]+$",
+    )
+    color: str = Field(
+        ...,
+        description="Color hex code without # (e.g., '0e8a16')",
+        pattern=r"^[0-9A-Fa-f]{6}$",
+    )
     description: str | None = Field(default="", description="Label description")
 
 
