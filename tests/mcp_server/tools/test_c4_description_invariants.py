@@ -57,7 +57,12 @@ class TestC4DescriptionInvariants:
         """AddLabelsInput.labels mentions label naming constraints."""
         field_info = AddLabelsInput.model_fields["labels"]
         desc = field_info.description or ""
-        assert "category:value" in desc.lower() or "naming" in desc.lower() or "pattern" in desc.lower(), (
+        has_naming_note = (
+            "category:value" in desc.lower()
+            or "naming" in desc.lower()
+            or "pattern" in desc.lower()
+        )
+        assert has_naming_note, (
             f"AddLabelsInput.labels description must mention naming constraints: {desc!r}"
         )
 

@@ -101,7 +101,6 @@ labels:
             CreateLabelInput(name="good first issue", color="7057FF")
 
 
-
 class TestAddLabelsToolValidation:
     """Tests for AddLabelsTool validation hooks."""
 
