@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import anyio
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces import IContextLoadedWriter
@@ -281,14 +281,15 @@ class GitCommitTool(BranchMutatingTool):
         workflow_phase = params.workflow_phase
         current_branch = self.manager.adapter.get_current_branch()
         issue_number: int | None = None
+        auto_state = None
 
         if workflow_phase is None:
             if self._state_engine is None:
                 raise ValueError("PhaseStateEngine must be injected for auto-detection")
             try:
-                state = self._state_engine.get_state(current_branch)
-                workflow_phase = state.current_phase
-                issue_number = state.issue_number
+                auto_state = self._state_engine.get_state(current_branch)
+                workflow_phase = auto_state.current_phase
+                issue_number = auto_state.issue_number
             except (FileNotFoundError, StateBranchMismatchError):
                 return ToolResult.error(
                     f"No state.json found for branch '{current_branch}'. "
@@ -308,13 +309,16 @@ class GitCommitTool(BranchMutatingTool):
         if self._phase_contract_resolver is not None and self._state_engine is not None:
             if params.workflow_phase is None:
                 # auto-detect path: state already loaded above
-                guard_workflow_name = state.workflow_name  # type: ignore[possibly-undefined]
+                assert auto_state is not None  # exception path returns early above
+                guard_workflow_name = auto_state.workflow_name
             else:
                 # explicit path: load state for workflow_name only
                 guard_state = self._state_engine.get_state(current_branch)
                 guard_workflow_name = guard_state.workflow_name
             if (
-                self._phase_contract_resolver.is_cycle_based_phase(guard_workflow_name, workflow_phase)
+                self._phase_contract_resolver.is_cycle_based_phase(
+                    guard_workflow_name, workflow_phase
+                )
                 and params.cycle_number is None
             ):
                 return ToolResult.error(
@@ -322,8 +326,6 @@ class GitCommitTool(BranchMutatingTool):
                     f"('{workflow_phase}'). "
                     "Use: git_add_or_commit(..., cycle_number=N)"
                 )
-
-
 
         commit_type = params.commit_type
         if commit_type is None and self._commit_type_resolver is not None:

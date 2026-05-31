@@ -388,7 +388,9 @@ async def test_git_commit_tool_execute_with_valid_commit_type(mock_git_manager: 
 
 
 def test_git_commit_input_allows_implementation_without_cycle_number() -> None:
-    """C5: @model_validator removed; GitCommitInput allows implementation phase without cycle_number.
+    """C5: @model_validator removed; GitCommitInput allows implementation phase
+    without cycle_number.
+
 
     The enforcement moved to execute(). Model construction must not raise.
     """
@@ -463,8 +465,6 @@ async def test_git_commit_cycle_number_required_explicit_path(
     assert result.is_error
     assert "cycle_number" in result.content[0]["text"].lower()
     mock_git_manager.commit_with_scope.assert_not_called()
-
-
 
 
 @pytest.mark.asyncio
@@ -784,6 +784,7 @@ async def test_get_parent_branch_not_set() -> None:
 
 # ===== Cycle Number Enforcement Tests (Issue #146 Cycle 5) =====
 
+
 def test_git_commit_tdd_requires_cycle_number() -> None:
     """C5: model_validator removed; construction with implementation phase succeeds.
 
@@ -809,7 +810,6 @@ def test_git_commit_tdd_subphase_requires_cycle_number() -> None:
         # cycle_number is MISSING - must not raise at model level after C5
     )
     assert params.cycle_number is None
-
 
 
 @pytest.mark.asyncio
