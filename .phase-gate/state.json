@@ -3,8 +3,8 @@
   "issue_number": 358,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 3,
-  "last_cycle": 2,
+  "current_cycle": 4,
+  "last_cycle": 3,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -17,6 +17,12 @@
       "name": "C3 \u2014 A4 config-driven schema overrides + constructor injection",
       "forced": false,
       "entered": "2026-05-31T15:51:04.283354+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "C4 \u2014 A1 description enrichments + reference docs",
+      "forced": false,
+      "entered": "2026-05-31T16:14:59.805150+00:00"
     }
   ],
   "required_phases": [
@@ -51,5 +57,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
