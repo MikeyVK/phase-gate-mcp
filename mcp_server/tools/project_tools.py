@@ -24,6 +24,7 @@ from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateAlreadyExistsError
+from mcp_server.schemas import ContractsConfig
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -89,6 +90,7 @@ class InitializeProjectTool(BranchMutatingTool):
         manager: ProjectManager,
         git_manager: GitManager,
         state_engine: PhaseStateEngine,
+        contracts_config: ContractsConfig | None = None,
     ) -> None:
         """Initialize tool with injected project dependencies."""
         super().__init__()
@@ -96,10 +98,16 @@ class InitializeProjectTool(BranchMutatingTool):
         self.manager = manager
         self.git_manager = git_manager
         self.state_engine = state_engine
+        self._contracts_config = contracts_config
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return InitializeProjectInput.model_json_schema()
+        schema = super().input_schema
+        if self._contracts_config is not None:
+            schema["properties"]["workflow_name"]["enum"] = list(
+                self._contracts_config.workflows.keys()
+            )
+        return schema
 
     def _detect_parent_branch_from_reflog_sync(self, current_branch: str) -> str | None:
         """Detect parent branch from git reflog.

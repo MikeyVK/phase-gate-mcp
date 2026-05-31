@@ -2,12 +2,15 @@
 
 import json
 import unicodedata
-from typing import Literal
+from typing import Any, Literal
 
 import jinja2
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from mcp_server.config.schemas.contracts_config import ContractsConfig
+from mcp_server.config.schemas.git_config import GitConfig
+from mcp_server.config.schemas.label_config import LabelConfig
+from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
@@ -160,12 +163,37 @@ class CreateIssueTool(BaseTool):
         issue_config: IssueConfig,
         milestone_config: MilestoneConfig,
         contracts_config: ContractsConfig,
+        label_config: LabelConfig | None = None,
+        scope_config: ScopeConfig | None = None,
+        git_config: GitConfig | None = None,
     ) -> None:
         self.manager = manager
         self._issue_config = issue_config
         self._milestone_config = milestone_config
         self._contracts_config = contracts_config
+        self._label_config = label_config
+        self._scope_config = scope_config
+        self._git_config = git_config
         self._renderer = JinjaRenderer(template_dir=get_template_root())
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        schema = super().input_schema
+        schema["properties"]["issue_type"]["enum"] = [
+            e.name for e in self._issue_config.issue_types
+        ]
+        if self._label_config is not None:
+            priority_labels = self._label_config.get_labels_by_category("priority")
+            schema["properties"]["priority"]["enum"] = [
+                lbl.name.split(":")[-1] for lbl in priority_labels
+            ]
+        if self._scope_config is not None:
+            schema["properties"]["scope"]["enum"] = self._scope_config.scopes
+        if self._git_config is not None:
+            schema["properties"]["title"]["maxLength"] = (
+                self._git_config.issue_title_max_length
+            )
+        return schema
 
     def _render_body(self, body: IssueBody, title: str = "") -> str:
         """Render an IssueBody to markdown via issue.md.jinja2."""

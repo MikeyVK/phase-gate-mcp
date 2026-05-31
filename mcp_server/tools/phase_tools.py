@@ -23,6 +23,7 @@ from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
+from mcp_server.schemas import WorkphasesConfig
 from mcp_server.tools.base import BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -74,6 +75,7 @@ class _BaseTransitionTool(BranchMutatingTool):
         project_manager: ProjectManager | None = None,
         state_engine: PhaseStateEngine | None = None,
         server_root: Path | None = None,
+        workphases_config: WorkphasesConfig | None = None,
     ) -> None:
         """Initialize tool with injected or legacy-created transition dependencies."""
         super().__init__()
@@ -86,6 +88,7 @@ class _BaseTransitionTool(BranchMutatingTool):
         self.server_root = server_root
         self._project_manager = project_manager
         self._state_engine = state_engine
+        self._workphases_config = workphases_config
 
     def _create_project_manager(self) -> ProjectManager:
         """Return the injected ProjectManager."""
@@ -110,6 +113,16 @@ class TransitionPhaseTool(_BaseTransitionTool):
     description = "Transition branch to next phase (strict sequential)"
     args_model = TransitionPhaseInput
     enforcement_event = "transition_phase"
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        schema = super().input_schema
+        if self._workphases_config is not None:
+            schema["properties"]["to_phase"]["enum"] = list(
+                self._workphases_config.phases.keys()
+            )
+        return schema
+
 
     async def execute(self, params: TransitionPhaseInput, context: NoteContext) -> ToolResult:
         """Execute standard phase transition.
@@ -158,6 +171,16 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
     description = "Force non-sequential phase transition (skip/jump with reason)"
     args_model = ForcePhaseTransitionInput
     enforcement_event = "transition_phase"
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        schema = super().input_schema
+        if self._workphases_config is not None:
+            schema["properties"]["to_phase"]["enum"] = list(
+                self._workphases_config.phases.keys()
+            )
+        return schema
+
 
     async def execute(self, params: ForcePhaseTransitionInput, context: NoteContext) -> ToolResult:
         """Execute forced phase transition.

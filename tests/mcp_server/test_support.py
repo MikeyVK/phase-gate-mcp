@@ -549,4 +549,7 @@ def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
         issue_config=dependencies["issue_config"],
         milestone_config=dependencies["milestone_config"],
         contracts_config=dependencies["contracts_config"],
+        label_config=dependencies["label_config"],
+        scope_config=dependencies["scope_config"],
+        git_config=dependencies["git_config"],
     )

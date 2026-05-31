@@ -109,6 +109,7 @@ class TestForcePhaseTransitionTool:
             project_manager=project_manager,
             state_engine=state_engine,
             server_root=workspace_root,
+            workphases_config=None,
         )
 
     @pytest.fixture
@@ -357,6 +358,7 @@ phases:
                 workflow_gate_runner=_StaticGateRunner(blocking=("planning_deliverables",)),
             ),
             server_root=workspace_with_gates,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -390,6 +392,7 @@ phases:
                 workflow_gate_runner=_StaticGateRunner(),
             ),
             server_root=workspace_no_gates,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -469,6 +472,7 @@ phases:
                 workflow_gate_runner=_StaticGateRunner(blocking=("planning_deliverables",)),
             ),
             server_root=workspace,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -504,6 +508,7 @@ phases:
                 workflow_gate_runner=_StaticGateRunner(passing=("planning_deliverables",)),
             ),
             server_root=workspace,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -558,6 +563,7 @@ phases:
                 workflow_gate_runner=_StaticGateRunner(),
             ),
             server_root=tmp_path,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
