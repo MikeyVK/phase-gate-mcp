@@ -282,8 +282,8 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 |-----------|------|----------|-------------|
 | `branch` | `str` | **Yes** | Branch name (e.g., `"feature/123-oauth"`) |
 | `to_phase` | `str` | **Yes** | Target phase to transition to (can skip phases). Run `get_work_context()` to see valid phases for the current branch; enum is injected at runtime from `workphases.yaml`. |
-| `skip_reason` | `str` | **Yes** | Reason for skipping validation (audit trail) |
-| `human_approval` | `str` | **Yes** | Human approval message (REQUIRED for forced transitions) |
+| `skip_reason` | `str` | **Yes** | Reason for skipping validation (audit trail) — must be non-empty (min_length=1) |
+| `human_approval` | `str` | **Yes** | Human approval message (REQUIRED for forced transitions) — must be non-empty (min_length=1) |
 
 #### Returns
 

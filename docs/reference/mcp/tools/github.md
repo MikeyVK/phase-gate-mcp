@@ -67,7 +67,7 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `title` | `str` | **Yes** | Issue title (Unicode-safe) |
+| `title` | `str` | **Yes** | Issue title (Unicode-safe, maximum 72 characters) |
 | `body` | `str` | **Yes** | Issue description (supports Markdown and Unicode) |
 | `labels` | `list[str]` | No | List of label names to apply (validates against existing labels) |
 | `milestone` | `int` | No | Milestone number (not title) |
@@ -740,8 +740,8 @@ Create a new label in the repository. Validates against `LabelConfig` patterns.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `name` | `str` | **Yes** | Label name (e.g., `"type:feature"`) — validates against patterns |
-| `color` | `str` | **Yes** | Color hex code WITHOUT `#` (e.g., `"0e8a16"`) |
+| `name` | `str` | **Yes** | Label name in `category:value` format. Allowed categories: `type`, `priority`, `status`, `phase`, `scope`, `component`, `effort`, `parent`. Value: lowercase letters, digits, hyphens only. Example: `"type:feature"`. |
+| `color` | `str` | **Yes** | Hex color code WITHOUT `#` prefix — exactly 6 characters (0-9, A-F, case-insensitive). Example: `"0e8a16"`. Pattern: `^[0-9A-Fa-f]{6}$` |
 | `description` | `str` | No | Label description (default: empty string) |
 
 #### Returns
