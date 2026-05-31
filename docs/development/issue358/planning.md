@@ -78,7 +78,7 @@ Resolved config access paths for all A4 tools. Implementation must follow these 
 | `mcp_server/tools/issue_tools.py` | Production | `CreateIssueTool.__init__`: new `label_config`, `scope_config`, `git_config` params; `input_schema` override for `issue_type`, `priority`, `scope`, `title.maxLength` |
 | `mcp_server/tools/scaffold_artifact.py` | Production | `ScaffoldArtifactTool.input_schema` override for `artifact_type.enum` |
 | `mcp_server/server.py` | Production | Update 5 tool constructor call sites (CreateIssueTool ×2, `_BaseTransitionTool` descendants ×2, `InitializeProjectTool` ×1) |
-| Tests | Test | New tests for each `input_schema` override; stable: `test_all_tools.py`, `test_create_issue_schema.py` |
+| Tests | Test | New tests for each `input_schema` override; also **requires update**: `test_create_issue_schema.py` (AttributeError via `__new__` bypass), `test_all_tools.py`, `test_support.py`, `test_project_tools.py`, `test_initialize_project_tool.py`, `test_c7_tool_conflict_handling.py`, `test_phase_state_engine_async.py`, `test_force_phase_transition_tool.py`, `test_transition_phase_tool.py`, `test_server.py`, `test_create_issue_e2e.py`, `test_consumers_c4.py` |
 
 ### C4 — A1 descriptions + reference docs
 
@@ -224,7 +224,7 @@ Read these first:
 - CreateIssueTool.__init__ accepts label_config: LabelConfig, scope_config: ScopeConfig, git_config: GitConfig; issue_type.enum from issue_config, priority.enum from label_config, scope.enum from scope_config, title.maxLength from git_config
 - ScaffoldArtifactTool.input_schema returns artifact_type.enum from self.manager.registry.list_type_ids()
 - server.py updated: CreateIssueTool x2 call sites, _BaseTransitionTool x2, InitializeProjectTool x1 all pass new params
-- All constructor call sites in tests updated: test_all_tools.py, test_support.py, test_project_tools.py, test_c7_tool_conflict_handling.py, test_phase_state_engine_async.py, test_force_phase_transition_tool.py, test_transition_phase_tool.py, test_server.py, test_create_issue_e2e.py, test_consumers_c4.py
+- All constructor call sites and `input_schema` callers in tests updated: test_create_issue_schema.py, test_initialize_project_tool.py, test_all_tools.py, test_support.py, test_project_tools.py, test_c7_tool_conflict_handling.py, test_phase_state_engine_async.py, test_force_phase_transition_tool.py, test_transition_phase_tool.py, test_server.py, test_create_issue_e2e.py, test_consumers_c4.py
 - All existing and new tests pass; quality gates green
 
 
