@@ -136,7 +136,7 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 |------|---------|----------------|
 | `run_quality_gates` | Run quality gates | `scope`, `files` |
 | `run_tests` | Run pytest | `path`, `scope`, `markers`, `timeout`, `last_failed_only`, `coverage` |
-| `validate_dto` | Validate DTO definitions | `file_path` |
+| `validate_dto` | Check that a DTO file path exists and is non-empty (does not validate DTO structure) | `file_path` |
 | `validate_template` | Validate template/file structure | `path`, `template_type` |
 
 ### 8. Discovery & Admin

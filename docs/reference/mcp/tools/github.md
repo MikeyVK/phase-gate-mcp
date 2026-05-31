@@ -61,17 +61,32 @@ All tools:
 **Class:** `CreateIssueTool`  
 **File:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py)
 
-Create a new GitHub issue with optional labels, milestone, and assignees.
+Create a new GitHub issue. Uses a structured input contract: `issue_type`, `priority`, and `scope` are required top-level fields with config-driven enum values (A4 schema override); free-form `labels` are assembled internally from those values.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
+| `issue_type` | `str` | **Yes** | Issue type enum — valid values injected at runtime from `LabelConfig` (e.g. `feature`, `bug`, `hotfix`, `chore`, `docs`, `epic`) |
 | `title` | `str` | **Yes** | Issue title (Unicode-safe, maximum 72 characters) |
-| `body` | `str` | **Yes** | Issue description (supports Markdown and Unicode) |
-| `labels` | `list[str]` | No | List of label names to apply (validates against existing labels) |
-| `milestone` | `int` | No | Milestone number (not title) |
+| `priority` | `str` | **Yes** | Priority enum — valid values injected at runtime from `LabelConfig` (e.g. `critical`, `high`, `medium`, `low`, `triage`) |
+| `scope` | `str` | **Yes** | Scope enum — valid values injected at runtime from `ScopeConfig` (e.g. `architecture`, `mcp-server`, `platform`, `tooling`, `workflow`, `documentation`) |
+| `body` | `IssueBody` | **Yes** | Structured body object — see IssueBody fields below |
+| `is_epic` | `bool` | No | Mark issue as an epic (default: `false`) |
+| `parent_issue` | `int` | No | Parent issue number (positive integer) for child issues |
+| `milestone` | `str` | No | Milestone **title** (string, not number) |
 | `assignees` | `list[str]` | No | List of GitHub usernames to assign |
+
+##### IssueBody fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `problem` | `str` | **Yes** | Clear description of the problem or feature request |
+| `expected` | `str` | No | Expected behavior |
+| `actual` | `str` | No | Actual behavior observed |
+| `context` | `str` | No | Relevant background or environment info |
+| `steps_to_reproduce` | `str` | No | Numbered steps to reproduce the issue |
+| `related_docs` | `list[str]` | No | List of related documentation paths or URLs |
 
 #### Returns
 
@@ -81,11 +96,11 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
   "issue": {
     "number": 123,
     "url": "https://github.com/owner/repo/issues/123",
-    "title": "Feature request: Add user authentication",
+    "title": "Add structured issue creation",
     "state": "open",
-    "labels": ["type:feature", "priority:high"],
-    "milestone": 5,
-    "assignees": ["username1", "username2"]
+    "labels": ["type:feature", "priority:medium", "scope:mcp-server"],
+    "milestone": null,
+    "assignees": []
   }
 }
 ```
@@ -94,23 +109,45 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
 
 ```json
 {
-  "title": "Feature: Add OAuth2 authentication 🔐",
-  "body": "## Description\n\nImplement OAuth2 authentication with Google and GitHub providers.\n\n## Acceptance Criteria\n- [ ] Google OAuth2 integration\n- [ ] GitHub OAuth2 integration\n- [ ] Token refresh logic",
-  "labels": ["type:feature", "priority:high"],
-  "milestone": 5,
-  "assignees": ["developer1"]
+  "issue_type": "feature",
+  "title": "Add structured issue creation",
+  "priority": "medium",
+  "scope": "mcp-server",
+  "body": {
+    "problem": "The create_issue tool lacks validation."
+  }
+}
+```
+
+```json
+{
+  "issue_type": "bug",
+  "title": "Login fails on Windows when username contains spaces",
+  "priority": "high",
+  "scope": "platform",
+  "body": {
+    "problem": "Login fails with 500 error.",
+    "expected": "Redirect to dashboard.",
+    "actual": "500 Internal Server Error.",
+    "context": "Windows 11, Python 3.13.",
+    "steps_to_reproduce": "1. Enter username with space\n2. Click Login",
+    "related_docs": ["docs/development/issue149/research.md"]
+  },
+  "is_epic": false,
+  "parent_issue": 91,
+  "milestone": "v2.0",
+  "assignees": ["alice"]
 }
 ```
 
 #### Behavior Notes
 
-- **Unicode Support:** Title and body support full Unicode including emojis (no stripping)
-- **Label Validation:** If label doesn't exist, GitHub API returns error
-- **Milestone Validation:** Must use milestone **number** (not title)
-- **Assignee Validation:** Usernames must be valid collaborators
-- **Default State:** Issues always created in `open` state
-
-> **Schema Note (C3):** The structured `CreateIssueInput` schema used by this tool includes `issue_type`, `priority`, and `scope` fields in addition to the flat parameters shown above. The enum values for these fields are populated at runtime from injected `LabelConfig` and `ScopeConfig` instances (A4 schema override). Call `get_work_context()` or inspect the tool schema to see the current valid values.
+- **Structured input:** `issue_type`, `priority`, and `scope` are required; free-form `labels` are not accepted — they are assembled internally by the tool
+- **Milestone:** Pass the milestone **title** (string), not the milestone number
+- **Label assembly:** Labels are derived from `issue_type`, `priority`, and `scope`
+- **Assignee validation:** Usernames must be valid collaborators
+- **Default state:** Issues always created in `open` state
+- **Enum values:** `issue_type`, `priority`, and `scope` enums are injected at runtime from config (A4 pattern) — inspect the tool schema for current valid values
 
 
 ---
