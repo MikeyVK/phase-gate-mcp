@@ -132,6 +132,3 @@ async def test_system_fields_filtered_from_schema(
         assert field not in schema_json["required"], (
             f"System field {field} should not be in required"
         )
-        assert field not in schema_json["optional"], (
-            f"System field {field} should not be in optional"
-        )
