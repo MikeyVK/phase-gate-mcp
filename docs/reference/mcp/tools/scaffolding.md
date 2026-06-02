@@ -1,19 +1,19 @@
 <!-- docs/reference/mcp/tools/scaffolding.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-02-08 -->
+<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-06-02 -->
 # Scaffolding Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-06-02  
 
-**Source:** [mcp_server/tools/scaffold_artifact.py](../../../../mcp_server/tools/scaffold_artifact.py)  
-**Tests:** [tests/unit/test_scaffold_artifact.py](../../../../tests/unit/test_scaffold_artifact.py)  
+**Source:** [mcp_server/tools/scaffold_artifact.py](../../../../mcp_server/tools/scaffold_artifact.py) | [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
+**Tests:** [tests/unit/test_scaffold_artifact.py](../../../../tests/unit/test_scaffold_artifact.py) | [tests/mcp_server/unit/tools/test_scaffold_schema_tool.py](../../../../tests/mcp_server/unit/tools/test_scaffold_schema_tool.py)  
 
 ---
 
 ## Purpose
 
-Complete reference documentation for unified artifact scaffolding via the `scaffold_artifact` tool. This tool generates code and documentation artifacts from Jinja2 templates defined in the [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) registry.
+Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same artifact registry defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
 
 The scaffolding system provides:
 - **Unified tool** for code and documentation generation (replaces separate tools)
@@ -21,16 +21,18 @@ The scaffolding system provides:
 - **Automatic directory resolution** from [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml)
 - **SCAFFOLD header injection** for template provenance tracking
 - **Context-driven customization** via template variables
+- **Proactive schema exposure** via `scaffold_schema` — inspect context requirements before scaffolding
 
 ---
 
 ## Overview
 
-The MCP server provides **1 scaffolding tool**:
+The MCP server provides **2 scaffolding tools**:
 
 | Tool | Purpose | Artifact Types |
 |------|---------|----------------|
 | `scaffold_artifact` | Generate code/docs from templates | 14+ types (DTO, worker, adapter, tool, design, architecture, etc.) |
+| `scaffold_schema` | Return JSON Schema for context parameter | All V2 artifact types |
 
 **Supported Artifact Categories:**
 - **Code Artifacts:** `dto`, `worker`, `adapter`, `tool`, `manager`, `service`
@@ -148,6 +150,46 @@ Generate any artifact type (code or document) from unified registry.
 |-------------------|-------------|---------|
 | Code (DTO, worker, adapter, tool, service) | PascalCase | `OrderDTO`, `ProcessOrderWorker` |
 | Documentation (design, architecture, etc.) | kebab-case | `oauth-design`, `worker-pattern-architecture` |
+
+---
+
+### scaffold_schema
+
+**MCP Name:** `scaffold_schema`  
+**Class:** `ScaffoldSchemaTool`  
+**File:** [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
+**Inherits:** `BaseTool` (read-only — no branch mutation)
+
+Return the JSON Schema for the `context` parameter of an artifact type. Use this before calling `scaffold_artifact` to discover exactly which fields are required and optional for a given type.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available enum values are populated at runtime from `artifacts.yaml`. |
+
+#### Returns
+
+A JSON Schema object (Pydantic `model_json_schema()` with `$defs` resolved inline) describing the `context` parameter for the specified type.
+
+#### Error Handling
+
+| Condition | Response |
+|-----------|----------|
+| V1-only type (e.g. `generic_doc`) | `is_error=true` — "No V2 context schema registered for type: generic_doc" |
+| Unknown type | `is_error=true` — type not in registry |
+
+#### Recommended Workflow
+
+Call `scaffold_schema` to inspect required and optional fields before calling `scaffold_artifact`:
+
+1. `scaffold_schema(artifact_type="design")` → returns full JSON Schema for `DesignContext`
+2. Build complete context dict from required and optional fields in the schema
+3. `scaffold_artifact(artifact_type="design", name="my-design", context={...})` → first-time-right
+
+This eliminates trial-and-error context validation failures.
+
+**Note:** `scaffold_artifact` also exposes the full JSON Schema in its error response when context validation fails. `scaffold_schema` is the proactive alternative for inspecting the schema before the first call.
 
 ---
 
@@ -619,3 +661,4 @@ When templates are updated:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 2.0 | 2026-02-08 | Agent | Complete reference for scaffold_artifact: artifact registry, template system, directory resolution, SCAFFOLD headers, tier architecture |
+| 2.1 | 2026-06-02 | Agent | Add scaffold_schema API Reference section; update tool counts (1→2); proactive schema exposure documented |
