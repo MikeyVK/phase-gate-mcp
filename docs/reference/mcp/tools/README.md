@@ -13,7 +13,7 @@
 
 ## Purpose
 
-Comprehensive navigation index for all 50 MCP server tools organized by functional category. This document serves as the entry point to the MCP Tools Reference suite, providing quick lookup and category-based navigation to detailed tool documentation.
+Comprehensive navigation index for all 51 MCP server tools organized by functional category. This document serves as the entry point to the MCP Tools Reference suite, providing quick lookup and category-based navigation to detailed tool documentation.
 
 The MCP server exposes a rich set of tools across eight functional domains: Git workflow automation, GitHub API integration, project lifecycle management, file editing, code scaffolding, quality assurance, documentation discovery, and server administration.
 
@@ -21,17 +21,17 @@ The MCP server exposes a rich set of tools across eight functional domains: Git 
 
 ## Tool Inventory Overview
 
-The MCP server has **50 registered tools** across 8 categories:
+The MCP server has **51 registered tools** across 8 categories:
 | Category | Tools | Documentation |
 |----------|-------|---------------|
 | **Git Workflow & Analysis** | 15 | [git.md](git.md) |
 | **GitHub Integration** | 16 | [github.md](github.md) |
 | **Project & Phase Management** | 8 | [project.md](project.md) |
 | **File Editing** | 2 | [editing.md](editing.md) |
-| **Scaffolding** | 1 | [scaffolding.md](scaffolding.md) |
+| **Scaffolding** | 2 | [scaffolding.md](scaffolding.md) |
 | **Quality & Validation** | 4 | [quality.md](quality.md) |
 | **Discovery & Admin** | 4 | [discovery.md](discovery.md) |
-| **TOTAL** | **50** | — |
+| **TOTAL** | **51** | — |
 ---
 
 ## Quick Reference by Category
@@ -135,13 +135,14 @@ Multi-mode file editing with quality gate integration and concurrent edit protec
 
 ---
 
-### 5. Scaffolding (1 tool)
+### 5. Scaffolding (2 tools)
 
 Unified artifact generation from Jinja2 templates for code and documentation artifacts.
 
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `scaffold_artifact` | Generate code/docs from templates | `artifact_type`, `name`, `output_path`, `context` |
+| `scaffold_schema` | Return JSON Schema for artifact type context | `artifact_type` |
 
 **Supported Artifact Types:**
 - **Code:** `dto`, `worker`, `adapter`, `tool`, `manager`, `service`
@@ -184,10 +185,10 @@ Documentation search, work context aggregation, and server administration.
 ## Tool Registration Architecture
 
 | Tier | Tools | Count | Registration Condition |
-| **Always Available** | Git (15), Quality (4), File Editing (2), Project/Phase (8), Scaffolding (1), Discovery & Admin (4) | **34** | None |
+| **Always Available** | Git (15), Quality (4), File Editing (2), Project/Phase (8), Scaffolding (2), Discovery & Admin (4) | **35** | None |
 | **GitHub-Dependent** | Issues (5), PRs (3), Labels (5), Milestones (3) | **16** | Requires `GITHUB_TOKEN` environment variable |
-| **TOTAL (with token)** | — | **50** | — |
-| **TOTAL (without token)** | — | **39** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
+| **TOTAL (with token)** | — | **51** | — |
+| **TOTAL (without token)** | — | **40** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
 **Note:** Issue management tools (5) are registered even without a token (schema-only registration). Tool calls will return errors if `GITHUB_TOKEN` is missing.
 
 ---
@@ -271,7 +272,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 ## Related Documentation
 
 - [editing.md](editing.md) — `safe_edit_file` deep-dive (4 edit modes, anti-patterns)
-- [scaffolding.md](scaffolding.md) — `scaffold_artifact` and artifacts.yaml registry
+- [scaffolding.md](scaffolding.md) — `scaffold_artifact` and `scaffold_schema` and artifacts.yaml registry
 - [project.md](project.md) — Workflow types and phase management
 - [docs/reference/mcp/proxy_restart.md](../proxy_restart.md) — Hot-reload mechanism for `restart_server`
 - [docs/reference/mcp/mcp_vision_reference.md](../mcp_vision_reference.md) — MCP server architecture and vision

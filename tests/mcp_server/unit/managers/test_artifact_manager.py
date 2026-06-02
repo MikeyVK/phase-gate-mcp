@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 import pytest
 
 from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
-from mcp_server.core.exceptions import ValidationError
+from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from tests.mcp_server.test_support import make_artifact_manager
@@ -129,3 +129,33 @@ class TestArtifactManagerCore:
         manager1 = make_artifact_manager(tmp_path)
         manager2 = make_artifact_manager(tmp_path)
         assert manager1 is not manager2
+
+
+class TestGetContextSchema:
+    """Tests for ArtifactManager.get_context_schema() — C1.D7."""
+
+    def _make_manager(self) -> ArtifactManager:
+        return ArtifactManager(registry=Mock(spec=ArtifactRegistryConfig), server_root=Path("."))
+
+    def test_returns_json_schema_dict_for_v2_type(self) -> None:
+        """get_context_schema returns JSON Schema dict for a V2-registered artifact type."""
+        manager = self._make_manager()
+        schema = manager.get_context_schema("research")
+        assert isinstance(schema, dict)
+        assert schema.get("type") == "object"
+        assert "properties" in schema
+        assert isinstance(schema["properties"], dict)
+
+    def test_required_fields_present_in_schema(self) -> None:
+        """get_context_schema includes 'required' list for V2 type with required fields."""
+        manager = self._make_manager()
+        schema = manager.get_context_schema("research")
+        assert "required" in schema
+        assert isinstance(schema["required"], list)
+        assert len(schema["required"]) > 0
+
+    def test_raises_config_error_for_v1_only_type(self) -> None:
+        """get_context_schema raises ConfigError for V1-only type (e.g. generic_doc)."""
+        manager = self._make_manager()
+        with pytest.raises(ConfigError):
+            manager.get_context_schema("generic_doc")

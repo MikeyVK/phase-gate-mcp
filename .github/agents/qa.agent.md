@@ -32,11 +32,6 @@ tools:
   - phase-gate-mcp/get_issue
   - phase-gate-mcp/list_issues
   - phase-gate-mcp/health_check
-handoffs:
-  - agent: imp
-    label: NOGO verdict — implementation corrections required
-  - agent: co
-    label: Scope or planning issue requiring coordination
 ---
 
 # @qa — QA Role

@@ -25,9 +25,9 @@ from mcp_server.tools.scaffold_artifact import (
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def _force_v1_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Force V1 pipeline: these tests validate V1 scaffolding infrastructure."""
+    """Force V1 pipeline (used only by tests that explicitly request it)."""
     monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
 
 
@@ -65,14 +65,14 @@ async def test_validation_error_returns_schema(
 
     # Verify schema contains expected structure
     schema_json = json.loads(schema_content["text"])
-    assert "required" in schema_json, "Schema should have required fields"
-    assert "optional" in schema_json, "Schema should have optional fields"
-    assert "description" in schema_json["required"], "description should be required"
+    assert "required" in schema_json, "Schema should have JSON Schema required list"
+    assert "properties" in schema_json, "Schema should have JSON Schema properties"
+    assert isinstance(schema_json["required"], list), "required should be a list"
 
 
 @pytest.mark.asyncio
 async def test_success_response_includes_schema(
-    artifact_manager: ArtifactManager, temp_workspace: Path
+    _force_v1_pipeline: None, artifact_manager: ArtifactManager, temp_workspace: Path
 ) -> None:
     """Verify successful scaffold includes schema in response"""
     # GIVEN: scaffold_artifact tool with complete valid context
@@ -98,7 +98,7 @@ async def test_success_response_includes_schema(
 
 @pytest.mark.asyncio
 async def test_system_fields_filtered_from_schema(
-    artifact_manager: ArtifactManager, temp_workspace: Path
+    _force_v1_pipeline: None, artifact_manager: ArtifactManager, temp_workspace: Path
 ) -> None:
     """Verify system fields not included in agent-facing schema"""
     # GIVEN: Template with system fields (template_id, template_version, etc.)
@@ -131,7 +131,4 @@ async def test_system_fields_filtered_from_schema(
     for field in system_fields:
         assert field not in schema_json["required"], (
             f"System field {field} should not be in required"
-        )
-        assert field not in schema_json["optional"], (
-            f"System field {field} should not be in optional"
         )

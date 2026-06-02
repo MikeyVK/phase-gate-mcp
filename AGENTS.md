@@ -70,6 +70,7 @@ This document is a **binding contract**. Code that violates these principles is 
 |--------|-------------|------------|
 | Edit file | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | `run_in_terminal("Set-Content")` |
 | Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | `create_file` or manual creation |
+| Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 
 ### Quality & Testing
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -197,6 +198,8 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 | `reference` | Reference docs | `scaffold_artifact(artifact_type="reference", name="my-reference", context={...})` |
 
 **Registry:** `.phase-gate/config/artifacts.yaml` defines all artifact types and their templates.
+
+**Schema discovery:** Before calling `scaffold_artifact` with an artifact type whose context fields are not already in your working context, call `scaffold_schema(artifact_type=...)` first. It returns the full JSON Schema for the `context` parameter — required and optional fields — enabling first-time-right scaffolding without a failed call. If you call `scaffold_artifact` with wrong or missing context fields, the error response contains the same schema; use it to correct the call immediately.
 
 ---
 

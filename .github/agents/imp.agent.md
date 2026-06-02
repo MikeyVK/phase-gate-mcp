@@ -23,9 +23,6 @@ tools:
   # Execute — dev servers en build commands (zelden; MCP tools hebben prioriteit)
   - execute/runInTerminal
   - execute/getTerminalOutput
-handoffs:
-  - agent: qa
-    label: When implementation cycle is complete and hand-over is produced
 ---
 
 # @imp — Implementation Role

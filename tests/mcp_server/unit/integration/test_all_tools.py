@@ -46,6 +46,7 @@ from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
 
 # Quality Tools
 from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
+from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.tools.validation_tools import (
     ValidateDTOInput,
@@ -221,6 +222,7 @@ def make_core_tools() -> list[object]:
         HealthCheckTool(),
         RunTestsTool(runner=PytestRunner()),
         CreateFileTool(),
+        ScaffoldSchemaTool(manager=MagicMock()),
     ]
 
 
