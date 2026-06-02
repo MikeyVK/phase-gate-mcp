@@ -46,7 +46,7 @@ Three-cycle plan: (C1) ArtifactManager.get_context_schema() + TemplateSchema rem
 - tests/mcp_server/unit/managers/test_artifact_manager.py
 - tests/mcp_server/unit/core/test_validation_error_enhancement.py
 - tests/mcp_server/integration/test_scaffold_validation_e2e.py
-- tests/mcp_server/unit/tools/test_scaffold_artifact.py
+- tests/mcp_server/unit/tools/test_scaffold_artifact.py (no change needed — file had no TemplateSchema usage; verified during C1 audit)
 
 **Success Criteria:**
 get_context_schema returns valid JSON Schema for V2 types; ConfigError for generic_doc; TemplateSchema removed; error path returns dict; all tests green; gates 10.00 + type-check pass
