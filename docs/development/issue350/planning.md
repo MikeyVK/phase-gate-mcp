@@ -89,14 +89,20 @@ scaffold_schema in tool manifest; execute() delegates to manager; input_schema.a
 
 ### Cycle 3: C3: start-issue.prompt.md base_branch correction
 
-**Goal:** Replace hardcoded base_branch='main' with 4-step git_list_branches derivation algorithm.
+**Goal:** Replace hardcoded `base_branch="main"` in step 2 with the concrete 4-step `git_list_branches` derivation algorithm from design §3.5.
 
-**Tests:**
+**Tests:** None — prompt file only; manual review in QA.
 
 **Success Criteria:**
-No hardcoded main in branch-creation step; step numbering consistent; prompt coherent
+- Old step 2 (`create_branch(..., base_branch="main")`) is split into two steps: a new step 2 (derive base branch) and a new step 3 (create branch)
+- New step 2 implements exactly the following algorithm (from design §3.5):
+  - If the issue has a `parent_issue` number: call `git_list_branches(remote=True, verbose=False)`, filter for `*/{parent_issue_number}-*`, use exactly one match as `base_branch`, stop and report if zero or multiple matches
+  - If no `parent_issue`: use `base_branch="main"`
+- `get_parent_branch` tool is NOT referenced (it requires PhaseStateEngine state which only exists after `initialize_project`)
+- All subsequent step numbers renumbered by +1 consistently
+- No other content in the prompt file is changed
 
-**Scope note:** Prompt file only — no Python production code affected. No automated tests; manual review in QA validates correctness.
+**Scope note:** Prompt file only (`.github/prompts/start-issue.prompt.md`). No Python production code affected. No automated tests; manual review in QA validates correctness.
 
 **Architecture obligations:** N/A (no Python code)
 
