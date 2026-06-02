@@ -49,13 +49,13 @@ Three-cycle plan: (C1) ArtifactManager.get_context_schema() + TemplateSchema rem
 - tests/mcp_server/unit/tools/test_scaffold_artifact.py (no change needed — file had no TemplateSchema usage; verified during C1 audit)
 
 **Success Criteria:**
-get_context_schema returns valid JSON Schema for V2 types; ConfigError for generic_doc; TemplateSchema removed; error path returns dict; all tests green; gates 10.00 + type-check pass
+get_context_schema returns valid JSON Schema for V2 types; ConfigError for generic_doc; TemplateSchema import removed from artifact_manager.py only (Option A: class preserved in template_introspector.py for V1 pipeline); error path returns dict for V2 errors; all tests green; gates 10.00 + type-check pass
 
 **Architecture obligations:**
 - `get_context_schema` must be a pure method (no I/O, no async, no side effects)
 - No config loading inside any Context class (A3)
-- `ValidationError.schema: Any` type annotation unchanged — value changes from `TemplateSchema` to `dict[str, Any]`
-- No `TemplateSchema` import may remain outside its own deleted file
+- `ValidationError.schema: Any` type annotation unchanged — value changes from `TemplateSchema` to `dict[str, Any]` for V2 errors
+- Option A (approved by user): `TemplateSchema` class STAYS in `template_introspector.py`; only the import in `artifact_manager.py` is removed; V1 consumers (`template_scaffolder.py`, `test_c3_note_context_scaffold_chain.py`) may retain their import
 
 **Typing obligations:**
 - `get_context_schema(artifact_type: str) -> dict[str, Any]` — explicit return type
