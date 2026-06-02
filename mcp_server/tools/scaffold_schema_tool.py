@@ -59,7 +59,7 @@ class ScaffoldSchemaTool(BaseTool):
         schema["properties"]["artifact_type"]["enum"] = self.manager.registry.list_type_ids()
         return schema
 
-    async def execute(self, params: ScaffoldSchemaInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: ScaffoldSchemaInput, context: NoteContext) -> ToolResult:  # noqa: ARG002
         """Return JSON Schema for the artifact type's context model.
 
         All exceptions are handled by tool_error_handler decorator.
