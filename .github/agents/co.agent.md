@@ -54,11 +54,6 @@ tools:
   - phase-gate-mcp/check_merge
   - phase-gate-mcp/submit_pr
   - phase-gate-mcp/merge_pr
-handoffs:
-  - agent: imp
-    label: When coordination delegates child technical implementation
-  - agent: qa
-    label: When epic-owned work is ready for external review
 ---
 
 # @co - Coordination Role
