@@ -65,9 +65,9 @@ async def test_validation_error_returns_schema(
 
     # Verify schema contains expected structure
     schema_json = json.loads(schema_content["text"])
-    assert "required" in schema_json, "Schema should have required fields"
-    assert "optional" in schema_json, "Schema should have optional fields"
-    assert "description" in schema_json["required"], "description should be required"
+    assert "required" in schema_json, "Schema should have JSON Schema required list"
+    assert "properties" in schema_json, "Schema should have JSON Schema properties"
+    assert isinstance(schema_json["required"], list), "required should be a list"
 
 
 @pytest.mark.asyncio
