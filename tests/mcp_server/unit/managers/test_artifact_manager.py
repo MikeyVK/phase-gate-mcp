@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 import pytest
 
 from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
-from mcp_server.core.exceptions import ValidationError
+from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from tests.mcp_server.test_support import make_artifact_manager
@@ -135,8 +135,6 @@ class TestGetContextSchema:
     """Tests for ArtifactManager.get_context_schema() — C1.D7."""
 
     def _make_manager(self) -> ArtifactManager:
-        from unittest.mock import Mock
-        from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
         return ArtifactManager(registry=Mock(spec=ArtifactRegistryConfig), server_root=Path("."))
 
     def test_returns_json_schema_dict_for_v2_type(self) -> None:
@@ -158,7 +156,6 @@ class TestGetContextSchema:
 
     def test_raises_config_error_for_v1_only_type(self) -> None:
         """get_context_schema raises ConfigError for V1-only type (e.g. generic_doc)."""
-        from mcp_server.core.exceptions import ConfigError
         manager = self._make_manager()
         with pytest.raises(ConfigError):
             manager.get_context_schema("generic_doc")

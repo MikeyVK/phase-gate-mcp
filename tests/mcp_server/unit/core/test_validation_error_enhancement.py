@@ -12,6 +12,7 @@ Schema is now a JSON Schema dict (from get_context_schema / model_json_schema).
     - Test resource dict format matches ToolResult contract
     - Test None schema handled gracefully
 """
+
 # Standard library
 from typing import Any
 
