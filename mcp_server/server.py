@@ -123,6 +123,7 @@ from mcp_server.tools.project_tools import (
 from mcp_server.tools.quality_tools import RunQualityGatesTool
 from mcp_server.tools.safe_edit_tool import SafeEditTool
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
+from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.template_validation_tool import TemplateValidationTool
 from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.tools.tool_result import ToolResult
@@ -406,6 +407,7 @@ class MCPServer:
             ),
             # Scaffold tools (unified artifact scaffolding)
             ScaffoldArtifactTool(manager=self.artifact_manager),
+            ScaffoldSchemaTool(manager=self.artifact_manager),
             # Discovery tools
             SearchDocumentationTool(settings=settings),
             GetWorkContextTool(
