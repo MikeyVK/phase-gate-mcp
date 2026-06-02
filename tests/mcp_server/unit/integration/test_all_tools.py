@@ -51,6 +51,7 @@ from mcp_server.tools.validation_tools import (
     ValidateDTOInput,
     ValidateDTOTool,
 )
+from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 
 
 def make_mock_git_config() -> MagicMock:
@@ -221,6 +222,7 @@ def make_core_tools() -> list[object]:
         HealthCheckTool(),
         RunTestsTool(runner=PytestRunner()),
         CreateFileTool(),
+        ScaffoldSchemaTool(manager=MagicMock()),
     ]
 
 
