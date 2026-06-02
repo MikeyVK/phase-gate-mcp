@@ -1,88 +1,25 @@
 {
-  "branch": "feature/350-scaffold-artifact-schema-exposure",
-  "issue_number": 350,
-  "workflow_name": "feature",
-  "current_phase": "ready",
+  "branch": "epic/320-production-readiness-tracker",
+  "issue_number": 320,
+  "workflow_name": "epic",
+  "current_phase": "research",
   "current_cycle": null,
-  "last_cycle": 3,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "C2: ScaffoldSchemaTool + server registration",
-      "forced": false,
-      "entered": "2026-06-02T06:40:51.384390+00:00"
-    },
-    {
-      "cycle_number": 3,
-      "name": "C3: start-issue.prompt.md base_branch correction",
-      "forced": false,
-      "entered": "2026-06-02T06:51:05.599992+00:00"
-    }
-  ],
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
-    "design",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Validation was performed live in the previous session (full test suite passed 2892/0, branch quality gates 12/12 PASS, live MCP demo of scaffold_schema and proactive schema exposure confirmed). Formal validation.md not committed, but evidence is in session history. User approved skip.",
-  "issue_title": "scaffold_artifact: proactive schema exposure and v1 doc-type coverage",
-  "parent_branch": "epic/320-production-readiness-tracker",
-  "created_at": "2026-05-31T19:36:32.115905+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "design",
-      "timestamp": "2026-06-01T05:19:35.718899+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-06-01T06:49:24.437236+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-06-02T05:51:56.098374+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-06-02T15:13:59.895688+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-06-02T16:48:57.910235+00:00",
-      "human_approval": "User approved on 2026-06-02 via chat",
-      "forced": true,
-      "skip_reason": "Validation was performed live in the previous session (full test suite passed 2892/0, branch quality gates 12/12 PASS, live MCP demo of scaffold_schema and proactive schema exposure confirmed). Formal validation.md not committed, but evidence is in session history. User approved skip."
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-06-02T20:05:54.078272+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "skip_reason": null,
+  "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
+  "parent_branch": "main",
+  "created_at": "2026-05-25T18:48:22.612710+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
