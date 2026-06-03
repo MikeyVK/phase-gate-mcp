@@ -11,7 +11,7 @@
 ## Scope
 
 **In Scope:**
-on_exit_cycle_based_phase / on_enter_cycle_based_phase in PhaseStateEngine; cycle guard in build_phase_guard (git_tools.py); cycle display in GetWorkContextTool (discovery_tools.py); build_phase_guard call-site in server.py
+on_exit_cycle_based_phase / on_enter_cycle_based_phase in PhaseStateEngine; cycle guard in build_phase_guard (git_tools.py) including replacement of direct state.json read with IStateReader.load() and injection of PhaseContractResolver; cycle display in GetWorkContextTool (discovery_tools.py); build_phase_guard call-site in server.py
 
 **Out of Scope:**
 Phase-owned cycle state refactor (per-phase cycle_state in state.json); enforcement_runner.py direct state.json access; cycle_tools.py direct state.json access; GetWorkContextTool state_path dead parameter
@@ -62,13 +62,17 @@ audit purposes; `current_cycle` is preserved as-is. `on_enter` already has the c
 
 #### Boundary 2 — `build_phase_guard` in `git_tools.py`
 
+Replace the direct `json.loads(state_file.read_text())` read with `IStateReader.load(branch)`.
 Replace `if workflow_phase == "implementation"` with a config-driven check:
 `phase_contract_resolver.is_cycle_based_phase(workflow_name, workflow_phase)`.
-`workflow_name` is already present in the state.json data read by the closure.
-`build_phase_guard` signature gains a `PhaseContractResolver` parameter;
-the call-site in `server.py` passes `self.phase_contract_resolver`.
 
-This eliminates a hardcoded phase-name assumption that violates OCP and DIP.
+`build_phase_guard` signature changes: `server_root: Path` is dropped; `state_reader: IStateReader`
+and `phase_contract_resolver: PhaseContractResolver` are injected instead.
+The call-site in `server.py` passes the existing `self.phase_contract_resolver` and the
+`FileStateRepository` (or its `IStateReader` abstraction) already constructed during assembly.
+
+This eliminates both the hardcoded phase-name assumption (OCP/DIP) and the direct unprotected
+file read (DIP, race condition risk).
 
 **Files:** `mcp_server/tools/git_tools.py`, `mcp_server/server.py`
 
