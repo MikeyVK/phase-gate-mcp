@@ -11,10 +11,10 @@
 ## Scope
 
 **In Scope:**
-on_exit_cycle_based_phase / on_enter_cycle_based_phase in PhaseStateEngine; cycle guard in build_phase_guard (git_tools.py) including replacement of direct state.json read with IStateReader.load() and injection of PhaseContractResolver; cycle display in GetWorkContextTool (discovery_tools.py); build_phase_guard call-site in server.py
+on_exit_cycle_based_phase / on_enter_cycle_based_phase in PhaseStateEngine; cycle guard in build_phase_guard (git_tools.py) including replacement of direct state.json read with IStateReader.load() and injection of PhaseContractResolver; cycle display in GetWorkContextTool (discovery_tools.py) including removal of dead state_path parameter; build_phase_guard call-site in server.py; GetWorkContextTool call-site in server.py
 
 **Out of Scope:**
-Phase-owned cycle state refactor (per-phase cycle_state in state.json); enforcement_runner.py direct state.json access; cycle_tools.py direct state.json access; GetWorkContextTool state_path dead parameter
+Phase-owned cycle state refactor (per-phase cycle_state in state.json); enforcement_runner.py direct state.json access; cycle_tools.py direct state.json access
 
 ---
 
@@ -110,14 +110,15 @@ per `ARCHITECTURE_PRINCIPLES.md`.
 
 Requires a separate bug/chore issue. Pattern fix: inject `IStateReader`, call `.load(branch)`.
 
-#### DEFERRED-3: Dead `state_path` Parameter in `GetWorkContextTool`
+#### DEFERRED-3: Dead `state_path` Parameter in `GetWorkContextTool` ~~(promoted to in-scope)~~
 
 `GetWorkContextTool.__init__` accepts `state_path: Path | None`, stores it in `self._state_path`,
 and never uses it. `server.py` still passes `server_root / "state.json"` at the call-site.
 Refactor omission from issue #268/#352 when direct file access was replaced by
 `self._state_engine.get_state(branch)`.
 
-Requires a separate chore (parameter removal + call-site cleanup).
+**Resolution:** Promoted to in-scope since `discovery_tools.py` and `server.py` are already
+touched in Boundary 3. The parameter is removed in the same cycle.
 
 ## Related Documentation
 
