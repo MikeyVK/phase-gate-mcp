@@ -1,0 +1,26 @@
+{
+  "branch": "bug/230-tdd-cycle-counter-resets-on-reentry",
+  "issue_number": 230,
+  "workflow_name": "bug",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "TDD cycle counter resets to 1 on TDD phase re-entry after planning/design detour",
+  "parent_branch": "epic/320-production-readiness-tracker",
+  "created_at": "2026-06-03T07:47:03.798683+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
