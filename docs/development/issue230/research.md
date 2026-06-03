@@ -110,15 +110,11 @@ per `ARCHITECTURE_PRINCIPLES.md`.
 
 Requires a separate bug/chore issue. Pattern fix: inject `IStateReader`, call `.load(branch)`.
 
-#### DEFERRED-3: Dead `state_path` Parameter in `GetWorkContextTool` ~~(promoted to in-scope)~~
+#### ~~DEFERRED-3: Dead `state_path` Parameter in `GetWorkContextTool`~~ → Promoted to In-Scope
 
-`GetWorkContextTool.__init__` accepts `state_path: Path | None`, stores it in `self._state_path`,
-and never uses it. `server.py` still passes `server_root / "state.json"` at the call-site.
-Refactor omission from issue #268/#352 when direct file access was replaced by
-`self._state_engine.get_state(branch)`.
-
-**Resolution:** Promoted to in-scope since `discovery_tools.py` and `server.py` are already
-touched in Boundary 3. The parameter is removed in the same cycle.
+`GetWorkContextTool.__init__` accepted `state_path: Path | None` (dead, never used). Promoted to
+Boundary 3 because `discovery_tools.py` and `server.py` are already in scope. Removed together
+with the `cycle_based` display guard in the same implementation cycle.
 
 ## Related Documentation
 
