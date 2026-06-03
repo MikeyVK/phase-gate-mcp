@@ -116,6 +116,44 @@ Requires a separate bug/chore issue. Pattern fix: inject `IStateReader`, call `.
 Boundary 3 because `discovery_tools.py` and `server.py` are already in scope. Removed together
 with the `cycle_based` display guard in the same implementation cycle.
 
+---
+
+## Blast Radius
+
+> Verified by automated codebase exploration. All files and line numbers confirmed.
+
+### Production Files — 3 files, targeted changes
+
+| File | Change |
+|------|--------|
+| `mcp_server/managers/phase_state_engine.py` | L752: remove `current_cycle=None` from `with_updates()` call |
+| `mcp_server/tools/git_tools.py` | L47: new signature; L48–77: replace direct file read with `state_reader.load(branch)` |
+| `mcp_server/tools/discovery_tools.py` | Remove `state_path` param + `self._state_path`; add `cycle_based` guard on `current_cycle` |
+| `mcp_server/server.py` | L325: update `build_phase_guard(...)` call; L413: remove `state_path=server_root / "state.json"` |
+
+### Test Files — 2 files, 5 assertions/call-sites
+
+**`tests/mcp_server/unit/test_c260_c2_state_root_injection.py`**
+- L226: `build_phase_guard(state_root)` → update to new signature ❌
+- L244: `build_phase_guard(state_root)` → update to new signature ❌
+
+**`tests/mcp_server/unit/managers/test_phase_state_engine.py`**
+- L179: `assert state.current_cycle is None` → update: cycle is preserved, not None ❌
+- L194: `assert state.current_cycle is None` → same ❌
+- L204: `assert state.current_cycle is None` → same ❌
+
+### Tests Confirmed Unaffected
+- `tests/mcp_server/unit/tools/test_discovery_tools.py` — all `GetWorkContextTool` instantiations already omit `state_path` ✓
+- `test_phase_state_engine.py` L510, L616, L664, L789, L831 — independent behavior, no `current_cycle is None` assertions ✓
+- `tests/mcp_server/unit/managers/test_phase_state_engine_c4_issue257.py` — cycle gate tests unaffected ✓
+- `tests/mcp_server/unit/managers/test_phase_state_engine_c1.py` — gate enforcement unaffected ✓
+- Mock fixtures in `test_discovery_tools.py`, `test_project_tools.py`, `test_project_manager.py` — fixture-only usage, no behavior assertions ✓
+
+### No Shared Conftest Impact
+No conftest.py entries reference `build_phase_guard`, `state_path`, or `on_exit_cycle_based_phase`.
+
+---
+
 ## Related Documentation
 
 - `mcp_server/managers/phase_state_engine.py` — `on_enter_cycle_based_phase` (L711), `on_exit_cycle_based_phase` (L735)
