@@ -162,6 +162,50 @@ These tests matter for later design because they distinguish between:
 - broken V2 contract paths that should be corrected
 - still-supported legacy/fallback paths that may remain temporarily until the final flag-day removal of V1
 
+### 7. The three-layer V2 SSOT model is confirmed in code but absent from all reference documentation
+
+The V2 pipeline is built on a three-layer architecture where each layer carries a distinct and non-overlapping responsibility. What appears at first glance to be DRY duplication or SSOT drift across the three surfaces is in fact a deliberate and correct division of concern.
+
+#### Layer responsibilities confirmed from code
+
+| Layer | Representative code | Responsibility | Must NOT do |
+|---|---|---|---|
+| 1 — Context schema | [mcp_server/schemas/contexts/](mcp_server/schemas/contexts/) | Defines the user-facing API contract: which fields are required, their types, and Pydantic fail-fast validation. Never includes lifecycle fields. | Render output. Know about templates, output paths, or scaffold timestamps. |
+| 2 — RenderContext schema | [mcp_server/schemas/base.py](mcp_server/schemas/base.py), naming convention `*Context → *RenderContext` | Adds lifecycle fields (`template_id`, `scaffold_created`, `version_hash`, `output_path`) via `LifecycleMixin`. Created by `ArtifactManager._enrich_context_v2()`. Never user-facing. | Re-define fields already in Layer 1. Accept direct user input. |
+| 3 — Jinja2 template | [mcp_server/scaffolding/templates/concrete/](mcp_server/scaffolding/templates/concrete/) | Consumes the fully-validated RenderContext to render the output artifact. Trusts that all contract fields are present and valid. The `TEMPLATE_METADATA` block is the SSOT for what variable names the template expects. | Validate input. Decide lifecycle values. |
+
+#### Why this is not DRY duplication
+
+Each layer holds information that the other two layers cannot provide:
+- Layer 1 holds the *user intention* (what the agent or developer specifies).
+- Layer 2 holds the *system state* at render time (timestamp, output path, version hash).
+- Layer 3 holds the *structural output contract* (how the artifact is formatted).
+
+Three different concerns, three separate surfaces, zero accidental overlap when the contract is intact.
+
+#### The generic mismatch as an SSOT breach between Layer 1 and Layer 3
+
+The `generic` artifact demonstrates what happens when the three-layer contract breaks:
+- Layer 1 (`GenericContext.methods: list[str]`) specifies that methods are plain strings.
+- Layer 3 (`concrete/generic.py.jinja2`) accesses `method.name`, `method.params`, `method.return_type`, `method.docstring`, and `method.body` — expecting structured objects.
+- There is no Layer 2 RenderContext that could bridge or transform the shape mismatch.
+
+The consequence is that any non-empty `methods` input will cause a runtime rendering failure. This is a real, code-confirmed production defect that should be treated as the primary implementation target after the reference documentation is accurate.
+
+#### Evidence that the three-layer SSOT model is absent from current reference documentation
+
+| Document | Coverage of three-layer model |
+|---|---|
+| [docs/architecture/TEMPLATE_LIBRARY.md](docs/architecture/TEMPLATE_LIBRARY.md) | Describes the Jinja2 tier hierarchy (Layer 3 only). Context schemas and RenderContext schemas are not mentioned. |
+| [docs/reference/mcp/tools/scaffolding.md](docs/reference/mcp/tools/scaffolding.md) | Describes the `scaffold_artifact` / `scaffold_schema` tool API. Does not describe the schema contract that determines what context is valid. |
+| [docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md](docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md) | Describes usage patterns from an agent/caller perspective. Does not explain how context schemas relate to templates or what fields each layer owns. |
+| [docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md](docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md) | Quick artifact inventory. No explanation of the three-layer model. |
+| [docs/reference/mcp/validation_api.md](docs/reference/mcp/validation_api.md) | Documents the template validation API. Does not explain the Context vs RenderContext split or how validation relates to the layers. |
+| [docs/reference/mcp/template_metadata_format.md](docs/reference/mcp/template_metadata_format.md) | Documents `TEMPLATE_METADATA` block format. Does not explain the relationship between template variable names and the context schema contract. |
+
+The net result: no existing reference document explains that the three layers jointly constitute the SSOT. An agent reading the current docs cannot determine why `methods: list[str]` in a context schema combined with `method.name` in a template is a real bug rather than acceptable V2 variation. This absence is the root cause of the documentation gap that issue #286 must address.
+
+
 ## Affected Surface
 
 ### Production / configuration surfaces
@@ -233,14 +277,54 @@ The cleanup target for this issue is the template/scaffolding documentation clus
 | Documentation remains partially V1-shaped while code is V2-led | Later template work would be planned against stale references |
 | Cleanup reaches too far outside the template/scaffolding cluster | The issue could turn into a broad MCP docs rewrite instead of a bounded bug fix |
 | V1 fallback documentation is removed without clarifying temporary support boundary | Future contributors may misread the remaining runtime behavior as undocumented breakage |
+| Three-layer SSOT model remains undocumented | Agents and contributors will continue to make false-positive SSOT and DRY violation calls on architecturally correct code |
 
 ## Corrected Behavior Framing
 
 Issue #286 should result in a state where:
-- the template/scaffolding reference set accurately describes the implemented V2 architecture
+- the template/scaffolding reference set explicitly describes the three-layer V2 architecture (Context schema, RenderContext schema, Jinja2 template) and the role of each layer
+- an agent or contributor reading the reference docs can determine whether a given change violates the SSOT contract or is correct architecture
 - the reference set is discoverable as one coherent documentation cluster from `docs/reference/mcp/`
 - the touched documentation no longer contains `S1mpleTraderV3` or `st3`-style branding references
 - only after that alignment should later decisions about missing or broken template paths proceed from an accurate V2 reference baseline
+
+## Design Input
+
+This section captures the minimum design questions that issue #286 research has surfaced and that design must answer. These are not design decisions; they are boundaries and open questions that need design-phase resolution.
+
+### Question 1: Which document is the authoritative home for the three-layer SSOT model?
+
+Research confirmed that the three-layer architecture is not described anywhere in the current reference set. Design must decide:
+- whether the three-layer model belongs in a new or updated top-level architecture document under `docs/architecture/` (e.g., an update to `TEMPLATE_LIBRARY.md`)
+- or whether it belongs in the main `docs/reference/mcp/` reference cluster alongside the scaffolding tool reference
+- or whether both surfaces need coverage at different levels of detail (architecture rationale versus operational how-to)
+
+The answer must be architecturally coherent: the home for this model is the document where an agent starts when it wants to understand the V2 scaffolding system.
+
+### Question 2: Which documents in the current reference cluster need to change, and what is the minimum coherent scope?
+
+Research identified six documents in the primary cluster plus adjacent drift (navigation, branding, paths). Design must decide:
+- which documents can be updated in place
+- whether any documents should be merged or split to reduce fragmentation
+- what the top-level `docs/reference/mcp/README.md` entry-point should group and how deeply
+
+The scope must be bounded: design should explicitly name what stays out of scope so that later implementation does not expand into a full MCP reference rewrite.
+
+### Question 3: How should the three-layer contract be presented so it prevents false SSOT/DRY violation calls?
+
+Research showed that the SSOT model is architecturally sound but looks like duplication from the outside. Design must determine:
+- whether a table, a short prose summary, or a combination is sufficient to communicate the unique role of each layer
+- whether the `TEMPLATE_METADATA` block in templates should be the SSOT for Layer 3 variable names, and whether that link to the context schema contract should be made explicit in the docs
+- whether worked examples (e.g., the `dto` artifact as a correct three-layer specimen) should be part of the reference documentation
+
+### Question 4: What is the correct before/after for the `generic` artifact schema-template contract?
+
+Research confirmed the mismatch. Design must determine:
+- whether the fix aligns Layer 1 to Layer 3 (promote `methods` to structured objects in the context schema)
+- or Layer 3 to Layer 1 (rewrite the template to render plain string method names)
+- which direction is consistent with how other artifact types (e.g., `dto.fields`) handle structured versus flat method/field lists
+
+This is a code design choice that belongs in the design phase, not in research. Research only surfaces the gap and the two option categories.
 
 ## Approved Strategy
 | Boundary / consumer scope | Selected strategy | Rationale |
@@ -253,6 +337,7 @@ Constraints for follow-on work:
 - subsequent work must treat code as SSOT
 - documentation cleanup must stay bounded to the template/scaffolding cluster unless directly linked surfaces are required
 - no touched documentation in this cluster may retain `S1mpleTraderV3` or `st3`-style branding references
+- design must address the three-layer model question before implementation proceeds
 
 ## Related Documentation
 
@@ -278,4 +363,5 @@ Constraints for follow-on work:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-06-04 | Agent | Added Finding 7 (three-layer SSOT architecture), Design Input section with four design questions, updated Corrected Behavior Framing and Regression Risks |
 | 1.0 | 2026-06-04 | Agent | Initial research draft for issue #286 with docs-first V2 alignment strategy and code-backed template/scaffolding drift findings |
