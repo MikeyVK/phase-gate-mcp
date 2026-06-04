@@ -1,100 +1,18 @@
 {
-  "230": {
-    "issue_title": "TDD cycle counter resets to 1 on TDD phase re-entry after planning/design detour",
-    "workflow_name": "bug",
+  "320": {
+    "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
+    "workflow_name": "epic",
     "execution_mode": "interactive",
     "required_phases": [
       "research",
-      "design",
       "planning",
-      "implementation",
-      "validation",
+      "design",
+      "coordination",
       "documentation",
       "ready"
     ],
     "skip_reason": null,
-    "parent_branch": "epic/320-production-readiness-tracker",
-    "created_at": "2026-06-03T07:47:03.704476+00:00",
-    "planning_deliverables": {
-      "tdd_cycles": {
-        "total": 3,
-        "cycles": [
-          {
-            "cycle_number": 1,
-            "deliverables": [
-              {
-                "id": "C1.engine.preserve-current-cycle",
-                "description": "on_exit_cycle_based_phase preserves current_cycle across implementation detours instead of clearing it."
-              },
-              {
-                "id": "C1.engine.audit-last-cycle",
-                "description": "last_cycle remains updated for audit purposes without introducing implicit cycle advancement semantics."
-              },
-              {
-                "id": "C1.tests.detour-reentry-behavior",
-                "description": "State-engine tests are updated in the same slice to assert preserved cycle behavior instead of reset-to-None behavior."
-              },
-              {
-                "id": "C1.validation.state-engine-slice",
-                "description": "Focused validation proves detour exit and re-entry preserve the active cycle."
-              }
-            ],
-            "exit_criteria": "PhaseStateEngine preserves current_cycle on implementation detour exit, re-entry no longer resets to cycle 1, same-slice state-engine tests pass, and focused validation for the touched production and test files is green."
-          },
-          {
-            "cycle_number": 2,
-            "deliverables": [
-              {
-                "id": "C2.guard.inject-state-reader",
-                "description": "build_phase_guard reads branch state through injected IStateReader.load(branch) instead of direct state.json access."
-              },
-              {
-                "id": "C2.guard.contract-driven-cycle-detection",
-                "description": "Cycle-based enforcement is driven by PhaseContractResolver rather than hardcoded implementation-phase checks."
-              },
-              {
-                "id": "C2.server.phase-guard-wiring",
-                "description": "server.py wires the existing state repository and contract resolver into build_phase_guard."
-              },
-              {
-                "id": "C2.tests.guard-signature-and-behavior",
-                "description": "Guard tests are updated in the same slice to the injected signature and corrected behavior."
-              },
-              {
-                "id": "C2.validation.guard-slice",
-                "description": "Focused validation proves the refactored guard path remains correct after the injection change."
-              }
-            ],
-            "exit_criteria": "The guard no longer performs direct state.json reads or hardcoded implementation-phase checks, server wiring uses only injected existing dependencies, same-slice guard tests pass, and focused validation for the touched files is green."
-          },
-          {
-            "cycle_number": 3,
-            "deliverables": [
-              {
-                "id": "C3.discovery.cycle-based-output-guard",
-                "description": "get_work_context exposes current_cycle only when the active phase contract is cycle_based."
-              },
-              {
-                "id": "C3.discovery.remove-dead-state-path",
-                "description": "GetWorkContextTool no longer accepts or stores the dead state_path parameter."
-              },
-              {
-                "id": "C3.server.discovery-wiring",
-                "description": "server.py drops the obsolete state_path argument from live discovery-tool wiring."
-              },
-              {
-                "id": "C3.tests.discovery-cycle-visibility",
-                "description": "Discovery-tool tests validate the corrected cycle visibility contract in the same slice."
-              },
-              {
-                "id": "C3.validation.discovery-slice",
-                "description": "Focused validation proves planning and design detours do not leak preserved cycle state while implementation still shows it."
-              }
-            ],
-            "exit_criteria": "Work-context output hides current_cycle outside cycle-based phases, the dead state_path parameter and its live wiring are removed without compatibility fallbacks, same-slice discovery tests pass, and focused validation for the touched files is green."
-          }
-        ]
-      }
-    }
+    "parent_branch": "main",
+    "created_at": "2026-05-25T18:48:22.490083+00:00"
   }
 }
