@@ -179,7 +179,7 @@ class TestTDDPhaseHooks:
         # Assert
         state = state_engine.get_state(branch)
         assert state.last_cycle == 3
-        assert state.current_cycle is None
+        assert state.current_cycle == 3
 
     def test_on_exit_implementation_phase_validates_completion(
         self, setup_project: tuple[Path, int]
@@ -211,7 +211,7 @@ class TestTDDPhaseHooks:
         # Assert
         state = state_engine.get_state(branch)
         assert state.last_cycle == 2
-        assert state.current_cycle is None
+        assert state.current_cycle == 2
 
 
 class TestPhaseStateEngineCleanBreak:
@@ -377,7 +377,7 @@ class TestTransitionHooksWiring:
             "on_exit_implementation_phase was not called by transition() - "
             "last_cycle should be 2 after exiting TDD phase"
         )
-        assert state.current_cycle is None, "current_cycle should be None after exiting TDD phase"
+        assert state.current_cycle == 2, "current_cycle should be preserved after exiting TDD phase"
 
 
 class TestPhaseStateEngineMutatorRoutingC6:
