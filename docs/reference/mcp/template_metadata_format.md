@@ -1,18 +1,15 @@
-# Template Metadata Format Reference - S1mpleTraderV3
+<!-- docs/reference/mcp/template_metadata_format.md -->
+<!-- template=reference version=064954ea created=2026-01-01T00:00Z updated=2026-06-04 -->
+# Template Metadata Format Reference
 
-<!--
-GENERATED DOCUMENT
-Template: generic.md.jinja2
-Type: generic
--->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      HEADER SECTION (REQUIRED)
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-**Status:** DRAFT
-**Version:** 1.0
-**Last Updated:** 2026-01-01
+**Status:** DEFINITIVE
+**Version:** 2.0
+**Last Updated:** 2026-06-04
 
 ---
 
@@ -355,12 +352,7 @@ variables:
 
 ### Worker Template (ARCHITECTURAL) - Actual Template
 
-**Location:** `mcp_server/templates/components/worker.py.jinja2`
-
-```jinja
-{# TEMPLATE_METADATA
-enforcement: ARCHITECTURAL
-level: content
+**Location:** `mcp_server/scaffolding/templates/concrete/worker.py.jinja2`
 extends: base/base_component.py.jinja2
 version: "2.0"
 
@@ -400,12 +392,7 @@ validates:
 
 ### Adapter Template (ARCHITECTURAL) - Actual Template
 
-**Location:** `mcp_server/templates/components/adapter.py.jinja2`
-
-```jinja
-{# TEMPLATE_METADATA
-enforcement: ARCHITECTURAL
-level: content
+**Location:** `mcp_server/scaffolding/templates/concrete/adapter.py.jinja2`
 extends: base/base_component.py.jinja2
 version: "2.0"
 
@@ -634,19 +621,33 @@ validates:
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     FOOTER SECTION (REQUIRED)
-     ═══════════════════════════════════════════════════════════════════════════ -->
+
+## Layer 1 / Layer 3 Relationship
+
+`TEMPLATE_METADATA.introspection.variables` is the Layer 3 variable contract SSOT. The Layer 1 Context schema for each artifact type is derived from this block:
+
+- Variables under `introspection.variables.required` become required fields in the Context schema
+- Variables under `introspection.variables.optional` become optional fields with sensible defaults
+
+This means the Jinja2 template (Layer 3) is the ground truth for what context a contributor must provide. The Pydantic Context schema (Layer 1) enforces this contract at call time.
+
+**Read Layer 3 to understand what Layer 1 should contain. Read Layer 1 to understand what callers must provide.**
+
+---
 
 ## Related Documentation
 
-- **[validation_api.md](validation_api.md)** - TemplateAnalyzer and LayeredTemplateValidator API reference
-- **[MCP_TOOLS.md](MCP_TOOLS.md)** - MCP server tool documentation
-- **[template_analyzer.py](../../../mcp_server/validation/template_analyzer.py)** - Implementation of metadata parsing
-- **[layered_template_validator.py](../../../mcp_server/validation/layered_template_validator.py)** - Three-tier validation logic
-- **[validation_service.py](../../../mcp_server/validation/validation_service.py)** - Validation orchestration
+- **[docs/architecture/TEMPLATE_LIBRARY.md](../../architecture/TEMPLATE_LIBRARY.md)** — Three-layer pipeline architecture
+- **[docs/reference/mcp/README.md](README.md)** — Cluster navigation
+- **[docs/reference/mcp/validation_api.md](validation_api.md)** — TemplateAnalyzer and LayeredTemplateValidator API
+- **[mcp_server/validation/template_analyzer.py](../../../mcp_server/validation/template_analyzer.py)** — Metadata parsing implementation
+- **[mcp_server/validation/layered_template_validator.py](../../../mcp_server/validation/layered_template_validator.py)** — Three-tier validation logic
+
+---
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-01-01 | Initial documentation (Issue #52 Phase 4g) |
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 2.0 | 2026-06-04 | Agent | Fix template paths; add Layer 1/Layer 3 relationship section; update Related Documentation; remove legacy branding (#286) |
+| 1.0 | 2026-01-01 | Agent | Initial documentation |
