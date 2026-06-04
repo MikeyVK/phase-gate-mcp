@@ -3,19 +3,19 @@
 # Issue #286 Research
 
 **Status:** DRAFT  
-**Version:** 1.0  
+**Version:** 1.3  
 **Last Updated:** 2026-06-04
 
 ---
 
 ## Purpose
 
-Investigate the V2 template/scaffolding gaps in issue #286 with code as the source of truth, and determine the correct sequencing for documentation alignment versus implementation work.
+Investigate the template/scaffolding gaps in issue #286 with code as the source of truth, and determine the correct sequencing for documentation alignment versus implementation work.
 
 ## Scope
 
 **In Scope:**
-Generic schema-template mismatch, missing V2 support for adapter/resource/interface, validation-report artifact gap, template/scaffolding reference documentation alignment under `docs/reference/mcp/`, and removal of obsolete V1 or legacy branding references from the touched documentation set.
+Generic schema-template mismatch, missing pipeline support for adapter/resource/interface, validation-report artifact gap, template/scaffolding reference documentation alignment under `docs/reference/mcp/`, and removal of legacy branding references from the touched documentation set.
 
 **Out of Scope:**
 Implementation patch details, exact cycle breakdown, the broader Template Workspace Initiative in issue #349, and unrelated MCP reference cleanup outside the template/scaffolding documentation cluster.
@@ -30,34 +30,34 @@ Read these first:
 
 ## Problem Statement
 
-The V2 scaffolding pipeline and its reference documentation are out of sync at multiple boundaries:
+The scaffolding pipeline and its reference documentation are out of sync at multiple boundaries:
 - the generic artifact schema disagrees with its concrete template
-- several artifact types still rely on legacy-only paths instead of first-class V2 support
+- several artifact types still rely on legacy-only paths instead of full pipeline support
 - validation-report scaffolding is absent as a registered artifact
 - the template/scaffolding reference docs still describe obsolete paths, legacy fallback behavior, and outdated product branding
 
 This creates two linked risks:
-1. the code path is harder to evolve safely because the documentation no longer reflects the actual V2 architecture
+1. the code path is harder to evolve safely because the documentation no longer reflects the actual scaffolding architecture
 2. later template work for issue #286 and related follow-up issues such as issue #349 would start from a drifting reference baseline instead of an accurate one
 
 ## Research Goals
 
 - Confirm the concrete code-level contract mismatch for the generic artifact path
-- Identify the current V2-versus-legacy boundaries for adapter, resource, interface, and validation-report scaffolding
+- Identify the current pipeline-versus-legacy boundaries for adapter, resource, interface, and validation-report scaffolding
 - Map the affected production surfaces, tests, helpers, and fixtures for issue #286
 - Assess the template/scaffolding reference documentation set under `docs/reference/mcp/` for code drift, navigation gaps, and obsolete branding
 - Establish the sequencing strategy for this issue so code-led reference documentation alignment happens before template-gap implementation work
 
 ## Background
 
-Issue #286 combines three template-library gaps that all sit on the same architectural seam: the project has a V2 scaffolding pipeline, but some artifact types, tests, and reference docs still reflect older assumptions.
+Issue #286 combines three template-library gaps that all sit on the same architectural seam: the project has a scaffolding pipeline, but some artifact types, tests, and reference docs still reflect older assumptions.
 
 The user-directed research policy for this branch is explicit:
 - no external research
 - code is the authoritative source of truth
-- reference documentation for templates and scaffolding must first be aligned to the V2 implementation and must not describe V1 behavior as the normative path
+- reference documentation for templates and scaffolding must first be aligned to the current implementation and must not describe legacy behavior as the normative path
 - the touched documentation set must not contain `S1mpleTraderV3` or `st3`-style branding references
-- once the V2 architecture is documented accurately, implementation can proceed on the missing or broken template paths in issue #286
+- once the scaffolding architecture is documented accurately, implementation can proceed on the missing or broken template paths in issue #286
 
 This makes documentation alignment a prerequisite for the rest of the issue rather than optional cleanup.
 
@@ -69,28 +69,28 @@ The strongest confirmed bug is the generic artifact mismatch.
 
 | Surface | Evidence |
 |---|---|
-| V2 schema | [mcp_server/schemas/contexts/generic.py](mcp_server/schemas/contexts/generic.py) defines `methods: list[str]` |
+| Context schema | [mcp_server/schemas/contexts/generic.py](mcp_server/schemas/contexts/generic.py) defines `methods: list[str]` |
 | Concrete template | [mcp_server/scaffolding/templates/concrete/generic.py.jinja2](mcp_server/scaffolding/templates/concrete/generic.py.jinja2) renders each method as an object with `method.name`, `method.params`, `method.return_type`, `method.docstring`, and `method.body` |
-| Effect | Non-empty `methods` input is structurally incompatible with the declared V2 schema |
+| Effect | Non-empty `methods` input is structurally incompatible with the declared context schema |
 
-This is not a documentation-only problem. It is a hard contract mismatch between the declared V2 context model and the concrete Jinja2 consumer.
+This is not a documentation-only problem. It is a hard contract mismatch between the declared context model and the concrete Jinja2 consumer.
 
-### 2. V2 support is incomplete for adapter, resource, and interface
+### 2. Pipeline support is incomplete for adapter, resource, and interface
 
-The current registry and manager wiring show that V2 support is not complete for three artifact types.
+The current registry and manager wiring show that full pipeline support is not in place for three artifact types.
 
 | Artifact type | Current state | Evidence |
 |---|---|---|
-| `adapter` | Disabled in registry, no V2 context class in active registry map | [.phase-gate/config/artifacts.yaml](.phase-gate/config/artifacts.yaml), [artifact_manager.py](mcp_server/managers/artifact_manager.py) |
-| `resource` | Disabled in registry, no V2 context class in active registry map | [.phase-gate/config/artifacts.yaml](.phase-gate/config/artifacts.yaml), [artifact_manager.py](mcp_server/managers/artifact_manager.py) |
-| `interface` | Disabled in registry, no V2 context class in active registry map | [.phase-gate/config/artifacts.yaml](.phase-gate/config/artifacts.yaml), [artifact_manager.py](mcp_server/managers/artifact_manager.py) |
+| `adapter` | Disabled in registry, no context class in active registry map | [.phase-gate/config/artifacts.yaml](.phase-gate/config/artifacts.yaml), [artifact_manager.py](mcp_server/managers/artifact_manager.py) |
+| `resource` | Disabled in registry, no context class in active registry map | [.phase-gate/config/artifacts.yaml](.phase-gate/config/artifacts.yaml), [artifact_manager.py](mcp_server/managers/artifact_manager.py) |
+| `interface` | Disabled in registry, no context class in active registry map | [.phase-gate/config/artifacts.yaml](.phase-gate/config/artifacts.yaml), [artifact_manager.py](mcp_server/managers/artifact_manager.py) |
 
 Legacy scaffolders still exist for these paths:
 - [mcp_server/scaffolding/components/adapter.py](mcp_server/scaffolding/components/adapter.py)
 - [mcp_server/scaffolding/components/resource.py](mcp_server/scaffolding/components/resource.py)
 - [mcp_server/scaffolding/components/interface.py](mcp_server/scaffolding/components/interface.py)
 
-That confirms the boundary clearly: the codebase is V2-led, but these types are not yet first-class V2 artifacts.
+That confirms the boundary clearly: the codebase follows the scaffolding pipeline, but these types are not yet fully supported artifact types.
 
 ### 3. Validation-report is not currently a first-class registered artifact
 
@@ -132,7 +132,7 @@ The requested documentation set contains both architectural drift and branding d
 
 | File | Drift evidence |
 |---|---|
-| [docs/reference/mcp/tools/scaffolding.md](docs/reference/mcp/tools/scaffolding.md) | Still documents `generic_doc` as a V1-only schema-discovery error path and still describes templates under `mcp_server/templates/` rather than the current scaffolding template root |
+| [docs/reference/mcp/tools/scaffolding.md](docs/reference/mcp/tools/scaffolding.md) | Still documents `generic_doc` as a legacy-only schema-discovery error path and still describes templates under `mcp_server/templates/` rather than the current scaffolding template root |
 | [docs/reference/mcp/validation_api.md](docs/reference/mcp/validation_api.md) | Uses outdated example paths such as `mcp_server/templates/components/...` |
 | [docs/reference/mcp/template_metadata_format.md](docs/reference/mcp/template_metadata_format.md) | Uses outdated template locations such as `mcp_server/templates/components/...` |
 | [docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md](docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md) | References `.st3/config/artifacts.yaml` and `.st3/template_registry.json`, which no longer match the active repository layout |
@@ -149,22 +149,22 @@ The requested documentation set contains both architectural drift and branding d
 
 Additional `st3` / `.st3` references also remain throughout the broader `docs/reference/mcp/` tree, but the issue-specific cleanup focus is the template/scaffolding cluster first.
 
-### 6. Tests already encode part of the current V2-versus-V1 boundary
+### 6. Tests already encode part of the current pipeline-versus-legacy boundary
 
 Issue #286 does not start from zero. Existing tests already capture parts of the present boundary.
 
 | Test | Current meaning |
 |---|---|
-| [tests/mcp_server/unit/tools/test_scaffold_schema_tool.py](tests/mcp_server/unit/tools/test_scaffold_schema_tool.py) | Confirms V1-only type error behavior for `generic_doc` |
+| [tests/mcp_server/unit/tools/test_scaffold_schema_tool.py](tests/mcp_server/unit/tools/test_scaffold_schema_tool.py) | Confirms legacy-only type error behavior for `generic_doc` |
 | [tests/mcp_server/unit/templates/test_generic_doc_template.py](tests/mcp_server/unit/templates/test_generic_doc_template.py) | Confirms the structured generic markdown template behavior that still exists in the current codebase |
 
 These tests matter for later design because they distinguish between:
-- broken V2 contract paths that should be corrected
-- still-supported legacy/fallback paths that may remain temporarily until the final flag-day removal of V1
+- broken contract paths that should be corrected
+- still-supported legacy/fallback paths that may remain temporarily until the final flag-day removal of the legacy scaffolding code
 
-### 7. The three-layer V2 SSOT model is confirmed in code but absent from all reference documentation
+### 7. The three-layer SSOT model is confirmed in code but absent from all reference documentation
 
-The V2 pipeline is built on a three-layer architecture where each layer carries a distinct and non-overlapping responsibility. What appears at first glance to be DRY duplication or SSOT drift across the three surfaces is in fact a deliberate and correct division of concern.
+The scaffolding pipeline is built on a three-layer architecture where each layer carries a distinct and non-overlapping responsibility. What appears at first glance to be DRY duplication or SSOT drift across the three surfaces is in fact a deliberate and correct division of concern.
 
 #### Layer responsibilities confirmed from code
 
@@ -203,7 +203,7 @@ The consequence is that any non-empty `methods` input will cause a runtime rende
 | [docs/reference/mcp/validation_api.md](docs/reference/mcp/validation_api.md) | Documents the template validation API. Does not explain the Context vs RenderContext split or how validation relates to the layers. |
 | [docs/reference/mcp/template_metadata_format.md](docs/reference/mcp/template_metadata_format.md) | Documents `TEMPLATE_METADATA` block format. Does not explain the relationship between template variable names and the context schema contract. |
 
-The net result: no existing reference document explains that the three layers jointly constitute the SSOT. An agent reading the current docs cannot determine why `methods: list[str]` in a context schema combined with `method.name` in a template is a real bug rather than acceptable V2 variation. This absence is the root cause of the documentation gap that issue #286 must address.
+The net result: no existing reference document explains that the three layers jointly constitute the SSOT. An agent reading the current docs cannot determine why `methods: list[str]` in a context schema combined with `method.name` in a template is a real bug rather than acceptable architectural variation. This absence is the root cause of the documentation gap that issue #286 must address.
 
 
 ## Affected Surface
@@ -232,14 +232,13 @@ The net result: no existing reference document explains that the three layers jo
 
 - [tests/mcp_server/unit/tools/test_scaffold_schema_tool.py](tests/mcp_server/unit/tools/test_scaffold_schema_tool.py)
 - [tests/mcp_server/unit/templates/test_generic_doc_template.py](tests/mcp_server/unit/templates/test_generic_doc_template.py)
-- Registry and artifact-manager tests that cover V2 schema exposure and disabled artifact paths
-
+- Registry and artifact-manager tests that cover context schema exposure and disabled artifact paths
 
 ## Architectural Constraints
 
 | Constraint | Research implication |
 |---|---|
-| Code is the source of truth | Reference docs must be aligned to the implemented V2 architecture before they are used as design guidance |
+| Code is the source of truth | Reference docs must be aligned to the implemented scaffolding architecture before they are used as design guidance |
 | Config-first / SSOT | Registry, template root, context schema, and tool docs must not describe conflicting sources of truth |
 | Fail-fast | Documentation should not normalize broken or legacy-only paths as the recommended happy path |
 | No accidental preservation of faulty behavior | Research must distinguish supported temporary fallback from the desired long-term normative path |
@@ -249,14 +248,14 @@ The net result: no existing reference document explains that the three layers jo
 ### Boundary 1: Documentation sequencing versus template implementation
 
 A meaningful user decision was provided during research:
-- documentation alignment to the V2 codebase comes first
+- documentation alignment to the current codebase comes first
 - only after the reference set is accurate should implementation continue on missing or broken template paths
 
-This establishes a boundary-level ordering constraint: the documentation baseline must reflect the implemented V2 code before decisions about missing or broken template paths move forward, so later work is anchored to an accurate reference model rather than a drifting one.
+This establishes a boundary-level ordering constraint: the documentation baseline must reflect the current scaffolding implementation before decisions about missing or broken template paths move forward, so later work is anchored to an accurate reference model rather than a drifting one.
 
 ### Boundary 2: Legacy text removal is a hard exit criterion for each touched document
 
-The codebase currently has a V2 pipeline with a temporary legacy fallback boundary. Research distinguishes:
+The codebase currently has a scaffolding pipeline with a temporary legacy fallback boundary. Research distinguishes:
 - **supported temporary behavior in code**: the legacy fallback path may still exist in the runtime codebase during the migration window
 - **documentation of legacy paths**: any description in a reference document that explains, demonstrates, or enables use of the legacy path
 
@@ -271,29 +270,29 @@ A touched document may include at most a brief factual note that a temporary cod
 The cleanup target for this issue is the template/scaffolding documentation cluster first. The broader `docs/reference/mcp/` tree still contains legacy `.st3` and branding references, but those should only be pulled in when directly required by the touched navigation and reference set.
 
 ## Unknowns
-- Whether the currently identified template/scaffolding documentation cluster is sufficient to establish an accurate V2 reference baseline, or whether directly linked reference surfaces must also be corrected to avoid partial V1-shaped guidance
+- Whether the currently identified template/scaffolding documentation cluster is sufficient to establish an accurate reference baseline, or whether directly linked reference surfaces must also be corrected to avoid partial legacy guidance
 - Whether `validation-report` should be introduced as a first-class artifact type once the reference baseline is corrected, or deferred to later follow-up work
-- Which existing tests beyond the currently read files most directly encode the supported temporary fallback boundary for V1-only document types
+- Which existing tests beyond the currently read files most directly encode the supported temporary fallback boundary for legacy-only document types
 
 ## Regression Risks
 
 | Risk | Why it matters |
 |---|---|
-| Documentation remains partially V1-shaped while code is V2-led | Later template work would be planned against stale references |
+| Documentation remains partially legacy while code uses the scaffolding architecture | Later template work would be planned against stale references |
 | Cleanup reaches too far outside the template/scaffolding cluster | The issue could turn into a broad MCP docs rewrite instead of a bounded bug fix |
-| A touched document retains legacy descriptions after its editing cycle | Implementers in later cycles can fall back on stale guidance instead of the V2 reference |
-| V1 runtime fallback is removed from docs entirely without any transitional note | Future contributors may misread the remaining runtime behavior as undocumented breakage |
+| A touched document retains legacy descriptions after its editing cycle | Implementers in later cycles can fall back on stale guidance instead of the current reference |
+| Legacy runtime fallback is removed from docs entirely without any transitional note | Future contributors may misread the remaining runtime behavior as undocumented breakage |
 | Three-layer SSOT model remains undocumented | Agents and contributors will continue to make false-positive SSOT and DRY violation calls on architecturally correct code |
 
 ## Corrected Behavior Framing
 
 Issue #286 should result in a state where:
-- the template/scaffolding reference set explicitly describes the three-layer V2 architecture (Context schema, RenderContext schema, Jinja2 template) and the role of each layer
+- the template/scaffolding reference set explicitly describes the three-layer scaffolding architecture (Context schema, RenderContext schema, Jinja2 template) and the role of each layer
 - an agent or contributor reading the reference docs can determine whether a given change violates the SSOT contract or is correct architecture
 - the reference set is discoverable as one coherent documentation cluster from `docs/reference/mcp/`
 - every document touched in this issue is fully free of legacy descriptions, stale template paths, legacy behavioral guidance, `S1mpleTraderV3` branding, and `.st3`-style path references after its editing cycle
 - partial legacy removal in a touched document is a defect, not an acceptable partial result
-- only after that alignment should later decisions about missing or broken template paths proceed from an accurate V2 reference baseline
+- only after that alignment should later decisions about missing or broken template paths proceed from an accurate reference baseline
 
 ## Design Input
 
@@ -306,7 +305,7 @@ Research confirmed that the three-layer architecture is not described anywhere i
 - or whether it belongs in the main `docs/reference/mcp/` reference cluster alongside the scaffolding tool reference
 - or whether both surfaces need coverage at different levels of detail (architecture rationale versus operational how-to)
 
-The answer must be architecturally coherent: the home for this model is the document where an agent starts when it wants to understand the V2 scaffolding system.
+The answer must be architecturally coherent: the home for this model is the document where an agent starts when it wants to understand the scaffolding system.
 
 ### Question 2: Which documents in the current reference cluster need to change, and what is the minimum coherent scope?
 
@@ -336,10 +335,10 @@ This is a code design choice that belongs in the design phase, not in research. 
 ## Approved Strategy
 | Boundary / consumer scope | Selected strategy | Rationale |
 |---|---|---|
-| Template/scaffolding reference documentation for issue #286 | Clean break in normative documentation toward V2 | Code is already V2-led; reference docs must stop teaching obsolete V1 paths as the normal model |
+| Template/scaffolding reference documentation for issue #286 | Clean break in normative documentation toward the current scaffolding architecture | Code already implements the scaffolding pipeline; reference docs must stop teaching legacy paths as the normal model |
 | Legacy text in every touched document | Hard removal — no partial cleanup permitted | An implementer finding a legacy description in a later cycle must treat it as an unfinished deliverable from the cycle that first touched the document |
 | Temporary runtime fallback in code | Preserve code-level fallback; do not document it as a usable alternative path | The runtime fallback is an engineering stability measure, not a feature that reference docs should teach |
-| Documentation sequencing versus template-gap changes | Establish documentation alignment as the prerequisite boundary | Any later decisions about template-path corrections depend on an accurate V2 architectural reference baseline |
+| Documentation sequencing versus template-gap changes | Establish documentation alignment as the prerequisite boundary | Any later decisions about template-path corrections depend on an accurate architectural reference baseline |
 
 Constraints for follow-on work:
 - subsequent work must treat code as SSOT
@@ -372,6 +371,7 @@ Constraints for follow-on work:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.3 | 2026-06-04 | Agent | Removed all V2/V1 version labels from prose; replaced with non-versioned scaffolding/legacy/pipeline terminology throughout; code-symbol references in backticks unchanged |
 | 1.2 | 2026-06-04 | Agent | Hardened Boundary 2 to require complete legacy removal per touched document; updated Approved Strategy with explicit hard-removal row; updated Regression Risks and Corrected Behavior Framing |
 | 1.1 | 2026-06-04 | Agent | Added Finding 7 (three-layer SSOT architecture), Design Input section with four design questions, updated Corrected Behavior Framing and Regression Risks |
-| 1.0 | 2026-06-04 | Agent | Initial research draft for issue #286 with docs-first V2 alignment strategy and code-backed template/scaffolding drift findings |
+| 1.0 | 2026-06-04 | Agent | Initial research draft for issue #286 with docs-first alignment strategy and code-backed template/scaffolding drift findings |
