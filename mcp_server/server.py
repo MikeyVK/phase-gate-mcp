@@ -324,7 +324,10 @@ class MCPServer:
             GitStatusTool(manager=self.git_manager),
             GitCommitTool(
                 manager=self.git_manager,
-                phase_guard=build_phase_guard(server_root),
+                phase_guard=build_phase_guard(
+                    state_reader=_branch_validated_reader,
+                    phase_contract_resolver=self.phase_contract_resolver,
+                ),
                 commit_type_resolver=build_commit_type_resolver(
                     self.phase_state_engine,
                     self.phase_contract_resolver,
@@ -417,7 +420,6 @@ class MCPServer:
                 state_engine=self.phase_state_engine,
                 github_manager=self.github_manager,
                 workphases_config=workphases_config,
-                state_path=server_root / "state.json",
                 workflow_status_resolver=self.workflow_status_resolver,
                 contracts_config=contracts_config,
                 context_loaded_writer=self._context_loaded_cache,

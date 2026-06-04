@@ -702,6 +702,39 @@ class TestGetWorkContextResolverAdoption:
         assert "TDD Cycle" not in result.content[0]["text"]
 
     @pytest.mark.asyncio
+    async def test_execute_hides_cycle_for_non_cycle_phase_even_when_preserved(self) -> None:
+        planning_tool = make_work_context_tool(contracts_config=load_contracts_config())
+        planning_tool._git_manager.get_current_branch.return_value = "bug/230-test"  # pyright: ignore[reportPrivateUsage]
+        planning_tool._state_engine.get_state.return_value.workflow_name = "bug"  # pyright: ignore[reportPrivateUsage]
+        planning_tool._state_engine.get_state.return_value.current_phase = "planning"  # pyright: ignore[reportPrivateUsage]
+        planning_tool._state_engine.get_state.return_value.issue_number = 230  # pyright: ignore[reportPrivateUsage]
+        planning_tool._state_engine.get_state.return_value.parent_branch = None  # pyright: ignore[reportPrivateUsage]
+        planning_tool._state_engine.get_state.return_value.current_cycle = 3  # pyright: ignore[reportPrivateUsage]
+        planning_tool._state_engine.get_state.return_value.current_sub_phase = None  # pyright: ignore[reportPrivateUsage]
+
+        planning_result = await planning_tool.execute(GetWorkContextInput(), NoteContext())
+
+        assert not planning_result.is_error
+        assert "Phase: 📋 planning" in planning_result.content[0]["text"]
+        assert "(cycle 3)" not in planning_result.content[0]["text"]
+
+        implementation_tool = make_work_context_tool(contracts_config=load_contracts_config())
+        implementation_tool._git_manager.get_current_branch.return_value = "bug/230-test"  # pyright: ignore[reportPrivateUsage]
+        implementation_tool._state_engine.get_state.return_value.workflow_name = "bug"  # pyright: ignore[reportPrivateUsage]
+        implementation_tool._state_engine.get_state.return_value.current_phase = "implementation"  # pyright: ignore[reportPrivateUsage]
+        implementation_tool._state_engine.get_state.return_value.issue_number = 230  # pyright: ignore[reportPrivateUsage]
+        implementation_tool._state_engine.get_state.return_value.parent_branch = None  # pyright: ignore[reportPrivateUsage]
+        implementation_tool._state_engine.get_state.return_value.current_cycle = 3  # pyright: ignore[reportPrivateUsage]
+        implementation_tool._state_engine.get_state.return_value.current_sub_phase = None  # pyright: ignore[reportPrivateUsage]
+
+        implementation_result = await implementation_tool.execute(
+            GetWorkContextInput(), NoteContext()
+        )
+
+        assert not implementation_result.is_error
+        assert "Phase: 🧪 implementation (cycle 3)" in implementation_result.content[0]["text"]
+
+    @pytest.mark.asyncio
     async def test_execute_shows_phase_from_resolver(self) -> None:
         """GetWorkContextTool output reflects phase from BranchState after C1."""
         resolver = MagicMock()

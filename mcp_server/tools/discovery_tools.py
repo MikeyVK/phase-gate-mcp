@@ -120,7 +120,6 @@ class GetWorkContextTool(BaseTool):
         state_engine: PhaseStateEngine,
         github_manager: GitHubManager | None = None,
         workphases_config: WorkphasesConfig | None = None,
-        state_path: Path | None = None,
         *,
         workflow_status_resolver: WorkflowStatusResolver,
         contracts_config: ContractsConfig | None = None,
@@ -133,7 +132,6 @@ class GetWorkContextTool(BaseTool):
         self._state_engine = state_engine
         self._github_manager = github_manager
         self._workphases_config = workphases_config
-        self._state_path = state_path
         self._workflow_status_resolver = workflow_status_resolver
         self._contracts_config = contracts_config
         self._context_loaded_writer = context_loaded_writer
@@ -159,8 +157,19 @@ class GetWorkContextTool(BaseTool):
                 ctx["issue_number"] = state.issue_number
             if state.parent_branch:
                 ctx["parent_branch"] = state.parent_branch
-            if state.current_cycle is not None:
-                ctx["current_cycle"] = state.current_cycle
+            if (
+                self._contracts_config is not None
+                and workflow
+                and phase
+                and state.current_cycle is not None
+            ):
+                workflow_entry = self._contracts_config.workflows.get(workflow)
+                if workflow_entry is not None:
+                    try:
+                        if workflow_entry.get_phase(phase).cycle_based:
+                            ctx["current_cycle"] = state.current_cycle
+                    except ValueError:
+                        pass
             if state.current_sub_phase:
                 ctx["sub_phase"] = state.current_sub_phase
             ctx["phase_source"] = "state.json"

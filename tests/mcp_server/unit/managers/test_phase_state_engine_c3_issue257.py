@@ -226,7 +226,7 @@ def test_transition_saves_reconstructed_state_before_continuing(
     }
     assert repository.save_count >= 2
     assert recovered_state.last_cycle == 2
-    assert recovered_state.current_cycle is None
+    assert recovered_state.current_cycle == 2
     assert recovered_state.current_phase == "validation"
 
 

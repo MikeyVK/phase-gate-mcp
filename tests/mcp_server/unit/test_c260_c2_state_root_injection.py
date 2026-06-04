@@ -207,43 +207,51 @@ class TestEnforcementRunnerStateRoot:
 
 
 class TestBuildPhaseGuard:
-    """build_phase_guard must take state_root (not workspace_root) and read state.json from it."""
+    """build_phase_guard must use injected state and contracts, not direct file reads."""
 
-    def test_reads_state_json_from_state_root(self, tmp_path: Path) -> None:
-        state_root = tmp_path / ".phase-gate"
-        state_root.mkdir()
-        state_file = state_root / "state.json"
-        state_file.write_text(
-            json.dumps(
-                {
-                    "branch": "feature/42-test",
-                    "current_phase": "implementation",
-                }
-            ),
-            encoding="utf-8",
+    def test_reads_state_via_injected_state_reader(self) -> None:
+        state_reader = MagicMock()
+        state_reader.load.return_value = MagicMock(
+            branch="feature/42-test",
+            workflow_name="bug",
+            current_phase="implementation",
+            current_cycle=2,
+        )
+        phase_contract_resolver = MagicMock()
+        phase_contract_resolver.is_cycle_based_phase.return_value = True
+
+        guard = build_phase_guard(
+            state_reader=state_reader,
+            phase_contract_resolver=phase_contract_resolver,
         )
 
-        guard = build_phase_guard(state_root)
-        # Should not raise (phase matches)
-        guard("feature/42-test", "implementation", None)
+        guard("feature/42-test", "implementation", 2)
 
-    def test_does_not_read_from_workspace_st3(self, tmp_path: Path) -> None:
-        """Guard built with state_root must not read from workspace_root/.phase-gate."""
-        state_root = tmp_path / ".custom-state"
-        state_root.mkdir()
-        # No state.json in state_root — should skip silently (no file = no guard)
-
-        # Create a misleading .phase-gate/state.json at tmp_path (workspace root)
-        phase_gate_dir = tmp_path / ".phase-gate"
-        phase_gate_dir.mkdir()
-        (phase_gate_dir / "state.json").write_text(
-            json.dumps({"branch": "feature/42-test", "current_phase": "research"}),
-            encoding="utf-8",
+        state_reader.load.assert_called_once_with("feature/42-test")
+        phase_contract_resolver.is_cycle_based_phase.assert_called_once_with(
+            "bug", "implementation"
         )
 
-        guard = build_phase_guard(state_root)
-        # Should NOT raise — because guard reads from state_root, not workspace/.phase-gate
-        guard("feature/42-test", "implementation", None)
+    def test_skips_cycle_mismatch_for_non_cycle_based_phase(self) -> None:
+        state_reader = MagicMock()
+        state_reader.load.return_value = MagicMock(
+            branch="feature/42-test",
+            workflow_name="bug",
+            current_phase="planning",
+            current_cycle=2,
+        )
+        phase_contract_resolver = MagicMock()
+        phase_contract_resolver.is_cycle_based_phase.return_value = False
+
+        guard = build_phase_guard(
+            state_reader=state_reader,
+            phase_contract_resolver=phase_contract_resolver,
+        )
+
+        guard("feature/42-test", "planning", 99)
+
+        state_reader.load.assert_called_once_with("feature/42-test")
+        phase_contract_resolver.is_cycle_based_phase.assert_called_once_with("bug", "planning")
 
 
 # ---------------------------------------------------------------------------

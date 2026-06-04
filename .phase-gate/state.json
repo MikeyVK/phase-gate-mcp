@@ -2,10 +2,32 @@
   "branch": "bug/230-tdd-cycle-counter-resets-on-reentry",
   "issue_number": 230,
   "workflow_name": "bug",
-  "current_phase": "research",
-  "current_cycle": null,
-  "last_cycle": null,
-  "cycle_history": [],
+  "current_phase": "validation",
+  "current_cycle": 2,
+  "last_cycle": 2,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Unknown",
+      "forced": false,
+      "entered": "2026-06-04T13:42:14.997881+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Unknown",
+      "forced": false,
+      "entered": "2026-06-04T14:20:58.163417+00:00"
+    },
+    {
+      "cycle_number": 2,
+      "name": "Unknown",
+      "entered": "2026-06-04T14:46:09.849832+00:00",
+      "forced": true,
+      "skip_reason": "User requested a backward cycle transition to inspect preserved cycle behavior and tool responses.",
+      "human_approval": "User approved force cycle transition back to cycle 2 on 2026-06-04.",
+      "skipped_cycles": []
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -16,11 +38,84 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "User approved follow-up implementation work to replace brittle template-anchored e2e assertions with contract-based coverage after validation uncovered a stale template test.",
   "issue_title": "TDD cycle counter resets to 1 on TDD phase re-entry after planning/design detour",
   "parent_branch": "epic/320-production-readiness-tracker",
   "created_at": "2026-06-03T07:47:03.798683+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-06-03T15:56:32.254218+00:00",
+      "human_approval": "User approved on 2026-06-03",
+      "forced": true,
+      "skip_reason": "User requested a direct rollback from research to planning to revise the bug investigation scope and start planning."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-04T13:27:17.744589+00:00",
+      "human_approval": "User approved transition to implementation on 2026-06-04",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-04T14:35:09.241622+00:00",
+      "human_approval": "User approved transition to validation on 2026-06-04",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-04T14:42:32.135138+00:00",
+      "human_approval": "User approved force transition back to implementation on 2026-06-04 for cycle-state inspection.",
+      "forced": true,
+      "skip_reason": "Temporary backward transition requested by user to inspect preserved cycle state visibility after validation."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "design",
+      "timestamp": "2026-06-04T14:47:26.100759+00:00",
+      "human_approval": "User approved force transition to design on 2026-06-04 for phase-visibility testing.",
+      "forced": true,
+      "skip_reason": "User requested a temporary phase detour to design to verify cycle visibility outside cycle-based phases."
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-04T14:47:33.870472+00:00",
+      "human_approval": "User approved force transition back to implementation on 2026-06-04 after design visibility test.",
+      "forced": true,
+      "skip_reason": "User requested return to implementation after temporary design detour for cycle visibility testing."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-04T14:48:43.314731+00:00",
+      "human_approval": "User approved transition back to validation on 2026-06-04 after implementation/design cycle-visibility checks.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-04T15:03:29.285331+00:00",
+      "human_approval": "User approved return to implementation on 2026-06-04 to refactor the failing template e2e test into a contract-based test.",
+      "forced": true,
+      "skip_reason": "User approved follow-up implementation work to replace brittle template-anchored e2e assertions with contract-based coverage after validation uncovered a stale template test."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-04T15:08:09.239364+00:00",
+      "human_approval": "User approved transition back to validation on 2026-06-04 after implementation completed the stale assertion fix and refactored the template e2e test to contract-based coverage.",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
