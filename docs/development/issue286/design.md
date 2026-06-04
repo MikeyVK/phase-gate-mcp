@@ -15,7 +15,7 @@ Define the fix direction for each gap in issue #286, establish the three-layer a
 ## Scope
 
 **In Scope:**
-Generic artifact Layer 1/Layer 3 contract fix; adapter, resource, interface, validation-report full pipeline registration; revision of the six-document template/scaffolding reference cluster; new `docs/reference/mcp/README.md` navigation surface.
+Generic artifact Layer 1/Layer 3 contract fix; adapter, resource, interface, validation-report, and generic_doc full pipeline registration; revision of the six-document template/scaffolding reference cluster; new `docs/reference/mcp/README.md` navigation surface.
 
 **Out of Scope:**
 Broader MCP reference documentation outside the template/scaffolding cluster; changes to the legacy scaffolding components beyond registry enablement; issue #349 architecture for source-code-free template contribution; unrelated artifact types.
@@ -143,7 +143,8 @@ Each type needs all six elements plus legacy removal:
 | `InterfaceContext` | `name: str` | `description`, `methods: list[MethodSpec]` |
 
 All three types reuse `MethodSpec` from Gap 1.
-### 2.3. Gap 3: validation-report — not registered
+
+### 2.3. Gap 3a: validation-report — not registered
 
 User decision: build fully in this issue.
 
@@ -168,6 +169,40 @@ User decision: build fully in this issue.
 | `phase` | no | Workflow phase being validated (e.g. `design`) |
 | `status` | no | PASS / FAIL / PENDING |
 | `scope` | no | Short description of validation scope |
+
+### 2.3b. Gap 3b: generic_doc — Layer 1 and Layer 2 missing (Layer 3 exists)
+
+`generic_doc` is already registered in `artifacts.yaml` and has an existing concrete template (`concrete/generic.md.jinja2`). It is absent from `_v2_context_registry`, so every call falls through to the V1 pipeline. Layer 3 is already correct; only Layer 1 and Layer 2 are missing.
+
+| Element | Status | Location |
+|---|---|---|
+| Context schema (Layer 1) | **Missing** | `mcp_server/schemas/contexts/generic_doc.py` (to create) |
+| RenderContext schema (Layer 2) | **Missing** | `mcp_server/schemas/render_contexts/generic_doc.py` (to create) |
+| Concrete template (Layer 3) | **Exists** | `concrete/generic.md.jinja2` — no change needed |
+| `_v2_context_registry` entry | **Missing** | `"generic_doc": "GenericDocContext"` |
+| `__init__.py` export | **Missing** | `GenericDocContext`, `GenericDocRenderContext` |
+| `artifacts.yaml` | **Already enabled** | `type_id: generic_doc` — no change needed |
+
+**Context schema field contract** (derived from `TEMPLATE_METADATA.introspection.variables` in the existing template):
+
+| Field | Required | Description |
+|---|---|---|
+| `title` | yes | Document title |
+| `purpose` | no | Purpose description |
+| `summary` | no | High-level summary |
+| `status` | no | Document status (DRAFT / APPROVED / DEFINITIVE) |
+| `version` | no | Document version |
+| `scope_in` | no | What is in scope |
+| `scope_out` | no | What is out of scope |
+| `prerequisites` | no | List of prerequisites |
+| `related_docs` | no | List of related document links |
+| `key_changes` | no | Key changes section content |
+| `migration_steps` | no | Migration steps content |
+| `validation_checklist` | no | Validation checklist content |
+| `faq` | no | FAQ section content |
+| `custom_sections` | no | Arbitrary additional sections |
+
+Note: `title` is the only required field, consistent with the minimalism principle applied to all other new types in this issue. The field list is derived from the existing template's `TEMPLATE_METADATA` block and must not deviate.
 
 ### 2.4. Gap 4–5: Documentation cluster revision
 
@@ -212,9 +247,9 @@ Answer the documentation must provide (all six steps visible in one place):
 
 ## 3. Chosen Design
 
-**Decision:** Fix all five gaps in a single issue: (1) introduce `MethodSpec` frozen value object with `name` as only required field; (2) add full pipeline support for `adapter`, `resource`, `interface`, and `validation-report` artifact types; (3) revise all six reference documents and create `docs/reference/mcp/README.md` with the three-layer architecture as the organizing principle.
+**Decision:** Fix all six gaps in a single issue: (1) introduce `MethodSpec` frozen value object with `name` as only required field; (2) add full pipeline support for `adapter`, `resource`, `interface`, `validation-report`, and `generic_doc` artifact types; (3) revise all six reference documents and create `docs/reference/mcp/README.md` with the three-layer architecture as the organizing principle.
 
-**Rationale:** All five gaps sit on the same architectural seam. Fixing them together produces a coherent, accurate reference baseline for future work (including issue #349). The docs-first Approved Strategy is satisfied by treating documentation revision as the first implementation deliverables so that all subsequent code work is anchored to accurate documentation.
+**Rationale:** All six gaps sit on the same architectural seam. `generic_doc` is the simplest addition (Layer 3 already exists; only Layer 1 + Layer 2 + one registry entry needed) and eliminates the last remaining V1-only type in the current registry. Fixing them together produces a coherent, accurate reference baseline for future work, including #326 (which removes the V1 pipeline entirely) and #349 (source-code-free template contribution). The docs-first Approved Strategy is satisfied by treating documentation revision as the first implementation deliverables.
 
 ### 3.1. Key Design Decisions
 
@@ -230,6 +265,7 @@ Answer the documentation must provide (all six steps visible in one place):
 | Documentation target audience | Future template editors | General agent users | User binding decision; "super duidelijk" for template contribution |
 | TEMPLATE_LIBRARY_USAGE + QUICK_REFERENCE | Keep separate, differentiate audience | Merge | USAGE = how-to guide; QUICK_REFERENCE = artifact inventory. Different lookup patterns. |
 | Architecture home for three-layer model | `docs/architecture/TEMPLATE_LIBRARY.md` | New standalone guide | Existing file already owns template architecture; extend rather than fragment |
+| `generic_doc` pipeline completion | Layer 1 + Layer 2 only (Layer 3 exists; `artifacts.yaml` already enabled) | Defer to #326 | Eliminates last V1-only type; minimal blast radius; two files to add |
 
 ### 3.2. Three-Layer Architecture (the authoritative model)
 
@@ -280,6 +316,8 @@ Three different concerns, three separate surfaces, zero accidental overlap when 
 | `mcp_server/scaffolding/templates/concrete/resource.py.jinja2` | Jinja2 — Layer 3 | Resource concrete template |
 | `mcp_server/scaffolding/templates/concrete/interface.py.jinja2` | Jinja2 — Layer 3 | Interface concrete template |
 | `mcp_server/scaffolding/templates/concrete/validation_report.md.jinja2` | Jinja2 — Layer 3 | Validation report template |
+| `mcp_server/schemas/contexts/generic_doc.py` | Python — Layer 1 | `GenericDocContext` |
+| `mcp_server/schemas/render_contexts/generic_doc.py` | Python — Layer 2 | `GenericDocRenderContext` |
 | `docs/reference/mcp/README.md` | Markdown — navigation | Cluster entry point |
 
 #### Modified files
@@ -288,8 +326,8 @@ Three different concerns, three separate surfaces, zero accidental overlap when 
 |---|---|
 | `mcp_server/schemas/contexts/generic.py` | `methods: list[str]` → `methods: list[MethodSpec]` |
 | `mcp_server/schemas/render_contexts/generic.py` | Inherits updated `GenericContext`; no structural change needed |
-| `mcp_server/schemas/__init__.py` | Add exports for 8 new classes (`*Context` + `*RenderContext` for adapter, resource, interface, validation_report) **and** `MethodSpec` — consistent with current convention that all user-facing schema types are exported from `__init__.py` |
-| `mcp_server/managers/artifact_manager.py` | Add 4 entries to `_v2_context_registry`; keys use underscore convention (`validation_report` not `validation-report` — consistent with `unit_test`, `integration_test`) |
+| `mcp_server/schemas/__init__.py` | Add exports for 10 new classes (`*Context` + `*RenderContext` for adapter, resource, interface, validation_report, generic_doc) **and** `MethodSpec` |
+| `mcp_server/managers/artifact_manager.py` | Add 5 entries to `_v2_context_registry`: adapter, resource, interface, validation_report, generic_doc |
 | `.phase-gate/config/artifacts.yaml` | Enable `adapter`, `resource`, `interface`, `validation_report`; `type_id` values use underscore to match registry keys; remove commented-out `scaffolder_class` lines |
 | `docs/architecture/TEMPLATE_LIBRARY.md` | Full revision; add three-layer model as primary frame |
 | `docs/reference/mcp/tools/scaffolding.md` | Remove legacy paths; align to current architecture |
@@ -306,16 +344,15 @@ Three different concerns, three separate surfaces, zero accidental overlap when 
 | `mcp_server/scaffolding/components/resource.py` | Idem |
 | `mcp_server/scaffolding/components/interface.py` | Idem |
 
-### 3.4. Affected Tests
 
 | Test file | Required update | Why |
 |---|---|---|
-| `tests/mcp_server/unit/tools/test_scaffold_schema_tool.py` | Verify that `generic_doc` error behavior is unaffected by the `generic` contract fix; update if test uses `list[str]` input directly | Existing test pins legacy error path |
-| `tests/mcp_server/unit/templates/test_generic_doc_template.py` | Update to use `list[MethodSpec]` inputs instead of `list[str]` | Tests current broken contract; must reflect corrected contract |
+| `tests/mcp_server/unit/tools/test_scaffold_schema_tool.py` | `test_returns_error_for_v1_type` currently asserts that `generic_doc` raises a "V1-only type" `ConfigError`. After #286 this must NOT fire — test must be rewritten to assert `generic_doc` returns a valid schema instead | `generic_doc` moves from V1-only to fully supported |
+| `tests/mcp_server/unit/templates/test_generic_doc_template.py` | No template change, but verify test still passes after the pipeline is active for `generic_doc`; the test exercises the template directly via Jinja2 with a dict context and should remain a valid Layer 3 test | Confirm that Layer 3 is unaffected by adding Layer 1 and Layer 2 |
+| `tests/mcp_server/unit/templates/test_generic_doc_template.py` | `test_generic_doc_template.py` tests the template via Jinja2 directly; this remains valid. However, any test that calls `scaffold_artifact("generic_doc", ...)` via the manager must now supply a valid `GenericDocContext` dict instead of a raw dict | Pipeline now validates input at Layer 1 |
 | `tests/mcp_server/unit/config/test_artifacts_type_field_cycle1.py` | Uncomment the three `# DISABLED (issue #325)` lines for `adapter`, `resource`, and `interface` | These are disabled-type assertions that become enabled after the fix |
-| Any test asserting exact `_v2_context_registry` key set | Update expected key set from 16 to 20 entries | New entries added |
-| `tests/mcp_server/integration/test_v2_smoke_all_types.py` | Add `_SMOKE_CASES` entries for `adapter`, `resource`, `interface`, `validation_report`; each requires `context_kwargs` with at minimum `{"name": "..."}`; update docstring from "16" to "20 artifact types" | Hardcoded list does not auto-pick up new registry entries; integration smoke coverage gap otherwise |
-
+| Any test asserting exact `_v2_context_registry` key set | Update expected key set from 16 to 21 entries | Five new entries added (adapter, resource, interface, validation_report, generic_doc) |
+| `tests/mcp_server/integration/test_v2_smoke_all_types.py` | Add `_SMOKE_CASES` entries for `adapter`, `resource`, `interface`, `validation_report`, `generic_doc`; each requires `context_kwargs` (minimum: `{"name": "..."}` for code types, `{"title": "..."}` for `generic_doc`); update docstring from "16" to "21 artifact types" | Hardcoded list does not auto-pick up new registry entries; integration smoke coverage gap otherwise |
 ### 3.5. Design-Level Validation Strategy
 
 Planning and implementation must prove the following stop-go conditions:
@@ -325,7 +362,7 @@ Planning and implementation must prove the following stop-go conditions:
 | Layer 1/Layer 3 contract consistency for `generic` | `MethodSpec` input renders without error through the full pipeline |
 | Minimal usability | `{"name": "calculate"}` alone scaffolds valid Python |
 | Rich usability | All `MethodSpec` fields populated renders complete method with annotation and body |
-| New artifact types end-to-end | Each of `adapter`, `resource`, `interface`, `validation_report` can be scaffolded from name-only input through the full pipeline |
+| New artifact types end-to-end | Each of `adapter`, `resource`, `interface`, `validation_report`, `generic_doc` can be scaffolded from minimal input through the full pipeline (`generic_doc` requires `title`, others require `name`) |
 | Legacy fallback eliminated | Legacy scaffolder files deleted; no test scenario can reach them |
 | Documentation hard-removal | No legacy paths, `.st3/` references, or `S1mpleTraderV3` remain in any touched document |
 | Three-layer model present | A reviewer reading the doc cluster can answer "what do I need to create to add a new artifact type?" without source code access |
@@ -363,4 +400,5 @@ Planning and implementation must prove the following stop-go conditions:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-06-04 | Agent | Added Gap 3b: generic_doc pipeline completion (Layer 1 + Layer 2); updated scope, decision, key decisions, file tables, affected tests, validation strategy |
 | 1.0 | 2026-06-04 | Agent | Initial design for issue #286: MethodSpec, four new pipeline types, documentation cluster revision with three-layer model |
