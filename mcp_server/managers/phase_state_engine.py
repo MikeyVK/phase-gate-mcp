@@ -702,7 +702,7 @@ class PhaseStateEngine:
                     _s.current_cycle,
                     branch,
                 )
-                return _s.with_updates(last_cycle=_s.current_cycle, current_cycle=None)
+                return _s.with_updates(last_cycle=_s.current_cycle)
             return _s
 
         self._workflow_state_mutator.apply(branch, _exit_lambda)
