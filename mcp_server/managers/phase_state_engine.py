@@ -688,7 +688,7 @@ class PhaseStateEngine:
     def on_exit_cycle_based_phase(self, branch: str) -> None:
         """Hook called when exiting implementation phase.
 
-        Preserves last_cycle and clears current_cycle.
+        Preserves last_cycle and current_cycle across detours.
         Logs warning if not all cycles completed.
 
         Args:
