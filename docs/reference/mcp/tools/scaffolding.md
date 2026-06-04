@@ -31,7 +31,7 @@ The MCP server provides **2 scaffolding tools**:
 
 | Tool | Purpose | Artifact Types |
 |------|---------|----------------|
-| `scaffold_artifact` | Generate code/docs from templates | 14+ types (DTO, worker, adapter, tool, design, architecture, etc.) |
+| `scaffold_artifact` | Generate code/docs from templates | 17 types (dto, worker, tool, design, generic_doc, etc.) |
 | `scaffold_schema` | Return JSON Schema for context parameter | All artifact types with registered Context schema |
 
 

@@ -28,22 +28,22 @@ Registry: `.phase-gate/config/artifacts.yaml`
 | Type | Minimum required context | Template |
 |---|---|---|
 | `dto` | `dto_name: str`, `fields: list[str]` | `concrete/dto.py.jinja2` |
-| `worker` | `name: str` | `concrete/worker.py.jinja2` |
+| `worker` | `name: str`, `layer: str` | `concrete/worker.py.jinja2` |
 | `tool` | `name: str` | `concrete/tool.py.jinja2` |
 | `schema` | `name: str` | `concrete/config_schema.py.jinja2` |
 | `service` | `name: str` | `concrete/service_command.py.jinja2` |
 | `generic` | `name: str` | `concrete/generic.py.jinja2` |
 | `unit_test` | `module_under_test: str`, `test_class_name: str` | `concrete/test_unit.py.jinja2` |
-| `integration_test` | `name: str` | `concrete/test_integration.py.jinja2` |
+| `integration_test` | `test_scenario: str`, `test_class_name: str` | `concrete/test_integration.py.jinja2` |
 
 ### Document Artifacts
 
 | Type | Minimum required context | Template |
 |---|---|---|
-| `research` | `title: str` | `concrete/research.md.jinja2` |
+| `research` | `title: str`, `problem_statement: str`, `goals: list[str]` | `concrete/research.md.jinja2` |
 | `planning` | `title: str`, `summary: str`, `tdd_cycles: list` | `concrete/planning.md.jinja2` |
-| `design` | `title: str`, `summary: str`, `tdd_cycles: list` | `concrete/design.md.jinja2` |
-| `architecture` | `title: str` | `concrete/architecture.md.jinja2` |
+| `design` | `title: str`, `status: str`, `version: str`, `problem_statement: str`, `requirements_functional: list[str]`, `requirements_nonfunctional: list[str]`, `decision: str`, `rationale: str` | `concrete/design.md.jinja2` |
+| `architecture` | `title: str`, `concepts: list[str]` | `concrete/architecture.md.jinja2` |
 | `reference` | `title: str` | `concrete/reference.md.jinja2` |
 | `generic_doc` | `title: str` | `concrete/generic.md.jinja2` |
 
