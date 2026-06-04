@@ -17,7 +17,7 @@ tools:
   - search/textSearch
   - search/listDirectory
   - search/usages
-  - search/changes
+  - vscode/toolSearch
   # Todo — taaklijsten bijhouden per fase/sessie
   - todo
   # Execute — dev servers en build commands (zelden; MCP tools hebben prioriteit)

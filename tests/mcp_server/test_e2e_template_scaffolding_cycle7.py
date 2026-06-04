@@ -15,7 +15,7 @@ from mcp_server.validation.template_analyzer import TemplateAnalyzer
 
 
 def _render_full_design_doc() -> str:
-    """Helper: Render complete design document with realistic context."""
+    """Helper: Render complete design document with current contract-shaped context."""
     template_dir = Path("mcp_server/scaffolding/templates")
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template("concrete/design.md.jinja2")
@@ -47,8 +47,17 @@ def _render_full_design_doc() -> str:
         },
         # concrete/design variables (DESIGN_TEMPLATE structure)
         problem_statement="Need structured, maintainable template system",
-        requirements="5-tier hierarchy, metadata enforcement, inheritance",
-        constraints="Must work with existing Jinja2, backward compatible SCAFFOLD",
+        requirements_functional=[
+            "Support 5-tier hierarchy",
+            "Enforce metadata inheritance",
+        ],
+        requirements_nonfunctional=[
+            "Remain maintainable as templates evolve",
+        ],
+        constraints=[
+            "Must work with existing Jinja2",
+            "Must preserve scaffold metadata output",
+        ],
         options=[
             {
                 "name": "Flat Templates",
@@ -155,29 +164,32 @@ class TestScaffoldDesignDocumentE2E:
         history_pos = result.find("## Version History")
         assert link_pos < history_pos, "Link definitions must come before Version History"
 
-    def test_e2e_concrete_design_template_structure(self) -> None:
-        """Validate concrete DESIGN_TEMPLATE numbered sections."""
+    def test_e2e_concrete_design_template_contract(self) -> None:
+        """Validate stable concrete design contract, not fixture-specific internals."""
         result = _render_full_design_doc()
 
-        # Section 1: Context & Requirements with numbered subsections
+        # Section 1 contract: numbered headings plus supported requirement buckets
         assert "## 1. Context & Requirements" in result
         assert "### 1.1. Problem Statement" in result
         assert "Need structured, maintainable template system" in result
         assert "### 1.2. Requirements" in result
-        assert "**Functional:**" in result  # Requirements subsections
+        assert "**Functional:**" in result
+        assert "- [ ] Support 5-tier hierarchy" in result
+        assert "**Non-Functional:**" in result
+        assert "- [ ] Remain maintainable as templates evolve" in result
         assert "### 1.3. Constraints" in result
-        assert "Must work with existing Jinja2" in result
+        assert "- Must work with existing Jinja2" in result
 
-        # Section 2: Design Options with numbered subsections
+        # Section 2 contract: options render as numbered alternatives with pros/cons lists
         assert "## 2. Design Options" in result
         assert "### 2.1. Option A: Flat Templates" in result
-        assert "Single template per artifact type" in result
-        assert "**Pros:**" in result
-        assert "- ✅ Simple" in result  # Checkmark format
-        assert "**Cons:**" in result
-        assert "- ❌ Duplication" in result  # X format
         assert "### 2.2. Option B: 5-Tier Hierarchy" in result
+        assert "Single template per artifact type" in result
         assert "Layered templates with inheritance" in result
+        assert "**Pros:**" in result
+        assert "- ✅ Simple" in result
+        assert "**Cons:**" in result
+        assert "- ❌ Duplication" in result
 
     def test_e2e_concrete_design_chosen_design_section(self) -> None:
         """Validate concrete DESIGN_TEMPLATE Chosen Design section."""
@@ -217,7 +229,9 @@ class TestScaffoldDesignDocumentE2E:
             scope_in="X",
             scope_out="Y",
             problem_statement="Problem",
-            requirements="Requirements",
+            requirements_functional=["Requirements"],
+            requirements_nonfunctional=[],
+            constraints=[],
             decision="Decision",
             rationale="Rationale",
             options=[],
@@ -230,11 +244,12 @@ class TestScaffoldDesignDocumentE2E:
         assert "## 1. Context & Requirements" in result
         assert "## 2. Design Options" in result
         assert "## 3. Chosen Design" in result
+        assert "- [ ] Requirements" in result
 
         # Optional sections should be omitted or show defaults
         assert "## Prerequisites" not in result
         assert "## 4. Open Questions" not in result
-        assert "None" in result  # related_docs defaults to "None"
+        assert "None" in result
 
     def test_e2e_guideline_enforcement(self) -> None:
         """Validate that design template uses GUIDELINE enforcement (not STRICT)."""

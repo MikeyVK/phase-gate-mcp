@@ -179,7 +179,7 @@ class TestTDDPhaseHooks:
         # Assert
         state = state_engine.get_state(branch)
         assert state.last_cycle == 3
-        assert state.current_cycle is None
+        assert state.current_cycle == 3
 
     def test_on_exit_implementation_phase_validates_completion(
         self, setup_project: tuple[Path, int]
@@ -211,7 +211,7 @@ class TestTDDPhaseHooks:
         # Assert
         state = state_engine.get_state(branch)
         assert state.last_cycle == 2
-        assert state.current_cycle is None
+        assert state.current_cycle == 2
 
 
 class TestPhaseStateEngineCleanBreak:
@@ -377,7 +377,49 @@ class TestTransitionHooksWiring:
             "on_exit_implementation_phase was not called by transition() - "
             "last_cycle should be 2 after exiting TDD phase"
         )
-        assert state.current_cycle is None, "current_cycle should be None after exiting TDD phase"
+        assert state.current_cycle == 2, "current_cycle should be preserved after exiting TDD phase"
+
+    def test_force_reentry_to_implementation_preserves_active_cycle(
+        self, setup_project: tuple[Path, int]
+    ) -> None:
+        """Implementation detour re-entry preserves the active cycle.
+
+        Re-entry after a planning detour must not reset the cycle to 1.
+        """
+        workspace_root, issue_number = setup_project
+        branch = "feature/999-detour-reentry"
+
+        project_manager = make_project_manager(workspace_root)
+        state_repository = InMemoryStateRepository()
+        state_engine = make_phase_state_engine(
+            workspace_root,
+            project_manager=project_manager,
+            state_repository=state_repository,
+        )
+
+        state_engine.initialize_branch(
+            branch=branch, issue_number=issue_number, initial_phase="implementation"
+        )
+        state = state_engine.get_state(branch)
+        state_repository.save(state.with_updates(current_cycle=2))
+
+        state_engine.force_transition(
+            branch=branch,
+            to_phase="planning",
+            skip_reason="Test detour to planning",
+            human_approval="Test approved on 2026-06-04",
+        )
+        state_engine.force_transition(
+            branch=branch,
+            to_phase="implementation",
+            skip_reason="Test re-entry to implementation",
+            human_approval="Test approved on 2026-06-04",
+        )
+
+        state = state_engine.get_state(branch)
+        assert state.current_phase == "implementation"
+        assert state.current_cycle == 2, "current_cycle should remain on the active detour cycle"
+        assert state.last_cycle == 2
 
 
 class TestPhaseStateEngineMutatorRoutingC6:

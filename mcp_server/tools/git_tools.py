@@ -1,16 +1,14 @@
 """Git tools."""
 
-import json
 import subprocess
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any, Literal
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
-from mcp_server.core.interfaces import IContextLoadedWriter
+from mcp_server.core.interfaces import IContextLoadedWriter, IStateReader
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import CommitNote, NoteContext
 from mcp_server.managers import phase_state_engine
@@ -43,18 +41,22 @@ def build_commit_type_resolver(
     return resolve_commit_type
 
 
-def build_phase_guard(server_root: Path) -> Callable[[str, str, int | None], None]:
-    """Build a guard callable that blocks commits when phase/cycle mismatches state.json."""
-    state_file = server_root / "state.json"
+def build_phase_guard(
+    state_reader: IStateReader,
+    phase_contract_resolver: PhaseContractResolver,
+) -> Callable[[str, str, int | None], None]:
+    """Build a guard callable that blocks commits when phase/cycle mismatches state."""
 
     def phase_mismatch(branch: str, workflow_phase: str, cycle_number: int | None) -> None:
-        if not state_file.exists():
+        try:
+            state = state_reader.load(branch)
+        except (FileNotFoundError, KeyError, StateBranchMismatchError):
             return
-        data: dict[str, Any] = json.loads(state_file.read_text(encoding="utf-8"))
-        if data.get("branch") != branch:
-            return  # state.json belongs to a different branch — skip
 
-        current_phase = data.get("current_phase", "unknown")
+        if getattr(state, "branch", branch) != branch:
+            return
+
+        current_phase = state.current_phase or "unknown"
         if workflow_phase != current_phase:
             msg = (
                 f"Phase mismatch: committing as '{workflow_phase}' "
@@ -63,8 +65,12 @@ def build_phase_guard(server_root: Path) -> Callable[[str, str, int | None], Non
             )
             raise CommitPhaseMismatchError(msg)
 
-        if workflow_phase == "implementation" and cycle_number is not None:
-            current_cycle = data.get("current_cycle")
+        is_cycle_based = phase_contract_resolver.is_cycle_based_phase(
+            state.workflow_name,
+            workflow_phase,
+        )
+        if is_cycle_based and cycle_number is not None:
+            current_cycle = state.current_cycle
             if current_cycle is not None and cycle_number != current_cycle:
                 msg = (
                     f"Cycle mismatch: committing as cycle {cycle_number} "

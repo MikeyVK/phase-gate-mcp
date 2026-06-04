@@ -51,14 +51,9 @@ class WorkflowStatusResolver:
 
         # StateBranchMismatchError propagates unchanged from BranchValidatedStateReader
 
-        # Detect sub_phase from latest commit (informational only — does not affect source)
-        commits = self._git.get_recent_commits(limit=1)
-        commit_message = commits[0] if commits else None
-        detection = self._detector.detect_from_commit(commit_message)
-
         return WorkflowStatusDTO(
             current_phase=branch_state.current_phase,
-            sub_phase=detection.get("sub_phase"),
+            sub_phase=branch_state.current_sub_phase,
             current_cycle=branch_state.current_cycle,
             phase_source="state.json",
             phase_confidence="high",
