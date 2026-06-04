@@ -13,10 +13,23 @@ so that the schema is fully self-contained (no $defs, no $ref).
 """
 
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
 from mcp_server.tools.issue_tools import CreateIssueTool
+
+
+def _make_tool() -> CreateIssueTool:
+    """Construct CreateIssueTool with minimal mocked dependencies."""
+    issue_config = MagicMock()
+    issue_config.issue_types = []
+    return CreateIssueTool(
+        manager=MagicMock(),
+        issue_config=issue_config,
+        milestone_config=MagicMock(),
+        contracts_config=MagicMock(),
+    )
 
 
 class TestCreateIssueInputSchemaNoRefs:
@@ -24,8 +37,7 @@ class TestCreateIssueInputSchemaNoRefs:
 
     @pytest.fixture
     def schema(self) -> dict:  # type: ignore[type-arg]
-        tool = CreateIssueTool.__new__(CreateIssueTool)
-        return tool.input_schema
+        return _make_tool().input_schema
 
     def test_schema_has_no_defs_key(self, schema: dict) -> None:  # type: ignore[type-arg]
         """$defs key must be absent from the top-level schema."""

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The S1mpleTrader V3 MCP Server provides **31 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
+The S1mpleTrader V3 MCP Server provides **30 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
 
 **Server Location:** `mcp_server/`
 **Configuration:** `.vscode/mcp.json` → `st3-workflow`
@@ -16,7 +16,7 @@ Comprehensive git flow automation with TDD phase tracking.
 
 | Tool | Purpose | Parameters | Example |
 |------|---------|------------|---------|
-| **CreateBranchTool** | Create feature/fix/refactor/docs branch | `name` (kebab-case), `branch_type` (default: feature) | `create_feature_branch name=add-metrics` |
+| **CreateBranchTool** | Create feature/bug/docs/refactor/hotfix branch | `name` (kebab-case), `base_branch` (**required**), `branch_type` (default: feature) | `create_branch(name="feature/123-add-metrics", base_branch="main")` |
 | **GitStatusTool** | Show working tree status | None | Returns current branch, staged, unstaged files |
 | **GitCommitTool** | Commit with phase prefix + issue suffix | `message`, `workflow_phase`, `sub_phase`, `cycle_number` | `git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="...")` |
 | **GitCheckoutTool** | Switch branches | `branch` | `checkout main` |
@@ -28,14 +28,15 @@ Comprehensive git flow automation with TDD phase tracking.
 **Workflow Example:**
 ```
 1. create_branch(name="feature/my-feature", base_branch="main")
-2. (Make changes)
-3. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Add feature")
-4. git_push(set_upstream=True)
-5. transition_phase(to_phase="ready")
-6. submit_pr(title="Add feature", head="feature/my-feature", base="main")
-7. (After merge)
-8. git_checkout(branch="main")
-9. git_delete_branch(branch="feature/my-feature")  # mode="both" (default: deletes local + remote)
+2. git_checkout(branch="feature/my-feature")
+3. (Make changes)
+4. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Add feature")
+5. git_push(set_upstream=True)
+6. transition_phase(to_phase="ready")
+7. submit_pr(title="Add feature", head="feature/my-feature", base="main")
+8. (After merge)
+9. git_checkout(branch="main")
+10. git_delete_branch(branch="feature/my-feature")  # mode="both" (default: deletes local + remote)
 ```
 
 **Related:** [TDD_WORKFLOW.md](../../coding_standards/TDD_WORKFLOW.md)
@@ -60,15 +61,16 @@ Full CRUD for GitHub issues with filtering and updates.
 4. close_issue issue_number=4 comment="Fixed in PR #123"
 ```
 
-### 3. Pull Request Tools (3 tools)
+### 3. Pull Request Tools (4 tools)
 
-Create, list, and merge PRs with merge strategy options.
+Create, list, merge, and inspect PRs with merge strategy options.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **SubmitPRTool** | Create PR (atomic flow) | `title`, `head` (source branch), `body` (optional), `base` (default: main), `draft` (optional) | PR number, URL |
 | **ListPRsTool** | List PRs with filters | `state` (open/closed/all), `base` (optional), `head` (optional) | Formatted list with numbers, titles, status |
 | **MergePRTool** | Merge PR | `pr_number`, `commit_message` (optional), `merge_method` (only `"merge"` is supported) | Merge result, SHA, message |
+| **GetPRTool** | Get PR details | `pr_number` | PR number, title, state, base/head branch, merged_at, merge_sha, body |
 
 > **Note:** `CreatePRTool` has been deleted (issue #283). Use `submit_pr` — it performs an
 > atomically robust submission: preflights before any mutation (dirty-tree + upstream checks),
@@ -117,15 +119,14 @@ Organize issues into release milestones.
 
 **ISO 8601 Format:** `2025-12-31T00:00:00Z` or `2025-12-31T00:00:00+00:00`
 
-### 6. Quality & Testing Tools (5 tools)
+### 6. Quality & Testing Tools (4 tools)
 
 Run quality gates, tests, and code validation.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **RunQualityGatesTool** | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required + non-empty only when `scope="files"`) | `content[0]=text` summary line, `content[1]=json` compact payload `{overall_pass,gates}` |
-| **ValidationTool** | Generic code validation | `scope` (all/dtos/workers/platform) | Validation report |
-| **ValidateDTOTool** | Validate DTO schema | `file_path` | DTO structure validation |
+| **ValidateDTOTool** | Check that a DTO file path exists and is non-empty | `file_path` | Existence check result |
 | **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` | `content[0]=text` (summary line + per-failure `FAILED test_id — reason` for exit 1; summary + stderr hint for exit 2/3/4), `content[1]=json` `{exit_code, summary, summary_line, failures[], coverage_pct, lf_cache_was_empty, stderr}` |
 | **HealthCheckTool** | Server health status | None | OK/ERROR |
 
@@ -189,7 +190,7 @@ All tools are registered in `mcp_server/server.py`:
 
 **Always Available (8 tools):**
 - Git tools (8)
-- Quality tools (4)
+- Quality tools (3)
 - Development tools (2)
 - Scaffold tools (2)
 - Discovery tools (2)
@@ -200,7 +201,7 @@ All tools are registered in `mcp_server/server.py`:
 - Label tools (5)
 - Milestone tools (3)
 
-**Total: 31 tools**
+**Total: 30 tools**
 
 ### Execution Flow
 

@@ -274,8 +274,7 @@ Do not write code for hypothetical future needs.
 | New consumer of a config | Accept config object via constructor injection |
 | Existing legacy schema pre-C_LOADER | `ClassVar` lazy-init permitted temporarily; must be in migration checklist |
 | Hot-reload / config refresh | `ConfigLoader(config_root)` constructs fresh instances; no `reset_instance()` |
-
----
+| MCP tool with config-driven enum/constraint | A4 pattern: override `input_schema` property on the **tool class** (not the input model); call `super().input_schema`, mutate the returned dict, return it; inject config via constructor. Never put `ClassVar` or `configure()` on the Pydantic input model. |
 
 ## 13. Enforcement is Config-First
 

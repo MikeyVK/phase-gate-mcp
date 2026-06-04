@@ -4,10 +4,10 @@ import json
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 import anyio
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces import IContextLoadedWriter
@@ -17,7 +17,6 @@ from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.schemas import GitConfig
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -90,34 +89,11 @@ class CreateBranchInput(BaseModel):
 
     name: str = Field(..., description="Branch name (kebab-case)")
     branch_type: str = Field(default="feature", description="Branch type")
-    _git_config: ClassVar[GitConfig | None] = None
-
-    @classmethod
-    def configure(cls, git_config: GitConfig) -> None:
-        cls._git_config = git_config
-
-    @classmethod
-    def _require_git_config(cls) -> GitConfig:
-        if cls._git_config is None:
-            raise ValueError("GitConfig must be injected before branch input validation")
-        return cls._git_config
 
     base_branch: str = Field(
         ...,
         description="Base branch to create from (e.g., 'HEAD', 'main', 'refactor/51-labels-yaml')",
     )
-
-    @field_validator("branch_type")
-    @classmethod
-    def validate_branch_type(cls, value: str) -> str:
-        """Validate branch_type against GitConfig (Convention #7)."""
-        git_config = cls._require_git_config()
-        if not git_config.has_branch_type(value):
-            valid_types = ", ".join(git_config.branch_types)
-            raise ValueError(
-                f"Invalid branch_type '{value}'. Valid types from git.yaml: {valid_types}"
-            )
-        return value
 
 
 class CreateBranchTool(BranchMutatingTool):
@@ -137,7 +113,6 @@ class CreateBranchTool(BranchMutatingTool):
             raise ValueError("GitManager must be injected")
         self.manager = manager
         self._state_engine = state_engine
-        CreateBranchInput.configure(self.manager.git_config)
 
     def _get_state_engine(self) -> phase_state_engine.PhaseStateEngine:
         if self._state_engine is None:
@@ -146,7 +121,10 @@ class CreateBranchTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        schema = super().input_schema
+        schema["properties"]["branch_type"]["enum"] = list(self.manager.git_config.branch_types)
+        schema["properties"]["name"]["pattern"] = self.manager.git_config.branch_name_pattern
+        return schema
 
     async def execute(self, params: CreateBranchInput, context: NoteContext) -> ToolResult:
         logger.info(
@@ -227,12 +205,6 @@ class GitStatusTool(BaseTool):
 class GitCommitInput(BaseModel):
     """Input for GitCommitTool."""
 
-    _git_config: ClassVar[GitConfig | None] = None
-
-    @classmethod
-    def configure(cls, git_config: GitConfig) -> None:
-        cls._git_config = git_config
-
     model_config = ConfigDict(extra="forbid")
 
     message: str = Field(..., description="Commit message (without type/scope prefix)")
@@ -260,7 +232,11 @@ class GitCommitInput(BaseModel):
     )
     cycle_number: int | None = Field(
         default=None,
-        description="Cycle number (e.g., 1, 2, 3). Optional, used in multi-cycle TDD.",
+        description=(
+            "Cycle number (e.g., 1, 2, 3). "
+            "Required when the active phase is cycle-based (e.g. implementation). "
+            "Optional otherwise."
+        ),
     )
     commit_type: str | None = Field(
         default=None,
@@ -269,26 +245,6 @@ class GitCommitInput(BaseModel):
             "Auto-determined from workphases.yaml if omitted."
         ),
     )
-
-    @field_validator("commit_type")
-    @classmethod
-    def validate_commit_type(cls, value: str | None) -> str | None:
-        """Validate commit_type against GitConfig (Convention #6). Only if provided."""
-        if value is None:
-            return None
-
-        git_config = cls._git_config
-        if git_config is None:
-            raise ValueError("GitConfig must be injected before validation")
-        if not git_config.has_commit_type(value):
-            valid_types = ", ".join(git_config.commit_types)
-            raise ValueError(
-                f"Invalid commit_type '{value}'. "
-                f"Valid types from git.yaml: {valid_types}. "
-                f"See: https://www.conventionalcommits.org/"
-            )
-
-        return value.lower()  # Normalize to lowercase
 
 
 class GitCommitTool(BranchMutatingTool):
@@ -305,31 +261,35 @@ class GitCommitTool(BranchMutatingTool):
         phase_guard: Callable[[str, str, int | None], None] | None = None,
         commit_type_resolver: Callable[[str, str, str | None], str | None] | None = None,
         state_engine: phase_state_engine.PhaseStateEngine | None = None,
+        phase_contract_resolver: PhaseContractResolver | None = None,
     ) -> None:
         if manager is None:
             raise ValueError("GitManager must be injected")
         self.manager = manager
-        GitCommitInput.configure(self.manager.git_config)
         self._phase_guard = phase_guard
         self._commit_type_resolver = commit_type_resolver
         self._state_engine = state_engine
+        self._phase_contract_resolver = phase_contract_resolver
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        schema = super().input_schema
+        schema["properties"]["commit_type"]["enum"] = list(self.manager.git_config.commit_types)
+        return schema
 
     async def execute(self, params: GitCommitInput, context: NoteContext) -> ToolResult:
         workflow_phase = params.workflow_phase
         current_branch = self.manager.adapter.get_current_branch()
         issue_number: int | None = None
+        auto_state = None
 
         if workflow_phase is None:
             if self._state_engine is None:
                 raise ValueError("PhaseStateEngine must be injected for auto-detection")
             try:
-                state = self._state_engine.get_state(current_branch)
-                workflow_phase = state.current_phase
-                issue_number = state.issue_number
+                auto_state = self._state_engine.get_state(current_branch)
+                workflow_phase = auto_state.current_phase
+                issue_number = auto_state.issue_number
             except (FileNotFoundError, StateBranchMismatchError):
                 return ToolResult.error(
                     f"No state.json found for branch '{current_branch}'. "
@@ -343,16 +303,29 @@ class GitCommitTool(BranchMutatingTool):
             )
         else:
             issue_number = self.manager.git_config.extract_issue_number(current_branch)
-
-        if workflow_phase == "implementation" and params.cycle_number is None:
-            raise ValueError(
-                "cycle_number is required for TDD phase commits. "
-                "All TDD work belongs to a specific cycle. "
-                "Use: git_add_or_commit(workflow_phase='implementation', cycle_number=N, ...)"
-            )
-
         if self._phase_guard is not None:
             self._phase_guard(current_branch, workflow_phase, params.cycle_number)
+
+        if self._phase_contract_resolver is not None and self._state_engine is not None:
+            if params.workflow_phase is None:
+                # auto-detect path: state already loaded above
+                assert auto_state is not None  # exception path returns early above
+                guard_workflow_name = auto_state.workflow_name
+            else:
+                # explicit path: load state for workflow_name only
+                guard_state = self._state_engine.get_state(current_branch)
+                guard_workflow_name = guard_state.workflow_name
+            if (
+                self._phase_contract_resolver.is_cycle_based_phase(
+                    guard_workflow_name, workflow_phase
+                )
+                and params.cycle_number is None
+            ):
+                return ToolResult.error(
+                    f"cycle_number is required when committing in a cycle-based phase "
+                    f"('{workflow_phase}'). "
+                    "Use: git_add_or_commit(..., cycle_number=N)"
+                )
 
         commit_type = params.commit_type
         if commit_type is None and self._commit_type_resolver is not None:
@@ -756,3 +729,50 @@ class GetParentBranchTool(BaseTool):
             StateBranchMismatchError,
         ) as exc:
             return ToolResult.error(f"Failed to get parent branch: {exc}")
+
+
+class CheckMergeInput(BaseModel):
+    """Input for CheckMergeTool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    merge_sha: str = Field(
+        ...,
+        description="Merge commit SHA to verify reachability from HEAD",
+    )
+
+
+class CheckMergeTool(BaseTool):
+    """Read-only tool to verify a merge commit SHA is reachable from HEAD.
+
+    Wraps `git merge-base --is-ancestor <sha> HEAD`.
+    Returns ToolResult.text when the SHA is reachable, ToolResult.error when not.
+    Raises ExecutionError on git failures (status >=2).
+    """
+
+    name = "check_merge"
+    description = (
+        "Verify that a merge commit SHA is reachable from HEAD (git merge-base --is-ancestor)"
+    )
+    args_model = CheckMergeInput
+    enforcement_event: str | None = None
+
+    def __init__(self, manager: GitManager | None = None) -> None:
+        if manager is None:
+            raise ValueError("GitManager must be injected")
+        self.manager = manager
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        return _input_schema(self.args_model)
+
+    async def execute(self, params: CheckMergeInput, context: NoteContext) -> ToolResult:
+        del context
+        reachable = self.manager.is_ancestor(params.merge_sha)
+        if reachable:
+            return ToolResult.text(
+                f"SHA {params.merge_sha} is reachable from HEAD (merge confirmed)"
+            )
+        return ToolResult.error(
+            f"SHA {params.merge_sha} is NOT reachable from HEAD — merge may not have landed yet"
+        )

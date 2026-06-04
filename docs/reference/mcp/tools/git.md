@@ -3,8 +3,8 @@
 # Git Workflow & Analysis Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-05-29  
 
 **Source:** [mcp_server/tools/git_tools.py](../../../../mcp_server/tools/git_tools.py), [git_fetch_tool.py](../../../../mcp_server/tools/git_fetch_tool.py), [git_pull_tool.py](../../../../mcp_server/tools/git_pull_tool.py), [git_analysis_tools.py](../../../../mcp_server/tools/git_analysis_tools.py)  
 **Tests:** [tests/unit/test_git_tools.py](../../../../tests/unit/test_git_tools.py)  
@@ -13,21 +13,20 @@
 
 ## Purpose
 
-Complete reference documentation for all 14 Git automation tools covering branch management, commit workflow, merge operations, stash management, repository synchronization, and analysis. These tools provide full Git workflow automation with phase state synchronization, thread-safe operations, and TDD cycle integration.
+Complete reference documentation for all 15 Git automation tools provided by the Phase-Gate MCP Server.
 
 ---
 
 ## Overview
 
-The MCP server provides **14 Git tools** across 4 functional categories:
+The MCP server provides **15 Git tools** across 4 functional categories:
 
 | Category | Tools | Key Features |
 |----------|-------|-------------|
-| **Git Workflow** | 10 | Branch CRUD, commits with TDD phases, checkout with phase sync, merge, stash, restore, parent detection |
+| **Git Workflow** | 11 | Branch CRUD, commits with TDD phases, checkout, merge, stash, restore, push, delete, parent detection, reachability gate |
 | **Git Sync** | 2 | Thread-safe fetch/pull with lock files |
 | **Git Analysis** | 2 | Branch listing with verbose info, diff statistics |
-| **TOTAL** | 14 | — |
-
+| **TOTAL** | **15** | — |
 All tools:
 - ✅ Execute in workspace root (detected from environment)
 - ✅ Return structured responses with `success` boolean
@@ -52,7 +51,7 @@ Create a new branch from specified base branch.
 |-----------|------|----------|-------------|
 | `name` | `str` | **Yes** | Branch name (kebab-case) — e.g., `"feature/123-my-feature"` |
 | `base_branch` | `str` | **Yes** | Base branch to create from (e.g., `"HEAD"`, `"main"`, `"develop"`) |
-| `branch_type` | `str` | No | Branch type: `"feature"`, `"bug"`, `"docs"`, `"refactor"`, `"hotfix"` (default: `"feature"`) |
+| `branch_type` | `str` | No | Branch type (default: `"feature"`). Valid values are populated at runtime from `git.yaml` via the `branch_types` config; enum is injected via A4 schema override. |
 
 #### Returns
 
@@ -80,6 +79,7 @@ Create a new branch from specified base branch.
 - **Protected Branches:** Validates `base_branch` against protected branch list
 - **Branch Exists:** Returns error if branch already exists
 - **Base Branch Validation:** Returns error if base branch doesn't exist
+- **No Auto-Checkout:** The branch is created but **not** automatically checked out. Call `git_checkout` after creation before making changes or committing.
 
 ---
 
@@ -138,10 +138,10 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `message` | `str` | **Yes** | Commit message (WITHOUT prefix — prefix is auto-added) |
-| `workflow_phase` | `str` | No | Phase override (e.g. `"implementation"`, `"documentation"`) — auto-detected from `.st3/state.json` if omitted |
-| `sub_phase` | `str` | No | Sub-phase for `implementation`: `"red"`, `"green"`, `"refactor"` |
-| `cycle_number` | `int` | No | **Required when `workflow_phase="implementation"`** — TDD cycle number (e.g. `1`, `2`, `3`) |
-| `commit_type` | `str` | No | Override commit type (e.g. `"feat"`, `"fix"`, `"docs"`) — use only as explicit override |
+| `workflow_phase` | `str` | No | Phase override (e.g. `"implementation"`, `"documentation"`) — auto-detected from `.st3/state.json` if omitted. Valid values populated at runtime from `workphases.yaml`. |
+| `sub_phase` | `str` | No | Sub-phase for `implementation`: `"red"`, `"green"`, `"refactor"`. Valid values populated at runtime from `workphases.yaml`. |
+| `cycle_number` | `int` | No | **Required when the active phase is cycle-based (e.g. implementation).** TDD cycle number (e.g. `1`, `2`, `3`). Optional otherwise. |
+| `commit_type` | `str` | No | Override commit type (e.g. `"feat"`, `"fix"`, `"docs"`). Valid values populated at runtime from `git.yaml` via the `commit_types` config. Use only as explicit override. |
 | `files` | `list[str]` | No | Specific file paths to stage — default: stage all changed files |
 | `skip_paths` | `frozenset[str]` | No | File paths to exclude from staging (advanced use) |
 
@@ -205,7 +205,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 - **No Changes:** Returns error if no changes to commit
 - **Issue suffix auto-append (#228):** The active issue number is extracted from the current branch name via `extract_issue_number()` and appended to the commit message as ` (#NNN)`. For branches without a parseable issue number (e.g. `main`, `feature/no-number`), no suffix is added. This happens transparently — no parameter needed.
 - **`phase` parameter:** Does NOT exist — `GitCommitInput` uses `extra="forbid"`. Passing `phase` crashes with a validation error.
-- **`cycle_number`:** Required when `workflow_phase="implementation"` — omitting it causes a validation error
+- **`cycle_number`:** Required when the active phase is cycle-based (e.g. `implementation`) — omitting it causes an error
 - **Ready-phase auto-exclude (#283):** When in `ready` phase, `.st3/state.json` and `.st3/deliverables.json` are automatically removed from the commit index before committing
 
 ---
@@ -849,6 +849,57 @@ Get diff statistics between two branches.
 - **File-Level Stats:** Includes per-file addition/deletion counts
 - **Branch Validation:** Returns error if either branch doesn't exist
 - **Empty Diff:** Returns `files_changed: 0` if branches are identical
+
+---
+
+### check_merge
+
+**MCP Name:** `check_merge`  
+**Class:** `CheckMergeTool`  
+**File:** [mcp_server/tools/git_tools.py](../../../../mcp_server/tools/git_tools.py)
+
+Verify that a merge commit SHA is reachable from the current HEAD. Wraps `git merge-base --is-ancestor <sha> HEAD`. Use this as the reachability gate in end-issue cleanup before deleting a merged branch.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `merge_sha` | `str` | **Yes** | The merge commit SHA to verify (e.g., the SHA returned by `merge_pr`) |
+
+#### Returns
+
+On success (SHA is reachable):
+```
+SHA <sha> is reachable from HEAD (merge confirmed)
+```
+
+On failure (SHA not reachable — `is_error: true`):
+```
+SHA <sha> is NOT reachable from HEAD — merge may not have landed yet
+```
+
+On git error (status ≥2 — `is_error: true`):
+```
+ExecutionError surfaced via error_handling decorator
+```
+
+#### Example Usage
+
+**Verify merge commit reachability after git_pull:**
+```json
+{
+  "merge_sha": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+}
+```
+
+#### Behavior Notes
+
+- **Exit 0:** SHA is an ancestor of HEAD → returns success text result
+- **Exit 1:** SHA is not an ancestor → returns `is_error: true` (expected non-error case — branch cleanup must not proceed)
+- **Exit ≥2:** Git command failed → `ExecutionError` surfaced via `error_handling` decorator → `is_error: true` result
+- **Read-only:** No state mutations; safe to call multiple times
+- **Use case:** Call after `git_pull()` in end-issue cleanup (step 6 of `end-issue.prompt.md`) before calling `git_delete_branch`
+- **Enforcement:** `enforcement_event = None` — this tool has no phase gate; callable in any phase
 
 ---
 

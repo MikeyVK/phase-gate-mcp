@@ -143,6 +143,7 @@ class TestServerToolRegistration:
             assert "list_issues" in tool_names
             assert "get_issue" in tool_names
             assert "close_issue" in tool_names
+            assert "get_pr" not in tool_names
 
     def test_github_tools_registered_with_token(self) -> None:
         """GitHub tools should be registered when token is configured."""
@@ -166,6 +167,7 @@ class TestServerToolRegistration:
             assert "get_issue" in tool_names
             assert "close_issue" in tool_names
             assert "add_labels" in tool_names
+            assert "get_pr" in tool_names
 
     @pytest.mark.asyncio
     async def test_call_tool_logging_has_call_id_and_duration(
@@ -391,6 +393,7 @@ class TestServerToolRegistration:
                     project_manager=project_manager,
                     state_engine=state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -441,6 +444,7 @@ class TestServerToolRegistration:
                     project_manager=server.project_manager,
                     state_engine=server.phase_state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -510,6 +514,7 @@ class TestServerToolRegistration:
                     project_manager=project_manager,
                     state_engine=state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -557,6 +562,7 @@ class TestServerToolRegistration:
                     project_manager=server.project_manager,
                     state_engine=server.phase_state_engine,
                     server_root=tmp_path / ".phase-gate",
+                    workphases_config=None,
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]

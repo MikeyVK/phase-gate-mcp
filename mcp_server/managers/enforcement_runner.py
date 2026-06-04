@@ -24,7 +24,7 @@ from mcp_server.core.operation_notes import (
     NoteContext,
     SuggestionNote,
 )
-from mcp_server.schemas import EnforcementAction, EnforcementConfig, EnforcementRule
+from mcp_server.schemas import EnforcementAction, EnforcementConfig, EnforcementRule, GitConfig
 from mcp_server.tools.tool_result import ToolResult
 
 _ENFORCEMENT_DISPLAY_PATH = "config/enforcement.yaml"
@@ -151,8 +151,8 @@ class EnforcementRunner:
         self,
         workspace_root: Path,
         config: EnforcementConfig,
+        git_config: GitConfig,
         registry: EnforcementRegistry | dict[str, ActionHandler] | None = None,
-        default_base_branch: str = "main",
         pr_status_reader: IPRStatusReader | None = None,
         server_root: Path | None = None,
         context_loaded_reader: IContextLoadedReader | None = None,
@@ -165,7 +165,7 @@ class EnforcementRunner:
             )
         self.server_root = server_root
         self._config = config
-        self.default_base_branch = default_base_branch
+        self._git_config = git_config
         self._pr_status_reader = pr_status_reader
         self._context_loaded_reader = context_loaded_reader
         if registry is None:
@@ -382,16 +382,26 @@ class EnforcementRunner:
         if not (self.server_root / "state.json").exists():
             return
 
+        branch = str(
+            context.get_param("current_branch") or _get_current_git_branch(workspace_root) or ""
+        )
+
+        # Mismatch bypass: state.json belongs to a different issue — gate inactive.
+        try:
+            state_data = json.loads((self.server_root / "state.json").read_text(encoding="utf-8"))
+            state_issue = state_data.get("issue_number")
+            branch_issue = self._git_config.extract_issue_number(branch)
+            if state_issue != branch_issue:
+                return
+        except Exception:
+            pass
+
         if self._context_loaded_reader is None:
             raise ConfigError(
                 "check_context_loaded action requires context_loaded_reader; "
                 "wire ContextLoadedCache in EnforcementRunner.__init__",
                 file_path=_ENFORCEMENT_DISPLAY_PATH,
             )
-
-        branch = str(
-            context.get_param("current_branch") or _get_current_git_branch(workspace_root) or ""
-        )
 
         if not self._context_loaded_reader.is_context_loaded(branch):
             note_context.produce(

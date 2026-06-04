@@ -79,7 +79,7 @@ class ValidationError(MCPError):
         }
 
         if self.schema:
-            data["schema"] = self.schema.to_dict()
+            data["schema"] = self.schema if isinstance(self.schema, dict) else self.schema.to_dict()
 
         if self.missing or self.provided:
             data["validation"] = {"missing": self.missing, "provided": self.provided}

@@ -86,10 +86,9 @@ class TestPhaseStateEngineConstructorC4:
 class TestPhaseStateEngineTransitionC4:
     def _build_engine(self, tmp_path: Path, contracts: ContractsConfig) -> PhaseStateEngine:
         """Build a minimal PhaseStateEngine with injected contracts_config."""
-        from mcp_server.schemas import GitConfig, WorkphasesConfig  # noqa: PLC0415
+        from mcp_server.schemas import GitConfig  # noqa: PLC0415
 
         git_config = MagicMock(spec=GitConfig)
-        workphases_config = MagicMock(spec=WorkphasesConfig)
         project_manager = MagicMock()
         state_repository = MagicMock()
         scope_decoder = MagicMock()
@@ -103,7 +102,6 @@ class TestPhaseStateEngineTransitionC4:
             project_manager=project_manager,
             git_config=git_config,
             contracts_config=contracts,
-            workphases_config=workphases_config,
             state_repository=state_repository,
             scope_decoder=scope_decoder,
             workflow_gate_runner=workflow_gate_runner,
@@ -223,8 +221,10 @@ class TestCreateIssueToolFirstPhaseC4:
             issue_config=issue_config,
             milestone_config=MagicMock(spec=MilestoneConfig),
             contracts_config=_minimal_contracts(first_phase="research"),
+            label_config=None,
+            scope_config=None,
+            git_config=None,
         )
-
         params = MagicMock(spec=CreateIssueInput)
         params.is_epic = False
         params.issue_type = "feature"

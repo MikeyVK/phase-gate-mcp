@@ -52,7 +52,7 @@ from mcp_server.tools.safe_edit_tool import LineEdit, SafeEditInput
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
 from mcp_server.tools.template_validation_tool import TemplateValidationInput
 from mcp_server.tools.test_tools import RunTestsInput
-from mcp_server.tools.validation_tools import ValidateDTOInput, ValidationInput
+from mcp_server.tools.validation_tools import ValidateDTOInput
 
 
 class TestExtraForbidOnAllInputModels:
@@ -99,7 +99,7 @@ class TestExtraForbidOnAllInputModels:
             (CloseIssueInput, {"issue_number": 1}),
             # label
             (ListLabelsInput, {}),
-            (CreateLabelInput, {"name": "bug", "color": "ff0000"}),
+            (CreateLabelInput, {"name": "type:bug", "color": "ff0000"}),
             (DeleteLabelInput, {"name": "bug"}),
             (RemoveLabelsInput, {"issue_number": 1, "labels": ["bug"]}),
             (AddLabelsInput, {"issue_number": 1, "labels": ["bug"]}),
@@ -142,7 +142,6 @@ class TestExtraForbidOnAllInputModels:
             # test_tools
             (RunTestsInput, {"path": "tests/"}),
             # validation
-            (ValidationInput, {}),
             (ValidateDTOInput, {"file_path": "/tmp/f.py"}),
         ],
     )

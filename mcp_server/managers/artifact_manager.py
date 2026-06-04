@@ -30,7 +30,6 @@ from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
-from mcp_server.scaffolding.template_introspector import TemplateSchema
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
 from mcp_server.schemas import ArtifactRegistryConfig, ProjectStructureConfig
@@ -691,14 +690,10 @@ class ArtifactManager:
                 v2_user_context = {k: v for k, v in context.items() if k not in _v2_strip_keys}
                 context_schema = context_class.model_validate(v2_user_context)
             except Exception as e:
-                _required = [f for f, fi in context_class.model_fields.items() if fi.is_required()]
-                _optional = [
-                    f for f, fi in context_class.model_fields.items() if not fi.is_required()
-                ]
                 raise ValidationError(
                     f"V2 pipeline: Failed to validate {artifact_type} context "
                     f"via {context_class.__name__}",
-                    schema=TemplateSchema(required=_required, optional=_optional),
+                    schema=self.get_context_schema(artifact_type),
                 ) from e
 
             # 2. Enrich to RenderContext (adds lifecycle fields)
@@ -849,3 +844,38 @@ class ArtifactManager:
                 "workspace_root not configured - cannot resolve artifact paths automatically",
             )
         return self.workspace_root / base_dir / file_name
+
+    def get_context_schema(self, artifact_type: str) -> dict[str, Any]:
+        """Return JSON Schema dict for the context parameter of a V2 artifact type.
+
+        Args:
+            artifact_type: Artifact type id (e.g. 'research', 'dto')
+
+        Returns:
+            JSON Schema dict (Draft 7, $refs inlined via resolve_schema_refs)
+
+        Raises:
+            ConfigError: If artifact_type has no V2 Context class (e.g. generic_doc)
+        """
+        import sys  # noqa: PLC0415
+
+        from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
+
+        context_class_name = _v2_context_registry.get(artifact_type)
+        if context_class_name is None:
+            raise ConfigError(
+                f"No V2 Context schema for artifact type '{artifact_type}'. "
+                f"This type is V1-only (see issue #286 for generic_doc migration)."
+            )
+
+        schemas_module = sys.modules.get("mcp_server.schemas")
+        if schemas_module is None:
+            import mcp_server.schemas as schemas_module  # noqa: PLC0415
+
+        context_class = getattr(schemas_module, context_class_name, None)
+        if context_class is None:
+            raise ConfigError(
+                f"V2 Context class '{context_class_name}' not found in mcp_server.schemas."
+            )
+
+        return resolve_schema_refs(context_class.model_json_schema())

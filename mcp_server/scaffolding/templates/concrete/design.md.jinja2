@@ -175,7 +175,9 @@ TEMPLATE_METADATA:
 ### 1.3. Constraints
 
 {% if constraints -%}
-{{ constraints }}
+{% for item in constraints -%}
+- {{ item }}
+{% endfor %}
 {% else -%}
 None
 {% endif %}

@@ -17,13 +17,14 @@ from pathlib import Path
 from typing import Any
 
 import anyio
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateAlreadyExistsError
+from mcp_server.schemas import ContractsConfig
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -57,6 +58,16 @@ class InitializeProjectInput(BaseModel):
     )
     skip_reason: str | None = Field(default=None, description="Reason for custom phases")
 
+    @model_validator(mode="after")
+    def require_custom_phases_for_custom_workflow(self) -> "InitializeProjectInput":
+        """Require custom_phases when workflow_name is 'custom'."""
+        if self.workflow_name == "custom" and not self.custom_phases:
+            raise ValueError(
+                "custom_phases is required when workflow_name='custom'. "
+                "Provide a non-empty list of phase names."
+            )
+        return self
+
 
 class InitializeProjectTool(BranchMutatingTool):
     """Tool for initializing projects with atomic state management.
@@ -79,6 +90,7 @@ class InitializeProjectTool(BranchMutatingTool):
         manager: ProjectManager,
         git_manager: GitManager,
         state_engine: PhaseStateEngine,
+        contracts_config: ContractsConfig | None = None,
     ) -> None:
         """Initialize tool with injected project dependencies."""
         super().__init__()
@@ -86,10 +98,16 @@ class InitializeProjectTool(BranchMutatingTool):
         self.manager = manager
         self.git_manager = git_manager
         self.state_engine = state_engine
+        self._contracts_config = contracts_config
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return InitializeProjectInput.model_json_schema()
+        schema = super().input_schema
+        if self._contracts_config is not None:
+            schema["properties"]["workflow_name"]["enum"] = list(
+                self._contracts_config.workflows.keys()
+            )
+        return schema
 
     def _detect_parent_branch_from_reflog_sync(self, current_branch: str) -> str | None:
         """Detect parent branch from git reflog.
@@ -481,7 +499,8 @@ class UpdatePlanningDeliverablesInput(BaseModel):
         ...,
         description=(
             "Partial or full planning deliverables to merge into the existing entry. "
-            "New cycles are appended; existing cycles have deliverables merged by id."
+            "New cycles are appended; existing cycles have deliverables merged by id. "
+            "Deliverable entries may include a 'validates' spec with type + required fields."
         ),
     )
 

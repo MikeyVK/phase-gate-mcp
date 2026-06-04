@@ -70,6 +70,7 @@ def _make_runner(tmp_path: Path) -> EnforcementRunner:
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        git_config=loader.load_git_config(),
         server_root=tmp_path / ".phase-gate",
     )
 

@@ -8,6 +8,7 @@
 
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -36,6 +37,7 @@ def _make_runner(
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        git_config=MagicMock(),
         registry=registry,
         server_root=tmp_path,
     )
@@ -163,6 +165,7 @@ class TestEnforcementRunner:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             server_root=tmp_path,
         )
 

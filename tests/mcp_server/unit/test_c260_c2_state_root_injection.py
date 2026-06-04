@@ -93,7 +93,6 @@ class TestPhaseStateEngineStateRoot:
             project_manager=MagicMock(),
             git_config=MagicMock(),
             contracts_config=MagicMock(),
-            workphases_config=MagicMock(),
             state_repository=MagicMock(),
             scope_decoder=MagicMock(),
             workflow_gate_runner=MagicMock(),
@@ -196,6 +195,7 @@ class TestEnforcementRunnerStateRoot:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             server_root=state_root,
+            git_config=MagicMock(),
             config=MagicMock(),
         )
         assert runner.server_root == state_root
@@ -441,7 +441,6 @@ class TestPhaseStateEngineNoFallback:
                 project_manager=MagicMock(),
                 git_config=MagicMock(),
                 contracts_config=MagicMock(),
-                workphases_config=MagicMock(),
                 state_repository=MagicMock(),
                 scope_decoder=MagicMock(),
                 workflow_gate_runner=MagicMock(),
@@ -494,6 +493,7 @@ class TestEnforcementRunnerNoFallback:
             EnforcementRunner(
                 workspace_root=Path("/some/workspace"),
                 config=EnforcementConfig(enforcement=[]),
+                git_config=MagicMock(),
                 # server_root omitted — must raise, not default to workspace/.phase-gate
             )
 

@@ -24,8 +24,7 @@ This page is optimized for agents: exact input contracts, copy/paste call patter
 |------|---------|-----------------|
 | `run_quality_gates` | Config-driven quality gates over explicit scope | `RunQualityGatesInput` in `quality_tools.py` |
 | `run_tests` | Pytest execution and failure reporting | `RunTestsInput` in `test_tools.py` |
-| `validate_architecture` | Architecture-level checks by scope | `ValidationInput` in `validation_tools.py` |
-| `validate_dto` | DTO-specific validation | `ValidateDTOInput` in `validation_tools.py` |
+| `validate_dto` | Checks that the DTO file path exists before parsing. Does **not** perform structural validation of the DTO definition itself. | `ValidateDTOInput` in `validation_tools.py` |
 | `validate_template` | Template conformance checks | `TemplateValidationInput` in `template_validation_tool.py` |
 
 ---

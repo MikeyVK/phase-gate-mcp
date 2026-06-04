@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError, PreflightError
-from mcp_server.core.interfaces import IPRStatusWriter, PRStatus
+from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
@@ -104,9 +105,8 @@ class MergePRTool(BaseTool):
     async def execute(self, params: MergePRInput, context: NoteContext) -> ToolResult:
         del context  # Not used
         try:
-            # Resolve head branch before merge so we can clear PRStatus after
-            pr = self.manager.adapter.repo.get_pull(params.pr_number)
-            head_branch = pr.head.ref
+            model = self.manager.get_pr(params.pr_number)
+            head_branch = model.head_branch
             result = self.manager.merge_pr(
                 pr_number=params.pr_number,
                 commit_message=params.commit_message,
@@ -121,6 +121,37 @@ class MergePRTool(BaseTool):
         )
 
 
+class GetPRInput(BaseModel):
+    """Input for GetPRTool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pr_number: int = Field(..., description="Pull request number")
+
+
+class GetPRTool(BaseTool):
+    """Tool to get a single pull request."""
+
+    name = "get_pr"
+    description = "Get detailed information about a specific pull request"
+    args_model = GetPRInput
+
+    def __init__(self, manager: GitHubManager) -> None:
+        self.manager = manager
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        return super().input_schema
+
+    async def execute(self, params: GetPRInput, context: NoteContext) -> ToolResult:
+        del context  # Not used
+        try:
+            model = self.manager.get_pr(params.pr_number)
+        except ExecutionError as e:
+            return ToolResult.error(str(e))
+        return ToolResult.text(json.dumps(model.model_dump(), indent=2))
+
+
 class SubmitPRInput(BaseModel):
     """Input for SubmitPRTool — atomic branch submission."""
 
@@ -128,7 +159,13 @@ class SubmitPRInput(BaseModel):
 
     head: str = Field(..., description="Source branch name (e.g. feature/42-name)")
     title: str = Field(..., description="PR title")
-    base: str | None = Field(default=None, description="Target branch (defaults to main)")
+    base: str | None = Field(
+        default=None,
+        description=(
+            "Target branch (defaults to main). "
+            "Cascade: explicit value → state.json parent_branch → git_config.default_base_branch."
+        ),
+    )
     body: str | None = Field(default=None, description="PR description (markdown)")
     draft: bool = Field(default=False, description="Create as draft PR")
 
@@ -154,11 +191,13 @@ class SubmitPRTool(BranchMutatingTool):
         github_manager: GitHubManager,
         pr_status_writer: IPRStatusWriter,
         merge_readiness_context: MergeReadinessContext,
+        branch_parent_reader: IBranchParentReader,
     ) -> None:
         self._git_manager = git_manager
         self._github_manager = github_manager
         self._pr_status_writer = pr_status_writer
         self._merge_readiness_context = merge_readiness_context
+        self._branch_parent_reader = branch_parent_reader
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -166,7 +205,11 @@ class SubmitPRTool(BranchMutatingTool):
 
     async def execute(self, params: SubmitPRInput, context: NoteContext) -> ToolResult:
         branch = self._git_manager.get_current_branch()
-        base = params.base or self._git_manager.git_config.default_base_branch
+        base = (
+            params.base
+            or self._branch_parent_reader.get_parent_branch(branch)
+            or self._git_manager.git_config.default_base_branch
+        )
         artifact_paths = frozenset(
             a.path for a in self._merge_readiness_context.branch_local_artifacts
         )
