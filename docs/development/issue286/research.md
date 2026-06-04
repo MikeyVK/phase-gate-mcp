@@ -234,6 +234,7 @@ The net result: no existing reference document explains that the three layers jo
 - [tests/mcp_server/unit/templates/test_generic_doc_template.py](tests/mcp_server/unit/templates/test_generic_doc_template.py)
 - Registry and artifact-manager tests that cover V2 schema exposure and disabled artifact paths
 
+
 ## Architectural Constraints
 
 | Constraint | Research implication |
@@ -253,13 +254,17 @@ A meaningful user decision was provided during research:
 
 This establishes a boundary-level ordering constraint: the documentation baseline must reflect the implemented V2 code before decisions about missing or broken template paths move forward, so later work is anchored to an accurate reference model rather than a drifting one.
 
-### Boundary 2: Supported fallback versus normative documentation
+### Boundary 2: Legacy text removal is a hard exit criterion for each touched document
 
-The codebase currently has a V2 pipeline with a temporary legacy fallback boundary. Research therefore distinguishes between:
-- **supported temporary behavior**: legacy fallback may still exist in code during the migration window
-- **normative reference behavior**: reference documentation should describe the V2 architecture and must not present V1 paths as the normal recommended operating model
+The codebase currently has a V2 pipeline with a temporary legacy fallback boundary. Research distinguishes:
+- **supported temporary behavior in code**: the legacy fallback path may still exist in the runtime codebase during the migration window
+- **documentation of legacy paths**: any description in a reference document that explains, demonstrates, or enables use of the legacy path
 
-This means the documentation can acknowledge temporary fallback existence where materially necessary, but it must not teach or normalize V1 as the primary path.
+These two are categorically different. The first is an engineering decision about runtime stability; the second is a documentation defect that this issue must resolve.
+
+The rule for this issue is explicit and hard: every document that is touched during this issue must be fully free of legacy descriptions, stale template paths, and legacy behavioral guidance after its editing cycle. Partial cleanup is not an acceptable result. An implementer finding a legacy description in a later cycle must treat it as an unfinished deliverable from the earlier cycle that first touched the document, not as acceptable residue.
+
+A touched document may include at most a brief factual note that a temporary code-level fallback exists in the current migration window. It must not describe, demonstrate, or direct the reader toward the legacy path as a functional alternative.
 
 ### Boundary 3: Documentation cleanup breadth
 
@@ -276,7 +281,8 @@ The cleanup target for this issue is the template/scaffolding documentation clus
 |---|---|
 | Documentation remains partially V1-shaped while code is V2-led | Later template work would be planned against stale references |
 | Cleanup reaches too far outside the template/scaffolding cluster | The issue could turn into a broad MCP docs rewrite instead of a bounded bug fix |
-| V1 fallback documentation is removed without clarifying temporary support boundary | Future contributors may misread the remaining runtime behavior as undocumented breakage |
+| A touched document retains legacy descriptions after its editing cycle | Implementers in later cycles can fall back on stale guidance instead of the V2 reference |
+| V1 runtime fallback is removed from docs entirely without any transitional note | Future contributors may misread the remaining runtime behavior as undocumented breakage |
 | Three-layer SSOT model remains undocumented | Agents and contributors will continue to make false-positive SSOT and DRY violation calls on architecturally correct code |
 
 ## Corrected Behavior Framing
@@ -285,7 +291,8 @@ Issue #286 should result in a state where:
 - the template/scaffolding reference set explicitly describes the three-layer V2 architecture (Context schema, RenderContext schema, Jinja2 template) and the role of each layer
 - an agent or contributor reading the reference docs can determine whether a given change violates the SSOT contract or is correct architecture
 - the reference set is discoverable as one coherent documentation cluster from `docs/reference/mcp/`
-- the touched documentation no longer contains `S1mpleTraderV3` or `st3`-style branding references
+- every document touched in this issue is fully free of legacy descriptions, stale template paths, legacy behavioral guidance, `S1mpleTraderV3` branding, and `.st3`-style path references after its editing cycle
+- partial legacy removal in a touched document is a defect, not an acceptable partial result
 - only after that alignment should later decisions about missing or broken template paths proceed from an accurate V2 reference baseline
 
 ## Design Input
@@ -330,13 +337,15 @@ This is a code design choice that belongs in the design phase, not in research. 
 | Boundary / consumer scope | Selected strategy | Rationale |
 |---|---|---|
 | Template/scaffolding reference documentation for issue #286 | Clean break in normative documentation toward V2 | Code is already V2-led; reference docs must stop teaching obsolete V1 paths as the normal model |
-| Temporary runtime fallback boundary where legacy paths still exist | Preserve temporary support in code, but do not present it as normative docs guidance | The current migration state still contains fallback behavior, but research must not let stale docs become the source of truth |
+| Legacy text in every touched document | Hard removal — no partial cleanup permitted | An implementer finding a legacy description in a later cycle must treat it as an unfinished deliverable from the cycle that first touched the document |
+| Temporary runtime fallback in code | Preserve code-level fallback; do not document it as a usable alternative path | The runtime fallback is an engineering stability measure, not a feature that reference docs should teach |
 | Documentation sequencing versus template-gap changes | Establish documentation alignment as the prerequisite boundary | Any later decisions about template-path corrections depend on an accurate V2 architectural reference baseline |
 
 Constraints for follow-on work:
 - subsequent work must treat code as SSOT
 - documentation cleanup must stay bounded to the template/scaffolding cluster unless directly linked surfaces are required
-- no touched documentation in this cluster may retain `S1mpleTraderV3` or `st3`-style branding references
+- every document touched in this issue must be fully cleaned in the cycle that touches it; legacy descriptions may not survive into a later cycle of the same issue
+- no touched documentation may retain `S1mpleTraderV3` branding, `.st3`-style paths, stale template paths, or legacy behavioral guidance
 - design must address the three-layer model question before implementation proceeds
 
 ## Related Documentation
@@ -363,5 +372,6 @@ Constraints for follow-on work:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.2 | 2026-06-04 | Agent | Hardened Boundary 2 to require complete legacy removal per touched document; updated Approved Strategy with explicit hard-removal row; updated Regression Risks and Corrected Behavior Framing |
 | 1.1 | 2026-06-04 | Agent | Added Finding 7 (three-layer SSOT architecture), Design Input section with four design questions, updated Corrected Behavior Framing and Regression Risks |
 | 1.0 | 2026-06-04 | Agent | Initial research draft for issue #286 with docs-first V2 alignment strategy and code-backed template/scaffolding drift findings |
