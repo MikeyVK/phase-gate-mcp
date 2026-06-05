@@ -1,5 +1,5 @@
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
-"""Integration Step 1: V2 pipeline smoke test for all 16 artifact types.
+"""Integration Step 1: V2 pipeline smoke test for all 19 artifact types.
 
 Validates that PYDANTIC_SCAFFOLDING_ENABLED=true produces non-empty output
 for every type registered in _v2_context_registry. One parametrized test per type.
@@ -90,14 +90,32 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         ".py",
     ),
     (
+        "adapter",
+        {"name": "SmokeAdapter"},
+        False,
+        ".py",
+    ),
+    (
         "tool",
         {"name": "SmokeTool"},
         False,
         ".py",
     ),
     (
+        "resource",
+        {"name": "SmokeResource"},
+        False,
+        ".py",
+    ),
+    (
         "schema",
         {"name": "SmokeSchema"},
+        False,
+        ".py",
+    ),
+    (
+        "interface",
+        {"name": "SmokeInterface"},
         False,
         ".py",
     ),

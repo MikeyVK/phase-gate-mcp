@@ -64,10 +64,10 @@ class TestArtifactsTypeField:
         code_type_ids = [
             "dto",
             "worker",
-            # "adapter",  # DISABLED (issue #325 - no V2 support)
+            "adapter",
             "tool",
-            # "resource",  # DISABLED (issue #325 - no V2 support)
-            # "interface",  # DISABLED (issue #325 - no V2 support)
+            "resource",
+            "interface",
             "schema",
             "service",
         ]
