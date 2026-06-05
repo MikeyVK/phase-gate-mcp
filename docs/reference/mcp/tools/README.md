@@ -13,7 +13,7 @@
 
 ## Purpose
 
-Comprehensive navigation index for all 51 MCP server tools organized by functional category. This document serves as the entry point to the MCP Tools Reference suite, providing quick lookup and category-based navigation to detailed tool documentation.
+Comprehensive navigation index for all 49 MCP server tools organized by functional category. This document serves as the entry point to the MCP Tools Reference suite, providing quick lookup and category-based navigation to detailed tool documentation.
 
 The MCP server exposes a rich set of tools across eight functional domains: Git workflow automation, GitHub API integration, project lifecycle management, file editing, code scaffolding, quality assurance, documentation discovery, and server administration.
 
@@ -21,18 +21,17 @@ The MCP server exposes a rich set of tools across eight functional domains: Git 
 
 ## Tool Inventory Overview
 
-The MCP server has **51 registered tools** across 8 categories:
+The MCP server has **49 registered tools** across 8 categories:
 | Category | Tools | Documentation |
 |----------|-------|---------------|
 | **Git Workflow & Analysis** | 15 | [git.md](git.md) |
 | **GitHub Integration** | 16 | [github.md](github.md) |
 | **Project & Phase Management** | 8 | [project.md](project.md) |
-| **File Editing** | 2 | [editing.md](editing.md) |
+| **File Editing** | 1 | [editing.md](editing.md) |
 | **Scaffolding** | 2 | [scaffolding.md](scaffolding.md) |
-| **Quality & Validation** | 4 | [quality.md](quality.md) |
+| **Quality & Validation** | 3 | [quality.md](quality.md) |
 | **Discovery & Admin** | 4 | [discovery.md](discovery.md) |
-| **TOTAL** | **51** | — |
----
+| **TOTAL** | **49** | — |
 
 ## Quick Reference by Category
 
@@ -183,10 +182,10 @@ Documentation search, work context aggregation, and server administration.
 ## Tool Registration Architecture
 
 | Tier | Tools | Count | Registration Condition |
-| **Always Available** | Git (15), Quality (4), File Editing (2), Project/Phase (8), Scaffolding (2), Discovery & Admin (4) | **35** | None |
+| **Always Available** | Git (15), Quality (3), File Editing (1), Project/Phase (8), Scaffolding (2), Discovery & Admin (4) | **33** | None |
 | **GitHub-Dependent** | Issues (5), PRs (3), Labels (5), Milestones (3) | **16** | Requires `GITHUB_TOKEN` environment variable |
-| **TOTAL (with token)** | — | **51** | — |
-| **TOTAL (without token)** | — | **40** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
+| **TOTAL (with token)** | — | **49** | — |
+| **TOTAL (without token)** | — | **38** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
 **Note:** Issue management tools (5) are registered even without a token (schema-only registration). Tool calls will return errors if `GITHUB_TOKEN` is missing.
 
 ---
