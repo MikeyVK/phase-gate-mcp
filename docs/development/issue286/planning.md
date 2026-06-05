@@ -181,6 +181,30 @@ Five sequential TDD cycles to fix all six pipeline gaps identified in design: do
 
 ---
 
+### Cycle 6: C_286.6 — Fix `None`-versus-`undefined` rendering in doc templates + document Layer 3 rendering contract
+
+**Goal:** Fix `generic_doc` and `validation_report` templates that render literal `None` when optional fields are omitted, and document the `field or "fallback"` rule in the three-layer contract reference. Surfaced during validation-phase live scaffold testing (Finding 8).
+
+**Root cause:** Jinja2's `| default()` filter only fires on `undefined`, not on Python `None`. `GenericDocContext` and `ValidationReportContext` correctly declare optional fields as `str | None = None`, but the concrete templates call `status | default("DRAFT")` — which does not fire when the value is `None`.
+
+**Tests:**
+- RED: add `test_generic_doc_status_defaults_to_draft_when_omitted` in `test_generic_doc_template.py` — scaffold with no `status`/`version` supplied, assert rendered output contains `**Status:** DRAFT` and `**Version:** 1.0`
+- RED: add `test_validation_report_status_defaults_to_pending_when_omitted` in existing validation_report template test — scaffold with no `status` supplied, assert rendered output contains `**Status:** PENDING`
+- GREEN: in `mcp_server/scaffolding/templates/concrete/generic.md.jinja2` change `status | default("DRAFT")` → `status or "DRAFT"` and `version | default("1.0")` → `version or "1.0"`
+- GREEN: in `mcp_server/scaffolding/templates/concrete/validation_report.md.jinja2` change `status | default("PENDING")` → `status or "PENDING"`
+- REFACTOR: update the three-layer contract description in `docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md` or the relevant reference doc to include the explicit rule: Layer 3 must use `field or "fallback"` for any field that Layer 1 declares as `str | None`
+- REFACTOR: verify full test suite green; run quality gates
+
+**Success Criteria:**
+- `scaffold_artifact('generic_doc', {'title': 'X'})` renders `**Status:** DRAFT` and `**Version:** 1.0` (not `None`)
+- `scaffold_artifact('validation_report', {'title': 'X'})` renders `**Status:** PENDING` (not `None`)
+- Reference documentation contains the explicit `None`-versus-`undefined` rendering rule for Layer 3 authors
+- pylint 10/10, mypy pass, full test suite green
+
+**Dependencies:** C_286.5 must be complete (generic_doc Layer 1/2 already in place)
+
+---
+
 ## Risks & Mitigation
 
 - **Risk:** test_code_artifact_parity.py TestGenericContextParity may fail in unexpected ways when methods field type changes from list[str] to list[MethodSpec] — the parity test introspects schema field types and compares them to template variable contracts
@@ -199,6 +223,7 @@ Five sequential TDD cycles to fix all six pipeline gaps identified in design: do
 - After C_286.3: adapter/resource/interface scaffoldable end-to-end; legacy scaffolders deleted; smoke test covers 19 types
 - After C_286.4: validation_report scaffoldable end-to-end; smoke test covers 20 types
 - After C_286.5: generic_doc scaffoldable end-to-end via V2 pipeline; smoke test covers 21 types; _v2_context_registry has 21 entries; no V1-only types remain
+- After C_286.6: generic_doc and validation_report render correct fallback values when optional fields omitted; Layer 3 `None`-versus-`undefined` rule documented in reference
 
 ## Related Documentation
 - **[docs/development/issue286/research.md][related-1]**

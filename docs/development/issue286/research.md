@@ -332,6 +332,34 @@ Research confirmed the mismatch. Design must determine:
 
 This is a code design choice that belongs in the design phase, not in research. Research only surfaces the gap and the two option categories.
 
+### 8. Optional display fields behave inconsistently across doc template types due to a Layer 1/Layer 3 contract gap
+
+Surfaced during validation-phase live scaffold testing (2026-06-05).
+
+Jinja2's `| default()` filter only fires on `undefined` variables — it does not fire when a variable is explicitly `None`. This creates a silent behavioural split across all doc templates:
+
+| Template | `status`/`version` in Layer 1 schema | Value received by Jinja2 | `default()` fires? | Rendered output |
+|---|---|---|---|---|
+| `design` | Required `str` | Always a real value | No (not needed) | Correct |
+| `research`, `planning`, `architecture` | Absent from schema | `undefined` | ✅ Yes | Correct (by accident) |
+| `generic_doc` | Optional `str \| None = None` | `None` when omitted | ❌ No | Renders literal `None` |
+| `validation_report` | Optional `str \| None = None` | `None` when omitted | ❌ No | Renders literal `None` |
+
+The root cause is that `generic_doc` and `validation_report` (both new in issue #286) correctly declare optional fields in Layer 1, but Layer 3 assumes `undefined` semantics. The old templates work accidentally because they omit the fields from Layer 1 entirely.
+
+**Correct fix:** Layer 3 templates must use `status or "DRAFT"` (Python/Jinja2 falsy check) instead of `status | default("DRAFT")` for any field that Layer 1 may pass as `None`. The schema-level optionality (`str | None`) is correct and should not change.
+
+**Structural implication:** The three-layer SSOT contract (Finding 7) must include an explicit rule for optional display fields:
+- Layer 1: `str | None = None` is correct for user-optional fields
+- Layer 3: must use `field or "fallback"` — never `field | default("fallback")` — for any field declared `str | None` in Layer 1
+
+This rule is currently absent from all reference documentation, which means every new template author will reproduce this bug unless the contract is documented.
+
+**Files affected:**
+- `mcp_server/scaffolding/templates/concrete/generic.md.jinja2` — `status or "DRAFT"`, `version or "1.0"`
+- `mcp_server/scaffolding/templates/concrete/validation_report.md.jinja2` — `status or "PENDING"`
+- Reference documentation: must add `None`-versus-`undefined` rendering rule to the three-layer contract description
+
 ## Approved Strategy
 | Boundary / consumer scope | Selected strategy | Rationale |
 |---|---|---|
@@ -339,6 +367,7 @@ This is a code design choice that belongs in the design phase, not in research. 
 | Legacy text in every touched document | Hard removal — no partial cleanup permitted | An implementer finding a legacy description in a later cycle must treat it as an unfinished deliverable from the cycle that first touched the document |
 | Temporary runtime fallback in code | Preserve code-level fallback; do not document it as a usable alternative path | The runtime fallback is an engineering stability measure, not a feature that reference docs should teach |
 | Documentation sequencing versus template-gap changes | Establish documentation alignment as the prerequisite boundary | Any later decisions about template-path corrections depend on an accurate architectural reference baseline |
+| Optional display fields in Layer 3 templates (`str \| None` from Layer 1) | Fix Layer 3 to use `field or "fallback"` — not `field \| default("fallback")` — and document the rule in the three-layer contract reference | `\| default()` only fires on `undefined`, not `None`; `generic_doc` and `validation_report` templates currently render literal `None` when optional fields are omitted |
 
 Constraints for follow-on work:
 - subsequent work must treat code as SSOT
