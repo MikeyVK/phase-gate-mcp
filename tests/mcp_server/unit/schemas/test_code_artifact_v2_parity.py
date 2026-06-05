@@ -120,7 +120,7 @@ def _assert_has_metadata_header(output: str, label: str) -> None:
 def _spy_v2_routed(manager: ArtifactManager) -> list[bool]:
     """Spy if _enrich_context_v2 is called (v2 pipeline routed)."""
     v2_calls: list[bool] = []
-    original = manager._enrich_context_v2
+    original = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]  # routing spy requires direct hook into the private v2 enrichment seam
 
     def spy(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
         v2_calls.append(True)

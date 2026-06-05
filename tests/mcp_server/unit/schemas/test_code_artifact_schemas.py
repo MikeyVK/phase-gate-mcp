@@ -22,6 +22,7 @@ import pytest
 from pydantic import ValidationError
 
 # Project modules
+from mcp_server.schemas import MethodSpec
 from mcp_server.schemas.contexts.generic import GenericContext
 from mcp_server.schemas.contexts.integration_test import IntegrationTestContext
 from mcp_server.schemas.contexts.schema import SchemaContext
@@ -307,17 +308,15 @@ class TestGenericContext:
 
     def test_method_spec_minimal_valid(self) -> None:
         """MethodSpec should accept a minimal method definition."""
-        method_spec_cls = getattr(__import__("mcp_server.schemas", fromlist=["MethodSpec"]), "MethodSpec")
-        method = method_spec_cls(name="calculate")
+        method = MethodSpec(name="calculate")
         assert method.name == "calculate"
 
     def test_method_spec_is_frozen_and_forbids_extra_fields(self) -> None:
         """MethodSpec should be immutable and reject unknown fields."""
-        method_spec_cls = getattr(__import__("mcp_server.schemas", fromlist=["MethodSpec"]), "MethodSpec")
-        method = method_spec_cls(name="calculate")
+        method = MethodSpec(name="calculate")
 
         with pytest.raises(ValidationError):
-            method_spec_cls(name="calculate", unexpected=True)
+            MethodSpec(name="calculate", unexpected=True)
 
         with pytest.raises(ValidationError):
             method.name = "recalculate"
