@@ -2,10 +2,35 @@
   "branch": "bug/286-v2-template-gaps-and-fixes-generic-schema-mismatch-adapter-resource-interface-validation-report",
   "issue_number": 286,
   "workflow_name": "bug",
-  "current_phase": "implementation",
-  "current_cycle": 1,
-  "last_cycle": 0,
-  "cycle_history": [],
+  "current_phase": "validation",
+  "current_cycle": 5,
+  "last_cycle": 5,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "C_286.2 \u2014 MethodSpec value object + GenericContext fix",
+      "forced": false,
+      "entered": "2026-06-05T06:16:28.164490+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "C_286.3 \u2014 adapter/resource/interface full pipeline + legacy scaffolder removal",
+      "forced": false,
+      "entered": "2026-06-05T06:26:44.482131+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "C_286.4 \u2014 validation_report full pipeline",
+      "forced": false,
+      "entered": "2026-06-05T06:37:45.608484+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "C_286.5 \u2014 generic_doc Layer 1 and Layer 2 completion",
+      "forced": false,
+      "entered": "2026-06-05T06:45:53.665518+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -41,6 +66,14 @@
       "from_phase": "planning",
       "to_phase": "implementation",
       "timestamp": "2026-06-04T20:48:49.482813+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-05T07:02:07.648387+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null

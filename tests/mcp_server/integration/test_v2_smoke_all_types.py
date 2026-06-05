@@ -8,7 +8,7 @@ for every type registered in _v2_context_registry. One parametrized test per typ
 @layer: Test Infrastructure
 @dependencies: mcp_server.managers.artifact_manager, mcp_server.config
 @responsibilities:
-  - E2E smoke: V2 pipeline → non-empty string output for all 16 types
+  - E2E smoke: V2 pipeline → non-empty string output for all 21 types
   - Covers: 8 code, 5 doc, 3 tracking (ephemeral)
   - Does NOT assert file existence for ephemeral artifacts
 """
@@ -248,7 +248,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "pr",
         {
             "title": "Smoke PR",
-            "changes": "Added V2 pipeline smoke tests for all 16 artifact types",
+            "changes": "Added V2 pipeline smoke tests for all 21 artifact types",
         },
         True,
         ".md",
