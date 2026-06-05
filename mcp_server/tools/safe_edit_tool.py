@@ -143,9 +143,6 @@ class SafeEditInput(BaseModel):
         description="Validation mode. 'strict' fails on error, 'interactive' writes but warns.",
         pattern="^(strict|interactive|verify_only)$",
     )
-    show_diff: bool = Field(
-        default=True, description="Show unified diff preview comparing original and new content"
-    )
 
     @field_validator("search_flags", mode="before")
     @classmethod
@@ -260,12 +257,8 @@ class SafeEditTool(BranchMutatingTool):
 
                     # Generate diff if requested
                     diff_output = ""
-                    if params.show_diff:
-                        diff_output = self._generate_diff(
-                            params.path, original_content, new_content
-                        )
-
-                    # Validate new content
+                    # Diff preview is no longer part of the public agent-facing contract.
+                    diff_output = ""
                     passed, issues_text = await self._validate(params.path, new_content)
 
                     # Build response object
