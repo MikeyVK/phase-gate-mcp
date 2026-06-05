@@ -447,9 +447,15 @@ class TestGenericV2Parity:
         "name": "CacheManager",
         "description": "Simple in-memory cache manager",
         "layer": "Backend (Utils)",
-        # methods omitted: V1 template expects dict objects (method.name/params/body)
-        # which is a V1 template design (pre-Pydantic). GenericContext.methods = list[str].
-        # Template-schema contract alignment is Cycle 6 scope.
+        "methods": [
+            {
+                "name": "get",
+                "params": "key: str",
+                "return_type": "str | None",
+                "docstring": "Return a cached value when present.",
+                "body": "return None",
+            }
+        ],
         "responsibilities": ["Cache data in memory", "Invalidate stale entries"],
     }
 

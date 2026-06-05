@@ -56,6 +56,7 @@ from mcp_server.schemas.contexts.dto import DTOContext
 from mcp_server.schemas.contexts.generic import GenericContext
 from mcp_server.schemas.contexts.integration_test import IntegrationTestContext
 from mcp_server.schemas.contexts.issue import IssueContext
+from mcp_server.schemas.contexts.method_spec import MethodSpec
 from mcp_server.schemas.contexts.planning import PlanningContext
 from mcp_server.schemas.contexts.pr import PRContext
 from mcp_server.schemas.contexts.reference import ReferenceContext
@@ -98,6 +99,7 @@ __all__ = [
     "GenericContext",
     "IntegrationTestContext",
     "IssueContext",
+    "MethodSpec",
     "PlanningContext",
     "PRContext",
     "ReferenceContext",

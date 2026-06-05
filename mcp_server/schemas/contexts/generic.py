@@ -12,6 +12,7 @@ from pydantic import ConfigDict, Field, field_validator
 
 # Project modules
 from mcp_server.schemas.base import BaseContext
+from mcp_server.schemas.contexts.method_spec import MethodSpec
 
 
 class GenericContext(BaseContext):
@@ -37,9 +38,9 @@ class GenericContext(BaseContext):
         default=None,
         description="Architectural layer (e.g. 'Backend (Generic)', 'MCP Server')",
     )
-    methods: list[str] = Field(
+    methods: list[MethodSpec] = Field(
         default_factory=list,
-        description="List of method names to scaffold",
+        description="List of structured method definitions to scaffold",
     )
     responsibilities: list[str] = Field(
         default_factory=list,
