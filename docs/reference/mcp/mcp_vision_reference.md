@@ -204,18 +204,8 @@ The MCP Server operates across three distinct domains with **fundamentally diffe
 
 **Mechanisms**:
 - `scaffold_artifact` generates compliant code from templates
-- `validate_dto` checks DTO schema structure
 - Quality gates enforce style/typing
 - PolicyEngine **BLOCKS** non-scaffolded creation in backend/
-
-**Example Enforcement**:
-```yaml
-# policies.yaml
-operations:
-  create_file:
-    blocked_patterns:
-      - "backend/**"  # Must use scaffold_artifact
-```
 
 **Result**: Code that doesn't follow patterns **CANNOT BE CREATED**
 
@@ -276,7 +266,7 @@ docs/
 ├── workphases.yaml          # Phase/sub-phase definitions for commits
 ├── validation.yaml          # Template validation rules
 ├── artifacts.yaml           # Unified artifact registry (code + docs)
-├── policies.yaml            # Operation policies (scaffold/create_file/commit)
+├── policies.yaml            # Operation policies (scaffold/commit)
 ├── enforcement.yaml         # Pre-execution enforcement rules for MCP tools
 ├── project_structure.yaml   # 15 directory definitions
 ├── quality.yaml             # Quality gate definitions

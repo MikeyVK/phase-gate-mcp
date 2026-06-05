@@ -2,7 +2,7 @@
 
 ## Overview
 
-The S1mpleTrader V3 MCP Server provides **30 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
+The S1mpleTrader V3 MCP Server provides **28 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
 
 **Server Location:** `mcp_server/`
 **Configuration:** `.vscode/mcp.json` → `st3-workflow`
@@ -119,7 +119,7 @@ Organize issues into release milestones.
 
 **ISO 8601 Format:** `2025-12-31T00:00:00Z` or `2025-12-31T00:00:00+00:00`
 
-### 6. Quality & Testing Tools (4 tools)
+### 6. Quality & Testing Tools (3 tools)
 
 Run quality gates, tests, and code validation.
 
@@ -172,7 +172,7 @@ Generate new artifacts from templates (unified system).
 
 See `.st3/config/artifacts.yaml` for complete list and required fields per type.
 
-### 9. Development & File Tools (2 tools)
+### 9. Development & File Tools (1 tool)
 
 Manage files and check server health.
 
@@ -188,8 +188,8 @@ All tools are registered in `mcp_server/server.py`:
 
 **Always Available (8 tools):**
 - Git tools (8)
-- Quality tools (3)
-- Development tools (2)
+- Quality tools (2)
+- Development tools (1)
 - Scaffold tools (2)
 - Discovery tools (2)
 
@@ -199,7 +199,7 @@ All tools are registered in `mcp_server/server.py`:
 - Label tools (5)
 - Milestone tools (3)
 
-**Total: 30 tools**
+**Total: 28 tools**
 
 ### Execution Flow
 

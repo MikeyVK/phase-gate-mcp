@@ -122,7 +122,7 @@ Workflow lifecycle management with phase tracking and transition validation.
 
 ---
 
-### 4. File Editing (2 tools)
+### 4. File Editing (1 tool)
 
 Multi-mode file editing with quality gate integration and concurrent edit protection.
 
@@ -151,7 +151,7 @@ Unified artifact generation from Jinja2 templates for code and documentation art
 
 ---
 
-### 6. Quality & Validation (4 tools)
+### 6. Quality & Validation (3 tools)
 
 Automated quality gates, test execution, and architectural validation.
 

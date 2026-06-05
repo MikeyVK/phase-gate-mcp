@@ -20,7 +20,7 @@ Reference documentation for file editing tools in the MCP server. The `safe_edit
 
 ## Overview
 
-The MCP server provides two file editing tools:
+The MCP server provides one file editing tool:
 
 | Tool | Status | Purpose | Use Case |
 |------|--------|---------|----------|
