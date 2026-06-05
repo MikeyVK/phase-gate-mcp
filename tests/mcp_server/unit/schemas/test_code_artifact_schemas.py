@@ -305,6 +305,23 @@ class TestServiceRenderContext:
 class TestGenericContext:
     """Test GenericContext schema validation."""
 
+    def test_method_spec_minimal_valid(self) -> None:
+        """MethodSpec should accept a minimal method definition."""
+        method_spec_cls = getattr(__import__("mcp_server.schemas", fromlist=["MethodSpec"]), "MethodSpec")
+        method = method_spec_cls(name="calculate")
+        assert method.name == "calculate"
+
+    def test_method_spec_is_frozen_and_forbids_extra_fields(self) -> None:
+        """MethodSpec should be immutable and reject unknown fields."""
+        method_spec_cls = getattr(__import__("mcp_server.schemas", fromlist=["MethodSpec"]), "MethodSpec")
+        method = method_spec_cls(name="calculate")
+
+        with pytest.raises(ValidationError):
+            method_spec_cls(name="calculate", unexpected=True)
+
+        with pytest.raises(ValidationError):
+            method.name = "recalculate"
+
     def test_generic_context_validation_happy(self) -> None:
         """Valid generic input should create GenericContext instance."""
         ctx = GenericContext(name="TemplateHasher")
@@ -317,13 +334,27 @@ class TestGenericContext:
         assert ctx.methods == []
 
     def test_generic_context_all_optional_populated(self) -> None:
-        """All optional generic fields should be storable."""
+        """Structured method definitions should validate for generic artifacts."""
         ctx = GenericContext(
             name="PathUtils",
             description="Path manipulation utilities",
-            methods=["normalize_path", "ensure_dir"],
+            methods=[
+                {
+                    "name": "normalize_path",
+                    "params": "path: str",
+                    "return_type": "str",
+                    "docstring": "Normalize a filesystem path.",
+                    "body": "return path.strip()",
+                },
+                {"name": "ensure_dir"},
+            ],
         )
         assert len(ctx.methods) == 2
+
+    def test_generic_context_rejects_string_methods(self) -> None:
+        """Legacy list[str] methods input should be rejected."""
+        with pytest.raises(ValidationError, match="methods"):
+            GenericContext(name="PathUtils", methods=["normalize_path"])
 
     def test_generic_context_missing_required_name(self) -> None:
         """Missing name should raise ValidationError."""
