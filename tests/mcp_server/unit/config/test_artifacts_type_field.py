@@ -1,14 +1,9 @@
-"""Unit tests for artifacts.yaml type field (Issue #72, TDD Cycle 1).
+"""Unit tests for artifacts.yaml type field.
 
-RED Phase Test:
-- Validates ALL artifacts in .phase-gate/config/artifacts.yaml have type field (code|doc|config)
-- Validates code artifacts (dto, worker, adapter, tool, resource, etc.) have type: code
-- Validates document artifacts (research, planning, design, etc.) have type: doc
-
-Author: AI Agent
-Created: 2026-01-26
-Issue: #72 (Template Library Management)
-TDD Cycle: 1
+Validates:
+- ALL artifacts in .phase-gate/config/artifacts.yaml have type field (code|doc|config)
+- Code artifacts (dto, worker, adapter, tool, resource, etc.) have type: code
+- Document artifacts (research, planning, design, etc.) have type: doc
 
 @layer: Tests (Unit)
 @dependencies: pytest, mcp_server.config.schemas.artifact_registry_config

@@ -14,13 +14,17 @@ from mcp_server.schemas.contexts.doc_base import DocArtifactContext
 
 
 class GenericDocContext(DocArtifactContext):
-    """Context schema for structured generic document scaffolding."""
+    """Context schema for structured generic document scaffolding.
+
+    Inherits:
+        - title (from TitledArtifactContext, with non-empty validation)
+        - status (DocumentStatus enum)
+        - version (validated x.y or x.y.z)
+        - last_updated (validated YYYY-MM-DD)
+    """
 
     purpose: str = Field(description="Purpose statement for the document")
     summary: str = Field(description="High-level summary for the document")
-    status: str | None = Field(default=None, description="Document status")
-    version: str | None = Field(default=None, description="Document version")
-    last_updated: str | None = Field(default=None, description="Last updated date string")
     scope_in: str | None = Field(default=None, description="In-scope summary")
     scope_out: str | None = Field(default=None, description="Out-of-scope summary")
     prerequisites: list[str] = Field(default_factory=list, description="Prerequisite items")

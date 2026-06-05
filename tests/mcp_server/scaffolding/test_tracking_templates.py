@@ -1,5 +1,5 @@
-"""
-Task 3.7: Integration tests for tracking templates
+"""Integration tests for tracking templates.
+
 Tests tier1_base_tracking + tier2 text/markdown + concrete tracking templates.
 
 @layer: Tests (Unit)

@@ -1,5 +1,4 @@
-"""
-Task 3.6.1: Comprehensive rendering test for all 5 DOCUMENT templates
+"""Comprehensive rendering tests for all 5 document templates.
 Tests that all templates render correctly with tier3 patterns after refactoring.
 
 @layer: Tests (Unit)

@@ -1,6 +1,6 @@
-# tests/mcp_server/scaffolding/test_task35_document_pattern_templates.py
+# tests/mcp_server/scaffolding/test_tier3_document_patterns.py
 # template=unit_test version=dev created=2026-02-05T21:00Z updated=2026-02-05T22:30Z
-"""Task 3.5 validation tests for tier3 markdown pattern templates.
+"""Validation tests for tier3 markdown pattern templates.
 
 Validates that tier3 markdown pattern templates:
 - exist in the templates directory

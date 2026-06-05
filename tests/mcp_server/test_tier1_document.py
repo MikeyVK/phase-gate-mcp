@@ -1,8 +1,8 @@
 # SCAFFOLD: template=test_unit version=xxx created=2026-01-26T21:30:00Z
 """
-Tests for Tier 1 document template (Issue #72, TDD Cycle 3).
+Tests for tier1_base_document.jinja2 universal document structure.
 
-RED phase: Tests for tier1_base_document.jinja2 universal document structure:
+Validates:
 - Status/Phase fields
 - Purpose section
 - Scope (In/Out)

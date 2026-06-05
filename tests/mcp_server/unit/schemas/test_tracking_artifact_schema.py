@@ -1,28 +1,15 @@
-# tests/unit/mcp_server/schemas/test_tracking_artifact_v2_parity.py
-# SCAFFOLD: test:manual | 2026-02-18T00:00:00Z | tests/unit/mcp_server/schemas/test_tracking_artifact_v2_parity.py  # noqa: E501
-"""V2 parity tests for tracking artifact types (Issue #135 Cycle 7).
+# tests/mcp_server/unit/schemas/test_tracking_artifact_schema.py
+# SCAFFOLD: test:manual | 2026-02-18T00:00:00Z
+"""Schema and pipeline tests for tracking artifact types.
 
-SCOPE (Cycle 7 - Tracking Artifact V2):
-  commit, pr, issue
+Covers: commit, pr, issue (all ephemeral — write to .phase-gate/temp/)
 
-3 tests per artifact type (9 total):
-  1. context_validates_minimal  - schema creates with required fields only; fails if schema absent
-  2. v2_routing_confirmed       - _enrich_context_v2 IS called; fails while not in registry
-  3. v2_rejects_invalid_context - empty context raises ValidationError;
-     fails while V1 fallback active
-
-Note on ephemeral artifacts:
-  Tracking artifacts (commit, pr, issue) use output_type: ephemeral — they write to
-  .phase-gate/temp/ instead of via fs_adapter.write_file. _run_v2_tracking patches
-  _validate_and_write to avoid actual file writes in unit tests.
-
-Note on parity definition (aligned with Cycles 5+6 docstring):
-  Parity = smoke: both pipelines produce valid output with routing confirmed.
+2 tests per artifact type:
+  1. context_validates_minimal  - schema instantiates with required fields
+  2. rejects_invalid_context    - empty context raises ValidationError
 
 @layer: Tests (Unit)
 @dependencies: pytest, pydantic, tracking artifact schemas, mcp_server scaffolding pipeline
-
-  Tracking artifacts have no SCAFFOLD header (output_type=ephemeral, no disk persistence).
 """
 
 import asyncio  # noqa: I001

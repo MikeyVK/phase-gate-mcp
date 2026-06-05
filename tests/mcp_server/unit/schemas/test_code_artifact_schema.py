@@ -1,35 +1,16 @@
-# tests/unit/mcp_server/schemas/test_code_artifact_v2_parity.py
-# SCAFFOLD: test:manual | 2026-02-18T00:00:00Z | tests/unit/mcp_server/schemas/test_code_artifact_v2_parity.py  # noqa: E501
-"""AST parity tests: v1 pipeline output ≡ v2 pipeline output (Issue #135 Cycle 5).
+# tests/mcp_server/unit/schemas/test_code_artifact_schema.py
+# SCAFFOLD: test:manual | 2026-02-18T00:00:00Z
+"""Schema and pipeline tests for code artifact types.
 
-SCOPE (Cycle 5 - AST Parity):
-- V1 pipeline (PYDANTIC_SCAFFOLDING_ENABLED=false) produces syntactically valid Python
-- V2 pipeline (PYDANTIC_SCAFFOLDING_ENABLED=true) produces syntactically valid Python
-- Both pipelines produce a SCAFFOLD/template metadata header
-- V2 pipeline is correctly ROUTED for all 7 code artifact types (not just dto)
+Covers: worker, tool, schema, service, generic, unit_test, integration_test
 
-This validates the Cycle 5 deliverable:
-  schema-validated context → v2 pipeline → same output quality as v1
-
-Artifact types tested (7):
-  worker, tool, schema, service, generic, unit_test, integration_test
-
-Test cases per type (5):
+Tests per type:
   1. Minimal valid context (required fields only)
-  2. Full context (all optional fields populated)
-  3. Schema validation rejection (invalid input → ValidationError)
+  2. Schema validation rejection (invalid input → ValidationError)
+  3. Output contains class definition
 
 @layer: Tests (Unit)
-@dependencies: pytest, pydantic, schema parity fixtures, mcp_server schema artifacts
-  4. V2 pipeline was routed (not fallen back to v1)
-  5. Output contains class definition
-
-Total: 5 × 7 = 35 tests
-
-Note on v1 context vs v2 context:
-  V1 uses raw dicts with no schema validation.
-  V2 uses Pydantic schemas — fields must match XxxContext exactly.
-  For parity, we compare smoke: both pipelines produce valid Python with metadata.
+@dependencies: pytest, pydantic, mcp_server schema artifacts
 """
 
 import asyncio  # noqa: I001

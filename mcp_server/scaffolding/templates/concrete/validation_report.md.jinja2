@@ -26,15 +26,14 @@ TEMPLATE_METADATA:
     phase: "validation"
     purpose: "Summarize validation status and evidence"
 -#}
-
 {%- block header_fields %}
 
-**Status:** {{ status | default("PENDING") }}  
-**Version:** {{ version | default("1.0") }}  
-**Last Updated:** {{ last_updated | default(timestamp[:10]) }}  
-{% if issue_number %}**Issue:** #{{ issue_number }}  
+**Status:** {{ status }}  
+**Version:** {{ version }}  
+**Last Updated:** {{ last_updated }}  
+{% if validation_status %}**Validation Outcome:** {{ validation_status }}  
+{% endif %}{% if issue_number %}**Issue:** #{{ issue_number }}  
 {% endif %}{% if cycle %}**Cycle:** {{ cycle }}  
-{% endif %}{% if phase %}**Phase:** {{ phase }}  
 {% endif %}
 {%- endblock %}
 
@@ -50,6 +49,6 @@ TEMPLATE_METADATA:
 
 ## Outcome
 
-{% if status %}Current validation status: **{{ status }}**.{% else %}Validation outcome pending.{% endif %}
+{% if validation_status %}Current validation status: **{{ validation_status }}**.{% else %}Validation outcome pending.{% endif %}
 
 {%- endblock %}

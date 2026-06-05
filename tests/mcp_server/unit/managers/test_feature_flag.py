@@ -1,14 +1,12 @@
-# tests/unit/mcp_server/managers/test_feature_flag_v2.py
-"""Test Pydantic v2 feature flag routing and schema-typed enrichment (Issue #135 Cycle 4).
+# tests/mcp_server/unit/managers/test_feature_flag.py
+"""Tests for Pydantic feature flag routing and schema-typed enrichment.
 
 Tests:
-- Feature flag OFF → v1 pipeline (dict-based)
-- Feature flag ON → v2 pipeline (schema-typed)
+- Feature flag OFF: dict-based pipeline
+- Feature flag ON: schema-typed pipeline
 - Feature flag toggle (runtime switch)
-- V1 pipeline unchanged (backward compatibility)
-- V2 pipeline validates via Pydantic
+- Pipeline validates via Pydantic
 - Schema-typed enrichment (_enrich_context_v2)
-- Naming Convention lookup (DTOContext → DTORenderContext)
 
 @layer: Tests (Unit)
 @dependencies: pytest, asyncio, pydantic, mcp_server.managers.artifact_manager

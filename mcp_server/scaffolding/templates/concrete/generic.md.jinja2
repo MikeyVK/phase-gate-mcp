@@ -72,7 +72,7 @@ TEMPLATE_METADATA:
 -#}
 
 {%- block header_fields %}
-{{ hdr.pattern_status_header_basic(status | default("DRAFT"), version | default("1.0"), last_updated | default(""), timestamp) }}
+{{ hdr.pattern_status_header_basic(status, version, last_updated, timestamp) }}
 {% endblock -%}
 
 {%- block purpose_section -%}
@@ -175,5 +175,5 @@ A: {{ item.answer }}
 {%- endblock -%}
 
 {%- block version_history_section -%}
-{{ history.pattern_version_history_basic(version | default("1.0"), last_updated | default("")) }}
+{{ history.pattern_version_history_basic(version, last_updated) }}
 {%- endblock -%}
