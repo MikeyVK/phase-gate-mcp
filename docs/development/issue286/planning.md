@@ -181,27 +181,11 @@ Five sequential TDD cycles to fix all six pipeline gaps identified in design: do
 
 ---
 
-### Cycle 6: C_286.6 — Fix `None`-versus-`undefined` rendering in doc templates + document Layer 3 rendering contract
+### Cycle 6: C_286.6 — Structural doc fields refactor (`status`, `version`, `last_updated`)
 
-**Goal:** Fix `generic_doc` and `validation_report` templates that render literal `None` when optional fields are omitted, and document the `field or "fallback"` rule in the three-layer contract reference. Surfaced during validation-phase live scaffold testing (Finding 8).
+**Goal:** Resolve Finding 8. Coordinated directly by user — no pre-defined deliverables or gate criteria in this document.
 
-**Root cause:** Jinja2's `| default()` filter only fires on `undefined`, not on Python `None`. `GenericDocContext` and `ValidationReportContext` correctly declare optional fields as `str | None = None`, but the concrete templates call `status | default("DRAFT")` — which does not fire when the value is `None`.
-
-**Tests:**
-- RED: add `test_generic_doc_status_defaults_to_draft_when_omitted` in `test_generic_doc_template.py` — scaffold with no `status`/`version` supplied, assert rendered output contains `**Status:** DRAFT` and `**Version:** 1.0`
-- RED: add `test_validation_report_status_defaults_to_pending_when_omitted` in existing validation_report template test — scaffold with no `status` supplied, assert rendered output contains `**Status:** PENDING`
-- GREEN: in `mcp_server/scaffolding/templates/concrete/generic.md.jinja2` change `status | default("DRAFT")` → `status or "DRAFT"` and `version | default("1.0")` → `version or "1.0"`
-- GREEN: in `mcp_server/scaffolding/templates/concrete/validation_report.md.jinja2` change `status | default("PENDING")` → `status or "PENDING"`
-- REFACTOR: update the three-layer contract description in `docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md` or the relevant reference doc to include the explicit rule: Layer 3 must use `field or "fallback"` for any field that Layer 1 declares as `str | None`
-- REFACTOR: verify full test suite green; run quality gates
-
-**Success Criteria:**
-- `scaffold_artifact('generic_doc', {'title': 'X'})` renders `**Status:** DRAFT` and `**Version:** 1.0` (not `None`)
-- `scaffold_artifact('validation_report', {'title': 'X'})` renders `**Status:** PENDING` (not `None`)
-- Reference documentation contains the explicit `None`-versus-`undefined` rendering rule for Layer 3 authors
-- pylint 10/10, mypy pass, full test suite green
-
-**Dependencies:** C_286.5 must be complete (generic_doc Layer 1/2 already in place)
+See `docs/development/issue286/research.md` Finding 8 for the architectural rationale and scope of affected files.
 
 ---
 

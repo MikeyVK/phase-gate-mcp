@@ -205,33 +205,50 @@ The consequence is that any non-empty `methods` input will cause a runtime rende
 
 The net result: no existing reference document explains that the three layers jointly constitute the SSOT. An agent reading the current docs cannot determine why `methods: list[str]` in a context schema combined with `method.name` in a template is a real bug rather than acceptable architectural variation. This absence is the root cause of the documentation gap that issue #286 must address.
 
-### 8. Optional display fields behave inconsistently across doc template types due to a Layer 1/Layer 3 contract gap
+### 8. Structural doc fields are incorrectly modelled as optional across all doc template types
 
 Surfaced during validation-phase live scaffold testing (2026-06-05).
 
-Jinja2's `| default()` filter only fires on `undefined` variables — it does not fire when a variable is explicitly `None`. This creates a silent behavioural split across all doc templates:
+`status`, `version`, and `last_updated` are structural fields — they are always rendered by every concrete doc template, unconditionally. A document without a status header, version, or last-updated date is not a valid governed artifact in this system.
 
-| Template | `status`/`version` in Layer 1 schema | Value received by Jinja2 | `default()` fires? | Rendered output |
-|---|---|---|---|---|
-| `design` | Required `str` | Always a real value | No (not needed) | Correct |
-| `research`, `planning`, `architecture` | Absent from schema | `undefined` | ✅ Yes | Correct (by accident) |
-| `generic_doc` | Optional `str \| None = None` | `None` when omitted | ❌ No | Renders literal `None` |
-| `validation_report` | Optional `str \| None = None` | `None` when omitted | ❌ No | Renders literal `None` |
+**Current state is architecturally inconsistent across doc types:**
 
-The root cause is that `generic_doc` and `validation_report` (both new in issue #286) correctly declare optional fields in Layer 1, but Layer 3 assumes `undefined` semantics. The old templates work accidentally because they omit the fields from Layer 1 entirely.
+| Template | `status`/`version` in Layer 1 schema | Modelled as | Effect when omitted |
+|---|---|---|---|
+| `design` | Present | Required `str` — user must supply | Pydantic rejects at input time ✓ |
+| `research`, `planning`, `architecture` | Absent | Not declared | Jinja2 fires `\| default()` accidentally ✓ |
+| `generic_doc` | Present | Optional `str \| None = None` | Renders literal `None` ✗ |
+| `validation_report` | Present | Optional `str \| None = None` | Renders literal `None` ✗ |
 
-**Correct fix:** Layer 3 templates must use `status or "DRAFT"` (Python/Jinja2 falsy check) instead of `status | default("DRAFT")` for any field that Layer 1 may pass as `None`. The schema-level optionality (`str | None`) is correct and should not change.
+This is not a Jinja2 `| default()` problem. The root cause is a modelling error: structural fields that belong in the shared `DocArtifactContext` base are scattered, absent, or typed incorrectly across concrete schemas.
 
-**Structural implication:** The three-layer SSOT contract (Finding 7) must include an explicit rule for optional display fields:
-- Layer 1: `str | None = None` is correct for user-optional fields
-- Layer 3: must use `field or "fallback"` — never `field | default("fallback")` — for any field declared `str | None` in Layer 1
+**Correct architecture:**
+`status`, `version`, and `last_updated` are structural fields that belong in `DocArtifactContext` — the shared base for all doc types. Defined once, inherited everywhere. Each field should carry appropriate validation:
 
-This rule is currently absent from all reference documentation, which means every new template author will reproduce this bug unless the contract is documented.
+- `status` — an enum (`DocumentStatus`: `DRAFT`, `APPROVED`, `DEFINITIVE`, ...), not a free string
+- `version` — a validated string matching a `x.y` or `x.y.z` pattern
+- `last_updated` — a validated ISO date string (`YYYY-MM-DD`), consistent with `scaffold_created`
+
+With this in place:
+- Pydantic enforces correctness at input time for all doc types uniformly
+- Concrete templates receive guaranteed valid values — no `| default()` fallbacks needed
+- `design` removes its duplicate `str` declarations and inherits from base
+- `research`, `planning`, `architecture` gain explicit schema coverage instead of accidental Jinja2 fallback behaviour
+- `generic_doc` and `validation_report` remove their `str | None = None` modelling errors
+
+**Why `str | None` is wrong for these fields:** optional implies the user may legitimately omit the value and the document is still valid. That is not true for status, version, or last_updated. A document with `None` for any of these is incomplete, not optional.
+
+**Why a default string value (`status: str = Field(default="DRAFT")`) is insufficient:** it masks the modelling error. The schema should express that `status` is a typed, validated structural field — not a free string with a fallback. Default values in Layer 1 are appropriate for truly optional content fields (`scope_in`, `key_changes`), not for structural document metadata.
+
+**Scope of impact:** all doc-type context schemas inheriting from `DocArtifactContext` (`research`, `planning`, `design`, `architecture`, `generic_doc`, `validation_report`) plus the base class itself, all corresponding concrete Jinja2 templates, and the reference documentation describing the three-layer contract.
 
 **Files affected:**
-- `mcp_server/scaffolding/templates/concrete/generic.md.jinja2` — `status or "DRAFT"`, `version or "1.0"`
-- `mcp_server/scaffolding/templates/concrete/validation_report.md.jinja2` — `status or "PENDING"`
-- Reference documentation: must add `None`-versus-`undefined` rendering rule to the three-layer contract description
+- `mcp_server/schemas/contexts/doc_base.py` — add `status: DocumentStatus`, `version: str` (validated), `last_updated: str` (validated) to `DocArtifactContext`
+- `mcp_server/schemas/contexts/design.py` — remove duplicate `status: str`, `version: str`; inherit from base
+- `mcp_server/schemas/contexts/generic_doc.py` — remove `status: str | None`, `version: str | None`, `last_updated: str | None`; inherit from base
+- `mcp_server/schemas/contexts/validation_report.py` — remove `status: str | None`; inherit from base
+- Concrete Jinja2 templates — remove `| default()` fallbacks for these fields; they are now guaranteed by Layer 1
+- Reference documentation — document the structural-field rule in the three-layer contract description
 
 
 ## Affected Surface
@@ -392,9 +409,8 @@ This rule is currently absent from all reference documentation, which means ever
 | Template/scaffolding reference documentation for issue #286 | Clean break in normative documentation toward the current scaffolding architecture | Code already implements the scaffolding pipeline; reference docs must stop teaching legacy paths as the normal model |
 | Legacy text in every touched document | Hard removal — no partial cleanup permitted | An implementer finding a legacy description in a later cycle must treat it as an unfinished deliverable from the cycle that first touched the document |
 | Temporary runtime fallback in code | Preserve code-level fallback; do not document it as a usable alternative path | The runtime fallback is an engineering stability measure, not a feature that reference docs should teach |
+| Structural doc fields (`status`, `version`, `last_updated`) | Move to `DocArtifactContext` base with typed validation (enum, pattern); remove from concrete schemas; concrete templates remove `\| default()` fallbacks | These are structural fields always rendered by every doc template — optional modelling is architecturally incorrect; correct enforcement belongs in Layer 1, not Layer 3 |
 | Documentation sequencing versus template-gap changes | Establish documentation alignment as the prerequisite boundary | Any later decisions about template-path corrections depend on an accurate architectural reference baseline |
-| Optional display fields in Layer 3 templates (`str \| None` from Layer 1) | Fix Layer 3 to use `field or "fallback"` — not `field \| default("fallback")` — and document the rule in the three-layer contract reference | `\| default()` only fires on `undefined`, not `None`; `generic_doc` and `validation_report` templates currently render literal `None` when optional fields are omitted |
-
 Constraints for follow-on work:
 - subsequent work must treat code as SSOT
 - documentation cleanup must stay bounded to the template/scaffolding cluster unless directly linked surfaces are required
