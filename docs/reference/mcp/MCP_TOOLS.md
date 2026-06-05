@@ -10,7 +10,7 @@ The S1mpleTrader V3 MCP Server provides **50 tools** for complete git workflow a
 
 ## Tool Categories
 
-### 1. Git Workflow Tools (15 tools)
+### 1. Git Workflow & Analysis (15 tools)
 
 Comprehensive git flow automation with TDD phase tracking.
 
@@ -48,9 +48,11 @@ Comprehensive git flow automation with TDD phase tracking.
 
 **Related:** [TDD_WORKFLOW.md](../../coding_standards/TDD_WORKFLOW.md)
 
-### 2. Issue Management Tools (5 tools)
+### 2. GitHub Integration (17 tools)
 
-Full CRUD for GitHub issues with filtering and updates.
+Full GitHub API integration for issues, pull requests, labels, and milestones. Requires `GITHUB_TOKEN` environment variable.
+
+#### Issues (5 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
@@ -68,9 +70,7 @@ Full CRUD for GitHub issues with filtering and updates.
 4. close_issue issue_number=4 comment="Fixed in PR #123"
 ```
 
-### 3. Pull Request Tools (4 tools)
-
-Create, list, merge, and inspect PRs with merge strategy options.
+#### Pull Requests (4 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
@@ -93,9 +93,7 @@ Create, list, merge, and inspect PRs with merge strategy options.
 4. merge_pr(pr_number=42)
 ```
 
-### 4. Label Management Tools (5 tools)
-
-Manage repository labels and apply to issues/PRs.
+#### Labels (5 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
@@ -114,9 +112,7 @@ Manage repository labels and apply to issues/PRs.
 - `in-progress` - Currently being worked on
 - `blocked` - Blocked by another issue
 
-### 5. Milestone Tools (3 tools)
-
-Organize issues into release milestones.
+#### Milestones (3 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
@@ -126,7 +122,7 @@ Organize issues into release milestones.
 
 **ISO 8601 Format:** `2025-12-31T00:00:00Z` or `2025-12-31T00:00:00+00:00`
 
-### 6. Project & Phase Management Tools (8 tools)
+### 3. Project & Phase Management (8 tools)
 
 Workflow lifecycle management: project initialization, phase transitions, TDD cycle management, and planning deliverables.
 
@@ -141,7 +137,33 @@ Workflow lifecycle management: project initialization, phase transitions, TDD cy
 | **TransitionCycleTool** | Sequential TDD cycle transition | `to_cycle` | New cycle state |
 | **ForceCycleTransitionTool** | Skip to cycle with reason + approval | `to_cycle`, `skip_reason`, `human_approval` | New cycle state |
 
-### 7. Quality & Validation (3 tools)
+### 4. File Editing (1 tool)
+
+Multi-mode file editing with quality gate integration and concurrent edit protection.
+
+| Tool | Purpose | Parameters | Returns |
+|------|---------|------------|---------|
+| **SafeEditFileTool** | Multi-mode file editing with validation | `path`, `content`/`line_edits`/`insert_lines`/`search`+`replace`, `mode` | Saved file path; diff preview |
+
+### 5. Scaffolding (2 tools)
+
+Generate new artifacts from templates (unified system).
+
+| Tool | Purpose | Parameters | Returns |
+|------|---------|------------|---------|
+| **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
+| **ScaffoldSchemaTool** | Return JSON Schema for artifact type context | `artifact_type` | JSON Schema for the context parameter |
+
+**Artifact Types (from .st3/config/artifacts.yaml):**
+- `dto` - Data Transfer Object with Pydantic
+- `worker` - Background job/processor
+- `design` - Design document
+- `adapter` - External API integration
+- `tool` - MCP tool
+
+See `.st3/config/artifacts.yaml` for complete list and required fields per type.
+
+### 6. Quality & Validation (3 tools)
 
 Run quality gates, tests, and template validation.
 
@@ -157,7 +179,7 @@ Run quality gates, tests, and template validation.
 - **Gate 4b:** Pyright type gate
 - Test execution belongs to `run_tests` (not `run_quality_gates`).
 
-### 8. Discovery & Admin (4 tools)
+### 7. Discovery & Admin (4 tools)
 
 Documentation search, work context aggregation, and server administration.
 
@@ -178,32 +200,6 @@ Documentation search, work context aggregation, and server administration.
    ### 🎯 Phase Instructions
 2. search_documentation query="how to implement worker" → Returns: Ranked docs with examples
 ```
-
-### 9. Scaffolding Tools (2 tools)
-
-Generate new artifacts from templates (unified system).
-
-| Tool | Purpose | Parameters | Returns |
-|------|---------|------------|---------|
-| **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
-| **ScaffoldSchemaTool** | Return JSON Schema for artifact type context | `artifact_type` | JSON Schema for the context parameter |
-
-**Artifact Types (from .st3/config/artifacts.yaml):**
-- `dto` - Data Transfer Object with Pydantic
-- `worker` - Background job/processor
-- `design` - Design document
-- `adapter` - External API integration
-- `tool` - MCP tool
-
-See `.st3/config/artifacts.yaml` for complete list and required fields per type.
-
-### 10. File Editing (1 tool)
-
-Multi-mode file editing with quality gate integration and concurrent edit protection.
-
-| Tool | Purpose | Parameters | Returns |
-|------|---------|------------|---------|
-| **SafeEditFileTool** | Multi-mode file editing with validation | `path`, `content`/`line_edits`/`insert_lines`/`search`+`replace`, `mode` | Saved file path; diff preview |
 
 ## Architecture
 
