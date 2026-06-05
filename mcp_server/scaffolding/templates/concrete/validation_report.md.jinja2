@@ -1,0 +1,55 @@
+{#- concrete/validation_report.md.jinja2 - Validation Report Document -#}
+{%- extends "tier2_base_markdown.jinja2" -%}
+
+{#-
+TEMPLATE_METADATA:
+  enforcement: GUIDELINE
+  level: content
+  artifact_type: validation_report
+  extends: tier2_base_markdown.jinja2
+  purpose: "Concrete template for validation report documents"
+  version: "1.0.0"
+  introspection:
+    template_id: validation_report
+    tier: concrete
+    parent: tier2_base_markdown
+    variables:
+      required:
+        - title
+      optional:
+        - issue_number
+        - cycle
+        - phase
+        - status
+        - scope
+  agent_hints:
+    phase: "validation"
+    purpose: "Summarize validation status and evidence"
+-#}
+
+{%- block header_fields %}
+
+**Status:** {{ status | default("PENDING") }}  
+**Version:** {{ version | default("1.0") }}  
+**Last Updated:** {{ last_updated | default(timestamp[:10]) }}  
+{% if issue_number %}**Issue:** #{{ issue_number }}  
+{% endif %}{% if cycle %}**Cycle:** {{ cycle }}  
+{% endif %}{% if phase %}**Phase:** {{ phase }}  
+{% endif %}
+{%- endblock %}
+
+{%- block document_content -%}
+
+---
+
+## Scope
+
+{{ scope | default("Validation scope to be documented.") }}
+
+---
+
+## Outcome
+
+{% if status %}Current validation status: **{{ status }}**.{% else %}Validation outcome pending.{% endif %}
+
+{%- endblock %}

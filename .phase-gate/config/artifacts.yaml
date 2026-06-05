@@ -330,6 +330,24 @@ artifact_types:
           to: [APPROVED, DEFINITIVE]
         - from: APPROVED
           to: [DEFINITIVE]
+  - type: doc
+    type_id: validation_report
+    name: "Validation Report"
+    description: "Validation report documenting test results and quality gate status"
+    output_type: "file"
+    template_path: "concrete/validation_report.md.jinja2"
+    fallback_template: null
+    name_suffix: null
+    file_extension: ".md"
+    generate_test: false
+    state_machine:
+      states: [DRAFT, APPROVED, DEFINITIVE]
+      initial_state: DRAFT
+      valid_transitions:
+        - from: DRAFT
+          to: [APPROVED, DEFINITIVE]
+        - from: APPROVED
+          to: [DEFINITIVE]
   # ===== TRACKING ARTIFACTS =====
   - type: tracking
     type_id: commit

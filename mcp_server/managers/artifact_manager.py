@@ -58,6 +58,7 @@ _v2_context_registry: dict[str, str] = {
     "design": "DesignContext",
     "architecture": "ArchitectureContext",
     "reference": "ReferenceContext",
+    "validation_report": "ValidationReportContext",
     # Tracking artifact types
     "commit": "CommitContext",
     "pr": "PRContext",

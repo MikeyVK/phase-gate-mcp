@@ -19,6 +19,7 @@ from mcp_server.schemas.render_contexts.schema import SchemaRenderContext
 from mcp_server.schemas.render_contexts.service import ServiceRenderContext
 from mcp_server.schemas.render_contexts.tool import ToolRenderContext
 from mcp_server.schemas.render_contexts.unit_test import UnitTestRenderContext
+from mcp_server.schemas.render_contexts.validation_report import ValidationReportRenderContext
 from mcp_server.schemas.render_contexts.worker import WorkerRenderContext
 
 __all__ = [
@@ -40,5 +41,6 @@ __all__ = [
     "ServiceRenderContext",
     "ToolRenderContext",
     "UnitTestRenderContext",
+    "ValidationReportRenderContext",
     "WorkerRenderContext",
 ]

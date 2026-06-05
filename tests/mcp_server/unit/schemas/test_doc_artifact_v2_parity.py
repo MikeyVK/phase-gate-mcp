@@ -327,9 +327,7 @@ class TestValidationReportV2Parity:
             "V2 routing not active for validation_report — not in _v2_context_registry"
         )
 
-    def test_validation_report_v2_rejects_invalid_context(
-        self, manager: ArtifactManager
-    ) -> None:
+    def test_validation_report_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Validation report V2 pipeline rejects empty context with ValidationError."""
         with pytest.raises(ValidationError):
             _run_v2(manager, "validation_report", {})

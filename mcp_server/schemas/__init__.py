@@ -69,6 +69,7 @@ from mcp_server.schemas.contexts.service import ServiceContext
 from mcp_server.schemas.contexts.titled_base import TitledArtifactContext
 from mcp_server.schemas.contexts.tool import ToolContext
 from mcp_server.schemas.contexts.unit_test import UnitTestContext
+from mcp_server.schemas.contexts.validation_report import ValidationReportContext
 from mcp_server.schemas.contexts.worker import WorkerContext
 from mcp_server.schemas.mixins.lifecycle import LifecycleMixin
 from mcp_server.schemas.render_contexts.adapter import AdapterRenderContext
@@ -89,6 +90,7 @@ from mcp_server.schemas.render_contexts.schema import SchemaRenderContext
 from mcp_server.schemas.render_contexts.service import ServiceRenderContext
 from mcp_server.schemas.render_contexts.tool import ToolRenderContext
 from mcp_server.schemas.render_contexts.unit_test import UnitTestRenderContext
+from mcp_server.schemas.render_contexts.validation_report import ValidationReportRenderContext
 from mcp_server.schemas.render_contexts.worker import WorkerRenderContext
 
 __all__ = [
@@ -118,6 +120,7 @@ __all__ = [
     "TitledArtifactContext",
     "ToolContext",
     "UnitTestContext",
+    "ValidationReportContext",
     "WorkerContext",
     # RenderContext schemas (system-enriched)
     "AdapterRenderContext",
@@ -138,6 +141,7 @@ __all__ = [
     "ServiceRenderContext",
     "ToolRenderContext",
     "UnitTestRenderContext",
+    "ValidationReportRenderContext",
     "WorkerRenderContext",
     # Config schemas and value objects
     "ArtifactRegistryConfig",
