@@ -1,5 +1,5 @@
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
-"""Integration Step 1: V2 pipeline smoke test for all 19 artifact types.
+"""Integration Step 1: V2 pipeline smoke test for all 20 artifact types.
 
 Validates that PYDANTIC_SCAFFOLDING_ENABLED=true produces non-empty output
 for every type registered in _v2_context_registry. One parametrized test per type.
@@ -210,6 +210,19 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
             "api_reference": [
                 {"name": "DTOContext", "description": "DTO artifact context schema"},
             ],
+        },
+        False,
+        ".md",
+    ),
+    (
+        "validation_report",
+        {
+            "title": "Smoke Validation Report",
+            "issue_number": 286,
+            "cycle": "C_286.4",
+            "phase": "implementation",
+            "status": "PASS",
+            "scope": "Minimal smoke coverage",
         },
         False,
         ".md",

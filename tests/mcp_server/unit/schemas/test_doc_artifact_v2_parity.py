@@ -289,3 +289,47 @@ class TestReferenceV2Parity:
         """Reference V2 pipeline rejects empty context with ValidationError."""
         with pytest.raises(ValidationError):
             _run_v2(manager, "reference", {})
+
+
+# ---------------------------------------------------------------------------
+# Validation Report (3 tests)
+# ---------------------------------------------------------------------------
+
+
+class TestValidationReportV2Parity:
+    """V2 parity tests for validation_report document artifact."""
+
+    @pytest.fixture
+    def manager(self, tmp_path: Path) -> ArtifactManager:
+        return _make_manager(tmp_path)
+
+    _MINIMAL = {
+        "title": "Cycle 4 Validation",
+        "issue_number": 286,
+        "cycle": "C_286.4",
+        "phase": "implementation",
+        "status": "PASS",
+        "scope": "Minimal behavior smoke",
+    }
+
+    def test_validation_report_context_validates_minimal(self) -> None:
+        """ValidationReportContext schema accepts minimal required fields."""
+        from mcp_server.schemas import ValidationReportContext  # noqa: PLC0415
+
+        ctx = ValidationReportContext(**self._MINIMAL)
+        assert ctx.title == self._MINIMAL["title"]
+
+    def test_validation_report_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
+        """Validation report V2 pipeline routes via _enrich_context_v2."""
+        calls = _spy_v2_routed(manager)
+        _run_v2(manager, "validation_report", self._MINIMAL)
+        assert len(calls) == 1, (
+            "V2 routing not active for validation_report — not in _v2_context_registry"
+        )
+
+    def test_validation_report_v2_rejects_invalid_context(
+        self, manager: ArtifactManager
+    ) -> None:
+        """Validation report V2 pipeline rejects empty context with ValidationError."""
+        with pytest.raises(ValidationError):
+            _run_v2(manager, "validation_report", {})
