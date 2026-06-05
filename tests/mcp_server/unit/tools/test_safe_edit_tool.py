@@ -193,10 +193,10 @@ class TestSafeEditTool:
                 NoteContext(),
             )
 
-            # Verify diff appears exactly once
+            # Verify compact response excludes diff preview by default
             text = result.content[0]["text"]
             diff_count = text.count("**Diff Preview:**")
-            assert diff_count == 1, f"Expected 1 diff block, found {diff_count}"
+            assert diff_count == 0, f"Expected 0 diff blocks, found {diff_count}"
 
             # Verify validation issues appear exactly once
             issues_count = text.count("**Validation Issues:**")
