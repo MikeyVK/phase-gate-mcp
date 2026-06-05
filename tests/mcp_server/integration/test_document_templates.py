@@ -15,20 +15,32 @@ Tests verify:
 from pathlib import Path
 
 import pytest
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
+
+_DOC_HEADER = {
+    "status": "DRAFT",
+    "version": "1.0",
+    "last_updated": "2026-01-27",
+}
+
+_REFERENCE_HEADER = {
+    "status": "DEFINITIVE",
+    "version": "1.0",
+    "last_updated": "2026-01-27",
+}
 
 
 class TestResearchTemplate:
     """Test concrete/research.md.jinja2 structure and rendering."""
 
     @pytest.fixture
-    def template(self):
+    def template(self) -> Template:
         """Load research template."""
         template_dir = Path("mcp_server/scaffolding/templates")
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/research.md.jinja2")
 
-    def test_has_title_from_name_fallback(self, template) -> None:
+    def test_has_title_from_name_fallback(self, template: Template) -> None:
         """Research doc should use 'name' parameter if 'title' not provided."""
         result = template.render(
             name="async-research",
@@ -40,21 +52,21 @@ class TestResearchTemplate:
         # Title should fallback to name
         assert "# async-research" in result
 
-    def test_has_multiline_header_fields(self, template) -> None:
+    def test_has_multiline_header_fields(self, template: Template) -> None:
         """Header fields must be multi-line (Status, Version, Last Updated)."""
         result = template.render(
             name="test-research",
             timestamp="2026-01-27T14:00:00Z",
             problem_statement="Problem",
             goals=["Goal 1"],
+            **_DOC_HEADER,
         )
-
         # Multi-line header fields (not frontmatter)
         assert "**Status:** DRAFT" in result
         assert "**Version:** 1.0" in result
         assert "**Last Updated:** 2026-01-27" in result
 
-    def test_no_frontmatter(self, template) -> None:
+    def test_no_frontmatter(self, template: Template) -> None:
         """Research template must NOT have YAML frontmatter."""
         result = template.render(
             name="test-research",
@@ -68,7 +80,7 @@ class TestResearchTemplate:
         non_comment_lines = [line for line in lines if not line.startswith("<!--")]
         assert non_comment_lines[0].startswith("# ")
 
-    def test_has_proper_dividers_with_blank_lines(self, template) -> None:
+    def test_has_proper_dividers_with_blank_lines(self, template: Template) -> None:
         """Dividers (---) must have blank line before AND after."""
         result = template.render(
             name="test-research",
@@ -91,7 +103,7 @@ class TestResearchTemplate:
             assert not lines[idx - 1].strip(), f"Missing blank line before divider at line {idx}"
             assert not lines[idx + 1].strip(), f"Missing blank line after divider at line {idx}"
 
-    def test_renders_problem_statement(self, template) -> None:
+    def test_renders_problem_statement(self, template: Template) -> None:
         """Research doc must render problem statement."""
         result = template.render(
             name="test-research",
@@ -103,7 +115,7 @@ class TestResearchTemplate:
         assert "## Problem Statement" in result
         assert "Async data fetching is slow" in result
 
-    def test_renders_research_goals_as_list(self, template) -> None:
+    def test_renders_research_goals_as_list(self, template: Template) -> None:
         """Research goals must render as bullet list."""
         result = template.render(
             name="test-research",
@@ -116,8 +128,8 @@ class TestResearchTemplate:
         assert "- Understand async patterns" in result
         assert "- Evaluate WebSocket" in result
 
-    def test_renders_open_questions_with_emoji(self, template) -> None:
-        """Open questions must render with ❓ emoji."""
+    def test_renders_open_questions_with_emoji(self, template: Template) -> None:
+        """Open questions must render with the question-mark emoji."""
         result = template.render(
             name="test-research",
             timestamp="2026-01-27T14:00:00Z",
@@ -127,34 +139,34 @@ class TestResearchTemplate:
         )
 
         assert "## Open Questions" in result
-        assert "- ❓ What is optimal pool size?" in result
-        assert "- ❓ How to reconnect?" in result
+        assert "- \u2753 What is optimal pool size?" in result
+        assert "- \u2753 How to reconnect?" in result
 
 
 class TestPlanningTemplate:
     """Test concrete/planning.md.jinja2 structure and rendering."""
 
     @pytest.fixture
-    def template(self):
+    def template(self) -> Template:
         """Load planning template."""
         template_dir = Path("mcp_server/scaffolding/templates")
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/planning.md.jinja2")
 
-    def test_has_multiline_header_fields(self, template) -> None:
+    def test_has_multiline_header_fields(self, template: Template) -> None:
         """Planning doc must have multi-line header fields."""
         result = template.render(
             name="test-planning",
             timestamp="2026-01-27T15:00:00Z",
             summary="Test planning",
             tdd_cycles=[],
+            **_DOC_HEADER,
         )
-
         assert "**Status:** DRAFT" in result
         assert "**Version:** 1.0" in result
         assert "**Last Updated:** 2026-01-27" in result
 
-    def test_renders_tdd_cycles(self, template) -> None:
+    def test_renders_tdd_cycles(self, template: Template) -> None:
         """Planning doc must render TDD cycles with Goal/Tests/Success Criteria."""
         result = template.render(
             name="test-planning",
@@ -177,7 +189,7 @@ class TestPlanningTemplate:
         assert "**Success Criteria:**" in result
         assert "Client fetches data async" in result
 
-    def test_success_criteria_handles_string(self, template) -> None:
+    def test_success_criteria_handles_string(self, template: Template) -> None:
         """Success criteria should handle string (not iterate characters)."""
         result = template.render(
             name="test-planning",
@@ -196,7 +208,7 @@ class TestPlanningTemplate:
         assert "This is a single string" in result
         assert "- T" not in result  # Would appear if iterating string
 
-    def test_success_criteria_handles_list(self, template) -> None:
+    def test_success_criteria_handles_list(self, template: Template) -> None:
         """Success criteria should handle list of criteria."""
         result = template.render(
             name="test-planning",
@@ -219,25 +231,25 @@ class TestArchitectureTemplate:
     """Test concrete/architecture.md.jinja2 structure and rendering."""
 
     @pytest.fixture
-    def template(self):
+    def template(self) -> Template:
         """Load architecture template."""
         template_dir = Path("mcp_server/scaffolding/templates")
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/architecture.md.jinja2")
 
-    def test_has_multiline_header_fields(self, template) -> None:
+    def test_has_multiline_header_fields(self, template: Template) -> None:
         """Architecture doc must have multi-line header fields."""
         result = template.render(
             name="test-architecture",
             timestamp="2026-01-27T15:00:00Z",
             concepts=[],
+            **_DOC_HEADER,
         )
-
         assert "**Status:** DRAFT" in result
         assert "**Version:** 1.0" in result
         assert "**Last Updated:** 2026-01-27" in result
 
-    def test_renders_numbered_concept_sections(self, template) -> None:
+    def test_renders_numbered_concept_sections(self, template: Template) -> None:
         """Architecture concepts must render as numbered sections (1., 2., etc.)."""
         result = template.render(
             name="test-architecture",
@@ -253,7 +265,7 @@ class TestArchitectureTemplate:
         assert "## 2. ConnectionPool" in result
         assert "Pool of connections" in result
 
-    def test_renders_constraints_and_decisions_table(self, template) -> None:
+    def test_renders_constraints_and_decisions_table(self, template: Template) -> None:
         """Architecture doc must render Constraints & Decisions table."""
         result = template.render(
             name="test-architecture",
@@ -277,25 +289,26 @@ class TestReferenceTemplate:
     """Test concrete/reference.md.jinja2 structure and rendering."""
 
     @pytest.fixture
-    def template(self):
+    def template(self) -> Template:
         """Load reference template."""
         template_dir = Path("mcp_server/scaffolding/templates")
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/reference.md.jinja2")
 
-    def test_has_definitive_status(self, template) -> None:
+    def test_has_definitive_status(self, template: Template) -> None:
         """Reference docs are always DEFINITIVE (post-implementation)."""
         result = template.render(
             name="test-reference",
             timestamp="2026-01-27T15:00:00Z",
             source_file="src/test.py",
             test_file="tests/test_test.py",
+            **_REFERENCE_HEADER,
             api_reference=[],
         )
 
         assert "**Status:** DEFINITIVE" in result
 
-    def test_has_source_and_test_links(self, template) -> None:
+    def test_has_source_and_test_links(self, template: Template) -> None:
         """Reference docs must have Source and Tests header fields."""
         result = template.render(
             name="test-reference",
@@ -308,7 +321,7 @@ class TestReferenceTemplate:
         assert "**Source:** [src/async_client.py][source]" in result
         assert "**Tests:** [tests/test_async_client.py][tests]" in result
 
-    def test_renders_api_reference_with_methods(self, template) -> None:
+    def test_renders_api_reference_with_methods(self, template: Template) -> None:
         """API reference must render classes with methods."""
         result = template.render(
             name="test-reference",
@@ -337,7 +350,7 @@ class TestReferenceTemplate:
         assert "**Parameters:** url: str" in result
         assert "**Returns:** Response" in result
 
-    def test_renders_usage_examples_with_code_blocks(self, template) -> None:
+    def test_renders_usage_examples_with_code_blocks(self, template: Template) -> None:
         """Usage examples must render with Python code blocks."""
         result = template.render(
             name="test-reference",

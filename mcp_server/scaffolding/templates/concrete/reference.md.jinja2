@@ -47,10 +47,10 @@ TEMPLATE_METADATA:
       - "Parameter descriptions and return types"
       - "Error handling and exceptions"
     does_not_belong:
-      - "Design rationale or decision-making → design.md"
-      - "Architectural concepts → architecture.md"
+      - "Design rationale or decision-making â†’ design.md"
+      - "Architectural concepts â†’ architecture.md"
       - "Implementation tutorials (focus on reference)"
-      - "Pre-implementation design → design.md"
+      - "Pre-implementation design â†’ design.md"
     tone: "Technical reference: precise, complete, example-driven"
     common_pitfalls:
       - "Writing reference docs before implementation (POST-implementation only)"
@@ -71,9 +71,9 @@ TEMPLATE_METADATA:
 {#- Reference documents add Source and Tests fields -#}
 {%- block header_fields %}
 
-**Status:** {{ status | default("DEFINITIVE") }}  
-**Version:** {{ version | default("1.0") }}  
-**Last Updated:** {{ last_updated | default(timestamp[:10]) }}  
+**Status:** {{ status }}  
+**Version:** {{ version }}  
+**Last Updated:** {{ last_updated }}  
 
 **Source:** [{{ source_file }}][source]  
 **Tests:** [{{ test_file }}][tests]{% if test_count %} ({{ test_count }} tests){% endif %}  

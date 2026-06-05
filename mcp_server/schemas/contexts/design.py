@@ -22,10 +22,11 @@ class DesignContext(DocArtifactContext):
 
     Inherits:
         - title (from DocArtifactContext, with non-empty validation)
+        - status (DocumentStatus enum)
+        - version (validated x.y or x.y.z)
+        - last_updated (validated YYYY-MM-DD)
     """
 
-    status: str = Field(description="Document status (DRAFT|APPROVED|DEFINITIVE)")
-    version: str = Field(description="Document version (e.g. 1.0, 2.3)")
     problem_statement: str = Field(description="Problem being solved by this design")
     requirements_functional: list[str] = Field(
         description="Functional requirements the design must satisfy"

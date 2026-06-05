@@ -1,5 +1,5 @@
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
-"""Integration Step 1: V2 pipeline smoke test for all 16 artifact types.
+"""Integration Step 1: V2 pipeline smoke test for all 21 artifact types.
 
 Validates that PYDANTIC_SCAFFOLDING_ENABLED=true produces non-empty output
 for every type registered in _v2_context_registry. One parametrized test per type.
@@ -8,7 +8,7 @@ for every type registered in _v2_context_registry. One parametrized test per typ
 @layer: Test Infrastructure
 @dependencies: mcp_server.managers.artifact_manager, mcp_server.config
 @responsibilities:
-  - E2E smoke: V2 pipeline → non-empty string output for all 16 types
+  - E2E smoke: V2 pipeline → non-empty string output for all 21 types
   - Covers: 8 code, 5 doc, 3 tracking (ephemeral)
   - Does NOT assert file existence for ephemeral artifacts
 """
@@ -90,14 +90,32 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         ".py",
     ),
     (
+        "adapter",
+        {"name": "SmokeAdapter"},
+        False,
+        ".py",
+    ),
+    (
         "tool",
         {"name": "SmokeTool"},
         False,
         ".py",
     ),
     (
+        "resource",
+        {"name": "SmokeResource"},
+        False,
+        ".py",
+    ),
+    (
         "schema",
         {"name": "SmokeSchema"},
+        False,
+        ".py",
+    ),
+    (
+        "interface",
+        {"name": "SmokeInterface"},
         False,
         ".py",
     ),
@@ -139,8 +157,11 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "research",
         {
             "title": "Smoke Research",
+            "status": "DRAFT",
+            "version": "1.0",
+            "last_updated": "2026-06-05",
             "problem_statement": "What needs investigating?",
-            "goals": ["Validate V2 pipeline for research type"],
+            "goals": ["Validate pipeline for research type"],
         },
         False,
         ".md",
@@ -149,7 +170,10 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "planning",
         {
             "title": "Smoke Planning",
-            "summary": "Validate V2 pipeline for planning type",
+            "status": "DRAFT",
+            "version": "1.0",
+            "last_updated": "2026-06-05",
+            "summary": "Validate pipeline for planning type",
             "tdd_cycles": [
                 {"cycle": 1, "phase": "RED", "description": "write failing test"},
                 {"cycle": 1, "phase": "GREEN", "description": "implement"},
@@ -165,10 +189,11 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
             "title": "Smoke Design",
             "status": "DRAFT",
             "version": "1.0",
-            "problem_statement": "Validate V2 pipeline for design type",
+            "last_updated": "2026-06-05",
+            "problem_statement": "Validate pipeline for design type",
             "requirements_functional": ["Must produce non-empty output"],
             "requirements_nonfunctional": ["Must complete within 5 seconds"],
-            "decision": "Use V2 Pydantic pipeline",
+            "decision": "Use Pydantic pipeline",
             "rationale": "Type-safe context validation",
         },
         False,
@@ -178,6 +203,9 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "architecture",
         {
             "title": "Smoke Architecture",
+            "status": "DRAFT",
+            "version": "1.0",
+            "last_updated": "2026-06-05",
             "concepts": ["V2 context schema validation", "Pydantic render contexts"],
         },
         False,
@@ -187,11 +215,42 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "reference",
         {
             "title": "Smoke Reference",
+            "status": "DRAFT",
+            "version": "1.0",
+            "last_updated": "2026-06-05",
             "source_file": "mcp_server/schemas/contexts/dto.py",
             "test_file": "tests/unit/schemas/contexts/test_dto_context.py",
             "api_reference": [
                 {"name": "DTOContext", "description": "DTO artifact context schema"},
             ],
+        },
+        False,
+        ".md",
+    ),
+    (
+        "validation_report",
+        {
+            "title": "Smoke Validation Report",
+            "status": "DRAFT",
+            "version": "1.0",
+            "last_updated": "2026-06-05",
+            "issue_number": 286,
+            "cycle": "C_286.4",
+            "validation_status": "PASS",
+            "scope": "Minimal smoke coverage",
+        },
+        False,
+        ".md",
+    ),
+    (
+        "generic_doc",
+        {
+            "title": "Smoke Generic Doc",
+            "status": "DRAFT",
+            "version": "1.0",
+            "last_updated": "2026-06-05",
+            "purpose": "Exercise the structured generic_doc pipeline.",
+            "summary": "Minimal behavior-based smoke coverage.",
         },
         False,
         ".md",
@@ -207,7 +266,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "pr",
         {
             "title": "Smoke PR",
-            "changes": "Added V2 pipeline smoke tests for all 16 artifact types",
+            "changes": "Added V2 pipeline smoke tests for all 21 artifact types",
         },
         True,
         ".md",

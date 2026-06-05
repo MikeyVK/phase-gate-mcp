@@ -1,8 +1,8 @@
 # SCAFFOLD: template=test_unit version=xxx created=2026-01-26T21:40:00Z
 """
-Tests for Tier 2 Markdown template (Issue #72, TDD Cycle 4).
+Tests for tier2_base_markdown.jinja2 Markdown-specific link definition syntax.
 
-RED phase: Tests for tier2_base_markdown.jinja2 Markdown-specific syntax:
+Validates:
 - Link definitions section (before Version History)
 - Link format: [id]: path/to/file.md "Title"
 - Link definitions invisible in Markdown preview

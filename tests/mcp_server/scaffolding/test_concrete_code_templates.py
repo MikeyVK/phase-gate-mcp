@@ -1,6 +1,6 @@
-# tests/mcp_server/scaffolding/test_task34_concrete_code_templates.py
+# tests/mcp_server/scaffolding/test_concrete_code_templates.py
 # template=unit_test version=dev created=2026-02-01T00:00Z updated=
-"""Task 3.4 regression tests for concrete CODE template composition.
+"""Regression tests for concrete CODE template composition.
 
 Validates that concrete CODE templates:
 - use Tier 3 pattern macro libraries via `{% import %}`

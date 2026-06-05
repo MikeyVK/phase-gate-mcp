@@ -1,6 +1,6 @@
-# tests/mcp_server/scaffolding/test_task36_refactor_document_templates.py
+# tests/mcp_server/scaffolding/test_doc_template_pattern_imports.py
 # template=unit_test version=dev created=2026-02-05T23:00Z
-"""Task 3.6 validation tests for refactored concrete DOCUMENT templates.
+"""Validation tests for concrete document template pattern imports.
 
 Validates that concrete DOCUMENT templates:
 - use {% import %} composition with tier3 patterns

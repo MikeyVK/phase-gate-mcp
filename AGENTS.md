@@ -188,7 +188,7 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 
 **NEVER use `safe_edit_file` to create code or documentation from scratch. Always use `scaffold_artifact`.**
 
-| Artifact Type | Use Case | Example |
+| Example Artifact Type | Use Case | Example |
 |---------------|----------|---------|
 | `dto` | Data Transfer Objects | `scaffold_artifact(artifact_type="dto", name="UserDTO", context={...})` |
 | `worker` | Background processors | `scaffold_artifact(artifact_type="worker", name="ProcessWorker", context={...})` |
@@ -197,7 +197,9 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 | `design` | Design documents | `scaffold_artifact(artifact_type="design", name="my-design", context={...})` |
 | `reference` | Reference docs | `scaffold_artifact(artifact_type="reference", name="my-reference", context={...})` |
 
-**Registry:** `.phase-gate/config/artifacts.yaml` defines all artifact types and their templates.
+These are representative examples, not the complete registry. Current first-class types also include `adapter`, `resource`, `interface`, `service`, `schema`, `generic`, `unit_test`, `integration_test`, `architecture`, `planning`, `validation_report`, `generic_doc`, `commit`, `pr`, and `issue`.
+
+**Registry:** `.phase-gate/config/artifacts.yaml` defines the authoritative complete set of artifact types and their templates.
 
 **Schema discovery:** Before calling `scaffold_artifact` with an artifact type whose context fields are not already in your working context, call `scaffold_schema(artifact_type=...)` first. It returns the full JSON Schema for the `context` parameter — required and optional fields — enabling first-time-right scaffolding without a failed call. If you call `scaffold_artifact` with wrong or missing context fields, the error response contains the same schema; use it to correct the call immediately.
 

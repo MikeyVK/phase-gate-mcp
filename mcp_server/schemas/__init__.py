@@ -48,40 +48,51 @@ from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.config.schemas.workflows import WorkflowConfig
 from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.schemas.base import BaseContext, BaseRenderContext
+from mcp_server.schemas.contexts.adapter import AdapterContext
 from mcp_server.schemas.contexts.architecture import ArchitectureContext
 from mcp_server.schemas.contexts.commit import CommitContext
 from mcp_server.schemas.contexts.design import DesignContext
 from mcp_server.schemas.contexts.doc_base import DocArtifactContext
 from mcp_server.schemas.contexts.dto import DTOContext
 from mcp_server.schemas.contexts.generic import GenericContext
+from mcp_server.schemas.contexts.generic_doc import GenericDocContext
 from mcp_server.schemas.contexts.integration_test import IntegrationTestContext
+from mcp_server.schemas.contexts.interface import InterfaceContext
 from mcp_server.schemas.contexts.issue import IssueContext
+from mcp_server.schemas.contexts.method_spec import MethodSpec
 from mcp_server.schemas.contexts.planning import PlanningContext
 from mcp_server.schemas.contexts.pr import PRContext
 from mcp_server.schemas.contexts.reference import ReferenceContext
 from mcp_server.schemas.contexts.research import ResearchContext
+from mcp_server.schemas.contexts.resource import ResourceContext
 from mcp_server.schemas.contexts.schema import SchemaContext
 from mcp_server.schemas.contexts.service import ServiceContext
 from mcp_server.schemas.contexts.titled_base import TitledArtifactContext
 from mcp_server.schemas.contexts.tool import ToolContext
 from mcp_server.schemas.contexts.unit_test import UnitTestContext
+from mcp_server.schemas.contexts.validation_report import ValidationReportContext
 from mcp_server.schemas.contexts.worker import WorkerContext
 from mcp_server.schemas.mixins.lifecycle import LifecycleMixin
+from mcp_server.schemas.render_contexts.adapter import AdapterRenderContext
 from mcp_server.schemas.render_contexts.architecture import ArchitectureRenderContext
 from mcp_server.schemas.render_contexts.commit import CommitRenderContext
 from mcp_server.schemas.render_contexts.design import DesignRenderContext
 from mcp_server.schemas.render_contexts.dto import DTORenderContext
 from mcp_server.schemas.render_contexts.generic import GenericRenderContext
+from mcp_server.schemas.render_contexts.generic_doc import GenericDocRenderContext
 from mcp_server.schemas.render_contexts.integration_test import IntegrationTestRenderContext
+from mcp_server.schemas.render_contexts.interface import InterfaceRenderContext
 from mcp_server.schemas.render_contexts.issue import IssueRenderContext
 from mcp_server.schemas.render_contexts.planning import PlanningRenderContext
 from mcp_server.schemas.render_contexts.pr import PRRenderContext
 from mcp_server.schemas.render_contexts.reference import ReferenceRenderContext
 from mcp_server.schemas.render_contexts.research import ResearchRenderContext
+from mcp_server.schemas.render_contexts.resource import ResourceRenderContext
 from mcp_server.schemas.render_contexts.schema import SchemaRenderContext
 from mcp_server.schemas.render_contexts.service import ServiceRenderContext
 from mcp_server.schemas.render_contexts.tool import ToolRenderContext
 from mcp_server.schemas.render_contexts.unit_test import UnitTestRenderContext
+from mcp_server.schemas.render_contexts.validation_report import ValidationReportRenderContext
 from mcp_server.schemas.render_contexts.worker import WorkerRenderContext
 
 __all__ = [
@@ -90,16 +101,21 @@ __all__ = [
     "BaseContext",
     "BaseRenderContext",
     # Context schemas (user-facing)
+    "AdapterContext",
     "ArchitectureContext",
     "CommitContext",
     "DesignContext",
     "DocArtifactContext",
     "DTOContext",
     "GenericContext",
+    "GenericDocContext",
     "IntegrationTestContext",
+    "InterfaceContext",
     "IssueContext",
+    "MethodSpec",
     "PlanningContext",
     "PRContext",
+    "ResourceContext",
     "ReferenceContext",
     "ResearchContext",
     "SchemaContext",
@@ -107,23 +123,29 @@ __all__ = [
     "TitledArtifactContext",
     "ToolContext",
     "UnitTestContext",
+    "ValidationReportContext",
     "WorkerContext",
     # RenderContext schemas (system-enriched)
+    "AdapterRenderContext",
     "ArchitectureRenderContext",
     "CommitRenderContext",
     "DesignRenderContext",
     "DTORenderContext",
     "GenericRenderContext",
+    "GenericDocRenderContext",
     "IntegrationTestRenderContext",
+    "InterfaceRenderContext",
     "IssueRenderContext",
     "PlanningRenderContext",
     "PRRenderContext",
+    "ResourceRenderContext",
     "ReferenceRenderContext",
     "ResearchRenderContext",
     "SchemaRenderContext",
     "ServiceRenderContext",
     "ToolRenderContext",
     "UnitTestRenderContext",
+    "ValidationReportRenderContext",
     "WorkerRenderContext",
     # Config schemas and value objects
     "ArtifactRegistryConfig",

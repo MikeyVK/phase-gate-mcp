@@ -31,7 +31,7 @@ TEMPLATE_METADATA:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| {{ version | default("1.0") }} | {{ last_updated | default(timestamp[:10] if timestamp else "") }} | {{ author }} | {{ changes }} |
+| {{ version }} | {{ last_updated }} | {{ author }} | {{ changes }} |
 {%- endmacro %}
 
 {# Changelog:

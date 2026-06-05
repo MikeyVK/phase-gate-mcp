@@ -43,10 +43,14 @@ logger = logging.getLogger(__name__)
 _v2_context_registry: dict[str, str] = {
     "dto": "DTOContext",
     "worker": "WorkerContext",
+    "adapter": "AdapterContext",
     "tool": "ToolContext",
+    "resource": "ResourceContext",
     "schema": "SchemaContext",
+    "interface": "InterfaceContext",
     "service": "ServiceContext",
     "generic": "GenericContext",
+    "generic_doc": "GenericDocContext",
     "unit_test": "UnitTestContext",
     "integration_test": "IntegrationTestContext",
     # Document artifact types
@@ -55,6 +59,7 @@ _v2_context_registry: dict[str, str] = {
     "design": "DesignContext",
     "architecture": "ArchitectureContext",
     "reference": "ReferenceContext",
+    "validation_report": "ValidationReportContext",
     # Tracking artifact types
     "commit": "CommitContext",
     "pr": "PRContext",
@@ -855,7 +860,7 @@ class ArtifactManager:
             JSON Schema dict (Draft 7, $refs inlined via resolve_schema_refs)
 
         Raises:
-            ConfigError: If artifact_type has no V2 Context class (e.g. generic_doc)
+            ConfigError: If artifact_type has no V2 Context class registered
         """
         import sys  # noqa: PLC0415
 
@@ -865,7 +870,7 @@ class ArtifactManager:
         if context_class_name is None:
             raise ConfigError(
                 f"No V2 Context schema for artifact type '{artifact_type}'. "
-                f"This type is V1-only (see issue #286 for generic_doc migration)."
+                "Register a matching Context schema in _v2_context_registry first."
             )
 
         schemas_module = sys.modules.get("mcp_server.schemas")

@@ -236,6 +236,9 @@ class TestScaffold:
         result = scaffolder.scaffold(
             artifact_type="design",
             title="Test Design",
+            status="DRAFT",
+            version="1.0",
+            last_updated="2026-01-27",
             problem_statement="Need to solve X",
             decision="Solution Y",
             rationale="Because Z",

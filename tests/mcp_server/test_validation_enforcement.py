@@ -1,4 +1,4 @@
-"""Test validation enforcement consistency (TDD Cycle 6).
+"""Tests for validation enforcement consistency across template tiers.
 
 Tests that tier0/tier1/tier2 templates have STRICT enforcement
 and concrete templates have GUIDELINE enforcement.

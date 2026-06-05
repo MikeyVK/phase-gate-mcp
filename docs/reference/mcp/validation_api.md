@@ -1,19 +1,15 @@
-# Template Validation API Reference - S1mpleTraderV3
+<!-- docs/reference/mcp/validation_api.md -->
+<!-- template=reference version=064954ea created=2026-01-01T00:00Z updated=2026-06-04 -->
+# Template Validation API Reference
 
-<!--
-GENERATED DOCUMENT
-Template: generic.md.jinja2
-Type: API Reference
--->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      HEADER SECTION (REQUIRED)
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-**Status:** APPROVED
-**Version:** 1.0
-**Last Updated:** 2026-01-01
-
+**Status:** DEFINITIVE
+**Version:** 2.0
+**Last Updated:** 2026-06-04
 ---
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -110,9 +106,9 @@ Extracts validation metadata from template YAML frontmatter within `{# TEMPLATE_
 
 **Example:**
 ```python
-analyzer = TemplateAnalyzer(Path("mcp_server/templates"))
+analyzer = TemplateAnalyzer(Path("mcp_server/scaffolding/templates"))
 metadata = analyzer.extract_metadata(
-    Path("mcp_server/templates/components/dto.py.jinja2")
+    Path("mcp_server/scaffolding/templates/concrete/dto.py.jinja2")
 )
 print(metadata["enforcement"])  # "ARCHITECTURAL"
 print(metadata["validates"]["strict"])  # List of strict rules
@@ -131,7 +127,7 @@ Extracts undeclared variables from Jinja2 template using AST analysis.
 **Example:**
 ```python
 variables = analyzer.extract_jinja_variables(
-    Path("mcp_server/templates/components/worker.py.jinja2")
+    Path("mcp_server/scaffolding/templates/concrete/worker.py.jinja2")
 )
 print(variables)  # ["input_dto", "name", "output_dto", "worker_type"]
 ```
@@ -149,9 +145,9 @@ Gets the base template this template extends (if any).
 **Example:**
 ```python
 base = analyzer.get_base_template(
-    Path("mcp_server/templates/components/worker.py.jinja2")
+    Path("mcp_server/scaffolding/templates/concrete/worker.py.jinja2")
 )
-print(base)  # Path("mcp_server/templates/base/base_component.py.jinja2")
+print(base)  # Path("mcp_server/scaffolding/templates/tier2_base_python.jinja2")
 ```
 
 #### `get_inheritance_chain(template_path: Path) -> list[Path]`
@@ -172,7 +168,7 @@ Gets complete inheritance chain from specific to base.
 **Example:**
 ```python
 chain = analyzer.get_inheritance_chain(
-    Path("mcp_server/templates/components/worker.py.jinja2")
+    Path("mcp_server/scaffolding/templates/concrete/worker.py.jinja2")
 )
 for tmpl in chain:
     print(tmpl.name)
@@ -296,7 +292,7 @@ Validates file against template rules using three-tier model with fail-fast beha
 
 **Example:**
 ```python
-analyzer = TemplateAnalyzer(Path("mcp_server/templates"))
+analyzer = TemplateAnalyzer(Path("mcp_server/scaffolding/templates"))
 validator = LayeredTemplateValidator("dto", analyzer)
 
 result = await validator.validate("mcp_server/dtos/my_dto.py")
@@ -408,7 +404,7 @@ from mcp_server.validation.template_analyzer import TemplateAnalyzer
 from mcp_server.validation.layered_template_validator import LayeredTemplateValidator
 
 # Initialize analyzer
-template_root = Path("mcp_server/templates")
+template_root = Path("mcp_server/scaffolding/templates")
 analyzer = TemplateAnalyzer(template_root)
 
 # Create validator for DTO template
@@ -434,10 +430,10 @@ else:
 from pathlib import Path
 from mcp_server.validation.template_analyzer import TemplateAnalyzer
 
-analyzer = TemplateAnalyzer(Path("mcp_server/templates"))
+analyzer = TemplateAnalyzer(Path("mcp_server/scaffolding/templates"))
 
 # Get metadata for worker template
-worker_template = Path("mcp_server/templates/components/worker.py.jinja2")
+worker_template = Path("mcp_server/scaffolding/templates/concrete/worker.py.jinja2")
 metadata = analyzer.extract_metadata(worker_template)
 
 print(f"Enforcement: {metadata['enforcement']}")
@@ -518,13 +514,18 @@ class CustomWorkerValidator(LayeredTemplateValidator):
 
 ## Related Documentation
 
-- **[template_metadata_format.md](template_metadata_format.md)** - TEMPLATE_METADATA format specification
-- **[MCP_TOOLS.md](MCP_TOOLS.md)** - MCP server tools documentation
-- **[validation_service.py](../../../mcp_server/validation/validation_service.py)** - Validation orchestration
-- **[base.py](../../../mcp_server/validation/base.py)** - Base validator interfaces
+- **[docs/reference/mcp/README.md](README.md)** — Cluster navigation
+- **[docs/reference/mcp/template_metadata_format.md](template_metadata_format.md)** — TEMPLATE_METADATA format specification
+- **[docs/architecture/TEMPLATE_LIBRARY.md](../../architecture/TEMPLATE_LIBRARY.md)** — Three-layer pipeline architecture
+- **[mcp_server/validation/validation_service.py](../../../mcp_server/validation/validation_service.py)** — Validation orchestration
+- **[mcp_server/validation/base.py](../../../mcp_server/validation/base.py)** — Base validator interfaces
 
 ## Version History
 
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 2.0 | 2026-06-04 | Agent | Fix template paths; update header; remove legacy branding; update Related Documentation (#286) |
+| 1.0 | 2026-01-01 | Agent | Initial API documentation |
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-01-01 | Initial API documentation (Issue #52 Documentation Phase) |

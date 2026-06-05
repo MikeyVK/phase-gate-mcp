@@ -1,35 +1,16 @@
-# tests/unit/mcp_server/schemas/test_code_artifact_v2_parity.py
-# SCAFFOLD: test:manual | 2026-02-18T00:00:00Z | tests/unit/mcp_server/schemas/test_code_artifact_v2_parity.py  # noqa: E501
-"""AST parity tests: v1 pipeline output ≡ v2 pipeline output (Issue #135 Cycle 5).
+# tests/mcp_server/unit/schemas/test_code_artifact_schema.py
+# SCAFFOLD: test:manual | 2026-02-18T00:00:00Z
+"""Schema and pipeline tests for code artifact types.
 
-SCOPE (Cycle 5 - AST Parity):
-- V1 pipeline (PYDANTIC_SCAFFOLDING_ENABLED=false) produces syntactically valid Python
-- V2 pipeline (PYDANTIC_SCAFFOLDING_ENABLED=true) produces syntactically valid Python
-- Both pipelines produce a SCAFFOLD/template metadata header
-- V2 pipeline is correctly ROUTED for all 7 code artifact types (not just dto)
+Covers: worker, tool, schema, service, generic, unit_test, integration_test
 
-This validates the Cycle 5 deliverable:
-  schema-validated context → v2 pipeline → same output quality as v1
-
-Artifact types tested (7):
-  worker, tool, schema, service, generic, unit_test, integration_test
-
-Test cases per type (5):
+Tests per type:
   1. Minimal valid context (required fields only)
-  2. Full context (all optional fields populated)
-  3. Schema validation rejection (invalid input → ValidationError)
+  2. Schema validation rejection (invalid input → ValidationError)
+  3. Output contains class definition
 
 @layer: Tests (Unit)
-@dependencies: pytest, pydantic, schema parity fixtures, mcp_server schema artifacts
-  4. V2 pipeline was routed (not fallen back to v1)
-  5. Output contains class definition
-
-Total: 5 × 7 = 35 tests
-
-Note on v1 context vs v2 context:
-  V1 uses raw dicts with no schema validation.
-  V2 uses Pydantic schemas — fields must match XxxContext exactly.
-  For parity, we compare smoke: both pipelines produce valid Python with metadata.
+@dependencies: pytest, pydantic, mcp_server schema artifacts
 """
 
 import asyncio  # noqa: I001
@@ -120,7 +101,7 @@ def _assert_has_metadata_header(output: str, label: str) -> None:
 def _spy_v2_routed(manager: ArtifactManager) -> list[bool]:
     """Spy if _enrich_context_v2 is called (v2 pipeline routed)."""
     v2_calls: list[bool] = []
-    original = manager._enrich_context_v2
+    original = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]  # routing spy requires direct hook into the private v2 enrichment seam
 
     def spy(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
         v2_calls.append(True)
@@ -447,9 +428,15 @@ class TestGenericV2Parity:
         "name": "CacheManager",
         "description": "Simple in-memory cache manager",
         "layer": "Backend (Utils)",
-        # methods omitted: V1 template expects dict objects (method.name/params/body)
-        # which is a V1 template design (pre-Pydantic). GenericContext.methods = list[str].
-        # Template-schema contract alignment is Cycle 6 scope.
+        "methods": [
+            {
+                "name": "get",
+                "params": "key: str",
+                "return_type": "str | None",
+                "docstring": "Return a cached value when present.",
+                "body": "return None",
+            }
+        ],
         "responsibilities": ["Cache data in memory", "Invalidate stale entries"],
     }
 

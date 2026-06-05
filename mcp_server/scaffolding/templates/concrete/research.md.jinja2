@@ -35,13 +35,13 @@ TEMPLATE_METADATA:
   changelog:
     - version: "1.3.1"
       date: "2026-02-05"
-      changes: "BUGFIX: Override link_definitions to normalize references → related_docs (SSOT fix for link refs mismatch)"
+      changes: "BUGFIX: Override link_definitions to normalize references â†’ related_docs (SSOT fix for link refs mismatch)"
     - version: "1.3.0"
       date: "2026-02-05"
       changes: "Re-added pattern imports + override all tier1 blocks with pattern calls, moved related_docs to proper block (Task 3.6.2)"
     - version: "1.2.0"
       date: "2026-02-05"
-      changes: "FIXED: Status collision (renamed import alias status→hdr), removed 4 unused pattern imports (Task 3.6.1)"
+      changes: "FIXED: Status collision (renamed import alias statusâ†’hdr), removed 4 unused pattern imports (Task 3.6.1)"
     - version: "1.1.0"
       date: "2026-02-05"
       changes: "Refactored to use {% import %} composition with 7 tier3 patterns (Task 3.6)"
@@ -79,11 +79,11 @@ TEMPLATE_METADATA:
       - "Knowledge gaps identified"
       - "Links to external resources and references"
     does_not_belong:
-      - "TDD cycle breakdown or task planning → planning.md"
-      - "Design decisions or options comparison → design.md"
-      - "Code examples (illustrative or production) → not in research phase"
-      - "Implementation details → source files"
-      - "Architectural concepts → architecture.md (if concepts solidify, move there)"
+      - "TDD cycle breakdown or task planning â†’ planning.md"
+      - "Design decisions or options comparison â†’ design.md"
+      - "Code examples (illustrative or production) â†’ not in research phase"
+      - "Implementation details â†’ source files"
+      - "Architectural concepts â†’ architecture.md (if concepts solidify, move there)"
     tone: "Investigative: ask questions, explore alternatives, identify unknowns"
     common_pitfalls:
       - "Jumping to solutions before understanding the problem"
@@ -92,7 +92,7 @@ TEMPLATE_METADATA:
       - "Not documenting 'what we don't know' (questions are valuable!)"
       - "Skipping existing solutions research (reinventing the wheel)"
     workflow_context:
-      - "Status lifecycle: DRAFT → APPROVED → DEFINITIVE"
+      - "Status lifecycle: DRAFT â†’ APPROVED â†’ DEFINITIVE"
       - "Research should be approved before moving to planning phase"
       - "Unanswered questions may require more research"
     related_phases:
@@ -103,7 +103,7 @@ TEMPLATE_METADATA:
 
 {#- Research documents use BASE header (no Created/Implementation Phase) -#}
 {%- block header_fields %}
-{{ hdr.pattern_status_header_basic(status | default("DRAFT"), version | default("1.0"), last_updated, timestamp) }}
+{{ hdr.pattern_status_header_basic(status, version, last_updated, timestamp) }}
 {% endblock -%}
 
 {#- Override tier1 blocks with pattern calls -#}
@@ -170,7 +170,7 @@ TEMPLATE_METADATA:
 {{ history.pattern_version_history_basic(version, last_updated) }}
 {%- endblock %}
 
-{#- Override link_definitions to normalize references → related_docs (SSOT fix) -#}
+{#- Override link_definitions to normalize references â†’ related_docs (SSOT fix) -#}
 {%- block link_definitions -%}
 {%- set link_docs = references if references else related_docs -%}
 {%- if link_docs %}

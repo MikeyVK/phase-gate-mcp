@@ -169,6 +169,9 @@ class TestProvenanceE2E:
             context.update(
                 {
                     "title": f"Test {artifact_type.title()} Document",
+                    "status": "DRAFT",
+                    "version": "1.0",
+                    "last_updated": "2026-01-27",
                     "problem_statement": "Test problem",
                     "requirements_functional": ["Req 1"],
                     "requirements_nonfunctional": ["Non-func req 1"],
@@ -186,7 +189,6 @@ class TestProvenanceE2E:
                     "timestamp": "2026-01-27T10:00:00Z",
                 }
             )
-
         file_path = await manager.scaffold_artifact(
             artifact_type,
             output_path=str(tmp_path / f"Test{artifact_type.title()}{expected_extension}"),
@@ -293,6 +295,9 @@ class TestProvenanceE2E:
             output_path=str(tmp_path / "TestDesign.md"),
             name="TestDesign",
             title="Test Design Document",
+            status="DRAFT",
+            version="1.0",
+            last_updated="2026-01-27",
             problem_statement="Define architecture",
             decision="Use layered architecture",
             rationale="Separation of concerns",
@@ -302,7 +307,6 @@ class TestProvenanceE2E:
             requirements_nonfunctional=["Performance Y"],
             timestamp="2026-01-27T10:00:00Z",
         )
-
         # Read generated file
         content = Path(file_path).read_text(encoding="utf-8")
 

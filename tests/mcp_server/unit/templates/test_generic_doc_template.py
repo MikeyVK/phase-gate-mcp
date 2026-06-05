@@ -40,7 +40,10 @@ def minimal_context(base_system_context: dict[str, Any]) -> dict[str, Any]:
     """Minimal valid context for generic_doc template."""
     return {
         **base_system_context,
-        "title": "Migration Guide: v1.x → v2.0",
+        "title": "Migration Guide: v1.x to v2.0",
+        "status": "DRAFT",
+        "version": "1.0",
+        "last_updated": "2026-02-16",
         "purpose": "Guide the transition to workflow-first commit scopes.",
         "summary": "This migration updates commit scope conventions and tool parameters.",
     }
@@ -114,7 +117,7 @@ class TestGenericDocTemplate:
             "<!-- template=generic_doc version=abc1234 created=2026-02-16T10:30:00Z updated= -->"
             in result
         )
-        assert "# Migration Guide: v1.x → v2.0" in result
+        assert "# Migration Guide: v1.x to v2.0" in result
 
     def test_renders_structured_sections_without_freeform_content_dump(
         self,
