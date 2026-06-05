@@ -35,6 +35,7 @@ class TestScaffoldSchemaTool:
             "design",
             "dto",
             "generic",
+            "generic_doc",
             "integration_test",
             "issue",
             "planning",
@@ -87,14 +88,21 @@ class TestScaffoldSchemaTool:
         assert len(result.content) > 0
 
     @pytest.mark.asyncio
-    async def test_returns_error_for_v1_type(
+    async def test_returns_schema_for_generic_doc(
         self, tool: ScaffoldSchemaTool, mock_manager: MagicMock
     ) -> None:
-        """execute() returns error ToolResult when manager raises ConfigError (V1-only type)."""
-        mock_manager.get_context_schema.side_effect = ConfigError(
-            "No V2 Context schema for artifact type 'generic_doc'."
-        )
+        """execute() returns a schema ToolResult for generic_doc once V2 support exists."""
+        mock_manager.get_context_schema.return_value = {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "purpose": {"type": "string"},
+                "summary": {"type": "string"},
+            },
+            "required": ["title", "purpose", "summary"],
+        }
         params = ScaffoldSchemaInput(artifact_type="generic_doc")
         result = await tool.execute(params, NoteContext())
 
-        assert result.is_error
+        assert not result.is_error
+        assert len(result.content) > 0

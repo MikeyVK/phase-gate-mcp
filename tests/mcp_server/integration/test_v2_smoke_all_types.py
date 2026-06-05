@@ -1,5 +1,5 @@
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
-"""Integration Step 1: V2 pipeline smoke test for all 20 artifact types.
+"""Integration Step 1: V2 pipeline smoke test for all 21 artifact types.
 
 Validates that PYDANTIC_SCAFFOLDING_ENABLED=true produces non-empty output
 for every type registered in _v2_context_registry. One parametrized test per type.
@@ -223,6 +223,16 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
             "phase": "implementation",
             "status": "PASS",
             "scope": "Minimal smoke coverage",
+        },
+        False,
+        ".md",
+    ),
+    (
+        "generic_doc",
+        {
+            "title": "Smoke Generic Doc",
+            "purpose": "Exercise the structured generic_doc pipeline.",
+            "summary": "Minimal behavior-based smoke coverage for the last V2 document type.",
         },
         False,
         ".md",

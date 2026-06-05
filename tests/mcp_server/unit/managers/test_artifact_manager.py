@@ -154,8 +154,11 @@ class TestGetContextSchema:
         assert isinstance(schema["required"], list)
         assert len(schema["required"]) > 0
 
-    def test_raises_config_error_for_v1_only_type(self) -> None:
-        """get_context_schema raises ConfigError for V1-only type (e.g. generic_doc)."""
+    def test_returns_json_schema_dict_for_generic_doc(self) -> None:
+        """get_context_schema returns JSON Schema dict for generic_doc once V2 support exists."""
         manager = self._make_manager()
-        with pytest.raises(ConfigError):
-            manager.get_context_schema("generic_doc")
+        schema = manager.get_context_schema("generic_doc")
+        assert isinstance(schema, dict)
+        assert schema.get("type") == "object"
+        assert "properties" in schema
+        assert {"title", "purpose", "summary"}.issubset(schema["properties"])

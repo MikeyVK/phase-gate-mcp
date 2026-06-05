@@ -331,3 +331,39 @@ class TestValidationReportV2Parity:
         """Validation report V2 pipeline rejects empty context with ValidationError."""
         with pytest.raises(ValidationError):
             _run_v2(manager, "validation_report", {})
+
+# ---------------------------------------------------------------------------
+# Generic Doc (3 tests)
+# ---------------------------------------------------------------------------
+
+
+class TestGenericDocV2Parity:
+    """V2 parity tests for generic_doc document artifact."""
+
+    @pytest.fixture
+    def manager(self, tmp_path: Path) -> ArtifactManager:
+        return _make_manager(tmp_path)
+
+    _MINIMAL = {
+        "title": "Migration Guide",
+        "purpose": "Guide users through the migration.",
+        "summary": "Summarizes the operational changes for the new workflow.",
+    }
+
+    def test_generic_doc_context_validates_minimal(self) -> None:
+        """GenericDocContext schema accepts the existing minimal template contract."""
+        from mcp_server.schemas import GenericDocContext  # noqa: PLC0415
+
+        ctx = GenericDocContext(**self._MINIMAL)
+        assert ctx.title == self._MINIMAL["title"]
+
+    def test_generic_doc_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
+        """generic_doc V2 pipeline routes via _enrich_context_v2."""
+        calls = _spy_v2_routed(manager)
+        _run_v2(manager, "generic_doc", self._MINIMAL)
+        assert len(calls) == 1, "V2 routing not active for generic_doc"
+
+    def test_generic_doc_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
+        """generic_doc V2 pipeline rejects an empty context."""
+        with pytest.raises(ValidationError):
+            _run_v2(manager, "generic_doc", {})
