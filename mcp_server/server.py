@@ -65,7 +65,6 @@ from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.tools.admin_tools import RestartServerTool
 from mcp_server.tools.base import BaseTool
-from mcp_server.tools.code_tools import CreateFileTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.discovery_tools import GetWorkContextTool, SearchDocumentationTool
 from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
@@ -127,7 +126,6 @@ from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.template_validation_tool import TemplateValidationTool
 from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.tools.tool_result import ToolResult
-from mcp_server.tools.validation_tools import ValidateDTOTool
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
@@ -357,14 +355,12 @@ class MCPServer:
             CheckMergeTool(manager=self.git_manager),
             # Quality tools
             RunQualityGatesTool(manager=self.qa_manager),
-            ValidateDTOTool(),
             SafeEditTool(),
             TemplateValidationTool(),
             # Development tools
             HealthCheckTool(),
             RestartServerTool(server_root=server_root),
             RunTestsTool(runner=PytestRunner(), settings=settings),
-            CreateFileTool(settings=settings),
             # Project tools (Phase 0.5)
             InitializeProjectTool(
                 workspace_root=Path(settings.server.workspace_root),

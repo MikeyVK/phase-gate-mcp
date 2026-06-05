@@ -7,13 +7,12 @@ These tests use mocks but test the full flow from Tool -> Manager -> Adapter.
 @dependencies: pytest, unittest.mock, mcp_server.tools
 """
 
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, MagicMock
 
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.pytest_runner import PytestRunner
-from mcp_server.tools.code_tools import CreateFileInput, CreateFileTool
 
 # Git Tools
 from mcp_server.tools.git_tools import (
@@ -48,10 +47,6 @@ from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
 from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
 from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.test_tools import RunTestsTool
-from mcp_server.tools.validation_tools import (
-    ValidateDTOInput,
-    ValidateDTOTool,
-)
 
 
 def make_mock_git_config() -> MagicMock:
@@ -218,10 +213,8 @@ def make_core_tools() -> list[object]:
         make_git_push_tool(),
         make_git_delete_branch_tool(),
         make_run_quality_gates_tool(),
-        ValidateDTOTool(),
         HealthCheckTool(),
         RunTestsTool(runner=PytestRunner()),
-        CreateFileTool(),
         ScaffoldSchemaTool(manager=MagicMock()),
     ]
 
@@ -415,24 +408,6 @@ class TestQualityToolsIntegration:
         assert "gates" in data
         assert data["gates"][0]["passed"] is True
 
-    @pytest.mark.asyncio
-    async def test_validate_dto_tool_flow(self) -> None:
-        """Test DTO validation tool complete flow."""
-        mock_content = (
-            "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass TestDTO:\n    pass"
-        )
-        with (
-            patch("pathlib.Path.exists", return_value=True),
-            patch("pathlib.Path.read_text", return_value=mock_content),
-        ):
-            tool = ValidateDTOTool()
-            result = await tool.execute(
-                ValidateDTOInput(file_path="backend/dtos/test.py"), NoteContext()
-            )
-
-            assert result.is_error is False
-            assert "DTO validation passed" in result.content[0]["text"]
-
 
 class TestDevelopmentToolsIntegration:
     """Integration tests for Development tools."""
@@ -445,17 +420,6 @@ class TestDevelopmentToolsIntegration:
 
         result_text = result.content[0]["text"].lower()
         assert "healthy" in result_text or "ok" in result_text
-
-    @pytest.mark.asyncio
-    async def test_create_file_tool_flow(self) -> None:
-        """Test create file tool complete flow."""
-        with patch("pathlib.Path.mkdir"), patch("builtins.open", MagicMock()):
-            tool = CreateFileTool()
-            result = await tool.execute(
-                CreateFileInput(path="test/file.py", content="# Test content"), NoteContext()
-            )
-
-            assert result.content is not None
 
 
 class TestGitHubToolsIntegration:
@@ -525,7 +489,6 @@ class TestToolSchemas:
         """Verify all Quality tools have input schemas."""
         tools = [
             make_run_quality_gates_tool(),
-            ValidateDTOTool(),
         ]
 
         for tool in tools:
@@ -537,7 +500,6 @@ class TestToolSchemas:
         tools = [
             HealthCheckTool(),
             RunTestsTool(runner=PytestRunner()),
-            CreateFileTool(),
         ]
         for tool in tools:
             schema = tool.input_schema

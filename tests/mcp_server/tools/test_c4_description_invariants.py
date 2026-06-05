@@ -23,7 +23,6 @@ from mcp_server.tools.project_tools import (
     SavePlanningDeliverablesInput,
     UpdatePlanningDeliverablesInput,
 )
-from mcp_server.tools.validation_tools import ValidateDTOTool
 
 
 class TestC4DescriptionInvariants:
@@ -73,13 +72,6 @@ class TestC4DescriptionInvariants:
         assert "YYYY-MM-DD" in desc or "T" in desc and "Z" in desc, (
             f"CreateMilestoneInput.due_on must specify ISO 8601 datetime format: {desc!r}"
         )
-
-    def test_validate_dto_tool_description_states_scope(self) -> None:
-        """ValidateDTOTool description states file-exists check scope."""
-        tool = ValidateDTOTool()
-        assert "file" in tool.description.lower() and (
-            "exist" in tool.description.lower() or "path" in tool.description.lower()
-        ), f"ValidateDTOTool.description must clarify scope: {tool.description!r}"
 
     def test_transition_phase_to_phase_references_get_work_context(self) -> None:
         """TransitionPhaseInput.to_phase description mentions get_work_context()."""
