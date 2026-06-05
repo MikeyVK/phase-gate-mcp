@@ -42,7 +42,7 @@ The scaffolding pipeline has three layers:
 1. Create Context schema in `mcp_server/schemas/contexts/<type>.py`
 2. Create RenderContext schema in `mcp_server/schemas/render_contexts/<type>.py`
 3. Export both from `mcp_server/schemas/__init__.py`
-4. Add registry entry to `_v2_context_registry` in `mcp_server/managers/artifact_manager.py`
+4. Add the new type to the artifact-to-Context registry in `mcp_server/managers/artifact_manager.py`
 5. Enable the type in `.phase-gate/config/artifacts.yaml`
 6. Create the Jinja2 template in `mcp_server/scaffolding/templates/concrete/<type>.<ext>.jinja2`
 

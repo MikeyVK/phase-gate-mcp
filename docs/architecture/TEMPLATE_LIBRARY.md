@@ -93,7 +93,7 @@ To introduce a new artifact type into the pipeline, all six steps are required.
 | 1 | `mcp_server/schemas/contexts/<type>.py` | Context schema: user-facing Pydantic `BaseModel`; required and optional fields matching the `TEMPLATE_METADATA` variable contract |
 | 2 | `mcp_server/schemas/render_contexts/<type>.py` | RenderContext schema: extends the appropriate render base; adds lifecycle fields |
 | 3 | `mcp_server/schemas/__init__.py` | Export `TypeContext` and `TypeRenderContext` |
-| 4 | `mcp_server/managers/artifact_manager.py` | Add `"type_id": "TypeContext"` to `_v2_context_registry` |
+| 4 | `mcp_server/managers/artifact_manager.py` | Add the new type to the artifact-to-Context registry |
 | 5 | `.phase-gate/config/artifacts.yaml` | Enable the artifact type entry |
 | 6 | `mcp_server/scaffolding/templates/concrete/<type>.<ext>.jinja2` | Jinja2 template with `TEMPLATE_METADATA` block including `introspection.variables` |
 

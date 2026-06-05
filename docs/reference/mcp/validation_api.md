@@ -7,7 +7,6 @@
      HEADER SECTION (REQUIRED)
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-**Status:** APPROVED
 **Status:** DEFINITIVE
 **Version:** 2.0
 **Last Updated:** 2026-06-04

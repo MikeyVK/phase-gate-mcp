@@ -32,7 +32,7 @@ The MCP server provides **2 scaffolding tools**:
 | Tool | Purpose | Artifact Types |
 |------|---------|----------------|
 | `scaffold_artifact` | Generate code/docs from templates | 17 types (dto, worker, tool, design, generic_doc, etc.) |
-| `scaffold_schema` | Return JSON Schema for context parameter | All artifact types with registered Context schema |
+| `scaffold_schema` | Return JSON Schema for context parameter | Artifact types in the three-layer scaffolding architecture |
 
 
 **Supported Artifact Categories:**
@@ -117,23 +117,6 @@ Generate any artifact type (code or document) from unified registry.
 **Scaffold Design Document:**
 ```json
 {
-  "artifact_type": "design",
-  "name": "oauth-integration-design",
-  "context": {
-    "feature_name": "OAuth2 Integration",
-    "goals": [
-      "Support Google OAuth2",
-      "Support GitHub OAuth2",
-      "Implement token refresh"
-    ],
-    "components": [
-      {"name": "OAuthService", "type": "Service"},
-      {"name": "TokenDTO", "type": "DTO"}
-    ]
-  }
-}
-```
-
 **Scaffold Architecture Document:**
 ```json
 {
@@ -181,6 +164,7 @@ A JSON Schema object (Pydantic `model_json_schema()` with `$defs` resolved inlin
 |-----------|----------|
 | Type without registered Context schema | `is_error=true` — "No Context schema registered for type: <type>" |
 | Unknown type | `is_error=true` — type not in registry |
+
 #### Recommended Workflow
 
 Call `scaffold_schema` to inspect required and optional fields before calling `scaffold_artifact`:
@@ -194,8 +178,8 @@ This eliminates trial-and-error context validation failures.
 **Note:** `scaffold_artifact` also exposes the full JSON Schema in its error response when context validation fails. `scaffold_schema` is the proactive alternative for inspecting the schema before the first call.
 
 ---
-
 ## Artifact Registry
+
 
 The unified artifact registry is defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
 
@@ -271,7 +255,7 @@ Concrete templates extend the appropriate tier 2 base (`{% extends %}`) and impo
 
 ### Context Variables
 
-Each artifact type's required and optional context fields are defined in its Context schema (`mcp_server/schemas/contexts/<type>.py`). Use `scaffold_schema(artifact_type="<type>")` to retrieve the full JSON Schema for any type before scaffolding.
+Each artifact type defines its required and optional context fields in a Context schema (`mcp_server/schemas/contexts/<type>.py`). Use `scaffold_schema(artifact_type="<type>")` to retrieve the full JSON Schema before scaffolding.
 
 ```json
 {

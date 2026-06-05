@@ -31,6 +31,8 @@ Practical guide for using the scaffolding pipeline: how to scaffold an artifact,
 
 ---
 
+---
+
 ## The Three-Layer Pipeline (Caller View)
 
 When you call `scaffold_artifact(artifact_type, name, context)`, your call passes through three layers:
@@ -150,6 +152,7 @@ This eliminates trial-and-error context validation failures.
 
 ---
 
+
 ## How to Add a New Artifact Type
 
 All six steps are required. Steps 1–4 require Python source code changes.
@@ -159,7 +162,7 @@ All six steps are required. Steps 1–4 require Python source code changes.
 | 1 | `mcp_server/schemas/contexts/<type>.py` | Create Context schema: user-facing Pydantic `BaseModel`; required fields from `TEMPLATE_METADATA.introspection.variables.required`; optional fields with sensible defaults |
 | 2 | `mcp_server/schemas/render_contexts/<type>.py` | Create RenderContext schema: extends appropriate render base; adds lifecycle fields |
 | 3 | `mcp_server/schemas/__init__.py` | Export `TypeContext` and `TypeRenderContext` |
-| 4 | `mcp_server/managers/artifact_manager.py` | Add `"type_id": "TypeContext"` to `_v2_context_registry` |
+| 4 | `mcp_server/managers/artifact_manager.py` | Add the new type to the artifact-to-Context registry |
 | 5 | `.phase-gate/config/artifacts.yaml` | Enable the artifact type entry |
 | 6 | `mcp_server/scaffolding/templates/concrete/<type>.<ext>.jinja2` | Create Jinja2 template with `TEMPLATE_METADATA` block including `introspection.variables` |
 
