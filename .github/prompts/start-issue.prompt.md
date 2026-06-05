@@ -39,7 +39,7 @@ Execute in this exact order. Do not skip steps.
    → branch name format: `{type}/{ISSUE_NUMBER}-{slug}`
 
 4. **Switch to the branch**
-   `git_checkout(branch="{type}/{ISSUE_NUMBER}-{slug}")`
+   `initialize_project(issue_number=ISSUE_NUMBER, issue_title="{title}", workflow_name=WORKFLOW_TYPE, parent_branch=<base_branch derived in step 2>)`
 
 5. **Initialize the project**
    `initialize_project(issue_number=ISSUE_NUMBER, issue_title="{title}", workflow_name=WORKFLOW_TYPE)`
