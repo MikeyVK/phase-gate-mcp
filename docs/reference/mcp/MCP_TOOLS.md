@@ -10,7 +10,7 @@ The S1mpleTrader V3 MCP Server provides **50 tools** for complete git workflow a
 
 ## Tool Categories
 
-### 1. Git Workflow Tools (8 tools)
+### 1. Git Workflow Tools (15 tools)
 
 Comprehensive git flow automation with TDD phase tracking.
 
@@ -20,10 +20,17 @@ Comprehensive git flow automation with TDD phase tracking.
 | **GitStatusTool** | Show working tree status | None | Returns current branch, staged, unstaged files |
 | **GitCommitTool** | Commit with phase prefix + issue suffix | `message`, `workflow_phase`, `sub_phase`, `cycle_number` | `git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="...")` |
 | **GitCheckoutTool** | Switch branches | `branch` | `checkout main` |
+| **GitFetchTool** | Fetch from remote | `remote`, `prune` | `git_fetch(remote="origin", prune=true)` |
+| **GitPullTool** | Pull updates with optional rebase | `remote`, `rebase` | `git_pull(rebase=false)` |
 | **GitPushTool** | Push to origin | `set_upstream` (optional, for new branches) | `push set_upstream=true` |
 | **GitMergeTool** | Merge feature → main | `branch` to merge | `merge feature/new-feature` |
 | **GitDeleteBranchTool** | Delete branch (safe by default) | `branch`, `force` (optional) | `delete_branch branch=feature/old force=false` |
 | **GitStashTool** | Save/restore WIP | `action` (push/pop/list), `message` (optional for push) | `stash action=push message=wip` |
+| **GitRestoreTool** | Restore files from a git ref | `files`, `source` | `git_restore(files=["path/to/file.py"], source="HEAD")` |
+| **GitListBranchesTool** | List branches with verbosity options | `verbose`, `remote` | `git_list_branches(verbose=true)` |
+| **GitDiffTool** | Diff statistics between branches | `target_branch`, `source_branch` | `git_diff_stat(target_branch="main")` |
+| **GetParentBranchTool** | Detect parent branch via phase state | `branch` | `get_parent_branch(branch="feature/123")` |
+| **CheckMergeTool** | Verify merge SHA is reachable from HEAD | `merge_sha` | `check_merge(merge_sha="abc123")` |
 
 **Workflow Example:**
 ```
@@ -119,15 +126,30 @@ Organize issues into release milestones.
 
 **ISO 8601 Format:** `2025-12-31T00:00:00Z` or `2025-12-31T00:00:00+00:00`
 
-### 6. Quality & Testing Tools (3 tools)
+### 6. Project & Phase Management Tools (8 tools)
 
-Run quality gates, tests, and code validation.
+Workflow lifecycle management: project initialization, phase transitions, TDD cycle management, and planning deliverables.
+
+| Tool | Purpose | Parameters | Returns |
+|------|---------|------------|---------|
+| **InitializeProjectTool** | Initialize project with workflow state | `issue_number`, `issue_title`, `workflow_name`, `parent_branch`, `custom_phases` | Initialized state confirmation |
+| **GetProjectPlanTool** | Get project phase plan for issue | `issue_number` | Phase plan with exit criteria |
+| **SavePlanningDeliverablesTool** | Save planning deliverables | `issue_number` | Confirmation |
+| **UpdatePlanningDeliverablesTool** | Update/merge planning deliverables | `issue_number` | Confirmation |
+| **TransitionPhaseTool** | Sequential phase transition | `branch`, `to_phase`, `human_approval` | New phase state |
+| **ForcePhaseTransitionTool** | Skip phases with reason + approval | `branch`, `to_phase`, `skip_reason`, `human_approval` | New phase state |
+| **TransitionCycleTool** | Sequential TDD cycle transition | `to_cycle` | New cycle state |
+| **ForceCycleTransitionTool** | Skip to cycle with reason + approval | `to_cycle`, `skip_reason`, `human_approval` | New cycle state |
+
+### 7. Quality & Validation (3 tools)
+
+Run quality gates, tests, and template validation.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **RunQualityGatesTool** | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required + non-empty only when `scope="files"`) | `content[0]=text` summary line, `content[1]=json` compact payload `{overall_pass,gates}` |
 | **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` | `content[0]=text` (summary line + per-failure `FAILED test_id — reason` for exit 1; summary + stderr hint for exit 2/3/4), `content[1]=json` `{exit_code, summary, summary_line, failures[], coverage_pct, lf_cache_was_empty, stderr}` |
-| **HealthCheckTool** | Server health status | None | OK/ERROR |
+| **TemplateValidationTool** | Validate file structure against template | `path`, `template_type` | Pass/fail with violation details |
 
 **Quality Gates Standard (`.st3/quality.yaml`):**
 - **Gates 0–3:** Ruff format, strict lint, imports, line length
@@ -135,14 +157,16 @@ Run quality gates, tests, and code validation.
 - **Gate 4b:** Pyright type gate
 - Test execution belongs to `run_tests` (not `run_quality_gates`).
 
-### 7. Discovery & Navigation Tools (2 tools)
+### 8. Discovery & Admin (4 tools)
 
-Find documentation and understand current work context.
+Documentation search, work context aggregation, and server administration.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **SearchDocumentationTool** | Search docs semantically | `query`, `scope` (optional: all/architecture/coding_standards/development/reference/implementation) | Ranked results with file path, line number, snippet |
 | **GetWorkContextTool** | Get current work state | `none` | Orientation header with TODO reminder, phase instructions, optional hand-over template |
+| **HealthCheckTool** | Server health check | None | OK/ERROR |
+| **RestartServerTool** | Hot-reload server via proxy mechanism | `reason` | Confirmation |
 
 **Usage Example:**
 ```
@@ -155,13 +179,14 @@ Find documentation and understand current work context.
 2. search_documentation query="how to implement worker" → Returns: Ranked docs with examples
 ```
 
-### 8. Scaffolding Tools (1 tool)
+### 9. Scaffolding Tools (2 tools)
 
 Generate new artifacts from templates (unified system).
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
+| **ScaffoldSchemaTool** | Return JSON Schema for artifact type context | `artifact_type` | JSON Schema for the context parameter |
 
 **Artifact Types (from .st3/config/artifacts.yaml):**
 - `dto` - Data Transfer Object with Pydantic
@@ -172,9 +197,9 @@ Generate new artifacts from templates (unified system).
 
 See `.st3/config/artifacts.yaml` for complete list and required fields per type.
 
-### 9. Development & File Tools (1 tool)
+### 10. File Editing (1 tool)
 
-Manage files and check server health.
+Multi-mode file editing with quality gate integration and concurrent edit protection.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
@@ -386,9 +411,9 @@ DOCS:         git_add_or_commit(workflow_phase="documentation", message="Update 
 ## Roadmap
 
 **Completed:**
-- ✅ Git workflow (8 tools)
+- ✅ Git workflow (15 tools)
 - ✅ Issue management (5 tools)
-- ✅ PR management (3 tools)
+- ✅ PR management (4 tools)
 - ✅ Label management (5 tools)
 - ✅ Milestone management (3 tools)
 

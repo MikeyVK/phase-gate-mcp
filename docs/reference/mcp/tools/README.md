@@ -59,7 +59,7 @@ Comprehensive Git automation with branch management, commit workflows, merge ope
 
 ---
 
-### 2. GitHub Integration (16 tools)
+### 2. GitHub Integration (17 tools)
 
 Full GitHub API integration for issues, pull requests, labels, and milestones. Requires `GITHUB_TOKEN` environment variable.
 
@@ -104,7 +104,7 @@ Full GitHub API integration for issues, pull requests, labels, and milestones. R
 
 ---
 
-### 3. Project & Phase Management (4 tools)
+### 3. Project & Phase Management (8 tools)
 
 Workflow lifecycle management with phase tracking and transition validation.
 
@@ -112,8 +112,12 @@ Workflow lifecycle management with phase tracking and transition validation.
 |------|---------|----------------|
 | `initialize_project` | Initialize project with workflow selection | `issue_number`, `issue_title`, `workflow_name`, `parent_branch`, `custom_phases` |
 | `get_project_plan` | Get project phase plan for issue | `issue_number` |
+| `save_planning_deliverables` | Save planning deliverables for issue | `issue_number` |
+| `update_planning_deliverables` | Update/merge planning deliverables | `issue_number` |
 | `transition_phase` | Sequential phase transition | `branch`, `to_phase`, `human_approval` |
 | `force_phase_transition` | Skip phases (requires reason + approval) | `branch`, `to_phase`, `skip_reason`, `human_approval` |
+| `transition_cycle` | Sequential TDD cycle transition | `to_cycle` |
+| `force_cycle_transition` | Skip to cycle (requires reason + approval) | `to_cycle`, `skip_reason`, `human_approval` |
 
 **📖 See:** [project.md](project.md) for workflow types, phase validation rules, and state tracking.
 
