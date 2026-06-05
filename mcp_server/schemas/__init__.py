@@ -55,6 +55,7 @@ from mcp_server.schemas.contexts.design import DesignContext
 from mcp_server.schemas.contexts.doc_base import DocArtifactContext
 from mcp_server.schemas.contexts.dto import DTOContext
 from mcp_server.schemas.contexts.generic import GenericContext
+from mcp_server.schemas.contexts.generic_doc import GenericDocContext
 from mcp_server.schemas.contexts.integration_test import IntegrationTestContext
 from mcp_server.schemas.contexts.interface import InterfaceContext
 from mcp_server.schemas.contexts.issue import IssueContext
@@ -78,6 +79,7 @@ from mcp_server.schemas.render_contexts.commit import CommitRenderContext
 from mcp_server.schemas.render_contexts.design import DesignRenderContext
 from mcp_server.schemas.render_contexts.dto import DTORenderContext
 from mcp_server.schemas.render_contexts.generic import GenericRenderContext
+from mcp_server.schemas.render_contexts.generic_doc import GenericDocRenderContext
 from mcp_server.schemas.render_contexts.integration_test import IntegrationTestRenderContext
 from mcp_server.schemas.render_contexts.interface import InterfaceRenderContext
 from mcp_server.schemas.render_contexts.issue import IssueRenderContext
@@ -106,6 +108,7 @@ __all__ = [
     "DocArtifactContext",
     "DTOContext",
     "GenericContext",
+    "GenericDocContext",
     "IntegrationTestContext",
     "InterfaceContext",
     "IssueContext",
@@ -129,6 +132,7 @@ __all__ = [
     "DesignRenderContext",
     "DTORenderContext",
     "GenericRenderContext",
+    "GenericDocRenderContext",
     "IntegrationTestRenderContext",
     "InterfaceRenderContext",
     "IssueRenderContext",

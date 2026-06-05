@@ -7,6 +7,7 @@ from mcp_server.schemas.render_contexts.commit import CommitRenderContext
 from mcp_server.schemas.render_contexts.design import DesignRenderContext
 from mcp_server.schemas.render_contexts.dto import DTORenderContext
 from mcp_server.schemas.render_contexts.generic import GenericRenderContext
+from mcp_server.schemas.render_contexts.generic_doc import GenericDocRenderContext
 from mcp_server.schemas.render_contexts.integration_test import IntegrationTestRenderContext
 from mcp_server.schemas.render_contexts.interface import InterfaceRenderContext
 from mcp_server.schemas.render_contexts.issue import IssueRenderContext
@@ -29,6 +30,7 @@ __all__ = [
     "DesignRenderContext",
     "DTORenderContext",
     "GenericRenderContext",
+    "GenericDocRenderContext",
     "IntegrationTestRenderContext",
     "InterfaceRenderContext",
     "IssueRenderContext",

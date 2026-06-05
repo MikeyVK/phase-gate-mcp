@@ -50,6 +50,7 @@ _v2_context_registry: dict[str, str] = {
     "interface": "InterfaceContext",
     "service": "ServiceContext",
     "generic": "GenericContext",
+    "generic_doc": "GenericDocContext",
     "unit_test": "UnitTestContext",
     "integration_test": "IntegrationTestContext",
     # Document artifact types

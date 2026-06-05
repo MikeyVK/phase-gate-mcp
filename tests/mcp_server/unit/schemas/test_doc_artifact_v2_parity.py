@@ -332,6 +332,7 @@ class TestValidationReportV2Parity:
         with pytest.raises(ValidationError):
             _run_v2(manager, "validation_report", {})
 
+
 # ---------------------------------------------------------------------------
 # Generic Doc (3 tests)
 # ---------------------------------------------------------------------------

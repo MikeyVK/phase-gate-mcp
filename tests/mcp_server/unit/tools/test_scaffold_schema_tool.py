@@ -9,7 +9,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.scaffold_schema_tool import (
     ScaffoldSchemaInput,
