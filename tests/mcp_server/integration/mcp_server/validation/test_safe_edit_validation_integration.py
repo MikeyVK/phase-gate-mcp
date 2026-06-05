@@ -198,8 +198,7 @@ class TestDTO(BaseModel):
         # Response must be non-empty and contain actionable feedback.
         assert text.strip(), "Response must not be empty"
         assert any(
-            phrase in text
-            for phrase in ("File saved", "rejected", "Validation", "saved", "error")
+            phrase in text for phrase in ("File saved", "rejected", "Validation", "saved", "error")
         ), f"Response should include actionable feedback, got: {text}"
 
     @pytest.mark.asyncio
