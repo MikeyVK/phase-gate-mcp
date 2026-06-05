@@ -49,24 +49,20 @@ artifact_types:
       states: [CREATED]
       initial_state: CREATED
       valid_transitions: []
-  # DISABLED (issue #325 - no V2 pipeline support, no template):
-  # - type: code
-  #   type_id: adapter
-  #   name: "Adapter"
-  #   description: "Adapter - integrates external systems (implements Interface)"
-  #   output_type: "file"
-  #   scaffolder_class: "AdapterScaffolder"
-  #   scaffolder_module: "mcp_server.scaffolders.adapter_scaffolder"
-  #   template_path: null  # No template needed - adapter uses legacy scaffolder
-  #   fallback_template: null
-  #   name_suffix: "Adapter"
-  #   file_extension: ".py"
-  #   generate_test: true
-  #   # NOTE: NO base_path or test_base_path (D2 - use project_structure.yaml only)
-  #   state_machine:
-  #     states: [CREATED]
-  #     initial_state: CREATED
-  #     valid_transitions: []
+  - type: code
+    type_id: adapter
+    name: "Adapter"
+    description: "Adapter - integrates external systems (implements Interface)"
+    output_type: "file"
+    template_path: "concrete/adapter.py.jinja2"
+    fallback_template: null
+    name_suffix: "Adapter"
+    file_extension: ".py"
+    generate_test: true
+    state_machine:
+      states: [CREATED]
+      initial_state: CREATED
+      valid_transitions: []
   - type: code
     type_id: tool
     name: "MCP Tool"
@@ -84,24 +80,20 @@ artifact_types:
       states: [CREATED]
       initial_state: CREATED
       valid_transitions: []
-  # DISABLED (issue #325 - no V2 pipeline support, no template):
-  # - type: code
-  #   type_id: resource
-  #   name: "MCP Resource"
-  #   description: "MCP Resource - provides dynamic content"
-  #   output_type: "file"
-  #   scaffolder_class: "ResourceScaffolder"
-  #   scaffolder_module: "mcp_server.scaffolders.resource_scaffolder"
-  #   template_path: null  # No template needed - resource uses legacy scaffolder
-  #   fallback_template: null
-  #   name_suffix: null
-  #   file_extension: ".py"
-  #   generate_test: true
-  #   # NOTE: NO base_path or test_base_path (D2 - use project_structure.yaml only)
-  #   state_machine:
-  #     states: [CREATED]
-  #     initial_state: CREATED
-  #     valid_transitions: []
+  - type: code
+    type_id: resource
+    name: "MCP Resource"
+    description: "MCP Resource - provides dynamic content"
+    output_type: "file"
+    template_path: "concrete/resource.py.jinja2"
+    fallback_template: null
+    name_suffix: null
+    file_extension: ".py"
+    generate_test: true
+    state_machine:
+      states: [CREATED]
+      initial_state: CREATED
+      valid_transitions: []
   - type: code
     type_id: schema
     name: "Pydantic Schema"
@@ -119,24 +111,20 @@ artifact_types:
       states: [CREATED]
       initial_state: CREATED
       valid_transitions: []
-  # DISABLED (issue #325 - no V2 pipeline support, no template):
-  # - type: code
-  #   type_id: interface
-  #   name: "Interface"
-  #   description: "Interface - abstract protocol definition"
-  #   output_type: "file"
-  #   scaffolder_class: "InterfaceScaffolder"
-  #   scaffolder_module: "mcp_server.scaffolders.interface_scaffolder"
-  #   template_path: null  # No template needed - interface uses legacy scaffolder
-  #   fallback_template: null
-  #   name_suffix: null
-  #   file_extension: ".py"
-  #   generate_test: true
-  #   # NOTE: NO base_path or test_base_path (D2 - use project_structure.yaml only)
-  #   state_machine:
-  #     states: [CREATED]
-  #     initial_state: CREATED
-  #     valid_transitions: []
+  - type: code
+    type_id: interface
+    name: "Interface"
+    description: "Interface - abstract protocol definition"
+    output_type: "file"
+    template_path: "concrete/interface.py.jinja2"
+    fallback_template: null
+    name_suffix: null
+    file_extension: ".py"
+    generate_test: true
+    state_machine:
+      states: [CREATED]
+      initial_state: CREATED
+      valid_transitions: []
   - type: code
     type_id: service
     name: "Service"

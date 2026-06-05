@@ -43,8 +43,11 @@ logger = logging.getLogger(__name__)
 _v2_context_registry: dict[str, str] = {
     "dto": "DTOContext",
     "worker": "WorkerContext",
+    "adapter": "AdapterContext",
     "tool": "ToolContext",
+    "resource": "ResourceContext",
     "schema": "SchemaContext",
+    "interface": "InterfaceContext",
     "service": "ServiceContext",
     "generic": "GenericContext",
     "unit_test": "UnitTestContext",
