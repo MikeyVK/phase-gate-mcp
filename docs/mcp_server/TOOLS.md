@@ -21,11 +21,11 @@ public server surface.
 The server exposes:
 
 - **33 always-available tools**
-- **16 GitHub-dependent tools** when `GITHUB_TOKEN` is configured
-- **49 total tools** when GitHub integration is active
+- **17 GitHub-dependent tools** when `GITHUB_TOKEN` is configured
+- **50 total tools** when GitHub integration is active
 
 GitHub issue tools are registered only when GitHub integration is available. `submit_pr`,
-`list_prs`, and `merge_pr` are the public PR tools.
+`list_prs`, `get_pr`, and `merge_pr` are the public PR tools.
 
 ---
 
@@ -66,6 +66,7 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 |------|---------|----------------|
 | `submit_pr` | Atomically neutralize, commit, push, and create a PR | `head`, `title`, `base`, `body`, `draft` |
 | `list_prs` | List PRs with filters | `state`, `base`, `head` |
+| `get_pr` | Get detailed PR information | `pr_number` |
 | `merge_pr` | Merge PR and clear PR status cache | `pr_number`, `commit_message`, `merge_method` |
 
 #### `submit_pr` Contract

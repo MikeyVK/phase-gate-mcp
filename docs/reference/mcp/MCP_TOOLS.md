@@ -2,7 +2,7 @@
 
 ## Overview
 
-The S1mpleTrader V3 MCP Server provides **49 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
+The S1mpleTrader V3 MCP Server provides **50 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
 
 **Server Location:** `mcp_server/`
 **Configuration:** `.vscode/mcp.json` → `st3-workflow`
@@ -194,13 +194,13 @@ All tools are registered in `mcp_server/server.py`:
 - Scaffold tools (2)
 - Discovery & Admin tools (4)
 
-**GitHub-Dependent (16 tools, requires GITHUB_TOKEN):**
+**GitHub-Dependent (17 tools, requires GITHUB_TOKEN):**
 - Issue tools (5)
 - PR tools (4)
 - Label tools (5)
 - Milestone tools (3)
 
-**Total: 49 tools** (33 always-available + 16 GitHub-dependent)
+**Total: 50 tools** (33 always-available + 17 GitHub-dependent)
 
 ### Execution Flow
 
