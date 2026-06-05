@@ -33,7 +33,6 @@ The MCP server provides two file editing tools:
 - **3 validation modes** (strict, interactive, verify-only)
 - **Quality gate integration** via `ValidationService` (Ruff, Pyright, markdown validation)
 - **Concurrent edit protection** with file-level `asyncio.Lock` (10ms timeout)
-- **Diff preview** via `difflib.unified_diff`
 
 ---
 
@@ -61,7 +60,6 @@ Multi-mode file editing with automatic validation and concurrent edit protection
 | `search_count` | `int` | No | Maximum replacements (search/replace mode) — default: `None` (all matches) |
 | `search_flags` | `int` | No | Regex flags e.g. `re.IGNORECASE` (search/replace mode) — default: `0` |
 | `mode` | `str` | No | Validation mode: `"strict"`, `"interactive"`, `"verify_only"` — default: `"strict"` |
-| `show_diff` | `bool` | No | Show unified diff preview — default: `True` |
 
 **⚠️ CRITICAL:** Exactly **ONE** of these parameter groups is required (enforced by Pydantic validator):
 1. `content` — full rewrite mode
@@ -554,7 +552,7 @@ safe_edit_file(path="file.py", line_edits=[edit1, edit2])
 `create_file` is a legacy tool superseded by `safe_edit_file`. It lacks:
 - Quality gate integration
 - Validation modes
-- Diff preview
+- Concurrent edit protection
 - Concurrent edit protection
 
 **Migration:**
