@@ -67,9 +67,9 @@ class GitHubSettings(BaseModel):
 class Settings(BaseModel):
     """Main settings container."""
 
-    server: ServerSettings = ServerSettings()
-    logging: LogSettings = LogSettings()
-    github: GitHubSettings = GitHubSettings()
+    server: ServerSettings = Field(default_factory=ServerSettings)
+    logging: LogSettings = Field(default_factory=LogSettings)
+    github: GitHubSettings = Field(default_factory=GitHubSettings)
 
     @classmethod
     def from_env(cls) -> "Settings":

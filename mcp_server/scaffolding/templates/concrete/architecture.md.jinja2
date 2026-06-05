@@ -67,9 +67,9 @@ TEMPLATE_METADATA:
       - "Architectural trade-offs and rationale"
     does_not_belong:
       - "Implementation code (link to source files instead)"
-      - "API reference details → reference.md"
-      - "Design decisions for specific features → design.md"
-      - "TDD cycle breakdown → planning.md"
+      - "API reference details â†’ reference.md"
+      - "Design decisions for specific features â†’ design.md"
+      - "TDD cycle breakdown â†’ planning.md"
       - "Implementation HOW (focus on conceptual WHAT/WHY)"
     tone: "Conceptual: explain principles, relationships, and architectural thinking"
     common_pitfalls:
@@ -79,7 +79,7 @@ TEMPLATE_METADATA:
       - "Skipping the 'why' behind architectural choices"
       - "Documenting unstable implementation details (architecture should be stable)"
     workflow_context:
-      - "Status lifecycle: DRAFT → PRELIMINARY → APPROVED → DEFINITIVE"
+      - "Status lifecycle: DRAFT â†’ PRELIMINARY â†’ APPROVED â†’ DEFINITIVE"
       - "Architecture should be stable before extensive implementation"
       - "Changes to DEFINITIVE architecture require careful review"
     related_phases:
@@ -90,7 +90,7 @@ TEMPLATE_METADATA:
 
 {#- Architecture documents use BASE header (no extra fields) -#}
 {%- block header_fields %}
-{{ hdr.pattern_status_header_basic(status | default("DRAFT"), version | default("1.0"), last_updated, timestamp) }}
+{{ hdr.pattern_status_header_basic(status, version, last_updated, timestamp) }}
 {% endblock -%}
 
 {#- Override tier1 blocks with pattern calls (code-tak compositie parity) -#}

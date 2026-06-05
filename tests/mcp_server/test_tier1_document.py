@@ -21,6 +21,12 @@ from jinja2 import Environment, FileSystemLoader
 # Template directory
 TEMPLATE_DIR = Path(__file__).parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
 
+_DOC_HEADER = {
+    "status": "DRAFT",
+    "version": "1.0",
+    "last_updated": "2026-01-26",
+}
+
 
 class TestTier1DocumentUniversalStructure:
     """Test tier1_base_document.jinja2 universal structure (Cycle 3)."""
@@ -104,6 +110,7 @@ class TestTier1DocumentUniversalStructure:
             output_path="docs/design.md",
             format="markdown",
             title="Test Design",
+            **_DOC_HEADER,
             purpose="Test",
             scope_in="X",
             scope_out="Y",
@@ -126,6 +133,7 @@ class TestTier1DocumentUniversalStructure:
             output_path="docs/design.md",
             format="markdown",
             title="Test Design",
+            **_DOC_HEADER,
             purpose="Test",
             scope_in="X",
             scope_out="Y",
@@ -145,6 +153,7 @@ class TestTier1DocumentUniversalStructure:
             output_path="docs/design.md",
             format="markdown",
             title="Test Design",
+            **_DOC_HEADER,
             purpose="Test",
             scope_in="X",
             scope_out="Y",
@@ -167,6 +176,7 @@ class TestTier1DocumentUniversalStructure:
             output_path="docs/design.md",
             format="markdown",
             title="Test Design",
+            **_DOC_HEADER,
             purpose="Test",
             scope_in="X",
             scope_out="Y",
@@ -175,6 +185,6 @@ class TestTier1DocumentUniversalStructure:
         assert "## Version History" in result
         # Updated column order per BASE_TEMPLATE: Version | Date | Author | Changes
         assert "| Version | Date | Author | Changes |" in result
-        assert "| 1.0 |" in result  # Default version
+        assert "| 1.0 |" in result
         assert "| Agent |" in result  # Default author
         assert "| Initial draft |" in result  # Default changes
