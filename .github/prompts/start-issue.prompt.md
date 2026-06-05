@@ -37,11 +37,11 @@ Execute in this exact order. Do not skip steps.
 3. **Create the branch**
    `create_branch(branch_type=WORKFLOW_TYPE, name="<short-slug-from-title>", base_branch=<derived above>)`
    → branch name format: `{type}/{ISSUE_NUMBER}-{slug}`
-
 4. **Switch to the branch**
-   `initialize_project(issue_number=ISSUE_NUMBER, issue_title="{title}", workflow_name=WORKFLOW_TYPE, parent_branch=<base_branch derived in step 2>)`
+   `git_checkout(branch="{type}/{ISSUE_NUMBER}-{slug}")`
 
 5. **Initialize the project**
+   `initialize_project(issue_number=ISSUE_NUMBER, issue_title="{title}", workflow_name=WORKFLOW_TYPE, parent_branch=<base_branch derived in step 2>)`
    `initialize_project(issue_number=ISSUE_NUMBER, issue_title="{title}", workflow_name=WORKFLOW_TYPE)`
 
 ## Epic-Owned Path
