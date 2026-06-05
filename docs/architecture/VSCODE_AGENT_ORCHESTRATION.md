@@ -568,7 +568,6 @@ PHASE_BLOCKS: dict[str, set[str]] = {
 # QA agent should never use write tools
 QA_BLOCKED_TOOLS: set[str] = {
     "mcp_st3-workflow_safe_edit_file",
-    "mcp_st3-workflow_create_file",
     "mcp_st3-workflow_scaffold_artifact",
     "mcp_st3-workflow_git_add_or_commit",
 }
@@ -682,7 +681,6 @@ description: "Researcher Agent — Analyse, planning en design voor pre-implemen
 tools:
   - mcp_st3-workflow_scaffold_artifact
   - mcp_st3-workflow_safe_edit_file
-  - mcp_st3-workflow_create_file
   - mcp_st3-workflow_git_add_or_commit
   - mcp_st3-workflow_git_status
   - mcp_st3-workflow_git_diff_stat
@@ -814,7 +812,6 @@ description: "Writer Agent — Documentatie en epic-coördinatie"
 tools:
   - mcp_st3-workflow_scaffold_artifact
   - mcp_st3-workflow_safe_edit_file
-  - mcp_st3-workflow_create_file
   - mcp_st3-workflow_git_add_or_commit
   - mcp_st3-workflow_git_status
   - mcp_st3-workflow_git_diff_stat
@@ -911,7 +908,6 @@ tools:
   - mcp_st3-workflow_get_work_context
   - mcp_st3-workflow_get_issue
   - mcp_st3-workflow_get_project_plan
-  - mcp_st3-workflow_validate_dto
   - mcp_st3-workflow_validate_template
   - mcp_st3-workflow_search_documentation
   - mcp_st3-workflow_health_check
@@ -1228,7 +1224,6 @@ Custom agents zijn `.agent.md` bestanden in `.github/agents/`. Ze:
 description: "Implementation Agent — TDD uitvoering met scope lock en hand-over naar QA"
 tools:
   - mcp_st3-workflow_safe_edit_file
-  - mcp_st3-workflow_create_file
   - mcp_st3-workflow_scaffold_artifact
   - mcp_st3-workflow_git_add_or_commit
   - mcp_st3-workflow_git_status
@@ -1245,7 +1240,6 @@ tools:
   - mcp_st3-workflow_get_work_context
   - mcp_st3-workflow_get_issue
   - mcp_st3-workflow_get_project_plan
-  - mcp_st3-workflow_validate_dto
   - mcp_st3-workflow_validate_template
   - mcp_st3-workflow_search_documentation
   - mcp_st3-workflow_health_check
@@ -1315,7 +1309,6 @@ tools:
   - mcp_st3-workflow_get_work_context
   - mcp_st3-workflow_get_issue
   - mcp_st3-workflow_get_project_plan
-  - mcp_st3-workflow_validate_dto
   - mcp_st3-workflow_validate_template
   - mcp_st3-workflow_search_documentation
   - mcp_st3-workflow_health_check

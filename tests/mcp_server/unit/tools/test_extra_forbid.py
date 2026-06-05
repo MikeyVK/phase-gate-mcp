@@ -4,7 +4,6 @@ import pytest
 from pydantic import ValidationError
 
 from mcp_server.tools.admin_tools import RestartServerInput
-from mcp_server.tools.code_tools import CreateFileInput
 from mcp_server.tools.cycle_tools import ForceCycleTransitionInput, TransitionCycleInput
 from mcp_server.tools.discovery_tools import GetWorkContextInput, SearchDocumentationInput
 from mcp_server.tools.git_analysis_tools import GitDiffInput, GitListBranchesInput
@@ -52,7 +51,6 @@ from mcp_server.tools.safe_edit_tool import LineEdit, SafeEditInput
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
 from mcp_server.tools.template_validation_tool import TemplateValidationInput
 from mcp_server.tools.test_tools import RunTestsInput
-from mcp_server.tools.validation_tools import ValidateDTOInput
 
 
 class TestExtraForbidOnAllInputModels:
@@ -63,8 +61,6 @@ class TestExtraForbidOnAllInputModels:
         [
             # admin
             (RestartServerInput, {}),
-            # code
-            (CreateFileInput, {"path": "/tmp/f.py", "content": "x = 1\n"}),
             # cycle
             (TransitionCycleInput, {"to_cycle": 2}),
             (
@@ -141,8 +137,6 @@ class TestExtraForbidOnAllInputModels:
             (TemplateValidationInput, {"path": "/tmp/f.py", "template_type": "tool"}),
             # test_tools
             (RunTestsInput, {"path": "tests/"}),
-            # validation
-            (ValidateDTOInput, {"file_path": "/tmp/f.py"}),
         ],
     )
     def test_extra_field_raises_validation_error(

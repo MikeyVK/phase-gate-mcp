@@ -69,7 +69,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
 | Edit file | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | `run_in_terminal("Set-Content")` |
-| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | `create_file` or manual creation |
+| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
 | Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 
 ### Quality & Testing
@@ -77,7 +77,6 @@ This document is a **binding contract**. Code that violates these principles is 
 |--------|-------------|------------|
 | Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
 | Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
-| Validate DTO | `validate_dto(file_path)` | Manual review |
 | Validate template | `validate_template(path, template_type)` | Manual review |
 
 ### Project & Phase Management

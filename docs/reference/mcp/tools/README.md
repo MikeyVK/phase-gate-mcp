@@ -13,27 +13,24 @@
 
 ## Purpose
 
-Comprehensive navigation index for all 51 MCP server tools organized by functional category. This document serves as the entry point to the MCP Tools Reference suite, providing quick lookup and category-based navigation to detailed tool documentation.
-
+Comprehensive navigation index for all 50 MCP server tools organized by functional category. This document serves as the entry point to the MCP Tools Reference suite, providing quick lookup and category-based navigation to detailed tool documentation.
 The MCP server exposes a rich set of tools across eight functional domains: Git workflow automation, GitHub API integration, project lifecycle management, file editing, code scaffolding, quality assurance, documentation discovery, and server administration.
 
 ---
 
 ## Tool Inventory Overview
 
-The MCP server has **51 registered tools** across 8 categories:
+The MCP server has **50 registered tools** across 8 categories:
 | Category | Tools | Documentation |
 |----------|-------|---------------|
 | **Git Workflow & Analysis** | 15 | [git.md](git.md) |
-| **GitHub Integration** | 16 | [github.md](github.md) |
+| **GitHub Integration** | 17 | [github.md](github.md) |
 | **Project & Phase Management** | 8 | [project.md](project.md) |
-| **File Editing** | 2 | [editing.md](editing.md) |
+| **File Editing** | 1 | [editing.md](editing.md) |
 | **Scaffolding** | 2 | [scaffolding.md](scaffolding.md) |
-| **Quality & Validation** | 4 | [quality.md](quality.md) |
+| **Quality & Validation** | 3 | [quality.md](quality.md) |
 | **Discovery & Admin** | 4 | [discovery.md](discovery.md) |
-| **TOTAL** | **51** | — |
----
-
+| **TOTAL** | **50** | — |
 ## Quick Reference by Category
 
 ### 1. Git Workflow & Analysis (15 tools)
@@ -62,7 +59,7 @@ Comprehensive Git automation with branch management, commit workflows, merge ope
 
 ---
 
-### 2. GitHub Integration (16 tools)
+### 2. GitHub Integration (17 tools)
 
 Full GitHub API integration for issues, pull requests, labels, and milestones. Requires `GITHUB_TOKEN` environment variable.
 
@@ -107,7 +104,7 @@ Full GitHub API integration for issues, pull requests, labels, and milestones. R
 
 ---
 
-### 3. Project & Phase Management (4 tools)
+### 3. Project & Phase Management (8 tools)
 
 Workflow lifecycle management with phase tracking and transition validation.
 
@@ -115,21 +112,24 @@ Workflow lifecycle management with phase tracking and transition validation.
 |------|---------|----------------|
 | `initialize_project` | Initialize project with workflow selection | `issue_number`, `issue_title`, `workflow_name`, `parent_branch`, `custom_phases` |
 | `get_project_plan` | Get project phase plan for issue | `issue_number` |
+| `save_planning_deliverables` | Save planning deliverables for issue | `issue_number` |
+| `update_planning_deliverables` | Update/merge planning deliverables | `issue_number` |
 | `transition_phase` | Sequential phase transition | `branch`, `to_phase`, `human_approval` |
 | `force_phase_transition` | Skip phases (requires reason + approval) | `branch`, `to_phase`, `skip_reason`, `human_approval` |
+| `transition_cycle` | Sequential TDD cycle transition | `to_cycle` |
+| `force_cycle_transition` | Skip to cycle (requires reason + approval) | `to_cycle`, `skip_reason`, `human_approval` |
 
 **📖 See:** [project.md](project.md) for workflow types, phase validation rules, and state tracking.
 
 ---
 
-### 4. File Editing (2 tools)
+### 4. File Editing (1 tool)
 
 Multi-mode file editing with quality gate integration and concurrent edit protection.
 
 | Tool | Purpose | Status | Key Features |
 |------|---------|--------|-------------|
 | `safe_edit_file` | Multi-mode editing with validation | **PRIMARY** | 4 edit modes, 3 validation modes, file-level mutex |
-| `create_file` | Simple file creation | **DEPRECATED** | Use `safe_edit_file` with `content` mode instead |
 
 **📖 See:** [editing.md](editing.md) for the complete `safe_edit_file` deep-dive including anti-patterns, concurrent edit protection, and QA integration.
 
@@ -152,7 +152,7 @@ Unified artifact generation from Jinja2 templates for code and documentation art
 
 ---
 
-### 6. Quality & Validation (4 tools)
+### 6. Quality & Validation (3 tools)
 
 Automated quality gates, test execution, and architectural validation.
 
@@ -160,7 +160,6 @@ Automated quality gates, test execution, and architectural validation.
 |------|---------|----------------|
 | `run_quality_gates` | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required only with `scope="files"`) |
 | `run_tests` | Run pytest — structured output: per-failure lines in `content[0]` text + full JSON payload in `content[1]` | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` |
-| `validate_dto` | Check that a DTO file path exists and is non-empty (does not validate DTO structure) | `file_path` |
 | `validate_template` | Validate file structure vs template | `path`, `template_type` |
 
 **📖 See:** [quality.md](quality.md) for quality gate configuration, test markers, and validation rule details.
@@ -185,10 +184,10 @@ Documentation search, work context aggregation, and server administration.
 ## Tool Registration Architecture
 
 | Tier | Tools | Count | Registration Condition |
-| **Always Available** | Git (15), Quality (4), File Editing (2), Project/Phase (8), Scaffolding (2), Discovery & Admin (4) | **35** | None |
-| **GitHub-Dependent** | Issues (5), PRs (3), Labels (5), Milestones (3) | **16** | Requires `GITHUB_TOKEN` environment variable |
-| **TOTAL (with token)** | — | **51** | — |
-| **TOTAL (without token)** | — | **40** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
+| **Always Available** | Git (15), Quality (3), File Editing (1), Project/Phase (8), Scaffolding (2), Discovery & Admin (4) | **33** | None |
+| **GitHub-Dependent** | Issues (5), PRs (4), Labels (5), Milestones (3) | **17** | Requires `GITHUB_TOKEN` environment variable |
+| **TOTAL (with token)** | — | **50** | — |
+| **TOTAL (without token)** | — | **38** | Issues (5) registered as schema-only (no `GITHUB_TOKEN`) |
 **Note:** Issue management tools (5) are registered even without a token (schema-only registration). Tool calls will return errors if `GITHUB_TOKEN` is missing.
 
 ---

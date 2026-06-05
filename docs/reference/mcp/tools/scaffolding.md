@@ -363,34 +363,6 @@ Tier information is stored in `artifacts.yaml` and `template_registry.json`.
 }
 ```
 
----
-
-### 3. Using `create_file` Instead of `scaffold_artifact`
-
-**❌ WRONG:**
-```json
-{
-  "tool": "create_file",
-  "path": "backend/dtos/order.py",
-  "content": "from dataclasses import dataclass\n..."
-}
-```
-
-**✅ CORRECT:**
-```json
-{
-  "tool": "scaffold_artifact",
-  "artifact_type": "dto",
-  "name": "OrderDTO",
-  "context": {...}
-}
-```
-
-**Rationale:** `scaffold_artifact` ensures:
-- Correct template usage
-- SCAFFOLD header injection
-- Directory structure compliance
-- Template version tracking
 
 ---
 

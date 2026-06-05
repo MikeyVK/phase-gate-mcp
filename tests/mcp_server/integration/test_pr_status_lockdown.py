@@ -6,8 +6,8 @@ Integration tests for PR-status lockdown via BranchMutatingTool (issue #283 C6).
 Verifies that:
   1. Every branch-mutating tool is a subclass of BranchMutatingTool.
   2. Every branch-mutating tool carries tool_category == "branch_mutating".
-  3. EnforcementRunner blocks all 18 tools when PRStatus.OPEN.
-  4. EnforcementRunner allows all 18 tools when PRStatus.ABSENT.
+  3. EnforcementRunner blocks all 17 tools when PRStatus.OPEN.
+  4. EnforcementRunner allows all 17 tools when PRStatus.ABSENT.
   5. MergePRTool is explicitly NOT a BranchMutatingTool (escape hatch).
 
 @layer: Tests (Integration)
@@ -25,9 +25,9 @@ Verifies that:
     mcp_server.managers.enforcement_runner,
     mcp_server.core.interfaces]
 @responsibilities:
-    - Verify BranchMutatingTool inheritance for all 18 branch-mutating tools
-    - Verify tool_category attribute on all 18 tools
-    - Verify EnforcementRunner dispatches check_pr_status for all 18 via category
+    - Verify BranchMutatingTool inheritance for all 17 branch-mutating tools
+    - Verify tool_category attribute on all 17 tools
+    - Verify EnforcementRunner dispatches check_pr_status for all 17 via category
     - Verify MergePRTool escape hatch is preserved
 """
 
@@ -49,7 +49,6 @@ from mcp_server.core.interfaces import IPRStatusReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
-from mcp_server.tools.code_tools import CreateFileTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.git_pull_tool import GitPullTool
 from mcp_server.tools.git_tools import (
@@ -76,7 +75,7 @@ if TYPE_CHECKING:
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
 # ---------------------------------------------------------------------------
-# Parametrize: the complete list of 18 branch-mutating tools
+# Parametrize: the complete list of 17 branch-mutating tools
 # ---------------------------------------------------------------------------
 BRANCH_MUTATING_TOOLS: list[type[BaseTool]] = [
     # git_tools
@@ -90,8 +89,6 @@ BRANCH_MUTATING_TOOLS: list[type[BaseTool]] = [
     GitPullTool,
     # safe_edit_tool
     SafeEditTool,
-    # code_tools
-    CreateFileTool,
     # scaffold_artifact
     ScaffoldArtifactTool,
     # project_tools
@@ -110,8 +107,8 @@ BRANCH_MUTATING_TOOLS: list[type[BaseTool]] = [
 
 _TOOL_IDS = [t.__name__ for t in BRANCH_MUTATING_TOOLS]
 
-assert len(BRANCH_MUTATING_TOOLS) == 18, (
-    f"Expected 18 branch-mutating tools, got {len(BRANCH_MUTATING_TOOLS)}"
+assert len(BRANCH_MUTATING_TOOLS) == 17, (
+    f"Expected 17 branch-mutating tools, got {len(BRANCH_MUTATING_TOOLS)}"
 )
 
 
@@ -141,7 +138,7 @@ def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
 
 
 # ---------------------------------------------------------------------------
-# 1. Inheritance — must FAIL in RED for 17/18 tools
+# 1. Inheritance — must FAIL in RED for 17/17 tools
 # ---------------------------------------------------------------------------
 
 

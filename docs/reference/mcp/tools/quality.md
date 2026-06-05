@@ -6,7 +6,7 @@
 **Version:** 3.0  
 **Last Updated:** 2026-03-01
 
-**Source:** [mcp_server/tools/quality_tools.py](../../../../mcp_server/tools/quality_tools.py), [mcp_server/managers/qa_manager.py](../../../../mcp_server/managers/qa_manager.py), [mcp_server/tools/test_tools.py](../../../../mcp_server/tools/test_tools.py), [mcp_server/tools/validation_tools.py](../../../../mcp_server/tools/validation_tools.py), [mcp_server/tools/template_validation_tool.py](../../../../mcp_server/tools/template_validation_tool.py)
+**Source:** [mcp_server/tools/quality_tools.py](../../../../mcp_server/tools/quality_tools.py), [mcp_server/managers/qa_manager.py](../../../../mcp_server/managers/qa_manager.py), [mcp_server/tools/test_tools.py](../../../../mcp_server/tools/test_tools.py), [mcp_server/tools/template_validation_tool.py](../../../../mcp_server/tools/template_validation_tool.py)
 
 ---
 
@@ -24,7 +24,6 @@ This page is optimized for agents: exact input contracts, copy/paste call patter
 |------|---------|-----------------|
 | `run_quality_gates` | Config-driven quality gates over explicit scope | `RunQualityGatesInput` in `quality_tools.py` |
 | `run_tests` | Pytest execution and failure reporting | `RunTestsInput` in `test_tools.py` |
-| `validate_dto` | Checks that the DTO file path exists before parsing. Does **not** perform structural validation of the DTO definition itself. | `ValidateDTOInput` in `validation_tools.py` |
 | `validate_template` | Template conformance checks | `TemplateValidationInput` in `template_validation_tool.py` |
 
 ---
