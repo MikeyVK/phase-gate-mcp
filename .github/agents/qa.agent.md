@@ -22,7 +22,6 @@ tools:
   - phase-gate-mcp/get_project_plan
   - phase-gate-mcp/run_tests
   - phase-gate-mcp/run_quality_gates
-  - phase-gate-mcp/validate_dto
   - phase-gate-mcp/validate_template
   - phase-gate-mcp/git_status
   - phase-gate-mcp/git_diff_stat

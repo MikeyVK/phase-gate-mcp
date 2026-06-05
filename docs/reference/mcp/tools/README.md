@@ -129,7 +129,6 @@ Multi-mode file editing with quality gate integration and concurrent edit protec
 | Tool | Purpose | Status | Key Features |
 |------|---------|--------|-------------|
 | `safe_edit_file` | Multi-mode editing with validation | **PRIMARY** | 4 edit modes, 3 validation modes, file-level mutex |
-| `create_file` | Simple file creation | **DEPRECATED** | Use `safe_edit_file` with `content` mode instead |
 
 **📖 See:** [editing.md](editing.md) for the complete `safe_edit_file` deep-dive including anti-patterns, concurrent edit protection, and QA integration.
 
@@ -160,7 +159,6 @@ Automated quality gates, test execution, and architectural validation.
 |------|---------|----------------|
 | `run_quality_gates` | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required only with `scope="files"`) |
 | `run_tests` | Run pytest — structured output: per-failure lines in `content[0]` text + full JSON payload in `content[1]` | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` |
-| `validate_dto` | Check that a DTO file path exists and is non-empty (does not validate DTO structure) | `file_path` |
 | `validate_template` | Validate file structure vs template | `path`, `template_type` |
 
 **📖 See:** [quality.md](quality.md) for quality gate configuration, test markers, and validation rule details.

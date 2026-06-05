@@ -127,7 +127,6 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `safe_edit_file` | Multi-mode file editing with validation | `path`, `content` or edit payload, `mode` |
-| `create_file` | Create a generic file | `path`, `content` |
 | `scaffold_artifact` | Generate code/docs from `.st3/config/artifacts.yaml` | `artifact_type`, `name`, `output_path`, `context` |
 
 ### 7. Quality & Validation
@@ -136,7 +135,6 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 |------|---------|----------------|
 | `run_quality_gates` | Run quality gates | `scope`, `files` |
 | `run_tests` | Run pytest | `path`, `scope`, `markers`, `timeout`, `last_failed_only`, `coverage` |
-| `validate_dto` | Check that a DTO file path exists and is non-empty (does not validate DTO structure) | `file_path` |
 | `validate_template` | Validate template/file structure | `path`, `template_type` |
 
 ### 8. Discovery & Admin

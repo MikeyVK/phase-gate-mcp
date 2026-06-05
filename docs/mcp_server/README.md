@@ -64,8 +64,8 @@ For template and registry details, see [docs/reference/mcp/tools/scaffolding.md]
 | **Git** | `create_branch`, `git_add_or_commit`, `git_checkout`, `git_fetch`, `git_pull`, `git_push`, `git_merge`, `git_delete_branch`, `git_stash`, `git_restore`, `git_list_branches`, `git_diff_stat`, `get_parent_branch` |
 | **GitHub** | `create_issue`, `list_issues`, `get_issue`, `update_issue`, `close_issue`, `submit_pr`, `list_prs`, `merge_pr`, `get_pr`, `list_labels`, `create_label`, `delete_label`, `add_labels`, `remove_labels`, `list_milestones`, `create_milestone`, `close_milestone` |
 | **Project & Phase** | `initialize_project`, `get_project_plan`, `save_planning_deliverables`, `update_planning_deliverables`, `transition_phase`, `force_phase_transition`, `transition_cycle`, `force_cycle_transition` |
-| **Editing & Scaffolding** | `safe_edit_file`, `create_file`, `scaffold_artifact` |
-| **Quality** | `run_quality_gates`, `run_tests`, `validate_dto`, `validate_template` |
+| **Editing & Scaffolding** | `safe_edit_file`, `scaffold_artifact` |
+| **Quality** | `run_quality_gates`, `run_tests`, `validate_template` |
 | **Admin** | `health_check`, `restart_server` |
 
 ### PR Workflow

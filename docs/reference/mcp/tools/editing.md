@@ -15,7 +15,6 @@
 
 Reference documentation for file editing tools in the MCP server. The `safe_edit_file` tool is the **primary file editing mechanism** for all code and documentation changes, providing multi-mode editing with quality gate integration, concurrent edit protection, and validation enforcement.
 
-The deprecated `create_file` tool is documented for legacy awareness only. All new code should use `safe_edit_file` with `content` mode for file creation.
 
 ---
 
@@ -26,7 +25,6 @@ The MCP server provides two file editing tools:
 | Tool | Status | Purpose | Use Case |
 |------|--------|---------|----------|
 | `safe_edit_file` | **PRIMARY** | Multi-mode editing with validation | All file edits (create, line edits, insert, search/replace) |
-| `create_file` | **DEPRECATED** | Simple file creation | Legacy only — use `safe_edit_file` instead |
 
 `safe_edit_file` is a 552-line tool offering:
 - **4 mutually exclusive edit modes** (full rewrite, line edits, insert, search/replace)
@@ -135,7 +133,7 @@ Or on error:
 **Use Cases:**
 - Creating new files
 - Complete file rewrites
-- Migrating from `create_file` (deprecated)
+- Complete file rewrites
 
 **Example:**
 ```json
@@ -534,38 +532,6 @@ safe_edit_file(path="file.py", line_edits=[edit1, edit2])
 ```
 
 ---
-
-## create_file (DEPRECATED)
-
-**MCP Name:** `create_file`  
-**Class:** `CreateFileTool`  
-**File:** [mcp_server/tools/code_tools.py](../../../../mcp_server/tools/code_tools.py)  
-**Status:** **DEPRECATED** — Use `safe_edit_file` with `content` mode instead
-
-### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `path` | `str` | Yes | Relative path to file |
-| `content` | `str` | Yes | File content |
-
-### Deprecation Notice
-
-`create_file` is a legacy tool superseded by `safe_edit_file`. It lacks:
-- Quality gate integration
-- Validation modes
-- Diff preview
-- Concurrent edit protection
-
-**Migration:**
-```json
-// OLD (create_file)
-{"path": "backend/dtos/user.py", "content": "..."}
-
-// NEW (safe_edit_file)
-{"path": "/workspace/backend/dtos/user.py", "content": "...", "mode": "strict"}
-```
-
 ---
 
 ## Configuration
