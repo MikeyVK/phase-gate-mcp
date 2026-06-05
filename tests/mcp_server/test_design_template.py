@@ -9,7 +9,7 @@ options comparison, and key decisions table.
 
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 
 _STRUCTURAL = {
     "status": "DRAFT",
@@ -18,7 +18,7 @@ _STRUCTURAL = {
 }
 
 
-def _make_template():  # type: ignore[no-untyped-def]
+def _make_template() -> Template:
     template_dir = Path("mcp_server/scaffolding/templates")
     env = Environment(loader=FileSystemLoader(template_dir))
     return env.get_template("concrete/design.md.jinja2")

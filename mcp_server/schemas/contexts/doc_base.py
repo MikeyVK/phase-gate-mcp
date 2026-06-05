@@ -47,7 +47,9 @@ class DocArtifactContext(TitledArtifactContext):
     model_config = ConfigDict(frozen=False, extra="forbid")
 
     status: DocumentStatus = Field(
-        description="Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)"
+        description=(
+            "Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)"
+        )
     )
     version: str = Field(description="Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)")
     last_updated: str = Field(description="Last updated date in ISO format YYYY-MM-DD")

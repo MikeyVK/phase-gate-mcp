@@ -12,7 +12,6 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 
-
 def _render_full_design_doc() -> str:
     """Helper: Render complete design document with current contract-shaped context."""
     template_dir = Path("mcp_server/scaffolding/templates")
@@ -181,4 +180,3 @@ class TestScaffoldDesignDocumentE2E:
         assert "| Question | Options | Status |" in result
         assert "How to handle template versioning?" in result
         assert "Migration path for existing files?" in result
-

@@ -12,7 +12,6 @@ Covers: research, planning, design, architecture, reference, generic_doc, valida
 @dependencies: pytest, pydantic, asyncio, mcp_server document artifact schemas
 """
 
-
 import asyncio  # noqa: I001
 import os
 from pathlib import Path
@@ -58,7 +57,6 @@ def _run_v2(manager: ArtifactManager, artifact_type: str, context: dict) -> str:
 
     assert len(output_captured) == 1, f"V2 pipeline produced no output for {artifact_type}"
     return output_captured[0]
-
 
 
 def _assert_has_metadata_header(output: str, label: str) -> None:

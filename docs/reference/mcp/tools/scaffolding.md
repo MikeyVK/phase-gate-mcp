@@ -31,13 +31,13 @@ The MCP server provides **2 scaffolding tools**:
 
 | Tool | Purpose | Artifact Types |
 |------|---------|----------------|
-| `scaffold_artifact` | Generate code/docs from templates | 17 types (dto, worker, tool, design, generic_doc, etc.) |
+| `scaffold_artifact` | Generate code/docs from templates | 21 types (including adapter, resource, interface, validation_report, generic_doc, etc.) |
 | `scaffold_schema` | Return JSON Schema for context parameter | Artifact types in the three-layer scaffolding architecture |
 
 
 **Supported Artifact Categories:**
-- **Code Artifacts:** `dto`, `worker`, `tool`, `schema`, `service`, `generic`, `unit_test`, `integration_test`
-- **Document Artifacts:** `design`, `architecture`, `research`, `planning`, `reference`, `generic_doc`
+- **Code Artifacts:** `dto`, `worker`, `adapter`, `tool`, `resource`, `schema`, `interface`, `service`, `generic`, `unit_test`, `integration_test`
+- **Document Artifacts:** `design`, `architecture`, `research`, `planning`, `reference`, `validation_report`, `generic_doc`
 - **Tracking Artifacts:** `commit`, `pr`, `issue`
 
 
@@ -192,20 +192,23 @@ The registry is defined in `.phase-gate/config/artifacts.yaml`. Each entry has a
 
 ### Supported Artifact Types
 
-#### Code Artifacts (8 types)
+#### Code Artifacts (11 types)
 
 | ID | Template | Description |
 |----|----------|-------------|
 | `dto` | `concrete/dto.py.jinja2` | Data Transfer Objects (frozen Pydantic models) |
 | `worker` | `concrete/worker.py.jinja2` | Async background workers |
+| `adapter` | `concrete/adapter.py.jinja2` | Adapter classes |
 | `tool` | `concrete/tool.py.jinja2` | MCP server tools |
+| `resource` | `concrete/resource.py.jinja2` | Resource classes |
 | `schema` | `concrete/config_schema.py.jinja2` | Configuration schema classes |
+| `interface` | `concrete/interface.py.jinja2` | Interface / protocol classes |
 | `service` | `concrete/service_command.py.jinja2` | Service layer classes |
 | `generic` | `concrete/generic.py.jinja2` | Generic Python classes (catch-all) |
 | `unit_test` | `concrete/test_unit.py.jinja2` | Unit test modules |
 | `integration_test` | `concrete/test_integration.py.jinja2` | Integration test modules |
 
-#### Document Artifacts (6 types)
+#### Document Artifacts (7 types)
 
 | ID | Template | Description |
 |----|----------|-------------|
@@ -214,6 +217,7 @@ The registry is defined in `.phase-gate/config/artifacts.yaml`. Each entry has a
 | `design` | `concrete/design.md.jinja2` | Feature/bug design documents |
 | `architecture` | `concrete/architecture.md.jinja2` | Architecture documents |
 | `reference` | `concrete/reference.md.jinja2` | API/tool reference documents |
+| `validation_report` | `concrete/validation_report.md.jinja2` | Validation report documents |
 | `generic_doc` | `concrete/generic.md.jinja2` | Generic markdown documents |
 
 #### Tracking Artifacts (3 types)

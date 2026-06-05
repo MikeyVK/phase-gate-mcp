@@ -1,10 +1,10 @@
 <!-- docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md -->
-<!-- template=reference version=064954ea created=2026-02-07T00:00Z updated=2026-06-04 -->
+<!-- template=reference version=064954ea created=2026-02-07T00:00Z updated=2026-06-05 -->
 # Template Library Quick Reference
 
 **Status:** DEFINITIVE
-**Version:** 2.0
-**Last Updated:** 2026-06-04
+**Version:** 2.1
+**Last Updated:** 2026-06-05
 
 **Source:** [mcp_server/scaffolding/templates/][source]
 **Tests:** [tests/mcp_server/integration/test_v2_smoke_all_types.py][tests]
@@ -29,8 +29,11 @@ Registry: `.phase-gate/config/artifacts.yaml`
 |---|---|---|
 | `dto` | `dto_name: str`, `fields: list[str]` | `concrete/dto.py.jinja2` |
 | `worker` | `name: str`, `layer: str` | `concrete/worker.py.jinja2` |
+| `adapter` | `name: str` | `concrete/adapter.py.jinja2` |
 | `tool` | `name: str` | `concrete/tool.py.jinja2` |
+| `resource` | `name: str` | `concrete/resource.py.jinja2` |
 | `schema` | `name: str` | `concrete/config_schema.py.jinja2` |
+| `interface` | `name: str` | `concrete/interface.py.jinja2` |
 | `service` | `name: str` | `concrete/service_command.py.jinja2` |
 | `generic` | `name: str` | `concrete/generic.py.jinja2` |
 | `unit_test` | `module_under_test: str`, `test_class_name: str` | `concrete/test_unit.py.jinja2` |
@@ -45,7 +48,8 @@ Registry: `.phase-gate/config/artifacts.yaml`
 | `design` | `title: str`, `status: str`, `version: str`, `problem_statement: str`, `requirements_functional: list[str]`, `requirements_nonfunctional: list[str]`, `decision: str`, `rationale: str` | `concrete/design.md.jinja2` |
 | `architecture` | `title: str`, `concepts: list[str]` | `concrete/architecture.md.jinja2` |
 | `reference` | `title: str` | `concrete/reference.md.jinja2` |
-| `generic_doc` | `title: str` | `concrete/generic.md.jinja2` |
+| `validation_report` | `title: str`, `status: str`, `version: str`, `last_updated: str` | `concrete/validation_report.md.jinja2` |
+| `generic_doc` | `title: str`, `status: str`, `version: str`, `last_updated: str`, `purpose: str`, `summary: str` | `concrete/generic.md.jinja2` |
 
 ### Tracking Artifacts
 
@@ -127,5 +131,6 @@ Templates root: `mcp_server/scaffolding/templates/`
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.1 | 2026-06-05 | Agent | Reconciled artifact inventory with validated branch state: added adapter/resource/interface and validation_report; generic_doc minimum context updated to current schema-validated contract |
 | 2.0 | 2026-06-04 | Agent | Full rewrite: artifact inventory updated to all 17 registered types; correct template paths; three-layer model integrated; removed legacy paths and branding (#286) |
 | 1.0 | 2026-02-07 | Agent | Initial draft |

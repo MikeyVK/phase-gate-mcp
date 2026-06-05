@@ -18,5 +18,8 @@ class ValidationReportContext(DocArtifactContext):
 
     issue_number: int | None = Field(default=None, description="Issue reference number")
     cycle: str | None = Field(default=None, description="Cycle label being validated")
-    validation_status: str | None = Field(default=None, description="Validation outcome (PASS/FAIL/PARTIAL)")
+    validation_status: str | None = Field(
+        default=None,
+        description="Validation outcome (PASS/FAIL/PARTIAL)",
+    )
     scope: str | None = Field(default=None, description="Validation scope summary")

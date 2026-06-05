@@ -34,6 +34,31 @@ from tests.mcp_server.test_support import make_artifact_manager
 logger = logging.getLogger(__name__)
 
 
+class ArtifactManagerProbe(ArtifactManager):
+    """Test-only access to protected enrichment helpers."""
+
+    def call_enrich_context(self, artifact_type: str, context: dict[str, Any]) -> dict[str, Any]:
+        return self._enrich_context(artifact_type, context)
+
+    def call_enrich_context_v2(self, probe_context: BaseContext, probe_type: str) -> BaseContext:
+        return self._enrich_context_v2(probe_context, probe_type)
+
+
+def to_probe(manager: ArtifactManager) -> ArtifactManagerProbe:
+    """Retype test manager to probe class for protected helper access."""
+    manager.__class__ = ArtifactManagerProbe
+    return manager  # type: ignore[return-value]
+
+
+def enrich_context_v2_for_test(
+    manager: ArtifactManager,
+    context: BaseContext,
+    artifact_type: str,
+) -> BaseContext:
+    """Route protected enrichment through a local helper for tests."""
+    return to_probe(manager).call_enrich_context_v2(context, artifact_type)
+
+
 class TestFeatureFlagV2Routing:
     """Test feature flag controls v1/v2 pipeline routing."""
 
@@ -51,7 +76,7 @@ class TestFeatureFlagV2Routing:
         os.environ["PYDANTIC_SCAFFOLDING_ENABLED"] = "false"
 
         # Spy on _enrich_context to verify v1 called
-        original_v1 = manager._enrich_context
+        original_v1 = manager._enrich_context  # pyright: ignore[reportPrivateUsage]
         v1_called = False
 
         def spy_v1(*args: Any, **kwargs: Any) -> object:  # noqa: ANN401
@@ -59,7 +84,7 @@ class TestFeatureFlagV2Routing:
             v1_called = True
             return original_v1(*args, **kwargs)
 
-        manager._enrich_context = spy_v1
+        manager._enrich_context = spy_v1  # pyright: ignore[reportPrivateUsage]
 
         # Mock scaffolder and validation to prevent real file operations
         manager.scaffolder.scaffold = Mock(return_value=Mock(content="# test"))
@@ -90,7 +115,7 @@ class TestFeatureFlagV2Routing:
         os.environ["PYDANTIC_SCAFFOLDING_ENABLED"] = "true"
 
         # Spy on _enrich_context_v2 to verify v2 called
-        original_v2 = manager._enrich_context_v2
+        original_v2 = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]
         v2_called = False
 
         def spy_v2(*args: Any, **kwargs: Any) -> object:  # noqa: ANN401
@@ -98,7 +123,7 @@ class TestFeatureFlagV2Routing:
             v2_called = True
             return original_v2(*args, **kwargs)
 
-        manager._enrich_context_v2 = spy_v2
+        manager._enrich_context_v2 = spy_v2  # pyright: ignore[reportPrivateUsage]
 
         # Mock scaffolder and validation
         manager.scaffolder.scaffold = Mock(return_value=Mock(content="# test"))
@@ -140,9 +165,9 @@ class TestFeatureFlagV2Routing:
 
         # Test 1: Flag OFF → v1
         os.environ["PYDANTIC_SCAFFOLDING_ENABLED"] = "false"
-        original_v1 = manager._enrich_context
+        original_v1 = manager._enrich_context  # pyright: ignore[reportPrivateUsage]
         v1_calls = []
-        manager._enrich_context = lambda *args, **kw: (
+        manager._enrich_context = lambda *args, **kw: (  # pyright: ignore[reportPrivateUsage]
             v1_calls.append(1),
             original_v1(*args, **kw),
         )[1]
@@ -154,9 +179,9 @@ class TestFeatureFlagV2Routing:
 
         # Test 2: Flag ON → v2
         os.environ["PYDANTIC_SCAFFOLDING_ENABLED"] = "true"
-        original_v2 = manager._enrich_context_v2
+        original_v2 = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]
         v2_calls = []
-        manager._enrich_context_v2 = lambda *args, **kw: (
+        manager._enrich_context_v2 = lambda *args, **kw: (  # pyright: ignore[reportPrivateUsage]
             v2_calls.append(1),
             original_v2(*args, **kw),
         )[1]
@@ -254,7 +279,7 @@ class TestSchemaTypedEnrichment:
         dto_context = DTOContext(dto_name="TestDTO", fields=["id: int", "name: str"])
 
         # Act: Enrich to RenderContext
-        render_context = manager._enrich_context_v2(dto_context, artifact_type="dto")
+        render_context = enrich_context_v2_for_test(manager, dto_context, artifact_type="dto")
 
         # Assert: Type transformation
         assert isinstance(render_context, DTORenderContext), "Should return DTORenderContext"
@@ -276,7 +301,7 @@ class TestSchemaTypedEnrichment:
         dto_context = DTOContext(dto_name="MyDTO", fields=["field1: str"])
 
         # Act
-        render_context = manager._enrich_context_v2(dto_context, artifact_type="dto")
+        render_context = enrich_context_v2_for_test(manager, dto_context, artifact_type="dto")
 
         # Assert: All 4 lifecycle fields present
         assert hasattr(render_context, "output_path"), "Missing output_path"
@@ -300,7 +325,7 @@ class TestSchemaTypedEnrichment:
         dto_context = DTOContext(dto_name="TestDTO", fields=[])
 
         # Act: _enrich_context_v2 uses Naming Convention internally
-        render_context = manager._enrich_context_v2(dto_context, artifact_type="dto")
+        render_context = enrich_context_v2_for_test(manager, dto_context, artifact_type="dto")
 
         # Assert: Correct type returned (proves globals() lookup succeeded)
         assert type(render_context).__name__ == "DTORenderContext"
@@ -322,7 +347,7 @@ class TestSchemaTypedEnrichment:
 
         # Act + Assert: Should raise ValidationError with clear message
         with pytest.raises(ValidationError) as exc_info:
-            manager._enrich_context_v2(fake_context, artifact_type="dto")
+            enrich_context_v2_for_test(manager, fake_context, artifact_type="dto")
 
         error_message = str(exc_info.value)
         assert "RenderContext class not found" in error_message
