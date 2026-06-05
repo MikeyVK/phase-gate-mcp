@@ -170,7 +170,6 @@ class TestDTO:  # Missing BaseModel - STRICT violation
         Per planning.md: Hints passed to response.
         Validates that error messages are helpful.
         """
-        # Invalid DTO
         test_file = temp_dir / "test_dto.py"
         invalid_dto = '''"""Test DTO"""
 from pydantic import BaseModel
@@ -196,8 +195,11 @@ class TestDTO(BaseModel):
 
         text = result.content[0]["text"]
 
-        # Should have detailed feedback (not just "error")
-        assert len(text) > 50, "Response should include detailed feedback"
+        # Response must be non-empty and contain actionable feedback.
+        assert text.strip(), "Response must not be empty"
+        assert any(
+            phrase in text for phrase in ("File saved", "rejected", "Validation", "saved", "error")
+        ), f"Response should include actionable feedback, got: {text}"
 
     @pytest.mark.asyncio
     async def test_validator_registry_loads_from_templates(

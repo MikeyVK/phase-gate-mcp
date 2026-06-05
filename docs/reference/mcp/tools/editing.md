@@ -7,7 +7,7 @@
 **Last Updated:** 2026-02-08  
 
 **Source:** [mcp_server/tools/safe_edit_tool.py](../../../../mcp_server/tools/safe_edit_tool.py)  
-**Tests:** [tests/unit/test_safe_edit_tool.py](../../../../tests/unit/test_safe_edit_tool.py)  
+**Tests:** [tests/mcp_server/unit/tools/test_safe_edit_tool.py](../../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py)  
 
 ---
 
@@ -536,7 +536,7 @@ safe_edit_file(path="file.py", line_edits=[edit1, edit2])
 
 ## Configuration
 
-No environment variables or configuration files required. Quality gate behavior is configured via [.st3/quality.yaml](../../../../.st3/quality.yaml):
+No environment variables or configuration files required. Quality gate behavior is configured via [.phase-gate/config/quality.yaml](../../../../.phase-gate/config/quality.yaml):
 
 ```yaml
 quality_gates:
@@ -555,7 +555,7 @@ quality_gates:
 - [quality.md](quality.md) — Quality gate tools and validation
 - [scaffolding.md](scaffolding.md) — Template-based artifact generation
 - [docs/reference/mcp/validation_api.md](../validation_api.md) — ValidationService API
-- [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 2: SafeEditTool Deep-Dive)
+- [docs/development/archive/issue19/research.md](../../../development/archive/issue19/research.md) — Tool inventory research (Section 2: SafeEditTool Deep-Dive)
 
 ---
 
