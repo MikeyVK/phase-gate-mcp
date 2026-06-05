@@ -311,6 +311,27 @@ class TestGenericContext:
         method = MethodSpec(name="calculate")
         assert method.name == "calculate"
 
+    def test_method_spec_optional_fields_have_renderable_defaults(self) -> None:
+        """MethodSpec defaults should be render-safe without pinning exact text."""
+        method = MethodSpec(name="calculate")
+
+        assert isinstance(method.params, str)
+        assert isinstance(method.return_type, str)
+        assert isinstance(method.docstring, str)
+        assert isinstance(method.body, str)
+        assert method.params is not None
+        assert method.return_type is not None
+        assert method.docstring is not None
+        assert method.body.strip()
+
+    def test_method_spec_name_is_required_and_non_empty(self) -> None:
+        """MethodSpec should reject missing or empty names."""
+        with pytest.raises(ValidationError, match="name"):
+            MethodSpec(name="")
+
+        with pytest.raises(ValidationError, match="name"):
+            MethodSpec()  # type: ignore[call-arg]
+
     def test_method_spec_is_frozen_and_forbids_extra_fields(self) -> None:
         """MethodSpec should be immutable and reject unknown fields."""
         method = MethodSpec(name="calculate")
