@@ -56,7 +56,7 @@ Full GitHub API integration for issues, pull requests, labels, and milestones. R
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
-| **CreateIssueTool** | Create new issue | **Required:** `issue_type` (feature/bug/hotfix/refactor/docs/chore/epic), `title`, `priority` (critical/high/medium/low/triage), `scope` (architecture/mcp-server/platform/tooling/workflow/documentation), `body` ({`problem`, `expected`?, `actual`?, `context`?, `steps_to_reproduce`?, `related_docs`?}) · **Optional:** `is_epic` (bool), `parent_issue` (int), `milestone` (title string), `assignees` (list) | Issue number, URL |
+| **CreateIssueTool** | Create new issue | **Required:** `issue_type` (feature/bug/hotfix/refactor/docs/chore/epic), `title`, `priority` (critical/high/medium/low/triage), `scope` (architecture/mcp-server/platform/tooling/workflow/documentation), `body` (str: pre-rendered markdown — generate with `scaffold_artifact(artifact_type='issue')`) · **Optional:** `is_epic` (bool), `parent_issue` (int), `milestone` (title string), `assignees` (list) | Issue number, URL |
 | **ListIssuesTool** | List issues with filters | `state` (open/closed/all), `labels` (optional list) | Formatted list with numbers, titles, labels |
 | **GetIssueTool** | Get issue details | `issue_number` | Full issue data, acceptance criteria extracted |
 | **CloseIssueTool** | Close issue | `issue_number`, `comment` (optional) | Confirmation message |
@@ -310,14 +310,24 @@ File: `.vscode/mcp.json`
 ### Issue Lifecycle Management
 
 ```
-1. create_issue(
+1. scaffold_artifact(
+     artifact_type="issue",
+     name="bug-memory-leak-cache",
+     context={
+       "title": "Bug: Memory leak in cache layer",
+       "problem": "Memory grows unbounded after 1h of operation.",
+       "steps_to_reproduce": "1. Start server\n2. Run 1000 requests",
+       "expected": "Stable memory usage",
+       "actual": "RSS grows to 2GB"
+     }
+   )
+   → Returns: scaffolded body (pre-rendered markdown)
+2. create_issue(
      issue_type="bug",
      title="Bug: Memory leak in cache layer",
      priority="high",
      scope="mcp-server",
-     body={"problem": "Memory grows unbounded after 1h of operation.",
-           "steps_to_reproduce": "1. Start server\n2. Run 1000 requests",
-           "expected": "Stable memory usage", "actual": "RSS grows to 2GB"},
+     body="<rendered markdown from step 1>",
      milestone="v1.0.0"
    )
    → Returns: Created issue #47: Bug: Memory leak in cache layer
@@ -327,15 +337,14 @@ File: `.vscode/mcp.json`
 ```
 
 Labels are assembled automatically from the required and optional fields. Do not pass a `labels` list — the tool enforces label policy from
-`.st3/config/issues.yaml` and `.st3/config/labels.yaml`. `body` is a structured object (not a free-form string);
-`problem` is the only required field.
+`.st3/config/issues.yaml` and `.st3/config/labels.yaml`. `body` accepts pre-rendered markdown (string); generate it with `scaffold_artifact(artifact_type='issue')` before calling `create_issue`. Use the `/create-issue` slash prompt to automate the two-step scaffold → submit flow.
 
 ### Release Milestone Workflow
 
 ```
 1. create_milestone title="v1.0.0" description="First stable release" due_on="2025-12-31T00:00:00Z"
-2. create_issue issue_type="feature" title="Feature A" priority="medium" scope="platform" body={"problem": "..."} milestone="v1.0.0"
-3. create_issue issue_type="feature" title="Feature B" priority="medium" scope="platform" body={"problem": "..."} milestone="v1.0.0"
+2. create_issue issue_type="feature" title="Feature A" priority="medium" scope="platform" body="## Problem\n\n..." milestone="v1.0.0"
+3. create_issue issue_type="feature" title="Feature B" priority="medium" scope="platform" body="## Problem\n\n..." milestone="v1.0.0"
 4. (As features complete)
 5. update_issue issue_number=X state=closed
 6. (When all done)

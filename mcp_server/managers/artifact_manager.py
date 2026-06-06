@@ -348,16 +348,11 @@ class ArtifactManager:
 
                     artifact_path = self.get_artifact_path(artifact_type, name)
                     output_path_value = artifact_path
-        elif artifact.output_type == "ephemeral":
+        elif artifact.output_type == "ephemeral" and provided_output_path is not None:
             # Ephemeral artifacts write to <server_root>/temp/ at write time (uuid-based filename).
-            # If caller provided explicit output_path, use it for the SCAFFOLD header.
-            # Otherwise, use a stable placeholder — actual path determined by _validate_and_write.
-            if provided_output_path is not None:
-                output_path_value = Path(provided_output_path)
-            else:
-                ext = getattr(artifact, "file_extension", ".txt")
-                _temp_base = self.server_root
-                output_path_value = _temp_base / "temp" / f"{artifact_type}_render{ext}"
+            # Only set output_path when caller explicitly provided one — otherwise leave as None
+            # so tier0 renders the compact single-line header (no filepath line).
+            output_path_value = Path(provided_output_path)
 
         # Instantiate RenderContext with lifecycle fields + user context fields
         # This validates all fields via Pydantic

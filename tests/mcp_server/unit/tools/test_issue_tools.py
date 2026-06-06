@@ -17,7 +17,6 @@ from mcp_server.tools.issue_tools import (
     CreateIssueInput,
     GetIssueInput,
     GetIssueTool,
-    IssueBody,
     ListIssuesInput,
     ListIssuesTool,
     UpdateIssueInput,
@@ -42,7 +41,7 @@ async def test_create_issue_tool(mock_github_manager: MagicMock) -> None:
         title="New Issue",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="Some problem description"),
+        body="## Problem\n\nSome problem description.",
     )
     result = await tool.execute(params, NoteContext())
 
@@ -77,7 +76,7 @@ async def test_create_issue_tool_forwards_milestone(mock_github_manager: MagicMo
         title="Milestone Issue",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="Needs milestone"),
+        body="## Problem\n\nNeeds milestone.",
         milestone="v2.0",
     )
     await tool.execute(params, NoteContext())
@@ -98,7 +97,7 @@ async def test_create_issue_tool_milestone_none_when_not_set(
         title="No milestone",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="No milestone set"),
+        body="## Problem\n\nNo milestone set.",
     )
     await tool.execute(params, NoteContext())
 
@@ -180,3 +179,27 @@ async def test_close_issue_tool(mock_github_manager: MagicMock) -> None:
     await tool.execute(CloseIssueInput(issue_number=5, comment="Done"), NoteContext())
 
     mock_github_manager.close_issue.assert_called_with(5, comment="Done")
+
+
+def test_create_issue_input_body_is_str() -> None:
+    """C1 RED: CreateIssueInput.body must accept a plain string, not IssueBody."""
+    params = CreateIssueInput(
+        issue_type="feature",
+        title="Test issue",
+        priority="medium",
+        scope="mcp-server",
+        body="## Problem\n\nSomething is broken.",
+    )
+    assert params.body == "## Problem\n\nSomething is broken."
+
+
+def test_create_issue_input_body_rejects_dict() -> None:
+    """C1 RED: CreateIssueInput.body must reject structured dicts (no IssueBody coercion)."""
+    with pytest.raises(Exception):  # noqa: B017
+        CreateIssueInput(
+            issue_type="feature",
+            title="Test issue",
+            priority="medium",
+            scope="mcp-server",
+            body={"problem": "something"},  # type: ignore[arg-type]
+        )
