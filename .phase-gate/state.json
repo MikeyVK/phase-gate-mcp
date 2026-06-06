@@ -1,80 +1,25 @@
 {
-  "branch": "feature/238-three-unity-architecture-for-create-issue",
-  "issue_number": 238,
-  "workflow_name": "feature",
-  "current_phase": "ready",
-  "current_cycle": 3,
-  "last_cycle": 3,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "C2 \u2014 Delete and update affected test files",
-      "forced": false,
-      "entered": "2026-06-06T12:16:26.248654+00:00"
-    },
-    {
-      "cycle_number": 3,
-      "name": "C3 \u2014 Fix H1 duplicate in issue.md.jinja2",
-      "forced": false,
-      "entered": "2026-06-06T12:24:36.361827+00:00"
-    }
-  ],
+  "branch": "epic/320-production-readiness-tracker",
+  "issue_number": 320,
+  "workflow_name": "epic",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
-    "design",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Design phase skipped with product owner approval. All design decisions are minimal and fully captured in research.md v1.1 (Adopted Design Decisions section): body field type/description, constructor unchanged, input_schema unchanged. No option comparison or interface trade-off analysis needed; submit_pr is the exact prior art pattern.",
-  "issue_title": "Implement three-unity architecture for create_issue tool",
-  "parent_branch": "epic/320-production-readiness-tracker",
-  "created_at": "2026-06-06T09:54:00.321777+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-06-06T11:07:06.966924+00:00",
-      "human_approval": "true",
-      "forced": true,
-      "skip_reason": "Design phase skipped with product owner approval. All design decisions are minimal and fully captured in research.md v1.1 (Adopted Design Decisions section): body field type/description, constructor unchanged, input_schema unchanged. No option comparison or interface trade-off analysis needed; submit_pr is the exact prior art pattern."
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-06-06T11:58:47.303196+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-06-06T12:30:01.588618+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-06-06T13:55:52.803770+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-06-06T14:16:59.565980+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "skip_reason": null,
+  "issue_title": "Production Readiness \u2014 Implementation Order Tracker",
+  "parent_branch": "main",
+  "created_at": "2026-05-25T18:48:22.612710+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
