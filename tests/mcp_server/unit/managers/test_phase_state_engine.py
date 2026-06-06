@@ -318,7 +318,10 @@ class TestTransitionHooksWiring:
         return workspace_root, issue_number
 
     def test_transition_to_tdd_calls_enter_hook(self, setup_project: tuple[Path, int]) -> None:
-        """Test that transition() to 'implementation' auto-calls on_enter_implementation_phase (Issue #146)."""
+        """Test that transition() to 'implementation' auto-calls on_enter_implementation_phase.
+
+        Issue #146.
+        """
         workspace_root, issue_number = setup_project
         branch = "feature/999-hook-wiring"
 
@@ -377,7 +380,9 @@ class TestTransitionHooksWiring:
             "on_exit_implementation_phase was not called by transition() - "
             "last_cycle should be 2 after exiting implementation phase"
         )
-        assert state.current_cycle == 2, "current_cycle should be preserved after exiting implementation phase"
+        assert state.current_cycle == 2, (
+            "current_cycle should be preserved after exiting implementation phase"
+        )
 
     def test_force_reentry_to_implementation_preserves_active_cycle(
         self, setup_project: tuple[Path, int]

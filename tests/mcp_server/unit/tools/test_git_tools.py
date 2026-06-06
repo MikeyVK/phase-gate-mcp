@@ -843,7 +843,9 @@ async def test_git_commit_non_tdd_allows_no_cycle_number(mock_git_manager: Magic
 
 
 @pytest.mark.asyncio
-async def test_git_commit_implementation_with_cycle_number_succeeds(mock_git_manager: MagicMock) -> None:
+async def test_git_commit_implementation_with_cycle_number_succeeds(
+    mock_git_manager: MagicMock,
+) -> None:
     """Test that implementation-phase commits WITH cycle_number succeed (Issue #146)."""
     tool = GitCommitTool(manager=mock_git_manager)
     mock_git_manager.commit_with_scope.return_value = "def5678"
