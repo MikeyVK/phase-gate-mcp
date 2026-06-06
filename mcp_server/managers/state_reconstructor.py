@@ -95,7 +95,7 @@ class StateReconstructor:
         try:
             commits = self._get_git_commits(branch)
             for commit in commits:
-                result = self._scope_decoder.detect_phase(commit, fallback_to_state=False)
+                result = self._scope_decoder.detect_phase(commit)
                 phase = result["workflow_phase"]
                 if phase != "unknown" and phase in workflow_phases:
                     logger.info("Detected phase '%s' from git commits", phase)

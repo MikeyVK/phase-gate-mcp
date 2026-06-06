@@ -129,6 +129,8 @@ class TransitionCycleTool(BaseTransitionTool):
         except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
             branch = None
 
+        # NOTE: IStateReader requires a known branch as input; raw state.json read retained
+        # intentionally here because this method's purpose is to discover the branch itself.
         state_file = self.server_root / "state.json"
         if state_file.exists():
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
@@ -262,6 +264,8 @@ class ForceCycleTransitionTool(BaseTransitionTool):
         except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
             branch = None
 
+        # NOTE: IStateReader requires a known branch as input; raw state.json read retained
+        # intentionally here because this method's purpose is to discover the branch itself.
         state_file = self.server_root / "state.json"
         if state_file.exists():
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
