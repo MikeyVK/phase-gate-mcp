@@ -104,7 +104,7 @@ class TestIGitContextReader:
 
 
 class TestCommitPhaseDetector:
-    """CommitPhaseDetector wraps ScopeDecoder with fallback_to_state=False."""
+    """CommitPhaseDetector wraps ScopeDecoder (commit-scope-only, no state.json fallback)."""
 
     def test_detector_exists_and_detects_from_commit(self) -> None:
         detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)

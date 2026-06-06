@@ -2,24 +2,21 @@
 # template=generic version=f35abd82 created=2026-02-15T06:38Z updated=2026-02-21T00:00Z
 """Phase Detection Utilities.
 
-Provides deterministic workflow phase detection from commit-scope and state.json.
+Provides deterministic workflow phase detection from commit-scope.
 NO type-heuristic guessing - unknown is acceptable outcome.
 
 @layer: Core
-@dependencies: [typing, pathlib, json, re, mcp_server.config.schemas.workphases]
+@dependencies: [typing, re, mcp_server.config.schemas.workphases]
 @responsibilities:
     - Define PhaseDetectionResult TypedDict schema
     - Parse commit-scope (P_PHASE_SP_SUBPHASE format)
-    - Fallback to state.json when commit-scope missing
     - Validate phases against WorkphasesConfig
-    - Return unknown with actionable error when both fail
+    - Return unknown with actionable error when detection fails
 """
 
 # Standard library
-import json
 import logging
 import re
-from pathlib import Path
 from typing import Literal, TypedDict
 
 # Project modules
@@ -53,7 +50,7 @@ class ScopeDecoder:
     """
     Decoder for workflow phase from commit-scope with deterministic precedence.
 
-    Precedence: state.json > commit-scope > unknown (NO type-heuristic guessing)
+    Precedence: commit-scope > unknown (NO type-heuristic guessing)
 
     Scope Format:
         - P_PHASE: e.g., P_RESEARCH, P_TDD
@@ -69,55 +66,40 @@ class ScopeDecoder:
     def __init__(
         self,
         workphases_config: WorkphasesConfig,
-        state_path: Path | None = None,
     ) -> None:
         """
-        Initialize ScopeDecoder with WorkphasesConfig and optional state.json path.
+        Initialize ScopeDecoder with WorkphasesConfig.
 
         Args:
             workphases_config: Parsed WorkphasesConfig instance
-            state_path: Path to state.json file (must be explicit; no default discovery)
         """
         self._workphases_config = workphases_config
-        self.state_path = state_path
         self._valid_phases: set[str] | None = None
 
     def detect_phase(
         self,
         commit_message: str | None,
-        fallback_to_state: bool = True,
     ) -> PhaseDetectionResult:
         """
-        Detect workflow phase with deterministic precedence.
-
-        Precedence chain: state.json > commit-scope > unknown
+        Detect workflow phase from commit-scope.
 
         Args:
             commit_message: Commit message to parse (Conventional Commits format)
-            fallback_to_state: Whether to fallback to state.json if scope missing
 
         Returns:
             PhaseDetectionResult with detected phase or unknown
 
         Notes:
             - Never raises exceptions (graceful degradation)
-            - Returns unknown with actionable error_message when all sources fail
+            - Returns unknown with actionable error_message when detection fails
             - NO type-heuristic guessing from commit type
             - Validates phase names against workphases.yaml
         """
-        # Primary: state.json (authoritative current branch state)
-        if fallback_to_state:
-            state_result = self._read_state_json()
-            if state_result:
-                return state_result
-
-        # Secondary: commit-scope (used by state_reconstructor with fallback_to_state=False)
         if commit_message:
             scope_result = self._parse_commit_scope(commit_message)
             if scope_result:
                 return scope_result
 
-        # Unknown fallback (TERTIARY)
         return self._unknown_fallback()
 
     def _parse_commit_scope(self, commit_message: str) -> PhaseDetectionResult | None:
@@ -206,51 +188,6 @@ class ScopeDecoder:
         self._valid_phases = {name.lower() for name in self._workphases_config.phases}
         logger.debug("Loaded %d valid phases from WorkphasesConfig", len(self._valid_phases))
         return self._valid_phases
-
-    def _read_state_json(self) -> PhaseDetectionResult | None:
-        """
-        Read workflow phase from state.json.
-
-        Returns:
-            PhaseDetectionResult with medium confidence if state.json exists and has valid phase,
-            None otherwise (graceful degradation on missing file, malformed JSON, or invalid phase)
-
-        Notes:
-            - Validates phase against workphases.yaml
-            - Invalid phases are rejected (returns None for unknown fallback)
-        """
-        try:
-            if self.state_path is None or not self.state_path.exists():
-                return None
-
-            with self.state_path.open("r", encoding="utf-8") as f:
-                state_data = json.load(f)
-
-            current_phase = state_data.get("current_phase")
-            if not current_phase:
-                return None
-
-            # Validate phase against workphases.yaml
-            valid_phases = self._load_valid_phases()
-            if valid_phases and current_phase.lower() not in valid_phases:
-                logger.warning(
-                    f"Invalid phase '{current_phase}' in state.json. "
-                    f"Valid phases: {sorted(valid_phases)}"
-                )
-                return None
-
-            return {
-                "workflow_phase": current_phase,
-                "sub_phase": None,
-                "source": "state.json",
-                "confidence": "medium",
-                "raw_scope": None,
-                "error_message": None,
-            }
-        except (OSError, json.JSONDecodeError) as e:
-            # Graceful degradation - log but don't raise
-            logger.debug(f"Failed to read state.json: {e}")
-            return None
 
     def _unknown_fallback(self) -> PhaseDetectionResult:
         """

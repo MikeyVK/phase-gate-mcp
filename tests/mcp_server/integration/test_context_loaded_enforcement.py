@@ -42,7 +42,8 @@ import pytest
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.exceptions import ValidationError
-from mcp_server.core.interfaces import IPRStatusReader, IStateReader, PRStatus
+from mcp_server.core.interfaces import IPRStatusReader, PRStatus
+from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.schemas import GitConfig
@@ -80,7 +81,7 @@ def _make_runner(cache: ContextLoadedCache, server_root: Path) -> EnforcementRun
         pr_status_reader=_make_pr_reader(),
         server_root=server_root,
         context_loaded_reader=cache,
-        state_reader=MagicMock(spec=IStateReader),
+        state_reader=FileStateRepository(state_file=server_root / "state.json"),
     )
 
 
@@ -175,7 +176,10 @@ class TestContextLoadedGate:
     def test_gate_inactive_when_issue_number_mismatches_branch(self, tmp_path: Path) -> None:
         """C3.D5: gate inactive when state.json present but issue_number mismatches branch."""
         # state.json exists but belongs to a DIFFERENT issue (999 vs branch issue 357)
-        (tmp_path / "state.json").write_text('{"issue_number": 999}', encoding="utf-8")
+        (tmp_path / "state.json").write_text(
+            '{"branch": "feature/999-other", "issue_number": 999, "workflow_name": "feature", "current_phase": "implementation"}',
+            encoding="utf-8",
+        )
         cache = ContextLoadedCache()  # context NOT loaded
         git_config = GitConfig(
             branch_types=["feature", "bug", "fix", "refactor", "docs", "hotfix", "epic"],
@@ -194,7 +198,7 @@ class TestContextLoadedGate:
             server_root=tmp_path,
             context_loaded_reader=cache,
             git_config=git_config,
-            state_reader=MagicMock(spec=IStateReader),
+            state_reader=FileStateRepository(state_file=tmp_path / "state.json"),
         )
 
         # Must not raise: mismatch bypass active (state.json issue 999 != branch issue 357)

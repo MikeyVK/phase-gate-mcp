@@ -16,7 +16,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.interfaces import IContextLoadedReader, IStateReader
+from mcp_server.core.interfaces import IContextLoadedReader
+from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.enforcement_runner import (
     EnforcementAction,
@@ -50,7 +51,7 @@ def _make_runner_c4(
         git_config=_GIT_CONFIG,
         server_root=tmp_path / ".phase-gate",
         context_loaded_reader=context_loaded_reader,
-        state_reader=MagicMock(spec=IStateReader),
+        state_reader=FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json"),
     )
 
 
@@ -75,7 +76,8 @@ def _write_state_json(tmp_path: Path) -> None:
     server_root = tmp_path / ".phase-gate"
     server_root.mkdir(parents=True, exist_ok=True)
     (server_root / "state.json").write_text(
-        '{"current_phase": "implementation", "issue_number": 42}', encoding="utf-8"
+        '{"branch": "feature/42-test", "current_phase": "implementation", "issue_number": 42, "workflow_name": "feature"}',
+        encoding="utf-8",
     )
 
 

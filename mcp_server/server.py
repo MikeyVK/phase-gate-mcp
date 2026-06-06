@@ -242,7 +242,6 @@ class MCPServer:
             project_manager=self.project_manager,
             scope_decoder=ScopeDecoder(
                 workphases_config=workphases_config,
-                state_path=server_root / "state.json",
             ),
         )
         self._workflow_state_mutator = WorkflowStateMutator(
@@ -258,7 +257,6 @@ class MCPServer:
             state_repository=self._state_repository,
             scope_decoder=ScopeDecoder(
                 workphases_config=workphases_config,
-                state_path=server_root / "state.json",
             ),
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
@@ -302,6 +300,7 @@ class MCPServer:
             workspace_root=workspace_root,
             config=enforcement_config,
             git_config=git_config,
+            state_reader=self._state_repository,
             pr_status_reader=self.pr_status_cache,
             server_root=server_root,
             context_loaded_reader=self._context_loaded_cache,
