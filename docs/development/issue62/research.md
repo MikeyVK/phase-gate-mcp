@@ -11,7 +11,7 @@
 ## Scope
 
 **In Scope:**
-7 test files with confirmed stale phase name literals. String-replacement fixes only.
+7 test files with confirmed stale phase name literals (functional string replacements) + 3 additional test files with stale TDD terminology in docstrings, comments, test names, and assertion messages. String-replacement and rename fixes only.
 
 **Out of Scope:**
 Config-driven fixture refactor (issue #282). Production code changes. New abstractions or helpers.
@@ -55,6 +55,58 @@ Originally scoped at ~200 hardcoded phase names across ~15 files. Interim refact
 - `test_deliverable_checker.py` — 'tdd' as YAML fixture name changed to 'implementation' (was incorrectly flagged as backward-compat; name is arbitrary)
 - `test_cycle_tools_legacy.py:546` — 'Discovery' is a cycle name, not a phase name
 - `test_deliverable_checker.py:207` — `tdd_cycles` is a field name in planning deliverables JSON schema, not a phase name
+- All `tdd_cycles` schema/payload fields across the codebase
+- Generic TDD process language (e.g., "Do TDD.", process descriptions)
+- Historical branch names, issue titles, planning template terminology
+
+## Residual Terminology Cleanup (same test surface)
+
+The following 30 items are within scope as `Residual terminology cleanup inside the same stale-phase test surface`. They cover docstrings, comments, test method names, and assertion messages in 3 test files. No functional (runtime) code changes.
+
+### tests/mcp_server/unit/managers/test_phase_state_engine.py (items 1–16)
+
+| # | Location | Current text | Replacement |
+|---|---|---|---|
+| 1 | Module header | `TDD phase lifecycle hooks` | `implementation phase lifecycle hooks` |
+| 2 | Class docstring | `Tests for TDD phase entry/exit hooks.` | `Tests for implementation phase entry/exit hooks.` |
+| 3 | Method docstring | `Test that entering TDD phase auto-initializes cycle 1.` | `entering implementation phase auto-initializes cycle 1.` |
+| 4 | Method docstring | `Test that entering TDD phase does NOT block on missing planning deliverables.` | `entering implementation phase does NOT block...` |
+| 5 | Method docstring | `Test that exiting TDD phase preserves last_cycle.` | `exiting implementation phase preserves last_cycle.` |
+| 6 | Inline comment | `Initialize in TDD phase at cycle 3` | `Initialize in implementation phase at cycle 3` |
+| 7 | Method docstring | `Test that exiting TDD phase validates all cycles completed.` | `exiting implementation phase validates...` |
+| 8 | Inline comment | `Initialize in TDD phase at cycle 2 (not completed)` | `Initialize in implementation phase at cycle 2 (not completed)` |
+| 9 | Method docstring | `transition() to 'tdd' auto-calls on_enter_implementation_phase...` | `transition() to 'implementation' auto-calls...` |
+| 10 | Inline comment | `Verify no TDD cycle before transition` | `Verify no active cycle before transition` |
+| 11 | Inline comment | `Transition to TDD - should auto-call on_enter_implementation_phase` | `Transition to implementation - should auto-call on_enter_implementation_phase` |
+| 12 | Assertion message | `current_cycle should be 1 after entering TDD phase` | `after entering implementation phase` |
+| 13 | Method docstring | `transition() from 'tdd' auto-calls on_exit_implementation_phase.` | `transition() from 'implementation' auto-calls...` |
+| 14 | Inline comment | `Initialize branch in TDD phase at cycle 2` | `Initialize branch in implementation phase at cycle 2` |
+| 15 | Assertion message | `last_cycle should be 2 after exiting TDD phase` | `after exiting implementation phase` |
+| 16 | Assertion message | `current_cycle should be preserved after exiting TDD phase` | `after exiting implementation phase` |
+
+### tests/mcp_server/unit/tools/test_git_tools.py (items 17–23)
+
+| # | Location | Current text | Replacement |
+|---|---|---|---|
+| 17 | Test name | `test_git_commit_tdd_requires_cycle_number` | `test_git_commit_implementation_phase_requires_cycle_number` |
+| 18 | Test name | `test_git_commit_tdd_subphase_requires_cycle_number` | `test_git_commit_implementation_subphase_requires_cycle_number` |
+| 19 | Method docstring | `Test that non-TDD phases do NOT require cycle_number` | `non-implementation phases do NOT require cycle_number` |
+| 20 | Test name | `test_git_commit_tdd_with_cycle_number_succeeds` | `test_git_commit_implementation_with_cycle_number_succeeds` |
+| 21 | Method docstring | `Test that TDD commits WITH cycle_number succeed` | `implementation-phase commits WITH cycle_number succeed` |
+| 22 | Inline comment | `Commit in TDD phase WITH cycle_number - should succeed` | `Commit in implementation phase WITH cycle_number - should succeed` |
+| 23 | Inline comment | `phase=tdd, cycle=2 matches state.json` | `phase=implementation, cycle=2 matches state.json` |
+
+### tests/mcp_server/unit/managers/test_cycle_tools_legacy.py (items 24–30)
+
+| # | Location | Current text | Replacement |
+|---|---|---|---|
+| 24 | Inline comment | `Initialize TDD phase with cycle 1` | `Initialize implementation phase with cycle 1` |
+| 25 | Test name | `test_transition_blocks_outside_tdd_phase` | `test_transition_blocks_outside_cycle_based_phase` |
+| 26 | Method docstring | `Test that transition only works during TDD phase.` | `only works during cycle-based phases.` |
+| 27 | Assertion message | `Expected transition to be blocked outside TDD phase` | `outside cycle-based phase` |
+| 28 | Method docstring | `Create project in TDD phase at cycle 2 for forced transitions.` | `cycle-based phase at cycle 2 for forced transitions.` |
+| 29 | Method docstring | `Create project in TDD phase at cycle 2.` | `cycle-based phase at cycle 2.` |
+| 30 | Method docstring | `Create project in TDD phase at cycle 1.` | `cycle-based phase at cycle 1.` |
 
 ## Preservation Goals
 
@@ -85,11 +137,13 @@ Originally scoped at ~200 hardcoded phase names across ~15 files. Interim refact
 **Rationale:** The remaining stale references are small in number (15 literals across 7 files) and mechanical in nature. A config-driven refactor (issue #282) is a separate complementary concern. Introducing fixture abstractions now would exceed scope and add complexity without proportional benefit.
 
 **Constraints for later phases:**
-- Fix only the 7 files listed in the findings table
+- Fix the 7 files in the functional findings table (phase name literals in runtime code)
+- Fix the 3 additional files with residual terminology (docstrings, comments, test names, assertion messages) — 30 items total
 - No new fixtures, helpers, or abstractions introduced
 - No production code changes
-- `test_cycle_tools_legacy.py` and `test_deliverable_checker.py:207` (`tdd_cycles` field name) must remain unchanged
-- `test_deliverable_checker.py` YAML fixture: `tdd` → `implementation` (arbitrary name, not a backward-compat concern)
+- `test_deliverable_checker.py:207` (`tdd_cycles` field name) must remain unchanged
+- `test_cycle_tools_legacy.py:546` (`Discovery` cycle name) must remain unchanged
+- `tdd_cycles` schema/payload fields and generic TDD process language outside this surface are out of scope
 
 <!-- Link definitions -->
 
@@ -104,3 +158,4 @@ Originally scoped at ~200 hardcoded phase names across ~15 files. Interim refact
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-06 | Agent | Initial draft |
+| 1.1 | 2026-06-06 | Agent | Scope expansion: +30 residual terminology items in test_phase_state_engine.py, test_git_tools.py, test_cycle_tools_legacy.py |
