@@ -25,15 +25,17 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 def _default_server_version() -> str:
-    """Resolve server version from installed package metadata."""
-    for package_name in ("mcp_server", "simpletraderv3"):
+    """Resolve server version from the installed distribution that owns this package."""
+    packages_map = metadata.packages_distributions()
+    dist_names = packages_map.get("mcp_server", [])
+    for dist_name in dist_names:
         try:
-            return metadata.version(package_name)
+            return metadata.version(dist_name)
         except metadata.PackageNotFoundError:
             continue
 
     raise metadata.PackageNotFoundError(
-        "Unable to resolve installed package metadata for 'mcp_server' or 'simpletraderv3'."
+        "Unable to resolve installed package version for distribution containing 'mcp_server'."
     )
 
 

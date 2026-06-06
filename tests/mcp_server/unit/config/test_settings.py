@@ -72,11 +72,17 @@ logging:
     assert settings.logging.level == "WARNING"
 
 
-def test_default_server_version_falls_back_to_secondary_package() -> None:
-    """Version lookup should fall back from mcp_server to simpletraderv3."""
-    with patch(
-        "mcp_server.config.settings.metadata.version",
-        side_effect=[metadata.PackageNotFoundError, "3.1.0"],
+def test_default_server_version_resolves_via_distribution_map() -> None:
+    """Version lookup uses packages_distributions() to find the owning distribution."""
+    with (
+        patch(
+            "mcp_server.config.settings.metadata.packages_distributions",
+            return_value={"mcp_server": ["some-dist"]},
+        ),
+        patch(
+            "mcp_server.config.settings.metadata.version",
+            return_value="3.1.0",
+        ),
     ):
         assert _default_server_version() == "3.1.0"
 
