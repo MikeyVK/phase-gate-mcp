@@ -14,7 +14,9 @@ from pathlib import Path
 import pytest
 from jinja2 import Environment, FileSystemLoader
 
-TEMPLATE_DIR = Path(__file__).parent.parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+TEMPLATE_DIR = (
+    Path(__file__).parent.parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+)
 
 
 @pytest.fixture
@@ -52,9 +54,7 @@ class TestIssueTemplateNoH1:
         """Rendered issue body must not contain a # H1 heading line."""
         result = render_issue(issue_env)
         h1_lines = [line for line in result.splitlines() if re.match(r"^# ", line)]
-        assert h1_lines == [], (
-            f"Template rendered unexpected H1 line(s): {h1_lines}"
-        )
+        assert h1_lines == [], f"Template rendered unexpected H1 line(s): {h1_lines}"
 
     def test_rendered_output_does_not_start_with_title_h1(self, issue_env: Environment) -> None:
         """Output must not start with # Test Issue Title."""
