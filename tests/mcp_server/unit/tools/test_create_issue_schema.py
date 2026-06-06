@@ -52,19 +52,18 @@ class TestCreateIssueInputSchemaNoRefs:
             "body property must not use $ref — inline IssueBody properties directly"
         )
 
-    def test_schema_body_is_object_type(self, schema: dict) -> None:  # type: ignore[type-arg]
-        """body property must declare type: object."""
+    def test_schema_body_is_string_type(self, schema: dict) -> None:  # type: ignore[type-arg]
+        """body property must declare type: string (pre-rendered markdown)."""
         body_prop = schema.get("properties", {}).get("body", {})
-        assert body_prop.get("type") == "object", (
-            "body property must have type: object after $ref resolution"
+        assert body_prop.get("type") == "string", (
+            "body property must have type: string after IssueBody removal"
         )
 
-    def test_schema_body_has_problem_property(self, schema: dict) -> None:  # type: ignore[type-arg]
-        """body.properties.problem must exist after inlining."""
+    def test_schema_body_has_no_nested_properties(self, schema: dict) -> None:  # type: ignore[type-arg]
+        """body property must not have nested properties (no IssueBody fields)."""
         body_prop = schema.get("properties", {}).get("body", {})
-        body_properties = body_prop.get("properties", {})
-        assert "problem" in body_properties, (
-            "body.properties.problem must exist after $ref is resolved"
+        assert "properties" not in body_prop, (
+            "body must be a plain string field — no nested IssueBody properties"
         )
 
     def test_schema_has_no_ref_anywhere(self, schema: dict) -> None:  # type: ignore[type-arg]

@@ -40,7 +40,7 @@ from mcp_server.tools.git_tools import (
 from mcp_server.tools.health_tools import HealthCheckInput, HealthCheckTool
 
 # GitHub Tools (imported here for availability, require manager injection)
-from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool, IssueBody
+from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool
 from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
 
 # Quality Tools
@@ -442,7 +442,7 @@ class TestGitHubToolsIntegration:
                 title="Test Issue",
                 priority="medium",
                 scope="mcp-server",
-                body=IssueBody(problem="Test body"),
+                body="## Problem\n\nTest body.",
             ),
             NoteContext(),
         )

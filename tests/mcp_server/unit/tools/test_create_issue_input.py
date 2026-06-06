@@ -6,20 +6,18 @@ Tests:
 - All required fields (issue_type, title, priority, scope, body)
 - Structural validation only; semantic validation moved to GitHubManager
 - Optional fields: is_epic, parent_issue, milestone, assignees
-- body JSON-string coercion for MCP chat compatibility
+- body is a pre-rendered markdown string
 
 @layer: Tests (Unit)
-@dependencies: [pytest, json, mcp_server.tools.issue_tools]
+@dependencies: [pytest, mcp_server.tools.issue_tools]
 """
-
-import json
 
 import pytest
 from pydantic import ValidationError
 
-from mcp_server.tools.issue_tools import CreateIssueInput, IssueBody
+from mcp_server.tools.issue_tools import CreateIssueInput
 
-VALID_BODY = IssueBody(problem="The tool crashes on startup.")
+VALID_BODY = "## Problem\n\nThe tool crashes on startup."
 
 VALID_MINIMAL: dict[str, object] = {
     "issue_type": "feature",
@@ -85,19 +83,17 @@ class TestPrimitiveFieldAcceptance:
 
 
 class TestBodyTypeValidation:
-    def test_body_must_not_be_plain_string(self) -> None:
+    def test_body_plain_string_accepted(self) -> None:
+        inp = CreateIssueInput(**{**VALID_MINIMAL, "body": "## Problem\n\nSomething is broken."})
+        assert inp.body == "## Problem\n\nSomething is broken."
+
+    def test_body_dict_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            CreateIssueInput(**{**VALID_MINIMAL, "body": "plain string body"})
+            CreateIssueInput(**{**VALID_MINIMAL, "body": {"problem": "Dict input"}})  # type: ignore[arg-type]
 
-    def test_body_as_issue_body_accepted(self) -> None:
-        body = IssueBody(problem="Correct type")
-        inp = CreateIssueInput(**{**VALID_MINIMAL, "body": body})
-        assert inp.body.problem == "Correct type"
-
-    def test_body_dict_still_accepted(self) -> None:
-        inp = CreateIssueInput(**{**VALID_MINIMAL, "body": {"problem": "Dict input still works."}})
-        assert isinstance(inp.body, IssueBody)
-        assert inp.body.problem == "Dict input still works."
+    def test_body_none_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            CreateIssueInput(**{**VALID_MINIMAL, "body": None})  # type: ignore[arg-type]
 
 
 class TestOptionalFields:
@@ -140,36 +136,3 @@ class TestOptionalFields:
     def test_assignees_list_accepted(self) -> None:
         inp = CreateIssueInput(**{**VALID_MINIMAL, "assignees": ["alice", "bob"]})
         assert inp.assignees == ["alice", "bob"]
-
-
-class TestBodyJsonStringCoercion:
-    def test_body_json_string_minimal_is_coerced(self) -> None:
-        body_str = json.dumps({"problem": "Widget crashes on startup."})
-        inp = CreateIssueInput(**{**VALID_MINIMAL, "body": body_str})
-        assert isinstance(inp.body, IssueBody)
-        assert inp.body.problem == "Widget crashes on startup."
-
-    def test_body_json_string_full_is_coerced(self) -> None:
-        body_str = json.dumps(
-            {
-                "problem": "Login fails.",
-                "expected": "Redirect to dashboard.",
-                "actual": "500 error.",
-                "context": "Windows 11.",
-                "steps_to_reproduce": "1. Open\n2. Click",
-                "related_docs": ["docs/planning.md"],
-            }
-        )
-        inp = CreateIssueInput(**{**VALID_MINIMAL, "body": body_str})
-        assert inp.body.expected == "Redirect to dashboard."
-        assert inp.body.related_docs == ["docs/planning.md"]
-        assert inp.body.steps_to_reproduce == "1. Open\n2. Click"
-
-    def test_body_json_string_missing_problem_raises(self) -> None:
-        body_str = json.dumps({"expected": "Something"})
-        with pytest.raises(ValidationError):
-            CreateIssueInput(**{**VALID_MINIMAL, "body": body_str})
-
-    def test_body_invalid_json_string_raises(self) -> None:
-        with pytest.raises(ValidationError):
-            CreateIssueInput(**{**VALID_MINIMAL, "body": "not valid json"})
