@@ -21,19 +21,21 @@ from typing import Any
 
 # Third-party
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 def _default_server_version() -> str:
-    """Resolve server version from installed package metadata."""
-    for package_name in ("mcp_server", "simpletraderv3"):
+    """Resolve server version from the installed distribution that owns this package."""
+    packages_map = metadata.packages_distributions()
+    dist_names = packages_map.get("mcp_server", [])
+    for dist_name in dist_names:
         try:
-            return metadata.version(package_name)
+            return metadata.version(dist_name)
         except metadata.PackageNotFoundError:
             continue
 
     raise metadata.PackageNotFoundError(
-        "Unable to resolve installed package metadata for 'mcp_server' or 'simpletraderv3'."
+        "Unable to resolve installed package version for distribution containing 'mcp_server'."
     )
 
 
@@ -47,12 +49,19 @@ class LogSettings(BaseModel):
 class ServerSettings(BaseModel):
     """Server configuration settings."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str = "phase-gate-mcp"
-    version: str = Field(default_factory=_default_server_version)
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
     server_root_dir: str = ".phase-gate"
     logs_dir: str = "logs"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def version(self) -> str:
+        """Resolve server version from installed package metadata (read-only)."""
+        return _default_server_version()
 
 
 class GitHubSettings(BaseModel):

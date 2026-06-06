@@ -390,7 +390,6 @@ async def create_issue(
 # MCP Server Configuration
 server:
   name: "st3-workflow"
-  version: "1.0.0"
   workspace_root: "d:/dev/SimpleTraderV3"
 
 github:
