@@ -17,7 +17,6 @@ from mcp_server.tools.issue_tools import (
     CreateIssueInput,
     GetIssueInput,
     GetIssueTool,
-    IssueBody,
     ListIssuesInput,
     ListIssuesTool,
     UpdateIssueInput,
@@ -42,7 +41,7 @@ async def test_create_issue_tool(mock_github_manager: MagicMock) -> None:
         title="New Issue",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="Some problem description"),
+        body="## Problem\n\nSome problem description.",
     )
     result = await tool.execute(params, NoteContext())
 
@@ -77,7 +76,7 @@ async def test_create_issue_tool_forwards_milestone(mock_github_manager: MagicMo
         title="Milestone Issue",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="Needs milestone"),
+        body="## Problem\n\nNeeds milestone.",
         milestone="v2.0",
     )
     await tool.execute(params, NoteContext())
@@ -98,7 +97,7 @@ async def test_create_issue_tool_milestone_none_when_not_set(
         title="No milestone",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="No milestone set"),
+        body="## Problem\n\nNo milestone set.",
     )
     await tool.execute(params, NoteContext())
 

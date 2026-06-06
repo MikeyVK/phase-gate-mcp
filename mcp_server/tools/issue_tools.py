@@ -4,8 +4,7 @@ import json
 import unicodedata
 from typing import Any, Literal
 
-import jinja2
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.config.schemas.git_config import GitConfig
@@ -14,16 +13,12 @@ from mcp_server.config.schemas.scope_config import ScopeConfig
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
-from mcp_server.scaffolding.renderer import JinjaRenderer
-from mcp_server.scaffolding.template_introspector import introspect_template_with_inheritance
-from mcp_server.scaffolding.version_hash import compute_version_hash
 from mcp_server.schemas import (
     IssueConfig,
     MilestoneConfig,
 )
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
-from mcp_server.utils.template_config import get_template_root
 
 IssueState = Literal["open", "closed", "all"]
 
@@ -42,46 +37,15 @@ def normalize_unicode(text: str) -> str:
     return unicodedata.normalize("NFC", normalized)
 
 
-class IssueBody(BaseModel):
-    """Structured body for a GitHub issue, rendered via issue.md.jinja2."""
-
-    problem: str = Field(..., description="Clear description of the problem or feature request")
-    expected: str | None = Field(default=None, description="Expected behavior")
-    actual: str | None = Field(default=None, description="Actual behavior observed")
-    context: str | None = Field(default=None, description="Relevant background or environment info")
-    steps_to_reproduce: str | None = Field(
-        default=None, description="Numbered steps to reproduce the issue"
-    )
-    related_docs: list[str] | None = Field(
-        default=None, description="List of related documentation paths or URLs"
-    )
-
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "examples": [
-                {
-                    "problem": "The create_issue tool does not validate issue_type.",
-                },
-                {
-                    "problem": "Login fails on Windows when username contains spaces.",
-                    "expected": "Login succeeds and redirects to dashboard.",
-                    "actual": "500 Internal Server Error is returned.",
-                    "context": "Observed on Windows 11, Python 3.13.",
-                    "steps_to_reproduce": "1. Enter username with space\n2. Click Login",
-                    "related_docs": ["docs/development/issue149/research.md"],
-                },
-            ]
-        },
-    )
-
-
 class CreateIssueInput(BaseModel):
     """Structured input for creating a GitHub issue.
 
     Only structural validation happens here. Semantic validation against project
     config is delegated to GitHubManager.validate_issue_params(). No free-form
     labels are accepted; they are assembled internally by CreateIssueTool.
+
+    The body field accepts pre-rendered markdown. Use scaffold_artifact(artifact_type='issue')
+    to generate the body before calling this tool.
     """
 
     issue_type: str = Field(..., description="Issue type: feature, bug, hotfix, chore, docs, epic")
@@ -94,27 +58,19 @@ class CreateIssueInput(BaseModel):
             " tooling, workflow, documentation"
         ),
     )
-    body: IssueBody = Field(..., description="Structured issue body (IssueBody)")
+    body: str = Field(
+        ...,
+        description=(
+            "Issue body as pre-rendered markdown. "
+            "Use scaffold_artifact(artifact_type='issue') to generate."
+        ),
+    )
     is_epic: bool = Field(default=False, description="Mark this issue as an epic")
     parent_issue: int | None = Field(
         default=None, description="Parent issue number (positive integer)", ge=1
     )
     milestone: str | None = Field(default=None, description="Milestone title")
     assignees: list[str] | None = Field(default=None, description="List of GitHub logins to assign")
-
-    @field_validator("body", mode="before")
-    @classmethod
-    def coerce_body_from_json_string(cls, v: object) -> object:
-        """Accept a JSON string for body and parse it into a dict for IssueBody."""
-        if isinstance(v, str):
-            try:
-                parsed = json.loads(v)
-            except json.JSONDecodeError as e:
-                raise ValueError(f"body must be a valid JSON string or object: {e}") from e
-            if not isinstance(parsed, dict):
-                raise ValueError("body JSON string must decode to an object, not a list or scalar")
-            return parsed
-        return v
 
     model_config = ConfigDict(
         extra="forbid",
@@ -125,21 +81,14 @@ class CreateIssueInput(BaseModel):
                     "title": "Add structured issue creation",
                     "priority": "medium",
                     "scope": "mcp-server",
-                    "body": {"problem": "The create_issue tool lacks validation."},
+                    "body": "## Problem\n\nThe create_issue tool lacks validation.",
                 },
                 {
                     "issue_type": "bug",
                     "title": "Login fails on Windows when username contains spaces",
                     "priority": "high",
                     "scope": "platform",
-                    "body": {
-                        "problem": "Login fails with 500 error.",
-                        "expected": "Redirect to dashboard.",
-                        "actual": "500 Internal Server Error.",
-                        "context": "Windows 11, Python 3.13.",
-                        "steps_to_reproduce": "1. Enter username with space\n2. Click Login",
-                        "related_docs": ["docs/development/issue149/research.md"],
-                    },
+                    "body": "## Problem\n\nLogin fails with 500 error.\n\n## Expected Behavior\n\nRedirect to dashboard.",
                     "is_epic": False,
                     "parent_issue": 91,
                     "milestone": "v2.0",
@@ -174,7 +123,6 @@ class CreateIssueTool(BaseTool):
         self._label_config = label_config
         self._scope_config = scope_config
         self._git_config = git_config
-        self._renderer = JinjaRenderer(template_dir=get_template_root())
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -192,31 +140,6 @@ class CreateIssueTool(BaseTool):
         if self._git_config is not None:
             schema["properties"]["title"]["maxLength"] = self._git_config.issue_title_max_length
         return schema
-
-    def _render_body(self, body: IssueBody, title: str = "") -> str:
-        """Render an IssueBody to markdown via issue.md.jinja2."""
-        _template_path = "concrete/issue.md.jinja2"
-        _template_root = get_template_root()
-        _schema = introspect_template_with_inheritance(_template_root, _template_path)
-        _parent_chain = getattr(_schema, "parent_chain", [])
-        _tier_chain = [(path, "1.0") for path in _parent_chain]
-        _version_hash = compute_version_hash("issue", _template_path, _tier_chain)
-
-        return self._renderer.render(
-            _template_path,
-            format="markdown",
-            title=title,
-            output_path=None,
-            artifact_type="issue",
-            version_hash=_version_hash,
-            timestamp="",
-            problem=body.problem,
-            expected=body.expected,
-            actual=body.actual,
-            context=body.context,
-            steps_to_reproduce=body.steps_to_reproduce,
-            related_docs=body.related_docs,
-        )
 
     def _assemble_labels(self, params: CreateIssueInput) -> list[str]:
         """Assemble the full label list from structured input fields."""
@@ -256,7 +179,7 @@ class CreateIssueTool(BaseTool):
 
         try:
             title_safe = normalize_unicode(params.title)
-            body_safe = normalize_unicode(self._render_body(params.body, title=params.title))
+            body_safe = normalize_unicode(params.body)
             labels = self._assemble_labels(params)
 
             milestone_number: int | None = None
@@ -278,11 +201,6 @@ class CreateIssueTool(BaseTool):
                 assignees=params.assignees,
             )
             return ToolResult.text(f"Created issue #{issue['number']}: {issue['title']}")
-        except jinja2.TemplateError as e:
-            return ToolResult.error(
-                f"Body rendering failed: {e}. "
-                "Check that issue.md.jinja2 exists in the templates directory."
-            )
         except ValueError as e:
             return ToolResult.error(f"Label assembly failed: {e}.")
         except ExecutionError as e:
@@ -380,18 +298,18 @@ class UpdateIssueTool(BaseTool):
     async def execute(self, params: UpdateIssueInput, context: NoteContext) -> ToolResult:
         del context  # Not used
         try:
-            self.manager.update_issue(
+            updated = self.manager.update_issue(
                 issue_number=params.issue_number,
                 title=params.title,
                 body=params.body,
                 state=params.state,
                 labels=params.labels,
-                milestone=params.milestone,
                 assignees=params.assignees,
+                milestone=params.milestone,
             )
-            return ToolResult.text(f"Updated issue #{params.issue_number}")
         except ExecutionError as e:
             return ToolResult.error(str(e))
+        return ToolResult.text(f"Updated issue #{updated.number}")
 
 
 class CloseIssueInput(BaseModel):
@@ -399,15 +317,15 @@ class CloseIssueInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    issue_number: int = Field(..., description="The issue number to close")
-    comment: str | None = Field(default=None, description="Optional comment to add before closing")
+    issue_number: int = Field(..., description="Issue number to close")
+    comment: str | None = Field(default=None, description="Optional closing comment")
 
 
 class CloseIssueTool(BaseTool):
     """Tool to close an issue."""
 
     name = "close_issue"
-    description = "Close a GitHub issue with optional comment"
+    description = "Close a GitHub issue with an optional comment"
     args_model = CloseIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
@@ -417,6 +335,6 @@ class CloseIssueTool(BaseTool):
         del context  # Not used
         try:
             self.manager.close_issue(params.issue_number, comment=params.comment)
-            return ToolResult.text(f"Closed issue #{params.issue_number}")
         except ExecutionError as e:
             return ToolResult.error(str(e))
+        return ToolResult.text(f"Closed issue #{params.issue_number}")
