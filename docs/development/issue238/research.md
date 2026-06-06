@@ -143,7 +143,7 @@ The `issue` artifact type is already registered in the scaffolding registry (use
 
 ## Open Questions
 
-- ❓ Does the `issue` artifact type context schema need type-aware enrichment to guide co-agent slash-prompt usage authoritatively? Residual quality-of-life concern; not a blocker for the refactor.
+- ✅ Type-aware enrichment: resolved as slash-prompt guidance only. `IssueContext` schema and `issue.md.jinja2` remain type-neutral. The co-agent slash-prompt instructs the agent which optional fields to populate per `issue_type` (e.g. `actual`/`steps_to_reproduce` for bugs; `expected`/`context` for features). No schema or template changes required. Schema-level enforcement would violate the pure value-object rule (ARCHITECTURE_PRINCIPLES.md).
 - ✅ `validate_issue_params()` in `GitHubManager` is retained: semantic guard independent of rendering.
 - ✅ `IssueBody` is deleted entirely: zero residual value after split (see analysis above).
 - ✅ H1 duplicate fix in `issue.md.jinja2` is a separate cycle.
@@ -187,3 +187,4 @@ Design phase is skipped; the decisions below are approved by the product owner a
 |---------|------|--------|---------|
 | 1.0 | 2026-06-06 | Agent | Initial draft |
 | 1.1 | 2026-06-06 | Agent | Added adopted design decisions; design phase skipped (product owner approval) |
+| 1.2 | 2026-06-06 | Agent | Closed all open questions; status → PRELIMINARY |
