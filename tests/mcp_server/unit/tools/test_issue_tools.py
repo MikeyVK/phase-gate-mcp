@@ -195,8 +195,7 @@ def test_create_issue_input_body_is_str() -> None:
 
 def test_create_issue_input_body_rejects_dict() -> None:
     """C1 RED: CreateIssueInput.body must reject structured dicts (no IssueBody coercion)."""
-    import pytest as _pytest
-    with _pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         CreateIssueInput(
             issue_type="feature",
             title="Test issue",

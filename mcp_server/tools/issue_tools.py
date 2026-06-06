@@ -88,7 +88,10 @@ class CreateIssueInput(BaseModel):
                     "title": "Login fails on Windows when username contains spaces",
                     "priority": "high",
                     "scope": "platform",
-                    "body": "## Problem\n\nLogin fails with 500 error.\n\n## Expected Behavior\n\nRedirect to dashboard.",
+                    "body": (
+                        "## Problem\n\nLogin fails with 500 error."
+                        "\n\n## Expected Behavior\n\nRedirect to dashboard."
+                    ),
                     "is_epic": False,
                     "parent_issue": 91,
                     "milestone": "v2.0",
