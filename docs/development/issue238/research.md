@@ -2,7 +2,7 @@
 <!-- template=research version=8b7bb3ab created=2026-06-06T10:18Z updated= -->
 # Refactor create_issue: split scaffolding from submission (mirror submit_pr pattern)
 
-**Status:** DRAFT  
+**Status:** PRELIMINARY  
 **Version:** 1.0  
 **Last Updated:** 2026-06-06
 
@@ -170,8 +170,20 @@ The `issue` artifact type is already registered in the scaffolding registry (use
 
 ---
 
+## Adopted Design Decisions
+
+Design phase is skipped; the decisions below are approved by the product owner and sufficient for planning.
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| `body` field type | `body: str` — required, no default | Mirrors `SubmitPRInput.body`; pre-rendered markdown passed by caller |
+| `body` field description | `"Issue body as pre-rendered markdown. Use scaffold_artifact(artifact_type='issue') to generate."` | Guides agents to the correct upstream tool |
+| `CreateIssueTool` constructor | Unchanged — all config deps (`IssueConfig`, `MilestoneConfig`, `ContractsConfig`, `LabelConfig`, `ScopeConfig`, `GitConfig`) stay for label assembly | No new injection needed; only `self._renderer` assignment is removed |
+| `input_schema` property | Unchanged — still injects enums for `issue_type`, `priority`, `scope` and `maxLength` for `title` | `body` is now a plain `str` field; no schema customization needed for it |
+
 ## Version History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-06 | Agent | Initial draft |
+| 1.1 | 2026-06-06 | Agent | Added adopted design decisions; design phase skipped (product owner approval) |
