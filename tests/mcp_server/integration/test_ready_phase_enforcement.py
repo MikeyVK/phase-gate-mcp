@@ -30,7 +30,6 @@ from types import SimpleNamespace
 
 # Third-party
 import pytest
-from unittest.mock import MagicMock
 
 # Project modules
 from mcp_server.config.loader import ConfigLoader

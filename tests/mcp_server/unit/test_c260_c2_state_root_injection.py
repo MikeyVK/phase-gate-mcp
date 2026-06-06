@@ -18,8 +18,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.config.loader import normalize_config_root
-from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.core.interfaces import IStateReader
+from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import (
     EnforcementConfig,
     EnforcementRunner,

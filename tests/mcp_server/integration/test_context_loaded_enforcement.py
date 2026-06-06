@@ -43,9 +43,9 @@ import pytest
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.exceptions import ValidationError
 from mcp_server.core.interfaces import IPRStatusReader, PRStatus
-from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
+from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.schemas import GitConfig
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.tools.git_pull_tool import GitPullInput, GitPullTool
@@ -177,7 +177,8 @@ class TestContextLoadedGate:
         """C3.D5: gate inactive when state.json present but issue_number mismatches branch."""
         # state.json exists but belongs to a DIFFERENT issue (999 vs branch issue 357)
         (tmp_path / "state.json").write_text(
-            '{"branch": "feature/999-other", "issue_number": 999, "workflow_name": "feature", "current_phase": "implementation"}',
+            '{"branch": "feature/999-other", "issue_number": 999,'
+            ' "workflow_name": "feature", "current_phase": "implementation"}',
             encoding="utf-8",
         )
         cache = ContextLoadedCache()  # context NOT loaded

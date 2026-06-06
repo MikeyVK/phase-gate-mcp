@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.interfaces import IStateReader
 from mcp_server.core.operation_notes import NoteContext
@@ -42,6 +43,7 @@ def _make_runner(
         server_root=tmp_path,
         state_reader=MagicMock(spec=IStateReader),
     )
+
 
 class TestEnforcementRunner:
     """Test suite for Cycle 5 enforcement loading and dispatch."""

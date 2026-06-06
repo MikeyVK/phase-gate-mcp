@@ -17,7 +17,6 @@ import pytest
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.interfaces import IPRStatusReader, PRStatus
-from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import (
     EnforcementAction,
@@ -27,6 +26,7 @@ from mcp_server.managers.enforcement_runner import (
     EnforcementRunner,
 )
 from mcp_server.managers.github_manager import GitHubManager
+from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.state.pr_status_cache import PRStatusCache
 
 
@@ -327,7 +327,8 @@ class TestCheckPhaseReadinessHandler:
         state_dir = tmp_path / ".phase-gate"
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text(
-            f'{{"branch": "feature/1-test", "current_phase": "{phase}", "workflow_name": "feature"}}',
+            f'{{"branch": "feature/1-test", "current_phase": "{phase}",'
+            f' "workflow_name": "feature"}}',
             encoding="utf-8",
         )
 
