@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 # Third-party
 import pytest
+from pydantic import ValidationError
 
 # Project modules
 from mcp_server.config.settings import (
@@ -104,8 +105,6 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
 
 def test_server_settings_rejects_version_kwarg() -> None:
     """#359 RED: ServerSettings must reject version= as a constructor kwarg."""
-    from pydantic import ValidationError
-
     with pytest.raises(ValidationError):
         ServerSettings(version="injected")
 
