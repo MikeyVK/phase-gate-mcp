@@ -21,7 +21,7 @@ from typing import Any
 
 # Third-party
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 def _default_server_version() -> str:
@@ -47,12 +47,19 @@ class LogSettings(BaseModel):
 class ServerSettings(BaseModel):
     """Server configuration settings."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str = "phase-gate-mcp"
-    version: str = Field(default_factory=_default_server_version)
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
     server_root_dir: str = ".phase-gate"
     logs_dir: str = "logs"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def version(self) -> str:
+        """Resolve server version from installed package metadata (read-only)."""
+        return _default_server_version()
 
 
 class GitHubSettings(BaseModel):
