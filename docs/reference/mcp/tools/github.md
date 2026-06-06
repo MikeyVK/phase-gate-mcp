@@ -71,20 +71,12 @@ Create a new GitHub issue. Uses a structured input contract: `issue_type`, `prio
 | `title` | `str` | **Yes** | Issue title (Unicode-safe, maximum 72 characters) |
 | `priority` | `str` | **Yes** | Priority enum — valid values injected at runtime from `LabelConfig` (e.g. `critical`, `high`, `medium`, `low`, `triage`) |
 | `scope` | `str` | **Yes** | Scope enum — valid values injected at runtime from `ScopeConfig` (e.g. `architecture`, `mcp-server`, `platform`, `tooling`, `workflow`, `documentation`) |
-| `body` | `IssueBody` | **Yes** | Structured body object — see IssueBody fields below |
+| `body` | `str` | **Yes** | Pre-rendered markdown body. Generate using `scaffold_artifact(artifact_type='issue')` before calling this tool. |
 | `is_epic` | `bool` | No | Mark issue as an epic (default: `false`) |
 | `parent_issue` | `int` | No | Parent issue number (positive integer) for child issues |
 | `milestone` | `str` | No | Milestone **title** (string, not number) |
 | `assignees` | `list[str]` | No | List of GitHub usernames to assign |
 
-##### IssueBody fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `problem` | `str` | **Yes** | Clear description of the problem or feature request |
-| `expected` | `str` | No | Expected behavior |
-| `actual` | `str` | No | Actual behavior observed |
-| `context` | `str` | No | Relevant background or environment info |
 | `steps_to_reproduce` | `str` | No | Numbered steps to reproduce the issue |
 | `related_docs` | `list[str]` | No | List of related documentation paths or URLs |
 
@@ -112,42 +104,34 @@ Create a new GitHub issue. Uses a structured input contract: `issue_type`, `prio
   "issue_type": "feature",
   "title": "Add structured issue creation",
   "priority": "medium",
+```json
+{
+  "issue_type": "feature",
+  "title": "Add structured issue creation",
+  "priority": "medium",
   "scope": "mcp-server",
-  "body": {
-    "problem": "The create_issue tool lacks validation."
-  }
+  "body": "## Problem\n\nThe create_issue tool lacks validation."
 }
 ```
-
 ```json
 {
   "issue_type": "bug",
   "title": "Login fails on Windows when username contains spaces",
   "priority": "high",
   "scope": "platform",
-  "body": {
-    "problem": "Login fails with 500 error.",
-    "expected": "Redirect to dashboard.",
-    "actual": "500 Internal Server Error.",
-    "context": "Windows 11, Python 3.13.",
-    "steps_to_reproduce": "1. Enter username with space\n2. Click Login",
-    "related_docs": ["docs/development/issue149/research.md"]
-  },
+  "body": "## Problem\n\nLogin fails with 500 error.\n\n## Expected Behavior\n\nRedirect to dashboard.\n\n## Actual Behavior\n\n500 Internal Server Error.\n\n## Context\n\nWindows 11, Python 3.13.\n\n## Steps to Reproduce\n\n1. Enter username with space\n2. Click Login",
   "is_epic": false,
   "parent_issue": 91,
   "milestone": "v2.0",
   "assignees": ["alice"]
 }
 ```
-
-#### Behavior Notes
-
-- **Structured input:** `issue_type`, `priority`, and `scope` are required; free-form `labels` are not accepted — they are assembled internally by the tool
 - **Milestone:** Pass the milestone **title** (string), not the milestone number
 - **Label assembly:** Labels are derived from `issue_type`, `priority`, and `scope`
 - **Assignee validation:** Usernames must be valid collaborators
 - **Default state:** Issues always created in `open` state
 - **Enum values:** `issue_type`, `priority`, and `scope` enums are injected at runtime from config (A4 pattern) — inspect the tool schema for current valid values
+- **Body generation:** Use `scaffold_artifact(artifact_type='issue', name="<slug>", context={...})` to generate a pre-rendered markdown body before calling this tool. The slash prompt `/create-issue` automates this two-step flow.
 
 
 ---
