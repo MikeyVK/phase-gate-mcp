@@ -97,6 +97,19 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# C1 #359 — version must be read-only (computed_field + extra='forbid')
+# ---------------------------------------------------------------------------
+
+
+def test_server_settings_rejects_version_kwarg() -> None:
+    """#359 RED: ServerSettings must reject version= as a constructor kwarg."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        ServerSettings(version="injected")
+
+
 def test_state_dir_default_is_phase_gate() -> None:
     """C5 RED: ServerSettings server_root_dir default must be '.phase-gate'."""
     s = ServerSettings()
