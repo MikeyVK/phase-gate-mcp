@@ -50,9 +50,9 @@ async def test_git_pull_success_syncs_phase_state() -> None:
 
     mock_engine = Mock()
     tool = GitPullTool(manager=manager, state_engine=mock_engine)
-    mock_engine.get_state.return_value = {"current_phase": "tdd"}
+    mock_engine.get_state.return_value = {"current_phase": "implementation"}
 
-    run_sync = AsyncMock(side_effect=["Pulled from origin", {"current_phase": "tdd"}])
+    run_sync = AsyncMock(side_effect=["Pulled from origin", {"current_phase": "implementation"}])
 
     with (
         patch("mcp_server.tools.git_pull_tool.anyio.to_thread.run_sync", new=run_sync),

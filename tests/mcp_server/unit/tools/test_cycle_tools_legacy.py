@@ -130,7 +130,7 @@ class TestTransitionCycleTool:
         }
         project_manager.save_planning_deliverables(issue_number, planning_deliverables)
 
-        # Initialize TDD phase with cycle 1
+        # Initialize implementation phase with cycle 1
         state_engine.initialize_branch(
             branch="feature/146-tdd-cycle-tracking",
             issue_number=issue_number,
@@ -233,10 +233,10 @@ class TestTransitionCycleTool:
         assert "force_cycle_transition" in text
 
     @pytest.mark.asyncio
-    async def test_transition_blocks_outside_tdd_phase(
+    async def test_transition_blocks_outside_cycle_based_phase(
         self, tool: TransitionCycleTool, setup_project: tuple[Path, int]
     ) -> None:
-        """Test that transition only works during TDD phase.
+        """Test that transition only works during cycle-based phases.
 
         Issue #146 Cycle 4: Phase enforcement.
         """
@@ -260,7 +260,7 @@ class TestTransitionCycleTool:
             result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
         # Assert blocked
-        assert result.is_error, "Expected transition to be blocked outside TDD phase"
+        assert result.is_error, "Expected transition to be blocked outside cycle-based phase"
         text = result.content[0]["text"]
         assert "cycle-based phase" in text.lower()
 
@@ -285,7 +285,7 @@ class TestForceCycleTransitionTool:
 
     @pytest.fixture()
     def setup_forced_project(self, tmp_path: Path) -> tuple[Path, int]:
-        """Create project in TDD phase at cycle 2 for forced transitions."""
+        """Create project in cycle-based phase at cycle 2 for forced transitions."""
         workspace_root = tmp_path
         issue_number = 146
 
@@ -512,7 +512,7 @@ class TestForceCycleAuditSchema:
 
     @pytest.fixture()
     def setup_project(self, tmp_path: Path) -> tuple[Path, int]:
-        """Create project in TDD phase at cycle 2."""
+        """Create project in cycle-based phase at cycle 2."""
         workspace_root = tmp_path
         issue_number = 146
 
@@ -714,7 +714,7 @@ class TestTransitionCycleHistory:
 
     @pytest.fixture()
     def setup_project(self, tmp_path: Path) -> tuple[Path, int]:
-        """Create project in TDD phase at cycle 1."""
+        """Create project in cycle-based phase at cycle 1."""
         workspace_root = tmp_path
         issue_number = 146
 

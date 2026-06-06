@@ -39,7 +39,7 @@ def workflow_phases(workflow_config: WorkflowConfig) -> list[str]:
     All unique phases across all workflows.
 
     Returns list like:
-    ["research", "planning", "design", "tdd", "integration", "documentation", "coordination"]
+    ["research", "planning", "design", "implementation", "validation", "documentation", "coordination"]
     """
     all_phases = set()
     for workflow in workflow_config.workflows.values():

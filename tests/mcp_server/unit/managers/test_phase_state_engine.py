@@ -1,6 +1,6 @@
 """Tests for PhaseStateEngine implementation-phase lifecycle hooks.
 
-Issue #146 Cycle 4: TDD phase lifecycle hooks.
+Issue #146 Cycle 4: implementation phase lifecycle hooks.
 
 @layer: Tests (Unit)
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.phase_state_engine
@@ -24,7 +24,7 @@ from tests.mcp_server.test_support import make_phase_state_engine, make_project_
 
 
 class TestTDDPhaseHooks:
-    """Tests for TDD phase entry/exit hooks.
+    """Tests for implementation phase entry/exit hooks.
 
     Issue #146 Cycle 4: on_enter_implementation_phase and on_exit_implementation_phase.
     """
@@ -85,7 +85,7 @@ class TestTDDPhaseHooks:
     def test_on_enter_implementation_phase_initializes_cycle_1(
         self, setup_project: tuple[Path, int]
     ) -> None:
-        """Test that entering TDD phase auto-initializes cycle 1."""
+        """Test that entering implementation phase auto-initializes cycle 1."""
         # Arrange
         workspace_root, issue_number = setup_project
         branch = "feature/146-tdd-cycle-tracking"
@@ -117,7 +117,7 @@ class TestTDDPhaseHooks:
     def test_on_enter_implementation_phase_does_not_block_without_planning_deliverables(
         self, tmp_path: Path
     ) -> None:
-        """Test that entering TDD phase does NOT block on missing planning deliverables.
+        """Test that entering implementation phase does NOT block on missing planning deliverables.
 
         GAP-02 fix (Issue #229 C2): the planning-deliverables check was moved to
         on_exit_planning_phase. TDD entry must no longer enforce this contract.
@@ -153,7 +153,7 @@ class TestTDDPhaseHooks:
     def test_on_exit_implementation_phase_preserves_last_cycle(
         self, setup_project: tuple[Path, int]
     ) -> None:
-        """Test that exiting TDD phase preserves last_cycle."""
+        """Test that exiting implementation phase preserves last_cycle."""
         # Arrange
         workspace_root, issue_number = setup_project
         branch = "feature/146-tdd-cycle-tracking"
@@ -166,7 +166,7 @@ class TestTDDPhaseHooks:
             state_repository=state_repository,
         )
 
-        # Initialize in TDD phase at cycle 3
+        # Initialize in implementation phase at cycle 3
         state_engine.initialize_branch(
             branch=branch, issue_number=issue_number, initial_phase="implementation"
         )
@@ -184,7 +184,7 @@ class TestTDDPhaseHooks:
     def test_on_exit_implementation_phase_validates_completion(
         self, setup_project: tuple[Path, int]
     ) -> None:
-        """Test that exiting TDD phase validates all cycles completed."""
+        """Test that exiting implementation phase validates all cycles completed."""
         # Arrange
         workspace_root, issue_number = setup_project
         branch = "feature/146-tdd-cycle-tracking"
@@ -197,7 +197,7 @@ class TestTDDPhaseHooks:
             state_repository=state_repository,
         )
 
-        # Initialize in TDD phase at cycle 2 (not completed)
+        # Initialize in implementation phase at cycle 2 (not completed)
         state_engine.initialize_branch(
             branch=branch, issue_number=issue_number, initial_phase="implementation"
         )
@@ -318,7 +318,7 @@ class TestTransitionHooksWiring:
         return workspace_root, issue_number
 
     def test_transition_to_tdd_calls_enter_hook(self, setup_project: tuple[Path, int]) -> None:
-        """Test that transition() to 'tdd' auto-calls on_enter_implementation_phase (Issue #146)."""
+        """Test that transition() to 'implementation' auto-calls on_enter_implementation_phase (Issue #146)."""
         workspace_root, issue_number = setup_project
         branch = "feature/999-hook-wiring"
 
@@ -334,22 +334,22 @@ class TestTransitionHooksWiring:
             branch=branch, issue_number=issue_number, initial_phase="design"
         )
 
-        # Verify no TDD cycle before transition
+        # Verify no active cycle before transition
         state = state_engine.get_state(branch)
         assert state.current_cycle is None
 
-        # Transition to TDD - should auto-call on_enter_implementation_phase
+        # Transition to implementation - should auto-call on_enter_implementation_phase
         state_engine.transition(branch=branch, to_phase="implementation")
 
         # Assert: hook was triggered and cycle 1 was initialized
         state = state_engine.get_state(branch)
         assert state.current_cycle == 1, (
             "on_enter_implementation_phase was not called by transition() - "
-            "current_cycle should be 1 after entering TDD phase"
+            "current_cycle should be 1 after entering implementation phase"
         )
 
     def test_transition_from_tdd_calls_exit_hook(self, setup_project: tuple[Path, int]) -> None:
-        """Test that transition() from 'tdd' auto-calls on_exit_implementation_phase."""
+        """Test that transition() from 'implementation' auto-calls on_exit_implementation_phase."""
         workspace_root, issue_number = setup_project
         branch = "feature/999-hook-wiring"
 
@@ -361,7 +361,7 @@ class TestTransitionHooksWiring:
             state_repository=state_repository,
         )
 
-        # Initialize branch in TDD phase at cycle 2
+        # Initialize branch in implementation phase at cycle 2
         state_engine.initialize_branch(
             branch=branch, issue_number=issue_number, initial_phase="implementation"
         )
@@ -375,9 +375,9 @@ class TestTransitionHooksWiring:
         state = state_engine.get_state(branch)
         assert state.last_cycle == 2, (
             "on_exit_implementation_phase was not called by transition() - "
-            "last_cycle should be 2 after exiting TDD phase"
+            "last_cycle should be 2 after exiting implementation phase"
         )
-        assert state.current_cycle == 2, "current_cycle should be preserved after exiting TDD phase"
+        assert state.current_cycle == 2, "current_cycle should be preserved after exiting implementation phase"
 
     def test_force_reentry_to_implementation_preserves_active_cycle(
         self, setup_project: tuple[Path, int]
