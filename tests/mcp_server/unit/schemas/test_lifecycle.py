@@ -44,7 +44,7 @@ class TestLifecycleMixin:
     def test_lifecycle_field_types(self) -> None:
         """Lifecycle fields must have correct types."""
         fields = LifecycleMixin.model_fields
-        assert fields["output_path"].annotation is Path
+        assert fields["output_path"].annotation == Path | None
         assert fields["scaffold_created"].annotation is datetime
         assert fields["template_id"].annotation is str
         assert fields["version_hash"].annotation is str

@@ -37,8 +37,12 @@ class LifecycleMixin(BaseModel):
         validate_default=True,
     )
 
-    output_path: Path = Field(
-        description="Absolute path where artifact was written",
+    output_path: Path | None = Field(
+        default=None,
+        description=(
+            "Absolute path where artifact was written. "
+            "None for ephemeral artifacts (renders compact header)."
+        ),
     )
     scaffold_created: datetime = Field(
         description="Timestamp of artifact creation",

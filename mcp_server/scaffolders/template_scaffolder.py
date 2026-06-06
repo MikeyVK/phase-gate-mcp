@@ -168,11 +168,12 @@ class TemplateScaffolder(BaseScaffolder):
         # Remove template_name from context to avoid conflict
         format_value = self._determine_format(artifact)
 
-        # Construct output path for SCAFFOLD header
+        # Construct output path for SCAFFOLD header.
+        # None = compact single-line header; absent key = fall back to name-based path.
         name = kwargs.get("name") or kwargs.get("title", "unnamed")
         suffix = artifact.name_suffix or ""
         extension = artifact.file_extension
-        output_path = kwargs.get("output_path") or f"{name}{suffix}{extension}"
+        output_path = kwargs.get("output_path", f"{name}{suffix}{extension}")
 
         # Use provided timestamp or generate ISO 8601 (UTC, minute precision)
         timestamp = kwargs.get("timestamp") or datetime.now(UTC).strftime("%Y-%m-%dT%H:%MZ")
