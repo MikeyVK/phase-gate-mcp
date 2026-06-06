@@ -2,9 +2,9 @@
   "branch": "bug/359-server-settings-version-not-configurable",
   "issue_number": 359,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 1,
-  "last_cycle": 0,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -36,8 +36,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-06T20:11:21.132979+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
