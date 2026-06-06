@@ -13,28 +13,20 @@ Guide through scaffolding a GitHub issue body and submitting it as a real GitHub
 
 Extract from the invocation argument:
 
-- `ISSUE_TYPE` — one of: `feature`, `bug`, `hotfix`, `chore`, `docs`, `epic`
+- `ISSUE_TYPE` — the issue type (e.g. `feature`, `bug`, `refactor`). Valid values are injected at runtime into the `create_issue` tool schema — check the schema if uncertain.
 - `DESCRIPTION` — short description (optional; used as a starting point for the title)
 
 If `ISSUE_TYPE` is absent, ask the user before proceeding. Do not guess.
 
 ---
 
-## Step 1: Select fields for this issue type
+## Step 1: Discover available fields
 
-Based on `ISSUE_TYPE`, determine which optional context fields to populate when calling `scaffold_artifact`.
+Call `scaffold_schema(artifact_type="issue")`.
 
-| ISSUE_TYPE | Recommended optional fields |
-| ---------- | --------------------------- |
-| `bug`      | `actual`, `steps_to_reproduce`, `expected` |
-| `feature`  | `expected`, `context`, `summary` |
-| `refactor` | `context`, `expected` |
-| `chore`    | `context` |
-| `docs`     | `context` |
-| `hotfix`   | `actual`, `steps_to_reproduce`, `expected` |
-| `epic`     | `summary`, `context`, `expected` |
+Read the description of each optional field in the returned schema. Using `ISSUE_TYPE` as the selection criterion, select the optional fields whose descriptions match the character of this issue type. Skip fields that are not relevant.
 
-Do not ask about fields outside the recommended set unless the user volunteers them.
+Do not ask about fields you did not select unless the user volunteers them.
 
 ---
 
@@ -44,7 +36,7 @@ Use conversation context or ask the user for:
 
 - `title` — concise issue title (required)
 - `problem` — what is wrong or needed (required)
-- Recommended optional fields from Step 1
+- The optional fields selected in Step 1
 
 ---
 
@@ -52,8 +44,8 @@ Use conversation context or ask the user for:
 
 Ask the user for:
 
-- `priority` — one of the values injected at runtime from config (typically `critical`, `high`, `medium`, `low`, `triage`). Default to `medium` if the user does not specify.
-- `scope` — one of the values injected at runtime from config (typically `architecture`, `mcp-server`, `platform`, `tooling`, `workflow`, `documentation`). Ask if unclear.
+- `priority` — valid values are injected at runtime from config into the `create_issue` tool schema. Default to `medium` if the user does not specify.
+- `scope` — valid values are injected at runtime from config into the `create_issue` tool schema. Ask if unclear.
 - `is_epic` — `true` only when `ISSUE_TYPE` is `epic`. Default `false`.
 - `parent_issue` — parent issue number (optional, positive integer).
 - `milestone` — milestone title (optional).
@@ -74,15 +66,8 @@ scaffold_artifact(
   context={
     "title": "<title>",
     "problem": "<problem>",
-    # include only when filled in:
-    "summary": "<summary>",
-    "expected": "<expected behavior>",
-    "actual": "<actual behavior>",
-    "context": "<additional context>",
-    "steps_to_reproduce": "<reproduction steps>",
-    "labels": [],           # leave empty — assembled by create_issue
-    "milestone": "<milestone>",
-    "assignees": ["<login>"]
+    # include only fields selected in Step 1 that the user provided
+    "labels": []  # leave empty — assembled by create_issue
   }
 )
 ```
