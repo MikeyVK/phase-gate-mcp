@@ -58,6 +58,9 @@
               "tests/mcp_server/integration/test_create_issue_e2e.py updated to body: str",
               "tests/mcp_server/unit/integration/test_all_tools.py updated to body: str",
               "tests/mcp_server/unit/integration/test_github.py updated to body: str",
+              "tests/mcp_server/unit/tools/test_create_issue_label_assembly.py updated to body: str",
+              "tests/mcp_server/unit/tools/test_create_issue_input.py updated to body: str",
+              "tests/mcp_server/unit/tools/test_create_issue_errors.py updated to body: str",
               "tests/mcp_server/test_support.py make_create_issue_tool updated",
               "Full test suite green",
               "grep for IssueBody and _render_body in tests/ returns zero hits"

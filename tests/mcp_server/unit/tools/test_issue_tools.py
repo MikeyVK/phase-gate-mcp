@@ -180,3 +180,28 @@ async def test_close_issue_tool(mock_github_manager: MagicMock) -> None:
     await tool.execute(CloseIssueInput(issue_number=5, comment="Done"), NoteContext())
 
     mock_github_manager.close_issue.assert_called_with(5, comment="Done")
+
+
+def test_create_issue_input_body_is_str() -> None:
+    """C1 RED: CreateIssueInput.body must accept a plain string, not IssueBody."""
+    params = CreateIssueInput(
+        issue_type="feature",
+        title="Test issue",
+        priority="medium",
+        scope="mcp-server",
+        body="## Problem\n\nSomething is broken.",
+    )
+    assert params.body == "## Problem\n\nSomething is broken."
+
+
+def test_create_issue_input_body_rejects_dict() -> None:
+    """C1 RED: CreateIssueInput.body must reject structured dicts (no IssueBody coercion)."""
+    import pytest as _pytest
+    with _pytest.raises(Exception):
+        CreateIssueInput(
+            issue_type="feature",
+            title="Test issue",
+            priority="medium",
+            scope="mcp-server",
+            body={"problem": "something"},  # type: ignore[arg-type]
+        )

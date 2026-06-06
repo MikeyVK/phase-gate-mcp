@@ -26,6 +26,9 @@ Define the implementation cycles for removing IssueBody and _render_body() from 
 | `tests/mcp_server/integration/test_create_issue_e2e.py` | Updated to `body: str` (C2) |
 | `tests/mcp_server/unit/integration/test_all_tools.py` | Updated to `body: str` (C2) |
 | `tests/mcp_server/unit/integration/test_github.py` | Updated to `body: str` (C2) |
+| `tests/mcp_server/unit/tools/test_create_issue_label_assembly.py` | Updated to `body: str` (C2) |
+| `tests/mcp_server/unit/tools/test_create_issue_input.py` | Updated to `body: str` (C2) |
+| `tests/mcp_server/unit/tools/test_create_issue_errors.py` | Updated to `body: str` (C2) |
 | `tests/mcp_server/test_support.py` | Updated `make_create_issue_tool` factory (C2) |
 
 **Out of Scope:**
@@ -81,8 +84,8 @@ Three TDD cycles: (C1) refactor CreateIssueTool to accept body: str; (C2) delete
 **Dependencies:** C1
 
 **Tests:**
-- RED: run full test suite — expect compile/import failures in `test_issue_body.py`, `test_render_body_scaffold_header.py`, `test_issue_tools.py`, `test_create_issue_e2e.py`, `test_all_tools.py`, `test_github.py`, `test_support.py`
-- GREEN: delete `test_issue_body.py` and `test_render_body_scaffold_header.py`; update `test_issue_tools.py`, `test_create_issue_e2e.py`, `test_all_tools.py`, `test_github.py`, `test_support.py` to use `body: str` (plain markdown string)
+- RED: run full test suite — expect compile/import failures in `test_issue_body.py`, `test_render_body_scaffold_header.py`, `test_issue_tools.py`, `test_create_issue_e2e.py`, `test_all_tools.py`, `test_github.py`, `test_create_issue_label_assembly.py`, `test_create_issue_input.py`, `test_create_issue_errors.py`, `test_support.py`
+- GREEN: delete `test_issue_body.py` and `test_render_body_scaffold_header.py`; update `test_issue_tools.py`, `test_create_issue_e2e.py`, `test_all_tools.py`, `test_github.py`, `test_create_issue_label_assembly.py`, `test_create_issue_input.py`, `test_create_issue_errors.py`, `test_support.py` to use `body: str` (plain markdown string)
 - REFACTOR: run full test suite — all tests pass; no `IssueBody` or `_render_body` references remain
 
 **Success Criteria:**
@@ -92,6 +95,9 @@ Three TDD cycles: (C1) refactor CreateIssueTool to accept body: str; (C2) delete
 - `tests/mcp_server/integration/test_create_issue_e2e.py` passes with `body: str` inputs
 - `tests/mcp_server/unit/integration/test_all_tools.py` passes with `body: str` inputs
 - `tests/mcp_server/unit/integration/test_github.py` passes with `body: str` inputs
+- `tests/mcp_server/unit/tools/test_create_issue_label_assembly.py` passes with `body: str` inputs
+- `tests/mcp_server/unit/tools/test_create_issue_input.py` passes with `body: str` inputs
+- `tests/mcp_server/unit/tools/test_create_issue_errors.py` passes with `body: str` inputs
 - `tests/mcp_server/test_support.py` `make_create_issue_tool` factory works without `IssueBody`
 - Full test suite green
 - `grep` for `IssueBody` and `_render_body` in `tests/` returns zero hits
@@ -177,3 +183,4 @@ Saved via `save_planning_deliverables(issue_number=238, ...)`.
 | 1.0 | 2026-06-06 | Agent | Initial draft |
 | 1.1 | 2026-06-06 | Agent | QA FAIL: add test_github.py to C2; add deliverables payload section |
 | 1.2 | 2026-06-06 | Agent | QA NOGO: remove all duplication — single Scope table, clean C2/C3, single Version History |
+| 1.3 | 2026-06-06 | Agent | Add test_create_issue_label_assembly.py, test_create_issue_input.py, test_create_issue_errors.py to C2 scope |
