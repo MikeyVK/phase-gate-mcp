@@ -280,8 +280,7 @@ def test_issue_md_renders_problem_sections(jinja_env: Environment) -> None:
 
     output = template.render(**context)
 
-    # Verify structure
-    assert "# Add tracking templates" in output
+    # Verify structure (title not rendered in body per issue.md.jinja2 design)
     assert "Implement tracking artifact templates" in output
 
     # Verify sections
@@ -349,7 +348,7 @@ def test_issue_md_minimal_context(jinja_env: Environment) -> None:
 
     output = template.render(**context)
 
-    assert "# Simple Issue" in output
+    # Title not rendered in body per issue.md.jinja2 design (H1 removed in #238)
     assert "## Problem" in output
     assert "Brief problem description" in output
 
