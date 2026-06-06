@@ -29,6 +29,71 @@
     ],
     "skip_reason": null,
     "parent_branch": "epic/320-production-readiness-tracker",
-    "created_at": "2026-06-06T18:12:39.790436+00:00"
+    "created_at": "2026-06-06T18:12:39.790436+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "total": 2,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C1: enforcement_runner + phase_detection IStateReader injection",
+            "deliverables": [
+              {
+                "id": "D1",
+                "description": "EnforcementRunner.__init__ accepts state_reader: IStateReader; raw reads on lines 39+391 replaced"
+              },
+              {
+                "id": "D2",
+                "description": "_read_current_phase module-level function deleted"
+              },
+              {
+                "id": "D3",
+                "description": "ScopeDecoder.__init__ accepts state_reader: IStateReader + branch: str; state_path param removed"
+              },
+              {
+                "id": "D4",
+                "description": "_read_state_json reads via state_reader.load(branch).current_phase with FileNotFoundError catch"
+              },
+              {
+                "id": "D5",
+                "description": "server.py passes state_reader + branch to both ScopeDecoder instantiations and state_reader to EnforcementRunner"
+              },
+              {
+                "id": "D6",
+                "description": "All enforcement_runner and phase_detection tests green"
+              },
+              {
+                "id": "D7",
+                "description": "Quality gates on changed files pass"
+              }
+            ],
+            "exit_criteria": "All 7 deliverables satisfied: constructor signatures updated, dead code removed, server.py wired, tests green, quality gates pass."
+          },
+          {
+            "cycle_number": 2,
+            "name": "C2: cycle_tools documented exception + dead-code cleanup",
+            "deliverables": [
+              {
+                "id": "D8",
+                "description": "Both _get_current_branch fallback blocks carry NOTE comment per Approved Strategy"
+              },
+              {
+                "id": "D9",
+                "description": "No unused imports, variables, or constructor parameters remain in cycle_tools.py"
+              },
+              {
+                "id": "D10",
+                "description": "All cycle_tools tests green"
+              },
+              {
+                "id": "D11",
+                "description": "Quality gates on changed files pass"
+              }
+            ],
+            "exit_criteria": "All 4 deliverables satisfied: fallback annotated, dead code removed, tests green, gates pass."
+          }
+        ]
+      }
+    }
   }
 }
