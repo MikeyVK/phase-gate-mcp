@@ -14,10 +14,6 @@ Test PhaseDetectionResult TypedDict schema validation and field types
     - Validate phase names against workphases.yaml
 """
 
-# Standard library
-import json
-from pathlib import Path
-
 # Third-party
 # Project modules
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
@@ -74,7 +70,7 @@ class TestScopeDecoder:
         commit_message = "docs(P_RESEARCH): complete problem analysis"
 
         # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=False)
+        result = decoder.detect_phase(commit_message)
 
         # Assert
         assert result["workflow_phase"] == "research"
@@ -91,7 +87,7 @@ class TestScopeDecoder:
         commit_message = "test(P_IMPLEMENTATION_SP_RED): add user validation tests"
 
         # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=False)
+        result = decoder.detect_phase(commit_message)
 
         # Assert
         assert result["workflow_phase"] == "implementation"
@@ -101,60 +97,6 @@ class TestScopeDecoder:
         assert result["raw_scope"] == "P_IMPLEMENTATION_SP_RED"
         assert result["error_message"] is None
 
-    def test_fallback_to_state_json_when_commit_scope_missing(self, tmp_path: Path) -> None:
-        """Fallback to state.json when commit message has no valid scope (medium confidence)."""
-        # Arrange
-        state_file = tmp_path / "state.json"
-        state_file.write_text(
-            json.dumps({"current_phase": "validation", "workflow_name": "feature"})
-        )
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-        commit_message = "docs: update README"  # No scope
-
-        # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=True)
-
-        # Assert - state.json fallback with medium confidence
-        assert result["workflow_phase"] == "validation"
-        assert result["sub_phase"] is None
-        assert result["source"] == "state.json"
-        assert result["confidence"] == "medium"
-        assert result["raw_scope"] is None
-        assert result["error_message"] is None
-
-    def test_fallback_to_state_json_on_invalid_scope_format(self, tmp_path: Path) -> None:
-        """Fallback to state.json when commit scope format is invalid."""
-        # Arrange
-        state_file = tmp_path / "state.json"
-        state_file.write_text(json.dumps({"current_phase": "planning", "workflow_name": "bug"}))
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-        commit_message = "feat(INVALID_SCOPE): implement feature"  # Invalid format
-
-        # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=True)
-
-        # Assert
-        assert result["workflow_phase"] == "planning"
-        assert result["source"] == "state.json"
-        assert result["confidence"] == "medium"
-
-    def test_unknown_fallback_when_all_sources_fail(self) -> None:
-        """Return unknown with actionable error when commit-scope and state.json both fail."""
-        # Arrange
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=Path("/nonexistent/state.json"))
-        commit_message = "docs: no scope here"
-
-        # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=True)
-
-        # Assert - unknown fallback
-        assert result["workflow_phase"] == "unknown"
-        assert result["sub_phase"] is None
-        assert result["source"] == "unknown"
-        assert result["confidence"] == "unknown"
-        assert result["raw_scope"] is None
-        assert result["error_message"] is not None
-
     def test_unknown_error_message_contains_recovery_steps(self) -> None:
         """Verify unknown fallback includes actionable recovery instructions."""
         # Arrange
@@ -162,7 +104,7 @@ class TestScopeDecoder:
         commit_message = None  # No commit message
 
         # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=False)
+        result = decoder.detect_phase(commit_message)
 
         # Assert - error message has recovery steps
         assert result["error_message"] is not None
@@ -170,90 +112,6 @@ class TestScopeDecoder:
         assert "transition_phase" in result["error_message"]
         assert "type(P_PHASE): message" in result["error_message"]
         assert "research, planning, design, implementation" in result["error_message"]
-
-    def test_graceful_degradation_old_commit_format(self, tmp_path: Path) -> None:
-        """Old commits without scope gracefully fallback without errors."""
-        # Arrange
-        state_file = tmp_path / "state.json"
-        state_file.write_text(
-            json.dumps({"current_phase": "implementation", "workflow_name": "feature"})
-        )
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-        old_commit = "feat: implement user service"  # Legacy format
-
-        # Act
-        result = decoder.detect_phase(old_commit, fallback_to_state=True)
-
-        # Assert - graceful fallback to state.json
-        assert result["workflow_phase"] == "implementation"
-        assert result["source"] == "state.json"
-        assert result["confidence"] == "medium"
-        # No exception raised - graceful degradation
-
-    def test_validate_phase_from_state_json_against_workphases(self, tmp_path: Path) -> None:
-        """Invalid phase in state.json should fallback to unknown."""
-        # Arrange
-        state_file = tmp_path / "state.json"
-        state_file.write_text(
-            json.dumps({"current_phase": "invalid_phase", "workflow_name": "feature"})
-        )
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-        commit_message = "docs: no scope"
-
-        # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=True)
-
-        # Assert - invalid phase rejected, fallback to unknown
-        assert result["workflow_phase"] == "unknown"
-        assert result["source"] == "unknown"
-        assert result["confidence"] == "unknown"
-        assert result["error_message"] is not None
-        assert "Phase detection failed" in result["error_message"]
-
-    def test_validate_phase_accepts_valid_phases_from_workphases(self, tmp_path: Path) -> None:
-        """Valid phase in state.json should be accepted."""
-        # Arrange - use all valid phases from workphases.yaml
-        valid_phases = [
-            "research",
-            "planning",
-            "design",
-            "implementation",
-            "validation",
-            "documentation",
-            "coordination",
-        ]
-
-        for phase in valid_phases:
-            state_file = tmp_path / f"state_{phase}.json"
-            state_file.write_text(json.dumps({"current_phase": phase, "workflow_name": "feature"}))
-            decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-            commit_message = "docs: no scope"
-
-            # Act
-            result = decoder.detect_phase(commit_message, fallback_to_state=True)
-
-            # Assert - valid phase accepted
-            assert result["workflow_phase"] == phase, f"Phase {phase} should be accepted"
-            assert result["source"] == "state.json"
-            assert result["confidence"] == "medium"
-
-    def test_validate_commit_scope_phase_against_workphases(self, tmp_path: Path) -> None:
-        """Invalid phase in commit-scope should be rejected (fallback to state.json)."""
-        # Arrange - commit with invalid phase, state.json with valid phase
-        state_file = tmp_path / "state.json"
-        state_file.write_text(
-            json.dumps({"current_phase": "implementation", "workflow_name": "feature"})
-        )
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-        commit_message = "docs(P_INVALID_PHASE): some documentation"
-
-        # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=True)
-
-        # Assert - should reject invalid commit-scope, fallback to state.json
-        assert result["workflow_phase"] == "implementation"  # From state.json, not commit-scope
-        assert result["source"] == "state.json"  # Fallback source
-        assert result["confidence"] == "medium"  # Medium confidence from state
 
     def test_validate_commit_scope_accepts_valid_phases(self) -> None:
         """Valid phase in commit-scope should be accepted."""
@@ -272,41 +130,9 @@ class TestScopeDecoder:
 
         for commit, expected_phase in valid_commits:
             # Act
-            result = decoder.detect_phase(commit, fallback_to_state=False)
+            result = decoder.detect_phase(commit)
 
             # Assert - valid phase accepted with high confidence
             assert result["workflow_phase"] == expected_phase
             assert result["source"] == "commit-scope"
             assert result["confidence"] == "high"
-
-    def test_detect_phase_state_json_wins_over_commit_scope(self, tmp_path: Path) -> None:
-        """state.json takes precedence over commit-scope (core of the bugfix)."""
-        # Arrange
-        state_file = tmp_path / "state.json"
-        state_file.write_text(json.dumps({"current_phase": "planning", "workflow_name": "bug"}))
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-        # commit_message carries a valid phase-scope (P_RESEARCH) from the parent branch
-        commit_message = "docs(P_RESEARCH): finalize research doc"
-
-        # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=True)
-
-        # Assert - state.json wins, NOT commit-scope
-        assert result["workflow_phase"] == "planning"
-        assert result["source"] == "state.json"
-        assert result["confidence"] == "medium"
-
-    def test_detect_phase_fallback_false_still_uses_commit_scope(self, tmp_path: Path) -> None:
-        """fallback_to_state=False uses commit-scope exclusively (state_reconstructor path)."""
-        # Arrange
-        state_file = tmp_path / "state.json"
-        state_file.write_text(json.dumps({"current_phase": "planning", "workflow_name": "bug"}))
-        decoder = ScopeDecoder(_TEST_WORKPHASES, state_path=state_file)
-        commit_message = "docs(P_RESEARCH): finalize research doc"
-
-        # Act
-        result = decoder.detect_phase(commit_message, fallback_to_state=False)
-
-        # Assert - fallback_to_state=False: commit-scope wins, state.json ignored
-        assert result["workflow_phase"] == "research"
-        assert result["source"] == "commit-scope"

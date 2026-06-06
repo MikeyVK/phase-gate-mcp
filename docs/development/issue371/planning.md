@@ -3,7 +3,7 @@
 # Replace remaining direct state.json reads with IStateReader (#371)
 
 **Status:** APPROVED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-06-06
 
 ---
@@ -15,7 +15,7 @@ Wire IStateReader into the three production modules that currently bypass it, re
 ## Scope
 
 **In Scope:**
-mcp_server/managers/enforcement_runner.py (2 raw read sites + _read_current_phase deletion), mcp_server/core/phase_detection.py (ScopeDecoder constructor change), mcp_server/tools/cycle_tools.py (comment annotation only for fallback sites), mcp_server/server.py (composition root wiring updates), affected test files.
+mcp_server/managers/enforcement_runner.py (2 raw read sites + _read_current_phase deletion), mcp_server/core/phase_detection.py (ScopeDecoder dead-code elimination: state_path + _read_state_json + fallback_to_state removed), mcp_server/managers/state_repository.py (branch-inject fallback removed), mcp_server/tools/cycle_tools.py (comment annotation only for fallback sites), mcp_server/server.py (composition root wiring updates), affected test files.
 
 **Out of Scope:**
 IStateReader / IStateRepository interface changes. IStateRepository write paths. WorkflowStateMutator. QAManager. cycle_tools raw fallback reads (retained per Approved Strategy Option A).
@@ -29,26 +29,28 @@ Read these first:
 
 ## Summary
 
-Two implementation cycles: C1 injects IStateReader into EnforcementRunner and ScopeDecoder and removes dead code; C2 annotates the cycle_tools documented exception and removes any dead code produced there. Both cycles update server.py wiring and affected tests.
+Two implementation cycles: C1 injects IStateReader into EnforcementRunner, eliminates dead code from ScopeDecoder (state_path/fallback_to_state/\_read_state_json), hardens FileStateRepository.load(), and updates server.py; C2 annotates the cycle_tools documented exception and removes any dead code produced there. Both cycles update affected tests.
 
 ---
 
 ## TDD Cycles
 
 
-### Cycle 1: C1: enforcement_runner.py + phase_detection.py IStateReader injection
+### Cycle 1: C1: enforcement_runner.py IStateReader injection + ScopeDecoder dead-code elimination
 
-**Goal:** Inject IStateReader into EnforcementRunner and ScopeDecoder. Remove dead code (_read_current_phase module function, state_path constructor param from ScopeDecoder). Update server.py wiring. All enforcement and phase-detection paths now read state via IStateReader.
+**Goal:** Inject IStateReader into EnforcementRunner and remove the two raw json.loads call sites. Eliminate dead code from ScopeDecoder: remove `state_path` constructor param, `_read_state_json()` method, and `fallback_to_state` parameter from `detect_phase()`. Harden `FileStateRepository.load()` by removing the branch-inject fallback. Update server.py wiring. Remove dead-code-covering tests.
 
 **Tests:**
 
 **Success Criteria:**
 - EnforcementRunner.__init__ accepts state_reader: IStateReader; raw json.loads calls on lines 39 and 391 replaced by state_reader.load(branch) field access
 - _read_current_phase module-level function deleted
-- ScopeDecoder.__init__ accepts state_reader: IStateReader + branch: str; state_path constructor param removed
-- _read_state_json reads via state_reader.load(branch).current_phase with FileNotFoundError catch
-- server.py passes self._state_repository (or BranchValidatedStateReader) and active branch to both ScopeDecoder instantiations
-- server.py passes state_reader to EnforcementRunner
+- ScopeDecoder.__init__ no longer has state_path parameter; _read_state_json() method deleted; detect_phase() no longer has fallback_to_state parameter
+- All callers of detect_phase() (production + tests) updated to drop fallback_to_state= keyword argument
+- All ScopeDecoder instantiations (server.py + tests) updated to drop state_path= argument
+- FileStateRepository.load(): if "branch" not in data fallback block removed; branch field required in JSON or Pydantic raises ValidationError
+- server.py passes state_reader to EnforcementRunner; ScopeDecoder instantiations no longer pass state_path=
+- Tests that exercised fallback_to_state=True behaviour deleted (not just commented out)
 - All tests for enforcement_runner and phase_detection green
 - run_quality_gates on changed files: lint + pyright pass
 
@@ -73,10 +75,14 @@ Two implementation cycles: C1 injects IStateReader into EnforcementRunner and Sc
 
 ## Risks & Mitigation
 
-- **Risk:** ScopeDecoder constructor change breaks all tests that instantiate it directly with state_path
-  - **Mitigation:** Search test suite for ScopeDecoder(...) instantiation; update call sites in RED before GREEN
+- **Risk:** ScopeDecoder constructor change breaks all tests that instantiate it directly with state_path=
+  - **Mitigation:** Search test suite for `ScopeDecoder(` instantiation; remove state_path= param in RED before GREEN
+- **Risk:** detect_phase() signature change (fallback_to_state removed) breaks all callers
+  - **Mitigation:** Search for `detect_phase(` in all files; update call sites in RED
 - **Risk:** EnforcementRunner constructor change requires server.py and all test fixtures to be updated
   - **Mitigation:** Identify all instantiation sites in tests before editing production code
+- **Risk:** FileStateRepository.load() branch-inject removal causes test state fixtures without branch field to fail
+  - **Mitigation:** Audit test fixtures; ensure all create state.json with branch field present
 - **Risk:** cycle_tools fallback retained as raw read — must be clearly commented to avoid future confusion
   - **Mitigation:** Add explicit NOTE comment per Approved Strategy
 

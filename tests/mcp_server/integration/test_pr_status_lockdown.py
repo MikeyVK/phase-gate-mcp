@@ -45,7 +45,7 @@ import pytest
 # Project modules
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.exceptions import ValidationError
-from mcp_server.core.interfaces import IPRStatusReader, PRStatus
+from mcp_server.core.interfaces import IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.tools.base import BaseTool, BranchMutatingTool
@@ -134,6 +134,7 @@ def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
         git_config=loader.load_git_config(),
         pr_status_reader=_make_pr_reader(pr_status),
         server_root=tmp_path,
+        state_reader=MagicMock(spec=IStateReader),
     )
 
 

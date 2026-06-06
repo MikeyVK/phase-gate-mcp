@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.interfaces import IPRStatusReader, PRStatus
+from mcp_server.core.interfaces import IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import (
     EnforcementAction,
@@ -52,6 +52,7 @@ def _make_runner(
         git_config=MagicMock(),
         pr_status_reader=pr_status_reader,
         server_root=tmp_path / ".phase-gate",
+        state_reader=MagicMock(spec=IStateReader),
     )
 
 
@@ -141,6 +142,7 @@ class TestToolCategoryDispatch:
             git_config=MagicMock(),
             registry={"check_phase_readiness": fake_handler},
             server_root=tmp_path,
+            state_reader=MagicMock(spec=IStateReader),
         )
 
         runner.run(
@@ -430,6 +432,7 @@ class TestColdStartWiring:
             git_config=MagicMock(),
             pr_status_reader=cache,
             server_root=tmp_path,
+            state_reader=MagicMock(spec=IStateReader),
         )
 
         # Must not raise; github_manager.get_pr_status called on cache miss
@@ -463,6 +466,7 @@ class TestColdStartWiring:
             git_config=MagicMock(),
             pr_status_reader=cache,
             server_root=tmp_path,
+            state_reader=MagicMock(spec=IStateReader),
         )
 
         with pytest.raises(ValidationError):

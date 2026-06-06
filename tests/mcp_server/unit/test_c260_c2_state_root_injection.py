@@ -19,10 +19,10 @@ import pytest
 
 from mcp_server.config.loader import normalize_config_root
 from mcp_server.managers.artifact_manager import ArtifactManager
+from mcp_server.core.interfaces import IStateReader
 from mcp_server.managers.enforcement_runner import (
     EnforcementConfig,
     EnforcementRunner,
-    _read_current_phase,  # pyright: ignore[reportPrivateUsage]
 )
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -176,18 +176,7 @@ class TestProjectManagerStateRoot:
 
 
 class TestEnforcementRunnerStateRoot:
-    """EnforcementRunner._read_current_phase must use injected state_root."""
-
-    def test_reads_from_state_root_not_workspace_dot_st3(self, tmp_path: Path) -> None:
-        """_read_current_phase reads state.json from state_root, not workspace/.phase-gate."""
-        state_root = tmp_path / ".phase-gate"
-        state_root.mkdir(parents=True)
-        state_file = state_root / "state.json"
-        state_file.write_text(json.dumps({"current_phase": "implementation"}), encoding="utf-8")
-
-        # Must accept state_root directly (not workspace_root)
-        result = _read_current_phase(state_root)
-        assert result == "implementation"
+    """EnforcementRunner must accept server_root injection."""
 
     def test_enforcement_runner_init_accepts_state_root(self, tmp_path: Path) -> None:
         """EnforcementRunner must accept server_root kwarg (was state_root)."""
@@ -197,6 +186,7 @@ class TestEnforcementRunnerStateRoot:
             server_root=state_root,
             git_config=MagicMock(),
             config=MagicMock(),
+            state_reader=MagicMock(spec=IStateReader),
         )
         assert runner.server_root == state_root
 

@@ -3,7 +3,7 @@
 # Replace remaining direct state.json reads with IStateReader (#371)
 
 **Status:** APPROVED  
-**Version:** 1.0  
+**Version:** 1.2  
 **Last Updated:** 2026-06-06
 
 ---
@@ -108,14 +108,17 @@ All five sites read one or two fields from `BranchState`. The uniform replacemen
 | `enforcement_runner.py:391` — `_check_context_loaded` | Same injected reader; replace `json.loads(...)` with `self._state_reader.load(branch).issue_number` | Same instance, no extra constructor param needed |
 | `cycle_tools.py:132` — `TransitionCycleTool._get_current_branch` | **Documented exception**: raw read retained for git-unavailable fallback | `IStateReader.load(branch)` requires a branch arg — precisely what is unknown in this fallback path. Race risk is absent when git is unavailable. Wrap in narrow private helper with explanatory comment. |
 | `cycle_tools.py:265` — `ForceCycleTransitionTool._get_current_branch` | Same documented exception as above | Structurally identical situation |
-| `phase_detection.py:226` — `ScopeDecoder._read_state_json` | Replace `state_path: Path` constructor arg with `state_reader: IStateReader` + `branch: str`; call `load(branch)` | Composition root already knows the active branch; uniform with other consumers |
+| `phase_detection.py:226` — `ScopeDecoder._read_state_json` | **Dead-code elimination**: remove `state_path`, `_read_state_json()`, and `fallback_to_state` parameter entirely | `fallback_to_state=True` has zero production callers — both production callers use `fallback_to_state=False`. The feature is dead code. Removing it is cleaner than injecting IStateReader for a path that is never exercised in production. Tests that exercised this path are deleted. |
+| `state_repository.py:76` — `FileStateRepository.load()` branch-inject fallback | Remove `if "branch" not in data` block | The `branch` field has been present in state.json since the schema was introduced. Keeping the fallback silently masks stale/corrupt state. Let Pydantic raise a `ValidationError` with a clear message on malformed input. |
 
-**Dead-code cleanup constraint:** After injecting `IStateReader`, any methods, variables, or constructor parameters rendered unused by the removal of raw reads must be deleted. Specifically: `_read_current_phase` module-level function in `enforcement_runner.py` (deleted after inlining), and any unused `state_path` / `server_root` references in `ScopeDecoder` that become dead after the reader injection.
+**Dead-code cleanup constraint:** After injecting `IStateReader`, any methods, variables, or constructor parameters rendered unused must be deleted. Specifically: `_read_current_phase` module-level function in `enforcement_runner.py` (deleted after inlining). For `ScopeDecoder`: `state_path`, `_read_state_json()`, and `fallback_to_state` are all deleted — they are dead code, not candidates for IStateReader injection.
+
+**Additional hardening:** `FileStateRepository.load()` branch-inject fallback (`if "branch" not in data`) is removed. A `branch`-less state.json is a domain error that must surface as a `ValidationError`, not be silently patched.
 
 **Constraints for later phases:**
 - Inject using the shared `FileStateRepository` instance from `server.py` composition root — same instance as `QAManager`, `GitCommitTool`, `BranchParentReader`
 - `EnforcementRunner` constructor signature changes — update all call sites in `server.py`
-- `ScopeDecoder` constructor signature changes — update all call sites in `server.py` and tests
+- `ScopeDecoder` constructor signature changes (state_path removed) — update all call sites in `server.py` and tests; remove `fallback_to_state` parameter from `detect_phase()` signature and all callers
 - Wrap all `state_reader.load(branch)` calls in try/except matching the semantics of the replaced file-not-found checks
 - The two cycle_tools fallback sites retain raw reads — document with `# NOTE: IStateReader requires known branch; raw fallback retained intentionally`
 
@@ -127,3 +130,4 @@ All five sites read one or two fields from `BranchState`. The uniform replacemen
 |---------|------|--------|---------|
 | 1.0 | 2026-06-06 | Agent | Initial draft |
 | 1.1 | 2026-06-06 | Agent | Approved Strategy added: Option A for cycle_tools, dead-code cleanup added to scope |
+| 1.2 | 2026-06-06 | Agent | Revised ScopeDecoder strategy: dead-code elimination instead of IStateReader injection (fallback_to_state has no production callers). Added FileStateRepository branch-inject fallback removal. |

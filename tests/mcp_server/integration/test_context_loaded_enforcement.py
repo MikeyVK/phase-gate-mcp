@@ -42,7 +42,7 @@ import pytest
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.core.exceptions import ValidationError
-from mcp_server.core.interfaces import IPRStatusReader, PRStatus
+from mcp_server.core.interfaces import IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.schemas import GitConfig
@@ -80,6 +80,7 @@ def _make_runner(cache: ContextLoadedCache, server_root: Path) -> EnforcementRun
         pr_status_reader=_make_pr_reader(),
         server_root=server_root,
         context_loaded_reader=cache,
+        state_reader=MagicMock(spec=IStateReader),
     )
 
 
@@ -193,6 +194,7 @@ class TestContextLoadedGate:
             server_root=tmp_path,
             context_loaded_reader=cache,
             git_config=git_config,
+            state_reader=MagicMock(spec=IStateReader),
         )
 
         # Must not raise: mismatch bypass active (state.json issue 999 != branch issue 357)
