@@ -1,5 +1,5 @@
 <!-- docs\development\issue359\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-06-06T19:58Z updated= -->
+<!-- template=research version=8b7bb3ab created=2026-06-06T19:58Z updated=2026-06-06T20:30Z -->
 # Research: ServerSettings.version is not configurable (#359)
 
 **Status:** APPROVED  
@@ -122,6 +122,42 @@ The `test_load_from_yaml` test must be verified: its YAML fixture must not conta
 
 **Operator impact**: Operators with `version:` in their `mcp_config.yaml` will get a startup `ValidationError`. This is the intended behavior, selected explicitly by the project owner.
 
+## Blast Radius
+
+### Production files changed
+
+| File | Change | Risk |
+|------|--------|------|
+| `mcp_server/config/settings.py` | `version` field → `@computed_field`; add `ConfigDict(extra='forbid')`; add `computed_field` import | Low — isolated to ServerSettings class |
+| `mcp_config.yaml` (operator file, .gitignore) | Remove `version:` key | Operator must update before restart |
+| `docs/mcp_server/ARCHITECTURE.md` | Remove `version:` from documented YAML example | Documentation only |
+
+### Test files affected
+
+| File | Change required | Reason |
+|------|----------------|--------|
+| `tests/mcp_server/unit/config/test_settings.py` | Verify/remove `version:` from any YAML fixture passed to `from_env()` or `ServerSettings()` | `extra='forbid'` will raise `ValidationError` if version key is present |
+| `tests/mcp_server/unit/test_cli.py` | No change expected | Mock patches `metadata.version()` at call time; `@computed_field` calls it on access — same behavior |
+
+### Files confirmed unaffected
+
+9 additional test files import `Settings` or `ServerSettings` but do not interact with the `version` field. `LogSettings`, `GitHubSettings`, and `Settings` itself require no changes. `from_env()` requires no changes — hardening at `ServerSettings` level is sufficient.
+
+### Total scope
+
+3 production files (1 code, 1 operator config, 1 doc) + 1 test file verification. No API surface changes, no new dependencies, no cross-module blast.
+
+## Design Phase
+
+**Design phase is skipped.** The Approved Strategy fully specifies the implementation:
+
+- The fix mechanism is unambiguous (`@computed_field` + `extra='forbid'`)
+- There are no strategy-sensitive boundaries requiring design input
+- There are no interface or compatibility decisions outstanding
+- There are no open questions for design to resolve
+
+All constraints needed by planning and implementation are captured in this research document. Planning may proceed directly from this artifact.
+
 ## Related Documentation
 - **[Pydantic v2 computed_field: https://docs.pydantic.dev/latest/concepts/fields/#computed-fields][related-1]**
 
@@ -136,3 +172,4 @@ The `test_load_from_yaml` test must be verified: its YAML fixture must not conta
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-06 | Agent | Initial draft |
+| 1.1 | 2026-06-06 | Agent | Added blast radius; confirmed design phase skipped |
