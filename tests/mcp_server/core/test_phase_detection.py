@@ -35,7 +35,6 @@ _TEST_WORKPHASES = WorkphasesConfig(
         "validation": PhaseDefinition(commit_type_hint="test"),
         "documentation": PhaseDefinition(commit_type_hint="docs"),
         "coordination": PhaseDefinition(commit_type_hint="chore"),
-        "integration": PhaseDefinition(commit_type_hint="test"),
         "ready": PhaseDefinition(commit_type_hint="chore", terminal=True),
     }
 )

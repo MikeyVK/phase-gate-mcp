@@ -32,10 +32,6 @@ _TEST_WORKPHASES = WorkphasesConfig.model_validate(
                 "commit_type_hint": "test",
                 "subphases": ["red", "green", "refactor"],
             },
-            "integration": {
-                "commit_type_hint": "test",
-                "subphases": ["e2e", "acceptance"],
-            },
             "documentation": {
                 "commit_type_hint": "docs",
                 "subphases": ["reference", "guides", "agent"],

@@ -785,7 +785,7 @@ async def test_get_parent_branch_not_set() -> None:
 # ===== Cycle Number Enforcement Tests (Issue #146 Cycle 5) =====
 
 
-def test_git_commit_tdd_requires_cycle_number() -> None:
+def test_git_commit_implementation_phase_requires_cycle_number() -> None:
     """C5: model_validator removed; construction with implementation phase succeeds.
 
     Enforcement moved back to execute() (runtime guard via PhaseContractResolver).
@@ -798,7 +798,7 @@ def test_git_commit_tdd_requires_cycle_number() -> None:
     assert params.cycle_number is None
 
 
-def test_git_commit_tdd_subphase_requires_cycle_number() -> None:
+def test_git_commit_implementation_subphase_requires_cycle_number() -> None:
     """C5: model_validator removed; construction with implementation sub-phase succeeds.
 
     Enforcement moved back to execute() (runtime guard via PhaseContractResolver).
@@ -814,7 +814,7 @@ def test_git_commit_tdd_subphase_requires_cycle_number() -> None:
 
 @pytest.mark.asyncio
 async def test_git_commit_non_tdd_allows_no_cycle_number(mock_git_manager: MagicMock) -> None:
-    """Test that non-TDD phases do NOT require cycle_number (Issue #146)."""
+    """Test that non-implementation phases do NOT require cycle_number (Issue #146)."""
     tool = GitCommitTool(manager=mock_git_manager)
     mock_git_manager.commit_with_scope.return_value = "abc1234"
 
@@ -843,12 +843,14 @@ async def test_git_commit_non_tdd_allows_no_cycle_number(mock_git_manager: Magic
 
 
 @pytest.mark.asyncio
-async def test_git_commit_tdd_with_cycle_number_succeeds(mock_git_manager: MagicMock) -> None:
-    """Test that TDD commits WITH cycle_number succeed (Issue #146)."""
+async def test_git_commit_implementation_with_cycle_number_succeeds(
+    mock_git_manager: MagicMock,
+) -> None:
+    """Test that implementation-phase commits WITH cycle_number succeed (Issue #146)."""
     tool = GitCommitTool(manager=mock_git_manager)
     mock_git_manager.commit_with_scope.return_value = "def5678"
 
-    # Commit in TDD phase WITH cycle_number - should succeed
+    # Commit in implementation phase WITH cycle_number - should succeed
     params = GitCommitInput(
         message="add schema validation",
         workflow_phase="implementation",
@@ -933,7 +935,7 @@ async def test_git_add_or_commit_passes_when_phase_and_cycle_match(
     """No error when workflow_phase and cycle_number match state.json (GAP-07)."""
 
     def phase_guard(_branch: str, _workflow_phase: str, _cycle_number: int | None) -> None:
-        pass  # phase=tdd, cycle=2 matches state.json
+        pass  # phase=implementation, cycle=2 matches state.json
 
     tool = GitCommitTool(manager=mock_git_manager, phase_guard=phase_guard)
     mock_git_manager.adapter.get_current_branch.return_value = (
