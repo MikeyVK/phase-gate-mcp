@@ -1,4 +1,4 @@
-# tests/unit/config/test_c_loader_structural.py
+# tests/mcp_server/unit/config/test_c_loader_schema_structural.py
 """
 Structural tests for C_LOADER schema migration cycles.
 
@@ -401,7 +401,7 @@ def test_no_from_file_on_any_config_schema() -> None:
 
 def test_config_package_contains_no_legacy_wrapper_modules() -> None:
     """The legacy config compatibility wrapper files must be deleted flag-day."""
-    config_dir = Path(__file__).resolve().parents[3] / "mcp_server" / "config"
+    config_dir = Path(__file__).resolve().parents[4] / "mcp_server" / "config"
     legacy_wrappers = {
         "artifact_registry_config.py",
         "compat_roots.py",
@@ -469,7 +469,7 @@ def test_no_tool_calls_from_file() -> None:
     C_LOADER.3 rewired all 14 entry-point tools; this guard prevents regression.
     Zone 1: source-code inspection only, no YAML or filesystem access.
     """
-    tools_dir = Path(__file__).parent.parent.parent.parent / "mcp_server" / "tools"
+    tools_dir = Path(__file__).parents[4] / "mcp_server" / "tools"
     violations: list[str] = []
     for py_file in tools_dir.rglob("*.py"):
         source = py_file.read_text(encoding="utf-8")
@@ -491,7 +491,7 @@ def test_no_manager_imports_config_schema_directly() -> None:
     layering contract and signals a regression to the old singleton-load pattern.
     Zone 1: source-code inspection only.
     """
-    managers_dir = Path(__file__).parent.parent.parent.parent / "mcp_server" / "managers"
+    managers_dir = Path(__file__).parents[4] / "mcp_server" / "managers"
     violations: list[str] = []
     for py_file in managers_dir.rglob("*.py"):
         source = py_file.read_text(encoding="utf-8")
