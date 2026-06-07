@@ -1,7 +1,5 @@
 {
   "include": [
-    "backend",
-    "tests",
     "mcp_server"
   ],
   "exclude": [
