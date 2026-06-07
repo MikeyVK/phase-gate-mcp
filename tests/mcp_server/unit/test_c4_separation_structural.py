@@ -11,8 +11,8 @@ Zone 1: git ls-files and pyproject.toml inspection; no imports, no network.
 @layer: Tests (Unit)
 @dependencies: [subprocess, pathlib, tomllib]
 """
+
 import subprocess
-import sys
 import tomllib
 from pathlib import Path
 

@@ -1,5 +1,5 @@
 [project]
-name = "simpletraderv3"
+name = "phase-gate-mcp"
 version = "3.0.0"
 description = "S1mpleTrader V3 - Contract-First, Event-Driven Trading Platform"
 authors = [
@@ -31,7 +31,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["backend*", "tests*", "mcp_server*"]
+include = ["mcp_server*"]
 
 [tool.setuptools.package-data]
 mcp_server = ["scaffolding/templates/**/*"]
