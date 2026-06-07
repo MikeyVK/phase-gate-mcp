@@ -734,6 +734,10 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
+                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+                  submit_pr requires a clean working tree — this step must always precede it.
+
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
             [ ] Produce the hand-over required by the handover_template before ending the session.
@@ -1537,6 +1541,10 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
+                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+                  submit_pr requires a clean working tree — this step must always precede it.
+
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
             [ ] Produce the hand-over required by the handover_template before ending the session.
@@ -1906,6 +1914,10 @@ workflows:
             [ ] Verify the PR body is complete using the handover template as a completeness check:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
+
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
+                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+                  submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
@@ -2565,6 +2577,10 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
+                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+                  submit_pr requires a clean working tree — this step must always precede it.
+
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
             [ ] Produce the hand-over required by the handover_template before ending the session.
@@ -2840,6 +2856,10 @@ workflows:
             [ ] Verify the PR body is complete using the handover template as a completeness check:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
+
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
+                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+                  submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.
@@ -3426,6 +3446,10 @@ workflows:
             [ ] Verify the PR body is complete using the handover template as a completeness check:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
+
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
+                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+                  submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
             [ ] Do NOT call merge_pr — human approval required.

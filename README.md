@@ -1,133 +1,117 @@
-# S1mpleTrader V3
+# Phase-Gate MCP Server
 
-**Contract-First, Event-Driven Trading Platform**
+An MCP (Model Context Protocol) server that enforces structured software development lifecycles. It gives AI agents a toolset to navigate, manage, and execute work strictly within predefined project phases — ensuring consistent state management, quality enforcement, and repository orchestration.
 
-## Architecture Principles
+---
 
-1. **Plugin First** - All strategy logic encapsulated in standalone, testable plugins
-2. **Separation of Concerns** - Strict layering: DTOs, Core, Assembly, Services
-3. **Configuration-Driven** - Behavior controlled via YAML, code is execution engine
-4. **Contract-Driven** - All data exchange validated through Pydantic schemas
+## For AI Agents
 
-## 🤝 Agent Cooperation
+> **STOP. Do not guess. Do not scan random files.**
+>
+> Read **[AGENTS.md](AGENTS.md)** immediately to initialize your cooperation protocol.
+> It contains the binding tool priority matrix, TDD cycle protocol, three-agent model, and all operating constraints.
+>
+> For MCP server architecture details, see [docs/reference/mcp/mcp_vision_reference.md](docs/reference/mcp/mcp_vision_reference.md).
 
-**Are you an AI Agent?**
-> **STOP.** Do not guess. Do not scan random files.
-> Read **[agent.md](agent.md)** immediately to initialize your cooperation protocol.
-> For MCP server vision/architecture, also see [docs/reference/mcp/mcp_vision_reference.md](docs/reference/mcp/mcp_vision_reference.md).
+---
 
-## Fundamental Architectural Shifts
+## What It Does
 
-### 1. Flattened Orchestration (No Operators)
-- Workers directly wired via explicit `wiring_map.yaml`
-- EventAdapter per component for event-driven communication
-- UI generates `strategy_wiring_map.yaml` from templates
+Phase-Gate MCP Server acts as an orchestrator and gatekeeper between an AI agent and a software repository. Rather than allowing arbitrary modifications, it mandates a structured workflow and prevents phase progression until all deliverables and quality contracts are fulfilled.
 
-### 2. Point-in-Time Data Model
-- DTO-Centric with TickCache for single-tick data
-- `ITradingContextProvider` for explicit data requests
-- Two communication paths: TickCache (sync flow) + EventBus (async signals)
+**Supported workflow types:** `feature`, `bug`, `refactor`, `docs`, `hotfix`, `epic`, `custom`
 
-### 3. BuildSpec-Driven Bootstrap
-- ConfigTranslator: YAML → BuildSpecs → Factories build components
-- OperationService as pure lifecycle manager
-- Fail-fast validation during bootstrap
+Each workflow defines an ordered sequence of phases (e.g. `research → design → planning → implementation → validation → documentation → ready`). The server tracks which phase is active, enforces transitions, and manages TDD cycle state within implementation phases.
 
-## Project Structure
+---
+
+## Core Capabilities
+
+- **Phase & cycle state management** — tracks active phase and TDD cycle via `.phase-gate/state.json`; blocks progression until contracts are met
+- **Intelligent scaffolding** — generates code, documents, and test files from a centralised template registry with schema validation
+- **Quality gates** — runs Ruff (format + lint), Pyright, import checks, and line-length checks before allowing commits or PRs
+- **Repository orchestration** — native Git and GitHub integrations for branching, committing, PR creation, issue tracking, and label management
+- **Config-driven policy enforcement** — workflow rules, phase contracts, artifact requirements, and quality thresholds defined in YAML
+
+---
+
+## Architecture
 
 ```
-backend/
-├── dtos/              # Data Transfer Objects (runtime data)
-│   ├── shared/        # Foundation (DispositionEnvelope, BaseContext)
-│   ├── strategy/      # Strategy Pipeline (Signals, Plans, Events)
-│   ├── state/         # State Management (TickCache, Ledger)
-│   └── build_specs/   # ConfigTranslator output
-├── config/            # Configuration Schemas (YAML validation)
-├── core/              # Core Components (Workers, Adapters, Interfaces)
-├── assembly/          # Bootstrap & Factories
-└── py.typed           # Type hints marker
-
-tests/
-├── unit/              # Unit tests (TDD approach)
-└── integration/       # Integration tests
-
-config/                # Configuration templates
-docs/                  # Documentation
+mcp_server/
+├── core/          # Phase state engine, proxy, operation notes, error handling
+├── managers/      # State persistence, git operations, pytest runner, QA manager
+├── tools/         # MCP tool interfaces exposed to the agent
+├── scaffolders/   # Jinja2 template engine and scaffold orchestration
+├── scaffolding/   # Templates, template registry, version hashing
+├── validation/    # File and artifact validators
+├── config/        # Settings, schema loading, config contracts
+└── schemas/       # Pydantic schemas for all internal contracts
 ```
 
-## Installatie
+Configuration lives in `.phase-gate/config/` (per-project, not in this repo):
 
-Werk altijd binnen een virtuele omgeving (bijv. `.venv`). Activeer de omgeving en gebruik vervolgens een van de onderstaande profielen:
+| File | Purpose |
+|---|---|
+| `workflows.yaml` / `workphases.yaml` | Phase sequences and lifecycle states |
+| `policies.yaml` / `enforcement.yaml` | Transition rules and strictness levels |
+| `artifacts.yaml` / `contracts.yaml` | Expected deliverables per phase |
+| `quality.yaml` | Active quality gates and thresholds |
+| `git.yaml` | Branch naming conventions |
 
-### Platform (runtime) afhankelijkheden
+---
 
-```powershell
-python -m pip install -r requirements.txt
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `MCP_WORKSPACE_ROOT` | Yes | Absolute path to the repository root |
+| `MCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.phase-gate`) |
+| `GITHUB_TOKEN` | Yes | Personal access token with `repo` and `workflow` scopes |
+| `GITHUB_OWNER` | Yes | GitHub account or org name |
+| `GITHUB_REPO` | Yes | Repository name |
+| `GITHUB_PROJECT_NUMBER` | No | GitHub Projects number for issue tracking |
+| `MCP_SERVER_NAME` | No | Server name reported in MCP handshake (default: `phase-gate-mcp`) |
+| `LOG_LEVEL` | No | Logging verbosity (default: `INFO`) |
+
+---
+
+## Installation
+
+**Requirements:** Python 3.11+
+
+```bash
+git clone https://github.com/MikeyVK/phase-gate-mcp.git
+cd phase-gate-mcp
+pip install -e .[dev]
 ```
 
-### Ontwikkeltooling
+### Starting the server
 
-```powershell
-python -m pip install -r requirements-dev.txt
+The entry point is `mcp_server.core.proxy` — a thin proxy that handles stdio transport and auto-restart on exit code 42:
+
+```bash
+python -m mcp_server.core.proxy
 ```
 
-`requirements-dev.txt` includeert automatisch `requirements.txt`, zodat één installatiestap op een nieuwe machine volstaat.
+For MCP client configuration, see [docs/setup/mcp.json](docs/setup/mcp.json) for a reference server definition.
 
-Voorkeur voor een editable install? Gebruik dan:
+---
 
-```powershell
-python -m pip install -e ".[dev]"
+## Running Tests
+
+```bash
+pytest tests/mcp_server/
 ```
 
-## Development Setup
+For coverage:
 
-```powershell
-# Run tests
-pytest
-
-# Type checking
-mypy backend
-
-# Linting
-ruff check backend
-
-# Static analysis
-pylint backend
-
-# Pyright CLI (alternatief voor Pylance)
-pyright
+```bash
+pytest tests/mcp_server/ --cov=mcp_server --cov-branch --cov-fail-under=90
 ```
 
-## Testing Philosophy
-
-**Test-Driven Development (TDD)**:
-1. 🔴 **Red** - Write failing test
-2. 🟢 **Green** - Minimal code to pass
-3. 🔄 **Refactor** - Clean up with tests passing
-
-## Key Concepts
-
-### DispositionEnvelope
-Workers return this to communicate intent to EventAdapter:
-- `CONTINUE` - Flow continues, data in TickCache
-- `PUBLISH` - Publish event with System DTO payload
-- `STOP` - Terminate flow branch
-
-### DTO vs Schema
-- **DTO** - Runtime data containers (Pydantic BaseModel instances)
-- **Schema** - Configuration validation (YAML parsers)
-
-### Provider Interfaces
-Platform "toolbox" injected into workers:
-- `ITradingContextProvider` - TickCache access
-- `ICandlestickProvider` - OHLCV data
-- `IStateProvider` - Persistence
-- `IJournalWriter` - Logging
-
-## Documentation
-
-See `docs/architecture.md` for complete architectural overview.
+---
 
 ## License
 
-[Add License Information]
+*(Specify License Information Here)*

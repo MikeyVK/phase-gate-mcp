@@ -33,7 +33,7 @@ pytestmark = pytest.mark.asyncio
 def test_qa_manager_run_gates_with_real_file() -> None:
     """QAManager runs quality gates on a real clean file."""
     manager = make_qa_manager()
-    result = manager.run_quality_gates(["backend/core/enums.py"])
+    result = manager.run_quality_gates(["mcp_server/server.py"])
 
     assert len(result["gates"]) >= 6, f"Expected at least 6 gates, got {len(result['gates'])}"
     assert "Ruff Format" in result["gates"][0]["name"]
@@ -47,7 +47,7 @@ async def test_quality_tool_output_format() -> None:
     tool = RunQualityGatesTool(manager=manager)
 
     result = await tool.execute(
-        RunQualityGatesInput(scope="files", files=["backend/core/enums.py"]), NoteContext()
+        RunQualityGatesInput(scope="files", files=["mcp_server/server.py"]), NoteContext()
     )
 
     # Text summary first (content[0]), JSON payload second (content[1])
@@ -121,7 +121,7 @@ def test_switching_active_gates_changes_execution(tmp_path: Path) -> None:
     config_file.write_text(json.dumps(custom_config), encoding="utf-8")
 
     manager = make_qa_manager(quality_config=QualityConfig.model_validate(custom_config))
-    result = manager.run_quality_gates(["backend/core/enums.py"])
+    result = manager.run_quality_gates(["mcp_server/server.py"])
 
     gate_names = [gate["name"] for gate in result["gates"]]
     assert len(gate_names) == 2, f"Expected 2 gates, got {len(gate_names)}: {gate_names}"
