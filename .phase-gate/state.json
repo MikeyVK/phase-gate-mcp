@@ -1,0 +1,25 @@
+{
+  "branch": "refactor/388-separate-st3-backend-repo",
+  "issue_number": 388,
+  "workflow_name": "refactor",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "Separate ST3 backend codebase into its own repository",
+  "parent_branch": "main",
+  "created_at": "2026-06-07T08:11:07.914976+00:00",
+  "transitions": [],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
