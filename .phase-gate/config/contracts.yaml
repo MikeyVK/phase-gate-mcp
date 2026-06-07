@@ -436,86 +436,59 @@ workflows:
         instructions:
           sub_role: implementer
           phase_instructions: |
-            [ ] Call get_project_plan(issue_number=N) and get_work_context.
-                Determine the active planned cycle from workflow state and planning deliverables.
-                Execute only planned cycles, in order, and do not widen scope beyond the active cycle.
+            [RULES]
+            - MAX 1-2 short sentences before ANY tool call (e.g., "Adding test X. Calling run_tests.").
+            - NO long reasoning. NO explanations. NO conversational filler.
+            - USE TODOs
 
-            [ ] Use explore_subagent to load the pre-implementation context for the active cycle.
-                Ask it to return:
-                - a short orientation for the active cycle and its prerequisites
-                - the relevant design decisions and Approved Strategy constraints for this cycle
-                - the RED scope: tests to add or update and the intended failure condition
-                - the GREEN checklist: production changes, imports, fixtures, helpers,
-                  call-site updates, and assertion updates
-                - the REFACTOR scope for this cycle, if any
-                - the cycle deliverables, exit criteria, and explicit out-of-scope items
-
-            [ ] If the cycle context is missing, ambiguous, contradictory,
-                or conflicts with planning, design, or the Approved Strategy,
-                stop and raise a blocker.
-                Do not redesign, re-plan, or change strategy inside implementation.
-            [ ] Treat production code, test files, fixtures, and helpers as equally in scope
-                for architecture, typing, and quality expectations.
-                If typing or static-analysis issues appear,
-                read TYPE_CHECKING_PLAYBOOK.md and apply it to both production and test code.
-
-            [ ] RED:
-                - write the failing test or tests for the active cycle only
-                - include collateral test updates in RED when they are part of the same planned behavior break
-                - run run_tests(path='<test file>::<class>::<method>') for the new or changed test scope
-                - confirm the failure is the intended RED condition, not an unrelated error
-                - commit: git_add_or_commit(workflow_phase='implementation', sub_phase='red',
-                  cycle_number=N, message='...')
-
-            [ ] GREEN:
-                - implement only the changes listed in the cycle context
-                - add required imports, fixtures, helper changes, and call-site updates
-                - run run_tests(path='<test file>') incrementally to keep the cycle visible
-                - finish with all tests for the active cycle passing
-                - commit: git_add_or_commit(workflow_phase='implementation', sub_phase='green',
-                  cycle_number=N, message='...')
-
-            [ ] REFACTOR:
-                - apply only cleanup that belongs to the active cycle
-                - do not widen scope beyond the planned cycle boundary
-                - run run_tests(path='<relevant test file(s)>') again after cleanup
-                - run_quality_gates(scope='files', files=['<all files touched in this cycle>'])
-                - if refactor changes were made, commit:
-                  git_add_or_commit(workflow_phase='implementation', sub_phase='refactor',
-                  cycle_number=N, message='...')
-
-            [ ] Internal QA checkpoint for the active cycle:
-                invoke the qa agent with sub-role validation-reviewer and provide:
-                - the cycle-specific implementation context
-                - the files changed
-                - the tests written or updated
-                - the final narrow test result
-                - the cycle deliverables claimed as satisfied
-                Ask QA to verify:
-                - the implementation matches the active cycle scope
-                - the planned deliverables and exit criteria for this cycle are satisfied
-                - no unplanned files or behaviors were changed
-                - architectural and Approved Strategy constraints were preserved
-                - the active-cycle tests are green
-                Return PASS or FAIL with exact gaps.
-
-            [ ] If internal QA returns FAIL, fix the finding, rerun the affected step,
-                and repeat the same QA checkpoint before proceeding.
-
-            [ ] If internal QA returns PASS and more cycles remain:
-                transition_cycle(to_cycle=N+1), then get_work_context,
-                and repeat the same cycle protocol automatically.
-
-            [ ] If internal QA returns PASS and no cycles remain:
-                report a concise implementation outcome to the user including:
-                - cycles executed
-                - key files changed
-                - final narrow tests and file-scoped gates
-                - deliverables now satisfied
-                - ready for transition_phase(to_phase='validation')
-
-            [ ] Do not call transition_phase(to_phase='validation') autonomously.
-                Stop after the concise user update and wait for the next instruction.
+            [WORKFLOW]
+            1. Call get_project_plan(issue_number=N) & get_work_context. Identify active cycle. Execute ONLY active cycle. NO scope creep.
+            
+            2. Call explore_subagent for active cycle pre-implementation context. Require:
+              - Orientation & prerequisites
+              - Constraints & Approved Strategy
+              - RED scope: tests & intended failure
+              - GREEN checklist: prod/imports/fixtures/helpers/call-sites
+              - REFACTOR scope
+              - Deliverables, exit criteria, out-of-scope items
+            
+            3. If context missing/conflicting with plan/strategy: STOP. Raise blocker. NO redesign/replanning.
+            
+            4. Prod, tests, fixtures = equal quality/typing. If typing errors: read TYPE_CHECKING_PLAYBOOK.md. Fix everywhere.
+            
+            5. TDD Loop:
+              [RED]
+              - Write active-cycle tests ONLY.
+              - Call run_tests(path='<test_file>::<class>::<method>'). Confirm INTENDED failure.
+              - Call git_add_or_commit(workflow_phase='implementation', sub_phase='red', cycle_number=N, message='...')
+              
+              [GREEN]
+              - Implement context-listed changes ONLY (incl. imports/fixtures).
+              - Call run_tests incrementally. Pass ALL active-cycle tests.
+              - Call git_add_or_commit(..., sub_phase='green', ...)
+              
+              [REFACTOR]
+              - Clean active-cycle scope ONLY.
+              - Call run_tests.
+              - Call run_quality_gates(scope='files', files=['<changed_files>']).
+              - If changed: Call git_add_or_commit(..., sub_phase='refactor', ...)
+            
+            6. QA Checkpoint: Call QA sub-agent. Config: model=GPT-5.4, reasoning=medium.
+              Payload: Cycle context, changed files, tests, test-results, claimed deliverables.
+              Enforce strict Micro-CoT prompt on sub-agent:
+              "ROLE: Ruthless Auditor. Prevent scope creep. NO conversation.
+              OUTPUT FORMAT EXACTLY AS FOLLOWS:
+              Scope: OK|FAIL
+              Deliverables: OK|FAIL
+              Unplanned: OK|FAIL
+              Strategy: OK|FAIL
+              Tests: OK|FAIL
+              JSON: {\"status\": \"PASS|FAIL\", \"gaps\": [\"gap description\"]}"
+            
+            7. Resolution:
+              - If QA JSON status=FAIL: Fix gaps, rerun affected step, REPEAT QA.
+              - If QA JSON status=PASS & cycles remain: Call transition_cycle(to_cycle=N+1) -> get_work_context -> REPEAT from step 2.
+              - If QA JSON status=PASS & NO cycles remain: Output concise summary (cycles, files, tests, deliverables). STOP. Await user instruction. DO NOT call transition_phase.
       - name: validation
         exit_requires:
           - id: validation-report

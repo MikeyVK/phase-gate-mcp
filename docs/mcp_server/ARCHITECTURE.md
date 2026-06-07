@@ -191,7 +191,6 @@ mcp_server/
 ├── tools/
 │   ├── __init__.py
 │   ├── discovery.py             # search_documentation, get_work_context
-│   ├── validation_tools.py      # validate_architecture, validate_dto
 │   ├── github_issues.py         # create_issue, update_issue, close_issue, etc.
 │   ├── scaffold_artifact.py     # scaffold_artifact (unified code/doc scaffolding)
 │   ├── quality_tools.py         # run_quality_gates, run_tests
@@ -391,7 +390,6 @@ async def create_issue(
 # MCP Server Configuration
 server:
   name: "st3-workflow"
-  version: "1.0.0"
   workspace_root: "d:/dev/SimpleTraderV3"
 
 github:

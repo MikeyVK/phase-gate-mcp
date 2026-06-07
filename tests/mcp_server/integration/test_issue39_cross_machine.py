@@ -187,20 +187,20 @@ class TestIssue39CrossMachine:
         # Recovery is triggered on the transition path.
         recovery_result = state_engine.force_transition(
             branch="fix/42-cross-machine-test",
-            to_phase="integration",
+            to_phase="validation",
             skip_reason="Trigger cross-machine recovery",
             human_approval="Verifier approved on 2026-04-05",
         )
 
         # Verify recovery inferred the pre-transition state correctly.
         assert recovery_result["from_phase"] == "implementation"
-        assert recovery_result["to_phase"] == "integration"
+        assert recovery_result["to_phase"] == "validation"
 
         recovered_state = state_engine.get_state("fix/42-cross-machine-test")
         assert recovered_state.branch == "fix/42-cross-machine-test"
         assert recovered_state.issue_number == 42
         assert recovered_state.workflow_name == "bug"
-        assert recovered_state.current_phase == "integration"
+        assert recovered_state.current_phase == "validation"
         assert recovered_state.reconstructed is True
 
         # Verify state.json was recreated
@@ -208,7 +208,7 @@ class TestIssue39CrossMachine:
 
         # Subsequent calls should return persisted state (idempotent)
         state_again = state_engine.get_state("fix/42-cross-machine-test")
-        assert state_again.current_phase == "integration"
+        assert state_again.current_phase == "validation"
         assert state_again.issue_number == 42
 
     @pytest.mark.asyncio

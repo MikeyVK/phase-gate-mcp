@@ -542,3 +542,10 @@ class GitManager:
                 )
             )
             raise
+
+    def is_ancestor(self, sha: str) -> bool:
+        """Return True if sha is an ancestor of HEAD; False otherwise.
+
+        Delegates to GitAdapter.is_ancestor. Raises ExecutionError on git error (status >=2).
+        """
+        return self.adapter.is_ancestor(sha)

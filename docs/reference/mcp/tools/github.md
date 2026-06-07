@@ -1,19 +1,18 @@
 <!-- docs/reference/mcp/tools/github.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-02-08 -->
+<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-05-27 -->
 # GitHub Integration Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-05-27  
 
 **Source:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py), [pr_tools.py](../../../../mcp_server/tools/pr_tools.py), [label_tools.py](../../../../mcp_server/tools/label_tools.py), [milestone_tools.py](../../../../mcp_server/tools/milestone_tools.py)  
 **Tests:** [tests/unit/test_github_tools.py](../../../../tests/unit/test_github_tools.py)  
 
 ---
-
 ## Purpose
 
-Complete reference documentation for all 16 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
+Complete reference documentation for all 17 GitHub API integration tools covering issues, pull requests, labels, and milestones. These tools provide full GitHub workflow automation with Unicode safety, validation against repository state, and structured error handling.
 
 All GitHub tools require a `GITHUB_TOKEN` environment variable. Tools are registered even without a token (schema-only), but execution returns errors if the token is missing.
 
@@ -21,12 +20,12 @@ All GitHub tools require a `GITHUB_TOKEN` environment variable. Tools are regist
 
 ## Overview
 
-The MCP server provides **16 GitHub tools** across 4 functional categories:
+The MCP server provides **17 GitHub tools** across 4 functional categories:
 
 | Category | Tools | Key Features |
 |----------|-------|-------------|
 | **Issues** | 5 | Create, read, list, update, close with Unicode support |
-| **Pull Requests** | 3 | Create, list, merge with draft support and merge strategies |
+| **Pull Requests** | 4 | Create, read single PR, list, merge with draft support and merge strategies |
 | **Labels** | 5 | CRUD operations with LabelConfig validation |
 | **Milestones** | 3 | List, create, close with state filtering |
 
@@ -62,17 +61,24 @@ All tools:
 **Class:** `CreateIssueTool`  
 **File:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py)
 
-Create a new GitHub issue with optional labels, milestone, and assignees.
+Create a new GitHub issue. Uses a structured input contract: `issue_type`, `priority`, and `scope` are required top-level fields with config-driven enum values (A4 schema override); free-form `labels` are assembled internally from those values.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `title` | `str` | **Yes** | Issue title (Unicode-safe) |
-| `body` | `str` | **Yes** | Issue description (supports Markdown and Unicode) |
-| `labels` | `list[str]` | No | List of label names to apply (validates against existing labels) |
-| `milestone` | `int` | No | Milestone number (not title) |
+| `issue_type` | `str` | **Yes** | Issue type enum — valid values injected at runtime from `LabelConfig` (e.g. `feature`, `bug`, `hotfix`, `chore`, `docs`, `epic`) |
+| `title` | `str` | **Yes** | Issue title (Unicode-safe, maximum 72 characters) |
+| `priority` | `str` | **Yes** | Priority enum — valid values injected at runtime from `LabelConfig` (e.g. `critical`, `high`, `medium`, `low`, `triage`) |
+| `scope` | `str` | **Yes** | Scope enum — valid values injected at runtime from `ScopeConfig` (e.g. `architecture`, `mcp-server`, `platform`, `tooling`, `workflow`, `documentation`) |
+| `body` | `str` | **Yes** | Pre-rendered markdown body. Generate using `scaffold_artifact(artifact_type='issue')` before calling this tool. |
+| `is_epic` | `bool` | No | Mark issue as an epic (default: `false`) |
+| `parent_issue` | `int` | No | Parent issue number (positive integer) for child issues |
+| `milestone` | `str` | No | Milestone **title** (string, not number) |
 | `assignees` | `list[str]` | No | List of GitHub usernames to assign |
+
+| `steps_to_reproduce` | `str` | No | Numbered steps to reproduce the issue |
+| `related_docs` | `list[str]` | No | List of related documentation paths or URLs |
 
 #### Returns
 
@@ -82,11 +88,11 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
   "issue": {
     "number": 123,
     "url": "https://github.com/owner/repo/issues/123",
-    "title": "Feature request: Add user authentication",
+    "title": "Add structured issue creation",
     "state": "open",
-    "labels": ["type:feature", "priority:high"],
-    "milestone": 5,
-    "assignees": ["username1", "username2"]
+    "labels": ["type:feature", "priority:medium", "scope:mcp-server"],
+    "milestone": null,
+    "assignees": []
   }
 }
 ```
@@ -95,21 +101,38 @@ Create a new GitHub issue with optional labels, milestone, and assignees.
 
 ```json
 {
-  "title": "Feature: Add OAuth2 authentication 🔐",
-  "body": "## Description\n\nImplement OAuth2 authentication with Google and GitHub providers.\n\n## Acceptance Criteria\n- [ ] Google OAuth2 integration\n- [ ] GitHub OAuth2 integration\n- [ ] Token refresh logic",
-  "labels": ["type:feature", "priority:high"],
-  "milestone": 5,
-  "assignees": ["developer1"]
+  "issue_type": "feature",
+  "title": "Add structured issue creation",
+  "priority": "medium",
+```json
+{
+  "issue_type": "feature",
+  "title": "Add structured issue creation",
+  "priority": "medium",
+  "scope": "mcp-server",
+  "body": "## Problem\n\nThe create_issue tool lacks validation."
 }
 ```
+```json
+{
+  "issue_type": "bug",
+  "title": "Login fails on Windows when username contains spaces",
+  "priority": "high",
+  "scope": "platform",
+  "body": "## Problem\n\nLogin fails with 500 error.\n\n## Expected Behavior\n\nRedirect to dashboard.\n\n## Actual Behavior\n\n500 Internal Server Error.\n\n## Context\n\nWindows 11, Python 3.13.\n\n## Steps to Reproduce\n\n1. Enter username with space\n2. Click Login",
+  "is_epic": false,
+  "parent_issue": 91,
+  "milestone": "v2.0",
+  "assignees": ["alice"]
+}
+```
+- **Milestone:** Pass the milestone **title** (string), not the milestone number
+- **Label assembly:** Labels are derived from `issue_type`, `priority`, and `scope`
+- **Assignee validation:** Usernames must be valid collaborators
+- **Default state:** Issues always created in `open` state
+- **Enum values:** `issue_type`, `priority`, and `scope` enums are injected at runtime from config (A4 pattern) — inspect the tool schema for current valid values
+- **Body generation:** Use `scaffold_artifact(artifact_type='issue', name="<slug>", context={...})` to generate a pre-rendered markdown body before calling this tool. The slash prompt `/create-issue` automates this two-step flow.
 
-#### Behavior Notes
-
-- **Unicode Support:** Title and body support full Unicode including emojis (no stripping)
-- **Label Validation:** If label doesn't exist, GitHub API returns error
-- **Milestone Validation:** Must use milestone **number** (not title)
-- **Assignee Validation:** Usernames must be valid collaborators
-- **Default State:** Issues always created in `open` state
 
 ---
 
@@ -131,25 +154,22 @@ Retrieve detailed information about a specific issue.
 
 ```json
 {
-  "success": true,
-  "issue": {
-    "number": 123,
-    "url": "https://github.com/owner/repo/issues/123",
-    "title": "Feature request: Add user authentication",
-    "body": "## Description\n\nDetailed issue body...",
-    "state": "open",
-    "labels": ["type:feature", "priority:high"],
-    "milestone": {
-      "number": 5,
-      "title": "v2.0",
-      "state": "open"
-    },
-    "assignees": ["username1"],
-    "created_at": "2026-02-01T10:00:00Z",
-    "updated_at": "2026-02-08T12:00:00Z",
-    "closed_at": null,
-    "author": "username2"
-  }
+  "number": 123,
+  "url": "https://github.com/owner/repo/issues/123",
+  "title": "Feature request: Add user authentication",
+  "body": "## Description\n\nDetailed issue body...",
+  "state": "open",
+  "labels": ["type:feature", "priority:high"],
+  "milestone": {
+    "number": 5,
+    "title": "v2.0",
+    "state": "open"
+  },
+  "assignees": ["username1"],
+  "created_at": "2026-02-01T10:00:00+00:00",
+  "updated_at": "2026-02-08T12:00:00+00:00",
+  "closed_at": null,
+  "author": "username2"
 }
 ```
 
@@ -379,8 +399,18 @@ cache update in a single operation.
 | `title` | `str` | **Yes** | PR title (Unicode-safe) |
 | `body` | `str` | No | PR description (supports Markdown and Unicode) |
 | `head` | `str` | **Yes** | Source branch (e.g., `"feature/123-my-feature"`) |
-| `base` | `str` | No | Target branch (default: `"main"`) |
+| `base` | `str` | No | Target branch. Resolution chain when omitted: (1) detected parent branch from `.phase-gate/state.json`, (2) `git_config.default_base_branch` (typically `"main"`). Pass explicitly to override. |
 | `draft` | `bool` | No | Create as draft PR (default: `False`) |
+
+
+#### Base Branch Resolution
+
+When `base` is omitted, `submit_pr` resolves the target branch in this order:
+
+1. **Parent branch detection:** Look up the parent branch for the source branch from `.phase-gate/state.json` via `IBranchParentReader`.
+2. **Fallback:** Use `git_config.default_base_branch` (typically `"main"`).
+
+This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...`) to automatically target their epic parent rather than `main`. Pass `base` explicitly to override the entire chain.
 
 #### Atomic Execution Flow
 
@@ -620,6 +650,51 @@ Merge a pull request with specified merge strategy.
 
 ---
 
+### get_pr
+
+**MCP Name:** `get_pr`  
+**Class:** `GetPRTool`  
+**File:** [mcp_server/tools/pr_tools.py](../../../../mcp_server/tools/pr_tools.py)
+
+Retrieve detailed information about a specific pull request.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `pr_number` | `int` | **Yes** | Pull request number to retrieve |
+
+#### Returns
+
+```json
+{
+  "pr_number": 45,
+  "title": "Feature: Add OAuth2 authentication",
+  "state": "closed",
+  "base_branch": "main",
+  "head_branch": "feature/123-oauth",
+  "merged_at": "2026-05-27T12:00:00+00:00",
+  "merge_sha": "abc123def456",
+  "body": "## Description\n\nThis PR adds OAuth2 authentication support."
+}
+```
+
+#### Example Usage
+
+```json
+{
+  "pr_number": 45
+}
+```
+
+#### Behavior Notes
+
+- `merged_at` is `null` for open or closed-but-not-merged PRs; ISO 8601 string when merged
+- `merge_sha` is `null` when not merged
+- Returns an `"error"` type result when PR is not found (404)
+
+---
+
 ## Label Management Tools
 
 ### list_labels
@@ -686,8 +761,8 @@ Create a new label in the repository. Validates against `LabelConfig` patterns.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `name` | `str` | **Yes** | Label name (e.g., `"type:feature"`) — validates against patterns |
-| `color` | `str` | **Yes** | Color hex code WITHOUT `#` (e.g., `"0e8a16"`) |
+| `name` | `str` | **Yes** | Label name in `category:value` format. Allowed categories: `type`, `priority`, `status`, `phase`, `scope`, `component`, `effort`, `parent`. Value: lowercase letters, digits, hyphens only. Example: `"type:feature"`. |
+| `color` | `str` | **Yes** | Hex color code WITHOUT `#` prefix — exactly 6 characters (0-9, A-F, case-insensitive). Example: `"0e8a16"`. Pattern: `^[0-9A-Fa-f]{6}$` |
 | `description` | `str` | No | Label description (default: empty string) |
 
 #### Returns
@@ -773,7 +848,7 @@ Add labels to an issue or pull request. Validates label existence before applyin
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | Issue or PR number |
-| `labels` | `list[str]` | **Yes** | List of label names to add |
+| `labels` | `list[str]` | **Yes** | List of label names to add. Labels must follow the `category:value` naming pattern (e.g., `"priority:high"`, `"type:feature"`). |
 
 #### Returns
 

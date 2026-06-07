@@ -5,6 +5,7 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.issue_tools]
 """
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -16,7 +17,6 @@ from mcp_server.tools.issue_tools import (
     CreateIssueInput,
     GetIssueInput,
     GetIssueTool,
-    IssueBody,
     ListIssuesInput,
     ListIssuesTool,
     UpdateIssueInput,
@@ -41,7 +41,7 @@ async def test_create_issue_tool(mock_github_manager: MagicMock) -> None:
         title="New Issue",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="Some problem description"),
+        body="## Problem\n\nSome problem description.",
     )
     result = await tool.execute(params, NoteContext())
 
@@ -76,7 +76,7 @@ async def test_create_issue_tool_forwards_milestone(mock_github_manager: MagicMo
         title="Milestone Issue",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="Needs milestone"),
+        body="## Problem\n\nNeeds milestone.",
         milestone="v2.0",
     )
     await tool.execute(params, NoteContext())
@@ -97,7 +97,7 @@ async def test_create_issue_tool_milestone_none_when_not_set(
         title="No milestone",
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(problem="No milestone set"),
+        body="## Problem\n\nNo milestone set.",
     )
     await tool.execute(params, NoteContext())
 
@@ -144,24 +144,31 @@ async def test_list_issues_tool(mock_github_manager: MagicMock) -> None:
 async def test_get_issue_tool(mock_github_manager: MagicMock) -> None:
     tool = GetIssueTool(manager=mock_github_manager)
 
-    issue_mock = MagicMock(
-        number=1,
-        title="Bug",
-        body="Fix it",
-        state="open",
-        html_url="url",
-        created_at=MagicMock(isoformat=lambda: "2023-01-01"),
-        assignees=[],
-        labels=[],
-        milestone=None,
-    )
-    mock_github_manager.get_issue.return_value = issue_mock
+    mock_model = MagicMock()
+    mock_model.model_dump.return_value = {
+        "number": 1,
+        "url": "https://github.com/owner/repo/issues/1",
+        "title": "Bug",
+        "body": "Fix it",
+        "state": "open",
+        "labels": [],
+        "milestone": None,
+        "assignees": [],
+        "created_at": "2023-01-01T00:00:00+00:00",
+        "updated_at": "2023-01-01T00:00:00+00:00",
+        "closed_at": None,
+        "author": "alice",
+    }
+    mock_github_manager.get_issue.return_value = mock_model
 
     result = await tool.execute(GetIssueInput(issue_number=1), NoteContext())
 
     mock_github_manager.get_issue.assert_called_with(1)
-    assert "#1: Bug" in result.content[0]["text"]
-    assert "Fix it" in result.content[0]["text"]
+    data = json.loads(result.content[0]["text"])
+    assert data["number"] == 1
+    assert data["title"] == "Bug"
+    assert data["author"] == "alice"
+    assert data["closed_at"] is None
 
 
 @pytest.mark.asyncio
@@ -172,3 +179,27 @@ async def test_close_issue_tool(mock_github_manager: MagicMock) -> None:
     await tool.execute(CloseIssueInput(issue_number=5, comment="Done"), NoteContext())
 
     mock_github_manager.close_issue.assert_called_with(5, comment="Done")
+
+
+def test_create_issue_input_body_is_str() -> None:
+    """C1 RED: CreateIssueInput.body must accept a plain string, not IssueBody."""
+    params = CreateIssueInput(
+        issue_type="feature",
+        title="Test issue",
+        priority="medium",
+        scope="mcp-server",
+        body="## Problem\n\nSomething is broken.",
+    )
+    assert params.body == "## Problem\n\nSomething is broken."
+
+
+def test_create_issue_input_body_rejects_dict() -> None:
+    """C1 RED: CreateIssueInput.body must reject structured dicts (no IssueBody coercion)."""
+    with pytest.raises(Exception):  # noqa: B017
+        CreateIssueInput(
+            issue_type="feature",
+            title="Test issue",
+            priority="medium",
+            scope="mcp-server",
+            body={"problem": "something"},  # type: ignore[arg-type]
+        )

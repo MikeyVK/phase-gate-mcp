@@ -33,6 +33,7 @@ from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.artifact_manager import ArtifactManager
+from mcp_server.managers.branch_parent_reader import BranchStateParentReader
 from mcp_server.managers.deliverable_checker import DeliverableChecker
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -64,13 +65,13 @@ from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.tools.admin_tools import RestartServerTool
 from mcp_server.tools.base import BaseTool
-from mcp_server.tools.code_tools import CreateFileTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.discovery_tools import GetWorkContextTool, SearchDocumentationTool
 from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
 from mcp_server.tools.git_fetch_tool import GitFetchTool
 from mcp_server.tools.git_pull_tool import GitPullTool
 from mcp_server.tools.git_tools import (
+    CheckMergeTool,
     CreateBranchTool,
     GetParentBranchTool,
     GitCheckoutTool,
@@ -111,7 +112,7 @@ from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
     TransitionPhaseTool,
 )
-from mcp_server.tools.pr_tools import ListPRsTool, MergePRTool, SubmitPRTool
+from mcp_server.tools.pr_tools import GetPRTool, ListPRsTool, MergePRTool, SubmitPRTool
 from mcp_server.tools.project_tools import (
     GetProjectPlanTool,
     InitializeProjectTool,
@@ -121,10 +122,10 @@ from mcp_server.tools.project_tools import (
 from mcp_server.tools.quality_tools import RunQualityGatesTool
 from mcp_server.tools.safe_edit_tool import SafeEditTool
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
+from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.template_validation_tool import TemplateValidationTool
 from mcp_server.tools.test_tools import RunTestsTool
 from mcp_server.tools.tool_result import ToolResult
-from mcp_server.tools.validation_tools import ValidateDTOTool, ValidationTool
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
@@ -241,7 +242,6 @@ class MCPServer:
             project_manager=self.project_manager,
             scope_decoder=ScopeDecoder(
                 workphases_config=workphases_config,
-                state_path=server_root / "state.json",
             ),
         )
         self._workflow_state_mutator = WorkflowStateMutator(
@@ -254,11 +254,9 @@ class MCPServer:
             project_manager=self.project_manager,
             git_config=git_config,
             contracts_config=contracts_config,
-            workphases_config=workphases_config,
             state_repository=self._state_repository,
             scope_decoder=ScopeDecoder(
                 workphases_config=workphases_config,
-                state_path=server_root / "state.json",
             ),
             workflow_gate_runner=self.workflow_gate_runner,
             state_reconstructor=self.state_reconstructor,
@@ -301,7 +299,8 @@ class MCPServer:
         self.enforcement_runner = EnforcementRunner(
             workspace_root=workspace_root,
             config=enforcement_config,
-            default_base_branch=git_config.default_base_branch,
+            git_config=git_config,
+            state_reader=self._state_repository,
             pr_status_reader=self.pr_status_cache,
             server_root=server_root,
             context_loaded_reader=self._context_loaded_cache,
@@ -322,12 +321,16 @@ class MCPServer:
             GitStatusTool(manager=self.git_manager),
             GitCommitTool(
                 manager=self.git_manager,
-                phase_guard=build_phase_guard(server_root),
+                phase_guard=build_phase_guard(
+                    state_reader=_branch_validated_reader,
+                    phase_contract_resolver=self.phase_contract_resolver,
+                ),
                 commit_type_resolver=build_commit_type_resolver(
                     self.phase_state_engine,
                     self.phase_contract_resolver,
                 ),
                 state_engine=self.phase_state_engine,
+                phase_contract_resolver=self.phase_contract_resolver,
             ),
             GitCheckoutTool(
                 manager=self.git_manager,
@@ -348,23 +351,22 @@ class MCPServer:
             GitListBranchesTool(manager=self.git_manager),
             GitDiffTool(manager=self.git_manager),
             GetParentBranchTool(manager=self.git_manager, state_engine=self.phase_state_engine),
+            CheckMergeTool(manager=self.git_manager),
             # Quality tools
             RunQualityGatesTool(manager=self.qa_manager),
-            ValidationTool(manager=self.qa_manager),
-            ValidateDTOTool(),
             SafeEditTool(),
             TemplateValidationTool(),
             # Development tools
             HealthCheckTool(),
             RestartServerTool(server_root=server_root),
             RunTestsTool(runner=PytestRunner(), settings=settings),
-            CreateFileTool(settings=settings),
             # Project tools (Phase 0.5)
             InitializeProjectTool(
                 workspace_root=Path(settings.server.workspace_root),
                 manager=self.project_manager,
                 git_manager=self.git_manager,
                 state_engine=self.phase_state_engine,
+                contracts_config=contracts_config,
             ),
             GetProjectPlanTool(manager=self.project_manager),
             SavePlanningDeliverablesTool(manager=self.project_manager),
@@ -375,12 +377,14 @@ class MCPServer:
                 project_manager=self.project_manager,
                 state_engine=self.phase_state_engine,
                 server_root=server_root,
+                workphases_config=workphases_config,
             ),
             ForcePhaseTransitionTool(
                 workspace_root=Path(settings.server.workspace_root),
                 project_manager=self.project_manager,
                 state_engine=self.phase_state_engine,
                 server_root=server_root,
+                workphases_config=workphases_config,
             ),
             # TDD Cycle tools (Issue #146)
             TransitionCycleTool(
@@ -401,6 +405,7 @@ class MCPServer:
             ),
             # Scaffold tools (unified artifact scaffolding)
             ScaffoldArtifactTool(manager=self.artifact_manager),
+            ScaffoldSchemaTool(manager=self.artifact_manager),
             # Discovery tools
             SearchDocumentationTool(settings=settings),
             GetWorkContextTool(
@@ -410,7 +415,6 @@ class MCPServer:
                 state_engine=self.phase_state_engine,
                 github_manager=self.github_manager,
                 workphases_config=workphases_config,
-                state_path=server_root / "state.json",
                 workflow_status_resolver=self.workflow_status_resolver,
                 contracts_config=contracts_config,
                 context_loaded_writer=self._context_loaded_cache,
@@ -429,6 +433,9 @@ class MCPServer:
                         issue_config=issue_config,
                         milestone_config=milestone_config,
                         contracts_config=contracts_config,
+                        label_config=label_config,
+                        scope_config=scope_config,
+                        git_config=git_config,
                     ),
                     ListIssuesTool(manager=self.github_manager),
                     GetIssueTool(manager=self.github_manager),
@@ -436,6 +443,7 @@ class MCPServer:
                     UpdateIssueTool(manager=self.github_manager),
                     # PR and Label tools (require token at init time)
                     ListPRsTool(manager=self.github_manager, git_config=git_config),
+                    GetPRTool(manager=self.github_manager),
                     MergePRTool(
                         manager=self.github_manager,
                         git_config=git_config,
@@ -446,6 +454,10 @@ class MCPServer:
                         github_manager=self.github_manager,
                         pr_status_writer=self.pr_status_cache,
                         merge_readiness_context=_merge_readiness_context,
+                        branch_parent_reader=BranchStateParentReader(
+                            state_reader=self._state_repository,
+                            git_config=git_config,
+                        ),
                     ),
                     AddLabelsTool(
                         manager=self.github_manager,
@@ -475,6 +487,9 @@ class MCPServer:
                         issue_config=issue_config,
                         milestone_config=milestone_config,
                         contracts_config=contracts_config,
+                        label_config=label_config,
+                        scope_config=scope_config,
+                        git_config=git_config,
                     ),
                     ListIssuesTool(manager=self.github_manager),
                     GetIssueTool(manager=self.github_manager),

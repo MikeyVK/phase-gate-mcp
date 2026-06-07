@@ -57,8 +57,16 @@ class CreateLabelInput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(..., description="Label name (e.g., 'type:feature')")
-    color: str = Field(..., description="Color hex code without # (e.g., '0e8a16')")
+    name: str = Field(
+        ...,
+        description="Label name (e.g., 'type:feature')",
+        pattern=r"^(type|priority|status|phase|scope|component|effort|parent):[a-z0-9-]+$",
+    )
+    color: str = Field(
+        ...,
+        description="Color hex code without # (e.g., '0e8a16')",
+        pattern=r"^[0-9A-Fa-f]{6}$",
+    )
     description: str | None = Field(default="", description="Label description")
 
 
@@ -184,7 +192,10 @@ class AddLabelsInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="Issue/PR number")
-    labels: list[str] = Field(..., description="List of labels to add")
+    labels: list[str] = Field(
+        ...,
+        description="List of labels to add. Labels must follow the category:value naming pattern.",
+    )
 
 
 class AddLabelsTool(BaseTool):

@@ -36,7 +36,7 @@ TEMPLATE_METADATA:
       changes: "Re-added pattern imports + override all tier1 blocks with pattern calls for code-tak compositie parity (Task 3.6.2)"
     - version: "1.2.0"
       date: "2026-02-05"
-      changes: "FIXED: Status collision (renamed import alias status→hdr), removed unused pattern imports (Task 3.6.1)"
+      changes: "FIXED: Status collision (renamed import alias statusâ†’hdr), removed unused pattern imports (Task 3.6.1)"
     - version: "1.1.0"
       date: "2026-02-05"
       changes: "Refactored to use {% import %} composition with 6 tier3 patterns (Task 3.6)"
@@ -65,18 +65,18 @@ TEMPLATE_METADATA:
     phase: "planning"
     purpose: "Break down work into TDD cycles before design or implementation"
     belongs_here:
-      - "TDD cycle breakdown (Red → Green → Refactor)"
+      - "TDD cycle breakdown (Red â†’ Green â†’ Refactor)"
       - "Test cycle sequencing and dependencies"
       - "Task estimation and milestone planning"
       - "Risk identification and mitigation strategies"
       - "Success criteria for each cycle"
       - "Dependencies between cycles"
     does_not_belong:
-      - "Research findings or problem investigation → research.md"
-      - "Design decisions or options comparison → design.md"
-      - "Code examples (test or production) → not in planning phase"
-      - "Implementation details → source files"
-      - "Architectural concepts → architecture.md"
+      - "Research findings or problem investigation â†’ research.md"
+      - "Design decisions or options comparison â†’ design.md"
+      - "Code examples (test or production) â†’ not in planning phase"
+      - "Implementation details â†’ source files"
+      - "Architectural concepts â†’ architecture.md"
     tone: "Pragmatic: focus on 'what to build' and 'in what order', not 'how to build it'"
     common_pitfalls:
       - "Including code examples or design decisions"
@@ -85,7 +85,7 @@ TEMPLATE_METADATA:
       - "Skipping dependencies between cycles"
       - "Not defining success criteria per cycle"
     workflow_context:
-      - "Status lifecycle: DRAFT → APPROVED → DEFINITIVE"
+      - "Status lifecycle: DRAFT â†’ APPROVED â†’ DEFINITIVE"
       - "Planning should be approved before moving to design/implementation"
       - "TDD cycles may be refined during execution"
     related_phases:
@@ -96,7 +96,7 @@ TEMPLATE_METADATA:
 
 {#- Planning documents use BASE header (no Created/Implementation Phase) -#}
 {%- block header_fields %}
-{{ hdr.pattern_status_header_basic(status | default("DRAFT"), version | default("1.0"), last_updated, timestamp) }}
+{{ hdr.pattern_status_header_basic(status, version, last_updated, timestamp) }}
 {% endblock -%}
 
 {#- Override tier1 blocks with pattern calls -#}

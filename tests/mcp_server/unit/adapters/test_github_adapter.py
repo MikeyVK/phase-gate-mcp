@@ -248,6 +248,26 @@ def test_list_prs_filter_head(adapter: GitHubAdapter) -> None:
     assert adapter.repo.get_pulls.call_args[1]["head"] == "test-owner:feature"
 
 
+def test_get_pr_success(adapter: GitHubAdapter) -> None:
+    mock_pr = MagicMock()
+    adapter.client.get_repo.return_value.get_pull.return_value = mock_pr
+
+    assert adapter.get_pr(42) == mock_pr
+    adapter.repo.get_pull.assert_called_once_with(42)
+
+
+def test_get_pr_not_found(adapter: GitHubAdapter) -> None:
+    adapter.client.get_repo.return_value.get_pull.side_effect = GithubException(404, "Not Found")
+    with pytest.raises(ExecutionError, match="Pull request #42 not found"):
+        adapter.get_pr(42)
+
+
+def test_get_pr_api_error(adapter: GitHubAdapter) -> None:
+    adapter.client.get_repo.return_value.get_pull.side_effect = GithubException(500, "Server Error")
+    with pytest.raises(MCPSystemError):
+        adapter.get_pr(42)
+
+
 def test_list_prs_error(adapter: GitHubAdapter) -> None:
     adapter.client.get_repo.return_value.get_pulls.side_effect = GithubException(500, "Error")
     with pytest.raises(ExecutionError, match="Failed to list pull requests"):

@@ -85,9 +85,9 @@ TEMPLATE_METADATA:
 
 {% block header_fields -%}
 
-**Status:** {{ status | default("DRAFT") }}  
-**Version:** {{ version | default("1.0") }}  
-**Last Updated:** {{ last_updated | default(timestamp[:10]) }}  
+**Status:** {{ status }}  
+**Version:** {{ version }}  
+**Last Updated:** {{ last_updated }}  
 {% endblock %}
 
 {% if purpose or scope_in or scope_out -%}
@@ -164,6 +164,6 @@ None
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| {{ version | default("1.0") }} | {{ last_updated | default(timestamp[:10]) }} | Agent | Initial draft |
+| {{ version }} | {{ last_updated }} | Agent | Initial draft |
 {%- endblock -%}
 {%- endblock -%}

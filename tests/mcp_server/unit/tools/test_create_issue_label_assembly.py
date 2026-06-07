@@ -14,10 +14,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool, IssueBody
+from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool
 from tests.mcp_server.test_support import make_create_issue_tool
 
-BODY = IssueBody(problem="Test problem")
+BODY = "## Problem\n\nTest problem."
 
 
 def make_params(**overrides: object) -> CreateIssueInput:

@@ -14,7 +14,9 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
+from mcp_server.core.interfaces import GateReport
 from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -23,6 +25,58 @@ from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
 )
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+
+
+class _StaticGateRunner:
+    """Minimal current-interface gate runner for force-transition response tests."""
+
+    def __init__(
+        self,
+        *,
+        blocking: tuple[str, ...] = (),
+        passing: tuple[str, ...] = (),
+    ) -> None:
+        self._report = GateReport(blocking=blocking, passing=passing)
+
+    def enforce_phase_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def inspect_phase_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int | None = None,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def enforce_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def inspect_cycle_exit(
+        self,
+        workflow_name: str,
+        phase: str,
+        cycle_number: int,
+    ) -> GateReport:
+        del workflow_name, phase, cycle_number
+        return self._report
+
+    def is_cycle_based_phase(self, workflow_name: str, phase: str) -> bool:
+        del workflow_name, phase
+        return False
 
 
 class TestForcePhaseTransitionTool:
@@ -55,6 +109,7 @@ class TestForcePhaseTransitionTool:
             project_manager=project_manager,
             state_engine=state_engine,
             server_root=workspace_root,
+            workphases_config=None,
         )
 
     @pytest.fixture
@@ -143,8 +198,8 @@ class TestForcePhaseTransitionTool:
         self, initialized_branch: str, feature_phases: list[str]
     ) -> None:
         """Test tool requires skip_reason parameter."""
-        # Empty skip_reason should be rejected
-        with pytest.raises(ValueError, match="cannot be empty"):
+        # Empty skip_reason should be rejected (min_length=1 or field_validator)
+        with pytest.raises(ValidationError):
             ForcePhaseTransitionInput(
                 branch=initialized_branch,
                 to_phase=feature_phases[2],  # design
@@ -156,7 +211,7 @@ class TestForcePhaseTransitionTool:
         self, initialized_branch: str, feature_phases: list[str]
     ) -> None:
         """Test tool requires human_approval parameter."""
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(ValidationError):
             ForcePhaseTransitionInput(
                 branch=initialized_branch,
                 to_phase=feature_phases[2],  # design
@@ -300,8 +355,10 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace_with_gates,
                 project_manager=make_project_manager(workspace_with_gates),
+                workflow_gate_runner=_StaticGateRunner(blocking=("planning_deliverables",)),
             ),
             server_root=workspace_with_gates,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -332,8 +389,10 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace_no_gates,
                 project_manager=make_project_manager(workspace_no_gates),
+                workflow_gate_runner=_StaticGateRunner(),
             ),
             server_root=workspace_no_gates,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -410,8 +469,10 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace,
                 project_manager=make_project_manager(workspace),
+                workflow_gate_runner=_StaticGateRunner(blocking=("planning_deliverables",)),
             ),
             server_root=workspace,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -444,8 +505,10 @@ phases:
             state_engine=make_phase_state_engine(
                 workspace,
                 project_manager=make_project_manager(workspace),
+                workflow_gate_runner=_StaticGateRunner(passing=("planning_deliverables",)),
             ),
             server_root=workspace,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,
@@ -497,8 +560,10 @@ phases:
             state_engine=make_phase_state_engine(
                 tmp_path,
                 project_manager=make_project_manager(tmp_path),
+                workflow_gate_runner=_StaticGateRunner(),
             ),
             server_root=tmp_path,
+            workphases_config=None,
         )
         params = ForcePhaseTransitionInput(
             branch=branch,

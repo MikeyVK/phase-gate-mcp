@@ -26,6 +26,7 @@ from mcp_server.managers.enforcement_runner import (
     EnforcementRunner,
 )
 from mcp_server.managers.github_manager import GitHubManager
+from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.state.pr_status_cache import PRStatusCache
 
 
@@ -49,8 +50,10 @@ def _make_runner(
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        git_config=MagicMock(),
         pr_status_reader=pr_status_reader,
         server_root=tmp_path / ".phase-gate",
+        state_reader=FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json"),
     )
 
 
@@ -137,8 +140,10 @@ class TestToolCategoryDispatch:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             registry={"check_phase_readiness": fake_handler},
             server_root=tmp_path,
+            state_reader=FileStateRepository(state_file=tmp_path / "state.json"),
         )
 
         runner.run(
@@ -321,7 +326,11 @@ class TestCheckPhaseReadinessHandler:
     def _make_state(self, tmp_path: Path, phase: str) -> None:
         state_dir = tmp_path / ".phase-gate"
         state_dir.mkdir(parents=True, exist_ok=True)
-        (state_dir / "state.json").write_text(f'{{"current_phase": "{phase}"}}', encoding="utf-8")
+        (state_dir / "state.json").write_text(
+            f'{{"branch": "feature/1-test", "current_phase": "{phase}",'
+            f' "workflow_name": "feature"}}',
+            encoding="utf-8",
+        )
 
     def test_passes_when_phase_matches_policy(self, tmp_path: Path) -> None:
         """No exception when current phase equals the required policy phase."""
@@ -425,8 +434,10 @@ class TestColdStartWiring:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             pr_status_reader=cache,
             server_root=tmp_path,
+            state_reader=FileStateRepository(state_file=tmp_path / "state.json"),
         )
 
         # Must not raise; github_manager.get_pr_status called on cache miss
@@ -457,8 +468,10 @@ class TestColdStartWiring:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             pr_status_reader=cache,
             server_root=tmp_path,
+            state_reader=FileStateRepository(state_file=tmp_path / "state.json"),
         )
 
         with pytest.raises(ValidationError):

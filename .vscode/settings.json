@@ -1,17 +1,4 @@
 {
-  "github.copilot.chat.codeGeneration.instructions": [
-    {
-      "file": "agent.md",
-      "text": "CRITICAL: Read agent.md before any work. Follow Tool Priority Matrix strictly. NEVER use run_in_terminal for file/git/test operations."
-    }
-  ],
-  "github.copilot.chat.followUp": "minimal",
-  "github.copilot.enable": {
-    "*": true,
-    "plaintext": false,
-    "markdown": true,
-    "scminput": false
-  },
   "python-envs.pythonProjects": [
     {
       "path": ".",
@@ -19,8 +6,4 @@
       "packageManager": "ms-python.python:pip"
     }
   ],
-  "workbench.colorCustomizations": {
-    "titleBar.activeBackground": "#4300b0",
-    "titleBar.activeForeground": "#ffffff"
-  }
 }

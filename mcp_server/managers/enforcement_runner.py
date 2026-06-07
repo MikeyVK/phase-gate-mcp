@@ -8,7 +8,6 @@ config/enforcement.yaml.
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import subprocess
@@ -19,12 +18,12 @@ from pathlib import Path
 from typing import cast
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.interfaces import IContextLoadedReader, IPRStatusReader, PRStatus
+from mcp_server.core.interfaces import IContextLoadedReader, IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import (
     NoteContext,
     SuggestionNote,
 )
-from mcp_server.schemas import EnforcementAction, EnforcementConfig, EnforcementRule
+from mcp_server.schemas import EnforcementAction, EnforcementConfig, EnforcementRule, GitConfig
 from mcp_server.tools.tool_result import ToolResult
 
 _ENFORCEMENT_DISPLAY_PATH = "config/enforcement.yaml"
@@ -33,16 +32,6 @@ logger = logging.getLogger(__name__)
 
 # Known tool_category values; config validation fails fast for any unlisted value.
 KNOWN_TOOL_CATEGORIES: frozenset[str] = frozenset({"branch_mutating"})
-
-
-def _read_current_phase(server_root: Path) -> str | None:
-    """Read the current workflow phase from state.json at call time."""
-    state_file = server_root / "state.json"
-    if not state_file.exists():
-        return None
-    data: dict[str, object] = json.loads(state_file.read_text(encoding="utf-8"))
-    raw = data.get("current_phase")
-    return str(raw) if raw else None
 
 
 def _git_command_env() -> dict[str, str]:
@@ -151,8 +140,9 @@ class EnforcementRunner:
         self,
         workspace_root: Path,
         config: EnforcementConfig,
+        git_config: GitConfig,
+        state_reader: IStateReader,
         registry: EnforcementRegistry | dict[str, ActionHandler] | None = None,
-        default_base_branch: str = "main",
         pr_status_reader: IPRStatusReader | None = None,
         server_root: Path | None = None,
         context_loaded_reader: IContextLoadedReader | None = None,
@@ -165,7 +155,8 @@ class EnforcementRunner:
             )
         self.server_root = server_root
         self._config = config
-        self.default_base_branch = default_base_branch
+        self._git_config = git_config
+        self._state_reader = state_reader
         self._pr_status_reader = pr_status_reader
         self._context_loaded_reader = context_loaded_reader
         if registry is None:
@@ -328,17 +319,22 @@ class EnforcementRunner:
         self,
         action: EnforcementAction,
         context: EnforcementContext,
-        workspace_root: Path,  # noqa: ARG002
+        workspace_root: Path,
         note_context: NoteContext,
     ) -> None:
         """Block tool execution when the current workflow phase does not match policy.
 
         Reads action.policy as the required phase name; compares against
-        live state.json. Raises ValidationError on mismatch or absent state.
+        live state.json via IStateReader. Raises ValidationError on mismatch or absent state.
         """
-        del context
         required_phase = action.policy
-        current_phase = _read_current_phase(self.server_root)
+        branch = str(
+            context.get_param("current_branch") or _get_current_git_branch(workspace_root) or ""
+        )
+        try:
+            current_phase: str | None = self._state_reader.load(branch).current_phase
+        except Exception:
+            current_phase = None
         if current_phase != required_phase:
             note_context.produce(
                 SuggestionNote(message=f'transition_phase(to_phase="{required_phase}")')
@@ -378,9 +374,21 @@ class EnforcementRunner:
         if context.tool_name in action.exempt_tools:
             return
 
-        # Bootstrap: no state.json means no active phase — gate is inactive.
-        if not (self.server_root / "state.json").exists():
-            return
+        branch = str(
+            context.get_param("current_branch") or _get_current_git_branch(workspace_root) or ""
+        )
+
+        # Bootstrap predicate + mismatch bypass via IStateReader.
+        # FileNotFoundError means no active workflow — gate is inactive.
+        try:
+            loaded_state = self._state_reader.load(branch)
+            branch_issue = self._git_config.extract_issue_number(branch)
+            if loaded_state.issue_number != branch_issue:
+                return
+        except FileNotFoundError:
+            return  # Bootstrap: no state.json means gate is inactive
+        except Exception:
+            pass
 
         if self._context_loaded_reader is None:
             raise ConfigError(
@@ -388,10 +396,6 @@ class EnforcementRunner:
                 "wire ContextLoadedCache in EnforcementRunner.__init__",
                 file_path=_ENFORCEMENT_DISPLAY_PATH,
             )
-
-        branch = str(
-            context.get_param("current_branch") or _get_current_git_branch(workspace_root) or ""
-        )
 
         if not self._context_loaded_reader.is_context_loaded(branch):
             note_context.produce(

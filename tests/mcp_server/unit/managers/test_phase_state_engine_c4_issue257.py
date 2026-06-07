@@ -196,7 +196,7 @@ def _create_cycle_engine(
 
 
 def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
-    """Write a minimal workflow where tdd, not implementation, is cycle-based."""
+    """Write a minimal workflow where implementation is cycle-based (config-driven)."""
     config_dir = workspace_root / ".phase-gate" / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "workflows.yaml").write_text(
@@ -205,7 +205,7 @@ def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
             "workflows:\n"
             "  feature:\n"
             "    name: feature\n"
-            "    phases: [planning, tdd, documentation]\n"
+            "    phases: [planning, implementation, documentation]\n"
         ),
         encoding="utf-8",
     )
@@ -215,8 +215,8 @@ def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
             "phases:\n"
             "  planning:\n"
             "    display_name: Planning\n"
-            "  tdd:\n"
-            "    display_name: TDD\n"
+            "  implementation:\n"
+            "    display_name: Implementation\n"
             "    subphases: [red, green, refactor]\n"
             "  documentation:\n"
             "    display_name: Documentation\n"
@@ -239,7 +239,7 @@ def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
             "          sub_role: test-role\n"
             "          phase_instructions: Test instructions.\n"
             "          handover_template: Test handover.\n"
-            "      - name: tdd\n"
+            "      - name: implementation\n"
             "        cycle_based: true\n"
             "        subphases: [red, green, refactor]\n"
             "        commit_type_map:\n"
@@ -385,7 +385,7 @@ def test_cycle_transition_is_allowed_in_any_cycle_based_phase(workspace_root: Pa
     """Cycle transitions should follow cycle_based config instead of phase name."""
     engine, branch, gate_runner = _create_config_driven_cycle_engine(
         workspace_root,
-        initial_phase="tdd",
+        initial_phase="implementation",
     )
 
     result = engine.transition_cycle(branch=branch, to_cycle=2)
@@ -394,7 +394,7 @@ def test_cycle_transition_is_allowed_in_any_cycle_based_phase(workspace_root: Pa
     assert result["success"] is True
     assert result["from_cycle"] == 1
     assert result["to_cycle"] == 2
-    assert gate_runner.enforce_calls == [("feature", "tdd", 1)]
+    assert gate_runner.enforce_calls == [("feature", "implementation", 1)]
     assert state.current_cycle == 2
 
 

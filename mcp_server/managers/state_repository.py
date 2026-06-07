@@ -73,9 +73,9 @@ class FileStateRepository:
 
     def load(self, branch: str) -> BranchState:
         """Load and validate state from disk."""
+        # branch field is authoritative in the JSON; param retained for IStateReader protocol
+        del branch
         data = json.loads(self._state_file.read_text(encoding="utf-8"))
-        if "branch" not in data:
-            data["branch"] = branch
         return BranchState.model_validate(data)
 
     def save(self, state: BranchState) -> None:

@@ -13,10 +13,23 @@ so that the schema is fully self-contained (no $defs, no $ref).
 """
 
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
 from mcp_server.tools.issue_tools import CreateIssueTool
+
+
+def _make_tool() -> CreateIssueTool:
+    """Construct CreateIssueTool with minimal mocked dependencies."""
+    issue_config = MagicMock()
+    issue_config.issue_types = []
+    return CreateIssueTool(
+        manager=MagicMock(),
+        issue_config=issue_config,
+        milestone_config=MagicMock(),
+        contracts_config=MagicMock(),
+    )
 
 
 class TestCreateIssueInputSchemaNoRefs:
@@ -24,8 +37,7 @@ class TestCreateIssueInputSchemaNoRefs:
 
     @pytest.fixture
     def schema(self) -> dict:  # type: ignore[type-arg]
-        tool = CreateIssueTool.__new__(CreateIssueTool)
-        return tool.input_schema
+        return _make_tool().input_schema
 
     def test_schema_has_no_defs_key(self, schema: dict) -> None:  # type: ignore[type-arg]
         """$defs key must be absent from the top-level schema."""
@@ -40,19 +52,18 @@ class TestCreateIssueInputSchemaNoRefs:
             "body property must not use $ref — inline IssueBody properties directly"
         )
 
-    def test_schema_body_is_object_type(self, schema: dict) -> None:  # type: ignore[type-arg]
-        """body property must declare type: object."""
+    def test_schema_body_is_string_type(self, schema: dict) -> None:  # type: ignore[type-arg]
+        """body property must declare type: string (pre-rendered markdown)."""
         body_prop = schema.get("properties", {}).get("body", {})
-        assert body_prop.get("type") == "object", (
-            "body property must have type: object after $ref resolution"
+        assert body_prop.get("type") == "string", (
+            "body property must have type: string after IssueBody removal"
         )
 
-    def test_schema_body_has_problem_property(self, schema: dict) -> None:  # type: ignore[type-arg]
-        """body.properties.problem must exist after inlining."""
+    def test_schema_body_has_no_nested_properties(self, schema: dict) -> None:  # type: ignore[type-arg]
+        """body property must not have nested properties (no IssueBody fields)."""
         body_prop = schema.get("properties", {}).get("body", {})
-        body_properties = body_prop.get("properties", {})
-        assert "problem" in body_properties, (
-            "body.properties.problem must exist after $ref is resolved"
+        assert "properties" not in body_prop, (
+            "body must be a plain string field — no nested IssueBody properties"
         )
 
     def test_schema_has_no_ref_anywhere(self, schema: dict) -> None:  # type: ignore[type-arg]

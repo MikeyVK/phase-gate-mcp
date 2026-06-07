@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 # Third-party
 import pytest
+from pydantic import ValidationError
 
 # Project modules
 from mcp_server.config.settings import (
@@ -71,11 +72,17 @@ logging:
     assert settings.logging.level == "WARNING"
 
 
-def test_default_server_version_falls_back_to_secondary_package() -> None:
-    """Version lookup should fall back from mcp_server to simpletraderv3."""
-    with patch(
-        "mcp_server.config.settings.metadata.version",
-        side_effect=[metadata.PackageNotFoundError, "3.1.0"],
+def test_default_server_version_resolves_via_distribution_map() -> None:
+    """Version lookup uses packages_distributions() to find the owning distribution."""
+    with (
+        patch(
+            "mcp_server.config.settings.metadata.packages_distributions",
+            return_value={"mcp_server": ["some-dist"]},
+        ),
+        patch(
+            "mcp_server.config.settings.metadata.version",
+            return_value="3.1.0",
+        ),
     ):
         assert _default_server_version() == "3.1.0"
 
@@ -95,6 +102,17 @@ def test_default_server_version_raises_when_no_package_metadata_exists() -> None
 # ---------------------------------------------------------------------------
 # C3 — server_root_dir field in ServerSettings (renamed from state_dir in C6)
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# C1 #359 — version must be read-only (computed_field + extra='forbid')
+# ---------------------------------------------------------------------------
+
+
+def test_server_settings_rejects_version_kwarg() -> None:
+    """#359 RED: ServerSettings must reject version= as a constructor kwarg."""
+    with pytest.raises(ValidationError):
+        ServerSettings(version="injected")
 
 
 def test_state_dir_default_is_phase_gate() -> None:

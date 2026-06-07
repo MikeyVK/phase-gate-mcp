@@ -205,7 +205,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     # Validate commit scope detection
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "research"
     assert result["source"] == "commit-scope"
 
@@ -222,7 +222,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     )
 
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "design"
     assert result["source"] == "commit-scope"
 
@@ -239,7 +239,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     )
 
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "planning"
     assert result["source"] == "commit-scope"
 
@@ -279,7 +279,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     )
 
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "implementation"
     assert result["sub_phase"] == "c1_red"
     assert result["source"] == "commit-scope"
@@ -297,7 +297,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     )
 
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "implementation"
     assert result["sub_phase"] == "c1_green"
     assert result["source"] == "commit-scope"
@@ -315,7 +315,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     )
 
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "implementation"
     assert result["sub_phase"] == "c1_refactor"
     assert result["source"] == "commit-scope"
@@ -333,7 +333,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     )
 
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "validation"
     assert result["source"] == "commit-scope"
 
@@ -350,7 +350,7 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     )
 
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "documentation"
     assert result["source"] == "commit-scope"
 
@@ -361,6 +361,6 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     # Verify last commit scope detection
     commits = git_manager.get_recent_commits(limit=1)
-    result = decoder.detect_phase(commit_message=commits[0], fallback_to_state=False)
+    result = decoder.detect_phase(commit_message=commits[0])
     assert result["workflow_phase"] == "documentation"
     assert result["source"] == "commit-scope"

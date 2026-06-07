@@ -19,6 +19,7 @@ from mcp_server.schemas import (
     MilestoneConfig,
     ScopeConfig,
 )
+from mcp_server.state.github_read_models import IssueReadModel, MilestoneReadModel, PRReadModel
 
 
 class TestGitHubManager:
@@ -101,9 +102,52 @@ class TestGitHubManager:
         manager.list_issues(state="closed")
         mock_adapter.list_issues.assert_called_with(state="closed", labels=None)
 
-    def test_get_issue(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
-        manager.get_issue(99)
-        mock_adapter.get_issue.assert_called_with(99)
+    def test_get_issue_normalization(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
+        label_mock = MagicMock()
+        label_mock.name = "type:feature"
+        assignee_mock = MagicMock()
+        assignee_mock.login = "alice"
+        milestone_mock = MagicMock()
+        milestone_mock.number = 5
+        milestone_mock.title = "v2.0"
+        milestone_mock.state = "open"
+        user_mock = MagicMock()
+        user_mock.login = "bob"
+
+        issue_mock = MagicMock()
+        issue_mock.number = 354
+        issue_mock.html_url = "https://github.com/owner/repo/issues/354"
+        issue_mock.title = "Add get_pr tool"
+        issue_mock.body = "Description"
+        issue_mock.state = "closed"
+        issue_mock.labels = [label_mock]
+        issue_mock.milestone = milestone_mock
+        issue_mock.assignees = [assignee_mock]
+        issue_mock.created_at.isoformat.return_value = "2026-01-01T00:00:00+00:00"
+        issue_mock.updated_at.isoformat.return_value = "2026-05-27T12:00:00+00:00"
+        issue_mock.closed_at.isoformat.return_value = "2026-05-27T12:00:00+00:00"
+        issue_mock.user = user_mock
+        mock_adapter.get_issue.return_value = issue_mock
+
+        result = manager.get_issue(354)
+
+        assert isinstance(result, IssueReadModel)
+        assert result.number == 354
+        assert result.url == "https://github.com/owner/repo/issues/354"
+        assert result.title == "Add get_pr tool"
+        assert result.body == "Description"
+        assert result.state == "closed"
+        assert result.labels == ["type:feature"]
+        assert result.milestone is not None
+        assert isinstance(result.milestone, MilestoneReadModel)
+        assert result.milestone.number == 5
+        assert result.milestone.title == "v2.0"
+        assert result.milestone.state == "open"
+        assert result.assignees == ["alice"]
+        assert result.created_at == "2026-01-01T00:00:00+00:00"
+        assert result.updated_at == "2026-05-27T12:00:00+00:00"
+        assert result.closed_at == "2026-05-27T12:00:00+00:00"
+        assert result.author == "bob"
 
     def test_close_issue(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
         manager.close_issue(1, "Fixed")
@@ -158,6 +202,30 @@ class TestGitHubManager:
         mock_adapter.merge_pr.assert_called_with(
             pr_number=1, commit_message="Merged", merge_method="merge"
         )
+
+    def test_get_pr_normalization(self, manager: GitHubManager, mock_adapter: MagicMock) -> None:
+        mock_pr = MagicMock()
+        mock_pr.number = 42
+        mock_pr.title = "Test PR"
+        mock_pr.state = "open"
+        mock_pr.base.ref = "main"
+        mock_pr.head.ref = "feature/42-test"
+        mock_pr.merged_at = None
+        mock_pr.merge_commit_sha = None
+        mock_pr.body = "PR body"
+        mock_adapter.get_pr.return_value = mock_pr
+
+        result = manager.get_pr(42)
+
+        assert isinstance(result, PRReadModel)
+        assert result.pr_number == 42
+        assert result.title == "Test PR"
+        assert result.state == "open"
+        assert result.base_branch == "main"
+        assert result.head_branch == "feature/42-test"
+        assert result.merged_at is None
+        assert result.merge_sha is None
+        assert result.body == "PR body"
 
 
 class TestGitHubManagerValidateIssueParams:

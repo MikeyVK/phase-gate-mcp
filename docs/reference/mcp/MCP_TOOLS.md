@@ -2,7 +2,7 @@
 
 ## Overview
 
-The S1mpleTrader V3 MCP Server provides **31 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
+The S1mpleTrader V3 MCP Server provides **50 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
 
 **Server Location:** `mcp_server/`
 **Configuration:** `.vscode/mcp.json` → `st3-workflow`
@@ -10,43 +10,53 @@ The S1mpleTrader V3 MCP Server provides **31 tools** for complete git workflow a
 
 ## Tool Categories
 
-### 1. Git Workflow Tools (8 tools)
+### 1. Git Workflow & Analysis (15 tools)
 
 Comprehensive git flow automation with TDD phase tracking.
 
 | Tool | Purpose | Parameters | Example |
 |------|---------|------------|---------|
-| **CreateBranchTool** | Create feature/fix/refactor/docs branch | `name` (kebab-case), `branch_type` (default: feature) | `create_feature_branch name=add-metrics` |
+| **CreateBranchTool** | Create feature/bug/docs/refactor/hotfix branch | `name` (kebab-case), `base_branch` (**required**), `branch_type` (default: feature) | `create_branch(name="feature/123-add-metrics", base_branch="main")` |
 | **GitStatusTool** | Show working tree status | None | Returns current branch, staged, unstaged files |
 | **GitCommitTool** | Commit with phase prefix + issue suffix | `message`, `workflow_phase`, `sub_phase`, `cycle_number` | `git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="...")` |
 | **GitCheckoutTool** | Switch branches | `branch` | `checkout main` |
+| **GitFetchTool** | Fetch from remote | `remote`, `prune` | `git_fetch(remote="origin", prune=true)` |
+| **GitPullTool** | Pull updates with optional rebase | `remote`, `rebase` | `git_pull(rebase=false)` |
 | **GitPushTool** | Push to origin | `set_upstream` (optional, for new branches) | `push set_upstream=true` |
 | **GitMergeTool** | Merge feature → main | `branch` to merge | `merge feature/new-feature` |
 | **GitDeleteBranchTool** | Delete branch (safe by default) | `branch`, `force` (optional) | `delete_branch branch=feature/old force=false` |
 | **GitStashTool** | Save/restore WIP | `action` (push/pop/list), `message` (optional for push) | `stash action=push message=wip` |
+| **GitRestoreTool** | Restore files from a git ref | `files`, `source` | `git_restore(files=["path/to/file.py"], source="HEAD")` |
+| **GitListBranchesTool** | List branches with verbosity options | `verbose`, `remote` | `git_list_branches(verbose=true)` |
+| **GitDiffTool** | Diff statistics between branches | `target_branch`, `source_branch` | `git_diff_stat(target_branch="main")` |
+| **GetParentBranchTool** | Detect parent branch via phase state | `branch` | `get_parent_branch(branch="feature/123")` |
+| **CheckMergeTool** | Verify merge SHA is reachable from HEAD | `merge_sha` | `check_merge(merge_sha="abc123")` |
 
 **Workflow Example:**
 ```
 1. create_branch(name="feature/my-feature", base_branch="main")
-2. (Make changes)
-3. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Add feature")
-4. git_push(set_upstream=True)
-5. transition_phase(to_phase="ready")
-6. submit_pr(title="Add feature", head="feature/my-feature", base="main")
-7. (After merge)
-8. git_checkout(branch="main")
-9. git_delete_branch(branch="feature/my-feature")  # mode="both" (default: deletes local + remote)
+2. git_checkout(branch="feature/my-feature")
+3. (Make changes)
+4. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Add feature")
+5. git_push(set_upstream=True)
+6. transition_phase(to_phase="ready")
+7. submit_pr(title="Add feature", head="feature/my-feature", base="main")
+8. (After merge)
+9. git_checkout(branch="main")
+10. git_delete_branch(branch="feature/my-feature")  # mode="both" (default: deletes local + remote)
 ```
 
 **Related:** [TDD_WORKFLOW.md](../../coding_standards/TDD_WORKFLOW.md)
 
-### 2. Issue Management Tools (5 tools)
+### 2. GitHub Integration (17 tools)
 
-Full CRUD for GitHub issues with filtering and updates.
+Full GitHub API integration for issues, pull requests, labels, and milestones. Requires `GITHUB_TOKEN` environment variable.
+
+#### Issues (5 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
-| **CreateIssueTool** | Create new issue | **Required:** `issue_type` (feature/bug/hotfix/refactor/docs/chore/epic), `title`, `priority` (critical/high/medium/low/triage), `scope` (architecture/mcp-server/platform/tooling/workflow/documentation), `body` ({`problem`, `expected`?, `actual`?, `context`?, `steps_to_reproduce`?, `related_docs`?}) · **Optional:** `is_epic` (bool), `parent_issue` (int), `milestone` (title string), `assignees` (list) | Issue number, URL |
+| **CreateIssueTool** | Create new issue | **Required:** `issue_type` (feature/bug/hotfix/refactor/docs/chore/epic), `title`, `priority` (critical/high/medium/low/triage), `scope` (architecture/mcp-server/platform/tooling/workflow/documentation), `body` (str: pre-rendered markdown — generate with `scaffold_artifact(artifact_type='issue')`) · **Optional:** `is_epic` (bool), `parent_issue` (int), `milestone` (title string), `assignees` (list) | Issue number, URL |
 | **ListIssuesTool** | List issues with filters | `state` (open/closed/all), `labels` (optional list) | Formatted list with numbers, titles, labels |
 | **GetIssueTool** | Get issue details | `issue_number` | Full issue data, acceptance criteria extracted |
 | **CloseIssueTool** | Close issue | `issue_number`, `comment` (optional) | Confirmation message |
@@ -60,15 +70,14 @@ Full CRUD for GitHub issues with filtering and updates.
 4. close_issue issue_number=4 comment="Fixed in PR #123"
 ```
 
-### 3. Pull Request Tools (3 tools)
-
-Create, list, and merge PRs with merge strategy options.
+#### Pull Requests (4 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **SubmitPRTool** | Create PR (atomic flow) | `title`, `head` (source branch), `body` (optional), `base` (default: main), `draft` (optional) | PR number, URL |
 | **ListPRsTool** | List PRs with filters | `state` (open/closed/all), `base` (optional), `head` (optional) | Formatted list with numbers, titles, status |
 | **MergePRTool** | Merge PR | `pr_number`, `commit_message` (optional), `merge_method` (only `"merge"` is supported) | Merge result, SHA, message |
+| **GetPRTool** | Get PR details | `pr_number` | PR number, title, state, base/head branch, merged_at, merge_sha, body |
 
 > **Note:** `CreatePRTool` has been deleted (issue #283). Use `submit_pr` — it performs an
 > atomically robust submission: preflights before any mutation (dirty-tree + upstream checks),
@@ -84,9 +93,7 @@ Create, list, and merge PRs with merge strategy options.
 4. merge_pr(pr_number=42)
 ```
 
-### 4. Label Management Tools (5 tools)
-
-Manage repository labels and apply to issues/PRs.
+#### Labels (5 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
@@ -105,9 +112,7 @@ Manage repository labels and apply to issues/PRs.
 - `in-progress` - Currently being worked on
 - `blocked` - Blocked by another issue
 
-### 5. Milestone Tools (3 tools)
-
-Organize issues into release milestones.
+#### Milestones (3 tools)
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
@@ -117,17 +122,56 @@ Organize issues into release milestones.
 
 **ISO 8601 Format:** `2025-12-31T00:00:00Z` or `2025-12-31T00:00:00+00:00`
 
-### 6. Quality & Testing Tools (5 tools)
+### 3. Project & Phase Management (8 tools)
 
-Run quality gates, tests, and code validation.
+Workflow lifecycle management: project initialization, phase transitions, TDD cycle management, and planning deliverables.
+
+| Tool | Purpose | Parameters | Returns |
+|------|---------|------------|---------|
+| **InitializeProjectTool** | Initialize project with workflow state | `issue_number`, `issue_title`, `workflow_name`, `parent_branch`, `custom_phases` | Initialized state confirmation |
+| **GetProjectPlanTool** | Get project phase plan for issue | `issue_number` | Phase plan with exit criteria |
+| **SavePlanningDeliverablesTool** | Save planning deliverables | `issue_number` | Confirmation |
+| **UpdatePlanningDeliverablesTool** | Update/merge planning deliverables | `issue_number` | Confirmation |
+| **TransitionPhaseTool** | Sequential phase transition | `branch`, `to_phase`, `human_approval` | New phase state |
+| **ForcePhaseTransitionTool** | Skip phases with reason + approval | `branch`, `to_phase`, `skip_reason`, `human_approval` | New phase state |
+| **TransitionCycleTool** | Sequential TDD cycle transition | `to_cycle` | New cycle state |
+| **ForceCycleTransitionTool** | Skip to cycle with reason + approval | `to_cycle`, `skip_reason`, `human_approval` | New cycle state |
+
+### 4. File Editing (1 tool)
+
+Multi-mode file editing with quality gate integration and concurrent edit protection.
+
+| Tool | Purpose | Parameters | Returns |
+|------|---------|------------|---------|
+| **SafeEditFileTool** | Multi-mode file editing with validation | `path`, `content`/`line_edits`/`insert_lines`/`search`+`replace`, `mode` | Saved file path; diff preview |
+
+### 5. Scaffolding (2 tools)
+
+Generate new artifacts from templates (unified system).
+
+| Tool | Purpose | Parameters | Returns |
+|------|---------|------------|---------|
+| **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
+| **ScaffoldSchemaTool** | Return JSON Schema for artifact type context | `artifact_type` | JSON Schema for the context parameter |
+
+**Artifact Types (from .st3/config/artifacts.yaml):**
+- `dto` - Data Transfer Object with Pydantic
+- `worker` - Background job/processor
+- `design` - Design document
+- `adapter` - External API integration
+- `tool` - MCP tool
+
+See `.st3/config/artifacts.yaml` for complete list and required fields per type.
+
+### 6. Quality & Validation (3 tools)
+
+Run quality gates, tests, and template validation.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **RunQualityGatesTool** | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required + non-empty only when `scope="files"`) | `content[0]=text` summary line, `content[1]=json` compact payload `{overall_pass,gates}` |
-| **ValidationTool** | Generic code validation | `scope` (all/dtos/workers/platform) | Validation report |
-| **ValidateDTOTool** | Validate DTO schema | `file_path` | DTO structure validation |
 | **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` | `content[0]=text` (summary line + per-failure `FAILED test_id — reason` for exit 1; summary + stderr hint for exit 2/3/4), `content[1]=json` `{exit_code, summary, summary_line, failures[], coverage_pct, lf_cache_was_empty, stderr}` |
-| **HealthCheckTool** | Server health status | None | OK/ERROR |
+| **TemplateValidationTool** | Validate file structure against template | `path`, `template_type` | Pass/fail with violation details |
 
 **Quality Gates Standard (`.st3/quality.yaml`):**
 - **Gates 0–3:** Ruff format, strict lint, imports, line length
@@ -135,14 +179,16 @@ Run quality gates, tests, and code validation.
 - **Gate 4b:** Pyright type gate
 - Test execution belongs to `run_tests` (not `run_quality_gates`).
 
-### 7. Discovery & Navigation Tools (2 tools)
+### 7. Discovery & Admin (4 tools)
 
-Find documentation and understand current work context.
+Documentation search, work context aggregation, and server administration.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
 | **SearchDocumentationTool** | Search docs semantically | `query`, `scope` (optional: all/architecture/coding_standards/development/reference/implementation) | Ranked results with file path, line number, snippet |
 | **GetWorkContextTool** | Get current work state | `none` | Orientation header with TODO reminder, phase instructions, optional hand-over template |
+| **HealthCheckTool** | Server health check | None | OK/ERROR |
+| **RestartServerTool** | Hot-reload server via proxy mechanism | `reason` | Confirmation |
 
 **Usage Example:**
 ```
@@ -155,52 +201,27 @@ Find documentation and understand current work context.
 2. search_documentation query="how to implement worker" → Returns: Ranked docs with examples
 ```
 
-### 8. Scaffolding Tools (1 tool)
-
-Generate new artifacts from templates (unified system).
-
-| Tool | Purpose | Parameters | Returns |
-|------|---------|------------|---------|
-| **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
-
-**Artifact Types (from .st3/config/artifacts.yaml):**
-- `dto` - Data Transfer Object with Pydantic
-- `worker` - Background job/processor
-- `design` - Design document
-- `adapter` - External API integration
-- `tool` - MCP tool
-
-See `.st3/config/artifacts.yaml` for complete list and required fields per type.
-
-### 9. Development & File Tools (2 tools)
-
-Manage files and check server health.
-
-| Tool | Purpose | Parameters | Returns |
-|------|---------|------------|---------|
-| **CreateFileTool** | Create new file | `path`, `content` | File created (deprecated) |
-| **HealthCheckTool** | Check MCP server | None | OK if healthy |
-
 ## Architecture
 
 ### Tool Registration
 
 All tools are registered in `mcp_server/server.py`:
 
-**Always Available (8 tools):**
-- Git tools (8)
-- Quality tools (4)
-- Development tools (2)
+**Always Available (33 tools):**
+- Git tools (15)
+- Project/Phase tools (8)
+- Quality tools (3)
+- File Editing (1)
 - Scaffold tools (2)
-- Discovery tools (2)
+- Discovery & Admin tools (4)
 
-**GitHub-Dependent (13 tools, requires GITHUB_TOKEN):**
+**GitHub-Dependent (17 tools, requires GITHUB_TOKEN):**
 - Issue tools (5)
-- PR tools (3)
+- PR tools (4)
 - Label tools (5)
 - Milestone tools (3)
 
-**Total: 31 tools**
+**Total: 50 tools** (33 always-available + 17 GitHub-dependent)
 
 ### Execution Flow
 
@@ -289,14 +310,24 @@ File: `.vscode/mcp.json`
 ### Issue Lifecycle Management
 
 ```
-1. create_issue(
+1. scaffold_artifact(
+     artifact_type="issue",
+     name="bug-memory-leak-cache",
+     context={
+       "title": "Bug: Memory leak in cache layer",
+       "problem": "Memory grows unbounded after 1h of operation.",
+       "steps_to_reproduce": "1. Start server\n2. Run 1000 requests",
+       "expected": "Stable memory usage",
+       "actual": "RSS grows to 2GB"
+     }
+   )
+   → Returns: scaffolded body (pre-rendered markdown)
+2. create_issue(
      issue_type="bug",
      title="Bug: Memory leak in cache layer",
      priority="high",
      scope="mcp-server",
-     body={"problem": "Memory grows unbounded after 1h of operation.",
-           "steps_to_reproduce": "1. Start server\n2. Run 1000 requests",
-           "expected": "Stable memory usage", "actual": "RSS grows to 2GB"},
+     body="<rendered markdown from step 1>",
      milestone="v1.0.0"
    )
    → Returns: Created issue #47: Bug: Memory leak in cache layer
@@ -306,15 +337,14 @@ File: `.vscode/mcp.json`
 ```
 
 Labels are assembled automatically from the required and optional fields. Do not pass a `labels` list — the tool enforces label policy from
-`.st3/config/issues.yaml` and `.st3/config/labels.yaml`. `body` is a structured object (not a free-form string);
-`problem` is the only required field.
+`.st3/config/issues.yaml` and `.st3/config/labels.yaml`. `body` accepts pre-rendered markdown (string); generate it with `scaffold_artifact(artifact_type='issue')` before calling `create_issue`. Use the `/create-issue` slash prompt to automate the two-step scaffold → submit flow.
 
 ### Release Milestone Workflow
 
 ```
 1. create_milestone title="v1.0.0" description="First stable release" due_on="2025-12-31T00:00:00Z"
-2. create_issue issue_type="feature" title="Feature A" priority="medium" scope="platform" body={"problem": "..."} milestone="v1.0.0"
-3. create_issue issue_type="feature" title="Feature B" priority="medium" scope="platform" body={"problem": "..."} milestone="v1.0.0"
+2. create_issue issue_type="feature" title="Feature A" priority="medium" scope="platform" body="## Problem\n\n..." milestone="v1.0.0"
+3. create_issue issue_type="feature" title="Feature B" priority="medium" scope="platform" body="## Problem\n\n..." milestone="v1.0.0"
 4. (As features complete)
 5. update_issue issue_number=X state=closed
 6. (When all done)
@@ -386,9 +416,9 @@ DOCS:         git_add_or_commit(workflow_phase="documentation", message="Update 
 ## Roadmap
 
 **Completed:**
-- ✅ Git workflow (8 tools)
+- ✅ Git workflow (15 tools)
 - ✅ Issue management (5 tools)
-- ✅ PR management (3 tools)
+- ✅ PR management (4 tools)
 - ✅ Label management (5 tools)
 - ✅ Milestone management (3 tools)
 

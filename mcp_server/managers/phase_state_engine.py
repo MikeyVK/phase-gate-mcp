@@ -45,7 +45,7 @@ from mcp_server.managers.state_repository import (
     StateAlreadyExistsError,
     StateBranchMismatchError,
 )
-from mcp_server.schemas import ContractsConfig, GitConfig, WorkphasesConfig
+from mcp_server.schemas import ContractsConfig, GitConfig
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,6 @@ class PhaseStateEngine:
         project_manager: ProjectManager,
         git_config: GitConfig,
         contracts_config: ContractsConfig,
-        workphases_config: WorkphasesConfig,
         state_repository: IStateRepository,
         scope_decoder: ScopeDecoder,
         workflow_gate_runner: IWorkflowGateRunner,
@@ -99,7 +98,6 @@ class PhaseStateEngine:
 
         self._contracts_config = contracts_config
         self._git_config = git_config
-        self._workphases_config = workphases_config
         self._state_repository = state_repository
         self._scope_decoder = scope_decoder
         self._workflow_gate_runner = workflow_gate_runner
@@ -252,18 +250,6 @@ class PhaseStateEngine:
         skipped_gates = list(report.blocking)
         passing_gates = list(report.passing)
         report_payload = self._gate_report_to_payload(report)
-
-        if not skipped_gates and not passing_gates:
-            skipped_gates, passing_gates = self._legacy_workphases_gate_summary(
-                issue_number=issue_number,
-                from_phase=from_phase,
-                to_phase=to_phase,
-            )
-            report_payload = {
-                "passing": passing_gates,
-                "blocking": skipped_gates,
-                "details": {},
-            }
 
         if skipped_gates:
             logger.warning(
@@ -454,39 +440,6 @@ class PhaseStateEngine:
             "blocking": list(report.blocking),
             "details": dict(report.details),
         }
-
-    def _legacy_workphases_gate_summary(
-        self,
-        issue_number: int,
-        from_phase: str,
-        to_phase: str,
-    ) -> tuple[list[str], list[str]]:
-        """Fallback skipped-gate summary for workspaces without phase contracts."""
-        skipped_gates: list[str] = []
-        passing_gates: list[str] = []
-        plan = self.project_manager.get_project_plan(issue_number)
-
-        for entry in self._workphases_config.get_exit_requires(from_phase):
-            key = entry.get("key")
-            if not key:
-                continue
-            gate_id = f"exit:{from_phase}:{key}"
-            if plan is None or key not in plan:
-                skipped_gates.append(gate_id)
-            else:
-                passing_gates.append(gate_id)
-
-        for entry in self._workphases_config.get_entry_expects(to_phase):
-            key = entry.get("key")
-            if not key:
-                continue
-            gate_id = f"entry:{to_phase}:{key}"
-            if plan is None or key not in plan:
-                skipped_gates.append(gate_id)
-            else:
-                passing_gates.append(gate_id)
-
-        return skipped_gates, passing_gates
 
     def _has_uncommitted_state_changes(self) -> bool:
         """Check whether tracked state.json has local git changes."""
@@ -735,7 +688,7 @@ class PhaseStateEngine:
     def on_exit_cycle_based_phase(self, branch: str) -> None:
         """Hook called when exiting implementation phase.
 
-        Preserves last_cycle and clears current_cycle.
+        Preserves last_cycle and current_cycle across detours.
         Logs warning if not all cycles completed.
 
         Args:
@@ -749,7 +702,7 @@ class PhaseStateEngine:
                     _s.current_cycle,
                     branch,
                 )
-                return _s.with_updates(last_cycle=_s.current_cycle, current_cycle=None)
+                return _s.with_updates(last_cycle=_s.current_cycle)
             return _s
 
         self._workflow_state_mutator.apply(branch, _exit_lambda)

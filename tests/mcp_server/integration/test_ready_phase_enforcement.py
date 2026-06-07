@@ -39,6 +39,7 @@ from mcp_server.managers.enforcement_runner import (
     EnforcementContext,
     EnforcementRunner,
 )
+from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.tools.git_tools import GitCommitTool
 from mcp_server.tools.pr_tools import SubmitPRTool
 
@@ -70,7 +71,9 @@ def _make_runner(tmp_path: Path) -> EnforcementRunner:
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        git_config=loader.load_git_config(),
         server_root=tmp_path / ".phase-gate",
+        state_reader=FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json"),
     )
 
 

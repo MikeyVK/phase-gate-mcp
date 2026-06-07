@@ -47,6 +47,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Pull | `git_pull(remote, rebase)` | `run_in_terminal("git pull")` |
 | List branches | `git_list_branches(verbose, remote)` | `run_in_terminal("git branch -a")` |
 | Diff stats | `git_diff_stat(target_branch, source_branch)` | `run_in_terminal("git diff --stat")` |
+| Verify merge reachability | `check_merge(merge_sha)` | `run_in_terminal("git merge-base --is-ancestor")` |
 
 ### GitHub Operations
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -59,6 +60,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Create PR (atomic) | `submit_pr(title, body, head, base, draft)` | `run_in_terminal("gh pr create")` |
 | List PRs | `list_prs(state, base, head)` | `run_in_terminal("gh pr list")` |
 | Merge PR | `merge_pr(pr_number, commit_message, merge_method)` | `run_in_terminal("gh pr merge")` |
+| Get PR | `get_pr(pr_number)` | `run_in_terminal("gh pr view")` |
 | Create label | `create_label(name, color, description)` | Manual GitHub UI |
 | Add labels | `add_labels(issue_number, labels)` | `run_in_terminal("gh issue edit")` |
 | Create milestone | `create_milestone(title, description, due_on)` | Manual GitHub UI |
@@ -67,14 +69,14 @@ This document is a **binding contract**. Code that violates these principles is 
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
 | Edit file | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | `run_in_terminal("Set-Content")` |
-| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | `create_file` or manual creation |
+| Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
+| Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 
 ### Quality & Testing
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
 | Run quality gates | `run_quality_gates(files)` | `run_in_terminal("pylint")` or `run_in_terminal("mypy")` |
 | Run tests | `run_tests(path, markers, timeout, verbose)` | `run_in_terminal("pytest")` |
-| Validate DTO | `validate_dto(file_path)` | Manual review |
 | Validate template | `validate_template(path, template_type)` | Manual review |
 
 ### Project & Phase Management
@@ -185,7 +187,7 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 
 **NEVER use `safe_edit_file` to create code or documentation from scratch. Always use `scaffold_artifact`.**
 
-| Artifact Type | Use Case | Example |
+| Example Artifact Type | Use Case | Example |
 |---------------|----------|---------|
 | `dto` | Data Transfer Objects | `scaffold_artifact(artifact_type="dto", name="UserDTO", context={...})` |
 | `worker` | Background processors | `scaffold_artifact(artifact_type="worker", name="ProcessWorker", context={...})` |
@@ -194,7 +196,11 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 | `design` | Design documents | `scaffold_artifact(artifact_type="design", name="my-design", context={...})` |
 | `reference` | Reference docs | `scaffold_artifact(artifact_type="reference", name="my-reference", context={...})` |
 
-**Registry:** `.phase-gate/config/artifacts.yaml` defines all artifact types and their templates.
+These are representative examples, not the complete registry. Current first-class types also include `adapter`, `resource`, `interface`, `service`, `schema`, `generic`, `unit_test`, `integration_test`, `architecture`, `planning`, `validation_report`, `generic_doc`, `commit`, `pr`, and `issue`.
+
+**Registry:** `.phase-gate/config/artifacts.yaml` defines the authoritative complete set of artifact types and their templates.
+
+**Schema discovery:** Before calling `scaffold_artifact` with an artifact type whose context fields are not already in your working context, call `scaffold_schema(artifact_type=...)` first. It returns the full JSON Schema for the `context` parameter — required and optional fields — enabling first-time-right scaffolding without a failed call. If you call `scaffold_artifact` with wrong or missing context fields, the error response contains the same schema; use it to correct the call immediately.
 
 ---
 

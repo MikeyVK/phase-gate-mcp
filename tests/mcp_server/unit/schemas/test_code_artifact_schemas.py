@@ -22,6 +22,7 @@ import pytest
 from pydantic import ValidationError
 
 # Project modules
+from mcp_server.schemas import MethodSpec
 from mcp_server.schemas.contexts.generic import GenericContext
 from mcp_server.schemas.contexts.integration_test import IntegrationTestContext
 from mcp_server.schemas.contexts.schema import SchemaContext
@@ -305,6 +306,42 @@ class TestServiceRenderContext:
 class TestGenericContext:
     """Test GenericContext schema validation."""
 
+    def test_method_spec_minimal_valid(self) -> None:
+        """MethodSpec should accept a minimal method definition."""
+        method = MethodSpec(name="calculate")
+        assert method.name == "calculate"
+
+    def test_method_spec_optional_fields_have_renderable_defaults(self) -> None:
+        """MethodSpec defaults should be render-safe without pinning exact text."""
+        method = MethodSpec(name="calculate")
+
+        assert isinstance(method.params, str)
+        assert isinstance(method.return_type, str)
+        assert isinstance(method.docstring, str)
+        assert isinstance(method.body, str)
+        assert method.params is not None
+        assert method.return_type is not None
+        assert method.docstring is not None
+        assert method.body.strip()
+
+    def test_method_spec_name_is_required_and_non_empty(self) -> None:
+        """MethodSpec should reject missing or empty names."""
+        with pytest.raises(ValidationError, match="name"):
+            MethodSpec(name="")
+
+        with pytest.raises(ValidationError, match="name"):
+            MethodSpec()  # type: ignore[call-arg]
+
+    def test_method_spec_is_frozen_and_forbids_extra_fields(self) -> None:
+        """MethodSpec should be immutable and reject unknown fields."""
+        method = MethodSpec(name="calculate")
+
+        with pytest.raises(ValidationError):
+            MethodSpec(name="calculate", unexpected=True)
+
+        with pytest.raises(ValidationError):
+            method.name = "recalculate"
+
     def test_generic_context_validation_happy(self) -> None:
         """Valid generic input should create GenericContext instance."""
         ctx = GenericContext(name="TemplateHasher")
@@ -317,13 +354,27 @@ class TestGenericContext:
         assert ctx.methods == []
 
     def test_generic_context_all_optional_populated(self) -> None:
-        """All optional generic fields should be storable."""
+        """Structured method definitions should validate for generic artifacts."""
         ctx = GenericContext(
             name="PathUtils",
             description="Path manipulation utilities",
-            methods=["normalize_path", "ensure_dir"],
+            methods=[
+                {
+                    "name": "normalize_path",
+                    "params": "path: str",
+                    "return_type": "str",
+                    "docstring": "Normalize a filesystem path.",
+                    "body": "return path.strip()",
+                },
+                {"name": "ensure_dir"},
+            ],
         )
         assert len(ctx.methods) == 2
+
+    def test_generic_context_rejects_string_methods(self) -> None:
+        """Legacy list[str] methods input should be rejected."""
+        with pytest.raises(ValidationError, match="methods"):
+            GenericContext(name="PathUtils", methods=["normalize_path"])
 
     def test_generic_context_missing_required_name(self) -> None:
         """Missing name should raise ValidationError."""

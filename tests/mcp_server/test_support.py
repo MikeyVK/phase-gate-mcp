@@ -45,7 +45,6 @@ from mcp_server.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-from mcp_server.tools.git_tools import CreateBranchInput
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
@@ -213,16 +212,6 @@ def load_issue_tool_dependencies(workspace_root: Path | str | None = None) -> di
     }
 
 
-def configure_create_branch_input(workspace_root: Path | str | None = None) -> GitConfig:
-    """Configure CreateBranchInput validators with explicit git config."""
-    git_config = cast(
-        GitConfig,
-        _load_config(workspace_root, "git.yaml", "load_git_config"),
-    )
-    CreateBranchInput.configure(git_config)
-    return git_config
-
-
 def make_git_manager(workspace_root: Path | str | None = None) -> GitManager:
     """Build a GitManager with explicit GitConfig."""
     git_config = cast(
@@ -366,7 +355,6 @@ def make_phase_state_engine(
         project_manager=manager,
         git_config=git_config,
         contracts_config=contracts_config,
-        workphases_config=workphases_config,
         state_repository=resolved_state_repository,
         scope_decoder=resolved_scope_decoder,
         workflow_gate_runner=resolved_workflow_gate_runner,
@@ -561,4 +549,7 @@ def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
         issue_config=dependencies["issue_config"],
         milestone_config=dependencies["milestone_config"],
         contracts_config=dependencies["contracts_config"],
+        label_config=dependencies["label_config"],
+        scope_config=dependencies["scope_config"],
+        git_config=dependencies["git_config"],
     )

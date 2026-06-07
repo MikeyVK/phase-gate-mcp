@@ -8,10 +8,12 @@
 
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
+from mcp_server.core.interfaces import IStateReader
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import (
     EnforcementAction,
@@ -36,8 +38,10 @@ def _make_runner(
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
+        git_config=MagicMock(),
         registry=registry,
         server_root=tmp_path,
+        state_reader=MagicMock(spec=IStateReader),
     )
 
 
@@ -163,7 +167,9 @@ class TestEnforcementRunner:
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             config=config,
+            git_config=MagicMock(),
             server_root=tmp_path,
+            state_reader=MagicMock(spec=IStateReader),
         )
 
         runner.run(

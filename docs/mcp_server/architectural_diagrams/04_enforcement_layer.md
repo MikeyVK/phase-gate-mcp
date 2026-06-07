@@ -81,7 +81,6 @@ graph TD
     GitDelete["GitDeleteBranchTool"]
     GitPull["GitPullTool"]
     SafeEdit["SafeEditTool"]
-    CreateFile["CreateFileTool"]
     SubmitPR["SubmitPRTool"]
     ScaffoldArtifact["ScaffoldArtifactTool"]
     InitProject["InitializeProjectTool"]
@@ -97,7 +96,6 @@ graph TD
     BMT --> GitDelete
     BMT --> GitPull
     BMT --> SafeEdit
-    BMT --> CreateFile
     BMT --> SubmitPR
     BMT --> ScaffoldArtifact
     BMT --> InitProject

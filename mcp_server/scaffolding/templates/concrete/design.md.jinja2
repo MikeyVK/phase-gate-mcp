@@ -126,7 +126,7 @@ TEMPLATE_METADATA:
 -#}
 
 {%- block header_fields %}
-{{ hdr.pattern_status_header_basic(status | default("DRAFT"), version | default("1.0"), last_updated | default(""), timestamp) }}
+{{ hdr.pattern_status_header_basic(status, version, last_updated, timestamp) }}
 {% endblock -%}
 
 {#- Override tier1 blocks with pattern calls (code-tak compositie parity) -#}
@@ -147,7 +147,7 @@ TEMPLATE_METADATA:
 {%- endblock -%}
 
 {%- block version_history_section -%}
-{{ history.pattern_version_history_basic(version, last_updated | default("")) }}
+{{ history.pattern_version_history_basic(version, last_updated) }}
 {%- endblock -%}
 
 {#- DESIGN_TEMPLATE.md content: numbered sections with --- dividers -#}
@@ -175,7 +175,9 @@ TEMPLATE_METADATA:
 ### 1.3. Constraints
 
 {% if constraints -%}
-{{ constraints }}
+{% for item in constraints -%}
+- {{ item }}
+{% endfor %}
 {% else -%}
 None
 {% endif %}

@@ -13,12 +13,12 @@ import pytest
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.schemas import MilestoneConfig
-from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool, IssueBody
+from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool
 from tests.mcp_server.test_support import load_issue_tool_dependencies, make_create_issue_tool
 
 pytestmark = pytest.mark.asyncio
 
-MINIMAL_BODY = IssueBody(problem="[e2e smoke] Integration test - safe to close automatically.")
+MINIMAL_BODY = "## Problem\n\n[e2e smoke] Integration test - safe to close automatically."
 
 
 def make_input(**overrides: object) -> CreateIssueInput:
@@ -52,6 +52,9 @@ def make_validating_tool(
         issue_config=dependencies["issue_config"],
         milestone_config=milestone_config or dependencies["milestone_config"],
         contracts_config=dependencies["contracts_config"],
+        label_config=dependencies["label_config"],
+        scope_config=dependencies["scope_config"],
+        git_config=dependencies["git_config"],
     )
     return tool, adapter
 
@@ -95,10 +98,7 @@ async def test_all_options_creates_issue_with_full_label_set() -> None:
         parent_issue=149,
         priority="medium",
         scope="mcp-server",
-        body=IssueBody(
-            problem="[e2e smoke] Full-options test.",
-            expected="Issue created with complete label set.",
-        ),
+        body="## Problem\n\n[e2e smoke] Full-options test.",
     )
 
     result = await tool.execute(params, NoteContext())
@@ -173,6 +173,9 @@ async def test_milestone_accepted_when_milestones_yaml_is_empty() -> None:
         issue_config=dependencies["issue_config"],
         milestone_config=empty_milestones,
         contracts_config=dependencies["contracts_config"],
+        label_config=dependencies["label_config"],
+        scope_config=dependencies["scope_config"],
+        git_config=dependencies["git_config"],
     )
     issue_mock = MagicMock(number=11, title="Milestone ok", html_url="http://x")
     adapter.create_issue.return_value = issue_mock

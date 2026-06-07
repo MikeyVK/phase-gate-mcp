@@ -70,6 +70,7 @@ class TestInitializeProjectToolParentBranch:
             manager=manager,
             git_manager=make_git_manager(workspace_root),
             state_engine=make_phase_state_engine(workspace_root, project_manager=manager),
+            contracts_config=None,
         )
 
     @pytest.mark.asyncio

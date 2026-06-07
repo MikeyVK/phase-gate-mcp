@@ -2,8 +2,7 @@
 # template=generic version=f35abd82 created=2026-03-23T00:00Z updated=
 """CommitPhaseDetector — commit-scope-only phase detector.
 
-Wraps ScopeDecoder with fallback_to_state=False so the resolver path never
-performs an implicit second state read.
+Wraps ScopeDecoder, which now only detects from commit scope (state.json fallback removed).
 """
 
 from __future__ import annotations
@@ -53,4 +52,4 @@ class CommitPhaseDetector:
             }
 
         decoder = ScopeDecoder(self._workphases_config)
-        return decoder.detect_phase(commit_message=commit_message, fallback_to_state=False)
+        return decoder.detect_phase(commit_message=commit_message)

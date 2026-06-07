@@ -30,7 +30,6 @@ from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
-from mcp_server.scaffolding.template_introspector import TemplateSchema
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
 from mcp_server.schemas import ArtifactRegistryConfig, ProjectStructureConfig
@@ -44,10 +43,14 @@ logger = logging.getLogger(__name__)
 _v2_context_registry: dict[str, str] = {
     "dto": "DTOContext",
     "worker": "WorkerContext",
+    "adapter": "AdapterContext",
     "tool": "ToolContext",
+    "resource": "ResourceContext",
     "schema": "SchemaContext",
+    "interface": "InterfaceContext",
     "service": "ServiceContext",
     "generic": "GenericContext",
+    "generic_doc": "GenericDocContext",
     "unit_test": "UnitTestContext",
     "integration_test": "IntegrationTestContext",
     # Document artifact types
@@ -56,6 +59,7 @@ _v2_context_registry: dict[str, str] = {
     "design": "DesignContext",
     "architecture": "ArchitectureContext",
     "reference": "ReferenceContext",
+    "validation_report": "ValidationReportContext",
     # Tracking artifact types
     "commit": "CommitContext",
     "pr": "PRContext",
@@ -344,16 +348,11 @@ class ArtifactManager:
 
                     artifact_path = self.get_artifact_path(artifact_type, name)
                     output_path_value = artifact_path
-        elif artifact.output_type == "ephemeral":
+        elif artifact.output_type == "ephemeral" and provided_output_path is not None:
             # Ephemeral artifacts write to <server_root>/temp/ at write time (uuid-based filename).
-            # If caller provided explicit output_path, use it for the SCAFFOLD header.
-            # Otherwise, use a stable placeholder — actual path determined by _validate_and_write.
-            if provided_output_path is not None:
-                output_path_value = Path(provided_output_path)
-            else:
-                ext = getattr(artifact, "file_extension", ".txt")
-                _temp_base = self.server_root
-                output_path_value = _temp_base / "temp" / f"{artifact_type}_render{ext}"
+            # Only set output_path when caller explicitly provided one — otherwise leave as None
+            # so tier0 renders the compact single-line header (no filepath line).
+            output_path_value = Path(provided_output_path)
 
         # Instantiate RenderContext with lifecycle fields + user context fields
         # This validates all fields via Pydantic
@@ -691,14 +690,10 @@ class ArtifactManager:
                 v2_user_context = {k: v for k, v in context.items() if k not in _v2_strip_keys}
                 context_schema = context_class.model_validate(v2_user_context)
             except Exception as e:
-                _required = [f for f, fi in context_class.model_fields.items() if fi.is_required()]
-                _optional = [
-                    f for f, fi in context_class.model_fields.items() if not fi.is_required()
-                ]
                 raise ValidationError(
                     f"V2 pipeline: Failed to validate {artifact_type} context "
                     f"via {context_class.__name__}",
-                    schema=TemplateSchema(required=_required, optional=_optional),
+                    schema=self.get_context_schema(artifact_type),
                 ) from e
 
             # 2. Enrich to RenderContext (adds lifecycle fields)
@@ -849,3 +844,38 @@ class ArtifactManager:
                 "workspace_root not configured - cannot resolve artifact paths automatically",
             )
         return self.workspace_root / base_dir / file_name
+
+    def get_context_schema(self, artifact_type: str) -> dict[str, Any]:
+        """Return JSON Schema dict for the context parameter of a V2 artifact type.
+
+        Args:
+            artifact_type: Artifact type id (e.g. 'research', 'dto')
+
+        Returns:
+            JSON Schema dict (Draft 7, $refs inlined via resolve_schema_refs)
+
+        Raises:
+            ConfigError: If artifact_type has no V2 Context class registered
+        """
+        import sys  # noqa: PLC0415
+
+        from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
+
+        context_class_name = _v2_context_registry.get(artifact_type)
+        if context_class_name is None:
+            raise ConfigError(
+                f"No V2 Context schema for artifact type '{artifact_type}'. "
+                "Register a matching Context schema in _v2_context_registry first."
+            )
+
+        schemas_module = sys.modules.get("mcp_server.schemas")
+        if schemas_module is None:
+            import mcp_server.schemas as schemas_module  # noqa: PLC0415
+
+        context_class = getattr(schemas_module, context_class_name, None)
+        if context_class is None:
+            raise ConfigError(
+                f"V2 Context class '{context_class_name}' not found in mcp_server.schemas."
+            )
+
+        return resolve_schema_refs(context_class.model_json_schema())

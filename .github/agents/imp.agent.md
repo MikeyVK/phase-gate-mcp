@@ -17,15 +17,12 @@ tools:
   - search/textSearch
   - search/listDirectory
   - search/usages
-  - search/changes
+  - vscode/toolSearch
   # Todo — taaklijsten bijhouden per fase/sessie
   - todo
   # Execute — dev servers en build commands (zelden; MCP tools hebben prioriteit)
   - execute/runInTerminal
   - execute/getTerminalOutput
-handoffs:
-  - agent: qa
-    label: When implementation cycle is complete and hand-over is produced
 ---
 
 # @imp — Implementation Role
@@ -71,6 +68,11 @@ Follow these sources in this order:
   can start a fresh `@qa` session with full context.
 
 ## Startup Protocol
+
+**Precondition: branch must be pre-initialized by `@co`.**
+`@imp` always starts on a branch where `create_branch`, `git_checkout`, and `initialize_project` have already been called by `@co`.
+An uninitialized branch reaching `@imp` is a process violation — do not call `initialize_project` as recovery.
+If the branch has no `.phase-gate/state.json`, stop and report the blocker; do not attempt to initialize.
 
 Do not rely on stale memory.
 

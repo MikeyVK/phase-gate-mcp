@@ -80,6 +80,7 @@ class TestTransitionPhaseToolConflict:
             project_manager=pm,
             state_engine=engine,
             server_root=tmp_path,
+            workphases_config=None,
         )
 
     @pytest.mark.asyncio
@@ -132,6 +133,7 @@ class TestForcePhaseTransitionToolConflict:
             project_manager=pm,
             state_engine=engine,
             server_root=tmp_path,
+            workphases_config=None,
         )
 
     @pytest.mark.asyncio

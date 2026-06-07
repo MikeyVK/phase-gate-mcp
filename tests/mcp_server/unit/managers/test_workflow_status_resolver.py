@@ -104,7 +104,7 @@ class TestIGitContextReader:
 
 
 class TestCommitPhaseDetector:
-    """CommitPhaseDetector wraps ScopeDecoder with fallback_to_state=False."""
+    """CommitPhaseDetector wraps ScopeDecoder (commit-scope-only, no state.json fallback)."""
 
     def test_detector_exists_and_detects_from_commit(self) -> None:
         detector = CommitPhaseDetector(workphases_config=_TEST_WORKPHASES)
@@ -145,6 +145,7 @@ class TestWorkflowStatusResolver:
         commits: list[str] | None = None,
         state_phase: str = "implementation",
         state_cycle: int | None = 3,
+        state_sub_phase: str | None = None,
     ) -> WorkflowStatusResolver:
         git_reader = MagicMock()
         git_reader.get_current_branch.return_value = branch
@@ -156,6 +157,7 @@ class TestWorkflowStatusResolver:
                 branch=branch,
                 current_phase=state_phase,
                 current_cycle=state_cycle,
+                current_sub_phase=state_sub_phase,
                 workflow_name="feature",
                 issue_number=50,
                 parent_branch="main",
@@ -203,6 +205,19 @@ class TestWorkflowStatusResolver:
         )
         result = resolver.resolve_current()
         assert result.current_cycle == 3
+
+    def test_resolve_ignores_stale_commit_sub_phase_when_state_sub_phase_cleared(self) -> None:
+        resolver = self._make_resolver(
+            commits=["feat(P_IMPLEMENTATION_SP_C1_REFACTOR): completed cycle one"],
+            state_cycle=2,
+            state_sub_phase=None,
+        )
+
+        result = resolver.resolve_current()
+
+        assert result.current_phase == "implementation"
+        assert result.current_cycle == 2
+        assert result.sub_phase is None
 
     def test_resolve_raises_state_not_found_on_branch_mismatch(self) -> None:
         """After #298: resolver raises StateNotFoundError when no state for current branch."""
@@ -300,6 +315,7 @@ class TestWorkflowStatusResolverInversion:
         branch: str = "feature/298-test",
         state_phase: str = "implementation",
         state_cycle: int | None = 3,
+        state_sub_phase: str | None = None,
         commits: list[str] | None = None,
     ) -> WorkflowStatusResolver:
         git_reader = MagicMock()
@@ -311,6 +327,7 @@ class TestWorkflowStatusResolverInversion:
                 branch=branch,
                 current_phase=state_phase,
                 current_cycle=state_cycle,
+                current_sub_phase=state_sub_phase,
                 workflow_name="feature",
                 issue_number=298,
                 parent_branch="main",

@@ -1,19 +1,19 @@
 <!-- docs/reference/mcp/tools/scaffolding.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-02-08 -->
+<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-06-02 -->
 # Scaffolding Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 2.1  
+**Last Updated:** 2026-06-02  
 
-**Source:** [mcp_server/tools/scaffold_artifact.py](../../../../mcp_server/tools/scaffold_artifact.py)  
-**Tests:** [tests/unit/test_scaffold_artifact.py](../../../../tests/unit/test_scaffold_artifact.py)  
+**Source:** [mcp_server/tools/scaffold_artifact.py](../../../../mcp_server/tools/scaffold_artifact.py) | [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
+**Tests:** [tests/mcp_server/unit/tools/test_scaffold_schema_tool.py](../../../../tests/mcp_server/unit/tools/test_scaffold_schema_tool.py)
 
 ---
 
 ## Purpose
 
-Complete reference documentation for unified artifact scaffolding via the `scaffold_artifact` tool. This tool generates code and documentation artifacts from Jinja2 templates defined in the [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) registry.
+Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same artifact registry defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
 
 The scaffolding system provides:
 - **Unified tool** for code and documentation generation (replaces separate tools)
@@ -21,20 +21,25 @@ The scaffolding system provides:
 - **Automatic directory resolution** from [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml)
 - **SCAFFOLD header injection** for template provenance tracking
 - **Context-driven customization** via template variables
+- **Proactive schema exposure** via `scaffold_schema` — inspect context requirements before scaffolding
 
 ---
 
 ## Overview
 
-The MCP server provides **1 scaffolding tool**:
+The MCP server provides **2 scaffolding tools**:
 
 | Tool | Purpose | Artifact Types |
 |------|---------|----------------|
-| `scaffold_artifact` | Generate code/docs from templates | 14+ types (DTO, worker, adapter, tool, design, architecture, etc.) |
+| `scaffold_artifact` | Generate code/docs from templates | 21 types (including adapter, resource, interface, validation_report, generic_doc, etc.) |
+| `scaffold_schema` | Return JSON Schema for context parameter | Artifact types in the three-layer scaffolding architecture |
+
 
 **Supported Artifact Categories:**
-- **Code Artifacts:** `dto`, `worker`, `adapter`, `tool`, `manager`, `service`
-- **Documentation Artifacts:** `design`, `architecture`, `tracking`, `research`, `reference`, `planning`, `guide`, `procedure`
+- **Code Artifacts:** `dto`, `worker`, `adapter`, `tool`, `resource`, `schema`, `interface`, `service`, `generic`, `unit_test`, `integration_test`
+- **Document Artifacts:** `design`, `architecture`, `research`, `planning`, `reference`, `validation_report`, `generic_doc`
+- **Tracking Artifacts:** `commit`, `pr`, `issue`
+
 
 ---
 
@@ -52,7 +57,7 @@ Generate any artifact type (code or document) from unified registry.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `"dto"`, `"design"`, `"worker"`) |
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `"dto"`, `"design"`, `"worker"`). The available enum values are populated at runtime from `artifacts.yaml` via the registry. |
 | `name` | `str` | **Yes** | Artifact name — PascalCase for code, kebab-case for docs |
 | `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.phase-gate/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |
@@ -112,23 +117,6 @@ Generate any artifact type (code or document) from unified registry.
 **Scaffold Design Document:**
 ```json
 {
-  "artifact_type": "design",
-  "name": "oauth-integration-design",
-  "context": {
-    "feature_name": "OAuth2 Integration",
-    "goals": [
-      "Support Google OAuth2",
-      "Support GitHub OAuth2",
-      "Implement token refresh"
-    ],
-    "components": [
-      {"name": "OAuthService", "type": "Service"},
-      {"name": "TokenDTO", "type": "DTO"}
-    ]
-  }
-}
-```
-
 **Scaffold Architecture Document:**
 ```json
 {
@@ -151,201 +139,128 @@ Generate any artifact type (code or document) from unified registry.
 
 ---
 
+### scaffold_schema
+
+**MCP Name:** `scaffold_schema`  
+**Class:** `ScaffoldSchemaTool`  
+**File:** [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
+**Inherits:** `BaseTool` (read-only — no branch mutation)
+
+Return the JSON Schema for the `context` parameter of an artifact type. Use this before calling `scaffold_artifact` to discover exactly which fields are required and optional for a given type.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available enum values are populated at runtime from `artifacts.yaml`. |
+
+#### Returns
+
+A JSON Schema object (Pydantic `model_json_schema()` with `$defs` resolved inline) describing the `context` parameter for the specified type.
+
+#### Error Handling
+
+| Condition | Response |
+|-----------|----------|
+| Type without registered Context schema | `is_error=true` — "No Context schema registered for type: <type>" |
+| Unknown type | `is_error=true` — type not in registry |
+
+#### Recommended Workflow
+
+Call `scaffold_schema` to inspect required and optional fields before calling `scaffold_artifact`:
+
+1. `scaffold_schema(artifact_type="design")` → returns full JSON Schema for `DesignContext`
+2. Build complete context dict from required and optional fields in the schema
+3. `scaffold_artifact(artifact_type="design", name="my-design", context={...})` → first-time-right
+
+This eliminates trial-and-error context validation failures.
+
+**Note:** `scaffold_artifact` also exposes the full JSON Schema in its error response when context validation fails. `scaffold_schema` is the proactive alternative for inspecting the schema before the first call.
+
+---
 ## Artifact Registry
+
 
 The unified artifact registry is defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
 
+
 ### Registry Structure
 
-```yaml
-# .phase-gate/config/artifacts.yaml
-artifacts:
-  # Code Artifacts
-  - id: dto
-    category: code
-    type: dto
-    template: dto.py.j2
-    tier: 0
-    context_schema:
-      fields: list[dict]
-      imports: list[str]
-  
-  - id: worker
-    category: code
-    type: worker
-    template: worker.py.j2
-    tier: 1
-    context_schema:
-      description: str
-      methods: list[dict]
-  
-  # Documentation Artifacts
-  - id: design
-    category: documentation
-    type: design
-    template: design.md.j2
-    tier: 1
-    context_schema:
-      feature_name: str
-      goals: list[str]
-      components: list[dict]
-  
-  - id: architecture
-    category: documentation
-    type: architecture
-    template: architecture.md.j2
-    tier: 1
-    context_schema:
-      pattern_name: str
-      description: str
-      use_cases: list[str]
-```
+The registry is defined in `.phase-gate/config/artifacts.yaml`. Each entry has at minimum: `type_id`, `display_name`, `category`, `template`, and (for enabled types) the template path.
+
+**See:** [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) for the full registry.
 
 ### Supported Artifact Types
 
-#### Code Artifacts (6 types)
+#### Code Artifacts (11 types)
 
-| ID | Template | Output Directory | Description |
-|----|----------|------------------|-------------|
-| `dto` | `dto.py.j2` | `backend/dtos/` | Data Transfer Objects (frozen dataclasses) |
-| `worker` | `worker.py.j2` | `backend/workers/` | Async background workers |
-| `adapter` | `adapter.py.j2` | `backend/adapters/` | External service adapters |
-| `tool` | `tool.py.j2` | `mcp_server/tools/` | MCP server tools |
-| `manager` | `manager.py.j2` | `mcp_server/managers/` | Manager classes |
-| `service` | `service.py.j2` | `backend/services/` | Service layer classes |
+| ID | Template | Description |
+|----|----------|-------------|
+| `dto` | `concrete/dto.py.jinja2` | Data Transfer Objects (frozen Pydantic models) |
+| `worker` | `concrete/worker.py.jinja2` | Async background workers |
+| `adapter` | `concrete/adapter.py.jinja2` | Adapter classes |
+| `tool` | `concrete/tool.py.jinja2` | MCP server tools |
+| `resource` | `concrete/resource.py.jinja2` | Resource classes |
+| `schema` | `concrete/config_schema.py.jinja2` | Configuration schema classes |
+| `interface` | `concrete/interface.py.jinja2` | Interface / protocol classes |
+| `service` | `concrete/service_command.py.jinja2` | Service layer classes |
+| `generic` | `concrete/generic.py.jinja2` | Generic Python classes (catch-all) |
+| `unit_test` | `concrete/test_unit.py.jinja2` | Unit test modules |
+| `integration_test` | `concrete/test_integration.py.jinja2` | Integration test modules |
 
-#### Documentation Artifacts (8+ types)
+#### Document Artifacts (7 types)
 
-| ID | Template | Output Directory | Description |
-|----|----------|------------------|-------------|
-| `design` | `design.md.j2` | `docs/design/` | Feature design documents |
-| `architecture` | `architecture.md.j2` | `docs/architecture/` | Architectural decision records |
-| `tracking` | `tracking.md.j2` | `docs/development/issue*/` | Issue tracking documents |
-| `research` | `research.md.j2` | `docs/development/issue*/` | Research and analysis |
-| `reference` | `reference.md.j2` | `docs/reference/` | API/tool reference docs |
-| `planning` | `planning.md.j2` | `docs/development/issue*/` | Planning documents |
-| `guide` | `guide.md.j2` | `docs/guides/` | How-to guides |
-| `procedure` | `procedure.md.j2` | `docs/procedures/` | Standard operating procedures |
+| ID | Template | Description |
+|----|----------|-------------|
+| `research` | `concrete/research.md.jinja2` | Research documents |
+| `planning` | `concrete/planning.md.jinja2` | Implementation planning documents |
+| `design` | `concrete/design.md.jinja2` | Feature/bug design documents |
+| `architecture` | `concrete/architecture.md.jinja2` | Architecture documents |
+| `reference` | `concrete/reference.md.jinja2` | API/tool reference documents |
+| `validation_report` | `concrete/validation_report.md.jinja2` | Validation report documents |
+| `generic_doc` | `concrete/generic.md.jinja2` | Generic markdown documents |
 
----
+#### Tracking Artifacts (3 types)
+
+| ID | Template | Description |
+|----|----------|-------------|
+| `commit` | `concrete/commit.txt.jinja2` | Commit message templates |
+| `pr` | `concrete/pr.md.jinja2` | Pull request descriptions |
+| `issue` | `concrete/issue.md.jinja2` | Issue descriptions |
+
+
 
 ## Template System
 
+Templates are organized in a tier hierarchy within `mcp_server/scaffolding/templates/`. See [docs/architecture/TEMPLATE_LIBRARY.md](../../../../docs/architecture/TEMPLATE_LIBRARY.md) for full architecture details.
+
 ### Template Location
 
-Templates are stored in [mcp_server/templates/](../../../../mcp_server/templates/):
+Templates root: `mcp_server/scaffolding/templates/`
 
 ```
-mcp_server/templates/
-├── code/
-│   ├── dto.py.j2
-│   ├── worker.py.j2
-│   ├── adapter.py.j2
-│   └── tool.py.j2
-├── docs/
-│   ├── design.md.j2
-│   ├── architecture.md.j2
-│   ├── research.md.j2
-│   └── reference.md.j2
-└── shared/
-    ├── base_class.j2
-    └── common_imports.j2
+mcp_server/scaffolding/templates/
+├── concrete/          ← artifact-specific output templates
+│   ├── dto.py.jinja2
+│   ├── worker.py.jinja2
+│   ├── design.md.jinja2
+│   └── ...
+├── tier0_base_artifact.jinja2
+├── tier1_base_code.jinja2
+├── tier1_base_document.jinja2
+├── tier2_base_python.jinja2
+├── tier2_base_markdown.jinja2
+└── tier3_pattern_*.jinja2  ← composable macro libraries
 ```
 
 ### Template Composition
 
-Templates use Jinja2 composition features:
-
-**Include Pattern:**
-```jinja2
-{# dto.py.j2 #}
-{% include 'shared/common_imports.j2' %}
-
-@dataclass(frozen=True)
-class {{ name }}:
-    {% for field in fields %}
-    {{ field.name }}: {{ field.type }}
-    {% endfor %}
-```
-
-**Inheritance Pattern:**
-```jinja2
-{# worker.py.j2 #}
-{% extends 'shared/base_class.j2' %}
-
-{% block imports %}
-from backend.core.interfaces import BaseWorker
-{{ super() }}
-{% endblock %}
-
-{% block class_definition %}
-class {{ name }}(BaseWorker):
-    """{{ description }}"""
-    
-    async def execute(self) -> None:
-        pass
-{% endblock %}
-```
+Concrete templates extend the appropriate tier 2 base (`{% extends %}`) and import optional pattern libraries (`{% import %}`). Every concrete template contains a `TEMPLATE_METADATA` block that is the authoritative variable contract for that type.
 
 ### Context Variables
 
-Each artifact type defines expected context variables in `context_schema`:
+Each artifact type defines its required and optional context fields in a Context schema (`mcp_server/schemas/contexts/<type>.py`). Use `scaffold_schema(artifact_type="<type>")` to retrieve the full JSON Schema before scaffolding.
 
-**DTO Context:**
-- `fields: list[dict]` — List of field definitions
-  - `name: str` — Field name (snake_case)
-  - `type: str` — Python type annotation
-  - `description: str` — Field documentation
-  - `default: any` — Optional default value
-- `imports: list[str]` — Additional import statements
-
-**Worker Context:**
-- `description: str` — Worker purpose
-- `methods: list[dict]` — Additional methods
-  - `name: str` — Method name
-  - `params: str` — Parameter list
-  - `returns: str` — Return type
-
-**Design Document Context:**
-- `feature_name: str` — Feature being designed
-- `goals: list[str]` — Feature goals
-- `components: list[dict]` — System components
-  - `name: str` — Component name
-  - `type: str` — Component type (DTO, Worker, Service, etc.)
-
----
-
-## Directory Resolution
-
-The `scaffold_artifact` tool automatically resolves output directories from [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml):
-
-```yaml
-# .phase-gate/config/project_structure.yaml
-directories:
-  code:
-    dto: "backend/dtos/"
-    worker: "backend/workers/"
-    adapter: "backend/adapters/"
-    service: "backend/services/"
-  
-  documentation:
-    design: "docs/design/"
-    architecture: "docs/architecture/"
-    reference: "docs/reference/"
-    tracking: "docs/development/issue{issue_number}/"
-```
-
-**Example:**
-```json
-{
-  "artifact_type": "dto",
-  "name": "OrderDTO"
-}
-```
-
-**Resolved path:** `backend/dtos/order_dto.py` (auto-resolved from `project_structure.yaml`)
-
-**Override with `output_path`:**
 ```json
 {
   "artifact_type": "dto",
@@ -448,34 +363,6 @@ Tier information is stored in `artifacts.yaml` and `template_registry.json`.
 }
 ```
 
----
-
-### 3. Using `create_file` Instead of `scaffold_artifact`
-
-**❌ WRONG:**
-```json
-{
-  "tool": "create_file",
-  "path": "backend/dtos/order.py",
-  "content": "from dataclasses import dataclass\n..."
-}
-```
-
-**✅ CORRECT:**
-```json
-{
-  "tool": "scaffold_artifact",
-  "artifact_type": "dto",
-  "name": "OrderDTO",
-  "context": {...}
-}
-```
-
-**Rationale:** `scaffold_artifact` ensures:
-- Correct template usage
-- SCAFFOLD header injection
-- Directory structure compliance
-- Template version tracking
 
 ---
 
@@ -609,13 +496,14 @@ When templates are updated:
 - [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) — Complete artifact registry
 - [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml) — Directory resolution
 - [.phase-gate/config/scaffold_metadata.yaml](../../../../.phase-gate/config/scaffold_metadata.yaml) — SCAFFOLD header specs
-- [mcp_server/templates/](../../../../mcp_server/templates/) — Template library
-- [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 1.10: Scaffolding)
+- [mcp_server/scaffolding/templates/](../../../../mcp_server/scaffolding/templates/) — Template library
+- [docs/architecture/TEMPLATE_LIBRARY.md](../../../../docs/architecture/TEMPLATE_LIBRARY.md) — Three-layer architecture reference
 
 ---
 
 ## Version History
-
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.2 | 2026-06-04 | Agent | Remove legacy error example; fix artifact type tables (17 registered types); fix template paths; replaced fake context schema YAML with registry reference; removed stale links (#286) |
+| 2.1 | 2026-06-02 | Agent | Add scaffold_schema API Reference section; update tool counts (1→2); proactive schema exposure documented |
 | 2.0 | 2026-02-08 | Agent | Complete reference for scaffold_artifact: artifact registry, template system, directory resolution, SCAFFOLD headers, tier architecture |

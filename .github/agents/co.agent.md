@@ -21,6 +21,7 @@ tools:
   - phase-gate-mcp/get_project_plan
   - phase-gate-mcp/list_issues
   - phase-gate-mcp/get_issue
+  - phase-gate-mcp/get_pr
   - phase-gate-mcp/create_issue
   - phase-gate-mcp/update_issue
   - phase-gate-mcp/close_issue
@@ -50,13 +51,9 @@ tools:
   - phase-gate-mcp/git_delete_branch
   - phase-gate-mcp/git_stash
   - phase-gate-mcp/git_pull
+  - phase-gate-mcp/check_merge
   - phase-gate-mcp/submit_pr
   - phase-gate-mcp/merge_pr
-handoffs:
-  - agent: imp
-    label: When coordination delegates child technical implementation
-  - agent: qa
-    label: When epic-owned work is ready for external review
 ---
 
 # @co - Coordination Role

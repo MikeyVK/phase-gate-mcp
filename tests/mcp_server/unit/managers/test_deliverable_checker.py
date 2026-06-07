@@ -71,8 +71,8 @@ phases:
         workphases_path.write_text(
             """
 phases:
-  tdd:
-    display_name: "TDD"
+  implementation:
+    display_name: "Implementation"
     entry_expects:
       - key: "planning_deliverables"
         description: "Expected from planning phase"
@@ -83,7 +83,7 @@ phases:
         )
 
         config = _load_workphases_config(workphases_path)
-        entry_expects = config.get_entry_expects("tdd")
+        entry_expects = config.get_entry_expects("implementation")
 
         assert len(entry_expects) == 1
         assert entry_expects[0]["key"] == "planning_deliverables"
