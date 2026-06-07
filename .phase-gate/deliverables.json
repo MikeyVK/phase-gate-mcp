@@ -16,7 +16,7 @@
     "created_at": "2026-06-07T08:11:07.823221+00:00",
     "planning_deliverables": {
       "tdd_cycles": {
-        "total": 4,
+        "total": 5,
         "cycles": [
           {
             "cycle_number": 1,
@@ -69,6 +69,28 @@
               "D20: docs/temp/ removed from git tracking in phase-gate-mcp repo (ST3 content; migrated to S1mpleTrader via C3)"
             ],
             "exit_criteria": "D15-D20 all satisfied. run_tests(path='tests/mcp_server/') all green. Quality gates pass. No backend/ directory in repo. No docs/temp/ in repo. docs/archive/ stays with phase-gate-mcp."
+          },
+          {
+            "cycle_number": 5,
+            "name": "C5",
+            "goal": "Full repo cleanup: fix C4 git rm regression, physically delete ST3 dirs, remove obsolete files, update configs, clean up migration-only tests, reconstruct venv after workspace rename",
+            "deliverables": [
+              "D21: docs/architecture/ (excl. VSCODE_AGENT_ORCHESTRATION.md already moved) removed from git tracking and disk",
+              "D22: VSCODE_AGENT_ORCHESTRATION.md moved to docs/development/archive/issue257/ (git mv)",
+              "D23: backend/, tests/backend/, locales/ correctly removed from git tracking (C4 fix) and deleted from disk",
+              "D24: docs/system/, docs/implementation/, docs/temp/, docs/reference/dtos/, docs/reference/platform/ removed from git tracking and deleted from disk",
+              "D25: start_mcp_server.ps1 removed from git tracking and disk",
+              "D26: mcp_config.yaml removed from git tracking and disk",
+              "D27: Untracked dead dirs removed from disk: tests/acceptance/, tests/copilot_orchestration/, tests/integration/, tests/regression/, tests/unit/, tests/fixtures/, src/, temp/, simpletraderv3.egg-info/, build/, dist_new/",
+              "D28: .vscode/mcp.json GITHUB_REPO updated to phase-gate-mcp",
+              "D29: docs/setup/mcp.json GITHUB_REPO updated to phase-gate-mcp",
+              "D30: pyrightconfig.json include list cleaned (remove backend entry)",
+              "D31: test_c4_separation_structural.py deleted; two permanent boundary tests moved to tests/mcp_server/unit/test_mcp_server_boundary.py",
+              "D32: MCP test suite passes after all removals",
+              "D33: Quality gates pass",
+              "D34: After manual workspace rename to pgmcp: .venv recreated, pip install -e .[dev] succeeds, health_check passes"
+            ],
+            "exit_criteria": "D21-D33 satisfied on branch before rename. D34 satisfied after manual workspace rename and venv reconstruction. run_tests(path='tests/mcp_server/') green. Quality gates pass."
           }
         ]
       }
