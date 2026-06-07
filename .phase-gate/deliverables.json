@@ -13,6 +13,64 @@
     ],
     "skip_reason": null,
     "parent_branch": "main",
-    "created_at": "2026-06-07T08:11:07.823221+00:00"
+    "created_at": "2026-06-07T08:11:07.823221+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "total": 4,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C1",
+            "goal": "Pre-migration cleanup: move 2 stranded MCP test files, delete dead code dirs from tracked git state, verify MCP test suite green",
+            "deliverables": [
+              "D1: tests/unit/config/test_c_loader_structural.py moved to tests/mcp_server/unit/config/ and passing",
+              "D2: tests/unit/config/test_c_settings_structural.py moved to tests/mcp_server/unit/config/ and passing",
+              "D3: tests/unit/ directory fully removed from git tracking",
+              "D4: src/copilot_orchestration/, tests/copilot_orchestration/, temp/, proof_of_concepts/ removed from git tracking",
+              "D5: Full MCP test suite passes after all moves",
+              "D6: Quality gates pass on changed files"
+            ],
+            "exit_criteria": "D1-D6 all satisfied. git ls-files tests/unit/ returns empty. run_tests(path='tests/mcp_server/') all green. Quality gates pass."
+          },
+          {
+            "cycle_number": 2,
+            "name": "C2",
+            "goal": "GitHub repo renames and new repo creation",
+            "deliverables": [
+              "D7: Existing S1mpleTrader repo renamed to ST1 on GitHub",
+              "D8: Current repo S1mpleTraderV3 renamed to phase-gate-mcp on GitHub",
+              "D9: New empty S1mpleTrader repo created under MikeyVK account"
+            ],
+            "exit_criteria": "D7-D9 all satisfied. New S1mpleTrader repo exists and is accessible."
+          },
+          {
+            "cycle_number": 3,
+            "name": "C3",
+            "goal": "Migrate ST3 content to new S1mpleTrader repo via git filter-repo with history preservation",
+            "deliverables": [
+              "D10: New S1mpleTrader repo contains backend/, tests/backend/, locales/, docs/architecture/, docs/coding_standards/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/",
+              "D11: New repo git history contains only ST3-relevant commits (first commit 2025-10-26)",
+              "D12: New repo does NOT contain mcp_server/, .phase-gate/, AGENTS.md, scripts/",
+              "D13: New repo has a minimal pyproject.toml covering backend* package",
+              "D14: docs/coding_standards/ present in new repo"
+            ],
+            "exit_criteria": "D10-D14 all satisfied. No mcp_server/, .phase-gate/, or AGENTS.md present in new repo. Git log first commit is 2025-10-26."
+          },
+          {
+            "cycle_number": 4,
+            "name": "C4",
+            "goal": "Remove ST3 content from phase-gate-mcp repo and update pyproject.toml",
+            "deliverables": [
+              "D15: backend/, tests/backend/, locales/, docs/architecture/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/ removed from phase-gate-mcp git tracking",
+              "D16: pyproject.toml updated: packages.find.include contains only mcp_server*; package name updated",
+              "D17: Full MCP test suite passes after ST3 removal",
+              "D18: Quality gates pass",
+              "D19: No backend.* imports found in mcp_server/ source"
+            ],
+            "exit_criteria": "D15-D19 all satisfied. run_tests(path='tests/mcp_server/') all green. Quality gates pass. No backend/ directory in repo."
+          }
+        ]
+      }
+    }
   }
 }
