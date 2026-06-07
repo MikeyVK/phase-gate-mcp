@@ -48,7 +48,7 @@
             "name": "C3",
             "goal": "Migrate ST3 content to new S1mpleTrader repo via git filter-repo with history preservation",
             "deliverables": [
-              "D10: New S1mpleTrader repo contains backend/, tests/backend/, locales/, docs/architecture/, docs/coding_standards/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/",
+              "D10: New S1mpleTrader repo contains backend/, tests/backend/, locales/, docs/temp/, docs/architecture/, docs/coding_standards/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/",
               "D11: New repo git history contains only ST3-relevant commits (first commit 2025-10-26)",
               "D12: New repo does NOT contain mcp_server/, .phase-gate/, AGENTS.md, scripts/",
               "D13: New repo has a minimal pyproject.toml covering backend* package",
@@ -65,9 +65,10 @@
               "D16: pyproject.toml updated: packages.find.include contains only mcp_server*; package name updated",
               "D17: Full MCP test suite passes after ST3 removal",
               "D18: Quality gates pass",
-              "D19: No backend.* imports found in mcp_server/ source"
+              "D19: No backend.* imports found in mcp_server/ source",
+              "D20: docs/temp/ removed from git tracking in phase-gate-mcp repo (ST3 content; migrated to S1mpleTrader via C3)"
             ],
-            "exit_criteria": "D15-D19 all satisfied. run_tests(path='tests/mcp_server/') all green. Quality gates pass. No backend/ directory in repo."
+            "exit_criteria": "D15-D20 all satisfied. run_tests(path='tests/mcp_server/') all green. Quality gates pass. No backend/ directory in repo. No docs/temp/ in repo. docs/archive/ stays with phase-gate-mcp."
           }
         ]
       }

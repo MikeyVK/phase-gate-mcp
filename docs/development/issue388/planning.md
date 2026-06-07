@@ -81,7 +81,7 @@ D7: Existing S1mpleTrader repo renamed to ST1 (GitHub redirect active). D8: Curr
 - Verify docs/coding_standards/ is present in new repo
 
 **Success Criteria:**
-D10: New S1mpleTrader repo contains backend/, tests/backend/, locales/, docs/architecture/, docs/coding_standards/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/. D11: New repo git history contains only ST3-relevant commits (first commit 2025-10-26). D12: New repo does NOT contain mcp_server/, .phase-gate/, AGENTS.md, scripts/. D13: New repo has a minimal pyproject.toml covering backend* package. D14: docs/coding_standards/ present in new repo.
+D10: New S1mpleTrader repo contains backend/, tests/backend/, locales/, docs/temp/, docs/architecture/, docs/coding_standards/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/. D11: New repo git history contains only ST3-relevant commits (first commit 2025-10-26). D12: New repo does NOT contain mcp_server/, .phase-gate/, AGENTS.md, scripts/. D13: New repo has a minimal pyproject.toml covering backend* package. D14: docs/coding_standards/ present in new repo.
 
 **Dependencies:** C2 complete (target repo must exist), C1 complete (stranded files moved)
 
@@ -97,7 +97,7 @@ D10: New S1mpleTrader repo contains backend/, tests/backend/, locales/, docs/arc
 - Verify pyproject.toml includes only mcp_server*
 
 **Success Criteria:**
-D15: backend/, tests/backend/, locales/, docs/architecture/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/ removed from git tracking in phase-gate-mcp repo. D16: pyproject.toml updated: packages.find.include contains only mcp_server*; package name updated. D17: Full MCP test suite passes (run_tests tests/mcp_server/). D18: Quality gates pass (run_quality_gates scope=branch). D19: No backend.* imports found in mcp_server/ source. D20: docs/archive/ and docs/temp/ removed from git tracking (both contain tracked files — docs/archive/execution_refactor_v4/ and docs/temp/ are ST3/deprecated content; docs/archive/ MCP design docs are historical and deleted per research §1e policy).
+D15: backend/, tests/backend/, locales/, docs/architecture/, docs/reference/platform/, docs/reference/dtos/, docs/system/, docs/implementation/ removed from git tracking in phase-gate-mcp repo. D16: pyproject.toml updated: packages.find.include contains only mcp_server*; package name updated. D17: Full MCP test suite passes (run_tests tests/mcp_server/). D18: Quality gates pass (run_quality_gates scope=branch). D19: No backend.* imports found in mcp_server/ source. D20: docs/temp/ removed from git tracking in phase-gate-mcp repo (ST3 content; migrated to S1mpleTrader via C3). Note: docs/archive/ stays with phase-gate-mcp (MCP historical design docs).
 
 **Dependencies:** C3 complete and verified
 
