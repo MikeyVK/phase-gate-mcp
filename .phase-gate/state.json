@@ -1,42 +1,25 @@
 {
-  "branch": "epic/289-installable-wheel-standalone-mcp-server",
-  "issue_number": 289,
-  "workflow_name": "epic",
-  "current_phase": "coordination",
+  "branch": "refactor/285-separate-mcpserver-composition-root",
+  "issue_number": 285,
+  "workflow_name": "refactor",
+  "current_phase": "research",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
   "required_phases": [
     "research",
     "planning",
-    "design",
-    "coordination",
+    "implementation",
+    "validation",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
   "skip_reason": "Design phase output (decomposition, sequencing, naming decisions, approved strategy) is fully captured in the #289 tracker body. No separate design artifact needed \u2014 all cross-issue contracts are explicit in the tracker. Child issues #285, #384, #385, #386, #387, #388 are created and sequenced.",
-  "issue_title": "Epic: Installable Wheel / Standalone MCP Server",
-  "parent_branch": "main",
-  "created_at": "2026-06-07T06:23:57.965595+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-06-07T08:08:40.010003+00:00",
-      "human_approval": "Scope en tracker volledig vastgesteld tijdens research. Planning-deliverables zijn verwerkt in de tracker body van #289.",
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "coordination",
-      "timestamp": "2026-06-07T08:08:57.265574+00:00",
-      "human_approval": "Akkoord \u2014 design is verwerkt in tracker #289, aparte design fase voegt niets toe.",
-      "forced": true,
-      "skip_reason": "Design phase output (decomposition, sequencing, naming decisions, approved strategy) is fully captured in the #289 tracker body. No separate design artifact needed \u2014 all cross-issue contracts are explicit in the tracker. Child issues #285, #384, #385, #386, #387, #388 are created and sequenced."
-    }
-  ],
+  "issue_title": "Separate MCPServer composition root from runtime dispatch",
+  "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
+  "created_at": "2026-06-07T20:18:52.755312+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
