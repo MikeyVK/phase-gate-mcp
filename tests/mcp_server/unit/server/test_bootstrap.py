@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.bootstrap import ConfigLayer, ManagerGraph, ServerBootstrapper
+from mcp_server.server import MCPServer
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
     ContractsConfig,
@@ -315,3 +316,42 @@ class TestServerBootstrapperToolsAndResources:
                 resources=mock_resources,
             )
             assert server is mock_mcp_server_cls.return_value
+
+
+class TestMCPServerBootstrap:
+    """Test suite for MCPServer dependency injection requirements."""
+
+    def test_mcp_server_requires_injected_dependencies(self) -> None:
+        """Verify that MCPServer raises TypeError when initialized without dependencies."""
+        mock_settings = MagicMock()
+        # Once the fallback code is deleted, this must raise a TypeError (missing required arguments)
+        with pytest.raises(TypeError):
+            MCPServer(settings=mock_settings)  # type: ignore[call-arg]
+
+    def test_mcp_server_accepts_injected_dependencies(self) -> None:
+        """Verify MCPServer successfully initializes with all dependencies injected."""
+        mock_settings = MagicMock()
+        mock_configs = MagicMock()
+        mock_managers = MagicMock()
+        mock_tools = []
+        mock_resources = []
+
+        server = MCPServer(
+            settings=mock_settings,
+            configs=mock_configs,
+            managers=mock_managers,
+            tools=mock_tools,
+            resources=mock_resources,
+        )
+        assert server._settings is mock_settings
+        assert server.tools is mock_tools
+        assert server.resources is mock_resources
+
+    def test_make_test_server_creates_valid_server(self) -> None:
+        """Verify make_test_server helper creates a valid MCPServer instance."""
+        from tests.mcp_server.test_support import make_test_server
+
+        server = make_test_server()
+        assert isinstance(server, MCPServer)
+        assert server.tools is not None
+        assert server.resources is not None
