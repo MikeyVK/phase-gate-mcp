@@ -11,6 +11,7 @@ import pytest
 
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.server import MCPServer
+from tests.mcp_server.test_support import make_test_server
 
 
 @pytest.fixture
@@ -31,4 +32,4 @@ def server() -> Generator[MCPServer, None, None]:
         mock_adapter_class.return_value = mock_adapter
 
         settings = Settings(server=ServerSettings())
-        yield MCPServer(settings=settings)
+        yield make_test_server(settings=settings)

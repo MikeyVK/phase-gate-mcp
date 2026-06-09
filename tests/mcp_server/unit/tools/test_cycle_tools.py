@@ -17,7 +17,6 @@ from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import InfoNote, NoteContext
-from mcp_server.server import MCPServer
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -30,6 +29,7 @@ from tests.mcp_server.test_support import (
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
+    make_test_server,
 )
 
 
@@ -149,7 +149,7 @@ class TestCycleTools:
         )
 
         with (
-            patch("mcp_server.server.Settings") as mock_settings_cls,
+            patch("mcp_server.config.settings.Settings") as mock_settings_cls,
             patch(
                 "mcp_server.tools.cycle_tools.TransitionCycleTool.execute",
                 new=_make_transition_advisory_execute("✅ Transitioned to TDD Cycle 1/2: One"),
@@ -167,7 +167,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 TransitionCycleTool(
                     workspace_root=tmp_path,
@@ -210,7 +210,7 @@ class TestCycleTools:
         config_dir = tmp_path / ".phase-gate" / "config"
         copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"
             mock_settings_cls.from_env.return_value.server.workspace_root = str(tmp_path)
             mock_settings_cls.from_env.return_value.server.config_root = str(
@@ -223,7 +223,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 ForceCycleTransitionTool(
                     workspace_root=tmp_path,
@@ -313,7 +313,7 @@ class TestCycleTools:
             initial_phase="implementation",
         )
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"
             mock_settings_cls.from_env.return_value.server.workspace_root = str(tmp_path)
             mock_settings_cls.from_env.return_value.server.config_root = str(
@@ -326,7 +326,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 TransitionCycleTool(
                     workspace_root=tmp_path,
@@ -372,7 +372,7 @@ class TestCycleTools:
         config_dir = tmp_path / ".phase-gate" / "config"
         copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"
             mock_settings_cls.from_env.return_value.server.workspace_root = str(tmp_path)
             mock_settings_cls.from_env.return_value.server.config_root = str(
@@ -385,7 +385,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 ForceCycleTransitionTool(
                     workspace_root=tmp_path,
