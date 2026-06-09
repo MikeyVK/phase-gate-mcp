@@ -12,9 +12,9 @@ from mcp.types import EmbeddedResource
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.server import MCPServer
-from tests.mcp_server.test_support import make_test_server
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
+from tests.mcp_server.test_support import make_test_server
 
 
 class IntegrationInput(BaseModel):

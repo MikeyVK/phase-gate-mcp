@@ -22,8 +22,6 @@ from mcp.types import CallToolRequest, CallToolRequestParams
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
-from mcp_server.server import MCPServer
-from tests.mcp_server.test_support import make_test_server
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
@@ -32,7 +30,11 @@ from mcp_server.tools.phase_tools import (
     TransitionPhaseTool,
 )
 from mcp_server.tools.tool_result import ToolResult
-from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+from tests.mcp_server.test_support import (
+    make_phase_state_engine,
+    make_project_manager,
+    make_test_server,
+)
 
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:

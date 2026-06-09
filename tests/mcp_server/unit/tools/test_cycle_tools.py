@@ -17,8 +17,6 @@ from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import InfoNote, NoteContext
-from mcp_server.server import MCPServer
-from tests.mcp_server.test_support import make_test_server
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -31,6 +29,7 @@ from tests.mcp_server.test_support import (
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
+    make_test_server,
 )
 
 

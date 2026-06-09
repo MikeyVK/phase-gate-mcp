@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.config.settings import GitHubSettings, LogSettings, ServerSettings, Settings
-from mcp_server.server import MCPServer
 from tests.mcp_server.test_support import make_test_server
 
 
