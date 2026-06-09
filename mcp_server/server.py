@@ -54,6 +54,7 @@ from mcp_server.managers.state_repository import BranchValidatedStateReader, Fil
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.resources.base import BaseResource
 from mcp_server.resources.github import GitHubIssuesResource
 
 # Resources
@@ -148,7 +149,7 @@ class MCPServer:
         configs: ConfigLayer | None = None,
         managers: ManagerGraph | None = None,
         tools: list[BaseTool] | None = None,
-        resources: list[Resource] | None = None,
+        resources: list[BaseResource] | None = None,
     ) -> None:
         """Initialize the MCP server with resources and tools."""
         settings = settings or Settings.from_env()

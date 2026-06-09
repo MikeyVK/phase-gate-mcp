@@ -303,9 +303,9 @@ class TestServerBootstrapperToolsAndResources:
             server = bootstrapper.bootstrap()
 
             bootstrapper._build_tools.assert_called_once_with(mock_config_layer, mock_manager_graph)  # pyright: ignore[reportPrivateUsage]
-            bootstrapper._build_resources.assert_called_once_with(
+            bootstrapper._build_resources.assert_called_once_with(  # pyright: ignore[reportPrivateUsage]
                 mock_config_layer, mock_manager_graph
-            )  # pyright: ignore[reportPrivateUsage]
+            )
 
             mock_mcp_server_cls.assert_called_once_with(
                 settings=mock_settings,

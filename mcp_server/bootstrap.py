@@ -27,8 +27,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from mcp.types import Resource
-
 if TYPE_CHECKING:
     from mcp_server.server import MCPServer
 
@@ -75,6 +73,7 @@ from mcp_server.managers.state_repository import BranchValidatedStateReader, Fil
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.resources.base import BaseResource
 from mcp_server.resources.github import GitHubIssuesResource
 from mcp_server.resources.standards import StandardsResource
 from mcp_server.resources.status import StatusResource
@@ -597,9 +596,13 @@ class ServerBootstrapper:
 
         return tools
 
-    def _build_resources(self, configs: ConfigLayer, managers: ManagerGraph) -> list[Resource]:
+    def _build_resources(
+        self,
+        configs: ConfigLayer,  # noqa: ARG002
+        managers: ManagerGraph,  # noqa: ARG002
+    ) -> list[BaseResource]:
         """Compose the list of available resources."""
-        resources = [
+        resources: list[BaseResource] = [
             StandardsResource(),
             StatusResource(),
         ]
