@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 # mcp_server\bootstrap.py
 # template=generic version=f35abd82 created=2026-06-09T09:48Z updated=
 """Bootstrap module.
@@ -18,41 +16,43 @@ Dependency injection and bootstrap orchestration layer.
     - Orchestrate composition root build phase.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from mcp_server.config.schemas import (
+    ArtifactRegistryConfig,
+    ContractsConfig,
+    ContributorConfig,
+    EnforcementConfig,
     GitConfig,
+    IssueConfig,
+    LabelConfig,
+    MilestoneConfig,
+    OperationPoliciesConfig,
+    ProjectStructureConfig,
+    QualityConfig,
+    ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
-    QualityConfig,
-    LabelConfig,
-    IssueConfig,
-    ScopeConfig,
-    MilestoneConfig,
-    ContributorConfig,
-    ArtifactRegistryConfig,
-    ProjectStructureConfig,
-    OperationPoliciesConfig,
-    EnforcementConfig,
-    ContractsConfig,
 )
-from mcp_server.scaffolding.template_registry import TemplateRegistry
-from mcp_server.managers.git_manager import GitManager
-from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
-from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
-from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
-from mcp_server.managers.state_reconstructor import StateReconstructor
-from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
-from mcp_server.state.context_loaded_cache import ContextLoadedCache
-from mcp_server.managers.phase_state_engine import PhaseStateEngine
-from mcp_server.managers.quality_state_repository import FileQualityStateRepository
-from mcp_server.managers.qa_manager import QAManager
-from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.artifact_manager import ArtifactManager
-from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.managers.enforcement_runner import EnforcementRunner
+from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.github_manager import GitHubManager
+from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
+from mcp_server.managers.phase_state_engine import PhaseStateEngine
+from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.qa_manager import QAManager
+from mcp_server.managers.quality_state_repository import FileQualityStateRepository
+from mcp_server.managers.state_reconstructor import StateReconstructor
+from mcp_server.managers.state_repository import FileStateRepository
+from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
+from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
+from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.scaffolding.template_registry import TemplateRegistry
+from mcp_server.state.context_loaded_cache import ContextLoadedCache
+from mcp_server.state.pr_status_cache import PRStatusCache
 
 
 @dataclass(frozen=True)

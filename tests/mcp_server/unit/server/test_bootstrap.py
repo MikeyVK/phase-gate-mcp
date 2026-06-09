@@ -1,64 +1,53 @@
 # tests\mcp_server\unit\server\test_bootstrap.py
 # template=unit_test version=3d15d309 created=2026-06-09T09:48Z updated=
-"""
-Unit tests for mcp_server.bootstrap.
-
-None
+"""Unit tests for mcp_server.bootstrap.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, mcp_server.bootstrap, unittest.mock]
 @responsibilities:
     - Test TestBootstrap functionality
-    - Verify None
-    - None
+    - Verify immutability of ConfigLayer and ManagerGraph
 """
 
-# Standard library
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
-from typing import Any
-
-# Third-party
-import pytest
-from pathlib import Path
-
-# Project modules
-from mcp_server.bootstrap import ConfigLayer, ManagerGraph
-
-
 import dataclasses
+from unittest.mock import MagicMock
+
+import pytest
+
+from mcp_server.bootstrap import ConfigLayer, ManagerGraph
 from mcp_server.config.schemas import (
+    ArtifactRegistryConfig,
+    ContractsConfig,
+    ContributorConfig,
+    EnforcementConfig,
     GitConfig,
+    IssueConfig,
+    LabelConfig,
+    MilestoneConfig,
+    OperationPoliciesConfig,
+    ProjectStructureConfig,
+    QualityConfig,
+    ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
-    QualityConfig,
-    LabelConfig,
-    IssueConfig,
-    ScopeConfig,
-    MilestoneConfig,
-    ContributorConfig,
-    ArtifactRegistryConfig,
-    ProjectStructureConfig,
-    OperationPoliciesConfig,
-    EnforcementConfig,
-    ContractsConfig,
 )
-from mcp_server.scaffolding.template_registry import TemplateRegistry
-from mcp_server.managers.git_manager import GitManager
-from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
-from mcp_server.managers.project_manager import ProjectManager
-from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
-from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
-from mcp_server.managers.state_reconstructor import StateReconstructor
-from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
-from mcp_server.state.context_loaded_cache import ContextLoadedCache
-from mcp_server.managers.phase_state_engine import PhaseStateEngine
-from mcp_server.managers.quality_state_repository import FileQualityStateRepository
-from mcp_server.managers.qa_manager import QAManager
-from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.artifact_manager import ArtifactManager
-from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.managers.enforcement_runner import EnforcementRunner
+from mcp_server.managers.git_manager import GitManager
+from mcp_server.managers.github_manager import GitHubManager
+from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
+from mcp_server.managers.phase_state_engine import PhaseStateEngine
+from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.qa_manager import QAManager
+from mcp_server.managers.quality_state_repository import FileQualityStateRepository
+from mcp_server.managers.state_reconstructor import StateReconstructor
+from mcp_server.managers.state_repository import FileStateRepository
+from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
+from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
+from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.scaffolding.template_registry import TemplateRegistry
+from mcp_server.state.context_loaded_cache import ContextLoadedCache
+from mcp_server.state.pr_status_cache import PRStatusCache
 
 
 class TestBootstrap:
