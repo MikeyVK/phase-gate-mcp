@@ -29,7 +29,7 @@ This document is a **binding contract**. Code that violates these principles is 
 
 ## 🔧 Tool Priority Matrix (MANDATORY)
 
-**Never use `run_in_terminal` for these operations — use MCP tools instead:**
+**Never use `run_in_terminal` or default/built-in agent tools (e.g., `write_to_file`, `replace_file_content`, `multi_replace_file_content`) for these operations — use MCP tools instead:**
 
 ### Git Operations
 | Action | ✅ USE THIS | ❌ NEVER USE |
