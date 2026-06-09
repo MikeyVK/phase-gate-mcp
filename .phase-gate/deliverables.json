@@ -36,36 +36,63 @@
           {
             "cycle_number": 1,
             "deliverables": [
-              "ConfigLayer and ManagerGraph dataclass definitions in mcp_server/bootstrap.py",
-              "Unit tests for immutability and type-checking pass"
+              {
+                "id": "D1.1",
+                "name": "ConfigLayer and ManagerGraph dataclass definitions in mcp_server/bootstrap.py"
+              },
+              {
+                "id": "D1.2",
+                "name": "Unit tests for immutability and type-checking pass"
+              }
             ],
-            "exit_criteria": "Bootstrap unit tests pass and typing validation passes.",
+            "exit_criteria": "Bootstrap unit tests pass and typing validation passes. (Verified via public dataclass instantiation).",
             "name": "Define Immutable Dependency Containers (ConfigLayer & ManagerGraph)"
           },
           {
             "cycle_number": 2,
             "deliverables": [
-              "ServerBootstrapper._build_config_layer() configuration loading",
-              "ServerBootstrapper._build_manager_graph() manager wiring"
+              {
+                "id": "D2.1",
+                "name": "ServerBootstrapper composition of ConfigLayer"
+              },
+              {
+                "id": "D2.2",
+                "name": "ServerBootstrapper composition of ManagerGraph"
+              }
             ],
-            "exit_criteria": "Unit tests for config and manager building logic pass successfully.",
+            "exit_criteria": "Unit tests pass by verifying ServerBootstrapper(settings).bootstrap() returns a valid MCPServer with wired managers and logging side effects.",
             "name": "Extract Configuration and Manager Building Logic"
           },
           {
             "cycle_number": 3,
             "deliverables": [
-              "ServerBootstrapper._build_tools() extraction",
-              "ServerBootstrapper._build_resources() extraction"
+              {
+                "id": "D3.1",
+                "name": "ServerBootstrapper composition of tools list"
+              },
+              {
+                "id": "D3.2",
+                "name": "ServerBootstrapper composition of resources list"
+              }
             ],
-            "exit_criteria": "Unit tests verifying tool and resource registration lists pass.",
+            "exit_criteria": "Unit tests pass by verifying ServerBootstrapper(settings).bootstrap() returns an MCPServer containing the expected tools and resources.",
             "name": "Extract Tool and Resource Building Logic"
           },
           {
             "cycle_number": 4,
             "deliverables": [
-              "MCPServer.__init__ constructor injection cutover",
-              "make_test_server in tests/mcp_server/test_support.py to prevent DRY violations",
-              "conftest.py server fixture update"
+              {
+                "id": "D4.1",
+                "name": "MCPServer.__init__ constructor injection cutover"
+              },
+              {
+                "id": "D4.2",
+                "name": "make_test_server in tests/mcp_server/test_support.py to prevent DRY violations"
+              },
+              {
+                "id": "D4.3",
+                "name": "conftest.py server fixture update"
+              }
             ],
             "exit_criteria": "Integration tests pass using make_test_server in conftest.py.",
             "name": "MCPServer DI Cutover, conftest Fixture Update, and Test Helper"
@@ -73,9 +100,18 @@
           {
             "cycle_number": 5,
             "deliverables": [
-              "Migration of remaining 26 test instantiations to use make_test_server()",
-              "Update mcp_server/server.py:main()",
-              "All quality gates pass"
+              {
+                "id": "D5.1",
+                "name": "Migration of remaining 26 test instantiations to use make_test_server()"
+              },
+              {
+                "id": "D5.2",
+                "name": "Update mcp_server/server.py:main()"
+              },
+              {
+                "id": "D5.3",
+                "name": "All quality gates pass"
+              }
             ],
             "exit_criteria": "All unit and integration tests pass, and quality gates pass with 10.0/10.",
             "name": "Complete Test Blast Radius Migration & Validation"

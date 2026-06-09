@@ -96,9 +96,8 @@ To separate the build phase (parsing environment, loading configurations, instan
 - tests/mcp_server/unit/server/test_bootstrap.py:TestServerBootstrapperConfigsAndManagers
 
 **Success Criteria:**
-- ServerBootstrapper._build_config_layer() returns a valid ConfigLayer.
-- ServerBootstrapper._build_manager_graph() correctly instantiates and wires all 13 managers.
-- Side effects like logging setup, audit logs, and template registry bootstrapping are correctly triggered.
+- `ServerBootstrapper(settings).bootstrap()` returns a valid `MCPServer` instance with configured managers wired and accessible via public attributes (e.g., `server.git_manager`).
+- Side effects like logging setup, audit logs, and template registry bootstrapping are correctly triggered and observed.
 - `run_quality_gates` executed and passes on changed files.
 
 **Dependencies:** Cycle 1
@@ -111,8 +110,8 @@ To separate the build phase (parsing environment, loading configurations, instan
 - tests/mcp_server/unit/server/test_bootstrap.py:TestServerBootstrapperToolsAndResources
 
 **Success Criteria:**
-- _build_tools() returns the expected list of tools.
-- _build_resources() returns the expected list of resources.
+- `ServerBootstrapper(settings).bootstrap()` returns an `MCPServer` containing the expected list of tools in `server.tools`.
+- `ServerBootstrapper(settings).bootstrap()` returns an `MCPServer` containing the expected list of resources in `server.resources`.
 - GitHub tools are conditionally registered based on token presence.
 - `run_quality_gates` executed and passes on changed files.
 
@@ -198,3 +197,4 @@ To separate the build phase (parsing environment, loading configurations, instan
 |---------|------|--------|---------|
 | 0.1 | 2026-06-09 | Agent | Initial draft |
 | 0.2 | 2026-06-09 | Agent | Addressed plan-verifier review feedback: added Invariants, Assumptions, Open Questions, typing obligations, per-cycle quality gates, and cleanup expectations. |
+| 0.3 | 2026-06-09 | Agent | Fixed ARCHITECTURE_PRINCIPLES.md §14 violation: changed Cycles 2 and 3 success criteria to test through the public API bootstrap() instead of calling private _build_* methods. |
