@@ -387,8 +387,11 @@ class MCPServer:
 
 def main(settings: Settings | None = None) -> None:
     """Entry point for the MCP server."""
+    from mcp_server.bootstrap import ServerBootstrapper  # noqa: PLC0415
+
     settings = settings or Settings.from_env()
-    server = MCPServer(settings=settings)
+    bootstrapper = ServerBootstrapper(settings)
+    server = bootstrapper.bootstrap()
     asyncio.run(server.run())
 
 

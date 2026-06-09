@@ -593,6 +593,24 @@ class ServerBootstrapper:
                     CloseMilestoneTool(manager=managers.github_manager),
                 ]
             )
+        else:
+            tools.extend(
+                [
+                    CreateIssueTool(
+                        manager=managers.github_manager,
+                        issue_config=configs.issue_config,
+                        milestone_config=configs.milestone_config,
+                        contracts_config=configs.contracts_config,
+                        label_config=configs.label_config,
+                        scope_config=configs.scope_config,
+                        git_config=configs.git_config,
+                    ),
+                    ListIssuesTool(manager=managers.github_manager),
+                    GetIssueTool(manager=managers.github_manager),
+                    CloseIssueTool(manager=managers.github_manager),
+                    UpdateIssueTool(manager=managers.github_manager),
+                ]
+            )
 
         return tools
 
