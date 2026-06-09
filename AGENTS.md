@@ -1,4 +1,4 @@
-# S1mpleTrader V3 — Agent Protocol
+# pgmcp — Agent Protocol
 
 **Auto-loaded by VS Code** via `chat.useAgentsMdFile: true` — single always-on instruction file.
 **Status:** Active | **Context:** High-Frequency Trading Platform
