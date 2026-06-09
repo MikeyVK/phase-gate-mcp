@@ -3,7 +3,7 @@
 # Validation Report: Separate MCPServer composition root from runtime dispatch (Issue #285)
 
 
-**Status:** DRAFT  
+**Status:** APPROVED  
 **Version:** 0.1  
 **Last Updated:** 2026-06-09  
 **Validation Outcome:** PASS  

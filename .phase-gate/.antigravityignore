@@ -1,0 +1,14 @@
+# Schakel de virtuele omgeving uit
+venv/
+.venv/
+env/
+
+# Schakel Python cachebestanden uit
+**/__pycache__/
+*.pyc
+
+*.ruff_cache
+*.git
+*.mypy_cache
+*.ruff_cache
+*._cache

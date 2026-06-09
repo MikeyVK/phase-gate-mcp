@@ -26,7 +26,7 @@ flowchart TD
     CR --> CL[ConfigLoader]
     CL --> |"load_*_config() × 14"| VO["Typed Value Objects<br/>Pydantic BaseModel"]
     VO --> CV["ConfigValidator<br/>validate_startup()"]
-    CV --> |validated| DI["Dependency Injection<br/>MCPServer.__init__"]
+    CV --> |validated| DI["Dependency Injection<br/>ServerBootstrapper._build_config_layer()"]
     DI --> MGR[Managers]
     DI --> TOOLS[Tools]
     DI --> RES[Resources]
@@ -240,14 +240,20 @@ Called as **second step** after `LabelConfig.validate_label_name()` (format chec
 
 ## Usage Examples
 
-### Startup sequence in `MCPServer.__init__`
+### Startup sequence in `ServerBootstrapper._build_config_layer()` (Issue #285)
+
+> **Note:** Since Issue #285 (refactor/285-separate-mcpserver-composition-root), config loading
+> is the responsibility of `ServerBootstrapper` in `mcp_server/bootstrap.py`, not `MCPServer.__init__`.
+> `MCPServer` now receives a fully constructed `ConfigLayer` via constructor injection.
 
 ```python
-# 1. Derive server_root and config_root (C3 chain inversion — server.py)
+# ServerBootstrapper._build_config_layer() — mcp_server/bootstrap.py
+
+# 1. Derive server_root and config_root
 server_root = workspace_root / settings.server.server_root_dir  # e.g. .phase-gate/
 config_root = server_root / "config"  # always derived; resolve_config_root() NOT called
 
-# 2. Load all configs (immutable from this point)
+# 2. Load all configs (immutable from this point) — returns ConfigLayer dataclass
 config_loader = ConfigLoader(config_root=config_root)
 workphases_config = config_loader.load_workphases_config()
 label_config = config_loader.load_label_config()
@@ -263,11 +269,21 @@ ConfigValidator().validate_startup(
     workphases=workphases_config,
 )
 
-# 4. Inject into tools
+# 4. Returns ConfigLayer @dataclass(frozen=True) — injected into MCPServer via constructor
+return ConfigLayer(
+    workphases=workphases_config,
+    labels=label_config,
+    # ... all 14 config VOs
+)
+```
+
+Tools receive config VOs through the ManagerGraph and the tool-builder step:
+```python
+# ServerBootstrapper._build_tools() — mcp_server/bootstrap.py
 AddLabelsTool(
-    manager=self.github_manager,
-    label_config=label_config,
-    workphases_config=workphases_config,   # added in issue #302
+    manager=graph.github_manager,
+    label_config=configs.labels,
+    workphases_config=configs.workphases,   # added in issue #302
 )
 ```
 
@@ -404,7 +420,7 @@ flowchart TD
 ## Design Invariants
 
 1. **Immutable after load:** All config value objects use `frozen=True` or `ConfigDict(frozen=True)`. No mutation at runtime.
-2. **Single load point:** `ConfigLoader` is constructed once in `MCPServer.__init__`. No lazy loading, no singleton registry.
+2. **Single load point:** `ConfigLoader` is constructed once in `ServerBootstrapper._build_config_layer()` (issue #285). No lazy loading, no singleton registry.
 3. **No config re-reads at runtime:** Tools and managers hold references to config VOs. Exception: `CommitPhaseDetector` constructs its own `ConfigLoader` lazily when called outside server context.
 4. **`config_path` override for tests:** Every `load_*` method accepts `config_path: Path | None` to bypass the default `config_root / filename` lookup. Primary isolation mechanism for unit tests.
 5. **Cross-config validation at startup only:** `ConfigValidator.validate_startup()` enforces referential integrity once. No runtime re-validation.
@@ -417,7 +433,7 @@ flowchart TD
 1. Create schema in `mcp_server/config/schemas/new_thing.py` (Pydantic `BaseModel`)
 2. Export from `mcp_server/config/schemas/__init__.py`
 3. Add `load_new_thing_config()` to `ConfigLoader`
-4. Load in `MCPServer.__init__` before `ConfigValidator.validate_startup()`
+4. Load in `ServerBootstrapper._build_config_layer()` (in `mcp_server/bootstrap.py`) before `ConfigValidator.validate_startup()`; add the field to the `ConfigLayer` dataclass
 5. If the new config references workphases or artifact types, add a cross-validation check to `ConfigValidator`
 6. Inject into managers/tools that need it
 7. Add shared fixture in `tests/mcp_server/fixtures/` if widely used across tests
