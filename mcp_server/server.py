@@ -24,6 +24,7 @@ from mcp.types import (
 from pydantic import AnyUrl, BaseModel, ValidationError
 
 # Config
+from mcp_server.bootstrap import ConfigLayer, ManagerGraph
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
@@ -141,171 +142,219 @@ TRANSITION_ADVISORY_TOOL_NAMES = {
 class MCPServer:
     """Main MCP server class that handles resources and tools."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        configs: ConfigLayer | None = None,
+        managers: ManagerGraph | None = None,
+    ) -> None:
         """Initialize the MCP server with resources and tools."""
         settings = settings or Settings.from_env()
         self._settings = settings
         server_name = settings.server.name
 
-        # Configure logging — derive audit log path from server_root/logs_dir
-        # (settings.logging.audit_log explicit override takes precedence)
-        _server_root_early = Path(settings.server.workspace_root) / settings.server.server_root_dir
-        _logs_dir_early = _server_root_early / settings.server.logs_dir
-        _audit_log = settings.logging.audit_log or str(_logs_dir_early / "mcp_audit.log")
-        setup_logging(settings.logging.level, _audit_log)
-
-        # Log server startup
-        lifecycle_logger.info("MCP server starting")
-
-        # Initialize template registry (Issue #72 Task 1.6)
         workspace_root = Path(settings.server.workspace_root)
-        self._workspace_root = workspace_root
-
-        # C3: chain inversion — server_root is primary, config_root is derived.
-        # MCP_CONFIG_ROOT / settings.server.config_root is kept in settings for
-        # backward compatibility but is no longer used for path derivation here.
         server_root = workspace_root / settings.server.server_root_dir
-        config_root = server_root / "config"
-        logs_dir = server_root / settings.server.logs_dir
-        registry_path = server_root / "template_registry.json"
 
-        # Bootstrap registry file if missing
-        if not registry_path.exists():
-            registry_path.parent.mkdir(parents=True, exist_ok=True)
-            lifecycle_logger.info("Bootstrapping template registry: %s", registry_path)
+        if configs is not None and managers is not None:
+            self._workspace_root = workspace_root
+            self.template_registry = managers.template_registry
+            self.git_manager = managers.git_manager
+            self._state_repository = managers.state_repository
+            self.workflow_status_resolver = managers.workflow_status_resolver
+            self.project_manager = managers.project_manager
+            self.phase_contract_resolver = managers.phase_contract_resolver
+            self.workflow_gate_runner = managers.workflow_gate_runner
+            self.state_reconstructor = managers.state_reconstructor
+            self._workflow_state_mutator = managers.workflow_state_mutator
+            self._context_loaded_cache = managers.context_loaded_cache
+            self.phase_state_engine = managers.phase_state_engine
+            self.qa_manager = managers.qa_manager
+            self.github_manager = managers.github_manager
+            self.artifact_manager = managers.artifact_manager
+            self.pr_status_cache = managers.pr_status_cache
+            self.enforcement_runner = managers.enforcement_runner
 
-        self.template_registry = TemplateRegistry(registry_path=registry_path)
-        lifecycle_logger.info("Template registry initialized")
-
-        config_loader = ConfigLoader(config_root=config_root)
-        git_config = config_loader.load_git_config()
-        workflow_config = config_loader.load_workflow_config()
-        workphases_config = config_loader.load_workphases_config()
-        quality_config = config_loader.load_quality_config()
-        label_config = config_loader.load_label_config()
-        issue_config = config_loader.load_issue_config()
-        scope_config = config_loader.load_scope_config()
-        milestone_config = config_loader.load_milestone_config()
-        contributor_config = config_loader.load_contributor_config()
-        artifact_registry = config_loader.load_artifact_registry_config()
-        project_structure_config = config_loader.load_project_structure_config(
-            artifact_registry=artifact_registry
-        )
-        operation_policies_config = config_loader.load_operation_policies_config()
-        enforcement_config = config_loader.load_enforcement_config()
-        contracts_config = config_loader.load_contracts_config()
-        ConfigValidator().validate_startup(
-            policies=operation_policies_config,
-            workflow=workflow_config,
-            structure=project_structure_config,
-            artifact=artifact_registry,
-            contracts=contracts_config,
-            workphases=workphases_config,
-        )
-
-        self.git_manager = GitManager(git_config=git_config, workphases_config=workphases_config)
-
-        # Build shared state repository (used by resolver and PhaseStateEngine)
-        self._state_repository = FileStateRepository(state_file=server_root / "state.json")
-        # Build WorkflowStatusResolver (Issue #231 C4)
-        _branch_validated_reader = BranchValidatedStateReader(inner=self._state_repository)
-        _commit_phase_detector = CommitPhaseDetector(
-            workphases_config=workphases_config,
-        )
-        self.workflow_status_resolver = WorkflowStatusResolver(
-            git_context_reader=self.git_manager,
-            state_reader=_branch_validated_reader,
-            commit_phase_detector=_commit_phase_detector,
-        )
-
-        self.project_manager = ProjectManager(
-            workspace_root=workspace_root,
-            contracts_config=contracts_config,
-            git_manager=self.git_manager,
-            workphases_config=workphases_config,
-            workflow_status_resolver=self.workflow_status_resolver,
-            server_root=server_root,
-        )
-        self.phase_contract_resolver = PhaseContractResolver(
-            PhaseConfigContext(
-                workphases=workphases_config,
-                contracts=contracts_config,
+            # Config locals for tools
+            git_config = configs.git_config
+            workflow_config = configs.workflow_config
+            workphases_config = configs.workphases_config
+            quality_config = configs.quality_config
+            label_config = configs.label_config
+            issue_config = configs.issue_config
+            scope_config = configs.scope_config
+            milestone_config = configs.milestone_config
+            contributor_config = configs.contributor_config
+            artifact_registry = configs.artifact_registry
+            project_structure_config = configs.project_structure_config
+            operation_policies_config = configs.operation_policies_config
+            enforcement_config = configs.enforcement_config
+            contracts_config = configs.contracts_config
+        else:
+            # Configure logging — derive audit log path from server_root/logs_dir
+            # (settings.logging.audit_log explicit override takes precedence)
+            _server_root_early = (
+                Path(settings.server.workspace_root) / settings.server.server_root_dir
             )
-        )
-        self.workflow_gate_runner = WorkflowGateRunner(
-            deliverable_checker=DeliverableChecker(workspace_root),
-            phase_contract_resolver=self.phase_contract_resolver,
-        )
-        self.state_reconstructor = StateReconstructor(
-            workspace_root=workspace_root,
-            git_config=git_config,
-            project_manager=self.project_manager,
-            scope_decoder=ScopeDecoder(
+            _logs_dir_early = _server_root_early / settings.server.logs_dir
+            _audit_log = settings.logging.audit_log or str(_logs_dir_early / "mcp_audit.log")
+            setup_logging(settings.logging.level, _audit_log)
+            # Log server startup
+            lifecycle_logger.info("MCP server starting")
+
+            # Initialize template registry (Issue #72 Task 1.6)
+            self._workspace_root = workspace_root
+
+            # C3: chain inversion — server_root is primary, config_root is derived.
+            # MCP_CONFIG_ROOT / settings.server.config_root is kept in settings for
+            # backward compatibility but is no longer used for path derivation here.
+            config_root = server_root / "config"
+            logs_dir = server_root / settings.server.logs_dir
+            registry_path = server_root / "template_registry.json"
+
+            # Bootstrap registry file if missing
+            if not registry_path.exists():
+                registry_path.parent.mkdir(parents=True, exist_ok=True)
+                lifecycle_logger.info("Bootstrapping template registry: %s", registry_path)
+
+            self.template_registry = TemplateRegistry(registry_path=registry_path)
+            lifecycle_logger.info("Template registry initialized")
+
+            config_loader = ConfigLoader(config_root=config_root)
+            git_config = config_loader.load_git_config()
+            workflow_config = config_loader.load_workflow_config()
+            workphases_config = config_loader.load_workphases_config()
+            quality_config = config_loader.load_quality_config()
+            label_config = config_loader.load_label_config()
+            issue_config = config_loader.load_issue_config()
+            scope_config = config_loader.load_scope_config()
+            milestone_config = config_loader.load_milestone_config()
+            contributor_config = config_loader.load_contributor_config()
+            artifact_registry = config_loader.load_artifact_registry_config()
+            project_structure_config = config_loader.load_project_structure_config(
+                artifact_registry=artifact_registry
+            )
+            operation_policies_config = config_loader.load_operation_policies_config()
+            enforcement_config = config_loader.load_enforcement_config()
+            contracts_config = config_loader.load_contracts_config()
+            ConfigValidator().validate_startup(
+                policies=operation_policies_config,
+                workflow=workflow_config,
+                structure=project_structure_config,
+                artifact=artifact_registry,
+                contracts=contracts_config,
+                workphases=workphases_config,
+            )
+
+            self.git_manager = GitManager(
+                git_config=git_config,
                 workphases_config=workphases_config,
-            ),
-        )
-        self._workflow_state_mutator = WorkflowStateMutator(
-            state_repository=self._state_repository,
-            state_reconstructor=self.state_reconstructor,
-        )
-        self._context_loaded_cache = ContextLoadedCache()
-        self.phase_state_engine = PhaseStateEngine(
-            workspace_root=workspace_root,
-            project_manager=self.project_manager,
-            git_config=git_config,
-            contracts_config=contracts_config,
-            state_repository=self._state_repository,
-            scope_decoder=ScopeDecoder(
+            )
+
+            # Build shared state repository (used by resolver and PhaseStateEngine)
+            self._state_repository = FileStateRepository(state_file=server_root / "state.json")
+            # Build WorkflowStatusResolver (Issue #231 C4)
+            _branch_validated_reader_local = BranchValidatedStateReader(
+                inner=self._state_repository
+            )
+            _commit_phase_detector = CommitPhaseDetector(
                 workphases_config=workphases_config,
-            ),
-            workflow_gate_runner=self.workflow_gate_runner,
-            state_reconstructor=self.state_reconstructor,
-            workflow_state_mutator=self._workflow_state_mutator,
-            context_loaded_writer=self._context_loaded_cache,
-            server_root=server_root,
-        )
-        _quality_state_repository = FileQualityStateRepository(
-            backing_file=server_root / "quality_state.json"
-        )
-        self.qa_manager = QAManager(
-            workspace_root=workspace_root,
-            quality_config=quality_config,
-            logs_dir=logs_dir,
-            quality_state_repository=_quality_state_repository,
-            git_context_reader=self.git_manager,
-            state_reader=_branch_validated_reader,
-        )
-        self.github_manager = GitHubManager(
-            issue_config=issue_config,
-            label_config=label_config,
-            scope_config=scope_config,
-            milestone_config=milestone_config,
-            contributor_config=contributor_config,
-            git_config=git_config,
-        )
-        self.artifact_manager = ArtifactManager(
-            workspace_root=workspace_root,
-            server_root=server_root,
-            template_registry=self.template_registry,
-            registry=artifact_registry,
-            project_structure_config=project_structure_config,
-        )
+            )
+            self.workflow_status_resolver = WorkflowStatusResolver(
+                git_context_reader=self.git_manager,
+                state_reader=_branch_validated_reader_local,
+                commit_phase_detector=_commit_phase_detector,
+            )
+
+            self.project_manager = ProjectManager(
+                workspace_root=workspace_root,
+                contracts_config=contracts_config,
+                git_manager=self.git_manager,
+                workphases_config=workphases_config,
+                workflow_status_resolver=self.workflow_status_resolver,
+                server_root=server_root,
+            )
+            self.phase_contract_resolver = PhaseContractResolver(
+                PhaseConfigContext(
+                    workphases=workphases_config,
+                    contracts=contracts_config,
+                )
+            )
+            self.workflow_gate_runner = WorkflowGateRunner(
+                deliverable_checker=DeliverableChecker(workspace_root),
+                phase_contract_resolver=self.phase_contract_resolver,
+            )
+            self.state_reconstructor = StateReconstructor(
+                workspace_root=workspace_root,
+                git_config=git_config,
+                project_manager=self.project_manager,
+                scope_decoder=ScopeDecoder(
+                    workphases_config=workphases_config,
+                ),
+            )
+            self._workflow_state_mutator = WorkflowStateMutator(
+                state_repository=self._state_repository,
+                state_reconstructor=self.state_reconstructor,
+            )
+            self._context_loaded_cache = ContextLoadedCache()
+            self.phase_state_engine = PhaseStateEngine(
+                workspace_root=workspace_root,
+                project_manager=self.project_manager,
+                git_config=git_config,
+                contracts_config=contracts_config,
+                state_repository=self._state_repository,
+                scope_decoder=ScopeDecoder(
+                    workphases_config=workphases_config,
+                ),
+                workflow_gate_runner=self.workflow_gate_runner,
+                state_reconstructor=self.state_reconstructor,
+                workflow_state_mutator=self._workflow_state_mutator,
+                context_loaded_writer=self._context_loaded_cache,
+                server_root=server_root,
+            )
+            _quality_state_repository = FileQualityStateRepository(
+                backing_file=server_root / "quality_state.json"
+            )
+            self.qa_manager = QAManager(
+                workspace_root=workspace_root,
+                quality_config=quality_config,
+                logs_dir=logs_dir,
+                quality_state_repository=_quality_state_repository,
+                git_context_reader=self.git_manager,
+                state_reader=_branch_validated_reader_local,
+            )
+            self.github_manager = GitHubManager(
+                issue_config=issue_config,
+                label_config=label_config,
+                scope_config=scope_config,
+                milestone_config=milestone_config,
+                contributor_config=contributor_config,
+                git_config=git_config,
+            )
+            self.artifact_manager = ArtifactManager(
+                workspace_root=workspace_root,
+                server_root=server_root,
+                template_registry=self.template_registry,
+                registry=artifact_registry,
+                project_structure_config=project_structure_config,
+            )
+            self.pr_status_cache = PRStatusCache(github_manager=self.github_manager)
+            self.enforcement_runner = EnforcementRunner(
+                workspace_root=workspace_root,
+                config=enforcement_config,
+                git_config=git_config,
+                state_reader=self._state_repository,
+                pr_status_reader=self.pr_status_cache,
+                server_root=server_root,
+                context_loaded_reader=self._context_loaded_cache,
+            )
+
+        _branch_validated_reader = BranchValidatedStateReader(inner=self._state_repository)
         _merge_readiness_context = MergeReadinessContext(
             terminal_phase=workphases_config.get_terminal_phase(),
             pr_allowed_phase=contracts_config.get_pr_allowed_phase(),
             branch_local_artifacts=tuple(contracts_config.merge_policy.branch_local_artifacts),
         )
-        self.pr_status_cache = PRStatusCache(github_manager=self.github_manager)
-        self.enforcement_runner = EnforcementRunner(
-            workspace_root=workspace_root,
-            config=enforcement_config,
-            git_config=git_config,
-            state_reader=self._state_repository,
-            pr_status_reader=self.pr_status_cache,
-            server_root=server_root,
-            context_loaded_reader=self._context_loaded_cache,
-        )
-
         self.server = Server(server_name)
 
         # Core resources (always available)

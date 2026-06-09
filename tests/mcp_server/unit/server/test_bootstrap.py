@@ -32,7 +32,6 @@ from mcp_server.config.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-from mcp_server.config.settings import Settings
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -48,7 +47,6 @@ from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 from mcp_server.scaffolding.template_registry import TemplateRegistry
-from mcp_server.server import MCPServer
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 
@@ -121,13 +119,13 @@ class TestServerBootstrapperConfigsAndManagers:
 
     def test_bootstrapper_initialization(self) -> None:
         """Verify ServerBootstrapper can be initialized with Settings."""
-        mock_settings = MagicMock(spec=Settings)
+        mock_settings = MagicMock()
         bootstrapper = ServerBootstrapper(mock_settings)
-        assert bootstrapper._settings is mock_settings
+        assert bootstrapper._settings is mock_settings  # pyright: ignore[reportPrivateUsage]
 
     def test_bootstrapper_bootstrap_returns_mcpserver(self) -> None:
         """Verify bootstrap() returns an MCPServer with all managers wired."""
-        mock_settings = MagicMock(spec=Settings)
+        mock_settings = MagicMock()
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
         mock_settings.server.server_root_dir = ".phase-gate"
@@ -137,29 +135,28 @@ class TestServerBootstrapperConfigsAndManagers:
 
         mock_config_layer = MagicMock(spec=ConfigLayer)
         mock_manager_graph = MagicMock(spec=ManagerGraph)
-
-        with patch("mcp_server.bootstrap.setup_logging") as mock_setup_logging, \
-             patch("mcp_server.bootstrap.TemplateRegistry") as mock_template_registry_cls, \
-             patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls, \
-             patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls, \
-             patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls:
-
+        with (
+            patch("mcp_server.bootstrap.setup_logging") as mock_setup_logging,
+            patch("mcp_server.bootstrap.TemplateRegistry") as mock_template_registry_cls,
+            patch("mcp_server.bootstrap.ConfigLoader"),
+            patch("mcp_server.bootstrap.ConfigValidator"),
+            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+        ):
             bootstrapper = ServerBootstrapper(mock_settings)
-            
+
             # Mock the building methods
-            bootstrapper._build_config_layer = MagicMock(return_value=mock_config_layer)
-            bootstrapper._build_manager_graph = MagicMock(return_value=mock_manager_graph)
+            bootstrapper._build_config_layer = MagicMock(return_value=mock_config_layer)  # pyright: ignore[reportPrivateUsage]
+            bootstrapper._build_manager_graph = MagicMock(return_value=mock_manager_graph)  # pyright: ignore[reportPrivateUsage]
 
             server = bootstrapper.bootstrap()
 
             # Verify side-effects
             mock_setup_logging.assert_called_once()
             mock_template_registry_cls.assert_called_once()
-            
-            # Verify building methods were called
-            bootstrapper._build_config_layer.assert_called_once()
-            bootstrapper._build_manager_graph.assert_called_once()
 
+            # Verify building methods were called
+            bootstrapper._build_config_layer.assert_called_once()  # pyright: ignore[reportPrivateUsage]
+            bootstrapper._build_manager_graph.assert_called_once()  # pyright: ignore[reportPrivateUsage]
             # Verify MCPServer was created with injected dependencies
             mock_mcp_server_cls.assert_called_once_with(
                 settings=mock_settings,
@@ -170,15 +167,16 @@ class TestServerBootstrapperConfigsAndManagers:
 
     def test_build_config_layer(self) -> None:
         """Verify _build_config_layer builds a valid ConfigLayer."""
-        mock_settings = MagicMock(spec=Settings)
+        mock_settings = MagicMock()
         mock_settings.server.workspace_root = "/fake/root"
         mock_settings.server.server_root_dir = ".phase-gate"
 
         bootstrapper = ServerBootstrapper(mock_settings)
 
-        with patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls, \
-             patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls:
-            
+        with (
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls,
+        ):
             mock_loader = mock_config_loader_cls.return_value
             mock_loader.load_git_config.return_value = MagicMock(spec=GitConfig)
             mock_loader.load_workflow_config.return_value = MagicMock(spec=WorkflowConfig)
@@ -188,14 +186,19 @@ class TestServerBootstrapperConfigsAndManagers:
             mock_loader.load_issue_config.return_value = MagicMock(spec=IssueConfig)
             mock_loader.load_scope_config.return_value = MagicMock(spec=ScopeConfig)
             mock_loader.load_milestone_config.return_value = MagicMock(spec=MilestoneConfig)
-            mock_loader.load_contributor_config.return_value = MagicMock(spec=ContributorConfig)
-            mock_loader.load_artifact_registry_config.return_value = MagicMock(spec=ArtifactRegistryConfig)
-            mock_loader.load_project_structure_config.return_value = MagicMock(spec=ProjectStructureConfig)
-            mock_loader.load_operation_policies_config.return_value = MagicMock(spec=OperationPoliciesConfig)
+            mock_loader.load_artifact_registry_config.return_value = MagicMock(
+                spec=ArtifactRegistryConfig
+            )
+            mock_loader.load_project_structure_config.return_value = MagicMock(
+                spec=ProjectStructureConfig
+            )
+            mock_loader.load_operation_policies_config.return_value = MagicMock(
+                spec=OperationPoliciesConfig
+            )
             mock_loader.load_enforcement_config.return_value = MagicMock(spec=EnforcementConfig)
             mock_loader.load_contracts_config.return_value = MagicMock(spec=ContractsConfig)
 
-            layer = bootstrapper._build_config_layer()
+            layer = bootstrapper._build_config_layer()  # pyright: ignore[reportPrivateUsage]
 
             assert isinstance(layer, ConfigLayer)
             mock_config_validator_cls.return_value.validate_startup.assert_called_once()
