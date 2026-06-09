@@ -9,6 +9,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource
 from pydantic import BaseModel
 
 from mcp_server.core.operation_notes import NoteContext
@@ -51,6 +52,7 @@ class MockSimpleTool(BaseTool):
     """Minimal mock tool for argument validation tests."""
 
     name = "mock_simple"
+    description = "Mock simple tool"
     args_model = SimpleInput
 
     async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401, ARG002
@@ -82,56 +84,64 @@ class TestValidateToolArgumentsFailurePath:
         """Minimal MCPServer instance for testing _validate_tool_arguments."""
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
-            return make_test_server()
+            s = make_test_server()
+            s.tools.append(MockSimpleTool())
+            return s
 
-    def test_returns_tool_result_on_validation_error(self, server: MCPServer) -> None:
+    @pytest.mark.asyncio
+    async def test_returns_tool_result_on_validation_error(self, server: MCPServer) -> None:
         """
         RED condition: When Pydantic validation fails (missing required field),
-        _validate_tool_arguments returns a ToolResult with is_error=True.
-
-        Before fix: would return list[TextContent], bypassing MCP pipeline.
-        After fix: returns ToolResult with proper error shape.
+        the call_tool handler returns a result with isError=True.
         """
-        tool = MockSimpleTool()
         invalid_args = {"optional_field": 99}
 
-        result = server._validate_tool_arguments(  # pyright: ignore[reportPrivateUsage]
-            tool, invalid_args, call_id="test-call", name="mock_simple"
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="mock_simple",
+                arguments=invalid_args,
+            )
         )
+        with patch("jsonschema.validate"):
+            response = await handler(req)
+        result = response.root
 
-        assert isinstance(result, ToolResult), (
-            f"Expected ToolResult on validation error, got {type(result).__name__}"
-        )
-        assert result.is_error is True, "is_error must be True for validation failure"
+        assert hasattr(result, "isError"), "Result must have isError"
+        assert result.isError is True, "isError must be True for validation failure"
 
-    def test_failure_includes_schema_resource(self, server: MCPServer) -> None:
+    @pytest.mark.asyncio
+    async def test_failure_includes_schema_resource(self, server: MCPServer) -> None:
         """
         RED condition: The failure response must include a schema://validation
         EmbeddedResource with the valid input schema in JSON.
         """
-        tool = MockSimpleTool()
         invalid_args = {"unknown_field": "typo"}
 
-        result = server._validate_tool_arguments(  # pyright: ignore[reportPrivateUsage]
-            tool, invalid_args, call_id="test-call", name="mock_simple"
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="mock_simple",
+                arguments=invalid_args,
+            )
         )
+        with patch("jsonschema.validate"):
+            response = await handler(req)
+        result = response.root
+        assert result.isError is True
 
-        assert isinstance(result, ToolResult)
-
-        resource_items = [
-            c for c in result.content if isinstance(c, dict) and c.get("type") == "resource"
-        ]
+        resource_items = [c for c in result.content if isinstance(c, EmbeddedResource)]
         assert len(resource_items) > 0, "Expected schema://validation resource in failure response"
 
-        resource = resource_items[0]["resource"]
-        assert resource["uri"] == "schema://validation", (
-            f"Expected uri=schema://validation, got {resource['uri']}"
+        resource = resource_items[0].resource
+        assert str(resource.uri) == "schema://validation", (
+            f"Expected uri=schema://validation, got {resource.uri}"
         )
-        assert resource["mimeType"] == "application/json", (
-            f"Expected application/json, got {resource['mimeType']}"
+        assert resource.mimeType == "application/json", (
+            f"Expected application/json, got {resource.mimeType}"
         )
 
-        schema = json.loads(resource["text"])
+        schema = json.loads(resource.text)
         assert isinstance(schema, dict), "schema must be a dict"
         assert "properties" in schema, "schema must have properties"
         assert "required_field" in schema["properties"], "required_field must be in properties"
@@ -139,24 +149,30 @@ class TestValidateToolArgumentsFailurePath:
             "Field description must be preserved in schema"
         )
 
-    def test_failure_includes_diagnostic_text(self, server: MCPServer) -> None:
+    @pytest.mark.asyncio
+    async def test_failure_includes_diagnostic_text(self, server: MCPServer) -> None:
         """
         RED condition: The response includes human-readable diagnostic text
         explaining what validation failed.
         """
-        tool = MockSimpleTool()
         invalid_args = {"optional_field": "not-an-integer"}
 
-        result = server._validate_tool_arguments(  # pyright: ignore[reportPrivateUsage]
-            tool, invalid_args, call_id="test-call", name="mock_simple"
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="mock_simple",
+                arguments=invalid_args,
+            )
         )
+        with patch("jsonschema.validate"):
+            response = await handler(req)
+        result = response.root
+        assert result.isError is True
 
-        assert isinstance(result, ToolResult)
-
-        text_items = [c for c in result.content if isinstance(c, dict) and c.get("type") == "text"]
+        text_items = [c for c in result.content if getattr(c, "type", None) == "text"]
         assert len(text_items) > 0, "Expected diagnostic text in failure response"
 
-        text_content = text_items[0]["text"]
+        text_content = text_items[0].text
         assert "Invalid input" in text_content, (
             f"Diagnostic text must mention 'Invalid input', got: {text_content}"
         )
@@ -164,41 +180,51 @@ class TestValidateToolArgumentsFailurePath:
             f"Diagnostic text must mention tool name, got: {text_content}"
         )
 
-    def test_success_returns_model_instance(self, server: MCPServer) -> None:
+    @pytest.mark.asyncio
+    async def test_success_returns_model_instance(self, server: MCPServer) -> None:
         """
-        Happy path: When validation succeeds, _validate_tool_arguments
-        returns a BaseModel instance, not a ToolResult.
+        Happy path: When validation succeeds, the call_tool handler executes
+        the tool and returns the expected result content.
         """
-        tool = MockSimpleTool()
         valid_args = {"required_field": "hello"}
 
-        result = server._validate_tool_arguments(  # pyright: ignore[reportPrivateUsage]
-            tool, valid_args, call_id="test-call", name="mock_simple"
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="mock_simple",
+                arguments=valid_args,
+            )
         )
+        with patch("jsonschema.validate"):
+            response = await handler(req)
+        result = response.root
 
-        assert isinstance(result, SimpleInput), (
-            f"Expected SimpleInput model instance on success, got {type(result).__name__}"
-        )
-        assert result.required_field == "hello"
-        assert result.optional_field == 42
+        assert getattr(result, "isError", False) is False
+        assert len(result.content) == 1
+        assert result.content[0].text == "OK"
 
-    def test_schema_is_normalized_no_defs_no_ref(self, server: MCPServer) -> None:
+    @pytest.mark.asyncio
+    async def test_schema_is_normalized_no_defs_no_ref(self, server: MCPServer) -> None:
         """
         RED condition: The schema://validation resource must not contain
         $defs or $ref (Cycle 1 guarantee: all schemas are normalized).
         """
-        tool = MockSimpleTool()
         invalid_args = {}
 
-        result = server._validate_tool_arguments(  # pyright: ignore[reportPrivateUsage]
-            tool, invalid_args, call_id="test-call", name="mock_simple"
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="mock_simple",
+                arguments=invalid_args,
+            )
         )
+        with patch("jsonschema.validate"):
+            response = await handler(req)
+        result = response.root
+        assert result.isError is True
 
-        assert isinstance(result, ToolResult)
-        resource_items = [
-            c for c in result.content if isinstance(c, dict) and c.get("type") == "resource"
-        ]
-        schema = json.loads(resource_items[0]["resource"]["text"])
+        resource_items = [c for c in result.content if isinstance(c, EmbeddedResource)]
+        schema = json.loads(resource_items[0].resource.text)
 
         assert "$defs" not in schema, "Schema must not contain $defs (Cycle 1 guarantee)"
         assert "$ref" not in json.dumps(schema), "Schema must not contain $ref anywhere"

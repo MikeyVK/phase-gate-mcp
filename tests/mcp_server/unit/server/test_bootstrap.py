@@ -115,14 +115,69 @@ class TestBootstrap:
             graph.git_manager = MagicMock(spec=GitManager)
 
 
+def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
+    """Helper to mock all configurations returned by ConfigLoader."""
+    mock_loader = mock_config_loader_cls.return_value
+    mock_loader.load_git_config.return_value = MagicMock(spec=GitConfig)
+    mock_loader.load_workflow_config.return_value = MagicMock(spec=WorkflowConfig)
+
+    mock_workphases = MagicMock(spec=WorkphasesConfig)
+    mock_workphases.get_terminal_phase.return_value = "ready"
+    mock_loader.load_workphases_config.return_value = mock_workphases
+
+    mock_loader.load_quality_config.return_value = MagicMock(spec=QualityConfig)
+    mock_loader.load_label_config.return_value = MagicMock(spec=LabelConfig)
+    mock_loader.load_issue_config.return_value = MagicMock(spec=IssueConfig)
+    mock_loader.load_scope_config.return_value = MagicMock(spec=ScopeConfig)
+    mock_loader.load_milestone_config.return_value = MagicMock(spec=MilestoneConfig)
+    mock_loader.load_contributor_config.return_value = MagicMock(spec=ContributorConfig)
+    mock_loader.load_artifact_registry_config.return_value = MagicMock(spec=ArtifactRegistryConfig)
+    mock_loader.load_project_structure_config.return_value = MagicMock(spec=ProjectStructureConfig)
+    mock_loader.load_operation_policies_config.return_value = MagicMock(
+        spec=OperationPoliciesConfig
+    )
+
+    mock_enforcement = MagicMock(spec=EnforcementConfig)
+    mock_enforcement.enforcement = []
+    mock_loader.load_enforcement_config.return_value = mock_enforcement
+
+    mock_contracts = MagicMock(spec=ContractsConfig)
+    mock_contracts.get_pr_allowed_phase.return_value = "ready"
+    mock_contracts.merge_policy = MagicMock()
+    mock_contracts.merge_policy.branch_local_artifacts = []
+    mock_loader.load_contracts_config.return_value = mock_contracts
+
+    return mock_loader
+
+
 class TestServerBootstrapperConfigsAndManagers:
     """Test suite for ServerBootstrapper config loading and manager creation."""
 
     def test_bootstrapper_initialization(self) -> None:
-        """Verify ServerBootstrapper can be initialized with Settings."""
+        """Verify ServerBootstrapper stores settings during initialization."""
+        # We verify this via public bootstrap() side-effect of passing settings to MCPServer
         mock_settings = MagicMock()
-        bootstrapper = ServerBootstrapper(mock_settings)
-        assert bootstrapper._settings is mock_settings  # pyright: ignore[reportPrivateUsage]
+        mock_settings.github.token = None
+        mock_settings.server.name = "test-server"
+        mock_settings.server.workspace_root = "/fake/root"
+        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.logs_dir = "logs"
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            patch("mcp_server.bootstrap.TemplateRegistry"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator"),
+            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+        ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+
+            bootstrapper = ServerBootstrapper(mock_settings)
+            bootstrapper.bootstrap()
+
+            call_kwargs = mock_mcp_server_cls.call_args[1]
+            assert call_kwargs["settings"] is mock_settings
 
     def test_bootstrapper_bootstrap_returns_mcpserver(self) -> None:
         """Verify bootstrap() returns an MCPServer with all managers wired."""
@@ -134,149 +189,42 @@ class TestServerBootstrapperConfigsAndManagers:
         mock_settings.server.logs_dir = "logs"
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
-        mock_config_layer = MagicMock()
-        mock_manager_graph = MagicMock()
+
         with (
             patch("mcp_server.bootstrap.setup_logging") as mock_setup_logging,
             patch("mcp_server.bootstrap.TemplateRegistry") as mock_template_registry_cls,
-            patch("mcp_server.bootstrap.ConfigLoader"),
-            patch("mcp_server.bootstrap.ConfigValidator"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls,
             patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
         ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+
             bootstrapper = ServerBootstrapper(mock_settings)
-
-            # Mock the building methods
-            bootstrapper._build_config_layer = MagicMock(return_value=mock_config_layer)  # pyright: ignore[reportPrivateUsage]
-            bootstrapper._build_manager_graph = MagicMock(return_value=mock_manager_graph)  # pyright: ignore[reportPrivateUsage]
-
             server = bootstrapper.bootstrap()
 
             # Verify side-effects
             mock_setup_logging.assert_called_once()
             mock_template_registry_cls.assert_called_once()
+            mock_config_validator_cls.return_value.validate_startup.assert_called_once()
 
-            # Verify building methods were called
-            bootstrapper._build_config_layer.assert_called_once()  # pyright: ignore[reportPrivateUsage]
-            bootstrapper._build_manager_graph.assert_called_once()  # pyright: ignore[reportPrivateUsage]
             # Verify MCPServer was created with injected dependencies
             assert mock_mcp_server_cls.called
             call_kwargs = mock_mcp_server_cls.call_args[1]
             assert call_kwargs["settings"] is mock_settings
-            assert call_kwargs["configs"] is mock_config_layer
-            assert call_kwargs["managers"] is mock_manager_graph
+            assert isinstance(call_kwargs["configs"], ConfigLayer)
+            assert isinstance(call_kwargs["managers"], ManagerGraph)
+            assert isinstance(call_kwargs["tools"], list)
+            assert isinstance(call_kwargs["resources"], list)
             assert server is mock_mcp_server_cls.return_value
-
-    def test_build_config_layer(self) -> None:
-        """Verify _build_config_layer builds a valid ConfigLayer."""
-        mock_settings = MagicMock()
-        mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
-
-        bootstrapper = ServerBootstrapper(mock_settings)
-
-        with (
-            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
-            patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls,
-        ):
-            mock_loader = mock_config_loader_cls.return_value
-            mock_loader.load_git_config.return_value = MagicMock(spec=GitConfig)
-            mock_loader.load_workflow_config.return_value = MagicMock(spec=WorkflowConfig)
-            mock_loader.load_workphases_config.return_value = MagicMock(spec=WorkphasesConfig)
-            mock_loader.load_quality_config.return_value = MagicMock(spec=QualityConfig)
-            mock_loader.load_label_config.return_value = MagicMock(spec=LabelConfig)
-            mock_loader.load_issue_config.return_value = MagicMock(spec=IssueConfig)
-            mock_loader.load_scope_config.return_value = MagicMock(spec=ScopeConfig)
-            mock_loader.load_milestone_config.return_value = MagicMock(spec=MilestoneConfig)
-            mock_loader.load_artifact_registry_config.return_value = MagicMock(
-                spec=ArtifactRegistryConfig
-            )
-            mock_loader.load_project_structure_config.return_value = MagicMock(
-                spec=ProjectStructureConfig
-            )
-            mock_loader.load_operation_policies_config.return_value = MagicMock(
-                spec=OperationPoliciesConfig
-            )
-            mock_loader.load_enforcement_config.return_value = MagicMock(spec=EnforcementConfig)
-            mock_loader.load_contracts_config.return_value = MagicMock(spec=ContractsConfig)
-
-            layer = bootstrapper._build_config_layer()  # pyright: ignore[reportPrivateUsage]
-
-            assert isinstance(layer, ConfigLayer)
-            mock_config_validator_cls.return_value.validate_startup.assert_called_once()
 
 
 class TestServerBootstrapperToolsAndResources:
     """Test suite for ServerBootstrapper tool and resource extraction."""
 
     def test_build_tools_without_github_token(self) -> None:
-        """Verify _build_tools returns only non-GitHub tools when token is None."""
+        """Verify bootstrap returns MCPServer with only non-GitHub tools when token is None."""
         mock_settings = MagicMock()
         mock_settings.github.token = None
-        mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
-
-        bootstrapper = ServerBootstrapper(mock_settings)
-        mock_configs = MagicMock()
-        mock_managers = MagicMock()
-
-        tools = bootstrapper._build_tools(mock_configs, mock_managers)  # pyright: ignore[reportPrivateUsage]
-        assert isinstance(tools, list)
-        tool_names = {t.name for t in tools}
-        assert "create_issue" in tool_names
-        assert "get_pr" not in tool_names
-        assert "git_status" in tool_names
-
-    def test_build_tools_with_github_token(self) -> None:
-        """Verify _build_tools returns GitHub tools when token is present."""
-        mock_settings = MagicMock()
-        mock_settings.github.token = "token"
-        mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
-
-        bootstrapper = ServerBootstrapper(mock_settings)
-        mock_configs = MagicMock()
-        mock_configs.contracts_config.merge_policy.branch_local_artifacts = []
-        mock_managers = MagicMock()
-        tools = bootstrapper._build_tools(mock_configs, mock_managers)  # pyright: ignore[reportPrivateUsage]
-        assert isinstance(tools, list)
-        tool_names = {t.name for t in tools}
-        assert "create_issue" in tool_names
-
-    def test_build_resources_without_github_token(self) -> None:
-        """Verify _build_resources returns only core resources when token is None."""
-        mock_settings = MagicMock()
-        mock_settings.github.token = None
-        mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
-
-        bootstrapper = ServerBootstrapper(mock_settings)
-        mock_configs = MagicMock()
-        mock_managers = MagicMock()
-        resources = bootstrapper._build_resources(mock_configs, mock_managers)  # pyright: ignore[reportPrivateUsage]
-        assert isinstance(resources, list)
-        resource_uris = {r.uri_pattern for r in resources}
-        assert "pgmcp://rules/coding_standards" in resource_uris
-        assert "pgmcp://github/issues" not in resource_uris
-
-    def test_build_resources_with_github_token(self) -> None:
-        """Verify _build_resources returns GitHub issues resource when token is present."""
-        mock_settings = MagicMock()
-        mock_settings.github.token = "token"
-        mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
-
-        bootstrapper = ServerBootstrapper(mock_settings)
-        mock_configs = MagicMock()
-        mock_managers = MagicMock()
-        resources = bootstrapper._build_resources(mock_configs, mock_managers)  # pyright: ignore[reportPrivateUsage]
-        assert isinstance(resources, list)
-        resource_uris = {r.uri_pattern for r in resources}
-        assert "pgmcp://rules/coding_standards" in resource_uris
-        assert "pgmcp://github/issues" in resource_uris
-
-    def test_bootstrap_wires_tools_and_resources(self) -> None:
-        """Verify bootstrap() calls _build_tools and _build_resources and injects them."""
-        mock_settings = MagicMock()
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
         mock_settings.server.server_root_dir = ".phase-gate"
@@ -284,39 +232,95 @@ class TestServerBootstrapperToolsAndResources:
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
 
-        mock_config_layer = MagicMock()
-        mock_manager_graph = MagicMock()
-        mock_tools = [MagicMock()]
-        mock_resources = [MagicMock()]
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            patch("mcp_server.bootstrap.TemplateRegistry"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator"),
+        ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+
+            bootstrapper = ServerBootstrapper(mock_settings)
+            server = bootstrapper.bootstrap()
+            tool_names = {t.name for t in server.tools}
+            assert "create_issue" in tool_names
+            assert "get_pr" not in tool_names
+            assert "git_status" in tool_names
+
+    def test_build_tools_with_github_token(self) -> None:
+        """Verify bootstrap returns GitHub tools when token is present."""
+        mock_settings = MagicMock()
+        mock_settings.github.token = "token"
+        mock_settings.server.name = "test-server"
+        mock_settings.server.workspace_root = "/fake/root"
+        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.logs_dir = "logs"
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
 
         with (
             patch("mcp_server.bootstrap.setup_logging"),
             patch("mcp_server.bootstrap.TemplateRegistry"),
-            patch("mcp_server.bootstrap.ConfigLoader"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
             patch("mcp_server.bootstrap.ConfigValidator"),
-            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
         ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+
             bootstrapper = ServerBootstrapper(mock_settings)
-            bootstrapper._build_config_layer = MagicMock(return_value=mock_config_layer)  # pyright: ignore[reportPrivateUsage]
-            bootstrapper._build_manager_graph = MagicMock(return_value=mock_manager_graph)  # pyright: ignore[reportPrivateUsage]
-            bootstrapper._build_tools = MagicMock(return_value=mock_tools)  # pyright: ignore[reportPrivateUsage]
-            bootstrapper._build_resources = MagicMock(return_value=mock_resources)  # pyright: ignore[reportPrivateUsage]
-
             server = bootstrapper.bootstrap()
+            tool_names = {t.name for t in server.tools}
+            assert "create_issue" in tool_names
+            assert "get_pr" in tool_names
 
-            bootstrapper._build_tools.assert_called_once_with(mock_config_layer, mock_manager_graph)  # pyright: ignore[reportPrivateUsage]
-            bootstrapper._build_resources.assert_called_once_with(  # pyright: ignore[reportPrivateUsage]
-                mock_config_layer, mock_manager_graph
-            )
+    def test_build_resources_without_github_token(self) -> None:
+        """Verify bootstrap returns only core resources when token is None."""
+        mock_settings = MagicMock()
+        mock_settings.github.token = None
+        mock_settings.server.name = "test-server"
+        mock_settings.server.workspace_root = "/fake/root"
+        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.logs_dir = "logs"
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
 
-            mock_mcp_server_cls.assert_called_once_with(
-                settings=mock_settings,
-                configs=mock_config_layer,
-                managers=mock_manager_graph,
-                tools=mock_tools,
-                resources=mock_resources,
-            )
-            assert server is mock_mcp_server_cls.return_value
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            patch("mcp_server.bootstrap.TemplateRegistry"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator"),
+        ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+
+            bootstrapper = ServerBootstrapper(mock_settings)
+            server = bootstrapper.bootstrap()
+            resource_uris = {r.uri_pattern for r in server.resources}
+            assert "pgmcp://rules/coding_standards" in resource_uris
+            assert "pgmcp://github/issues" not in resource_uris
+
+    def test_build_resources_with_github_token(self) -> None:
+        """Verify bootstrap returns GitHub issues resource when token is present."""
+        mock_settings = MagicMock()
+        mock_settings.github.token = "token"
+        mock_settings.server.name = "test-server"
+        mock_settings.server.workspace_root = "/fake/root"
+        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.logs_dir = "logs"
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
+
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            patch("mcp_server.bootstrap.TemplateRegistry"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator"),
+        ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+
+            bootstrapper = ServerBootstrapper(mock_settings)
+            server = bootstrapper.bootstrap()
+            resource_uris = {r.uri_pattern for r in server.resources}
+            assert "pgmcp://rules/coding_standards" in resource_uris
+            assert "pgmcp://github/issues" in resource_uris
 
 
 class TestMCPServerBootstrap:
@@ -345,7 +349,7 @@ class TestMCPServerBootstrap:
             tools=mock_tools,
             resources=mock_resources,
         )
-        assert server._settings is mock_settings  # pyright: ignore[reportPrivateUsage]
+        assert server._settings is mock_settings  # pyright: ignore[reportPrivateUsage]  # unavoidable test-infrastructure necessity to verify the constructor stores the settings dependency
         assert server.tools is mock_tools
         assert server.resources is mock_resources
 
