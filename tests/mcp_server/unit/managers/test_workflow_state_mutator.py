@@ -200,13 +200,13 @@ class TestWorkflowStateMutatorApply:
 
 
 class TestServerMutatorWiringC6:
-    """C6: mcp_server/server.py wires WorkflowStateMutator."""
+    """C6: mcp_server/bootstrap.py wires WorkflowStateMutator."""
 
     def test_server_imports_workflow_state_mutator(self) -> None:
-        """server.py imports or references WorkflowStateMutator (source check)."""
-        import mcp_server.server as _srv  # noqa: PLC0415
+        """bootstrap.py imports or references WorkflowStateMutator (source check)."""
+        import mcp_server.bootstrap as _boot  # noqa: PLC0415
 
-        source = inspect.getsource(_srv)
+        source = inspect.getsource(_boot)
         assert "WorkflowStateMutator" in source, (
-            "mcp_server/server.py must wire WorkflowStateMutator into PhaseStateEngine"
+            "mcp_server/bootstrap.py must wire WorkflowStateMutator into PhaseStateEngine"
         )

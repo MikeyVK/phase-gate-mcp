@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.server import MCPServer
+from tests.mcp_server.test_support import make_test_server
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -79,9 +80,9 @@ class TestValidateToolArgumentsFailurePath:
     @pytest.fixture
     def server(self) -> MCPServer:
         """Minimal MCPServer instance for testing _validate_tool_arguments."""
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
-            return MCPServer()
+            return make_test_server()
 
     def test_returns_tool_result_on_validation_error(self, server: MCPServer) -> None:
         """

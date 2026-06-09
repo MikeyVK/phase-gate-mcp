@@ -222,7 +222,8 @@ class TestServerBootstrapperToolsAndResources:
         tools = bootstrapper._build_tools(mock_configs, mock_managers)  # pyright: ignore[reportPrivateUsage]
         assert isinstance(tools, list)
         tool_names = {t.name for t in tools}
-        assert "create_issue" not in tool_names
+        assert "create_issue" in tool_names
+        assert "get_pr" not in tool_names
         assert "git_status" in tool_names
 
     def test_build_tools_with_github_token(self) -> None:

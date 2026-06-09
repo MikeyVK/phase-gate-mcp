@@ -12,6 +12,7 @@ from mcp.types import EmbeddedResource
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.server import MCPServer
+from tests.mcp_server.test_support import make_test_server
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -52,7 +53,7 @@ class TestStrictInputValidationResponse:
     @pytest_asyncio.fixture
     async def server(self) -> MCPServer:
         """MCPServer with MockIntegrationTool registered."""
-        s = MCPServer()
+        s = make_test_server()
         s.tools.append(MockIntegrationTool())
         return s
 
