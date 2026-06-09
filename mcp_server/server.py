@@ -147,6 +147,8 @@ class MCPServer:
         settings: Settings | None = None,
         configs: ConfigLayer | None = None,
         managers: ManagerGraph | None = None,
+        tools: list[BaseTool] | None = None,
+        resources: list[Resource] | None = None,
     ) -> None:
         """Initialize the MCP server with resources and tools."""
         settings = settings or Settings.from_env()
@@ -357,200 +359,206 @@ class MCPServer:
         )
         self.server = Server(server_name)
 
-        # Core resources (always available)
-        self.resources = [
-            StandardsResource(),
-            StatusResource(),
-        ]
+        if resources is not None:
+            self.resources = resources
+        else:
+            # Core resources (always available)
+            self.resources = [
+                StandardsResource(),
+                StatusResource(),
+            ]
+            if settings.github.token:
+                self.resources.append(GitHubIssuesResource())
 
-        # Core tools (always available)
-        self.tools = [
-            # Git tools
-            CreateBranchTool(manager=self.git_manager),
-            GitStatusTool(manager=self.git_manager),
-            GitCommitTool(
-                manager=self.git_manager,
-                phase_guard=build_phase_guard(
-                    state_reader=_branch_validated_reader,
+        if tools is not None:
+            self.tools = tools
+        else:
+            # Core tools (always available)
+            self.tools = [
+                # Git tools
+                CreateBranchTool(manager=self.git_manager),
+                GitStatusTool(manager=self.git_manager),
+                GitCommitTool(
+                    manager=self.git_manager,
+                    phase_guard=build_phase_guard(
+                        state_reader=_branch_validated_reader,
+                        phase_contract_resolver=self.phase_contract_resolver,
+                    ),
+                    commit_type_resolver=build_commit_type_resolver(
+                        self.phase_state_engine,
+                        self.phase_contract_resolver,
+                    ),
+                    state_engine=self.phase_state_engine,
                     phase_contract_resolver=self.phase_contract_resolver,
                 ),
-                commit_type_resolver=build_commit_type_resolver(
-                    self.phase_state_engine,
-                    self.phase_contract_resolver,
+                GitCheckoutTool(
+                    manager=self.git_manager,
+                    state_engine=self.phase_state_engine,
+                    context_loaded_writer=self._context_loaded_cache,
                 ),
-                state_engine=self.phase_state_engine,
-                phase_contract_resolver=self.phase_contract_resolver,
-            ),
-            GitCheckoutTool(
-                manager=self.git_manager,
-                state_engine=self.phase_state_engine,
-                context_loaded_writer=self._context_loaded_cache,
-            ),
-            GitFetchTool(manager=self.git_manager),
-            GitPullTool(
-                manager=self.git_manager,
-                state_engine=self.phase_state_engine,
-                context_loaded_writer=self._context_loaded_cache,
-            ),
-            GitPushTool(manager=self.git_manager),
-            GitMergeTool(manager=self.git_manager),
-            GitDeleteBranchTool(manager=self.git_manager),
-            GitStashTool(manager=self.git_manager),
-            GitRestoreTool(manager=self.git_manager),
-            GitListBranchesTool(manager=self.git_manager),
-            GitDiffTool(manager=self.git_manager),
-            GetParentBranchTool(manager=self.git_manager, state_engine=self.phase_state_engine),
-            CheckMergeTool(manager=self.git_manager),
-            # Quality tools
-            RunQualityGatesTool(manager=self.qa_manager),
-            SafeEditTool(),
-            TemplateValidationTool(),
-            # Development tools
-            HealthCheckTool(),
-            RestartServerTool(server_root=server_root),
-            RunTestsTool(runner=PytestRunner(), settings=settings),
-            # Project tools (Phase 0.5)
-            InitializeProjectTool(
-                workspace_root=Path(settings.server.workspace_root),
-                manager=self.project_manager,
-                git_manager=self.git_manager,
-                state_engine=self.phase_state_engine,
-                contracts_config=contracts_config,
-            ),
-            GetProjectPlanTool(manager=self.project_manager),
-            SavePlanningDeliverablesTool(manager=self.project_manager),
-            UpdatePlanningDeliverablesTool(manager=self.project_manager),
-            # Phase tools (Phase B)
-            TransitionPhaseTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=self.project_manager,
-                state_engine=self.phase_state_engine,
-                server_root=server_root,
-                workphases_config=workphases_config,
-            ),
-            ForcePhaseTransitionTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=self.project_manager,
-                state_engine=self.phase_state_engine,
-                server_root=server_root,
-                workphases_config=workphases_config,
-            ),
-            # TDD Cycle tools (Issue #146)
-            TransitionCycleTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=self.project_manager,
-                state_engine=self.phase_state_engine,
-                git_manager=self.git_manager,
-                gate_runner=self.workflow_gate_runner,
-                server_root=server_root,
-            ),
-            ForceCycleTransitionTool(
-                workspace_root=Path(settings.server.workspace_root),
-                project_manager=self.project_manager,
-                state_engine=self.phase_state_engine,
-                git_manager=self.git_manager,
-                gate_runner=self.workflow_gate_runner,
-                server_root=server_root,
-            ),
-            # Scaffold tools (unified artifact scaffolding)
-            ScaffoldArtifactTool(manager=self.artifact_manager),
-            ScaffoldSchemaTool(manager=self.artifact_manager),
-            # Discovery tools
-            SearchDocumentationTool(settings=settings),
-            GetWorkContextTool(
-                settings=settings,
-                git_manager=self.git_manager,
-                project_manager=self.project_manager,
-                state_engine=self.phase_state_engine,
-                github_manager=self.github_manager,
-                workphases_config=workphases_config,
-                workflow_status_resolver=self.workflow_status_resolver,
-                contracts_config=contracts_config,
-                context_loaded_writer=self._context_loaded_cache,
-            ),
-        ]
+                GitFetchTool(manager=self.git_manager),
+                GitPullTool(
+                    manager=self.git_manager,
+                    state_engine=self.phase_state_engine,
+                    context_loaded_writer=self._context_loaded_cache,
+                ),
+                GitPushTool(manager=self.git_manager),
+                GitMergeTool(manager=self.git_manager),
+                GitDeleteBranchTool(manager=self.git_manager),
+                GitStashTool(manager=self.git_manager),
+                GitRestoreTool(manager=self.git_manager),
+                GitListBranchesTool(manager=self.git_manager),
+                GitDiffTool(manager=self.git_manager),
+                GetParentBranchTool(manager=self.git_manager, state_engine=self.phase_state_engine),
+                CheckMergeTool(manager=self.git_manager),
+                # Quality tools
+                RunQualityGatesTool(manager=self.qa_manager),
+                SafeEditTool(),
+                TemplateValidationTool(),
+                # Development tools
+                HealthCheckTool(),
+                RestartServerTool(server_root=server_root),
+                RunTestsTool(runner=PytestRunner(), settings=settings),
+                # Project tools (Phase 0.5)
+                InitializeProjectTool(
+                    workspace_root=Path(settings.server.workspace_root),
+                    manager=self.project_manager,
+                    git_manager=self.git_manager,
+                    state_engine=self.phase_state_engine,
+                    contracts_config=contracts_config,
+                ),
+                GetProjectPlanTool(manager=self.project_manager),
+                SavePlanningDeliverablesTool(manager=self.project_manager),
+                UpdatePlanningDeliverablesTool(manager=self.project_manager),
+                # Phase tools (Phase B)
+                TransitionPhaseTool(
+                    workspace_root=Path(settings.server.workspace_root),
+                    project_manager=self.project_manager,
+                    state_engine=self.phase_state_engine,
+                    server_root=server_root,
+                    workphases_config=workphases_config,
+                ),
+                ForcePhaseTransitionTool(
+                    workspace_root=Path(settings.server.workspace_root),
+                    project_manager=self.project_manager,
+                    state_engine=self.phase_state_engine,
+                    server_root=server_root,
+                    workphases_config=workphases_config,
+                ),
+                # TDD Cycle tools (Issue #146)
+                TransitionCycleTool(
+                    workspace_root=Path(settings.server.workspace_root),
+                    project_manager=self.project_manager,
+                    state_engine=self.phase_state_engine,
+                    git_manager=self.git_manager,
+                    gate_runner=self.workflow_gate_runner,
+                    server_root=server_root,
+                ),
+                ForceCycleTransitionTool(
+                    workspace_root=Path(settings.server.workspace_root),
+                    project_manager=self.project_manager,
+                    state_engine=self.phase_state_engine,
+                    git_manager=self.git_manager,
+                    gate_runner=self.workflow_gate_runner,
+                    server_root=server_root,
+                ),
+                # Scaffold tools (unified artifact scaffolding)
+                ScaffoldArtifactTool(manager=self.artifact_manager),
+                ScaffoldSchemaTool(manager=self.artifact_manager),
+                # Discovery tools
+                SearchDocumentationTool(settings=settings),
+                GetWorkContextTool(
+                    settings=settings,
+                    git_manager=self.git_manager,
+                    project_manager=self.project_manager,
+                    state_engine=self.phase_state_engine,
+                    github_manager=self.github_manager,
+                    workphases_config=workphases_config,
+                    workflow_status_resolver=self.workflow_status_resolver,
+                    contracts_config=contracts_config,
+                    context_loaded_writer=self._context_loaded_cache,
+                ),
+            ]
 
-        # GitHub-dependent resources and additional tools (only if token is configured)
-        github_token = settings.github.token
-        if github_token:
-            self.resources.append(GitHubIssuesResource())
-            self.tools.extend(
-                [
-                    # GitHub Issue tools
-                    CreateIssueTool(
-                        manager=self.github_manager,
-                        issue_config=issue_config,
-                        milestone_config=milestone_config,
-                        contracts_config=contracts_config,
-                        label_config=label_config,
-                        scope_config=scope_config,
-                        git_config=git_config,
-                    ),
-                    ListIssuesTool(manager=self.github_manager),
-                    GetIssueTool(manager=self.github_manager),
-                    CloseIssueTool(manager=self.github_manager),
-                    UpdateIssueTool(manager=self.github_manager),
-                    # PR and Label tools (require token at init time)
-                    ListPRsTool(manager=self.github_manager, git_config=git_config),
-                    GetPRTool(manager=self.github_manager),
-                    MergePRTool(
-                        manager=self.github_manager,
-                        git_config=git_config,
-                        pr_status_writer=self.pr_status_cache,
-                    ),
-                    SubmitPRTool(
-                        git_manager=self.git_manager,
-                        github_manager=self.github_manager,
-                        pr_status_writer=self.pr_status_cache,
-                        merge_readiness_context=_merge_readiness_context,
-                        branch_parent_reader=BranchStateParentReader(
-                            state_reader=self._state_repository,
+            # GitHub-dependent resources and additional tools (only if token is configured)
+            github_token = settings.github.token
+            if github_token:
+                self.tools.extend(
+                    [
+                        # GitHub Issue tools
+                        CreateIssueTool(
+                            manager=self.github_manager,
+                            issue_config=issue_config,
+                            milestone_config=milestone_config,
+                            contracts_config=contracts_config,
+                            label_config=label_config,
+                            scope_config=scope_config,
                             git_config=git_config,
                         ),
-                    ),
-                    AddLabelsTool(
-                        manager=self.github_manager,
-                        label_config=label_config,
-                        workphases_config=workphases_config,
-                    ),
-                    ListLabelsTool(manager=self.github_manager, label_config=label_config),
-                    CreateLabelTool(
-                        manager=self.github_manager,
-                        label_config=label_config,
-                        workphases_config=workphases_config,
-                    ),
-                    DeleteLabelTool(manager=self.github_manager, label_config=label_config),
-                    RemoveLabelsTool(manager=self.github_manager, label_config=label_config),
-                    ListMilestonesTool(),
-                    CreateMilestoneTool(),
-                    CloseMilestoneTool(),
-                ]
-            )
-            logger.info("GitHub integration enabled")
-        else:
-            # Register issue tools without token so schemas are available; execution will error.
-            self.tools.extend(
-                [
-                    CreateIssueTool(
-                        manager=self.github_manager,
-                        issue_config=issue_config,
-                        milestone_config=milestone_config,
-                        contracts_config=contracts_config,
-                        label_config=label_config,
-                        scope_config=scope_config,
-                        git_config=git_config,
-                    ),
-                    ListIssuesTool(manager=self.github_manager),
-                    GetIssueTool(manager=self.github_manager),
-                    CloseIssueTool(manager=self.github_manager),
-                    UpdateIssueTool(manager=self.github_manager),
-                ]
-            )
-            logger.info(
-                "GitHub token not configured - GitHub issue tools available but will "
-                "return error on use. Set GITHUB_TOKEN to enable full functionality."
-            )
-
+                        ListIssuesTool(manager=self.github_manager),
+                        GetIssueTool(manager=self.github_manager),
+                        CloseIssueTool(manager=self.github_manager),
+                        UpdateIssueTool(manager=self.github_manager),
+                        # PR and Label tools (require token at init time)
+                        ListPRsTool(manager=self.github_manager, git_config=git_config),
+                        GetPRTool(manager=self.github_manager),
+                        MergePRTool(
+                            manager=self.github_manager,
+                            git_config=git_config,
+                            pr_status_writer=self.pr_status_cache,
+                        ),
+                        SubmitPRTool(
+                            git_manager=self.git_manager,
+                            github_manager=self.github_manager,
+                            pr_status_writer=self.pr_status_cache,
+                            merge_readiness_context=_merge_readiness_context,
+                            branch_parent_reader=BranchStateParentReader(
+                                state_reader=self._state_repository,
+                                git_config=git_config,
+                            ),
+                        ),
+                        AddLabelsTool(
+                            manager=self.github_manager,
+                            label_config=label_config,
+                            workphases_config=workphases_config,
+                        ),
+                        ListLabelsTool(manager=self.github_manager, label_config=label_config),
+                        CreateLabelTool(
+                            manager=self.github_manager,
+                            label_config=label_config,
+                            workphases_config=workphases_config,
+                        ),
+                        DeleteLabelTool(manager=self.github_manager, label_config=label_config),
+                        RemoveLabelsTool(manager=self.github_manager, label_config=label_config),
+                        ListMilestonesTool(),
+                        CreateMilestoneTool(),
+                        CloseMilestoneTool(),
+                    ]
+                )
+                logger.info("GitHub integration enabled")
+            else:
+                # Register issue tools without token so schemas are available; execution will error.
+                self.tools.extend(
+                    [
+                        CreateIssueTool(
+                            manager=self.github_manager,
+                            issue_config=issue_config,
+                            milestone_config=milestone_config,
+                            contracts_config=contracts_config,
+                            label_config=label_config,
+                            scope_config=scope_config,
+                            git_config=git_config,
+                        ),
+                        ListIssuesTool(manager=self.github_manager),
+                        GetIssueTool(manager=self.github_manager),
+                        CloseIssueTool(manager=self.github_manager),
+                        UpdateIssueTool(manager=self.github_manager),
+                    ]
+                )
+                logger.info(
+                    "GitHub token not configured - GitHub issue tools available but will "
+                    "return error on use. Set GITHUB_TOKEN to enable full functionality."
+                )
         self.setup_handlers()
 
     def _validate_tool_arguments(

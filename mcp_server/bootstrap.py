@@ -27,8 +27,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from mcp.types import Resource
+
 if TYPE_CHECKING:
     from mcp_server.server import MCPServer
+
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
@@ -52,13 +55,19 @@ from mcp_server.core.commit_phase_detector import CommitPhaseDetector
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.artifact_manager import ArtifactManager
+from mcp_server.managers.branch_parent_reader import BranchStateParentReader
 from mcp_server.managers.deliverable_checker import DeliverableChecker
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
-from mcp_server.managers.phase_contract_resolver import PhaseConfigContext, PhaseContractResolver
+from mcp_server.managers.phase_contract_resolver import (
+    MergeReadinessContext,
+    PhaseConfigContext,
+    PhaseContractResolver,
+)
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.managers.pytest_runner import PytestRunner
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
 from mcp_server.managers.state_reconstructor import StateReconstructor
@@ -66,9 +75,68 @@ from mcp_server.managers.state_repository import BranchValidatedStateReader, Fil
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.resources.github import GitHubIssuesResource
+from mcp_server.resources.standards import StandardsResource
+from mcp_server.resources.status import StatusResource
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
+from mcp_server.tools.admin_tools import RestartServerTool
+from mcp_server.tools.base import BaseTool
+from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
+from mcp_server.tools.discovery_tools import GetWorkContextTool, SearchDocumentationTool
+from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
+from mcp_server.tools.git_fetch_tool import GitFetchTool
+from mcp_server.tools.git_pull_tool import GitPullTool
+from mcp_server.tools.git_tools import (
+    CheckMergeTool,
+    CreateBranchTool,
+    GetParentBranchTool,
+    GitCheckoutTool,
+    GitCommitTool,
+    GitDeleteBranchTool,
+    GitMergeTool,
+    GitPushTool,
+    GitRestoreTool,
+    GitStashTool,
+    GitStatusTool,
+    build_commit_type_resolver,
+    build_phase_guard,
+)
+from mcp_server.tools.health_tools import HealthCheckTool
+from mcp_server.tools.issue_tools import (
+    CloseIssueTool,
+    CreateIssueTool,
+    GetIssueTool,
+    ListIssuesTool,
+    UpdateIssueTool,
+)
+from mcp_server.tools.label_tools import (
+    AddLabelsTool,
+    CreateLabelTool,
+    DeleteLabelTool,
+    ListLabelsTool,
+    RemoveLabelsTool,
+)
+from mcp_server.tools.milestone_tools import (
+    CloseMilestoneTool,
+    CreateMilestoneTool,
+    ListMilestonesTool,
+)
+from mcp_server.tools.phase_tools import ForcePhaseTransitionTool, TransitionPhaseTool
+from mcp_server.tools.pr_tools import GetPRTool, ListPRsTool, MergePRTool, SubmitPRTool
+from mcp_server.tools.project_tools import (
+    GetProjectPlanTool,
+    InitializeProjectTool,
+    SavePlanningDeliverablesTool,
+    UpdatePlanningDeliverablesTool,
+)
+from mcp_server.tools.quality_tools import RunQualityGatesTool
+from mcp_server.tools.safe_edit_tool import SafeEditTool
+from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
+from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
+from mcp_server.tools.template_validation_tool import TemplateValidationTool
+from mcp_server.tools.test_tools import RunTestsTool
 
 logger = get_logger("bootstrap")
 lifecycle_logger = get_logger("server_lifecycle")
@@ -154,6 +222,10 @@ class ServerBootstrapper:
         # Build ManagerGraph
         managers = self._build_manager_graph(configs, template_registry)
 
+        # Build Tools and Resources
+        tools = self._build_tools(configs, managers)
+        resources = self._build_resources(configs, managers)
+
         # Import dynamically to avoid circular dependencies
         from mcp_server.server import MCPServer  # noqa: PLC0415
 
@@ -161,6 +233,8 @@ class ServerBootstrapper:
             settings=settings,
             configs=configs,
             managers=managers,
+            tools=tools,
+            resources=resources,
         )
 
     def _build_config_layer(self) -> ConfigLayer:
@@ -337,3 +411,200 @@ class ServerBootstrapper:
             pr_status_cache=pr_status_cache,
             enforcement_runner=enforcement_runner,
         )
+
+    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[BaseTool]:
+        """Compose the list of available tools."""
+        settings = self._settings
+
+        _branch_validated_reader = BranchValidatedStateReader(inner=managers.state_repository)
+
+        tools: list[BaseTool] = [
+            # Git tools
+            CreateBranchTool(manager=managers.git_manager),
+            GitStatusTool(manager=managers.git_manager),
+            GitCommitTool(
+                manager=managers.git_manager,
+                phase_guard=build_phase_guard(
+                    state_reader=_branch_validated_reader,
+                    phase_contract_resolver=managers.phase_contract_resolver,
+                ),
+                commit_type_resolver=build_commit_type_resolver(
+                    managers.phase_state_engine,
+                    managers.phase_contract_resolver,
+                ),
+                state_engine=managers.phase_state_engine,
+                phase_contract_resolver=managers.phase_contract_resolver,
+            ),
+            GitCheckoutTool(
+                manager=managers.git_manager,
+                state_engine=managers.phase_state_engine,
+                context_loaded_writer=managers.context_loaded_cache,
+            ),
+            GitFetchTool(manager=managers.git_manager),
+            GitPullTool(
+                manager=managers.git_manager,
+                state_engine=managers.phase_state_engine,
+                context_loaded_writer=managers.context_loaded_cache,
+            ),
+            GitPushTool(manager=managers.git_manager),
+            GitMergeTool(manager=managers.git_manager),
+            GitDeleteBranchTool(manager=managers.git_manager),
+            GitStashTool(manager=managers.git_manager),
+            GitRestoreTool(manager=managers.git_manager),
+            GitListBranchesTool(manager=managers.git_manager),
+            GitDiffTool(manager=managers.git_manager),
+            GetParentBranchTool(
+                manager=managers.git_manager, state_engine=managers.phase_state_engine
+            ),
+            CheckMergeTool(manager=managers.git_manager),
+            # Quality tools
+            RunQualityGatesTool(manager=managers.qa_manager),
+            SafeEditTool(),
+            TemplateValidationTool(),
+            # Development tools
+            HealthCheckTool(),
+            RestartServerTool(
+                server_root=Path(settings.server.workspace_root) / settings.server.server_root_dir
+            ),
+            RunTestsTool(runner=PytestRunner(), settings=settings),
+            # Project tools (Phase 0.5)
+            InitializeProjectTool(
+                workspace_root=Path(settings.server.workspace_root),
+                manager=managers.project_manager,
+                git_manager=managers.git_manager,
+                state_engine=managers.phase_state_engine,
+                contracts_config=configs.contracts_config,
+            ),
+            GetProjectPlanTool(manager=managers.project_manager),
+            SavePlanningDeliverablesTool(manager=managers.project_manager),
+            UpdatePlanningDeliverablesTool(manager=managers.project_manager),
+            # Phase tools (Phase B)
+            TransitionPhaseTool(
+                workspace_root=Path(settings.server.workspace_root),
+                project_manager=managers.project_manager,
+                state_engine=managers.phase_state_engine,
+                server_root=Path(settings.server.workspace_root) / settings.server.server_root_dir,
+                workphases_config=configs.workphases_config,
+            ),
+            ForcePhaseTransitionTool(
+                workspace_root=Path(settings.server.workspace_root),
+                project_manager=managers.project_manager,
+                state_engine=managers.phase_state_engine,
+                server_root=Path(settings.server.workspace_root) / settings.server.server_root_dir,
+                workphases_config=configs.workphases_config,
+            ),
+            # TDD Cycle tools (Issue #146)
+            TransitionCycleTool(
+                workspace_root=Path(settings.server.workspace_root),
+                project_manager=managers.project_manager,
+                state_engine=managers.phase_state_engine,
+                git_manager=managers.git_manager,
+                gate_runner=managers.workflow_gate_runner,
+                server_root=Path(settings.server.workspace_root) / settings.server.server_root_dir,
+            ),
+            ForceCycleTransitionTool(
+                workspace_root=Path(settings.server.workspace_root),
+                project_manager=managers.project_manager,
+                state_engine=managers.phase_state_engine,
+                git_manager=managers.git_manager,
+                gate_runner=managers.workflow_gate_runner,
+                server_root=Path(settings.server.workspace_root) / settings.server.server_root_dir,
+            ),
+            # Scaffold tools (unified artifact scaffolding)
+            ScaffoldArtifactTool(manager=managers.artifact_manager),
+            ScaffoldSchemaTool(manager=managers.artifact_manager),
+            # Discovery tools
+            SearchDocumentationTool(settings=settings),
+            GetWorkContextTool(
+                settings=settings,
+                git_manager=managers.git_manager,
+                project_manager=managers.project_manager,
+                state_engine=managers.phase_state_engine,
+                github_manager=managers.github_manager,
+                workphases_config=configs.workphases_config,
+                workflow_status_resolver=managers.workflow_status_resolver,
+                contracts_config=configs.contracts_config,
+                context_loaded_writer=managers.context_loaded_cache,
+            ),
+        ]
+
+        if settings.github.token:
+            _merge_readiness_context = MergeReadinessContext(
+                terminal_phase=configs.workphases_config.get_terminal_phase(),
+                pr_allowed_phase=configs.contracts_config.get_pr_allowed_phase(),
+                branch_local_artifacts=tuple(
+                    configs.contracts_config.merge_policy.branch_local_artifacts
+                ),
+            )
+            tools.extend(
+                [
+                    # GitHub Issue tools
+                    CreateIssueTool(
+                        manager=managers.github_manager,
+                        issue_config=configs.issue_config,
+                        milestone_config=configs.milestone_config,
+                        contracts_config=configs.contracts_config,
+                        label_config=configs.label_config,
+                        scope_config=configs.scope_config,
+                        git_config=configs.git_config,
+                    ),
+                    ListIssuesTool(manager=managers.github_manager),
+                    GetIssueTool(manager=managers.github_manager),
+                    CloseIssueTool(manager=managers.github_manager),
+                    UpdateIssueTool(manager=managers.github_manager),
+                    # PR and Label tools (require token at init time)
+                    ListPRsTool(manager=managers.github_manager, git_config=configs.git_config),
+                    GetPRTool(manager=managers.github_manager),
+                    MergePRTool(
+                        manager=managers.github_manager,
+                        git_config=configs.git_config,
+                        pr_status_writer=managers.pr_status_cache,
+                    ),
+                    SubmitPRTool(
+                        git_manager=managers.git_manager,
+                        github_manager=managers.github_manager,
+                        pr_status_writer=managers.pr_status_cache,
+                        merge_readiness_context=_merge_readiness_context,
+                        branch_parent_reader=BranchStateParentReader(
+                            state_reader=managers.state_repository,
+                            git_config=configs.git_config,
+                        ),
+                    ),
+                    AddLabelsTool(
+                        manager=managers.github_manager,
+                        label_config=configs.label_config,
+                        workphases_config=configs.workphases_config,
+                    ),
+                    ListLabelsTool(
+                        manager=managers.github_manager, label_config=configs.label_config
+                    ),
+                    CreateLabelTool(
+                        manager=managers.github_manager,
+                        label_config=configs.label_config,
+                        workphases_config=configs.workphases_config,
+                    ),
+                    DeleteLabelTool(
+                        manager=managers.github_manager, label_config=configs.label_config
+                    ),
+                    RemoveLabelsTool(
+                        manager=managers.github_manager, label_config=configs.label_config
+                    ),
+                    ListMilestonesTool(manager=managers.github_manager),
+                    CreateMilestoneTool(manager=managers.github_manager),
+                    CloseMilestoneTool(manager=managers.github_manager),
+                ]
+            )
+
+        return tools
+
+    def _build_resources(self, configs: ConfigLayer, managers: ManagerGraph) -> list[Resource]:
+        """Compose the list of available resources."""
+        resources = [
+            StandardsResource(),
+            StatusResource(),
+        ]
+
+        if self._settings.github.token:
+            resources.append(GitHubIssuesResource())
+
+        return resources
