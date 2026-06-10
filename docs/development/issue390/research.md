@@ -1,9 +1,9 @@
 <!-- docs/development/issue390/research.md -->
-<!-- template=research version=8b7bb3ab created=2026-06-10T18:42Z updated=2026-06-10T19:18Z -->
+<!-- template=research version=8b7bb3ab created=2026-06-10T18:42Z updated=2026-06-10T19:24Z -->
 # Research — Issue #390: Improve validation logic of save/update deliverables tools
 
 **Status:** DRAFT  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-06-10
 
 ---
@@ -19,14 +19,15 @@ The `save_planning_deliverables` and `update_planning_deliverables` tools accept
 ## Scope
 
 ### In Scope
-* **Declarative Pydantic validation**: Define a deep Pydantic validation schema for `planning_deliverables` at the tool boundary.
-* **Dynamic cycle-based workflow validation**: Inspect the active workflow configuration via the injected `ContractsConfig` to determine whether `tdd_cycles` are required, eliminating hardcoding for non-cycle-based workflows.
-* **Refactoring text-json tools**: Refactor `get_project_plan`, `get_issue`, `get_pr`, and `initialize_project` to return structured JSON payloads using `ToolResult.json_data()`.
-* **Server-level `structuredContent` mapping**: Implement the server-level extraction of `type="json"` blocks to populate the MCP `structuredContent` field (from Issue #301).
-* **Clean Break migration**: Migrate all tests that verify old text-based deliverables or JSON outputs to the new dictionary-based deliverables and structured JSON format.
+* Analysis of declarative validation options for `planning_deliverables` structures.
+* Analysis of workflow configuration check mechanisms to conditionally enforce TDD cycle planning.
+* Analysis of JSON-returning tools and truncation behaviors in the client chat UI.
+* Analysis of double-serialization behaviors and the MCP `structuredContent` response field.
+* Identification of the complete blast radius in code and test suites.
 
 ### Out of Scope
-* None (the previously deferred Issue #301 scope is now consolidated into this issue).
+* Design of the concrete Pydantic schemas or base classes.
+* Planning of cycles, tasks, or execution steps.
 
 ---
 
@@ -34,17 +35,12 @@ The `save_planning_deliverables` and `update_planning_deliverables` tools accept
 
 ### Finding 1: Observed Failure Behavior
 The deliverables tools accept any `dict` at the boundary without verifying deep fields:
-* `tdd_cycles.cycles` is assumed to be a list of dicts. If it is passed as a string or contains string values, `ProjectManager` crashes with `TypeError: string indices must be integers, not 'str'`.
+* If `tdd_cycles.cycles` is passed as a string or contains string values, `ProjectManager` crashes with `TypeError: string indices must be integers, not 'str'`.
 * Similarly, `validates` specs are only validated at runtime during tool execution, and malformed structures can slip through or crash.
 * Returning raw traceback errors to the client lacks transparency and makes debug cycles fragile.
 
 ### Finding 2: Hardcoded TDD Cycles in Workflows
-`ProjectManager.save_planning_deliverables` currently asserts:
-```python
-if "tdd_cycles" not in planning_deliverables:
-    raise ValueError("planning_deliverables must contain 'tdd_cycles' key")
-```
-This fails for non-cycle-based workflows (such as `docs`) which have no `implementation` phase with `cycle_based: true` in `contracts.yaml`. 
+`ProjectManager.save_planning_deliverables` currently asserts that the `tdd_cycles` key must be present in the deliverables dictionary. This fails for non-cycle-based workflows (such as `docs`) which have no `implementation` phase with `cycle_based: true` in `contracts.yaml`.
 
 ### Finding 3: Complete Tool Inventory
 Out of 50 registered tools in `bootstrap.py`, only **7 tools** produce structured JSON payloads. These are:
@@ -68,58 +64,54 @@ As investigated in the deferred Issue #301:
 Adhering to `ARCHITECTURE_PRINCIPLES.md` §12:
 * Classes must never load configuration files directly from the filesystem inside methods.
 * All configuration must be loaded at the composition root and injected via constructor injection.
-* `ProjectManager` already receives `ContractsConfig` via constructor injection, which will be used to check if the workflow requires TDD cycles.
+* `ProjectManager` already receives `ContractsConfig` via constructor injection, which can be used to check if the workflow requires TDD cycles.
 
 ---
 
-## Regression Risks & Mitigation
+## Strategy Options & Policy Analysis
 
-### Risk: Step-by-step Signature Breakage
-If we modify the signature of `ToolResult.json_data` to require a `text` parameter immediately:
-* Existing tools like `ScaffoldSchemaTool` and several unit tests will fail compilation or crash during execution because they do not supply the `text` parameter.
-* The server would crash mid-refactoring, preventing step-by-step TDD verification.
+### Topic 1: Deliverables Validation Strategy
+* **Option 1: Complete Pydantic deep validation at tool boundary (BLOCK policy)**. 
+  * *Pros*: Fail-fast, clean schema discovery, elegant error translation.
+  * *Cons*: Requires writing and maintaining Pydantic models for deliverables.
+* **Option 2: Preserve unstructured dict[str, Any] and add custom dictionary key checks inside tools**.
+  * *Pros*: Simple, no new models.
+  * *Cons*: Bypasses declarative JSON schema discovery, error formatting is ad-hoc, prone to missed edge cases.
+* **Recommendation**: Option 1. It provides a first-time-right declarative contract for agents and catches all malformed inputs at the boundary.
 
-### Mitigation: Backward Compatible Signature
-To mitigate this risk:
-* We will keep the `text` parameter optional in `ToolResult.json_data` signature initially (`text: str | None = None`).
-* If `text` is omitted, the method falls back to serializing the JSON payload as the text summary, preserving backward compatibility.
-* Once all tools and tests have been migrated, we can make the `text` parameter strictly required.
+### Topic 2: Workflow Cycle Validation
+* **Option 1: Keep hardcoded tdd_cycles check in ProjectManager**.
+  * *Pros*: Zero code change in validation logic.
+  * *Cons*: Breaks documentation-only changes or non-cycle-based workflows.
+* **Option 2: Read contracts.yaml dynamically to check if workflow is cycle-based**.
+  * *Pros*: Correctly models workflow requirements.
+  * *Cons*: Slightly more complex check in `ProjectManager`.
+* **Recommendation**: Option 2. It adheres to Config-First principles.
 
----
-
-## Blast Radius
-
-### Production Code
-* [project_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/project_tools.py):
-  - Update `SavePlanningDeliverablesInput` and `UpdatePlanningDeliverablesInput` to use the new `PlanningDeliverablesModel` and `UpdatePlanningDeliverablesModel`.
-  - Refactor `GetProjectPlanTool` and `InitializeProjectTool` to return `ToolResult.json_data()`.
-* [issue_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/issue_tools.py):
-  - Refactor `GetIssueTool` to return `ToolResult.json_data()`.
-* [pr_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/pr_tools.py):
-  - Refactor `GetPRTool` to return `ToolResult.json_data()`.
-* [project_manager.py](file:///c:/temp/pgmcp/mcp_server/managers/project_manager.py):
-  - Update `save_planning_deliverables` and `update_planning_deliverables` signature and validation.
-  - Determine `cycle_based` requirement dynamically from the injected `ContractsConfig`.
-* [server.py](file:///c:/temp/pgmcp/mcp_server/server.py):
-  - Update `_convert_tool_result_to_mcp_result` to extract `type="json"` blocks and populate the `structuredContent` field.
-
-### Test Code
-* [test_project_tools.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/tools/test_project_tools.py): Update assertions verifying `get_project_plan` and `initialize_project` to check `content[0]["json"]` instead of `content[0]["text"]`, and update deliverables tool tests to align with the new Pydantic schema validation.
-* [test_issue_tools.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/tools/test_issue_tools.py): Update assertions verifying `get_issue` to check `content[0]["json"]` instead of `content[0]["text"]`.
-* [test_pr_tools.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/tools/test_pr_tools.py): Update assertions verifying `get_pr` to check `content[0]["json"]` instead of `content[0]["text"]`.
-* [test_project_manager.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/managers/test_project_manager.py): Update unit tests verifying deliverables validation in `ProjectManager`.
-* [test_workflow_cycle_e2e.py](file:///c:/temp/pgmcp/tests/mcp_server/integration/test_workflow_cycle_e2e.py): Align integration tests with JSON outputs and deliverables validation.
+### Topic 3: Structured Content Transport
+* **Option 1: Consolidate Issue #301 structuredContent implementation now**.
+  * *Pros*: Resolves double serialization and truncation globally for all tools, cleaner architecture.
+  * *Cons*: Slightly larger upfront design effort, breaks some test assertions that need updating.
+* **Option 2: Keep Issue #301 deferred and stick to ToolResult.json_data() with double-serialization fallback**.
+  * *Pros*: Smaller scope for #390.
+  * *Cons*: Continues to produce duplicate JSON blocks in response, does not fully resolve the user's truncation issue for the migrated tools.
+* **Recommendation**: Option 1. It provides a complete, clean end-to-end fix for JSON tool outputs.
 
 ---
 
 ## Approved Strategy
 
-### Boundary / consumer scope
-`planning_deliverables` format validation and JSON tool output formats.
+### Boundary 1: Deliverables Validation Schema
+* **Boundary**: Deliverables JSON file format and tool validation inputs.
+* **Selected Strategy**: Clean Break.
+* **Rationale**: Storing unstructured strings in `deliverables.json` was a legacy workaround. Enforcing a strict schema prevents runtime crashes. All tests will be migrated to the new dictionary-based deliverables format.
+* **Constraints**: Validation must check workflow configuration to only enforce `tdd_cycles` if the workflow contains cycle-based phases.
 
-### Selected strategy
-* **Clean Break + Issue #301 Consolidation**: We consolidate Issue #301 into this issue. We will refactor the server to natively support `structuredContent` and prevent double serialization.
-* **Migration Strategy**: We use a backward-compatible signature for `ToolResult.json_data` to ensure step-by-step TDD migration is safe and does not break the server mid-run. All tools will eventually be migrated to use `StructuredTool` and return structured JSON and summaries.
+### Boundary 2: Tool Output Serialization and Transport
+* **Boundary**: Server-level MCP result serialization and tool JSON responses.
+* **Selected Strategy**: Clean Break.
+* **Rationale**: Eliminates truncation to `output.txt` and double-serialization cleanly at the server transport layer by extracting JSON and populating `structuredContent`. All affected tests will be updated to verify the new format.
+* **Constraints**: Maintain backward compatibility of `ToolResult.json_data` signature during the migration to allow step-by-step TDD cycle verification.
 
 ---
 
@@ -135,3 +127,4 @@ None.
 |---------|------|--------|---------|
 | 1.0 | 2026-06-10 | Agent | Initial findings drafted |
 | 1.1 | 2026-06-10 | Agent | Consolidated Issue #301 structuredContent, tool inventory, and migration risks |
+| 1.2 | 2026-06-10 | Agent | Cleaned up design/planning content, added Strategy Options analysis, and formatted Approved Strategy per boundary |
