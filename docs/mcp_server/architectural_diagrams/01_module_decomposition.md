@@ -71,7 +71,7 @@ that import the manager directly.
 | File | Primary Class | Responsibility | Used by (tools/) |
 |------|--------------|----------------|-----------------|
 | `phase_state_engine.py` | `PhaseStateEngine` | Branch state machine, phase transitions, on_exit hooks | `phase_tools`, `project_tools`, `discovery_tools`, `git_tools`* |
-| `state_repository.py` | `FileStateRepository` | Load/save `.st3/state.json` | via PSE only |
+| `state_repository.py` | `FileStateRepository` | Load/save `.phase-gate/state.json` | via PSE only |
 | `phase_contract_resolver.py` | `PhaseContractResolver` | Resolve `phase_contracts.yaml` → `CheckSpec` list | `git_tools` (commit-type only) |
 | `deliverable_checker.py` | `DeliverableChecker` | Run `CheckSpec` file-exists checks | `cycle_tools` (direct), via PSE (internal) |
 | `enforcement_runner.py` | `EnforcementRunner` | Pre/post hook dispatch from `enforcement.yaml` | via server (wraps all tools) |

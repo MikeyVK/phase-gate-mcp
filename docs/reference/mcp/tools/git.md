@@ -75,7 +75,7 @@ Create a new branch from specified base branch.
 
 #### Behavior Notes
 
-- **Naming Convention:** Validates against [.st3/git.yaml](../../../../.st3/git.yaml) patterns
+- **Naming Convention:** Validates against [.phase-gate/git.yaml](../../../../.phase-gate/git.yaml) patterns
 - **Protected Branches:** Validates `base_branch` against protected branch list
 - **Branch Exists:** Returns error if branch already exists
 - **Base Branch Validation:** Returns error if base branch doesn't exist
@@ -138,7 +138,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `message` | `str` | **Yes** | Commit message (WITHOUT prefix — prefix is auto-added) |
-| `workflow_phase` | `str` | No | Phase override (e.g. `"implementation"`, `"documentation"`) — auto-detected from `.st3/state.json` if omitted. Valid values populated at runtime from `workphases.yaml`. |
+| `workflow_phase` | `str` | No | Phase override (e.g. `"implementation"`, `"documentation"`) — auto-detected from `.phase-gate/state.json` if omitted. Valid values populated at runtime from `workphases.yaml`. |
 | `sub_phase` | `str` | No | Sub-phase for `implementation`: `"red"`, `"green"`, `"refactor"`. Valid values populated at runtime from `workphases.yaml`. |
 | `cycle_number` | `int` | No | **Required when the active phase is cycle-based (e.g. implementation).** TDD cycle number (e.g. `1`, `2`, `3`). Optional otherwise. |
 | `commit_type` | `str` | No | Override commit type (e.g. `"feat"`, `"fix"`, `"docs"`). Valid values populated at runtime from `git.yaml` via the `commit_types` config. Use only as explicit override. |
@@ -206,7 +206,7 @@ Stage and commit changes with auto-generated phase prefix. Integrates with Phase
 - **Issue suffix auto-append (#228):** The active issue number is extracted from the current branch name via `extract_issue_number()` and appended to the commit message as ` (#NNN)`. For branches without a parseable issue number (e.g. `main`, `feature/no-number`), no suffix is added. This happens transparently — no parameter needed.
 - **`phase` parameter:** Does NOT exist — `GitCommitInput` uses `extra="forbid"`. Passing `phase` crashes with a validation error.
 - **`cycle_number`:** Required when the active phase is cycle-based (e.g. `implementation`) — omitting it causes an error
-- **Ready-phase auto-exclude (#283):** When in `ready` phase, `.st3/state.json` and `.st3/deliverables.json` are automatically removed from the commit index before committing
+- **Ready-phase auto-exclude (#283):** When in `ready` phase, `.phase-gate/state.json` and `.phase-gate/deliverables.json` are automatically removed from the commit index before committing
 
 ---
 
@@ -245,7 +245,7 @@ Switch to an existing branch (auto-syncs phase state).
 
 #### Behavior Notes
 
-- **Phase Sync:** Loads phase state from `.st3/state.json` after checkout
+- **Phase Sync:** Loads phase state from `.phase-gate/state.json` after checkout
 - **Dirty Working Directory:** Returns error if uncommitted changes exist (use `git_stash` first)
 - **Branch Validation:** Returns error if branch doesn't exist
 - **Protected Branches:** Can checkout protected branches (read-only warning)
@@ -406,7 +406,7 @@ Delete a branch locally, remotely, or both (default). Protected-branch safety al
 
 #### Behavior Notes
 
-- **Protected Branches:** Returns error if attempting to delete protected branches (`main`, `develop`, etc. from [.st3/git.yaml](../../../../.st3/git.yaml))
+- **Protected Branches:** Returns error if attempting to delete protected branches (`main`, `develop`, etc. from [.phase-gate/git.yaml](../../../../.phase-gate/git.yaml))
 - **Unmerged Changes:** Default `force=false` returns error if local branch has unmerged commits (applies to `mode="local"` and `mode="both"`)
 - **Current Branch:** Returns error if attempting to delete the current local branch (applies to `mode="local"` and `mode="both"`; skipped for `mode="remote"`)
 - **Remote Absent:** When `mode="remote"` or `mode="both"`, a branch that is not present on the remote is treated as `absent` (not an error)
@@ -592,7 +592,7 @@ Detect parent branch for a branch (via PhaseStateEngine state).
 
 #### Behavior Notes
 
-- **State Source:** Reads `parent_branch` from `.st3/state.json` (set during `initialize_project`)
+- **State Source:** Reads `parent_branch` from `.phase-gate/state.json` (set during `initialize_project`)
 - **Fallback:** If no state found, attempts detection via git reflog
 - **Returns Null:** If parent cannot be determined, returns `parent_branch: null`
 
@@ -905,7 +905,7 @@ ExecutionError surfaced via error_handling decorator
 
 ## Configuration
 
-### .st3/git.yaml
+### .phase-gate/git.yaml
 
 Git conventions loaded on server startup:
 
@@ -971,7 +971,7 @@ Both `git_fetch` and `git_pull` use a file-based lock to prevent concurrent oper
 
 - [README.md](README.md) — MCP Tools navigation index
 - [project.md](project.md) — Phase management and TDD workflow
-- [.st3/git.yaml](../../../../.st3/git.yaml) — Git conventions configuration
+- [.phase-gate/git.yaml](../../../../.phase-gate/git.yaml) — Git conventions configuration
 - [docs/reference/mcp/git_fetch_pull.md](../git_fetch_pull.md) — Thread-safe fetch/pull implementation
 - [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 1.1-1.3: Git tools)
 

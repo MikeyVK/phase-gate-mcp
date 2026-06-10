@@ -93,7 +93,7 @@ Feature branch workflow with strict quality requirements.
 
 **Code Style Guide - Formatting & Conventions**
 
-Comprehensive style guide for Python code in S1mpleTrader V3.
+Comprehensive style guide for Python code in PhaseGate MCP.
 
 **Topics:**
 - File headers (mandatory architectural documentation)
@@ -170,7 +170,7 @@ All code must meet these standards before merge:
 
 **Configuration Doctrine:**
 - **`pyproject.toml`** = IDE baseline (pragmatic, for VS Code/PyCharm)
-- **`.st3/quality.yaml`** = CI authority (strict, gates use `--isolated`)
+- **`.phase-gate/quality.yaml`** = CI authority (strict, gates use `--isolated`)
 - See [QUALITY_GATES.md](QUALITY_GATES.md) for complete details and exact commands
 
 ## Key Principles
@@ -195,8 +195,8 @@ All code must meet these standards before merge:
 | **❌ NEVER** | `tests/*.py` root or `tests/unit/` |
 
 **Enforcement:**
-- `base_path` in `.st3/artifacts.yaml` for `unit_test` → `tests/mcp_server/unit/`
-- `base_path` in `.st3/artifacts.yaml` for `integration_test` → `tests/mcp_server/integration/`
+- `base_path` in `.phase-gate/artifacts.yaml` for `unit_test` → `tests/mcp_server/unit/`
+- `base_path` in `.phase-gate/artifacts.yaml` for `integration_test` → `tests/mcp_server/integration/`
 - For backend code, override via `output_path="tests/backend/..."` in `scaffold_artifact`
 - `pytest` zonder args = enkel `tests/mcp_server/` (via `testpaths` in `pyproject.toml`)
 - `pytest tests/backend/` = explicit backend run

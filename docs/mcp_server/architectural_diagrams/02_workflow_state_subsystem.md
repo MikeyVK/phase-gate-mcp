@@ -74,7 +74,7 @@ Red nodes indicate code that violates OCP, DRY, or DIP and should be refactored.
 
 | Decision | Rationale | Alternatives Rejected |
 |----------|-----------|----------------------|
-| StateRepository encapsulates all state I/O | Single place for `.st3/state.json` read/write; tools and managers must not bypass it | Direct JSON file access from tools |
+| StateRepository encapsulates all state I/O | Single place for `.phase-gate/state.json` read/write; tools and managers must not bypass it | Direct JSON file access from tools |
 | PCR and DeliverableChecker as SRP components | Each has one reason to change; enables independent testing | Inlining both into PSE (already the current debt) |
 
 ---

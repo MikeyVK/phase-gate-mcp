@@ -34,7 +34,7 @@ configured rules and two dispatch paths: by tool name and by tool category.
 graph TD
     Tool["Tool<br/>execute()"]
     ER["EnforcementRunner<br/>run(event, timing, tool_category)"]
-    YAML[".st3/config/enforcement.yaml"]
+    YAML[".phase-gate/config/enforcement.yaml"]
     CBP["check_branch_policy<br/>(handler ✅)"]
     CPS["check_pr_status<br/>(handler ✅)"]
     CPR["check_phase_readiness<br/>(handler ✅)"]
@@ -53,7 +53,7 @@ mutually exclusive per schema validator. A rule with neither field is skipped.
 
 ## 2. Currently Configured Rules
 
-Three rules exist in `.st3/config/enforcement.yaml`.
+Three rules exist in `.phase-gate/config/enforcement.yaml`.
 
 | # | Event Source | Match | Timing | Action | Effect |
 |---|-------------|-------|--------|--------|--------|
@@ -174,7 +174,7 @@ Raises `ConfigError` at startup if no `pr_status_reader` is injected.
 ### `check_phase_readiness`
 
 Reads `action.policy` as the required phase name. Reads `current_phase` from
-`.st3/state.json` at call time (no caching). Raises `ValidationError` on mismatch or absent
+`.phase-gate/state.json` at call time (no caching). Raises `ValidationError` on mismatch or absent
 state file. Produces `SuggestionNote` with `transition_phase(to_phase="<policy>")`.
 
 ---

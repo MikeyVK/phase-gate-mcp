@@ -78,7 +78,7 @@ The mixin defines 4 fields that are **never user-provided**. They are injected b
 | `template_id` | `str` | Template identifier e.g. `"dto"`, `"design"` |
 | `version_hash` | `str` | 8-char lowercase hex from tier-chain hash |
 
-The `version_hash` validator enforces `len == 8` and `[0-9a-f]` only. It connects to `.st3/template_registry.yaml` for provenance tracking.
+The `version_hash` validator enforces `len == 8` and `[0-9a-f]` only. It connects to `.phase-gate/template_registry.yaml` for provenance tracking.
 
 `BaseRenderContext` inherits both `LifecycleMixin` and `BaseContext`, so every `XxxRenderContext` automatically has all 4 lifecycle fields plus the artifact-specific fields.
 
@@ -224,7 +224,7 @@ _v2_context_registry: dict[str, str] = {
 **5. Create the template** (`mcp_server/scaffolding/templates/concrete/new_type.py.jinja2`)
 Use template variables that match the `NewTypeContext` field names exactly. No `| default()` guards needed — schema validation guarantees field presence.
 
-**6. Register in `.st3/artifacts.yaml`** — verify `type_id: new_type` exists with correct `template_path` and `type` (`code` or `document`).
+**6. Register in `.phase-gate/artifacts.yaml`** — verify `type_id: new_type` exists with correct `template_path` and `type` (`code` or `document`).
 
 **7. Write a V2 smoke test** (see `tests/integration/test_v2_smoke_all_types.py` for the pattern):
 ```python

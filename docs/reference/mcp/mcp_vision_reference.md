@@ -1,4 +1,4 @@
-# ST3 Workflow MCP Server: Vision & Architecture Reference
+# PhaseGate MCP Server: Vision & Architecture Reference
 
 **Document Type:** Vision & Architecture Reference  
 **Status:** DEFINITIVE  
@@ -13,9 +13,9 @@
 
 ## Executive Summary
 
-### What is the ST3 Workflow MCP Server?
+### What is the PhaseGate MCP Server?
 
-The **ST3 Workflow MCP Server** is an intelligent development orchestration platform that acts as an **AI-native development partner** for the SimpleTraderV3 project. It transforms software development from ad-hoc execution to a **structured, enforced, configuration-driven workflow**.
+The **PhaseGate MCP Server** is an intelligent development orchestration platform that acts as an **AI-native development partner** for the phase-gate-mcp project. It transforms software development from ad-hoc execution to a **structured, enforced, configuration-driven workflow**.
 
 **In One Sentence:**  
 *An MCP server that enforces architectural patterns, TDD principles, and quality standards through intelligent tooling and configuration-driven workflows, enabling AI agents to develop software with human-level discipline and consistency.*
@@ -28,14 +28,14 @@ Traditional development workflows suffer from three fundamental problems:
 2. **Manual Ceremony**: Developers repeat boilerplate and workflow steps manually
 3. **Inconsistent Quality**: Quality depends on developer discipline, not system constraints
 
-**The ST3 Workflow MCP Server solves these by:**
+**The PhaseGate MCP Server solves these by:**
 - **Encoding standards as enforced policies** (not just documentation)
 - **Automating ceremony** (scaffolding, validation, transitions)
 - **Making quality gates mandatory** (fail-fast on violations)
 
 ### Core Value Proposition
 
-| Traditional Development | ST3 Workflow MCP Server |
+| Traditional Development | PhaseGate MCP Server |
 |------------------------|-------------------------|
 | Standards in docs (unenforced) | Standards as executable policies |
 | Manual boilerplate | Template-driven scaffolding |
@@ -50,7 +50,7 @@ Traditional development workflows suffer from three fundamental problems:
 
 ### The Real Problem: Development at Scale
 
-SimpleTraderV3 is a **plugin-driven, event-driven trading platform** with strict architectural principles:
+The platform is a **plugin-driven, event-driven trading platform** with strict architectural principles:
 
 1. **Plugin First**: All strategy logic is plugins
 2. **Separation of Concerns**: Workers vs Platform vs Configuration
@@ -146,7 +146,7 @@ graph TB
 **Decision**: 100% Python
 
 **Rationale**:
-- SimpleTraderV3 is 100% Python
+- the host project is 100% Python
 - Direct import of `backend.*` validators
 - Shared tooling (pytest, pylint, mypy)
 - Shared configuration (pyproject.toml)
@@ -162,7 +162,7 @@ graph TB
 **Decision**: All behavior controlled by YAML configs
 
 **Rationale**:
-- Mirrors SimpleTraderV3's "Configuration-Driven" principle
+- Mirrors the project's "Configuration-Driven" principle
 - Workflows customizable without code changes
 - Policies enforceable at config level
 - Extensible without modifying Python code
@@ -240,7 +240,7 @@ docs/
 
 **Result**: Docs that deviate from templates generate **WARNINGS**, not failures
 
-### 3. Configuration Management (.st3/) - SCHEMA VALIDATION
+### 3. Configuration Management (.phase-gate/) - SCHEMA VALIDATION
 
 **Purpose**: Centralize all workflow/policy configuration
 
@@ -260,7 +260,7 @@ docs/
 
 **Configuration Files**:
 ```yaml
-.st3/
+.phase-gate/
 ├── workflows.yaml           # Workflow metadata: name, description, execution_mode (no phases — see contracts.yaml)
 ├── contracts.yaml           # SSOT for workflow-phase membership, ordering, and exit gates (Issue #271)
 ├── workphases.yaml          # Phase/sub-phase definitions for commits
@@ -328,7 +328,7 @@ milestones: []   # { number: int, title: str, state: "open"|"closed" }
 
 ### The Critical Architectural Distinction
 
-| Aspect | CODE (backend/) | DOCUMENTS (docs/) | CONFIG (.st3/) |
+| Aspect | CODE (backend/) | DOCUMENTS (docs/) | CONFIG (.phase-gate/) |
 |--------|----------------|-------------------|----------------|
 | **Enforcement** | HARD (blocks) | SOFT (warns) | SCHEMA (validates) |
 | **Flexibility** | Low | High | Medium |
@@ -627,7 +627,7 @@ class WorkflowConfig:
 
 **Implication**: Config changes require client restart
 
-**Known server-side limitation (Issue #271 — F-271-B)**: All `.st3/config/` files are loaded **once at server startup** and cached in memory. Any change to `contracts.yaml`, `workflows.yaml`, or any other config file has **no effect until the server is restarted**. Use `restart_server()` after editing config files. This applies to phase order, exit gates, enforcement rules, and all other config-driven behaviour.
+**Known server-side limitation (Issue #271 — F-271-B)**: All `.phase-gate/config/` files are loaded **once at server startup** and cached in memory. Any change to `contracts.yaml`, `workflows.yaml`, or any other config file has **no effect until the server is restarted**. Use `restart_server()` after editing config files. This applies to phase order, exit gates, enforcement rules, and all other config-driven behaviour.
 
 ---
 
@@ -739,7 +739,7 @@ artifact_types:
 
 ## Conclusion
 
-The ST3 Workflow MCP Server is transforming software development by:
+The PhaseGate MCP Server is transforming software development by:
 
 1. **Encoding standards as executable constraints**
 2. **Automating ceremony through intelligent tooling**
