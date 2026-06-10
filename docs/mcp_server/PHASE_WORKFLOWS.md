@@ -24,7 +24,7 @@
 
 ## 1. Overview
 
-This document defines the 7 development phases that ST3 follows, including entry/exit criteria, GitHub workflow integration, and which MCP tools are used per phase.
+This document defines the 7 development phases that PhaseGate follows, including entry/exit criteria, GitHub workflow integration, and which MCP tools are used per phase.
 
 ### 1.1 Design Principles
 
@@ -110,7 +110,7 @@ Exploration of a problem, requirement, or idea. No commitments, just building un
 |----------|-------------|----------|
 | Create Discussion | Open GitHub Issue with `type:discussion` | `create_issue` |
 | Explore Codebase | Understand existing structure | `search_documentation` |
-| Guidelines Check | Research patterns and standards | `st3://rules/coding_standards` |
+| Guidelines Check | Research patterns and standards | `pgmcp://rules/coding_standards` |
 
 ### 3.4 Exit Criteria
 
@@ -170,7 +170,7 @@ System-level design decisions. How do components fit together?
 |----------|-------------|----------|
 | Review Existing Arch | Understand current architecture | `search_documentation` |
 | Draft Design | Write architectural design | `scaffold_artifact` |
-| Validate Patterns | Check against ST3 patterns | `check_arch_compliance` |
+| Validate Patterns | Check against PhaseGate patterns | `check_arch_compliance` |
 | Request Review | Assign reviewers | `update_issue` |
 
 ### 5.4 Exit Criteria
@@ -316,7 +316,7 @@ Create/update reference documentation after implementation.
 
 | Activity | Description | MCP Tool |
 |----------|-------------|----------|
-| Identify Doc Gaps | What needs documenting | `st3://docs/inventory` |
+| Identify Doc Gaps | What needs documenting | `pgmcp://docs/inventory` |
 | Write Reference | API docs, guides | `scaffold_artifact` |
 | Update Existing | Keep docs in sync | Manual |
 | Close Issue | Mark as done | `update_issue` |

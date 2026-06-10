@@ -95,8 +95,8 @@ sequenceDiagram
 ```json
 {
   "mcpServers": {
-    "st3-workflow": {
-      "command": "D:\\dev\\SimpleTraderV3\\.venv\\Scripts\\python.exe",
+    "phase-gate-mcp": {
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
       "args": ["-m", "mcp_server.core.proxy"],
       "env": {}
     }

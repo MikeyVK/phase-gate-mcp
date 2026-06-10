@@ -1,4 +1,4 @@
-# Git Fetch & Pull Tools Reference - S1mpleTraderV3
+# Git Fetch & Pull Tools Reference - PhaseGate MCP
 
 <!--
 GENERATED DOCUMENT
@@ -24,7 +24,7 @@ Type: Tool Reference
 
 Reference documentation for the `git_fetch` and `git_pull` MCP tools.
 
-These tools exist to keep local branches in sync with remote state using the ST3 MCP toolset (instead of ad-hoc CLI usage), while maintaining the reliability constraints required for stdio-based MCP servers.
+These tools exist to keep local branches in sync with remote state using the PhaseGate MCP toolset (instead of ad-hoc CLI usage), while maintaining the reliability constraints required for stdio-based MCP servers.
 
 ## Scope
 

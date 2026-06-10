@@ -15,7 +15,7 @@ load them.
 
 ## Scope
 
-**In Scope:** `mcp_server/config/` Python modules, `.st3/` YAML files, load relationships
+**In Scope:** `mcp_server/config/` Python modules, `.phase-gate/` YAML files, load relationships
 
 **Out of Scope:** Pydantic schema detail, template system (`scaffolding/`)
 
@@ -37,18 +37,18 @@ graph TD
         SC --> SET["settings.py<br/>(server root)"]
     end
     subgraph YAML Config
-        ST3[".st3/"]
-        ST3 --> ENF["enforcement.yaml<br/>(enforcement rules)"]
-        ST3 --> PC["phase_contracts.yaml<br/>(exit gates per phase)"]
-        ST3 --> ART["artifacts.yaml<br/>(scaffold registry)"]
-        ST3 --> WFY["workflows.yaml<br/>(phase definitions)"]
+        PG[".phase-gate/"]
+        PG --> ENF["enforcement.yaml<br/>(enforcement rules)"]
+        PG --> PC["phase_contracts.yaml<br/>(exit gates per phase)"]
+        PG --> ART["artifacts.yaml<br/>(scaffold registry)"]
+        PG --> WFY["workflows.yaml<br/>(phase definitions)"]
     end
 
     Managers["managers/"] -->|"constructor injection"| SC
-    Managers -->|"runtime load"| ST3
+    Managers -->|"runtime load"| PG
 ```
 
-Changes to `.st3/` YAML files take effect without a server restart. Changes to
+Changes to `.phase-gate/` YAML files take effect without a server restart. Changes to
 `mcp_server/config/` require a restart (or `restart_server` in dev).
 
 ---

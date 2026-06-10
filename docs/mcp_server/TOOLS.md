@@ -1,4 +1,4 @@
-# ST3 Workflow MCP Server - Public Tool Surface
+# PhaseGate MCP Server - Public Tool Surface
 
 **Status:** CURRENT
 **Last Updated:** 2026-04-23
@@ -82,14 +82,14 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 
 **Execution behavior:**
 1. Computes net branch-local artifact diffs against the merge-base.
-2. Neutralizes `.st3/state.json` and `.st3/deliverables.json` when needed.
+2. Neutralizes `.phase-gate/state.json` and `.phase-gate/deliverables.json` when needed.
 3. Commits the neutralization with `workflow_phase="ready"`.
 4. Pushes the branch.
 5. Creates the GitHub PR.
 6. Writes `PRStatus.OPEN` to cache.
 
 **Safeguards:**
-- Blocked unless `.st3/state.json` reports `current_phase == "ready"`
+- Blocked unless `.phase-gate/state.json` reports `current_phase == "ready"`
 - Blocked for any branch-mutating tool while the branch already has `PRStatus.OPEN`
 - Returns a `RecoveryNote` when the flow fails after neutralization and the branch tip may have changed
 
@@ -128,7 +128,7 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `safe_edit_file` | Multi-mode file editing with validation | `path`, `content` or edit payload, `mode` |
-| `scaffold_artifact` | Generate code/docs from `.st3/config/artifacts.yaml` | `artifact_type`, `name`, `output_path`, `context` |
+| `scaffold_artifact` | Generate code/docs from `.phase-gate/config/artifacts.yaml` | `artifact_type`, `name`, `output_path`, `context` |
 
 ### 7. Quality & Validation
 

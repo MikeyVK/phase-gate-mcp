@@ -286,11 +286,11 @@ class TestProjectManagerPhaseDetection:
     @pytest.fixture
     def workspace_root(self, tmp_path: Path) -> Path:
         """Create temporary workspace with .phase-gate directory."""
-        st3_dir = tmp_path / ".phase-gate"
-        st3_dir.mkdir()
+        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir.mkdir()
 
         # Create workphases.yaml
-        workphases_path = st3_dir / "workphases.yaml"
+        workphases_path = phase_gate_dir / "workphases.yaml"
         workphases_path.write_text(
             """
 version: "1.0"

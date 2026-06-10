@@ -121,7 +121,7 @@ Initialize project with phase plan selection. Human selects workflow_name (featu
 
 #### Behavior Notes
 
-- **State Persistence:** Creates `.st3/deliverables.json` (workflow definition) and `.st3/state.json` (branch state) atomically
+- **State Persistence:** Creates `.phase-gate/deliverables.json` (workflow definition) and `.phase-gate/state.json` (branch state) atomically
 - **Parent Branch Auto-Detection:** If `parent_branch` not provided, attempts detection via `git reflog`
 - **Branch Validation:** Current branch must match pattern `<type>/<issue_number>-*`
 - **Idempotency:** Re-running on same branch returns error (project already initialized)
@@ -185,7 +185,7 @@ Get project phase plan for issue number.
 #### Behavior Notes
 
 - **Read-Only:** Does not modify state
-- **Plan Access:** Reads workflow definition from `.st3/deliverables.json`; current phase is read from `.st3/state.json` via `WorkflowStatusResolver`. Returns plan without phase fields when state is absent or branch-mismatched.
+- **Plan Access:** Reads workflow definition from `.phase-gate/deliverables.json`; current phase is read from `.phase-gate/state.json` via `WorkflowStatusResolver`. Returns plan without phase fields when state is absent or branch-mismatched.
 - **Not Found:** Returns error if project not initialized
 
 ---
@@ -243,8 +243,8 @@ Transition branch to next phase (strict sequential validation).
 #### Behavior Notes
 
 - **Sequential Validation:** Target phase must be the **next** phase in workflow (no skipping)
-- **State Update:** Updates `.st3/state.json` atomically
-- **Branch-Local State:** Updates `.st3/state.json` for the active branch only
+- **State Update:** Updates `.phase-gate/state.json` atomically
+- **Branch-Local State:** Updates `.phase-gate/state.json` for the active branch only
 - **Required Next Step:** On success, the response appends `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
 - **Not Initialized:** Returns error if project not initialized
 
@@ -317,7 +317,7 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 #### Behavior Notes
 
 - **No Validation:** Bypasses sequential phase validation
-- **Branch-Local State:** Updates `.st3/state.json` for the active branch; forced-transition metadata stays in that branch-local state
+- **Branch-Local State:** Updates `.phase-gate/state.json` for the active branch; forced-transition metadata stays in that branch-local state
 - **Required Next Step:** On success, the response appends `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
 - **Use Sparingly:** Intended for emergency situations only
 - **Required Fields:** Both `skip_reason` and `human_approval` are REQUIRED (not optional)
@@ -372,7 +372,7 @@ Merge-update TDD cycle planning deliverables for an issue in deliverables.json. 
 ---
 
 
-### .st3/state.json
+### .phase-gate/state.json
 
 Current branch state (runtime, branch-local, neutralized before PR submission):
 
@@ -410,7 +410,7 @@ Current branch state (runtime, branch-local, neutralized before PR submission):
 
 ---
 
-### .st3/deliverables.json
+### .phase-gate/deliverables.json
 
 Workflow definition and planning deliverables (branch-local artifact):
 
@@ -451,14 +451,14 @@ Workflow definition and planning deliverables (branch-local artifact):
 
 ## Workflow Definitions
 
-### .st3/workflows.yaml
+### .phase-gate/workflows.yaml
 
-> **Note (Issue #271):** Phase membership and ordering are no longer defined in `workflows.yaml`. The file now contains only workflow metadata (name, description, execution mode). Phase sequences are exclusively defined in `.st3/config/contracts.yaml`.
+> **Note (Issue #271):** Phase membership and ordering are no longer defined in `workflows.yaml`. The file now contains only workflow metadata (name, description, execution mode). Phase sequences are exclusively defined in `.phase-gate/config/contracts.yaml`.
 
 ```yaml
-# .st3/config/workflows.yaml
+# .phase-gate/config/workflows.yaml
 version: "1.0"
-phase_source: ".st3/config/workphases.yaml"
+phase_source: ".phase-gate/config/workphases.yaml"
 
 workflows:
   feature:
@@ -494,7 +494,7 @@ workflows:
 ```
 
 
-For the phase sequences per workflow, see `.st3/config/contracts.yaml`.
+For the phase sequences per workflow, see `.phase-gate/config/contracts.yaml`.
 
 ---
 
@@ -504,9 +504,9 @@ Phase state is **synchronized** with git branch operations:
 
 | Git Operation | Phase State Behavior |
 |---------------|---------------------|
-| `git_checkout` | Loads phase state from `.st3/state.json` after switching branches |
+| `git_checkout` | Loads phase state from `.phase-gate/state.json` after switching branches |
 | `create_branch` | No phase state (must run `initialize_project` after) |
-| `git_delete_branch` | Removes phase state from `.st3/state.json` |
+| `git_delete_branch` | Removes phase state from `.phase-gate/state.json` |
 
 ---
 

@@ -14,7 +14,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ScopeConfig
 from mcp_server.core.exceptions import ConfigError
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 _MINIMAL_SCOPES_YAML = {
     "version": "1.0",
@@ -23,7 +23,7 @@ _MINIMAL_SCOPES_YAML = {
 
 
 def _load_scope_config(config_path: Path) -> ScopeConfig:
-    return ConfigLoader(_ST3_CONFIG).load_scope_config(config_path=config_path)
+    return ConfigLoader(_PGMCP_CONFIG).load_scope_config(config_path=config_path)
 
 
 @pytest.fixture(name="scopes_yaml_path")

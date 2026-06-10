@@ -10,7 +10,7 @@
 
 ## Purpose
 
-Guide teams to migrate from phase-first commit scopes to workflow-first commit scopes in ST3.
+Guide teams to migrate from phase-first commit scopes to workflow-first commit scopes in PhaseGate.
 
 ## Scope
 

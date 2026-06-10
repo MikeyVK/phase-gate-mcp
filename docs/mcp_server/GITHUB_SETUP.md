@@ -1,4 +1,4 @@
-# ST3 Workflow MCP Server - GitHub Configuration
+# PhaseGate MCP Server - GitHub Configuration
 
 **Status:** DRAFT
 **Version:** 2.0
@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-This document specifies the mandatory GitHub configuration required to support the ST3 Workflow MCP Server. The server's tools (e.g., `create_issue`, `start_work_on_issue`) rely on the existence of specific labels, project structures, and branch protection rules defined here.
+This document specifies the mandatory GitHub configuration required to support the PhaseGate MCP Server. The server's tools (e.g., `create_issue`, `start_work_on_issue`) rely on the existence of specific labels, project structures, and branch protection rules defined here.
 
 ---
 
@@ -42,7 +42,7 @@ These rules enforce the Quality Gates defined in `QUALITY_GATES.md`.
 
 The MCP Server uses the **Project V2** API to track sprint progress and velocity.
 
-**Project Name:** `S1mpleTraderV3 Development`
+**Project Name:** `PhaseGate Development`
 
 ### 3.1 Custom Fields
 
@@ -97,7 +97,7 @@ Determines order of execution.
 - `priority:triage`: Needs prioritization
 
 ### 4.3 Phase (`#0E8A16` - Green)
-Aligns with MCP Server `st3://status/phase` and `PHASE_WORKFLOWS.md`.
+Aligns with MCP Server `pgmcp://status/phase` and `PHASE_WORKFLOWS.md`.
 
 - `phase:discovery`: Problem exploration
 - `phase:discussion`: Active discussion
@@ -212,15 +212,15 @@ categories:
 |----------|--------------------------|-------------------|
 | `create_issue` | Labels, Issue Template structure | Tool may fail or create unstructured spam |
 | `start_work_on_issue` | Branch Protection, Labels | Branch might not be linkable; PR might bypass Check |
-| `st3://github/project` | Project V2 Custom Fields | Velocity/Burn-down metrics will be empty |
-| `st3://status/phase` | Milestones | `current_phase` derivation will fail |
+| `pgmcp://github/project` | Project V2 Custom Fields | Velocity/Burn-down metrics will be empty |
+| `pgmcp://status/phase` | Milestones | `current_phase` derivation will fail |
 | `submit_pr` | PR Template, Branch Protection | Check failure on PR creation |
 
 ---
 
 ## 9. Setup Checklist
 
-1. [ ] Create Project V2 "S1mpleTraderV3 Development"
+1. [ ] Create Project V2 "PhaseGate Development"
 2. [ ] Define Custom Fields (Size, Layer, Sprint)
 3. [ ] Delete default labels & run `gh label create` script (to be created)
 4. [ ] Configure Branch Protection on `main`

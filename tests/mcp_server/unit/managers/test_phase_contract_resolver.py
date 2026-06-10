@@ -23,8 +23,8 @@ from tests.mcp_server.test_support import make_phase_config_context
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Create a minimal workspace with workphases, phase contracts, and deliverables."""
-    st3_dir = tmp_path / ".phase-gate"
-    config_dir = st3_dir / "config"
+    phase_gate_dir = tmp_path / ".phase-gate"
+    config_dir = phase_gate_dir / "config"
     config_dir.mkdir(parents=True)
 
     (config_dir / "workphases.yaml").write_text(
@@ -159,7 +159,9 @@ workflows:
             }
         }
     }
-    (st3_dir / "deliverables.json").write_text(json.dumps(deliverables, indent=2), encoding="utf-8")
+    (phase_gate_dir / "deliverables.json").write_text(
+        json.dumps(deliverables, indent=2), encoding="utf-8"
+    )
 
     return tmp_path
 
@@ -169,8 +171,8 @@ class TestPhaseConfigContext:
 
     def test_invalid_cycle_based_phase_raises_config_error(self, tmp_path: Path) -> None:
         """cycle_based phases must declare a non-empty commit_type_map."""
-        st3_dir = tmp_path / ".phase-gate"
-        config_dir = st3_dir / "config"
+        phase_gate_dir = tmp_path / ".phase-gate"
+        config_dir = phase_gate_dir / "config"
         config_dir.mkdir(parents=True)
 
         (config_dir / "workphases.yaml").write_text(
@@ -213,8 +215,8 @@ class TestPhaseConfigContext:
 
     def test_loader_applies_defaults_for_optional_phase_fields(self, tmp_path: Path) -> None:
         """Missing optional fields should resolve to empty collections and false."""
-        st3_dir = tmp_path / ".phase-gate"
-        config_dir = st3_dir / "config"
+        phase_gate_dir = tmp_path / ".phase-gate"
+        config_dir = phase_gate_dir / "config"
         config_dir.mkdir(parents=True)
 
         (config_dir / "workphases.yaml").write_text(

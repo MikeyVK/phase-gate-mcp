@@ -24,7 +24,7 @@ with it and through which channels. Two runtime variants exist — production an
 ## 1. Production Context
 
 In production, VS Code communicates directly with the MCP Server over stdio. The server reads
-and writes to the filesystem (`.st3/` state files and workspace files) and calls GitHub via
+and writes to the filesystem (`.phase-gate/` state files and workspace files) and calls GitHub via
 the `gh` CLI. There is no HTTP layer — stdio is the only entry point into the server.
 
 ```mermaid
@@ -32,7 +32,7 @@ graph TD
     VSCode["VS Code<br/>(MCP Client)"]
     Server["MCP Server<br/>(FastMCP)"]
     Git["Git / GitHub"]
-    FS["Filesystem<br/>(.st3/ + workspace)"]
+    FS["Filesystem<br/>(.phase-gate/ + workspace)"]
 
     VSCode -->|"stdio"| Server
     Server -->|"read/write"| FS
@@ -54,7 +54,7 @@ graph TD
     Proxy["MCP Proxy<br/>(dev only)"]
     Server["MCP Server<br/>(FastMCP)"]
     Git["Git / GitHub"]
-    FS["Filesystem<br/>(.st3/ + workspace)"]
+    FS["Filesystem<br/>(.phase-gate/ + workspace)"]
 
     VSCode -->|"stdio (stable)"| Proxy
     Proxy -->|"stdio (restartable)"| Server

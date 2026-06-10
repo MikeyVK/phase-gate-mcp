@@ -42,13 +42,13 @@ class _MockLabel:  # pylint: disable=too-few-public-methods
         self.description = description
 
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 def _load_label_config(tmp_path: Path, yaml_content: str) -> LabelConfig:
     yaml_file = tmp_path / "labels.yaml"
     yaml_file.write_text(yaml_content)
-    return ConfigLoader(_ST3_CONFIG).load_label_config(config_path=yaml_file)
+    return ConfigLoader(_PGMCP_CONFIG).load_label_config(config_path=yaml_file)
 
 
 class TestCreateLabelToolValidation:

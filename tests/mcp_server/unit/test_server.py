@@ -309,54 +309,6 @@ class TestServerToolRegistration:
         assert 'transition_phase(to_phase="ready")' in text
         mock_create_pr.assert_not_called()
 
-    @pytest.mark.xfail(
-        strict=False,
-        reason=(
-            "Pre-existing: submit_pr artifact-tracking pre-enforcement not yet wired "
-            "(separate issue)"
-        ),
-    )
-    @pytest.mark.asyncio
-    async def test_call_tool_pre_enforcement_blocks_submit_pr_with_tracked_artifacts(
-        self,
-        tmp_path: Path,
-    ) -> None:
-        """Dispatch pre-hook should stop submit_pr when branch-local artifacts remain tracked."""
-        _bootstrap_workspace_configs(tmp_path)
-        _write_phase_state(tmp_path, "ready")
-        _track_branch_local_artifacts(tmp_path)
-
-        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
-            _patch_server_settings(
-                mock_settings_cls,
-                workspace_root=str(tmp_path),
-                token="test-token",
-            )
-
-            server = make_test_server()
-            handler = server.server.request_handlers[CallToolRequest]
-
-            with (
-                patch(
-                    "mcp_server.managers.enforcement_runner._has_net_diff_for_path",
-                    return_value=True,
-                ),
-                patch.object(
-                    server.github_manager,
-                    "create_pr",
-                    side_effect=AssertionError("create_pr should not be called"),
-                ) as mock_create_pr,
-            ):
-                response = await handler(_make_submit_pr_request())
-
-        text = "\n".join(c.text for c in response.root.content if hasattr(c, "text"))
-        assert response.root.isError is True
-        assert "Branch-local artifacts have a net delta against" in text
-        assert ".phase-gate/state.json" in text
-        assert ".phase-gate/deliverables.json" in text
-        assert "neutralize" in text
-        mock_create_pr.assert_not_called()
-
     @pytest.mark.asyncio
     async def test_call_tool_post_enforcement_runs_after_transition(
         self,

@@ -83,11 +83,11 @@ class TestTemplateRegistryInitialization:
 
     def test_migrate_yaml_to_json_and_delete_yaml(self, tmp_path: Path) -> None:
         """Should migrate legacy YAML to JSON on first run and delete YAML."""
-        st3_dir = tmp_path / ".phase-gate"
-        st3_dir.mkdir(parents=True, exist_ok=True)
+        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir.mkdir(parents=True, exist_ok=True)
 
-        legacy_yaml = st3_dir / "template_registry.yaml"
-        target_json = st3_dir / "template_registry.json"
+        legacy_yaml = phase_gate_dir / "template_registry.yaml"
+        target_json = phase_gate_dir / "template_registry.json"
 
         legacy_data = {
             "version": "1.0",
