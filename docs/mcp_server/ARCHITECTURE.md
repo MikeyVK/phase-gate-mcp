@@ -21,7 +21,7 @@ quality gates, Git conventions, and GitHub integration.
 |------------|-------------|
 | **Workflow Enforcement** | Phase-gated development lifecycles with configurable workflows (feature, bug, hotfix, refactor, docs, epic, custom) |
 | **Semantic Context** | Exposes project status, coding standards, and GitHub issues as structured MCP Resources |
-| **Tool-Based Operations** | 49 tools encapsulating Git, GitHub, QA, scaffolding, and project management operations |
+| **Tool-Based Operations** | 50 tools encapsulating Git, GitHub, QA, scaffolding, and project management operations |
 | **Quality Gates** | Automated linting (ruff), type-checking (pyright), and test execution with configurable thresholds |
 | **Template Scaffolding** | 4-tier Jinja2 template system for generating code, tests, and documentation |
 | **Enforcement System** | Pre/post enforcement rules that block unsafe operations (e.g., branch mutation while PR is open) |
@@ -110,7 +110,7 @@ graph TB
             NoteCtx["NoteContext"]
         end
 
-        subgraph Tools ["Tool Layer (49 tools)"]
+        subgraph Tools ["Tool Layer (50 tools)"]
             BaseTool["BaseTool"]
             BranchMut["BranchMutatingTool"]
         end
@@ -169,7 +169,7 @@ graph TB
 |-------|------------|----------------|
 | **Composition Root** | `ServerBootstrapper`, `ConfigLayer`, `ManagerGraph` | Config loading, DI wiring, server construction |
 | **Runtime** | `MCPServer`, `EnforcementRunner`, `NoteContext` | MCP protocol handling, tool dispatch, enforcement |
-| **Tools** | 49 `BaseTool` / `BranchMutatingTool` subclasses | Validate input, delegate to managers, format output |
+| **Tools** | 50 `BaseTool` / `BranchMutatingTool` subclasses | Validate input, delegate to managers, format output |
 | **Resources** | 3 `BaseResource` subclasses | Expose read-only project context via `pgmcp://` URIs |
 | **Managers** | 18 manager classes | Business logic, workflow state, quality gates |
 | **Adapters** | `FilesystemAdapter`, `GitAdapter`, `GitHubAdapter` | External system integration |
@@ -482,11 +482,11 @@ sequenceDiagram
     Notes-->>Agent: CallToolResult with notes
 ```
 
-### 6.3 Tool Categories (49 tools)
+### 6.3 Tool Categories (50 tools)
 
 | Category | Count | Examples |
 |----------|-------|---------|
-| Git operations | 14 | `create_branch`, `git_add_or_commit`, `git_checkout`, `git_push`, `git_merge`, `git_stash`, `git_restore`, `git_fetch`, `git_pull`, ... |
+| Git operations | 15 | `create_branch`, `git_add_or_commit`, `git_checkout`, `git_push`, `git_merge`, `git_stash`, `git_restore`, `git_fetch`, `git_pull`, ... |
 | GitHub Issues | 5 | `create_issue`, `get_issue`, `list_issues`, `update_issue`, `close_issue` |
 | GitHub PRs | 4 | `list_prs`, `get_pr`, `merge_pr`, `submit_pr` |
 | GitHub Labels | 5 | `list_labels`, `create_label`, `delete_label`, `add_labels`, `remove_labels` |
@@ -790,7 +790,7 @@ pip install phase_gate_mcp-1.0.0-py3-none-any.whl
 
 - **[ARCHITECTURE_PRINCIPLES.md](../coding_standards/ARCHITECTURE_PRINCIPLES.md)** — Binding architecture contract
 - **[config-loading-architecture.md](../reference/mcp/config-loading-architecture.md)** — Config loading, Settings, DI map
-- **[TOOLS.md](./TOOLS.md)** — All 49 MCP tools with parameters
+- **[TOOLS.md](./TOOLS.md)** — All 50 MCP tools with parameters
 - **[RESOURCES.md](./RESOURCES.md)** — MCP resource specifications
 - **[PHASE_WORKFLOWS.md](./PHASE_WORKFLOWS.md)** — Workflow phase definitions
 - **[GITHUB_SETUP.md](./GITHUB_SETUP.md)** — GitHub configuration
@@ -801,6 +801,6 @@ pip install phase_gate_mcp-1.0.0-py3-none-any.whl
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 3.0 | 2026-06-10 | Complete rewrite reflecting actual architecture: ServerBootstrapper composition root, 49 class-based tools, 15 YAML configs, enforcement system, proxy architecture |
+| 3.0 | 2026-06-10 | Complete rewrite reflecting actual architecture: ServerBootstrapper composition root, 50 class-based tools, 15 YAML configs, enforcement system, proxy architecture |
 | 2.0 | 2025-12-08 | Original draft (now superseded) |
 | 1.0 | 2025-12-08 | Initial architecture |
