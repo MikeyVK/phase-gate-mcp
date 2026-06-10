@@ -159,7 +159,9 @@ workflows:
             }
         }
     }
-    (phase_gate_dir / "deliverables.json").write_text(json.dumps(deliverables, indent=2), encoding="utf-8")
+    (phase_gate_dir / "deliverables.json").write_text(
+        json.dumps(deliverables, indent=2), encoding="utf-8"
+    )
 
     return tmp_path
 

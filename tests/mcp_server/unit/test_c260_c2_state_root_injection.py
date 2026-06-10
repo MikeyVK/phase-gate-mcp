@@ -269,7 +269,9 @@ class TestCycleToolsStateRoot:
             branch = tool._get_current_branch()  # pyright: ignore[reportPrivateUsage]
         assert branch == "feature/99-test"
 
-    def test_transition_cycle_tool_does_not_read_from_workspace_phase_gate(self, tmp_path: Path) -> None:
+    def test_transition_cycle_tool_does_not_read_from_workspace_phase_gate(
+        self, tmp_path: Path
+    ) -> None:
         state_root = tmp_path / ".custom-state"
         state_root.mkdir()
         # No state.json in state_root
