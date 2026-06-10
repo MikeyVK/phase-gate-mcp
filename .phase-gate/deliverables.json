@@ -1,0 +1,19 @@
+{
+  "390": {
+    "issue_title": "Improve validation logic of save/update deliverables tools",
+    "workflow_name": "bug",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-06-10T18:15:32.433379+00:00"
+  }
+}
