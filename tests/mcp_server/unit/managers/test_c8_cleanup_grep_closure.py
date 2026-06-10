@@ -11,7 +11,7 @@ from pathlib import Path
 # Constants
 _MANAGERS = Path("mcp_server/managers")
 _QA_MANAGER = _MANAGERS / "qa_manager.py"
-_SERVER = Path("mcp_server/server.py")
+_SERVER = Path("mcp_server/bootstrap.py")
 
 
 class TestQAManagerLegacyPathRemovalC8:
@@ -50,20 +50,20 @@ class TestQAManagerLegacyPathRemovalC8:
 
 
 class TestServerQAManagerWiringC8:
-    """C8: server.py must wire FileQualityStateRepository into QAManager."""
+    """C8: bootstrap.py must wire FileQualityStateRepository into QAManager."""
 
     def test_server_imports_file_quality_state_repository(self) -> None:
-        """server.py must import FileQualityStateRepository."""
+        """bootstrap.py must import FileQualityStateRepository."""
         src = _SERVER.read_text(encoding="utf-8")
         assert "FileQualityStateRepository" in src, (
-            "server.py does not import FileQualityStateRepository. "
+            "bootstrap.py does not import FileQualityStateRepository. "
             "Add the import and wire it into QAManager."
         )
 
     def test_server_passes_quality_state_repository_to_qa_manager(self) -> None:
-        """server.py must pass quality_state_repository= when constructing QAManager."""
+        """bootstrap.py must pass quality_state_repository= when constructing QAManager."""
         src = _SERVER.read_text(encoding="utf-8")
         assert "quality_state_repository=" in src, (
-            "server.py does not pass quality_state_repository= to QAManager. "
+            "bootstrap.py does not pass quality_state_repository= to QAManager. "
             "Wire FileQualityStateRepository into the QAManager constructor call."
         )

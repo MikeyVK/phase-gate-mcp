@@ -2,10 +2,10 @@
 
 ## Overview
 
-The S1mpleTrader V3 MCP Server provides **50 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
+The PhaseGate MCP Server provides **50 tools** for complete git workflow automation, project management, quality assurance, and documentation scaffolding. All tools are accessed via Model Context Protocol (MCP) and integrated with VS Code.
 
 **Server Location:** `mcp_server/`
-**Configuration:** `.vscode/mcp.json` → `st3-workflow`
+**Configuration:** `.vscode/mcp.json` → `phase-gate-mcp`
 **Main Entry:** `mcp_server/__main__.py`
 
 ## Tool Categories
@@ -154,14 +154,14 @@ Generate new artifacts from templates (unified system).
 | **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
 | **ScaffoldSchemaTool** | Return JSON Schema for artifact type context | `artifact_type` | JSON Schema for the context parameter |
 
-**Artifact Types (from .st3/config/artifacts.yaml):**
+**Artifact Types (from .phase-gate/config/artifacts.yaml):**
 - `dto` - Data Transfer Object with Pydantic
 - `worker` - Background job/processor
 - `design` - Design document
 - `adapter` - External API integration
 - `tool` - MCP tool
 
-See `.st3/config/artifacts.yaml` for complete list and required fields per type.
+See `.phase-gate/config/artifacts.yaml` for complete list and required fields per type.
 
 ### 6. Quality & Validation (3 tools)
 
@@ -173,7 +173,7 @@ Run quality gates, tests, and template validation.
 | **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` | `content[0]=text` (summary line + per-failure `FAILED test_id — reason` for exit 1; summary + stderr hint for exit 2/3/4), `content[1]=json` `{exit_code, summary, summary_line, failures[], coverage_pct, lf_cache_was_empty, stderr}` |
 | **TemplateValidationTool** | Validate file structure against template | `path`, `template_type` | Pass/fail with violation details |
 
-**Quality Gates Standard (`.st3/quality.yaml`):**
+**Quality Gates Standard (`.phase-gate/quality.yaml`):**
 - **Gates 0–3:** Ruff format, strict lint, imports, line length
 - **Gate 4:** Mypy-based type gate
 - **Gate 4b:** Pyright type gate
@@ -264,7 +264,7 @@ All tools use three exception types:
 ```bash
 GITHUB_TOKEN=ghp_xxxxx           # Enable GitHub tools
 GITHUB_OWNER=MikeyVK             # Repository owner
-GITHUB_REPO=S1mpleTraderV3        # Repository name
+GITHUB_REPO=phase-gate-mcp        # Repository name
 ```
 
 ### VS Code Configuration
@@ -274,11 +274,11 @@ File: `.vscode/mcp.json`
 ```json
 {
   "servers": {
-    "st3-workflow": {
+    "phase-gate-mcp": {
       "type": "stdio",
       "command": "d:\\...\\python.exe",
       "args": ["-m", "mcp_server"],
-      "cwd": "d:\\dev\\SimpleTraderV3",
+      "cwd": "${workspaceFolder}",
       "env": {
         "GITHUB_TOKEN": "${env:GITHUB_TOKEN}"
       }
@@ -337,7 +337,7 @@ File: `.vscode/mcp.json`
 ```
 
 Labels are assembled automatically from the required and optional fields. Do not pass a `labels` list — the tool enforces label policy from
-`.st3/config/issues.yaml` and `.st3/config/labels.yaml`. `body` accepts pre-rendered markdown (string); generate it with `scaffold_artifact(artifact_type='issue')` before calling `create_issue`. Use the `/create-issue` slash prompt to automate the two-step scaffold → submit flow.
+`.phase-gate/config/issues.yaml` and `.phase-gate/config/labels.yaml`. `body` accepts pre-rendered markdown (string); generate it with `scaffold_artifact(artifact_type='issue')` before calling `create_issue`. Use the `/create-issue` slash prompt to automate the two-step scaffold → submit flow.
 
 ### Release Milestone Workflow
 

@@ -21,11 +21,11 @@ from mcp_server.managers.deliverable_checker import (
     DeliverableCheckError,
 )
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 def _load_workphases_config(config_path: Path) -> WorkphasesConfig:
-    return ConfigLoader(_ST3_CONFIG).load_workphases_config(config_path=config_path)
+    return ConfigLoader(_PGMCP_CONFIG).load_workphases_config(config_path=config_path)
 
 
 # ---------------------------------------------------------------------------

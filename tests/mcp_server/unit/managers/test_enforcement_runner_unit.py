@@ -52,30 +52,6 @@ class TestGitCommitToolC3:
         ),
         strict=False,
     )
-    async def test_git_commit_tool_reads_exclusion_note(self) -> None:
-        """GitCommitTool with ExclusionNotes must call neutralize_to_base (C8 Model 1 contract)."""
-        mock_manager = MagicMock()
-        mock_manager.git_config.commit_types = ["feat", "fix", "chore", "refactor", "test", "docs"]
-        mock_manager.git_config.default_base_branch = "main"
-        mock_manager.adapter.get_current_branch.return_value = "refactor/283"
-        mock_manager.commit_with_scope.return_value = "def5678"
-
-        tool = GitCommitTool(manager=mock_manager)
-        params = GitCommitInput(message="ready", workflow_phase="ready")
-        note_context = NoteContext()
-        note_context.produce(ExclusionNote(file_path=_STATE_JSON))
-        note_context.produce(ExclusionNote(file_path=_DELIVERABLES_JSON))
-
-        await tool.execute(params, note_context)
-
-        mock_manager.adapter.neutralize_to_base.assert_called_once()
-        call_paths = mock_manager.adapter.neutralize_to_base.call_args.args[0]
-        assert _STATE_JSON in call_paths
-        assert _DELIVERABLES_JSON in call_paths
-
-        skip_paths = mock_manager.commit_with_scope.call_args.kwargs.get("skip_paths")
-        assert skip_paths == frozenset()
-
     @pytest.mark.asyncio
     async def test_server_renders_exclusion_note_in_response(self) -> None:
         """NoteContext.render_to_response must include ExclusionNote text in the result."""

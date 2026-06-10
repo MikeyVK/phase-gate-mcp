@@ -25,13 +25,13 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import WorkflowConfig, WorkflowTemplate
 from mcp_server.core.exceptions import ConfigError
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 def _load_workflow_config(config_path: Path | None = None) -> WorkflowConfig:
     if config_path is None:
-        return ConfigLoader(_ST3_CONFIG).load_workflow_config()
-    return ConfigLoader(_ST3_CONFIG).load_workflow_config(config_path=config_path)
+        return ConfigLoader(_PGMCP_CONFIG).load_workflow_config()
+    return ConfigLoader(_PGMCP_CONFIG).load_workflow_config(config_path=config_path)
 
 
 @pytest.fixture

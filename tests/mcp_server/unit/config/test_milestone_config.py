@@ -14,7 +14,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import MilestoneConfig
 from mcp_server.core.exceptions import ConfigError
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 _EMPTY_MILESTONES_YAML = {"version": "1.0", "milestones": []}
 
@@ -28,7 +28,7 @@ _POPULATED_MILESTONES_YAML = {
 
 
 def _load_milestone_config(config_path: Path) -> MilestoneConfig:
-    return ConfigLoader(_ST3_CONFIG).load_milestone_config(config_path=config_path)
+    return ConfigLoader(_PGMCP_CONFIG).load_milestone_config(config_path=config_path)
 
 
 @pytest.fixture(name="empty_milestones_path")

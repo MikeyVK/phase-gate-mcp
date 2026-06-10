@@ -23,7 +23,7 @@ Show three critical runtime flows as sequence diagrams: `initialize_branch`,
 
 ## 1. Flow: `initialize_branch`
 
-`InitializeProjectTool` sets up the initial branch state in `.st3/state.json`. The
+`InitializeProjectTool` sets up the initial branch state in `.phase-gate/state.json`. The
 `EnforcementRunner` pre-hook runs `check_branch_policy` before the tool executes.
 
 ```mermaid
@@ -51,7 +51,7 @@ sequenceDiagram
 
 `TransitionPhaseTool` delegates to `PhaseStateEngine`. The PSE runs `on_exit_*` hooks
 (which currently instantiate `DeliverableChecker` directly). After the tool completes,
-the `EnforcementRunner` post-hook auto-commits `.st3/state.json`.
+the `EnforcementRunner` post-hook auto-commits `.phase-gate/state.json`.
 
 ```mermaid
 sequenceDiagram

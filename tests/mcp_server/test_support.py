@@ -48,8 +48,10 @@ from mcp_server.schemas import (
 from mcp_server.tools.issue_tools import CreateIssueTool
 
 if TYPE_CHECKING:
+    from mcp_server.config.settings import Settings
     from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+    from mcp_server.server import MCPServer
 
 
 class _NopGateRunner:
@@ -553,3 +555,13 @@ def make_create_issue_tool(manager: MagicMock | None = None) -> CreateIssueTool:
         scope_config=dependencies["scope_config"],
         git_config=dependencies["git_config"],
     )
+
+
+def make_test_server(settings: Settings | None = None) -> MCPServer:
+    """Create a fully bootstrapped MCPServer for tests using ServerBootstrapper."""
+    from mcp_server.bootstrap import ServerBootstrapper  # noqa: PLC0415
+    from mcp_server.config.settings import Settings as ServerSettings  # noqa: PLC0415
+
+    resolved_settings = settings or ServerSettings.from_env()
+    bootstrapper = ServerBootstrapper(resolved_settings)
+    return bootstrapper.bootstrap()

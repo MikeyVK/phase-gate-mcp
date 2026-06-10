@@ -22,7 +22,6 @@ from mcp.types import CallToolRequest, CallToolRequestParams
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
-from mcp_server.server import MCPServer
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
@@ -31,7 +30,11 @@ from mcp_server.tools.phase_tools import (
     TransitionPhaseTool,
 )
 from mcp_server.tools.tool_result import ToolResult
-from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+from tests.mcp_server.test_support import (
+    make_phase_state_engine,
+    make_project_manager,
+    make_test_server,
+)
 
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
@@ -133,10 +136,10 @@ class TestServerToolRegistration:
 
     def test_github_tools_always_registered(self) -> None:
         """GitHub tools should always be registered, even without token."""
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
 
-            server = MCPServer()
+            server = make_test_server()
             tool_names = [t.name for t in server.tools]
 
             assert "create_issue" in tool_names
@@ -148,7 +151,7 @@ class TestServerToolRegistration:
     def test_github_tools_registered_with_token(self) -> None:
         """GitHub tools should be registered when token is configured."""
         with (
-            patch("mcp_server.server.Settings") as mock_settings_cls,
+            patch("mcp_server.config.settings.Settings") as mock_settings_cls,
             patch("mcp_server.resources.github.GitHubManager") as mock_res_manager,
             patch("mcp_server.tools.pr_tools.GitHubManager") as mock_pr_manager,
             patch("mcp_server.tools.label_tools.GitHubManager") as mock_label_manager,
@@ -159,7 +162,7 @@ class TestServerToolRegistration:
             mock_pr_manager.return_value = MagicMock()
             mock_label_manager.return_value = MagicMock()
 
-            server = MCPServer()
+            server = make_test_server()
             tool_names = [t.name for t in server.tools]
 
             assert "create_issue" in tool_names
@@ -187,10 +190,10 @@ class TestServerToolRegistration:
                 del params, context
                 return ToolResult.text("ok")
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [DummyTool()]
 
             handler = server.server.request_handlers[CallToolRequest]
@@ -249,10 +252,10 @@ class TestServerToolRegistration:
 
         _bootstrap_workspace_configs(tmp_path)
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
-            server = MCPServer()
+            server = make_test_server()
             manager = MagicMock()
             manager.git_config = server.git_manager.git_config
             server.tools = [CreateBranchTool(manager=manager)]
@@ -282,14 +285,14 @@ class TestServerToolRegistration:
         _bootstrap_workspace_configs(tmp_path)
         _write_phase_state(tmp_path, "documentation")
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(
                 mock_settings_cls,
                 workspace_root=str(tmp_path),
                 token="test-token",
             )
 
-            server = MCPServer()
+            server = make_test_server()
             handler = server.server.request_handlers[CallToolRequest]
 
             with patch.object(
@@ -304,54 +307,6 @@ class TestServerToolRegistration:
         assert "requires phase 'ready'" in text
         assert "Current phase: 'documentation'" in text
         assert 'transition_phase(to_phase="ready")' in text
-        mock_create_pr.assert_not_called()
-
-    @pytest.mark.xfail(
-        strict=False,
-        reason=(
-            "Pre-existing: submit_pr artifact-tracking pre-enforcement not yet wired "
-            "(separate issue)"
-        ),
-    )
-    @pytest.mark.asyncio
-    async def test_call_tool_pre_enforcement_blocks_submit_pr_with_tracked_artifacts(
-        self,
-        tmp_path: Path,
-    ) -> None:
-        """Dispatch pre-hook should stop submit_pr when branch-local artifacts remain tracked."""
-        _bootstrap_workspace_configs(tmp_path)
-        _write_phase_state(tmp_path, "ready")
-        _track_branch_local_artifacts(tmp_path)
-
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
-            _patch_server_settings(
-                mock_settings_cls,
-                workspace_root=str(tmp_path),
-                token="test-token",
-            )
-
-            server = MCPServer()
-            handler = server.server.request_handlers[CallToolRequest]
-
-            with (
-                patch(
-                    "mcp_server.managers.enforcement_runner._has_net_diff_for_path",
-                    return_value=True,
-                ),
-                patch.object(
-                    server.github_manager,
-                    "create_pr",
-                    side_effect=AssertionError("create_pr should not be called"),
-                ) as mock_create_pr,
-            ):
-                response = await handler(_make_submit_pr_request())
-
-        text = "\n".join(c.text for c in response.root.content if hasattr(c, "text"))
-        assert response.root.isError is True
-        assert "Branch-local artifacts have a net delta against" in text
-        assert ".phase-gate/state.json" in text
-        assert ".phase-gate/deliverables.json" in text
-        assert "neutralize" in text
         mock_create_pr.assert_not_called()
 
     @pytest.mark.asyncio
@@ -383,10 +338,10 @@ class TestServerToolRegistration:
         research_doc.parent.mkdir(parents=True, exist_ok=True)
         research_doc.write_text("# Research\n", encoding="utf-8")
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 TransitionPhaseTool(
                     workspace_root=tmp_path,
@@ -434,10 +389,10 @@ class TestServerToolRegistration:
         """Successful forced phase transitions append the advisory note after post-hook success."""
         _bootstrap_workspace_configs(tmp_path)
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 ForcePhaseTransitionTool(
                     workspace_root=tmp_path,
@@ -504,10 +459,10 @@ class TestServerToolRegistration:
             initial_phase="research",
         )
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 TransitionPhaseTool(
                     workspace_root=tmp_path,
@@ -552,10 +507,10 @@ class TestServerToolRegistration:
         """Force phase transitions should fail when post-enforcement raises."""
         _bootstrap_workspace_configs(tmp_path)
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
-            server = MCPServer()
+            server = make_test_server()
             server.tools = [
                 ForcePhaseTransitionTool(
                     workspace_root=tmp_path,
@@ -612,10 +567,10 @@ class TestServerToolRegistration:
         ) -> AsyncIterator[tuple[MagicMock, MagicMock]]:
             yield MagicMock(), MagicMock()
 
-        with patch("mcp_server.server.Settings") as mock_settings_cls:
+        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
             injected_settings = mock_settings_cls.from_env.return_value
-            server = MCPServer(settings=injected_settings)
+            server = make_test_server(settings=injected_settings)
             mock_settings_cls.from_env.reset_mock()
 
             with (

@@ -47,7 +47,7 @@ _GATE0_PATTERN = "^--- (?P<file>.+)$"
 
 
 def _make_manager() -> QAManager:
-    return make_qa_manager(Path("D:/dev/SimpleTraderV3"))
+    return make_qa_manager(Path("D:/dev/pgmcp"))
 
 
 # ---------------------------------------------------------------------------

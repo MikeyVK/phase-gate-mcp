@@ -16,7 +16,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ContributorConfig
 from mcp_server.core.exceptions import ConfigError
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 _EMPTY_CONTRIBUTORS_YAML = {"version": "1.0", "contributors": []}
 
@@ -30,7 +30,7 @@ _POPULATED_CONTRIBUTORS_YAML = {
 
 
 def _load_contributor_config(config_path: Path) -> ContributorConfig:
-    return ConfigLoader(_ST3_CONFIG).load_contributor_config(config_path=config_path)
+    return ConfigLoader(_PGMCP_CONFIG).load_contributor_config(config_path=config_path)
 
 
 @pytest.fixture(name="empty_contributors_path")

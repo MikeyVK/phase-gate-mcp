@@ -17,11 +17,11 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import CommentPattern, MetadataField, ScaffoldMetadataConfig
 from mcp_server.core.exceptions import ConfigError
 
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 def _load_scaffold_metadata_config(config_file: Path) -> ScaffoldMetadataConfig:
-    return ConfigLoader(_ST3_CONFIG).load_scaffold_metadata_config(config_path=config_file)
+    return ConfigLoader(_PGMCP_CONFIG).load_scaffold_metadata_config(config_path=config_file)
 
 
 class TestCommentPattern:

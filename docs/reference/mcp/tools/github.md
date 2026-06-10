@@ -452,16 +452,16 @@ never reach `main`:
 
 | Artifact | Path | Reason |
 |----------|------|--------|
-| Workflow state | `.st3/state.json` | Branch-local TDD phase tracking |
-| Deliverables | `.st3/deliverables.json` | Branch-local planning deliverables |
+| Workflow state | `.phase-gate/state.json` | Branch-local TDD phase tracking |
+| Deliverables | `.phase-gate/deliverables.json` | Branch-local planning deliverables |
 
-Configured in `.st3/config/contracts.yaml` → `branch_local_artifacts`.
+Configured in `.phase-gate/config/contracts.yaml` → `branch_local_artifacts`.
 
 #### Enforcement Guards
 
 `submit_pr` is subject to enforcement checks and internal preflights:
 
-**Enforcement runner** (`.st3/config/enforcement.yaml`, runs before execution):
+**Enforcement runner** (`.phase-gate/config/enforcement.yaml`, runs before execution):
 1. **`check_phase_readiness`** — blocks unless `state.json` shows `current_phase == "ready"`.
    Produces a `SuggestionNote` with `transition_phase(to_phase="ready")`.
 2. **`check_pr_status`** (via `BranchMutatingTool`) — blocks if the branch already has
@@ -790,7 +790,7 @@ Create a new label in the repository. Validates against `LabelConfig` patterns.
 
 #### Behavior Notes
 
-- **LabelConfig Validation:** Validates name against patterns in [.st3/labels.yaml](../../../../.st3/labels.yaml)
+- **LabelConfig Validation:** Validates name against patterns in [.phase-gate/labels.yaml](../../../../.phase-gate/labels.yaml)
 - **Duplicate Check:** Returns error if label already exists
 - **Color Format:** Must be 6-character hex WITHOUT `#` (validated by Pydantic)
 
@@ -1136,12 +1136,12 @@ All GitHub tools fully support Unicode content including emojis, non-ASCII chara
 
 ## Configuration
 
-### .st3/labels.yaml
+### .phase-gate/labels.yaml
 
-Labels created via `create_label` are validated against patterns in [.st3/labels.yaml](../../../../.st3/labels.yaml):
+Labels created via `create_label` are validated against patterns in [.phase-gate/labels.yaml](../../../../.phase-gate/labels.yaml):
 
 ```yaml
-# Labels are defined in .st3/config/labels.yaml
+# Labels are defined in .phase-gate/config/labels.yaml
 # See the file for the full list — key categories:
 #
 # labels:              # Named labels (type:*, priority:*, scope:*)
@@ -1158,7 +1158,7 @@ Labels matching `freeform-*` pattern bypass pattern validation.
 
 - [README.md](README.md) — MCP Tools navigation index
 - [project.md](project.md) — Project initialization and phase management
-- [.st3/labels.yaml](../../../../.st3/labels.yaml) — Label configuration
+- [.phase-gate/labels.yaml](../../../../.phase-gate/labels.yaml) — Label configuration
 - [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 1.4-1.7: GitHub tools)
 
 ---

@@ -1,6 +1,6 @@
 # MCP Server Documentation
 
-This directory is the operational index for the S1mpleTrader V3 MCP Server.
+This directory is the operational index for the PhaseGate MCP Server.
 
 ## What Is Authoritative
 
@@ -24,7 +24,7 @@ This directory links the MCP server architecture and operational guidance around
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)**
   Historical roadmap for the MCP server rollout.
 - **[Resources](RESOURCES.md)**
-  Specification of available MCP resources (`st3://...`).
+  Specification of available MCP resources (`pgmcp://...`).
 - **[Tools](TOOLS.md)**
   Current public tool surface summary derived from [mcp_server/server.py](../../mcp_server/server.py).
 - **[Phase Workflows](PHASE_WORKFLOWS.md)**
@@ -34,7 +34,7 @@ This directory links the MCP server architecture and operational guidance around
 
 ## Standardized Development
 
-Use `scaffold_artifact` to generate code and documentation artifacts from the artifact registry in `.st3/config/artifacts.yaml`.
+Use `scaffold_artifact` to generate code and documentation artifacts from the artifact registry in `.phase-gate/config/artifacts.yaml`.
 
 | Artifact Type | Example Usage |
 | :--- | :--- |
@@ -52,9 +52,9 @@ For template and registry details, see [docs/reference/mcp/tools/scaffolding.md]
 
 | Resource URI | Description |
 |--------------|-------------|
-| `st3://rules/coding_standards` | Active coding standards derived from `.st3/config/quality.yaml` |
-| `st3://status/phase` | Current phase and git status |
-| `st3://github/issues` | Active GitHub issues resource |
+| `pgmcp://rules/coding_standards` | Active coding standards derived from `.phase-gate/config/quality.yaml` |
+| `pgmcp://status/phase` | Current phase and git status |
+| `pgmcp://github/issues` | Active GitHub issues resource |
 
 ### Public Tool Surface
 

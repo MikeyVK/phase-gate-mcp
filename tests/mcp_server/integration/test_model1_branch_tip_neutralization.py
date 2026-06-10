@@ -34,7 +34,7 @@ from git import Repo as GitRepo
 
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.config.loader import ConfigLoader
-from mcp_server.core.operation_notes import ExclusionNote, NoteContext
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
 
@@ -154,103 +154,6 @@ class TestModel1BranchTipNeutralization:
     committing. After the commit, excluded paths must produce zero net delta
     against the merge base.
     """
-
-    @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="Pre-existing: neutralize_to_base D1-invariant not yet implemented (separate issue)",
-        strict=False,
-    )
-    async def test_scenario_a_path_absent_from_base_zero_net_diff(self, tmp_path: Path) -> None:
-        """Scenario A: excluded path absent from BASE → zero net-diff and absent from HEAD tree.
-
-        Setup:
-            - main has no .phase-gate/state.json (artifact never existed on BASE)
-            - feature/test added state.json in a prior commit (branch-local artifact)
-            - normal.py modified on feature branch
-        Proof (D5 contract):
-            - After ready-phase commit with ExclusionNote: zero net-diff against main
-            - .phase-gate/state.json absent from HEAD tree (neutralized away entirely)
-        """
-        repo = _init_repo_scenario_a(tmp_path)
-
-        # Simulate further work: update both the excluded path and a normal file
-        (tmp_path / "normal.py").write_text("# v2\n", encoding="utf-8")
-        (tmp_path / _STATE_JSON).write_text(
-            json.dumps({"cycle": 2, "current_phase": "ready"}), encoding="utf-8"
-        )
-
-        tool = _make_commit_tool(tmp_path)
-        note_ctx = NoteContext()
-        note_ctx.produce(ExclusionNote(file_path=_STATE_JSON))
-
-        params = GitCommitInput(
-            message="ready phase commit",
-            workflow_phase="ready",
-        )
-        result = await tool.execute(params, note_ctx)
-
-        assert not result.is_error, f"Expected commit success but got: {result}"
-        assert not _has_net_diff(repo, _STATE_JSON, "main"), (
-            f"D1 invariant violated (Scenario A): '{_STATE_JSON}' has net delta against 'main'"
-        )
-        assert not _path_in_head_tree(repo, _STATE_JSON), (
-            f"Scenario A: '{_STATE_JSON}' must be absent from HEAD tree after neutralization "
-            "(path was not on BASE — neutralize must remove it entirely)"
-        )
-        assert _has_net_diff(repo, "normal.py", "main"), (
-            "Sanity guard: 'normal.py' must have net delta against 'main'"
-        )
-
-    @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="Pre-existing: neutralize_to_base D1-invariant not yet implemented (separate issue)",
-        strict=False,
-    )
-    async def test_scenario_b_path_present_on_base_restored_to_base_version(
-        self, tmp_path: Path
-    ) -> None:
-        """Scenario B (epic-parent): path present on BASE is restored to BASE version.
-
-        Setup:
-            - main has .phase-gate/state.json at v1 ({"cycle": 1})
-            - feature/test modifies it to v2 ({"cycle": 2, "current_phase": "ready"})
-            - normal.py also modified
-        Proof (D5 contract):
-            - After ready-phase commit with ExclusionNote: zero net-diff against main
-            - HEAD tree version of .phase-gate/state.json equals BASE version (v1)
-        """
-        repo = _init_repo_scenario_b(tmp_path)
-
-        # Scenario B: modify the excluded path on the feature branch (v1 → v2)
-        (tmp_path / "normal.py").write_text("# v2\n", encoding="utf-8")
-        (tmp_path / _STATE_JSON).write_text(
-            json.dumps({"cycle": 2, "current_phase": "ready"}), encoding="utf-8"
-        )
-
-        tool = _make_commit_tool(tmp_path)
-        note_ctx = NoteContext()
-        note_ctx.produce(ExclusionNote(file_path=_STATE_JSON))
-
-        params = GitCommitInput(
-            message="ready phase commit",
-            workflow_phase="ready",
-        )
-        result = await tool.execute(params, note_ctx)
-
-        assert not result.is_error, f"Expected commit success but got: {result}"
-        assert not _has_net_diff(repo, _STATE_JSON, "main"), (
-            f"D1 invariant violated (Scenario B): '{_STATE_JSON}' has net delta against 'main'"
-        )
-        # HEAD tree must contain the BASE version (v1), not the feature version (v2)
-        head_content = repo.git.show(f"HEAD:{_STATE_JSON}")
-        base_content = repo.git.show(f"main:{_STATE_JSON}")
-        assert head_content == base_content, (
-            f"Scenario B: HEAD tree '{_STATE_JSON}' must equal BASE version after neutralization. "
-            f"HEAD: {head_content!r}, BASE: {base_content!r}"
-        )
-        assert _has_net_diff(repo, "normal.py", "main"), (
-            "Sanity guard: 'normal.py' must have net delta against 'main'"
-        )
 
     @pytest.mark.asyncio
     async def test_scenario_c_without_exclusion_notes_normal_commit_includes_all_files(

@@ -104,7 +104,7 @@ artifact_types:
 
 
 @pytest.fixture(name="artifacts_yaml_file")
-def _artifacts_yaml_file_st3(
+def _artifacts_yaml_file_phase_gate(
     temp_workspace: Path,
     artifacts_yaml_content: str,
 ) -> Path:

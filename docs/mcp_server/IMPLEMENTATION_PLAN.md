@@ -7,7 +7,7 @@ This document combines the findings from the **Gap Analysis** with the detailed 
 Our goal is to professionalize the `mcp_server` scaffolding capabilities. We will fill coverage gaps identified in the analysis (Tools, Resources, Standard Patterns) and introduce a flexible, generic mechanism to support future needs without code changes.
 
 **Key Deliverables:**
-1.  **New Templates**: A suite of templates for MCP components and standard architecture patterns (based on S1mpleTraderV2).
+1.  **New Templates**: A suite of templates for MCP components and standard architecture patterns (based on phase-gate-mcp).
 2.  **Extensibility**: A "Generic" template system allowing generation of *any* file type.
 3.  **Documentation Sync**: Aligning automation templates with reference documentation.
 
@@ -63,12 +63,12 @@ We will create the following Jinja2 files inheriting from `base/base_component.p
 
 ### 3.3. Phase 3: Documentation
 
-#### [MODIFY] [docs/reference/templates/COMPONENTS_README.md](file:///d:/dev/SimpleTraderV3/docs/reference/templates/COMPONENTS_README.md)
+#### [MODIFY] [docs/reference/templates/COMPONENTS_README.md](file:///docs/reference/templates/COMPONENTS_README.md)
 - Update index to include DTO, Worker, Adapter templates.
 
-#### [NEW] [docs/reference/templates/python_dto.md](file:///d:/dev/SimpleTraderV3/docs/reference/templates/python_dto.md)
-#### [NEW] [docs/reference/templates/python_worker.md](file:///d:/dev/SimpleTraderV3/docs/reference/templates/python_worker.md)
-#### [NEW] [docs/reference/templates/python_adapter.md](file:///d:/dev/SimpleTraderV3/docs/reference/templates/python_adapter.md)
+#### [NEW] [docs/reference/templates/python_dto.md](file:///docs/reference/templates/python_dto.md)
+#### [NEW] [docs/reference/templates/python_worker.md](file:///docs/reference/templates/python_worker.md)
+#### [NEW] [docs/reference/templates/python_adapter.md](file:///docs/reference/templates/python_adapter.md)
 
 ## Verification Plan
 

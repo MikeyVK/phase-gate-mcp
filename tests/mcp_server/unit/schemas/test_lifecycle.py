@@ -136,7 +136,7 @@ class TestLifecycleSystemControl:
         # Invalid: not lowercase hex
         with pytest.raises(ValidationError, match="version_hash must be lowercase hex"):
             BaseRenderContext(
-                output_path=Path("/tmp/test3.py"),
+                output_path=Path("/tmp/tephase_gate.py"),
                 scaffold_created=datetime.now(tz=UTC),
                 template_id="tool",
                 version_hash="ABCD1234",  # Invalid: uppercase

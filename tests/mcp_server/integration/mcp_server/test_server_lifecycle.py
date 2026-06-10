@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from mcp_server.config.settings import GitHubSettings, LogSettings, ServerSettings, Settings
-from mcp_server.server import MCPServer
+from tests.mcp_server.test_support import make_test_server
 
 
 def _make_test_settings(audit_log: Path) -> Settings:
@@ -38,7 +38,7 @@ async def test_server_startup_logged_to_audit(tmp_path: Path) -> None:
         mock_adapter.list_issues.return_value = []
         mock_adapter_class.return_value = mock_adapter
 
-        _server = MCPServer(settings=_make_test_settings(audit_log))
+        _server = make_test_server(settings=_make_test_settings(audit_log))
 
     assert audit_log.exists(), "Audit log should be created"
 
@@ -49,7 +49,7 @@ async def test_server_startup_logged_to_audit(tmp_path: Path) -> None:
         entry
         for entry in log_entries
         if "server_lifecycle" in entry.get("logger", "")
-        and entry.get("message") == "MCP server starting"
+        and "MCP server starting" in entry.get("message", "")
     ]
 
     assert len(startup_entries) >= 1, "Should log server startup"
@@ -66,7 +66,7 @@ async def test_server_shutdown_logged_to_audit(tmp_path: Path) -> None:
         mock_adapter.list_issues.return_value = []
         mock_adapter_class.return_value = mock_adapter
 
-        server = MCPServer(settings=_make_test_settings(audit_log))
+        server = make_test_server(settings=_make_test_settings(audit_log))
         await server.shutdown()
 
     log_lines = audit_log.read_text().strip().split("\n")

@@ -23,7 +23,7 @@ from tests.mcp_server.test_support import make_phase_state_engine, make_project_
 
 @pytest.fixture
 def git_repo(tmp_path: Path) -> Path:
-    """Create temporary git repository with ST3 configuration."""
+    """Create temporary git repository with PhaseGate configuration."""
     # Initialize git repo
     subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
     subprocess.run(
@@ -40,8 +40,8 @@ def git_repo(tmp_path: Path) -> Path:
     )
 
     # Create .phase-gate directory structure
-    st3_dir = tmp_path / ".phase-gate"
-    config_dir = st3_dir / "config"
+    phase_gate_dir = tmp_path / ".phase-gate"
+    config_dir = phase_gate_dir / "config"
     config_dir.mkdir(parents=True)
 
     # Create workphases.yaml

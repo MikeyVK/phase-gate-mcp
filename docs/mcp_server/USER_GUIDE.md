@@ -7,7 +7,7 @@
 
 ## 1. Introduction
 
-The PhaseGate MCP Server (`phase-gate-mcp`) is a Model Context Protocol server designed to assist with the development of the S1mpleTraderV3 project. It provides AI agents with context about the project's state, coding standards, and facilitates workflows like TDD and GitHub integration.
+The PhaseGate MCP Server (`phase-gate-mcp`) is a Model Context Protocol server designed to assist with the development of the phase-gate-mcp project. It provides AI agents with context about the project's state, coding standards, and facilitates workflows like TDD and GitHub integration.
 
 ## 2. Installation
 
@@ -49,7 +49,7 @@ logging:
 
 github:
   owner: "MikeyVK"
-  repo: "S1mpleTraderV3"
+  repo: "phase-gate-mcp"
   project_number: 1
 ```
 
@@ -73,7 +73,7 @@ To use this MCP server with Claude Desktop, add the following to your `claude_de
     "phase-gate-mcp": {
       "command": "python",
       "args": ["-m", "mcp_server"],
-      "cwd": "/absolute/path/to/SimpleTraderV3",
+      "cwd": "/absolute/path/to/phase-gate-mcp",
       "env": {
         "GITHUB_TOKEN": "your-github-token"
       }
@@ -82,7 +82,7 @@ To use this MCP server with Claude Desktop, add the following to your `claude_de
 }
 ```
 
-Replace `/absolute/path/to/SimpleTraderV3` with the actual path to your repository.
+Replace `/absolute/path/to/phase-gate-mcp` with the actual path to your repository.
 
 ## 6. Available Resources
 

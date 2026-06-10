@@ -35,7 +35,7 @@ graph LR
         TC["template_config<br/>template_config.py"]
     end
 
-    subgraph YAML["YAML Runtime Config (.st3/)"]
+    subgraph YAML["YAML Runtime Config (.phase-gate/)"]
         WC["WorkflowConfig<br/>workflows.py"]
         WPC["WorkphasesConfig<br/>workphases_config.py"]
         ARC["ArtifactRegistryConfig<br/>artifact_registry_config.py"]
@@ -67,16 +67,16 @@ graph LR
 
 | Config Class | YAML File | Primary Consumer(s) |
 |-------------|-----------|---------------------|
-| `WorkflowConfig` | `.st3/workflows.yaml` | `PhaseStateEngine`, `ProjectManager`, `project_tools`, `issue_tools` |
-| `WorkphasesConfig` | `.st3/workphases.yaml` or similar | `PhaseStateEngine`, `PhaseContractResolver` |
-| `ArtifactRegistryConfig` | `.st3/artifacts.yaml` | `ArtifactManager` |
-| `LabelConfig` | `.st3/labels.yaml` | `label_tools`, `issue_tools` |
-| `IssueConfig` | `.st3/issue_config.yaml` | `issue_tools` |
-| `MilestoneConfig` | `.st3/milestone_config.yaml` | `issue_tools` |
-| `ScopeConfig` | `.st3/scope_config.yaml` | `issue_tools` |
-| `ContributorConfig` | `.st3/contributors.yaml` | `issue_tools` |
-| `ProjectStructureConfig` | `.st3/project_structure.yaml` | `ProjectManager` |
-| `OperationPoliciesConfig` | `.st3/operation_policies.yaml` | `QAManager` (indirect) |
+| `WorkflowConfig` | `.phase-gate/workflows.yaml` | `PhaseStateEngine`, `ProjectManager`, `project_tools`, `issue_tools` |
+| `WorkphasesConfig` | `.phase-gate/workphases.yaml` or similar | `PhaseStateEngine`, `PhaseContractResolver` |
+| `ArtifactRegistryConfig` | `.phase-gate/artifacts.yaml` | `ArtifactManager` |
+| `LabelConfig` | `.phase-gate/labels.yaml` | `label_tools`, `issue_tools` |
+| `IssueConfig` | `.phase-gate/issue_config.yaml` | `issue_tools` |
+| `MilestoneConfig` | `.phase-gate/milestone_config.yaml` | `issue_tools` |
+| `ScopeConfig` | `.phase-gate/scope_config.yaml` | `issue_tools` |
+| `ContributorConfig` | `.phase-gate/contributors.yaml` | `issue_tools` |
+| `ProjectStructureConfig` | `.phase-gate/project_structure.yaml` | `ProjectManager` |
+| `OperationPoliciesConfig` | `.phase-gate/operation_policies.yaml` | `QAManager` (indirect) |
 
 ---
 

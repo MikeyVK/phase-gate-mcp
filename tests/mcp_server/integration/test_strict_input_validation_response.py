@@ -8,12 +8,13 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from mcp.types import EmbeddedResource
+from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.server import MCPServer
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.tool_result import ToolResult
+from tests.mcp_server.test_support import make_test_server
 
 
 class IntegrationInput(BaseModel):
@@ -26,6 +27,7 @@ class MockIntegrationTool(BaseTool):
     """Mock tool for integration testing."""
 
     name = "MockIntegrationTool"
+    description = "Mock integration tool"
     args_model = IntegrationInput
 
     async def execute(  # noqa: ANN201
@@ -52,7 +54,7 @@ class TestStrictInputValidationResponse:
     @pytest_asyncio.fixture
     async def server(self) -> MCPServer:
         """MCPServer with MockIntegrationTool registered."""
-        s = MCPServer()
+        s = make_test_server()
         s.tools.append(MockIntegrationTool())
         return s
 
@@ -62,25 +64,22 @@ class TestStrictInputValidationResponse:
     ):
         """
         Integration test: end-to-end validation failure path.
-        When an extra unknown field is supplied, _validate_tool_arguments returns a
-        ToolResult and _convert_tool_result_to_mcp_result wraps it in a
+        When an extra unknown field is supplied, the call_tool handler returns a
         CallToolResult with isError=True.
-
-        Before fix: validation errors bypassed the ToolResult path.
-        After fix: proper CallToolResult(isError=True) returned.
         """
-        tool = next(t for t in server.tools if t.name == "MockIntegrationTool")
         extra_field_args = {"action": "test", "unknown_field": "typo"}
 
-        validated = server._validate_tool_arguments(  # pyright: ignore[reportPrivateUsage]
-            tool, extra_field_args, "test-call-id", "MockIntegrationTool"
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="MockIntegrationTool",
+                arguments=extra_field_args,
+            )
         )
+        response = await handler(req)
+        result = response.root
 
-        assert isinstance(validated, ToolResult), "Validation failure must return ToolResult"
-        assert validated.is_error is True
-
-        result = server._convert_tool_result_to_mcp_result(validated)  # pyright: ignore[reportPrivateUsage]
-        assert hasattr(result, "isError"), "Converted result must have isError"
+        assert hasattr(result, "isError"), "Result must have isError"
         assert result.isError is True
 
     @pytest.mark.asyncio
@@ -91,15 +90,17 @@ class TestStrictInputValidationResponse:
         Integration test: error response includes schema://validation resource
         so the agent can learn the valid input structure.
         """
-        tool = next(t for t in server.tools if t.name == "MockIntegrationTool")
         extra_field_args = {"action": "test", "unknown_field": "typo"}
 
-        validated = server._validate_tool_arguments(  # pyright: ignore[reportPrivateUsage]
-            tool, extra_field_args, "test-call-id", "MockIntegrationTool"
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="MockIntegrationTool",
+                arguments=extra_field_args,
+            )
         )
-        assert isinstance(validated, ToolResult)
-
-        result = server._convert_tool_result_to_mcp_result(validated)  # pyright: ignore[reportPrivateUsage]
+        response = await handler(req)
+        result = response.root
         assert result.isError is True
 
         # content on CallToolResult contains MCP TextContent / EmbeddedResource objects
