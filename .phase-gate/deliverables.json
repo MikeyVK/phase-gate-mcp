@@ -70,11 +70,11 @@
             "cycle_number": 4,
             "deliverables": [
               {
-                "description": "Refactor test variables and fixtures containing st3",
+                "description": "Refactor test variables/fixtures containing st3/simpletrader, delete obsolete tests, and rename legacy test file",
                 "id": "del_test_refactoring"
               }
             ],
-            "exit_criteria": "All unit and e2e tests pass cleanly with updated naming.",
+            "exit_criteria": "All unit and e2e tests pass cleanly with updated naming; 10 obsolete tests deleted; test_cycle_tools_legacy.py renamed.",
             "name": "C_CLEANUP.4"
           }
         ],

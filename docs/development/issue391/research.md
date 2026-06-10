@@ -48,7 +48,10 @@ The repository was recently split from the SimpleTraderV3 backend into a standal
 
 1. **Codebase (mcp_server/)**: 0 occurrences of 'st3' or 'simpletrader'. The production codebase is completely clean.
 2. **Configuration (.phase-gate/)**: 0 occurrences of legacy terms.
-3. **Tests (tests/)**: ~40 occurrences of 'st3' or 'simpletrader' in fixtures, variables, and comments (e.g., test_workflow_cycle_e2e.py). These are functional test utilities that mock old paths or use variable names like _ST3_CONFIG.
+3. **Tests (tests/)**:
+   - **Active naming violations**: A detailed scan revealed **78 occurrences** of legacy naming (`st3`) in test variables (e.g., `st3_dir`, `_ST3_CONFIG`), functions (e.g., `test_workspace_root_st3`), and mock paths.
+   - **Hardcoded paths**: **4 occurrences** of `SimpleTraderV3` remain in hardcoded mock paths (e.g., `Path("D:/dev/SimpleTraderV3")` in `test_autofix_propagation.py` and `test_violation_path_normalization.py`).
+   - **Dead/Obsolete tests**: There are **6 legacy skipped tests** in `tests/mcp_server/unit/managers/test_qa_manager.py` that mock hardcoded, non-config-driven quality gates (replaced by `TestConfigDrivenExecution`). These should be cleaned up.
 4. **Active Documentation (docs/)**:
    - docs/mcp_server/ARCHITECTURE.md: Multiple references to 'ST3 Workflow MCP Server' and 'st3://' resource URIs.
    - docs/mcp_server/RESOURCES.md: Defines st3:// URIs (should be pgmcp://).

@@ -2,8 +2,8 @@
 <!-- template=planning version=130ac5ea created=2026-06-10T06:08Z updated= -->
 # refactor(mcp-server): Cleanup legacy naming, docs, tests, and archive files
 
-**Status:** DRAFT  
-**Version:** 1.0  
+**Status:** APPROVED  
+**Version:** 1.1  
 **Last Updated:** 2026-06-10
 
 ---
@@ -78,7 +78,14 @@ Plan to perform a clean break on all legacy name occurrences across active docs 
 
 ### Cycle 4: C_CLEANUP.4
 - **Deliverable ID:** `del_test_refactoring`
-- **Goal:** Refactor all test variables, fixtures, and comments in `tests/` containing `st3` or `simpletrader`
+- **Goal:** Refactor test variables/fixtures containing `st3` or `simpletrader`, delete obsolete tests, and rename legacy test file.
+- **Tasks:**
+  - Rename the **82 legacy naming occurrences** in the test suite (e.g., `_ST3_CONFIG` -> `_PGMCP_CONFIG`, `st3_dir` -> `phase_gate_dir`, `SimpleTraderV3` -> `pgmcp`).
+  - Delete **10 obsolete tests** that are functionally dead:
+    - 6 skipped tests in `tests/mcp_server/unit/managers/test_qa_manager.py` (which mock old hardcoded gates).
+    - 3 xfail tests in `test_enforcement_runner_unit.py` and `test_model1_branch_tip_neutralization.py` (which expect neutralization in `GitCommitTool`).
+    - 1 xfail test in `test_server.py` (which expects `submit_pr` to block instead of automatically neutralizing).
+  - Rename `tests/mcp_server/unit/tools/test_cycle_tools_legacy.py` to `tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py` to match its active function.
 - **Tests:**
   - Run the entire `pytest` test suite locally.
   - Run static type checking gate (`pyright` or quality gates) on all modified test files.
@@ -86,6 +93,8 @@ Plan to perform a clean break on all legacy name occurrences across active docs 
   - Test suite is fully green.
   - Static type checking passes cleanly on modified test files.
   - All variables renamed (e.g. `_PGMCP_CONFIG`, `phase_gate_dir`).
+  - The 10 obsolete tests are removed.
+  - The legacy test file is renamed.
 
 ## Typing & Quality Gate Obligations
 
