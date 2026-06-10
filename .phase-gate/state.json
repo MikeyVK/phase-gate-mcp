@@ -2,7 +2,7 @@
   "branch": "refactor/391-cleanup-legacy-naming-and-architecture",
   "issue_number": 391,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -19,7 +19,16 @@
   "issue_title": "refactor(mcp-server): Cleanup legacy naming, docs, tests, and archive files",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-09T20:24:36.669833+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-06-10T05:56:58.188815+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }

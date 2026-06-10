@@ -29,6 +29,57 @@
     ],
     "skip_reason": null,
     "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
-    "created_at": "2026-06-09T20:24:36.592763+00:00"
+    "created_at": "2026-06-09T20:24:36.592763+00:00",
+    "planning_deliverables": {
+      "tdd_cycles": {
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "deliverables": [
+              {
+                "description": "Delete all deprecated files under docs/archive/",
+                "id": "del_archive_deletion"
+              }
+            ],
+            "exit_criteria": "docs/archive/ directory is completely removed from the branch.",
+            "name": "C_CLEANUP.1"
+          },
+          {
+            "cycle_number": 2,
+            "deliverables": [
+              {
+                "description": "Rename ST3 and simpletrader terms in active docs and pyproject.toml",
+                "id": "del_active_docs_cleanup"
+              }
+            ],
+            "exit_criteria": "Active docs contain zero legacy terms and pyproject.toml is updated.",
+            "name": "C_CLEANUP.2"
+          },
+          {
+            "cycle_number": 3,
+            "deliverables": [
+              {
+                "description": "Complete rewrite of docs/mcp_server/ARCHITECTURE.md",
+                "id": "del_architecture_rewrite"
+              }
+            ],
+            "exit_criteria": "ARCHITECTURE.md is up-to-date and approved.",
+            "name": "C_CLEANUP.3"
+          },
+          {
+            "cycle_number": 4,
+            "deliverables": [
+              {
+                "description": "Refactor test variables and fixtures containing st3",
+                "id": "del_test_refactoring"
+              }
+            ],
+            "exit_criteria": "All unit and e2e tests pass cleanly with updated naming.",
+            "name": "C_CLEANUP.4"
+          }
+        ],
+        "total": 4
+      }
+    }
   }
 }
