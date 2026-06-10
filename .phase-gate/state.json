@@ -1,107 +1,40 @@
 {
-  "branch": "refactor/391-cleanup-legacy-naming-and-architecture",
-  "issue_number": 391,
-  "workflow_name": "refactor",
-  "current_phase": "ready",
-  "current_cycle": 4,
-  "last_cycle": 4,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "C_CLEANUP.2",
-      "forced": false,
-      "entered": "2026-06-10T06:14:28.025321+00:00"
-    },
-    {
-      "cycle_number": 3,
-      "name": "C_CLEANUP.3",
-      "forced": false,
-      "entered": "2026-06-10T06:22:02.758161+00:00"
-    },
-    {
-      "cycle_number": 4,
-      "name": "C_CLEANUP.4",
-      "forced": false,
-      "entered": "2026-06-10T15:20:58.098335+00:00"
-    }
-  ],
+  "branch": "epic/289-installable-wheel-standalone-mcp-server",
+  "issue_number": 289,
+  "workflow_name": "epic",
+  "current_phase": "coordination",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested transition back to research phase to perform additional investigations.",
-  "issue_title": "refactor(mcp-server): Cleanup legacy naming, docs, tests, and archive files",
-  "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
-  "created_at": "2026-06-09T20:24:36.669833+00:00",
+  "skip_reason": "Design phase output (decomposition, sequencing, naming decisions, approved strategy) is fully captured in the #289 tracker body. No separate design artifact needed \u2014 all cross-issue contracts are explicit in the tracker. Child issues #285, #384, #385, #386, #387, #388 are created and sequenced.",
+  "issue_title": "Epic: Installable Wheel / Standalone MCP Server",
+  "parent_branch": "main",
+  "created_at": "2026-06-07T06:23:57.965595+00:00",
   "transitions": [
     {
       "from_phase": "research",
       "to_phase": "planning",
-      "timestamp": "2026-06-10T05:56:58.188815+00:00",
-      "human_approval": null,
+      "timestamp": "2026-06-07T08:08:40.010003+00:00",
+      "human_approval": "Scope en tracker volledig vastgesteld tijdens research. Planning-deliverables zijn verwerkt in de tracker body van #289.",
       "forced": false,
       "skip_reason": null
     },
     {
       "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-06-10T06:13:29.437122+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "research",
-      "timestamp": "2026-06-10T15:49:41.530235+00:00",
-      "human_approval": "Approved by user MikeyVK",
+      "to_phase": "coordination",
+      "timestamp": "2026-06-07T08:08:57.265574+00:00",
+      "human_approval": "Akkoord \u2014 design is verwerkt in tracker #289, aparte design fase voegt niets toe.",
       "forced": true,
-      "skip_reason": "User requested transition back to research phase to perform additional investigations."
-    },
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-06-10T16:48:03.302225+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-06-10T16:49:02.102005+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-06-10T17:18:59.038095+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-06-10T17:24:53.422993+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-06-10T18:07:35.347864+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
+      "skip_reason": "Design phase output (decomposition, sequencing, naming decisions, approved strategy) is fully captured in the #289 tracker body. No separate design artifact needed \u2014 all cross-issue contracts are explicit in the tracker. Child issues #285, #384, #385, #386, #387, #388 are created and sequenced."
     }
   ],
   "reconstructed": false,
