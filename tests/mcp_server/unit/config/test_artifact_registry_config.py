@@ -29,11 +29,11 @@ from mcp_server.core.exceptions import ConfigError
 # a required constructor argument. We point it at the real .phase-gate/config directory
 # (named "config", so normalize_config_root accepts it) to avoid coupling the
 # loader constructor to arbitrary temp directories.
-_ST3_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
 
 
 def _load_artifact_registry(config_path: Path) -> ArtifactRegistryConfig:
-    return ConfigLoader(_ST3_CONFIG).load_artifact_registry_config(config_path=config_path)
+    return ConfigLoader(_PGMCP_CONFIG).load_artifact_registry_config(config_path=config_path)
 
 
 @pytest.fixture

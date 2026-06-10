@@ -72,7 +72,7 @@ def _keyword_matches(tree: ast.AST, *names: str) -> list[str]:
     return matches
 
 
-def test_no_raw_st3_config_paths_in_production() -> None:
+def test_no_raw_phase_gate_config_paths_in_production() -> None:
     """No production Python module may hardcode .phase-gate/config paths in Path() calls."""
     offenders: list[str] = []
 

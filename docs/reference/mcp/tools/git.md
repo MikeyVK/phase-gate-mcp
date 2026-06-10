@@ -644,7 +644,7 @@ Fetch updates from a remote (thread-safe).
 
 #### Behavior Notes
 
-- **Thread-Safe:** Uses lock file (`.git/st3_fetch.lock`) to prevent concurrent fetch operations
+- **Thread-Safe:** Offloaded to a worker thread to prevent event loop / stdio deadlocks
 - **No Working Directory Changes:** Only updates remote-tracking branches
 - **Prune:** `prune=true` removes remote-tracking branches that no longer exist on remote
 - **Timeout:** 30 second timeout on fetch operation
@@ -700,7 +700,7 @@ Pull updates from a remote with optional rebase.
 
 #### Behavior Notes
 
-- **Thread-Safe:** Uses same lock file as `git_fetch`
+- **Thread-Safe:** Offloaded to a worker thread to prevent event loop / stdio deadlocks
 - **Upstream Required:** Returns error if current branch has no upstream tracking
 - **Conflicts:** Returns error if merge/rebase conflicts occur
 - **Rebase vs Merge:** `rebase=true` maintains linear history; `rebase=false` creates merge commit
@@ -954,14 +954,7 @@ issue_title_max_length: 72
 
 ## Thread Safety
 
-### Fetch/Pull Lock Mechanism
-
-Both `git_fetch` and `git_pull` use a file-based lock to prevent concurrent operations:
-
-- **Lock File:** `.git/st3_fetch.lock`
-- **Timeout:** 30 seconds
-- **Behavior:** If lock file exists, waits up to 30s for release; returns error if timeout exceeded
-- **Cleanup:** Lock file automatically removed after operation completes
+Both `git_fetch` and `git_pull` execute potentially blocking GitPython network operations via `anyio.to_thread.run_sync` to protect against event loop blocking / stdio deadlocks (preventing MCP hanging).
 
 **See Also:** [docs/reference/mcp/git_fetch_pull.md](../git_fetch_pull.md) for detailed threading architecture.
 

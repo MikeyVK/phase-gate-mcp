@@ -58,7 +58,7 @@ def _minimal_artifact_registry() -> ArtifactRegistryConfig:
     )
 
 
-def test_normalize_config_root_handles_workspace_and_st3_paths(tmp_path: Path) -> None:
+def test_normalize_config_root_handles_workspace_and_phase_gate_paths(tmp_path: Path) -> None:
     workspace_root = tmp_path / "workspace"
     config_root = workspace_root / ".phase-gate" / "config"
 

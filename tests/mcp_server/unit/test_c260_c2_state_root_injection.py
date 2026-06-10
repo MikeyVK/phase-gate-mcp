@@ -109,7 +109,7 @@ class TestPhaseStateEngineStateRoot:
 
         assert engine.state_path == state_root / "state.json"
 
-    def test_state_file_is_not_workspace_root_st3(self, tmp_path: Path) -> None:
+    def test_state_file_is_not_workspace_root_phase_gate(self, tmp_path: Path) -> None:
         """state_path must NOT be derived from workspace_root / '.phase-gate'."""
         state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
@@ -161,7 +161,7 @@ class TestProjectManagerStateRoot:
 
         assert manager.deliverables_file == state_root / "deliverables.json"
 
-    def test_deliverables_file_is_not_workspace_root_st3(self, tmp_path: Path) -> None:
+    def test_deliverables_file_is_not_workspace_root_phase_gate(self, tmp_path: Path) -> None:
         state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
 
@@ -269,7 +269,7 @@ class TestCycleToolsStateRoot:
             branch = tool._get_current_branch()  # pyright: ignore[reportPrivateUsage]
         assert branch == "feature/99-test"
 
-    def test_transition_cycle_tool_does_not_read_from_workspace_st3(self, tmp_path: Path) -> None:
+    def test_transition_cycle_tool_does_not_read_from_workspace_phase_gate(self, tmp_path: Path) -> None:
         state_root = tmp_path / ".custom-state"
         state_root.mkdir()
         # No state.json in state_root
@@ -307,7 +307,7 @@ class TestAdminToolsRestartMarker:
         assert str(server_root) in str(result)
         assert ".restart_marker" in result.name
 
-    def test_does_not_use_cwd_dot_st3(self, tmp_path: Path) -> None:
+    def test_does_not_use_cwd_dot_phase_gate(self, tmp_path: Path) -> None:
         """Marker path must not contain CWD-relative '.phase-gate'."""
         server_root = tmp_path / ".custom-state"
         tool = RestartServerTool(server_root=server_root)
@@ -369,15 +369,15 @@ class TestArtifactManagerEphemeralTemp:
 # ---------------------------------------------------------------------------
 
 
-class TestTemplateConfigNoCwdSt3:
+class TestTemplateConfigNoCwdPhaseGate:
     """get_template_root() must not check CWD-relative .phase-gate/templates."""
 
-    def test_does_not_fall_through_to_cwd_dot_st3(
+    def test_does_not_fall_through_to_cwd_dot_phase_gate(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Even if .phase-gate/templates exists in CWD, it must not be used."""
-        st3_templates = tmp_path / ".phase-gate" / "templates"
-        st3_templates.mkdir(parents=True)
+        phase_gate_templates = tmp_path / ".phase-gate" / "templates"
+        phase_gate_templates.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
         # Patch package root to not exist so we can test isolation
@@ -400,7 +400,7 @@ class TestTemplateConfigNoCwdSt3:
 class TestTemplateRegistryDefaultArg:
     """TemplateRegistry default registry_path must not hardcode .phase-gate."""
 
-    def test_default_registry_path_is_not_cwd_dot_st3(self) -> None:
+    def test_default_registry_path_is_not_cwd_dot_phase_gate(self) -> None:
         """TemplateRegistry() without args must not default to Path('.phase-gate/...')."""
         sig = inspect.signature(TemplateRegistry.__init__)
         default = sig.parameters["registry_path"].default
@@ -562,10 +562,10 @@ class TestAdminToolsServerRootInjection:
 # ---------------------------------------------------------------------------
 
 
-class TestNormalizeConfigRootNoSt3Fallback:
+class TestNormalizeConfigRootNoPhaseGateFallback:
     """normalize_config_root must not hardcode .phase-gate in the final fallback branch."""
 
-    def test_workspace_root_fallback_does_not_produce_st3_path(self, tmp_path: Path) -> None:
+    def test_workspace_root_fallback_does_not_produce_phase_gate_path(self, tmp_path: Path) -> None:
         """When given a plain directory (not hidden, no config/ child), must not return .phase-gate.
 
         GREEN: raises FileNotFoundError (no silent .phase-gate fallback).
@@ -589,10 +589,10 @@ class TestNormalizeConfigRootNoSt3Fallback:
 # ---------------------------------------------------------------------------
 
 
-class TestTemplateRegistryNoSt3Fallback:
+class TestTemplateRegistryNoPhaseGateFallback:
     """TemplateRegistry with registry_path=None must raise, not silently use .phase-gate."""
 
-    def test_none_registry_path_raises_or_no_st3(self) -> None:
+    def test_none_registry_path_raises_or_no_phase_gate(self) -> None:
         """TemplateRegistry() without args: registry_path must not resolve to .phase-gate.
 
         RED: current __init__ body sets

@@ -43,9 +43,9 @@ def _make_quality_repo(
     failed_files: list[str] | None = None,
 ) -> FileQualityStateRepository:
     """Create a FileQualityStateRepository seeded with the given state."""
-    st3_dir = tmp_path / ".phase-gate"
-    st3_dir.mkdir(exist_ok=True)
-    repo = FileQualityStateRepository(backing_file=st3_dir / "quality_state.json")
+    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir.mkdir(exist_ok=True)
+    repo = FileQualityStateRepository(backing_file=phase_gate_dir / "quality_state.json")
     repo.apply(
         lambda _: QualityState(
             baseline_sha=baseline_sha,

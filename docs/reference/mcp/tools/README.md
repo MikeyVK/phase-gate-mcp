@@ -245,7 +245,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 
 ### 5. Thread Safety
 
-- Git fetch/pull use thread-safe lock files
+- Git fetch/pull run asynchronously in worker threads to prevent stdio deadlocks
 - `safe_edit_file` uses file-level `asyncio.Lock` with 10ms timeout
 - `restart_server` coordinates via proxy to avoid race conditions
 

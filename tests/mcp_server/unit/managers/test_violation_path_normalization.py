@@ -28,11 +28,11 @@ from tests.mcp_server.test_support import make_qa_manager
 # Helpers
 # ---------------------------------------------------------------------------
 
-_WORKSPACE = Path("D:/dev/SimpleTraderV3")
+_WORKSPACE = Path("D:/dev/pgmcp")
 _REL_FILE = "mcp_server/utils/path_resolver.py"
 # Same file, different representations:
-_ABS_WIN = r"D:\dev\SimpleTraderV3\mcp_server\utils\path_resolver.py"
-_ABS_POSIX = "D:/dev/SimpleTraderV3/mcp_server/utils/path_resolver.py"
+_ABS_WIN = r"D:\dev\pgmcp\mcp_server\utils\path_resolver.py"
+_ABS_POSIX = "D:/dev/pgmcp/mcp_server/utils/path_resolver.py"
 _REL_BACKSLASH = r"mcp_server\utils\path_resolver.py"
 
 

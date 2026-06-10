@@ -26,9 +26,9 @@ def _make_quality_repo(
     failed_files: list[str] | None = None,
 ) -> FileQualityStateRepository:
     """Create a FileQualityStateRepository backed by quality_state.json in tmp_path."""
-    st3_dir = tmp_path / ".phase-gate"
-    st3_dir.mkdir(exist_ok=True)
-    backing_file = st3_dir / "quality_state.json"
+    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir.mkdir(exist_ok=True)
+    backing_file = phase_gate_dir / "quality_state.json"
     repo = FileQualityStateRepository(backing_file=backing_file)
     repo.apply(
         lambda _: QualityState(
@@ -45,9 +45,9 @@ def _state_with_quality_gates(
     failed_files: list[str] | None = None,
 ) -> Path:
     """Write a .phase-gate/state.json with quality_gates section; returns state file path."""
-    st3_dir = tmp_path / ".phase-gate"
-    st3_dir.mkdir(exist_ok=True)
-    state_file = st3_dir / "state.json"
+    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir.mkdir(exist_ok=True)
+    state_file = phase_gate_dir / "state.json"
     state_file.write_text(
         json.dumps(
             {
@@ -135,9 +135,9 @@ class TestBaselineAdvanceOnAllPass:
 
     def test_advance_baseline_creates_state_file_if_absent(self, tmp_path: Path) -> None:
         """When quality_state.json is absent, _advance_baseline_on_all_pass creates it."""
-        st3_dir = tmp_path / ".phase-gate"
-        st3_dir.mkdir()
-        quality_state_file = st3_dir / "quality_state.json"
+        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir.mkdir()
+        quality_state_file = phase_gate_dir / "quality_state.json"
         assert not quality_state_file.exists()  # precondition
 
         repo = FileQualityStateRepository(backing_file=quality_state_file)
