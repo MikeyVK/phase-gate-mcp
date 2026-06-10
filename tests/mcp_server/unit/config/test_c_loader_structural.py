@@ -112,3 +112,29 @@ def test_no_blockers_or_recovery_kwargs_on_exception_callsites() -> None:
     assert not offenders, (
         "Legacy blockers=/recovery= kwargs remain in production code:\n" + "\n".join(offenders)
     )
+
+
+def test_no_st3_or_simpletrader_naming_in_tests() -> None:
+    """No test Python module may contain the legacy terms 'st3' or 'simpletrader' (case-insensitive)."""
+    import re
+    # Match st3 or simpletrader as word parts or standalone words (e.g. st3_dir, _ST3_CONFIG, SimpleTraderV3)
+    legacy_pattern = re.compile(r"st3|simpletrader", re.IGNORECASE)
+    offenders = []
+
+    # Scan all Python files in tests/
+    tests_root = WORKSPACE_ROOT / "tests"
+    for path in tests_root.rglob("*.py"):
+        # Exclude this file itself to avoid false positives on the test definition
+        if path.name == "test_c_loader_structural.py":
+            continue
+
+        content = path.read_text(encoding="utf-8")
+        # Find all occurrences of the pattern
+        matches = legacy_pattern.findall(content)
+        if matches:
+            offenders.append(f"{path.relative_to(WORKSPACE_ROOT).as_posix()} (matches: {set(matches)})")
+
+    assert not offenders, (
+        "Legacy terms 'st3' or 'simpletrader' found in test suite files:\n"
+        + "\n".join(offenders)
+    )
