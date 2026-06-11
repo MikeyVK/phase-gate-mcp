@@ -562,7 +562,7 @@ def test_c2_run_tests_input_verbose_validation() -> None:
 
 @pytest.mark.asyncio
 async def test_c3_run_tests_build_cmd_verbose_tb_styles(injected_settings: Settings) -> None:
-    """RunTestsTool._build_cmd sets --tb=long when verbose=True and --tb=short when verbose=False."""
+    """RunTestsTool._build_cmd sets --tb=long when verbose is True, short when False."""
     runner = FakePytestRunner(result=_make_pytest_result())
     tool = RunTestsTool(runner=runner, settings=injected_settings)
 

@@ -115,7 +115,7 @@ _COVERAGE_RE = re.compile(r"^TOTAL\b(?:\s+\d+)+\s+(\d+(?:\.\d+)?)%$", re.MULTILI
 _LF_EMPTY_RE = re.compile(r"no previously failed tests,\s*not deselecting", re.IGNORECASE)
 
 
-MAX_FAILURES_DETAILED = 3
+MAX_FAILURES_DETAILED: int = 3
 
 
 class PytestRunner:
@@ -204,17 +204,17 @@ class PytestRunner:
 
     def _parse_failures(self, stdout: str, *, verbose: bool = False) -> tuple[FailureDetail, ...]:
         """Extract FailureDetail entries from FAILED lines in short summary."""
-        """Extract FailureDetail entries from FAILED lines in short summary."""
         details: list[FailureDetail] = []
         for i, match in enumerate(_FAILED_LINE_RE.finditer(stdout)):
             test_id = match.group(1).strip()
             raw_traceback = self._extract_traceback(stdout, test_id)
             inline_reason = match.group(2)
-            short_reason = (
-                inline_reason.strip() if inline_reason else self._extract_short_reason(raw_traceback)
-            )
+            if inline_reason:
+                short_reason = inline_reason.strip()
+            else:
+                short_reason = self._extract_short_reason(raw_traceback)
             location, _, _ = test_id.partition("::")
-            
+
             traceback = ""
             if verbose and i < MAX_FAILURES_DETAILED:
                 traceback = raw_traceback
