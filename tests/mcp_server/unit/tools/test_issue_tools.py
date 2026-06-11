@@ -5,7 +5,6 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.issue_tools]
 """
 
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,7 +21,7 @@ from mcp_server.tools.issue_tools import (
     UpdateIssueInput,
     UpdateIssueTool,
 )
-from tests.mcp_server.test_support import make_create_issue_tool
+from tests.mcp_server.test_support import assert_structured_result, make_create_issue_tool
 
 
 @pytest.fixture
@@ -165,9 +164,8 @@ async def test_get_issue_tool(mock_github_manager: MagicMock) -> None:
     result = await tool.execute(GetIssueInput(issue_number=1), NoteContext())
 
     mock_github_manager.get_issue.assert_called_with(1)
-    
-    from tests.mcp_server.test_support import assert_structured_result
     assert_structured_result(result, expected_data=issue_data)
+
 
 @pytest.mark.asyncio
 async def test_close_issue_tool(mock_github_manager: MagicMock) -> None:
