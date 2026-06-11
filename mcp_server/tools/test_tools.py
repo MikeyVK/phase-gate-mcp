@@ -199,6 +199,7 @@ class RunTestsTool(BaseTool):
                 cmd,
                 self._workspace_root,
                 effective_timeout,
+                verbose=params.verbose,
             )
         except Exception as exc:
             if _find_timeout_expired(exc) is not None:
@@ -219,6 +220,17 @@ class RunTestsTool(BaseTool):
         if result.note is not None:
             context.produce(result.note)
         _emit_lf_cache_note(result, params, context)
+
+        if not params.verbose and result.failures:
+            failing_files = sorted(list({f.location for f in result.failures if f.location}))
+            if failing_files:
+                failing_files_str = " ".join(failing_files)
+                msg = (
+                    "Some tests failed. To see detailed tracebacks and stdout/stderr, "
+                    "rerun with verbose=True. Suggested command: "
+                    f"run_tests(path='{failing_files_str}', verbose=True)"
+                )
+                context.produce(RecoveryNote(msg))
 
         if result.should_raise:
             raise ExecutionError(f"pytest exited with returncode {result.exit_code}")
