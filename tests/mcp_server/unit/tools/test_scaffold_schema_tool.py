@@ -14,6 +14,7 @@ from mcp_server.tools.scaffold_schema_tool import (
     ScaffoldSchemaInput,
     ScaffoldSchemaTool,
 )
+from tests.mcp_server.test_support import assert_structured_result
 
 
 class TestScaffoldSchemaTool:
@@ -83,12 +84,15 @@ class TestScaffoldSchemaTool:
         result = await tool.execute(params, NoteContext())
 
         mock_manager.get_context_schema.assert_called_once_with("research")
-        from tests.mcp_server.test_support import assert_structured_result
-        assert_structured_result(result, {
-            "type": "object",
-            "properties": {"title": {"type": "string"}, "problem": {"type": "string"}},
-            "required": ["title"],
-        })
+
+        assert_structured_result(
+            result,
+            {
+                "type": "object",
+                "properties": {"title": {"type": "string"}, "problem": {"type": "string"}},
+                "required": ["title"],
+            },
+        )
 
     @pytest.mark.asyncio
     async def test_returns_schema_for_generic_doc(
@@ -108,5 +112,4 @@ class TestScaffoldSchemaTool:
         params = ScaffoldSchemaInput(artifact_type="generic_doc")
         result = await tool.execute(params, NoteContext())
 
-        from tests.mcp_server.test_support import assert_structured_result
         assert_structured_result(result, expected_schema)

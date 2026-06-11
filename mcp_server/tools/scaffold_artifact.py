@@ -20,8 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
-from mcp_server.tools.base import BranchMutatingTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.tools.base import BranchMutatingTool, StructuredTool
 
 
 class ScaffoldArtifactInput(BaseModel):
@@ -41,7 +40,7 @@ class ScaffoldArtifactInput(BaseModel):
     )
 
 
-class ScaffoldArtifactTool(BranchMutatingTool):
+class ScaffoldArtifactTool(StructuredTool, BranchMutatingTool):
     """Unified artifact scaffolding tool.
 
     Handles both code artifacts (dto, worker, adapter, etc.)
@@ -65,7 +64,11 @@ class ScaffoldArtifactTool(BranchMutatingTool):
         schema["properties"]["artifact_type"]["enum"] = self.manager.registry.list_type_ids()
         return schema
 
-    async def execute(self, params: ScaffoldArtifactInput, context: NoteContext) -> ToolResult:
+    async def execute_structured(
+        self,
+        params: ScaffoldArtifactInput,
+        context: NoteContext,
+    ) -> tuple[dict[str, Any], str]:
         """Execute artifact scaffolding.
 
         All exceptions are handled by tool_error_handler decorator,
@@ -73,9 +76,10 @@ class ScaffoldArtifactTool(BranchMutatingTool):
 
         Args:
             params: Scaffolding parameters
+            context: NoteContext for note production
 
         Returns:
-            ToolResult with success message
+            Tuple of (data_dict, summary_text)
         """
         # Prepare kwargs from template context
         template_ctx = params.context or {}
@@ -91,4 +95,9 @@ class ScaffoldArtifactTool(BranchMutatingTool):
         )
 
         # Success result
-        return ToolResult.text(f"✅ Scaffolded {params.artifact_type}: {artifact_path}")
+        data = {
+            "artifact_type": params.artifact_type,
+            "artifact_path": str(artifact_path),
+        }
+        summary = f"✅ Scaffolded {params.artifact_type}: {artifact_path}"
+        return data, summary

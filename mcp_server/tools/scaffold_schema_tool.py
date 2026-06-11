@@ -20,8 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.tools.base import StructuredTool
 
 
 class ScaffoldSchemaInput(BaseModel):
@@ -35,7 +34,7 @@ class ScaffoldSchemaInput(BaseModel):
     )
 
 
-class ScaffoldSchemaTool(BaseTool):
+class ScaffoldSchemaTool(StructuredTool):
     """Read-only tool that returns the JSON Schema for an artifact context.
 
     Enables agents to discover required and optional context fields
@@ -59,7 +58,11 @@ class ScaffoldSchemaTool(BaseTool):
         schema["properties"]["artifact_type"]["enum"] = self.manager.registry.list_type_ids()
         return schema
 
-    async def execute(self, params: ScaffoldSchemaInput, context: NoteContext) -> ToolResult:  # noqa: ARG002
+    async def execute_structured(
+        self,
+        params: ScaffoldSchemaInput,
+        context: NoteContext,  # noqa: ARG002
+    ) -> tuple[dict[str, Any], str]:
         """Return JSON Schema for the artifact type's context model.
 
         All exceptions are handled by tool_error_handler decorator.
@@ -69,7 +72,7 @@ class ScaffoldSchemaTool(BaseTool):
             context: NoteContext (unused, required by protocol)
 
         Returns:
-            ToolResult with JSON Schema dict
+            Tuple of (schema_dict, summary_text)
         """
         schema_dict = self.manager.get_context_schema(params.artifact_type)
-        return ToolResult.json_data(schema_dict)
+        return schema_dict, f"JSON Schema for '{params.artifact_type}'"
