@@ -98,31 +98,31 @@ class TestTransitionCycleTool:
 
         # Save planning deliverables (4 cycles)
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Schema & Storage",
-                        "deliverables": ["Schema"],
+                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
                         "exit_criteria": "Tests pass",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Validation Logic",
-                        "deliverables": ["Validators"],
+                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
                         "exit_criteria": "All scenarios covered",
                     },
                     {
                         "cycle_number": 3,
                         "name": "Discovery Tools",
-                        "deliverables": ["get_work_context"],
+                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
                         "exit_criteria": "Tools return cycle info",
                     },
                     {
                         "cycle_number": 4,
                         "name": "Transition Tools",
-                        "deliverables": ["transition_cycle"],
+                        "deliverables": [{"id": "D4.1", "description": "transition_cycle"}],
                         "exit_criteria": "All transitions working",
                     },
                 ],
@@ -301,31 +301,34 @@ class TestForceCycleTransitionTool:
 
         # Save planning deliverables (4 cycles)
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Schema & Storage",
-                        "deliverables": ["Schema"],
+                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
                         "exit_criteria": "Tests pass",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Validation Logic",
-                        "deliverables": ["Validators"],
+                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
                         "exit_criteria": "All scenarios covered",
                     },
                     {
                         "cycle_number": 3,
                         "name": "Discovery Tools",
-                        "deliverables": ["get_work_context"],
+                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
                         "exit_criteria": "Tools return cycle info",
                     },
                     {
                         "cycle_number": 4,
                         "name": "Transition Tools",
-                        "deliverables": ["transition_cycle", "force_cycle_transition"],
+                        "deliverables": [
+                            {"id": "D4.1", "description": "transition_cycle"},
+                            {"id": "D4.2", "description": "force_cycle_transition"},
+                        ],
                         "exit_criteria": "All transitions working",
                     },
                 ],
@@ -526,31 +529,31 @@ class TestForceCycleAuditSchema:
         )
 
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Schema",
-                        "deliverables": ["Schema"],
+                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
                         "exit_criteria": "Tests pass",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Validation",
-                        "deliverables": ["Validators"],
+                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
                         "exit_criteria": "All scenarios covered",
                     },
                     {
                         "cycle_number": 3,
                         "name": "Discovery",
-                        "deliverables": ["get_work_context"],
+                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
                         "exit_criteria": "Tools work",
                     },
                     {
                         "cycle_number": 4,
                         "name": "Transition",
-                        "deliverables": ["transition_cycle"],
+                        "deliverables": [{"id": "D4.1", "description": "transition_cycle"}],
                         "exit_criteria": "Transitions work",
                     },
                 ],
@@ -728,25 +731,25 @@ class TestTransitionCycleHistory:
         )
 
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 3,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Cycle One",
-                        "deliverables": ["D1"],
+                        "deliverables": [{"id": "D1.1", "description": "D1"}],
                         "exit_criteria": "EC1",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Cycle Two",
-                        "deliverables": ["D2"],
+                        "deliverables": [{"id": "D2.1", "description": "D2"}],
                         "exit_criteria": "EC2",
                     },
                     {
                         "cycle_number": 3,
                         "name": "Cycle Three",
-                        "deliverables": ["D3"],
+                        "deliverables": [{"id": "D3.1", "description": "D3"}],
                         "exit_criteria": "EC3",
                     },
                 ],
@@ -896,13 +899,13 @@ class TestTransitionCycleExitCriteria:
                 projects = json.load(f)
 
             projects[str(issue_number)]["planning_deliverables"] = {
-                "tdd_cycles": {"total": len(cycles), "cycles": cycles}
+                "cycles": {"total": len(cycles), "cycles": cycles}
             }
             with projects_file.open("w") as f:
                 json.dump(projects, f, indent=2)
         else:
             planning_deliverables = {
-                "tdd_cycles": {
+                "cycles": {
                     "total": len(cycles),
                     "cycles": cycles,
                 }
@@ -941,13 +944,13 @@ class TestTransitionCycleExitCriteria:
                 {
                     "cycle_number": 1,
                     "name": "Schema",
-                    "deliverables": ["Schema"],
+                    "deliverables": [{"id": "D1.1", "description": "Schema"}],
                     "exit_criteria": "",  # Empty - bypasses save_planning_deliverables validation
                 },
                 {
                     "cycle_number": 2,
                     "name": "Validation",
-                    "deliverables": ["Validators"],
+                    "deliverables": [{"id": "D2.1", "description": "Validators"}],
                     "exit_criteria": "All validators pass",
                 },
             ],
@@ -981,13 +984,13 @@ class TestTransitionCycleExitCriteria:
                 {
                     "cycle_number": 1,
                     "name": "Schema",
-                    "deliverables": ["Schema"],
+                    "deliverables": [{"id": "D1.1", "description": "Schema"}],
                     # No exit_criteria key at all
                 },
                 {
                     "cycle_number": 2,
                     "name": "Validation",
-                    "deliverables": ["Validators"],
+                    "deliverables": [{"id": "D2.1", "description": "Validators"}],
                     "exit_criteria": "All validators pass",
                 },
             ],
@@ -1020,13 +1023,13 @@ class TestTransitionCycleExitCriteria:
                 {
                     "cycle_number": 1,
                     "name": "Schema",
-                    "deliverables": ["Schema"],
+                    "deliverables": [{"id": "D1.1", "description": "Schema"}],
                     "exit_criteria": "All schema tests pass",
                 },
                 {
                     "cycle_number": 2,
                     "name": "Validation",
-                    "deliverables": ["Validators"],
+                    "deliverables": [{"id": "D2.1", "description": "Validators"}],
                     "exit_criteria": "All validators pass",
                 },
             ],

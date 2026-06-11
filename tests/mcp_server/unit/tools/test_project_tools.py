@@ -20,6 +20,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.tools.project_tools import (
@@ -289,7 +290,7 @@ def _minimal_deliverables(validates: dict | None = None) -> dict:
     if validates is not None:
         deliverable["validates"] = validates
     return {
-        "tdd_cycles": {
+        "cycles": {
             "total": 1,
             "cycles": [
                 {
@@ -370,23 +371,18 @@ class TestSavePlanningDeliverablesTool:
         assert "already exist" in result.content[0]["text"].lower()
 
     @pytest.mark.asyncio()
-    async def test_save_planning_deliverables_tool_rejects_missing_tdd_cycles(
+    async def test_save_planning_deliverables_tool_rejects_missing_cycles(
         self, initialized: tuple[Path, int]
     ) -> None:
-        """Payload without tdd_cycles key is rejected."""
-        workspace_root, issue_number = initialized
-        tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
+        """Payload without cycles key is rejected."""
+        _workspace_root, issue_number = initialized
 
-        result = await tool.execute(
+        with pytest.raises(ValidationError) as exc_info:
             SavePlanningDeliverablesInput(
                 issue_number=issue_number,
-                planning_deliverables={"notes": "forgot the tdd_cycles key"},
-            ),
-            NoteContext(),
-        )
-
-        assert result.is_error
-        assert "tdd_cycles" in result.content[0]["text"]
+                planning_deliverables={"notes": "forgot the cycles key"},
+            )
+        assert "notes" in str(exc_info.value)
 
     # ------------------------------------------------------------------
     # D4.3: Layer 2 validates-entry schema validation
@@ -397,67 +393,49 @@ class TestSavePlanningDeliverablesTool:
         self, initialized: tuple[Path, int]
     ) -> None:
         """validates entry with unknown type is rejected before persisting. (D4.3)"""
-        workspace_root, issue_number = initialized
-        tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
+        _workspace_root, issue_number = initialized
 
-        result = await tool.execute(
+        with pytest.raises(ValidationError) as exc_info:
             SavePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables=_minimal_deliverables(
                     validates={"type": "does_not_exist", "file": "x.py"}
                 ),
-            ),
-            NoteContext(),
-        )
-
-        assert result.is_error
-        text = result.content[0]["text"]
-        assert "does_not_exist" in text
-        assert "D1.1" in text  # deliverable ID surfaced in error
+            )
+        assert "does_not_exist" in str(exc_info.value)
 
     @pytest.mark.asyncio()
     async def test_save_planning_deliverables_tool_rejects_validates_missing_required_field(
         self, initialized: tuple[Path, int]
     ) -> None:
         """validates entry missing required field (text for contains_text) is rejected. (D4.3)"""
-        workspace_root, issue_number = initialized
-        tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
+        _workspace_root, issue_number = initialized
 
-        result = await tool.execute(
+        with pytest.raises(ValidationError) as exc_info:
             SavePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables=_minimal_deliverables(
                     validates={"type": "contains_text", "file": "x.py"}  # missing 'text'
                 ),
-            ),
-            NoteContext(),
-        )
-
-        assert result.is_error
-        text = result.content[0]["text"]
-        assert "text" in text  # missing field name surfaced
+            )
+        assert "contains_text" in str(exc_info.value)
+        assert "text" in str(exc_info.value)
 
     @pytest.mark.asyncio()
     async def test_save_planning_deliverables_tool_error_lists_available_types_and_fields(
         self, initialized: tuple[Path, int]
     ) -> None:
         """Error on unknown type lists all valid types and their required fields. (D4.3)"""
-        workspace_root, issue_number = initialized
-        tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
+        _workspace_root, issue_number = initialized
 
-        result = await tool.execute(
+        with pytest.raises(ValidationError) as exc_info:
             SavePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables=_minimal_deliverables(validates={"type": "wrong_type"}),
-            ),
-            NoteContext(),
-        )
-
-        assert result.is_error
-        text = result.content[0]["text"]
-        # Must list all valid types
+            )
+        text = str(exc_info.value)
         for valid_type in ("file_exists", "file_glob", "contains_text", "absent_text", "key_path"):
-            assert valid_type in text, f"Expected '{valid_type}' listed in error, got: {text}"
+            assert valid_type in text
 
 
 class TestUpdatePlanningDeliverablesTool:
@@ -489,7 +467,7 @@ class TestUpdatePlanningDeliverablesTool:
     async def test_update_planning_deliverables_tool_appends_new_cycle(
         self, initialized: tuple[Path, int]
     ) -> None:
-        """Sending a new cycle_number appends it to tdd_cycles.cycles. (D5.1)"""
+        """Sending a new cycle_number appends it to cycles.cycles. (D5.1)"""
         workspace_root, issue_number = initialized
         tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -497,7 +475,7 @@ class TestUpdatePlanningDeliverablesTool:
             UpdatePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables={
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 2,
                         "cycles": [
                             {
@@ -515,7 +493,7 @@ class TestUpdatePlanningDeliverablesTool:
         assert not result.is_error
         manager = make_project_manager(workspace_root)
         data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
-        cycles = data["planning_deliverables"]["tdd_cycles"]["cycles"]
+        cycles = data["planning_deliverables"]["cycles"]["cycles"]
         assert len(cycles) == 2  # original C1 + new C2
         assert cycles[1]["cycle_number"] == 2
 
@@ -531,7 +509,7 @@ class TestUpdatePlanningDeliverablesTool:
             UpdatePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables={
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
                             {
@@ -551,7 +529,7 @@ class TestUpdatePlanningDeliverablesTool:
         assert not result.is_error
         manager = make_project_manager(workspace_root)
         data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
-        cycle1 = data["planning_deliverables"]["tdd_cycles"]["cycles"][0]
+        cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
         ids = [d["id"] for d in cycle1["deliverables"]]
         assert "D1.1" in ids  # original preserved
         assert "D1.2" in ids  # new one appended
@@ -568,7 +546,7 @@ class TestUpdatePlanningDeliverablesTool:
             UpdatePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables={
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
                             {
@@ -588,7 +566,7 @@ class TestUpdatePlanningDeliverablesTool:
         assert not result.is_error
         manager = make_project_manager(workspace_root)
         data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
-        cycle1 = data["planning_deliverables"]["tdd_cycles"]["cycles"][0]
+        cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
         d1_1 = next(d for d in cycle1["deliverables"] if d["id"] == "D1.1")
         assert d1_1["description"] == "updated description"
 
@@ -622,28 +600,23 @@ class TestUpdatePlanningDeliverablesTool:
         self, initialized: tuple[Path, int]
     ) -> None:
         """Invalid validates entry is rejected before persisting. (D5.1)"""
-        workspace_root, issue_number = initialized
-        tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
+        _workspace_root, issue_number = initialized
 
-        result = await tool.execute(
+        with pytest.raises(ValidationError) as exc_info:
             UpdatePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables=_minimal_deliverables(validates={"type": "unknown_type"}),
-            ),
-            NoteContext(),
-        )
-
-        assert result.is_error
-        text = result.content[0]["text"]
+            )
+        text = str(exc_info.value)
         for valid_type in ("file_exists", "file_glob", "contains_text", "absent_text", "key_path"):
-            assert valid_type in text, f"Expected '{valid_type}' listed in error, got: {text}"
+            assert valid_type in text
 
 
 class TestPlanningDeliverablesPhaseSchema:
     """Tests for per-phase deliverables schema in save_planning_deliverables.
 
     Issue #229 Cycle 7 (GAP-11):
-    - D7.1: save_planning_deliverables accepts phase keys alongside tdd_cycles
+    - D7.1: save_planning_deliverables accepts phase keys alongside cycles
     """
 
     @pytest.fixture()
@@ -660,7 +633,7 @@ class TestPlanningDeliverablesPhaseSchema:
 
     @pytest.mark.asyncio()
     async def test_save_accepts_design_phase_key(self, initialized: tuple[Path, int]) -> None:
-        """save_planning_deliverables accepts design phase key alongside tdd_cycles. (D7.1)"""
+        """save_planning_deliverables accepts design phase key alongside cycles. (D7.1)"""
         workspace_root, issue_number = initialized
         tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -686,23 +659,17 @@ class TestPlanningDeliverablesPhaseSchema:
     @pytest.mark.asyncio()
     async def test_save_rejects_unknown_phase_key(self, initialized: tuple[Path, int]) -> None:
         """save_planning_deliverables rejects unrecognised phase keys. (D7.1)"""
-        workspace_root, issue_number = initialized
-        tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
+        _workspace_root, issue_number = initialized
 
-        result = await tool.execute(
+        with pytest.raises(ValidationError) as exc_info:
             SavePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables={
                     **_minimal_deliverables(),
                     "unknown_phase": {"deliverables": []},
                 },
-            ),
-            NoteContext(),
-        )
-
-        assert result.is_error
-        text = result.content[0]["text"]
-        assert "unknown_phase" in text
+            )
+        assert "unknown_phase" in str(exc_info.value)
 
 
 class TestUpdatePlanningDeliverablesPerPhase:
@@ -716,7 +683,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
     @pytest.fixture()
     def initialized(self, tmp_path: Path) -> tuple[Path, int]:
-        """Initialize a project with tdd_cycles + design phase deliverables."""
+        """Initialize a project with cycles + design phase deliverables."""
         issue_number = 229
         manager = make_project_manager(tmp_path)
         manager.initialize_project(
@@ -897,7 +864,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
             UpdatePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables={
-                    "tdd_cycles": {
+                    "cycles": {
                         "cycles": [
                             {
                                 "cycle_number": 1,
@@ -915,14 +882,14 @@ class TestUpdatePlanningDeliverablesPerPhase:
         data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
-        cycle1 = data["planning_deliverables"]["tdd_cycles"]["cycles"][0]
+        cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
         assert cycle1["exit_criteria"] == "Updated exit criteria"  # (D8.3)
 
     @pytest.mark.asyncio()
-    async def test_update_planning_deliverables_tdd_cycles_backward_compat(
+    async def test_update_planning_deliverables_cycles_backward_compat(
         self, initialized: tuple[Path, int]
     ) -> None:
-        """tdd_cycles merge behaviour unchanged after per-phase support added.
+        """cycles merge behaviour unchanged after per-phase support added.
         (D8.1 backward compat)"""
         workspace_root, issue_number = initialized
         tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
@@ -931,7 +898,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
             UpdatePlanningDeliverablesInput(
                 issue_number=issue_number,
                 planning_deliverables={
-                    "tdd_cycles": {
+                    "cycles": {
                         "cycles": [
                             {
                                 "cycle_number": 2,
@@ -949,7 +916,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
         data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
-        cycles = data["planning_deliverables"]["tdd_cycles"]["cycles"]
+        cycles = data["planning_deliverables"]["cycles"]["cycles"]
         assert len(cycles) == 2  # original C1 + new C2 appended
         assert cycles[0]["cycle_number"] == 1  # original C1 untouched
         assert cycles[1]["cycle_number"] == 2  # C2 appended

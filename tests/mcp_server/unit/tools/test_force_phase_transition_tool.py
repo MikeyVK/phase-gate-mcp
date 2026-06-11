@@ -450,7 +450,7 @@ phases:
             # Inject planning_deliverables so gate would have PASSED
             projects_path = tmp_path / ".phase-gate" / "deliverables.json"
             data = json.loads(projects_path.read_text())
-            data["42"]["planning_deliverables"] = {"tdd_cycles": {"total": 1, "cycles": []}}
+            data["42"]["planning_deliverables"] = {"cycles": {"total": 1, "cycles": []}}
             projects_path.write_text(json.dumps(data, indent=2))
 
         return tmp_path, branch

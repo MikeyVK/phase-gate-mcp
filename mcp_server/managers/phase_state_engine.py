@@ -503,14 +503,14 @@ class PhaseStateEngine:
         return issue_number
 
     def _get_tdd_cycles(self, issue_number: int) -> tuple[list[dict[str, Any]], int]:
-        """Return planned TDD cycles and total count for one issue."""
+        """Return planned cycles and total count for one issue."""
         self._validate_planning_deliverables_exist(issue_number)
         plan = self.project_manager.get_project_plan(issue_number)
         assert plan is not None
         planning_deliverables = plan["planning_deliverables"]
-        tdd_cycles = planning_deliverables.get("tdd_cycles", {})
-        cycles = tdd_cycles.get("cycles", [])
-        total_cycles = tdd_cycles.get("total", 0)
+        cycles_data = planning_deliverables.get("cycles", {})
+        cycles = cycles_data.get("cycles", [])
+        total_cycles = cycles_data.get("total", 0)
         return cycles, total_cycles
 
     def _is_cycle_based_phase(

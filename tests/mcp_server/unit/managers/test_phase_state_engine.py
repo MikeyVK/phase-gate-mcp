@@ -46,31 +46,34 @@ class TestTDDPhaseHooks:
 
         # Save planning deliverables (4 cycles)
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Schema & Storage",
-                        "deliverables": ["Schema"],
+                        "deliverables": [{"id": "D1.1", "description": "Schema"}],
                         "exit_criteria": "Tests pass",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Validation Logic",
-                        "deliverables": ["Validators"],
+                        "deliverables": [{"id": "D2.1", "description": "Validators"}],
                         "exit_criteria": "All scenarios covered",
                     },
                     {
                         "cycle_number": 3,
                         "name": "Discovery Tools",
-                        "deliverables": ["get_work_context"],
+                        "deliverables": [{"id": "D3.1", "description": "get_work_context"}],
                         "exit_criteria": "Tools return cycle info",
                     },
                     {
                         "cycle_number": 4,
                         "name": "Transition Tools",
-                        "deliverables": ["transition_cycle", "force_cycle_transition"],
+                        "deliverables": [
+                            {"id": "D4.1", "description": "transition_cycle"},
+                            {"id": "D4.2", "description": "force_cycle_transition"},
+                        ],
                         "exit_criteria": "All transitions working",
                     },
                 ],
@@ -302,13 +305,13 @@ class TestTransitionHooksWiring:
         project_manager.save_planning_deliverables(
             issue_number=issue_number,
             planning_deliverables={
-                "tdd_cycles": {
+                "cycles": {
                     "total": 1,
                     "cycles": [
                         {
                             "cycle_number": 1,
                             "name": "Basic",
-                            "deliverables": ["A"],
+                            "deliverables": [{"id": "D1.1", "description": "A"}],
                             "exit_criteria": "pass",
                         }
                     ],
@@ -671,19 +674,19 @@ class TestPhaseStateEngineRecordSubPhase:
         project_manager.save_planning_deliverables(
             issue_number=298,
             planning_deliverables={
-                "tdd_cycles": {
+                "cycles": {
                     "total": 2,
                     "cycles": [
                         {
                             "cycle_number": 1,
                             "name": "C1",
-                            "deliverables": ["deliverable-a"],
+                            "deliverables": [{"id": "D1.1", "description": "deliverable-a"}],
                             "exit_criteria": "pass",
                         },
                         {
                             "cycle_number": 2,
                             "name": "C2",
-                            "deliverables": ["deliverable-b"],
+                            "deliverables": [{"id": "D2.1", "description": "deliverable-b"}],
                             "exit_criteria": "pass",
                         },
                     ],
@@ -771,19 +774,19 @@ class TestContextLoadedWriterReset:
         pm.save_planning_deliverables(
             issue_number=issue_number,
             planning_deliverables={
-                "tdd_cycles": {
+                "cycles": {
                     "total": 2,
                     "cycles": [
                         {
                             "cycle_number": 1,
                             "name": "A",
-                            "deliverables": ["x"],
+                            "deliverables": [{"id": "D1.1", "description": "x"}],
                             "exit_criteria": "pass",
                         },
                         {
                             "cycle_number": 2,
                             "name": "B",
-                            "deliverables": ["y"],
+                            "deliverables": [{"id": "D2.1", "description": "y"}],
                             "exit_criteria": "pass",
                         },
                     ],
@@ -988,19 +991,19 @@ class TestPhaseStateFreshSLambdaC1:
         pm.save_planning_deliverables(
             issue_number=292,
             planning_deliverables={
-                "tdd_cycles": {
+                "cycles": {
                     "total": 2,
                     "cycles": [
                         {
                             "cycle_number": 1,
                             "name": "C1",
-                            "deliverables": ["D1"],
+                            "deliverables": [{"id": "D1.1", "description": "D1"}],
                             "exit_criteria": "pass",
                         },
                         {
                             "cycle_number": 2,
                             "name": "C2",
-                            "deliverables": ["D2"],
+                            "deliverables": [{"id": "D2.1", "description": "D2"}],
                             "exit_criteria": "pass",
                         },
                     ],

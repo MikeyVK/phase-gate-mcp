@@ -120,7 +120,7 @@ class TestPlanningSchema:
         "version": "1.0",
         "last_updated": "2026-02-18",
         "summary": "Implement Pydantic context schemas for doc artifact types",
-        "tdd_cycles": [
+        "cycles": [
             {"cycle": 6, "phase": "RED", "description": "failing tests"},
             {"cycle": 6, "phase": "GREEN", "description": "context schemas"},
         ],

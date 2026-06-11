@@ -32,7 +32,7 @@ _BRANCH_D1 = "feature/292-mixed-concurrent"
 _BRANCH_D2 = "feature/292-homogeneous-concurrent"
 _ISSUE = 292
 _PLANNING_DELIVERABLES = {
-    "tdd_cycles": {
+    "cycles": {
         "total": 4,
         "cycles": [
             {

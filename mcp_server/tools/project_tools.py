@@ -25,8 +25,8 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateAlreadyExistsError
 from mcp_server.schemas import ContractsConfig
+from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
 from mcp_server.tools.base import BranchMutatingTool, StructuredTool
-from mcp_server.tools.tool_result import ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -367,46 +367,8 @@ class GetProjectPlanTool(StructuredTool):
 
 
 # ---------------------------------------------------------------------------
-# Layer 2 validates-entry schema validation
+# Planning deliverables tools
 # ---------------------------------------------------------------------------
-
-#: Valid check types and the fields each requires (beyond 'type').
-_VALIDATES_REQUIRED_FIELDS: dict[str, list[str]] = {
-    "file_exists": ["file"],
-    "file_glob": ["file"],
-    "contains_text": ["file", "text"],
-    "absent_text": ["file", "text"],
-    "key_path": ["file", "path"],
-}
-
-
-def validate_spec(deliverable_id: str, validates: dict[str, Any]) -> str | None:
-    """Check one *validates* entry for schema correctness.
-
-    Returns an error string when the entry is invalid, else ``None``.
-
-    Args:
-        deliverable_id: Deliverable ID for error context (e.g. "D1.1").
-        validates: The ``validates`` sub-dict from a deliverable entry.
-    """
-    check_type = validates.get("type", "")
-    if check_type not in _VALIDATES_REQUIRED_FIELDS:
-        valid_summary = ", ".join(
-            f"{t} (requires: {', '.join(fields)})"
-            for t, fields in _VALIDATES_REQUIRED_FIELDS.items()
-        )
-        return (
-            f"[{deliverable_id}] Unknown validates type '{check_type}'. "
-            f"Valid types: {valid_summary}"
-        )
-    for field in _VALIDATES_REQUIRED_FIELDS[check_type]:
-        if field not in validates:
-            required = ", ".join(_VALIDATES_REQUIRED_FIELDS[check_type])
-            return (
-                f"[{deliverable_id}] validates type '{check_type}' requires field '{field}'. "
-                f"Required fields: {required}"
-            )
-    return None
 
 
 class SavePlanningDeliverablesInput(BaseModel):
@@ -415,27 +377,27 @@ class SavePlanningDeliverablesInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="GitHub issue number")
-    planning_deliverables: dict[str, Any] = Field(
+    planning_deliverables: CyclePlanningModel = Field(
         ...,
         description=(
-            "Planning deliverables dict with tdd_cycles.total + cycles[]. "
+            "Planning deliverables with cycles.total + cycles[]. "
             "Each deliverable entry may include a 'validates' spec with type + required fields."
         ),
     )
 
 
-class SavePlanningDeliverablesTool(BranchMutatingTool):
+class SavePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
     """Tool to persist planning deliverables for an issue to deliverables.json.
 
-    Issue #229 Cycle 4 — GAP-04 + GAP-06:
+    Issue #229 Cycle 4 / Issue #390:
     - Layer 1: MCP JSON Schema (Pydantic, automatic)
-    - Layer 2: Runtime validation of every ``validates`` entry before writing.
+    - Defer schema validation entirely to CyclePlanningModel.
     """
 
     name = "save_planning_deliverables"
     description = (
-        "Save TDD cycle planning deliverables for an issue to deliverables.json. "
-        "Validates each 'validates' entry schema before persisting."
+        "Save cycle planning deliverables for an issue to deliverables.json. "
+        "Validates the schema before persisting."
     )
     args_model = SavePlanningDeliverablesInput
 
@@ -449,56 +411,30 @@ class SavePlanningDeliverablesTool(BranchMutatingTool):
         del workspace_root
         self._manager = manager
 
-    async def execute(
+    async def execute_structured(
         self, params: SavePlanningDeliverablesInput, context: NoteContext
-    ) -> ToolResult:
-        """Persist planning deliverables with Layer 2 schema validation.
+    ) -> tuple[dict[str, Any], str]:
+        """Persist planning deliverables.
 
         Args:
             params: issue_number + planning_deliverables payload.
 
         Returns:
-            ToolResult success or structured error.
+            Tuple of (data_dict, summary_text).
         """
-        del context  # Not used
-        # Layer 2: validate every validates entry before touching disk
-        tdd_cycles = params.planning_deliverables.get("tdd_cycles", {})
-        for cycle in tdd_cycles.get("cycles", []):
-            for deliverable in cycle.get("deliverables", []):
-                if not isinstance(deliverable, dict):
-                    continue
-                validates = deliverable.get("validates")
-                if validates is None:
-                    continue
-                d_id = deliverable.get("id", "?")
-                error = validate_spec(d_id, validates)
-                if error:
-                    return ToolResult.error(error)
-
-        # Layer 2: also validate phase-key deliverables (design/validation/documentation)
-        for phase_key in ("design", "validation", "documentation"):
-            phase_entry = params.planning_deliverables.get(phase_key, {})
-            for deliverable in phase_entry.get("deliverables", []):
-                if not isinstance(deliverable, dict):
-                    continue
-                validates = deliverable.get("validates")
-                if validates is None:
-                    continue
-                d_id = deliverable.get("id", "?")
-                error = validate_spec(d_id, validates)
-                if error:
-                    return ToolResult.error(error)
-
+        del context
         try:
+            pd_dict = params.planning_deliverables.model_dump(exclude_none=True)
             self._manager.save_planning_deliverables(
                 issue_number=params.issue_number,
-                planning_deliverables=params.planning_deliverables,
+                planning_deliverables=pd_dict,
             )
-            return ToolResult.text(
-                f"✅ Planning deliverables saved for issue #{params.issue_number}"
+            return (
+                {"success": True, "issue_number": params.issue_number},
+                f"Planning deliverables saved for issue #{params.issue_number}",
             )
         except ValueError as e:
-            return ToolResult.error(str(e))
+            raise ExecutionError(str(e)) from e
 
 
 class UpdatePlanningDeliverablesInput(BaseModel):
@@ -507,7 +443,7 @@ class UpdatePlanningDeliverablesInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     issue_number: int = Field(..., description="GitHub issue number")
-    planning_deliverables: dict[str, Any] = Field(
+    planning_deliverables: UpdatePlanningModel = Field(
         ...,
         description=(
             "Partial or full planning deliverables to merge into the existing entry. "
@@ -517,20 +453,19 @@ class UpdatePlanningDeliverablesInput(BaseModel):
     )
 
 
-class UpdatePlanningDeliverablesTool(BranchMutatingTool):
+class UpdatePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
     """Tool to merge-update planning deliverables for an issue in deliverables.json.
 
-    Issue #229 Cycle 5 — GAP-09:
-    - Requires save_planning_deliverables to have been called first (write-once guard preserved).
-    - Merge strategy: new cycle → append; existing cycle + new id → append;
-      existing id → overwrite.
-    - Layer 2: validates every ``validates`` entry before writing
-      (same as SavePlanningDeliverablesTool).
+    Issue #229 Cycle 5 / Issue #390:
+    - Requires save_planning_deliverables to have been called first.
+    - Merge strategy: new cycle -> append; existing cycle + new id -> append;
+      existing id -> overwrite.
+    - Defer schema validation entirely to UpdatePlanningModel.
     """
 
     name = "update_planning_deliverables"
     description = (
-        "Merge-update TDD cycle planning deliverables for an issue in deliverables.json. "
+        "Merge-update cycle planning deliverables for an issue in deliverables.json. "
         "Must be preceded by save_planning_deliverables. "
         "New cycles are appended; deliverables within existing cycles are merged by id."
     )
@@ -546,53 +481,27 @@ class UpdatePlanningDeliverablesTool(BranchMutatingTool):
         del workspace_root
         self._manager = manager
 
-    async def execute(
+    async def execute_structured(
         self, params: UpdatePlanningDeliverablesInput, context: NoteContext
-    ) -> ToolResult:
-        """Merge planning deliverables with Layer 2 schema validation.
+    ) -> tuple[dict[str, Any], str]:
+        """Merge planning deliverables.
 
         Args:
             params: issue_number + planning_deliverables payload.
 
         Returns:
-            ToolResult success or structured error.
+            Tuple of (data_dict, summary_text).
         """
-        del context  # Not used
-        # Layer 2: validate every validates entry before touching disk
-        tdd_cycles = params.planning_deliverables.get("tdd_cycles", {})
-        for cycle in tdd_cycles.get("cycles", []):
-            for deliverable in cycle.get("deliverables", []):
-                if not isinstance(deliverable, dict):
-                    continue
-                validates = deliverable.get("validates")
-                if validates is None:
-                    continue
-                d_id = deliverable.get("id", "?")
-                error = validate_spec(d_id, validates)
-                if error:
-                    return ToolResult.error(error)
-
-        # Layer 2: also validate phase-key deliverables (design/validation/documentation)
-        for phase_key in ("design", "validation", "documentation"):
-            phase_entry = params.planning_deliverables.get(phase_key, {})
-            for deliverable in phase_entry.get("deliverables", []):
-                if not isinstance(deliverable, dict):
-                    continue
-                validates = deliverable.get("validates")
-                if validates is None:
-                    continue
-                d_id = deliverable.get("id", "?")
-                error = validate_spec(d_id, validates)
-                if error:
-                    return ToolResult.error(error)
-
+        del context
         try:
+            pd_dict = params.planning_deliverables.model_dump(exclude_none=True)
             self._manager.update_planning_deliverables(
                 issue_number=params.issue_number,
-                planning_deliverables=params.planning_deliverables,
+                planning_deliverables=pd_dict,
             )
-            return ToolResult.text(
-                f"✅ Planning deliverables updated for issue #{params.issue_number}"
+            return (
+                {"success": True, "issue_number": params.issue_number},
+                f"Planning deliverables updated for issue #{params.issue_number}",
             )
         except ValueError as e:
-            return ToolResult.error(str(e))
+            raise ExecutionError(str(e)) from e

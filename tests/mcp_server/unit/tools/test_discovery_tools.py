@@ -369,19 +369,19 @@ class TestGetWorkContextTddCycleInfo:
 
         # Save planning deliverables with total=2 (matching 2 cycles)
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 2,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": " & Storage",
-                        "deliverables": ["ProjectManager schema"],
+                        "deliverables": [{"id": "D1.1", "description": "ProjectManager schema"}],
                         "exit_criteria": "Schema validated",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Validation Logic",
-                        "deliverables": ["Cycle validation"],
+                        "deliverables": [{"id": "D2.1", "description": "Cycle validation"}],
                         "exit_criteria": "All validation covered",
                     },
                 ],
@@ -456,13 +456,13 @@ class TestGetWorkContextTddCycleInfo:
 
         # Save planning deliverables
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 1,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Schema & Storage",
-                        "deliverables": ["ProjectManager schema"],
+                        "deliverables": [{"id": "D1.1", "description": "ProjectManager schema"}],
                         "exit_criteria": "Tests pass",
                     }
                 ],
@@ -584,13 +584,13 @@ class TestTddCycleInfoStatusField:
         )
 
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 1,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Status Field Test",
-                        "deliverables": ["Add status field"],
+                        "deliverables": [{"id": "D1.1", "description": "Add status field"}],
                         "exit_criteria": "Status field present in output",
                     }
                 ],

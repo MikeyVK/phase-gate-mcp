@@ -293,7 +293,7 @@ class TestForceTransitionNoWarningWhenDeliverablesPresent:
         )
         # Inject the key directly (bypasses schema validation — tests engine check logic only)
         projects = json.loads(pm.deliverables_file.read_text(encoding="utf-8"))
-        projects["229"]["planning_deliverables"] = {"tdd_cycles": {"total": 1, "cycles": []}}
+        projects["229"]["planning_deliverables"] = {"cycles": {"total": 1, "cycles": []}}
         pm.deliverables_file.write_text(json.dumps(projects, indent=2))
 
         engine = make_phase_state_engine(workspace_root, project_manager=pm)

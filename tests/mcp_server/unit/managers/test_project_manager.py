@@ -396,9 +396,7 @@ class TestPlanningDeliverablesSchema:
                     },
                     {
                         "cycle_number": 2,
-                        "deliverables": [
-                            {"id": "D2.1", "description": "cycle_number validation"}
-                        ],
+                        "deliverables": [{"id": "D2.1", "description": "cycle_number validation"}],
                         "exit_criteria": "Validation tests pass",
                     },
                     {
@@ -410,9 +408,7 @@ class TestPlanningDeliverablesSchema:
                     },
                     {
                         "cycle_number": 4,
-                        "deliverables": [
-                            {"id": "D4.1", "description": "transition_cycle"}
-                        ],
+                        "deliverables": [{"id": "D4.1", "description": "transition_cycle"}],
                         "exit_criteria": "All tools implemented",
                     },
                 ],
@@ -441,12 +437,12 @@ class TestPlanningDeliverablesSchema:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 1,
                 "cycles": [
                     {
                         "cycle_number": 1,
-                        "deliverables": ["test deliverable"],
+                        "deliverables": [{"id": "D1.1", "description": "test deliverable"}],
                         "exit_criteria": "test criteria",
                     }
                 ],
@@ -458,52 +454,49 @@ class TestPlanningDeliverablesSchema:
         with pytest.raises(ValueError, match="already exist"):
             manager.save_planning_deliverables(146, planning_deliverables)
 
-    def test_save_planning_deliverables_rejects_missing_tdd_cycles(
+    def test_save_planning_deliverables_rejects_missing_cycles(
         self, manager: ProjectManager
     ) -> None:
-        """Test schema validation: tdd_cycles required."""
+        """Test schema validation: cycles required."""
         manager.initialize_project(
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
-
-        # Missing tdd_cycles key
-        with pytest.raises(ValueError, match="must contain 'tdd_cycles' key"):
-            manager.save_planning_deliverables(146, {"validation_plan": {}})
-
-    def test_save_planning_deliverables_rejects_malformed_tdd_cycles(
-        self, manager: ProjectManager
-    ) -> None:
-        """Test schema validation: tdd_cycles structure."""
-        manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-
-        # tdd_cycles not a dict
-        with pytest.raises(ValueError, match="must be a dict"):
-            manager.save_planning_deliverables(146, {"tdd_cycles": "invalid"})
-
-        # Missing total key
-        with pytest.raises(ValueError, match="must contain 'total' key"):
-            manager.save_planning_deliverables(146, {"tdd_cycles": {"cycles": []}})
-
-        # Invalid total (not int)
-        with pytest.raises(ValueError, match="must be a positive integer"):
-            manager.save_planning_deliverables(146, {"tdd_cycles": {"total": "4", "cycles": []}})
-
-        # Invalid total (zero)
-        with pytest.raises(ValueError, match="must be a positive integer"):
-            manager.save_planning_deliverables(146, {"tdd_cycles": {"total": 0, "cycles": []}})
 
         # Missing cycles key
         with pytest.raises(ValueError, match="must contain 'cycles' key"):
-            manager.save_planning_deliverables(146, {"tdd_cycles": {"total": 4}})
+            manager.save_planning_deliverables(146, {"validation": {"deliverables": []}})
+
+    def test_save_planning_deliverables_rejects_malformed_cycles(
+        self, manager: ProjectManager
+    ) -> None:
+        """Test schema validation: cycles structure."""
+        manager.initialize_project(
+            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
+        )
+
+        # cycles not a dict/model
+        with pytest.raises(ValueError, match="Input should be a valid dictionary"):
+            manager.save_planning_deliverables(146, {"cycles": "invalid"})
+
+        # Missing total key
+        with pytest.raises(ValueError, match="total[\\s\\S]*Field required"):
+            manager.save_planning_deliverables(146, {"cycles": {"cycles": []}})
+
+        # Invalid total (not int)
+        with pytest.raises(ValueError, match="Input should be a valid integer"):
+            manager.save_planning_deliverables(146, {"cycles": {"total": "4", "cycles": []}})
+
+        # Invalid total (zero / negative)
+        with pytest.raises(ValueError, match="Input should be greater than 0"):
+            manager.save_planning_deliverables(146, {"cycles": {"total": 0, "cycles": []}})
+
+        # Missing cycles list key
+        with pytest.raises(ValueError, match="cycles[\\s\\S]*Field required"):
+            manager.save_planning_deliverables(146, {"cycles": {"total": 4}})
 
         # Invalid cycles (not list)
-        # Invalid cycles (not list)
-        with pytest.raises(ValueError, match="must be a list"):
-            manager.save_planning_deliverables(
-                146, {"tdd_cycles": {"total": 4, "cycles": "invalid"}}
-            )
+        with pytest.raises(ValueError, match="Input should be a valid list"):
+            manager.save_planning_deliverables(146, {"cycles": {"total": 4, "cycles": "invalid"}})
 
     def test_save_planning_deliverables_rejects_total_mismatch(
         self, manager: ProjectManager
@@ -514,21 +507,21 @@ class TestPlanningDeliverablesSchema:
         )
 
         # total=4 but only 2 cycles provided
-        with pytest.raises(ValueError, match="must equal len\\(tdd_cycles.cycles\\)"):
+        with pytest.raises(ValueError, match="total \\(4\\) must equal len\\(cycles\\) \\(2\\)"):
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 4,
                         "cycles": [
                             {
                                 "cycle_number": 1,
-                                "deliverables": ["Schema"],
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
                                 "exit_criteria": "Tests pass",
                             },
                             {
                                 "cycle_number": 2,
-                                "deliverables": ["Validation"],
+                                "deliverables": [{"id": "D2.1", "description": "Validation"}],
                                 "exit_criteria": "Tests pass",
                             },
                         ],
@@ -545,13 +538,18 @@ class TestPlanningDeliverablesSchema:
         )
 
         # Missing cycle_number
-        with pytest.raises(ValueError, match="missing 'cycle_number' key"):
+        with pytest.raises(ValueError, match="cycle_number[\\s\\S]*Field required"):
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
-                        "cycles": [{"deliverables": ["Schema"], "exit_criteria": "Tests pass"}],
+                        "cycles": [
+                            {
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                                "exit_criteria": "Tests pass",
+                            }
+                        ],
                     }
                 },
             )
@@ -561,12 +559,12 @@ class TestPlanningDeliverablesSchema:
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
                             {
                                 "cycle_number": 0,
-                                "deliverables": ["Schema"],
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
                                 "exit_criteria": "Tests pass",
                             }
                         ],
@@ -579,17 +577,17 @@ class TestPlanningDeliverablesSchema:
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 2,
                         "cycles": [
                             {
                                 "cycle_number": 1,
-                                "deliverables": ["Schema"],
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
                                 "exit_criteria": "Tests pass",
                             },
                             {
                                 "cycle_number": 3,
-                                "deliverables": ["Validation"],
+                                "deliverables": [{"id": "D2.1", "description": "Validation"}],
                                 "exit_criteria": "Tests pass",
                             },
                         ],
@@ -606,11 +604,11 @@ class TestPlanningDeliverablesSchema:
         )
 
         # Missing deliverables key
-        with pytest.raises(ValueError, match="missing 'deliverables' key"):
+        with pytest.raises(ValueError, match="deliverables[\\s\\S]*Field required"):
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [{"cycle_number": 1, "exit_criteria": "Tests pass"}],
                     }
@@ -618,11 +616,11 @@ class TestPlanningDeliverablesSchema:
             )
 
         # Empty deliverables array
-        with pytest.raises(ValueError, match="deliverables must be a non-empty list"):
+        with pytest.raises(ValueError, match="List should have at least 1 item"):
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
                             {"cycle_number": 1, "deliverables": [], "exit_criteria": "Tests pass"}
@@ -632,11 +630,11 @@ class TestPlanningDeliverablesSchema:
             )
 
         # deliverables not a list
-        with pytest.raises(ValueError, match="deliverables must be a non-empty list"):
+        with pytest.raises(ValueError, match="Input should be a valid list"):
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
                             {
@@ -658,13 +656,18 @@ class TestPlanningDeliverablesSchema:
         )
 
         # Missing exit_criteria key
-        with pytest.raises(ValueError, match="missing 'exit_criteria' key"):
+        with pytest.raises(ValueError, match="exit_criteria[\\s\\S]*Field required"):
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
-                        "cycles": [{"cycle_number": 1, "deliverables": ["Schema"]}],
+                        "cycles": [
+                            {
+                                "cycle_number": 1,
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                            }
+                        ],
                     }
                 },
             )
@@ -674,10 +677,14 @@ class TestPlanningDeliverablesSchema:
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
-                            {"cycle_number": 1, "deliverables": ["Schema"], "exit_criteria": ""}
+                            {
+                                "cycle_number": 1,
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                                "exit_criteria": "",
+                            }
                         ],
                     }
                 },
@@ -688,24 +695,32 @@ class TestPlanningDeliverablesSchema:
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
-                            {"cycle_number": 1, "deliverables": ["Schema"], "exit_criteria": "   "}
+                            {
+                                "cycle_number": 1,
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                                "exit_criteria": "   ",
+                            }
                         ],
                     }
                 },
             )
 
         # exit_criteria not a string
-        with pytest.raises(ValueError, match="exit_criteria must be a non-empty string"):
+        with pytest.raises(ValueError, match="Input should be a valid string"):
             manager.save_planning_deliverables(
                 146,
                 {
-                    "tdd_cycles": {
+                    "cycles": {
                         "total": 1,
                         "cycles": [
-                            {"cycle_number": 1, "deliverables": ["Schema"], "exit_criteria": 123}
+                            {
+                                "cycle_number": 1,
+                                "deliverables": [{"id": "D1.1", "description": "Schema"}],
+                                "exit_criteria": 123,
+                            }
                         ],
                     }
                 },

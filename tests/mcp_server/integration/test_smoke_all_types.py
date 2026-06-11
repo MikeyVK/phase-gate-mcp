@@ -174,7 +174,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
             "version": "1.0",
             "last_updated": "2026-06-05",
             "summary": "Validate pipeline for planning type",
-            "tdd_cycles": [
+            "cycles": [
                 {"cycle": 1, "phase": "RED", "description": "write failing test"},
                 {"cycle": 1, "phase": "GREEN", "description": "implement"},
                 {"cycle": 1, "phase": "REFACTOR", "description": "clean up"},
