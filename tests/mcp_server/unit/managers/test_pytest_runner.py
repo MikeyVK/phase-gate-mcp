@@ -650,3 +650,80 @@ class TestC5MultilineEBlock:
 
         assert len(result.failures) == 1
         assert result.failures[0].short_reason != ""
+
+
+_FIVE_FAILURES_STDOUT = """\\
+============================= test session starts ==============================
+collected 5 items
+
+tests/test_foo.py::test_1 FAILED
+tests/test_foo.py::test_2 FAILED
+tests/test_foo.py::test_3 FAILED
+tests/test_foo.py::test_4 FAILED
+tests/test_foo.py::test_5 FAILED
+
+================================= FAILURES =================================
+________________________________ test_1 __________________________________
+    def test_1():
+>       assert 1 == 0
+E       AssertionError: 1
+________________________________ test_2 __________________________________
+    def test_2():
+>       assert 2 == 0
+E       AssertionError: 2
+________________________________ test_3 __________________________________
+    def test_3():
+>       assert 3 == 0
+E       AssertionError: 3
+________________________________ test_4 __________________________________
+    def test_4():
+>       assert 4 == 0
+E       AssertionError: 4
+________________________________ test_5 __________________________________
+    def test_5():
+>       assert 5 == 0
+E       AssertionError: 5
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_1
+FAILED tests/test_foo.py::test_2
+FAILED tests/test_foo.py::test_3
+FAILED tests/test_foo.py::test_4
+FAILED tests/test_foo.py::test_5
+========================= 5 failed in 0.23s =========================
+"""
+
+
+class TestC3VerboseTracebackAndCapping:
+    """C3: tests for verbose traceback extraction and capping to MAX_FAILURES_DETAILED."""
+
+    def test_verbose_false_tracebacks_are_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """When verbose=False, all traceback strings must be empty."""
+        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback == ""
+
+    def test_verbose_true_tracebacks_are_extracted_and_capped(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """When verbose=True, extract tracebacks but cap at MAX_FAILURES_DETAILED = 3."""
+        completed = subprocess.CompletedProcess(
+            args=["pytest"],
+            returncode=1,
+            stdout=_FIVE_FAILURES_STDOUT,
+            stderr="",
+        )
+        monkeypatch.setattr(
+            pytest_runner_module.subprocess,
+            "run",
+            lambda *_args, **_kwargs: completed,
+        )
+
+        result = PytestRunner().run(["pytest"], cwd=".", timeout=30, verbose=True)
+
+        assert len(result.failures) == 5
+        assert "AssertionError: 1" in result.failures[0].traceback
+        assert "AssertionError: 2" in result.failures[1].traceback
+        assert "AssertionError: 3" in result.failures[2].traceback
+        assert result.failures[3].traceback == ""
+        assert result.failures[4].traceback == ""
