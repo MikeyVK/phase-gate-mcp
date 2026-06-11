@@ -7,7 +7,6 @@ Issue #229 Cycle 4: SavePlanningDeliverablesTool with Layer 2 validates schema v
 """
 
 import contextlib
-import json
 import logging
 import os
 import re
@@ -70,7 +69,7 @@ class InitializeProjectInput(BaseModel):
         return self
 
 
-class InitializeProjectTool(BranchMutatingTool):
+class InitializeProjectTool(StructuredTool, BranchMutatingTool):
     """Tool for initializing projects with atomic state management.
 
     Phase 0.5: Human selects workflow_name → generates project phase plan.
@@ -199,7 +198,11 @@ class InitializeProjectTool(BranchMutatingTool):
             cancellable=True,
         )
 
-    async def execute(self, params: InitializeProjectInput, context: NoteContext) -> ToolResult:
+    async def execute_structured(
+        self,
+        params: InitializeProjectInput,
+        context: NoteContext,  # noqa: ANN401, ARG002
+    ) -> tuple[dict[str, Any], str]:
         """Execute project initialization with atomic state creation.
 
         Issue #39: Creates both deliverables.json AND state.json atomically.
@@ -209,12 +212,11 @@ class InitializeProjectTool(BranchMutatingTool):
             params: InitializeProjectInput with issue details
 
         Returns:
-            ToolResult with success message and project details
+            Tuple of (success_message, summary)
 
         Raises:
             ValueError: If workflow_name invalid or custom_phases missing
         """
-        del context  # Not used
         try:
             start = time.perf_counter()
 
@@ -301,10 +303,14 @@ class InitializeProjectTool(BranchMutatingTool):
                 ],
             }
 
-            return ToolResult.text(json.dumps(success_message, indent=2))
+            summary = (
+                f"Initialized project for issue #{params.issue_number} "
+                f"on branch {branch} (phase: {first_phase})"
+            )
+            return success_message, summary
 
         except (ValueError, OSError, RuntimeError, StateAlreadyExistsError) as e:
-            return ToolResult.error(str(e))
+            raise ExecutionError(str(e)) from e
 
 
 class GetProjectPlanInput(BaseModel):
