@@ -23,13 +23,7 @@
       "root": "./mcp_server"
     },
     {
-      "root": "./tests",
-      "reportPrivateUsage": "none",
-      "reportIncompatibleMethodOverride": "none",
-      "reportMissingImports": "none",
-      "reportOptionalMemberAccess": "none",
-      "reportUnusedExpression": "none",
-      "reportDeprecated": "none"
+      "root": "./tests"
     }
   ],
   "useLibraryCodeForTypes": true,

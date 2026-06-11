@@ -12,7 +12,6 @@ BaselineTestWorker - Worker implementation.
 # Standard library
 from __future__ import annotations
 
-import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -25,6 +24,7 @@ from backend.utils.translator import Translator
 
 if TYPE_CHECKING:
     from backend.core.interfaces.config import BuildSpec
+
     from backend.core.interfaces.strategy_cache import IStrategyCache
 
 __all__ = ["BaselineTestWorker"]
@@ -65,7 +65,7 @@ class BaselineTestWorker(IWorker, IWorkerLifecycle):
     def initialize(
         self,
         strategy_cache: IStrategyCache | None = None,
-        **capabilities: Any,  # noqa: ANN401 - Allow Any for dynamic capabilities
+        **capabilities: Any,
     ) -> None:
         """
         Initialize with runtime dependencies.
@@ -109,5 +109,8 @@ class BaselineTestWorker(IWorker, IWorkerLifecycle):
         IWorkerLifecycle requirement: Must be idempotent (safe to call multiple times).
         Must complete within 5 seconds and never raise exceptions.
         """
-        with contextlib.suppress(Exception):
+        try:
             self._cache = None
+        except Exception:  # noqa: BLE001
+            # GUIDELINE: shutdown must not raise; best-effort cleanup only.
+            pass
