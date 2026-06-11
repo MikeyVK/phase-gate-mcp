@@ -49,14 +49,32 @@ class RunTestsInput(BaseModel):
         default=False,
         description="Enable branch coverage and enforce the 90% threshold.",
     )
+    verbose: bool = Field(
+        default=False,
+        description=(
+            "Enable verbose mode to capture complete tracebacks and stdout/stderr output "
+            "from failed tests. Only permitted in path-based execution mode targeting "
+            "specific test files (directories or the full suite run are not supported)."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_path_or_scope(self) -> RunTestsInput:
-        """Ensure exactly one of path or scope is provided."""
+        """Ensure exactly one of path or scope is provided and validate verbose constraints."""
         if self.path is None and self.scope is None:
             raise ValueError("Either 'path' or 'scope' must be provided")
         if self.path is not None and self.scope is not None:
             raise ValueError("'path' and 'scope' are mutually exclusive — provide one, not both")
+
+        if self.verbose:
+            if self.path is None:
+                raise ValueError("verbose mode requires a path-based execution mode (directories or the full suite are not supported)")
+            for p in self.path.split():
+                if os.path.isdir(p):
+                    raise ValueError(f"verbose mode is only permitted on specific files, but '{p}' is a directory")
+                # String check fallback for mock/non-existent paths in unit tests
+                if not (p.endswith(".py") or ".py::" in p or "::" in p):
+                    raise ValueError(f"verbose mode is only permitted on specific test files, but '{p}' is not a valid python file path")
         return self
 
 
