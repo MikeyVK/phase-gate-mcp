@@ -81,7 +81,7 @@ The RunTestsTool relies on an injected IPytestRunner implementation (concrete Py
 - **Selected strategy:** Clean break / Extension (for run_tests parameters) and Clean-up / Refactor (for quality_tools dead code). We are extending the test tool API with `verbose: bool = False` (backward-compatible) and removing dead code from quality tools.
 - **Rationale:** Extension is clean and preserves existing contracts, while dead code removal reduces codebase weight.
 - **Constraints for later phases:**
-  - The `RunTestsInput` model must validate that `verbose=True` is only permitted when running specific test files (i.e. `scope` is not "full" and `path` does not contain directories).
+  - The `RunTestsInput` model must validate that `verbose=True` is only permitted in path-based execution mode targeting specific files (i.e., `path` is explicitly provided, `scope` is None, and `path` does not contain directories).
   - The description of the `verbose` property in the input schema must explicitly document these constraints to guide agents.
   - Python constant `MAX_FAILURES_DETAILED = 3` in the code will limit traceback extraction when `verbose=True` is used.
   - When `verbose=False`, traceback strings in JSON must be empty. A conditional `RecoveryNote` suggesting the failing files will be generated on test failure.
