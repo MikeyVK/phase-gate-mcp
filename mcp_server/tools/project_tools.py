@@ -19,13 +19,14 @@ from typing import Any
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateAlreadyExistsError
 from mcp_server.schemas import ContractsConfig
-from mcp_server.tools.base import BaseTool, BranchMutatingTool
+from mcp_server.tools.base import BranchMutatingTool, StructuredTool
 from mcp_server.tools.tool_result import ToolResult
 
 logger = logging.getLogger(__name__)
@@ -314,7 +315,7 @@ class GetProjectPlanInput(BaseModel):
     issue_number: int = Field(..., description="GitHub issue number")
 
 
-class GetProjectPlanTool(BaseTool):
+class GetProjectPlanTool(StructuredTool):
     """Tool for retrieving project plan."""
 
     name = "get_project_plan"
@@ -330,28 +331,33 @@ class GetProjectPlanTool(BaseTool):
     def input_schema(self) -> dict[str, Any]:
         return GetProjectPlanInput.model_json_schema()
 
-    async def execute(self, params: GetProjectPlanInput, context: NoteContext) -> ToolResult:
+    async def execute_structured(
+        self,
+        params: GetProjectPlanInput,
+        context: NoteContext,  # noqa: ANN401
+    ) -> tuple[dict[str, Any], str]:
         """Execute project plan retrieval.
 
         Args:
             params: GetProjectPlanInput with issue_number
 
         Returns:
-            ToolResult with project plan or error
+            Tuple of (plan_data, summary)
         """
         try:
             plan = self.manager.get_project_plan(issue_number=params.issue_number)
             if plan:
-                return ToolResult.text(json.dumps(plan, indent=2))
+                summary = f"Retrieved project plan for issue #{params.issue_number}"
+                return plan, summary
             context.produce(
                 SuggestionNote(
                     "Run initialize_project first to create a project plan.",
                     subject=f"issue #{params.issue_number}",
                 )
             )
-            return ToolResult.error(f"No project plan found for issue #{params.issue_number}")
+            raise ExecutionError(f"No project plan found for issue #{params.issue_number}")
         except (ValueError, OSError) as e:
-            return ToolResult.error(str(e))
+            raise ExecutionError(str(e)) from e
 
 
 # ---------------------------------------------------------------------------
