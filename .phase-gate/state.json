@@ -2,9 +2,9 @@
   "branch": "bug/390-improve-validation-logic-of-save-update-deliverables",
   "issue_number": 390,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 9,
-  "last_cycle": 8,
+  "last_cycle": 9,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -93,8 +93,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-11T12:13:22.440789+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": null
 }
