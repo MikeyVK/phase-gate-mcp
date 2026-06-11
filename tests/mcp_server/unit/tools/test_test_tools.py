@@ -518,3 +518,34 @@ class TestC3ToToolResultRouting:
         result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
         assert result.content[1]["text"] == "3 passed in 0.30s"
+
+
+def test_c2_run_tests_input_verbose_validation() -> None:
+    """RunTestsInput validates verbose constraints."""
+    # 1. Default verbose is False
+    model = RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools.py")
+    assert model.verbose is False
+
+    # 2. verbose=True requires path (reject scope="full")
+    with pytest.raises(ValueError, match="path"):
+        RunTestsInput(scope="full", verbose=True)
+
+    # 3. verbose=True rejects directories
+    with pytest.raises(ValueError, match="directory"):
+        RunTestsInput(path="tests/mcp_server/unit", verbose=True)
+
+    # 4. verbose=True rejects space-separated list containing directory
+    with pytest.raises(ValueError, match="directory"):
+        RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools.py tests/mcp_server/unit", verbose=True)
+
+    # 5. verbose=True rejects paths that are not python files
+    with pytest.raises(ValueError, match="file"):
+        RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools", verbose=True)
+
+    # 6. verbose=True accepts valid test files
+    valid_file = RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools.py", verbose=True)
+    assert valid_file.verbose is True
+
+    # 7. verbose=True accepts valid test files with test methods
+    valid_method = RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools.py::test_foo", verbose=True)
+    assert valid_method.verbose is True

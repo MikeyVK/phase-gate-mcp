@@ -3,9 +3,16 @@
   "issue_number": 397,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 1,
+  "current_cycle": 2,
   "last_cycle": 1,
-  "cycle_history": [],
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "RunTestsInput Schema & Path-based Validation",
+      "forced": false,
+      "entered": "2026-06-11T15:41:57.472742+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -63,5 +70,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
