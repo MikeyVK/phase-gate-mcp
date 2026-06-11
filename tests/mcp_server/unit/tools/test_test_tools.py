@@ -93,8 +93,8 @@ async def test_c4_run_tests_all_passed_via_injected_runner(injected_settings: Se
 
     result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
-    assert result.content[0]["text"] == "2 passed in 0.45s"
-    assert result.content[1]["json"]["summary"]["passed"] == 2
+    assert result.content[1]["text"] == "2 passed in 0.45s"
+    assert result.content[0]["json"]["summary"]["passed"] == 2
     assert len(context.of_type(RecoveryNote)) == 0
 
 
@@ -119,9 +119,9 @@ async def test_c4_run_tests_failed_result_contains_failures(injected_settings: S
 
     result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
-    assert result.content[1]["json"]["summary"]["failed"] == 1
-    assert len(result.content[1]["json"]["failures"]) == 1
-    assert result.content[1]["json"]["failures"][0]["test_id"] == failure.test_id
+    assert result.content[0]["json"]["summary"]["failed"] == 1
+    assert len(result.content[0]["json"]["failures"]) == 1
+    assert result.content[0]["json"]["failures"][0]["test_id"] == failure.test_id
 
 
 @pytest.mark.asyncio
@@ -209,7 +209,7 @@ async def test_c4_run_tests_no_tests_collected_returns_suggestion_note(
 
     result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
-    assert result.content[0]["text"] == "no tests collected"
+    assert result.content[1]["text"] == "no tests collected"
     assert len(context.of_type(SuggestionNote)) == 1
 
 
@@ -280,7 +280,7 @@ async def test_c4_run_tests_coverage_true_roundtrips_json(injected_settings: Set
 
     result = await tool.execute(RunTestsInput(path="tests/unit", coverage=True), NoteContext())
 
-    assert result.content[1]["json"]["coverage_pct"] == pytest.approx(92.5)
+    assert result.content[0]["json"]["coverage_pct"] == pytest.approx(92.5)
 
 
 @pytest.mark.asyncio
@@ -290,7 +290,7 @@ async def test_c4_run_tests_coverage_false_roundtrips_none(injected_settings: Se
 
     result = await tool.execute(RunTestsInput(path="tests/unit", coverage=False), NoteContext())
 
-    assert result.content[1]["json"]["coverage_pct"] is None
+    assert result.content[0]["json"]["coverage_pct"] is None
 
 
 @pytest.mark.asyncio
@@ -304,7 +304,7 @@ async def test_c4_run_tests_text_and_json_summary_stay_in_sync(
 
     result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
-    assert result.content[0]["text"] == result.content[1]["json"]["summary_line"]
+    assert result.content[1]["text"] == result.content[0]["json"]["summary_line"]
 
 
 @pytest.mark.asyncio
@@ -409,7 +409,7 @@ class TestC3ToToolResultRouting:
         assert result.is_error is False
 
     @pytest.mark.asyncio
-    async def test_c3_to_tool_result_exit1_content0_includes_failure_lines(
+    async def test_c3_to_tool_result_exit1_content1_includes_failure_lines(
         self, injected_settings: Settings
     ) -> None:
         """Exit 1 + failure → content[0] text contains FAILED ... — ... line."""
@@ -432,8 +432,8 @@ class TestC3ToToolResultRouting:
 
         result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
-        assert "FAILED tests/unit/test_foo.py::test_bad" in result.content[0]["text"]
-        assert "AssertionError: nope" in result.content[0]["text"]
+        assert "FAILED tests/unit/test_foo.py::test_bad" in result.content[1]["text"]
+        assert "AssertionError: nope" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_c3_to_tool_result_exit2_returns_tool_result_is_error_true(
@@ -473,14 +473,14 @@ class TestC3ToToolResultRouting:
 
         result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
-        assert result.content[0]["text"].startswith("pytest interrupted (exit 2)")
-        assert "INTERNALERROR" in result.content[0]["text"]
+        assert result.content[1]["text"].startswith("pytest interrupted (exit 2)")
+        assert "INTERNALERROR" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_c3_to_tool_result_payload_includes_stderr_tail(
         self, injected_settings: Settings
     ) -> None:
-        """content[1] JSON payload always contains 'stderr' key."""
+        """content[0] JSON payload always contains 'stderr' key."""
         runner = FakePytestRunner(
             result=_make_pytest_result(
                 exit_code=0,
@@ -492,13 +492,13 @@ class TestC3ToToolResultRouting:
 
         result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
-        assert "stderr" in result.content[1]["json"]
+        assert "stderr" in result.content[0]["json"]
 
     @pytest.mark.asyncio
     async def test_c3_to_tool_result_exit0_no_failures_text_is_summary_line(
         self, injected_settings: Settings
     ) -> None:
-        """Exit 0, no failures → content[0] text == summary_line exactly."""
+        """Exit 0, no failures → content[1] text == summary_line exactly."""
         runner = FakePytestRunner(
             result=_make_pytest_result(
                 exit_code=0,
@@ -511,4 +511,4 @@ class TestC3ToToolResultRouting:
 
         result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
-        assert result.content[0]["text"] == "3 passed in 0.30s"
+        assert result.content[1]["text"] == "3 passed in 0.30s"
