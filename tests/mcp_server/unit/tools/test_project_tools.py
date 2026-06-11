@@ -98,10 +98,9 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify
-        assert result.is_error is False
-        content_text = result.content[0]["text"]
-        assert "epic/76-quality-gates" in content_text
-        assert '"parent_branch": "epic/76-quality-gates"' in content_text
+        assert_structured_result(result)
+        data = result.content[0]["json"]
+        assert data["parent_branch"] == "epic/76-quality-gates"
 
     @pytest.mark.asyncio
     async def test_initialize_auto_detects_parent_branch(self, tool: InitializeProjectTool) -> None:
@@ -126,9 +125,9 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify
-        assert result.is_error is False
-        content_text = result.content[0]["text"]
-        assert '"parent_branch": "main"' in content_text
+        assert_structured_result(result)
+        data = result.content[0]["json"]
+        assert data["parent_branch"] == "main"
         mock_detect.assert_called_once_with("feature/80-test")
 
     @pytest.mark.asyncio
@@ -156,9 +155,9 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify - no error, parent_branch is null
-        assert result.is_error is False
-        content_text = result.content[0]["text"]
-        assert '"parent_branch": null' in content_text
+        assert_structured_result(result)
+        data = result.content[0]["json"]
+        assert data["parent_branch"] is None
         mock_detect.assert_called_once_with("feature/81-test")
 
     @pytest.mark.asyncio
@@ -188,9 +187,9 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify - auto-detect NOT called
-        assert result.is_error is False
-        content_text = result.content[0]["text"]
-        assert '"parent_branch": "epic/special"' in content_text
+        assert_structured_result(result)
+        data = result.content[0]["json"]
+        assert data["parent_branch"] == "epic/special"
         mock_detect.assert_not_called()
 
 
