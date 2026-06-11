@@ -381,37 +381,38 @@ class TestPlanningDeliverablesSchema:
         return make_project_manager(workspace_root)
 
     def test_planning_deliverables_stored_in_projects_json(self, manager: ProjectManager) -> None:
-        """Test that planning_deliverables are persisted to deliverables.json.
-
-        RED: This test WILL FAIL - planning_deliverables schema not implemented yet.
-        """
+        """Test that planning_deliverables are persisted to deliverables.json."""
         # Arrange: Create planning deliverables according to design.md schema
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": 1,
-                        "name": "Schema & Storage",
-                        "deliverables": ["planning_deliverables schema", "tdd_cycle_* fields"],
+                        "deliverables": [
+                            {"id": "D1.1", "description": "planning_deliverables schema"}
+                        ],
                         "exit_criteria": "Schema validated, tests pass",
                     },
                     {
                         "cycle_number": 2,
-                        "name": "Validation Logic",
-                        "deliverables": ["cycle_number validation", "planning checks"],
+                        "deliverables": [
+                            {"id": "D2.1", "description": "cycle_number validation"}
+                        ],
                         "exit_criteria": "Validation tests pass",
                     },
                     {
                         "cycle_number": 3,
-                        "name": "Discovery Tools",
-                        "deliverables": ["get_work_context enhancement"],
+                        "deliverables": [
+                            {"id": "D3.1", "description": "get_work_context enhancement"}
+                        ],
                         "exit_criteria": "Discovery tools tested",
                     },
                     {
                         "cycle_number": 4,
-                        "name": "Transition Tools",
-                        "deliverables": ["transition_cycle", "force_cycle_transition"],
+                        "deliverables": [
+                            {"id": "D4.1", "description": "transition_cycle"}
+                        ],
                         "exit_criteria": "All tools implemented",
                     },
                 ],
@@ -423,15 +424,15 @@ class TestPlanningDeliverablesSchema:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
 
-        # Save planning deliverables (method doesn't exist yet - will fail)
+        # Save planning deliverables
         manager.save_planning_deliverables(146, planning_deliverables)
 
         # Assert: Retrieve and verify planning deliverables persisted
         plan = manager.get_project_plan(146)
         assert plan is not None
         assert "planning_deliverables" in plan
-        assert plan["planning_deliverables"]["tdd_cycles"]["total"] == 4
-        assert len(plan["planning_deliverables"]["tdd_cycles"]["cycles"]) == 4
+        assert plan["planning_deliverables"]["cycles"]["total"] == 4
+        assert len(plan["planning_deliverables"]["cycles"]["cycles"]) == 4
 
     def test_save_planning_deliverables_rejects_duplicate(self, manager: ProjectManager) -> None:
         """Test that save_planning_deliverables rejects duplicate saves."""
