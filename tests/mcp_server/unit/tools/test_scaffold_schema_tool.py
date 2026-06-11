@@ -83,15 +83,19 @@ class TestScaffoldSchemaTool:
         result = await tool.execute(params, NoteContext())
 
         mock_manager.get_context_schema.assert_called_once_with("research")
-        assert not result.is_error
-        assert len(result.content) > 0
+        from tests.mcp_server.test_support import assert_structured_result
+        assert_structured_result(result, {
+            "type": "object",
+            "properties": {"title": {"type": "string"}, "problem": {"type": "string"}},
+            "required": ["title"],
+        })
 
     @pytest.mark.asyncio
     async def test_returns_schema_for_generic_doc(
         self, tool: ScaffoldSchemaTool, mock_manager: MagicMock
     ) -> None:
         """execute() returns a schema ToolResult for generic_doc once V2 support exists."""
-        mock_manager.get_context_schema.return_value = {
+        expected_schema = {
             "type": "object",
             "properties": {
                 "title": {"type": "string"},
@@ -100,8 +104,9 @@ class TestScaffoldSchemaTool:
             },
             "required": ["title", "purpose", "summary"],
         }
+        mock_manager.get_context_schema.return_value = expected_schema
         params = ScaffoldSchemaInput(artifact_type="generic_doc")
         result = await tool.execute(params, NoteContext())
 
-        assert not result.is_error
-        assert len(result.content) > 0
+        from tests.mcp_server.test_support import assert_structured_result
+        assert_structured_result(result, expected_schema)
