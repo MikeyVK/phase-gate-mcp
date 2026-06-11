@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.state.github_read_models import PRReadModel
+from tests.mcp_server.test_support import assert_structured_result
 from mcp_server.tools.pr_tools import (
     GetPRInput,
     GetPRTool,
@@ -112,7 +113,8 @@ async def test_get_pr_tool(mock_github_manager: MagicMock) -> None:
     params = GetPRInput(pr_number=42)
     result = await tool.execute(params, NoteContext())
 
-    data = json.loads(result.content[0]["text"])
+    assert_structured_result(result)
+    data = result.content[0]["json"]
     assert data["pr_number"] == 42
     assert data["title"] == "Test PR"
     assert data["head_branch"] == "feature/42-test"
