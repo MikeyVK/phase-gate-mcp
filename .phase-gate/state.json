@@ -3,8 +3,8 @@
   "issue_number": 397,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 3,
-  "last_cycle": 2,
+  "current_cycle": 4,
+  "last_cycle": 3,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -17,6 +17,12 @@
       "name": "PytestRunner Verbose Execution & Capping",
       "forced": false,
       "entered": "2026-06-11T15:46:05.548367+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "RunTestsTool Execution & RecoveryNote",
+      "forced": false,
+      "entered": "2026-06-11T18:15:47.747549+00:00"
     }
   ],
   "required_phases": [
@@ -76,5 +82,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
