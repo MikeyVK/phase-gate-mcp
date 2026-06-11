@@ -4,7 +4,6 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.pr_tools]
 """
 
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,7 +11,6 @@ from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.state.github_read_models import PRReadModel
-from tests.mcp_server.test_support import assert_structured_result
 from mcp_server.tools.pr_tools import (
     GetPRInput,
     GetPRTool,
@@ -21,6 +19,7 @@ from mcp_server.tools.pr_tools import (
     MergePRInput,
     MergePRTool,
 )
+from tests.mcp_server.test_support import assert_structured_result
 
 
 @pytest.fixture
