@@ -3,8 +3,8 @@
   "issue_number": 390,
   "workflow_name": "bug",
   "current_phase": "implementation",
-  "current_cycle": 4,
-  "last_cycle": 3,
+  "current_cycle": 5,
+  "last_cycle": 4,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -23,6 +23,12 @@
       "name": "Unknown",
       "forced": false,
       "entered": "2026-06-11T07:25:10.225805+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "Unknown",
+      "forced": false,
+      "entered": "2026-06-11T07:31:46.414007+00:00"
     }
   ],
   "required_phases": [
@@ -66,5 +72,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }

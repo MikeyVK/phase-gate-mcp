@@ -33,6 +33,7 @@ from mcp_server.tools.project_tools import (
     UpdatePlanningDeliverablesTool,
 )
 from tests.mcp_server.test_support import (
+    assert_structured_result,
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
@@ -223,9 +224,9 @@ class TestGetProjectPlanTool:
 
         result = await tool.execute(GetProjectPlanInput(issue_number=253), context)
 
-        assert result.is_error is False
-        assert result.content[0]["type"] == "text"
-        assert json.loads(result.content[0]["text"]) == plan
+        assert_structured_result(result)
+        data = result.content[0]["json"]
+        assert data == plan
         assert len(context.of_type(SuggestionNote)) == 0
 
     @pytest.mark.asyncio
