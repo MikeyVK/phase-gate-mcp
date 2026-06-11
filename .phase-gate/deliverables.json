@@ -59,8 +59,23 @@
             "cycle_number": 3,
             "deliverables": [
               {
-                "description": "Migrated GetPRTool in pr_tools.py",
+                "description": "Migrated GetWorkContextTool in discovery_tools.py",
                 "id": "D3.1",
+                "validates": {
+                  "file": "mcp_server/tools/discovery_tools.py",
+                  "text": "StructuredTool",
+                  "type": "contains_text"
+                }
+              }
+            ],
+            "exit_criteria": "GetWorkContextTool unit tests pass."
+          },
+          {
+            "cycle_number": 4,
+            "deliverables": [
+              {
+                "description": "Migrated GetPRTool in pr_tools.py",
+                "id": "D4.1",
                 "validates": {
                   "file": "mcp_server/tools/pr_tools.py",
                   "text": "StructuredTool",
@@ -71,11 +86,11 @@
             "exit_criteria": "GetPRTool tests succeed."
           },
           {
-            "cycle_number": 4,
+            "cycle_number": 5,
             "deliverables": [
               {
                 "description": "Migrated GetProjectPlanTool in project_tools.py",
-                "id": "D4.1",
+                "id": "D5.1",
                 "validates": {
                   "file": "mcp_server/tools/project_tools.py",
                   "text": "StructuredTool",
@@ -86,11 +101,11 @@
             "exit_criteria": "GetProjectPlanTool tests succeed."
           },
           {
-            "cycle_number": 5,
+            "cycle_number": 6,
             "deliverables": [
               {
                 "description": "Migrated InitializeProjectTool in project_tools.py",
-                "id": "D5.1",
+                "id": "D6.1",
                 "validates": {
                   "file": "mcp_server/tools/project_tools.py",
                   "text": "tool_category = \"branch_mutating\"",
@@ -101,11 +116,11 @@
             "exit_criteria": "InitializeProjectTool tests succeed and tool_category is preserved."
           },
           {
-            "cycle_number": 6,
+            "cycle_number": 7,
             "deliverables": [
               {
                 "description": "Migrated ScaffoldSchemaTool in scaffold_schema_tool.py",
-                "id": "D6.1",
+                "id": "D7.1",
                 "validates": {
                   "file": "mcp_server/tools/scaffold_schema_tool.py",
                   "text": "StructuredTool",
@@ -114,7 +129,7 @@
               },
               {
                 "description": "Migrated ScaffoldArtifactTool in scaffold_artifact.py",
-                "id": "D6.2",
+                "id": "D7.2",
                 "validates": {
                   "file": "mcp_server/tools/scaffold_artifact.py",
                   "text": "StructuredTool",
@@ -125,11 +140,11 @@
             "exit_criteria": "ScaffoldSchemaTool and ScaffoldArtifactTool tests succeed."
           },
           {
-            "cycle_number": 7,
+            "cycle_number": 8,
             "deliverables": [
               {
                 "description": "Pydantic schemas in deliverables.py",
-                "id": "D7.1",
+                "id": "D8.1",
                 "validates": {
                   "file": "mcp_server/schemas/deliverables.py",
                   "type": "file_exists"
@@ -137,7 +152,7 @@
               },
               {
                 "description": "Updated ProjectManager with conditional cycles validation and rename from tdd_cycles to cycles",
-                "id": "D7.2",
+                "id": "D8.2",
                 "validates": {
                   "file": "mcp_server/managers/project_manager.py",
                   "text": "contracts_config",
@@ -148,11 +163,11 @@
             "exit_criteria": "Deliverables validation succeeds and all cycles references are migrated."
           },
           {
-            "cycle_number": 8,
+            "cycle_number": 9,
             "deliverables": [
               {
                 "description": "Cleaned up RunTestsTool and RunQualityGatesTool",
-                "id": "D8.1",
+                "id": "D9.1",
                 "validates": {
                   "file": "mcp_server/tools/test_tools.py",
                   "text": "pytest",
@@ -163,7 +178,7 @@
             "exit_criteria": "All unit/integration tests (2800+) succeed and run_quality_gates passes 10.00/10."
           }
         ],
-        "total": 8
+        "total": 9
       }
     }
   }

@@ -43,29 +43,42 @@ The deliverables tools accept any `dict` at the boundary without verifying deep 
 `ProjectManager.save_planning_deliverables` currently asserts that the `tdd_cycles` key must be present in the deliverables dictionary. This fails for non-cycle-based workflows (such as `docs`) which have no `implementation` phase with `cycle_based: true` in `contracts.yaml`.
 
 ### Finding 3: Complete Tool Inventory
-Out of 50 registered tools in `bootstrap.py`, only **8 tools** produce structured JSON payloads. These are:
+Out of 50 registered tools in `bootstrap.py`, only **9 tools** produce structured JSON payloads. These are:
 1. `GetIssueTool` (returns JSON dump of issue)
-2. `GetPRTool` (returns JSON dump of PR)
-3. `InitializeProjectTool` (returns JSON success details)
+2. `GetWorkContextTool` (returns active phase context, rules, and phase instructions)
+3. `GetPRTool` (returns JSON dump of PR)
 4. `GetProjectPlanTool` (returns JSON phase plan)
-5. `ScaffoldArtifactTool` (returns JSON path details of scaffolded artifact)
-6. `RunTestsTool` (returns structured test stats and failures)
-7. `RunQualityGatesTool` (returns structured gate violations)
-8. `ScaffoldSchemaTool` (returns JSON Schema of artifact contexts)
+5. `InitializeProjectTool` (returns JSON success details)
+6. `ScaffoldSchemaTool` (returns JSON Schema of artifact contexts)
+7. `ScaffoldArtifactTool` (returns JSON path details of scaffolded artifact)
+8. `RunTestsTool` (returns structured test stats and failures)
+9. `RunQualityGatesTool` (returns structured gate violations)
 
-All other 42 tools return simple text messages (`ToolResult.text()`), meaning our migration is fully bounded and no other tools are affected.
+All other 41 tools return simple status or confirmation text messages (`ToolResult.text()`), meaning our migration is fully bounded.
 ### Finding 4: Double Serialization and `structuredContent` (Issue #301)
 As investigated in the deferred Issue #301:
 * `ToolResult.json_data()` creates two content blocks: `{"type": "json"}` and `{"type": "text"}` (which is a JSON string fallback).
 * The MCP server's `_convert_tool_result_to_content()` converts the `type="json"` block into a second `TextContent` block, sending the same JSON data twice.
 * The clean resolution is to pop the `type="json"` block at the server layer and populate the `structuredContent` field of `CallToolResult`. This natively prevents double serialization and stops VS Code from saving large text outputs into `output.txt`.
 
-### Finding 5: Config Injection Architecture Pattern
-Adhering to `ARCHITECTURE_PRINCIPLES.md` §12:
-* Classes must never load configuration files directly from the filesystem inside methods.
-* All configuration must be loaded at the composition root and injected via constructor injection.
 * `ProjectManager` already receives `ContractsConfig` via constructor injection, which can be used to check if the workflow requires TDD cycles.
 
+### Finding 6: Deferred Work / Future Tool Migrations Analysis
+Out of the remaining 41 text-only tools, we analyzed their data patterns to determine which should be deferred for future structured JSON refactoring:
+* **High Priority for Future Migrations**:
+  * `GitListBranchesTool`: Returns branch list as text. Structured JSON (list of branches with their details like SHA, upstream, tracking status) would allow agents to programmatically filter and select branches.
+  * `GitDiffTool`: Returns git diff output as text. Programmatic JSON diffs (structured as file modifications, hunks, and line changes) would increase the intelligence of code change verification.
+  * `GitStatusTool`: Returns status as text. Programmatic JSON status (with files grouped by staged, unstaged, and untracked) would allow agents to programmatically check clean state without regex parsing.
+  * `SearchDocumentationTool`: Returns ranked search results as text. A structured JSON list of results (containing path, score, title, snippet) would enable programmatic filtering, ranking, and navigation of documentation.
+  * `ListIssuesTool`, `ListPRsTool`, `ListLabelsTool`, `ListMilestonesTool`: Returning structured JSON lists of GitHub resources (issues, PRs, labels, milestones) rather than formatted text would allow agents to filter them natively using Python logic (e.g. searching for specific labels or milestones).
+  * `TemplateValidationTool`: Returns template validation logs as text. A structured JSON response (lists of violations, line numbers, and severities) would help the agent automatically identify and correct rendering or structure issues.
+* **Low Priority (Keep as Text)**:
+  * Mutating Git tools (`CreateBranchTool`, `GitMergeTool`, `GitStashTool`, `GitCheckoutTool`, `GitFetchTool`, `GitPullTool`, `GitPushTool`, `GitDeleteBranchTool`, `GitRestoreTool`, `CheckMergeTool`): These return simple success/status text or confirmation messages. Structured output here has no functional value since the caller only needs to verify success.
+  * Phase & Cycle transitions (`TransitionPhaseTool`, `ForcePhaseTransitionTool`, `TransitionCycleTool`, `ForceCycleTransitionTool`): Return instructional advice/notes directly targeted at the agent's chat, which is naturally consumable as text.
+  * Health / Dev tools (`HealthCheckTool`, `RestartServerTool`): Return simple status strings like "OK" or server process status.
+  * Mutating GitHub tools (`CloseIssueTool`, `UpdateIssueTool`, `CreateIssueTool`, `MergePRTool`, `SubmitPRTool`, `AddLabelsTool`, `CreateLabelTool`, `DeleteLabelTool`, `RemoveLabelsTool`, `CreateMilestoneTool`, `CloseMilestoneTool`): These mutate resources and return simple text-based success confirmations or redirection links.
+  * File editing tools (`SafeEditTool`): Mutates files and returns diff/lint logs which are best consumed as text.
+---
 ---
 
 ## Strategy Options & Policy Analysis
@@ -128,3 +141,4 @@ None.
 | 1.0 | 2026-06-10 | Agent | Initial findings drafted |
 | 1.1 | 2026-06-10 | Agent | Consolidated Issue #301 structuredContent, tool inventory, and migration risks |
 | 1.2 | 2026-06-10 | Agent | Cleaned up design/planning content, added Strategy Options analysis, and formatted Approved Strategy per boundary |
+| 1.3 | 2026-06-11 | Agent | Added GetWorkContextTool to JSON-producing tools and documented the deferred work analysis for the other 41 tools. |
