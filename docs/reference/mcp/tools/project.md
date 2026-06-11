@@ -339,7 +339,7 @@ Save TDD cycle planning deliverables for an issue to deliverables.json. Validate
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
-| `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `tdd_cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
+| `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
 
 #### Behavior Notes
 
@@ -432,7 +432,7 @@ Workflow definition and planning deliverables (branch-local artifact):
     "parent_branch": "main",
     "created_at": "2026-02-08T10:00:00Z",
     "planning_deliverables": {
-      "tdd_cycles": {
+      "cycles": {
         "total": 3,
         "cycles": []
       }
@@ -563,6 +563,6 @@ Phase state is **synchronized** with git branch operations:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
 | 2.1 | 2026-05-24 | Agent | Document the required `get_work_context` follow-up note on successful phase transitions |
-| 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
