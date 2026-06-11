@@ -43,17 +43,17 @@ The deliverables tools accept any `dict` at the boundary without verifying deep 
 `ProjectManager.save_planning_deliverables` currently asserts that the `tdd_cycles` key must be present in the deliverables dictionary. This fails for non-cycle-based workflows (such as `docs`) which have no `implementation` phase with `cycle_based: true` in `contracts.yaml`.
 
 ### Finding 3: Complete Tool Inventory
-Out of 50 registered tools in `bootstrap.py`, only **7 tools** produce structured JSON payloads. These are:
+Out of 50 registered tools in `bootstrap.py`, only **8 tools** produce structured JSON payloads. These are:
 1. `GetIssueTool` (returns JSON dump of issue)
 2. `GetPRTool` (returns JSON dump of PR)
 3. `InitializeProjectTool` (returns JSON success details)
 4. `GetProjectPlanTool` (returns JSON phase plan)
-5. `RunTestsTool` (returns structured test stats and failures)
-6. `RunQualityGatesTool` (returns structured gate violations)
-7. `ScaffoldSchemaTool` (returns JSON Schema of artifact contexts)
+5. `ScaffoldArtifactTool` (returns JSON path details of scaffolded artifact)
+6. `RunTestsTool` (returns structured test stats and failures)
+7. `RunQualityGatesTool` (returns structured gate violations)
+8. `ScaffoldSchemaTool` (returns JSON Schema of artifact contexts)
 
-All other 43 tools return simple text messages (`ToolResult.text()`), meaning our migration is fully bounded and no other tools are affected.
-
+All other 42 tools return simple text messages (`ToolResult.text()`), meaning our migration is fully bounded and no other tools are affected.
 ### Finding 4: Double Serialization and `structuredContent` (Issue #301)
 As investigated in the deferred Issue #301:
 * `ToolResult.json_data()` creates two content blocks: `{"type": "json"}` and `{"type": "text"}` (which is a JSON string fallback).

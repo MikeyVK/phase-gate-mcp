@@ -192,7 +192,7 @@ def assert_structured_result(result: ToolResult, expected_data: dict[str, Any] |
     * `tests/mcp_server/unit/managers/test_phase_state_engine.py` (Validates cycle state transitions)
     * `tests/mcp_server/integration/test_workflow_cycle_e2e.py` (Validates end-to-end cycle workflow integration)
     * `tests/mcp_server/integration/test_document_templates.py` (Validates Jinja2 template rendering output)
-
+    * `tests/mcp_server/unit/tools/test_scaffold_artifact.py` (Validates artifact scaffolding structured JSON output)
 ### 5.2. Migration Document
 A manual migration guide will be created at `docs/development/issue390/migration.md` to instruct developers on how to migrate existing `deliverables.json` files in their active branches.
 
@@ -204,3 +204,4 @@ A manual migration guide will be created at `docs/development/issue390/migration
 |---------|------|--------|---------|
 | 1.0 | 2026-06-11 | Agent | Initial draft containing structuredTool, SRP conversion, and cycles renaming decisions. |
 | 1.1 | 2026-06-11 | Agent | Resolved QA review findings: added templates to blast radius, specified frozen schemas, listed affected test modules, and added Mermaid diagram. |
+| 1.2 | 2026-06-11 | Agent | Backwards check: explicitly added ScaffoldArtifactTool to the JSON-producing tools scope, blast radius, and test modules. |
