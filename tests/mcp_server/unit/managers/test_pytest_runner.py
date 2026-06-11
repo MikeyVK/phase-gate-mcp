@@ -228,7 +228,10 @@ class TestPytestRunnerRun:
         assert result.should_raise is False
         assert isinstance(result.note, SuggestionNote)
 
-    def test_c1_pytest_runner_run_accepts_verbose_kwarg(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_c1_pytest_runner_run_accepts_verbose_kwarg(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """PytestRunner.run accepts verbose keyword-only argument."""
         completed = subprocess.CompletedProcess(
             args=["pytest"],
@@ -239,7 +242,7 @@ class TestPytestRunnerRun:
         monkeypatch.setattr(
             pytest_runner_module.subprocess,
             "run",
-            lambda *args, **kwargs: completed,
+            lambda *_args, **_kwargs: completed,
         )
         result_verbose = PytestRunner().run(["pytest"], cwd=".", timeout=30, verbose=True)
         assert result_verbose.exit_code == 0
