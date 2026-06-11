@@ -25,7 +25,7 @@
             "deliverables": [
               {
                 "id": "D1.1",
-                "description": "IPytestRunner.run signature includes *, verbose: bool = False"
+                "description": "IPytestRunner.run and PytestRunner.run signatures include *, verbose: bool = False, preserving backward compatibility and LSP."
               },
               {
                 "id": "D1.2",
@@ -55,7 +55,7 @@
             "deliverables": [
               {
                 "id": "D3.1",
-                "description": "PytestRunner command execution builds --tb=long when verbose=True, and --tb=short when verbose=False"
+                "description": "RunTestsTool._build_cmd command execution builds --tb=long when verbose=True, and --tb=short when verbose=False. PytestRunner execution itself does not modify command-line arguments."
               },
               {
                 "id": "D3.2",

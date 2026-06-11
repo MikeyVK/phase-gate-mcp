@@ -3,8 +3,8 @@
   "issue_number": 397,
   "workflow_name": "feature",
   "current_phase": "planning",
-  "current_cycle": null,
-  "last_cycle": null,
+  "current_cycle": 1,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Re-planning and resolving blockers identified in QA review",
   "issue_title": "tooling: Add verbose traceback and stdout capture to run_tests tool",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-11T13:35:28.980679+00:00",
@@ -36,6 +36,22 @@
       "human_approval": "QA design review passed successfully",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-11T14:52:19.711728+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "planning",
+      "timestamp": "2026-06-11T15:31:28.948553+00:00",
+      "human_approval": "User requested restarting/updating the planning phase",
+      "forced": true,
+      "skip_reason": "Re-planning and resolving blockers identified in QA review"
     }
   ],
   "reconstructed": false,

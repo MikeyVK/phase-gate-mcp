@@ -97,7 +97,8 @@ sequenceDiagram
     Proc-->>Runner: stdout, stderr, returncode
     deactivate Proc
     Runner->>Runner: _parse_output(stdout, stderr, returncode, verbose=True)
-    Note over Runner: Extracts failures & tracebacks.<br/>Caps detailed tracebacks at index < 3.<br/>Clear tracebacks for index >= 3.
+    Note over Runner: _parse_output calls _parse_failures(stdout, verbose=True)
+    Note over Runner: _parse_failures extracts failures & tracebacks.<br/>Caps detailed tracebacks at index < 3.<br/>Clear tracebacks for index >= 3.
     Runner-->>Tool: PytestResult(failures, ...)
     deactivate Runner
     Tool-->>Agent: ToolResult(json_data)
@@ -123,7 +124,8 @@ sequenceDiagram
     Proc-->>Runner: stdout, stderr, returncode
     deactivate Proc
     Runner->>Runner: _parse_output(stdout, stderr, returncode, verbose=False)
-    Note over Runner: Extracts failures & tracebacks.<br/>Clear tracebacks for all failures since verbose=False.
+    Note over Runner: _parse_output calls _parse_failures(stdout, verbose=False)
+    Note over Runner: _parse_failures extracts failures & tracebacks.<br/>Clear tracebacks for all failures since verbose=False.
     Runner-->>Tool: PytestResult(failures, ...)
     deactivate Runner
     Tool->>Tool: check failures & verbose=False
@@ -176,10 +178,10 @@ class RunTestsInput(BaseModel):
 | Component/File | Interface/Class/Method | Expected Changes |
 |----------------|------------------------|------------------|
 | [`mcp_server/core/interfaces/__init__.py`](file:///c:/temp/pgmcp/mcp_server/core/interfaces/__init__.py) | `IPytestRunner.run` | Update signature to: `def run(self, cmd: list[str], cwd: str, timeout: int, *, verbose: bool = False) -> PytestResult:`. Keyword-only argument preserves backward compatibility. |
-| [`mcp_server/tools/test_tools.py`](file:///c:/temp/pgmcp/mcp_server/tools/test_tools.py) | `RunTestsInput` | Add `verbose: bool = False` property with explicit description. Add model validator `validate_verbose_constraints` to reject verbose mode unless in path mode targeting files. |
-| [`mcp_server/tools/test_tools.py`](file:///c:/temp/pgmcp/mcp_server/tools/test_tools.py) | `RunTestsTool` | Propagate `verbose` flag from params to `runner.run()`. Generate conditional `RecoveryNote` when `verbose=False` and tests fail. |
-| [`mcp_server/managers/pytest_runner.py`](file:///c:/temp/pgmcp/mcp_server/managers/pytest_runner.py) | `PytestRunner.run` & `_parse_output` | Update `run` to accept `verbose` and pass it to `_parse_output`. |
-| [`mcp_server/managers/pytest_runner.py`](file:///c:/temp/pgmcp/mcp_server/managers/pytest_runner.py) | `PytestRunner._parse_failures` | Accept `verbose` parameter. Limit tracebacks to `MAX_FAILURES_DETAILED = 3` if `verbose` is True; clear tracebacks if `verbose` is False. |
+| [`mcp_server/tools/test_tools.py`](file:///c:/temp/pgmcp/mcp_server/tools/test_tools.py) | `RunTestsInput` | Add `verbose: bool = False` property with explicit description. Add validator to reject verbose mode unless in path mode targeting files (checking path exists and isn't a directory, or falls back to ends-with-py/contains-py-double-colon string check). |
+| [`mcp_server/tools/test_tools.py`](file:///c:/temp/pgmcp/mcp_server/tools/test_tools.py) | `RunTestsTool` | Propagate `verbose` flag from params to `runner.run()`. `RunTestsTool._build_cmd` builds the command including `--tb=long` when `verbose=True`, and `--tb=short` when `verbose=False`. Generate RecoveryNote on failure if `verbose=False` (exact text: `"Some tests failed. To see detailed tracebacks and stdout/stderr, rerun with verbose=True. Suggested command: run_tests(path='<failing_test_files>', verbose=True)"`). |
+| [`mcp_server/managers/pytest_runner.py`](file:///c:/temp/pgmcp/mcp_server/managers/pytest_runner.py) | `PytestRunner.run` & `_parse_output` | Update `run` and `_parse_output` to accept `verbose` and pass it to `_parse_failures`. `PytestRunner` does not modify the cmd list parameters. Update `run` signature in Cycle 1 to accept `*, verbose: bool = False` to preserve LSP. |
+| [`mcp_server/managers/pytest_runner.py`](file:///c:/temp/pgmcp/mcp_server/managers/pytest_runner.py) | `PytestRunner._parse_failures` | Accept `verbose` parameter. Limit tracebacks to `MAX_FAILURES_DETAILED = 3` (module-level constant in `pytest_runner.py`) if `verbose` is True; clear tracebacks if `verbose` is False. |
 | [`mcp_server/tools/quality_tools.py`](file:///c:/temp/pgmcp/mcp_server/tools/quality_tools.py) | `RunQualityGatesTool` | Delete unused `_render_text_output` static method. |
 | [`tests/mcp_server/fixtures/fake_pytest_runner.py`](file:///c:/temp/pgmcp/tests/mcp_server/fixtures/fake_pytest_runner.py) | `FakePytestRunner` | Update signature of `run` method to match the protocol. |
 

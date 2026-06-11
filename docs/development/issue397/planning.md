@@ -1,5 +1,5 @@
 <!-- C:\temp\pgmcp\docs\development\issue397\planning.md -->
-<!-- template=planning version=130ac5ea created=2026-06-11T14:52Z updated= -->
+<!-- template=planning version=130ac5ea created=2026-06-11T15:30Z updated= -->
 # Add verbose traceback and stdout capture to run_tests tool
 
 **Status:** DRAFT  
@@ -39,14 +39,14 @@ This planning document outlines the sequential TDD implementation cycles to add 
 
 ### Cycle 1: IPytestRunner Protocol & FakePytestRunner alignment
 
-**Goal:** Update the IPytestRunner protocol signature and FakePytestRunner to accept verbose keyword argument, preserving backward compatibility.
+**Goal:** Update the IPytestRunner protocol signature, FakePytestRunner, and concrete PytestRunner to accept the verbose keyword argument, preserving backward compatibility and avoiding intermediate LSP compiler violations.
 
 **Tests:**
 - tests/mcp_server/unit/tools/test_test_tools.py
 - tests/mcp_server/fixtures/fake_pytest_runner.py
 
 **Success Criteria:**
-- [D1.1] IPytestRunner.run signature includes *, verbose: bool = False, preserving backward compatibility with existing callers.
+- [D1.1] IPytestRunner.run and PytestRunner.run signatures include *, verbose: bool = False, preserving backward compatibility with existing callers.
 - [D1.2] FakePytestRunner signature updated and all existing unit tests compile and pass.
 - Run quality gates (run_quality_gates) on changed files. Achieve 10.00/10 linting score and pass type checking cleanly (no global ignores, per TYPE_CHECKING_PLAYBOOK.md).
 
@@ -61,7 +61,7 @@ This planning document outlines the sequential TDD implementation cycles to add 
 
 **Success Criteria:**
 - [D2.1] RunTestsInput schema includes verbose parameter with detailed agent description.
-- [D2.2] ValueError raised if verbose=True is set when path is None or contains directories.
+- [D2.2] ValueError raised if verbose=True is set when path is None or contains directories. Validator uses os.path.isdir combined with ends-with-py/contains-py-double-colon string check fallback for isolated unit testing.
 - Run quality gates (run_quality_gates) on changed files. Achieve 10.00/10 linting score and pass type checking cleanly (no global ignores, per TYPE_CHECKING_PLAYBOOK.md).
 
 
@@ -74,9 +74,9 @@ This planning document outlines the sequential TDD implementation cycles to add 
 - tests/mcp_server/unit/managers/test_pytest_runner.py
 
 **Success Criteria:**
-- [D3.1] PytestRunner command execution builds --tb=long when verbose=True, and --tb=short when verbose=False.
-- [D3.2] Traceback extraction caps detailed tracebacks at 3, leaving others empty.
-- [D3.3] All traceback strings are empty when verbose=False.
+- [D3.1] RunTestsTool._build_cmd command execution builds --tb=long when verbose=True, and --tb=short when verbose=False. PytestRunner execution itself does not modify command-line arguments.
+- [D3.2] Traceback extraction in PytestRunner._parse_failures caps detailed tracebacks at MAX_FAILURES_DETAILED = 3 (module-level constant in pytest_runner.py) when verbose=True, leaving others empty.
+- [D3.3] All traceback strings are empty in PytestRunner._parse_failures when verbose=False.
 - Run quality gates (run_quality_gates) on changed files. Achieve 10.00/10 linting score and pass type checking cleanly (no global ignores, per TYPE_CHECKING_PLAYBOOK.md).
 
 
@@ -90,7 +90,7 @@ This planning document outlines the sequential TDD implementation cycles to add 
 
 **Success Criteria:**
 - [D4.1] ToolResult JSON contains empty tracebacks when verbose=False.
-- [D4.2] RecoveryNote suggesting failing test files is generated when verbose=False and tests fail.
+- [D4.2] RecoveryNote suggesting failing test files is generated when verbose=False and tests fail. Note format is exactly: 'Some tests failed. To see detailed tracebacks and stdout/stderr, rerun with verbose=True. Suggested command: run_tests(path=\'<failing_test_files>\', verbose=True)'.
 - Run quality gates (run_quality_gates) on changed files. Achieve 10.00/10 linting score and pass type checking cleanly (no global ignores, per TYPE_CHECKING_PLAYBOOK.md).
 
 
