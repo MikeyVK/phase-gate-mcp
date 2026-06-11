@@ -121,4 +121,3 @@ class RunQualityGatesTool(BaseTool):
         )
         compact_payload = self.manager._build_compact_result(result)  # pyright: ignore[reportPrivateUsage]
         return ToolResult.json_data(compact_payload, text=summary_line)
-
