@@ -133,7 +133,26 @@ Aggregates the active branch and workflow state into an operator-facing orientat
 
 None. `GetWorkContextInput` is fieldless.
 
-#### Returns
+#### Returns (via MCP structuredContent)
+
+```json
+{
+  "current_branch": "feature/123-oauth",
+  "workflow_name": "feature",
+  "phase": "implementation",
+  "issue_number": 123,
+  "parent_branch": "main",
+  "sub_phase": "red",
+  "current_cycle": 1,
+  "phase_source": "state.json",
+  "phase_confidence": "high",
+  "sub_role_hint": "implementer",
+  "phase_instructions": "[ ] Call get_project_plan(issue_number=N)\n[ ] Execute the current TDD cycle",
+  "handover_template": "### Imp → QA hand-over\n#### Scope\n- Cycles executed: <list>"
+}
+```
+
+#### Text Fallback
 
 ```text
 Branch: `feature/123-oauth` | Workflow: feature | Issue: #123

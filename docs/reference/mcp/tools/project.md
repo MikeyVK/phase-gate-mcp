@@ -332,7 +332,7 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 **Class:** `SavePlanningDeliverablesTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py)
 
-Save TDD cycle planning deliverables for an issue to deliverables.json. Validates each `validates` entry schema before persisting.
+Save cycle planning deliverables for an issue to deliverables.json. Validates each `validates` entry schema before persisting.
 
 #### Parameters
 
@@ -340,6 +340,15 @@ Save TDD cycle planning deliverables for an issue to deliverables.json. Validate
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 | `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
+
+#### Returns (via MCP structuredContent)
+
+```json
+{
+  "success": true,
+  "issue_number": 123
+}
+```
 
 #### Behavior Notes
 
@@ -362,6 +371,15 @@ Merge-update cycle planning deliverables for an issue in deliverables.json. Must
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 | `planning_deliverables` | `dict` | **Yes** | Partial or full planning deliverables to merge. New cycles are appended; existing cycles have deliverables merged by id. Deliverable entries may include a `validates` spec with `type` + required fields (Layer 2 validation). |
+
+#### Returns (via MCP structuredContent)
+
+```json
+{
+  "success": true,
+  "issue_number": 123
+}
+```
 
 #### Behavior Notes
 

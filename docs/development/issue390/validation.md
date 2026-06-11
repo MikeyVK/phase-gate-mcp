@@ -4,7 +4,7 @@
 
 
 **Status:** APPROVED  
-**Version:** 1.0  
+**Version:** 1.3  
 **Last Updated:** 2026-06-11  
 **Validation Outcome:** PASS  
 **Issue:** #390  
@@ -106,3 +106,4 @@ None
 | 1.0 | 2026-06-11 | Agent | Initial draft |
 | 1.1 | 2026-06-11 | Agent | Documented Quality Gate DX friction as deferred work |
 | 1.2 | 2026-06-11 | Agent | Documented Test Runner DX friction and traceback verbose proposal as deferred work |
+| 1.3 | 2026-06-11 | Agent | Renamed `_get_tdd_cycles` in `phase_state_engine.py` and updated versioning |
