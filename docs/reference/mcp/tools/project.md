@@ -71,7 +71,7 @@ Initialize project with phase plan selection. Human selects workflow_name (featu
 | `epic` | 2 phases | Epic coordination (planning → tracking) |
 | `custom` | User-defined | Custom workflows (requires `custom_phases` and `skip_reason`) |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 ```json
 {
@@ -149,7 +149,7 @@ Get project phase plan for issue number.
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 ```json
 {
