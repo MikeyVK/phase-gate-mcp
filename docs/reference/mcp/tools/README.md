@@ -231,6 +231,10 @@ Documentation search, work context aggregation, and server administration.
 
 Each tool has one clear purpose. Complex workflows compose multiple tools rather than creating monolithic tools.
 
+### 1. Structured JSON Transport (MCP structuredContent)
+
+JSON-producing tools (such as issue retrieval, work context, and deliverables tools) inherit from the `StructuredTool` base class. Instead of double-serializing JSON payloads into a text block, the server natively extracts the structured dictionary and returns it via the MCP `structuredContent` field. This prevents client-side chat truncation and ensures clean JSON deserialization for callers.
+
 ### 2. Fail-Fast Validation
 
 Tools validate inputs before execution. Invalid parameters return structured errors, not partial operations.
@@ -282,6 +286,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 ## Version History
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.3 | 2026-06-11 | Agent | Document Structured JSON Transport (MCP structuredContent) design principle |
 | 2.2 | 2026-05-23 | Agent | Update discovery/index guidance for the delivered `get_work_context` contract and startup flow |
 | 2.1 | 2026-04-10 | Agent | Fix tool counts (50 total, Project/Phase 8, GitHub-Dependent 16); fix stale params and merge_method |
 | 2.0 | 2026-02-08 | Agent | Complete navigation index for 46 tools across 8 categories |
