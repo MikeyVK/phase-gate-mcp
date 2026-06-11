@@ -14,16 +14,15 @@ Unit tests for ToolResult to MCP result conversion.
 """
 
 # Standard library
-from typing import Any
 
 # Third-party
 import pytest
-from pathlib import Path
+from mcp.types import CallToolResult, TextContent
+
+from mcp_server.tools.tool_result import ToolResult
 
 # Project modules
 from mcp_server.utils.mcp_converters import convert_tool_result_to_mcp_result
-from mcp_server.tools.tool_result import ToolResult
-from mcp.types import CallToolResult, TextContent
 
 
 class TestToolResultConversion:
@@ -33,7 +32,7 @@ class TestToolResultConversion:
         """Should convert text-only ToolResult to CallToolResult normally."""
         result = ToolResult.text("Hello World")
         mcp_result = convert_tool_result_to_mcp_result(result)
-        
+
         assert isinstance(mcp_result, CallToolResult)
         assert not mcp_result.isError
         assert len(mcp_result.content) == 1
@@ -46,14 +45,14 @@ class TestToolResultConversion:
         test_data = {"key": "value", "list": [1, 2, 3]}
         result = ToolResult.json_data(test_data, text="Summary text")
         mcp_result = convert_tool_result_to_mcp_result(result)
-        
+
         assert isinstance(mcp_result, CallToolResult)
         assert not mcp_result.isError
         # The JSON content block must be popped, leaving only the TextContent block
         assert len(mcp_result.content) == 1
         assert isinstance(mcp_result.content[0], TextContent)
         assert mcp_result.content[0].text == "Summary text"
-        
+
         # The structuredContent field must contain the original dict data
         assert getattr(mcp_result, "structuredContent", None) == test_data
 
@@ -64,7 +63,7 @@ class TestToolResultConversion:
                 {"type": "json", "json": {"a": 1}},
                 {"type": "json", "json": {"b": 2}},
             ],
-            is_error=False
+            is_error=False,
         )
         with pytest.raises(ValueError, match="Multiple JSON content blocks"):
             convert_tool_result_to_mcp_result(result)
