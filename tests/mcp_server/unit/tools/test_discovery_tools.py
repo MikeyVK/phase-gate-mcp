@@ -37,7 +37,11 @@ from mcp_server.tools.discovery_tools import (
     SearchDocumentationInput,
     SearchDocumentationTool,
 )
-from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
+from tests.mcp_server.test_support import (
+    assert_structured_result,
+    make_phase_state_engine,
+    make_project_manager,
+)
 
 
 def make_settings(workspace_root: Path | str = ".", github_token: str | None = None) -> Settings:
@@ -200,11 +204,12 @@ class TestGetWorkContextTool:
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        from tests.mcp_server.test_support import assert_structured_result
+
         assert_structured_result(result)
-        
+
         data = result.content[0]["json"]
         assert data["current_branch"] == "main"
+
     @pytest.mark.asyncio
     async def test_get_context_extracts_issue_number(self, tool: GetWorkContextTool) -> None:
         """Issue number comes from BranchState after C1 (issue #268)."""
@@ -217,7 +222,7 @@ class TestGetWorkContextTool:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "#42" in result.content[0]["text"]
+        assert "#42" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_context_extracts_issue_number_alternate_format(
@@ -233,7 +238,7 @@ class TestGetWorkContextTool:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "#99" in result.content[0]["text"]
+        assert "#99" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_context_detects_workflow_phase_from_commit_scope(
@@ -251,9 +256,9 @@ class TestGetWorkContextTool:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"].lower()
+        text = result.content[1]["text"].lower()
         assert "implementation" in text
-        assert "red" in text or "🔴" in result.content[0]["text"]
+        assert "red" in text or "🔴" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_detect_workflow_phase_variations(self, tool: GetWorkContextTool) -> None:
@@ -277,8 +282,8 @@ class TestGetWorkContextTool:
             tool._state_engine.get_state.return_value.current_phase = expected_phase  # pyright: ignore[reportPrivateUsage]
             tool._state_engine.get_state.return_value.workflow_name = "feature"  # pyright: ignore[reportPrivateUsage]
             result = await tool.execute(GetWorkContextInput(), NoteContext())
-            text = result.content[0]["text"].lower()
-            assert expected_phase in text or expected_emoji in result.content[0]["text"]
+            text = result.content[1]["text"].lower()
+            assert expected_phase in text or expected_emoji in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_context_with_github_integration(self, tool: GetWorkContextTool) -> None:
@@ -311,7 +316,7 @@ class TestGetWorkContextTool:
 
         assert not result.is_error
         # GitHub issue title no longer included in output after C1
-        assert "Test Issue" not in result.content[0]["text"]
+        assert "Test Issue" not in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_context_shows_error_message_when_phase_unknown(
@@ -327,7 +332,7 @@ class TestGetWorkContextTool:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # Graceful fallback: phase_confidence=unknown → ⚠️ message or ❓ emoji
         assert "unknown" in text.lower() or "❓" in text
 
@@ -426,7 +431,7 @@ class TestGetWorkContextTddCycleInfo:
 
         # Assert - after C1 (issue #268) TDD cycle info removed from output
         assert not result.is_error, f"Expected success, got error: {result.content}"
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # TDD cycle noise block removed in C1 (issue #268)
         assert "TDD Cycle" not in text, f"Unexpected cycle info in output after C1: {text}"
 
@@ -491,7 +496,7 @@ class TestGetWorkContextTddCycleInfo:
 
         # Assert - NO tdd_cycle_info in design phase
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # Should NOT mention TDD cycle info or cycle names
         assert "TDD Cycle" not in text, f"Expected NO cycle info in design phase: {text}"
         assert "Validation Logic" not in text, f"Expected NO cycle name in design phase: {text}"
@@ -544,7 +549,7 @@ class TestGetWorkContextTddCycleInfo:
 
         # Assert - tool should NOT crash
         assert not result.is_error, f"Tool crashed: {result.content}"
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # Should show implementation phase
         assert "implementation" in text.lower() or "🔴" in text or "🟢" in text
 
@@ -634,7 +639,7 @@ class TestTddCycleInfoStatusField:
 
         assert not result.is_error, f"Tool failed: {result.content}"
         # TDD cycle status removed from output in C1 (issue #268)
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "in_progress" not in text, f"Unexpected tdd_cycle_info in output after C1: {text}"
 
 
@@ -673,7 +678,7 @@ class TestGetWorkContextResolverAdoption:
 
         assert not result.is_error
         # C1: resolver no longer called; execute() reads BranchState directly
-        assert "Branch:" in result.content[0]["text"]
+        assert "Branch:" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_execute_gates_cycle_enrichment_on_current_cycle_not_none(self) -> None:
@@ -702,7 +707,7 @@ class TestGetWorkContextResolverAdoption:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "TDD Cycle" not in result.content[0]["text"]
+        assert "TDD Cycle" not in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_execute_hides_cycle_for_non_cycle_phase_even_when_preserved(self) -> None:
@@ -718,8 +723,8 @@ class TestGetWorkContextResolverAdoption:
         planning_result = await planning_tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not planning_result.is_error
-        assert "Phase: 📋 planning" in planning_result.content[0]["text"]
-        assert "(cycle 3)" not in planning_result.content[0]["text"]
+        assert "Phase: 📋 planning" in planning_result.content[1]["text"]
+        assert "(cycle 3)" not in planning_result.content[1]["text"]
 
         implementation_tool = make_work_context_tool(contracts_config=load_contracts_config())
         implementation_tool._git_manager.get_current_branch.return_value = "bug/230-test"  # pyright: ignore[reportPrivateUsage]
@@ -735,7 +740,7 @@ class TestGetWorkContextResolverAdoption:
         )
 
         assert not implementation_result.is_error
-        assert "Phase: 🧪 implementation (cycle 3)" in implementation_result.content[0]["text"]
+        assert "Phase: 🧪 implementation (cycle 3)" in implementation_result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_execute_shows_phase_from_resolver(self) -> None:
@@ -759,7 +764,7 @@ class TestGetWorkContextResolverAdoption:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "research" in result.content[0]["text"].lower()
+        assert "research" in result.content[1]["text"].lower()
 
 
 # ---------------------------------------------------------------------------
@@ -874,7 +879,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # C1: "Role: implementer" in compact orientation header
         assert "Role: implementer" in text
 
@@ -887,7 +892,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # C1: phase instructions appear in "### 🎯 Phase Instructions" block
         assert "Phase Instructions" in text
         # Instructions must mention the core TDD tools agents should call
@@ -904,7 +909,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
 
         assert not result.is_error
         # No crash; output shows "No instructions defined" for unknown combo
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "No instructions defined" in text or "❓" in text
 
     @pytest.mark.asyncio
@@ -941,7 +946,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # C1: phase instructions appear in "### 🎯 Phase Instructions" block
         assert "Phase Instructions" in text
         assert "get_issue" in text  # bug research always starts with reading the issue
@@ -956,7 +961,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         # C1: phase instructions appear in "### 🎯 Phase Instructions" block
         assert "Phase Instructions" in text
         assert "RED" in text  # TDD RED phase required
@@ -1042,7 +1047,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "Role: implementer" in result.content[0]["text"]
+        assert "Role: implementer" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_phase_instructions_for_feature_implementation(
@@ -1053,7 +1058,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "### \U0001f3af Phase Instructions" in text
         assert "get_project_plan" in text
 
@@ -1066,7 +1071,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "### \U0001f3af Phase Instructions" in text
         assert "No instructions defined" in text
         assert "⚠️ Invalid workflow state:" not in text
@@ -1078,7 +1083,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "⚠️ Invalid workflow state:" in text
         assert (
             "⚠️ Invalid workflow state: workflow 'feature' does not contains phase "
@@ -1099,7 +1104,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         warning_pos = text.find("⚠️ Invalid workflow state:")
         phase_instructions_pos = text.find("### 🎯 Phase Instructions")
         first_h3 = text.find("###")
@@ -1118,7 +1123,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "Workflow: feature" in result.content[0]["text"]
+        assert "Workflow: feature" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_issue_number_from_branch_state(self) -> None:
@@ -1128,7 +1133,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "Issue: #268" in result.content[0]["text"]
+        assert "Issue: #268" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_parent_branch_from_branch_state(self) -> None:
@@ -1137,7 +1142,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "Parent: main" in result.content[0]["text"]
+        assert "Parent: main" in result.content[1]["text"]
 
     @pytest.mark.asyncio
     async def test_get_work_context_omits_noise_fields(self) -> None:
@@ -1152,7 +1157,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "### Active Issue:" not in text
         assert "Recent Commits:" not in text
         assert "TDD Cycle" not in text
@@ -1164,7 +1169,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "### \U0001f3af Phase Instructions" in text, f"Header not found in output:\n{text}"
         first_h3 = text.find("###")
         phase_instructions_pos = text.find("### \U0001f3af Phase Instructions")
@@ -1179,7 +1184,7 @@ class TestGetWorkContextC1Restructuring:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         reminder = "TODO discipline: create or refresh your TODO list now"
         assert reminder in text
         assert "keep exactly one item in progress" in text
@@ -1201,7 +1206,7 @@ class TestGetWorkContextC1Restructuring:
         assert not result.is_error, (
             f"Expected graceful degradation, got error.\nContent: {result.content}"
         )
-        assert "feature/268-test" in result.content[0]["text"]
+        assert "feature/268-test" in result.content[1]["text"]
 
 
 # ---------------------------------------------------------------------------
@@ -1299,7 +1304,7 @@ class TestGetWorkContextC7ContractsInjection:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "implementer-c7" in text
 
     @pytest.mark.asyncio
@@ -1312,7 +1317,7 @@ class TestGetWorkContextC7ContractsInjection:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "Do TDD. Call get_project_plan." in text
 
     @pytest.mark.asyncio
@@ -1323,7 +1328,7 @@ class TestGetWorkContextC7ContractsInjection:
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "### Hand-over Template" in text
         assert "## Hand-over" in text
 
