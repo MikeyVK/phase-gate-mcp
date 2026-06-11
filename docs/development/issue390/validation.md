@@ -90,6 +90,10 @@ Since the change affects only the internal serialization structure of tool resul
 ## Residual Risks & Caveats
 * **Client Compatibility**: Because this is a Clean Break, any external scripts or tools that manually call the migrated MCP tools and expect a raw string in the text response (instead of reading the `structuredContent` JSON list) will require updating. This has been documented in `docs/development/issue390/migration.md`.
 * **Quality Gate Friction (Deferred Work)**: Fixing minor formatting or linting errors (like Ruff autofixes) currently requires executing terminal commands and manually approving sandbox permissions. The lack of detailed verbose error reporting in the text response of `run_quality_gates` and the absence of a dedicated `fix_quality_gates` MCP tool creates unnecessary friction. A new follow-up issue should be created for `@co` to prioritize and implement this auto-fix capability.
+* **Test Runner Friction & Missing Tracebacks (Deferred Work)**: Debugging failing tests was high-friction because `run_tests` did not return detailed tracebacks or stdout/stderr captures. This forced the agent to write scratch runner scripts and execute them via the terminal. A new follow-up issue should be created to:
+  1. Add a `verbose: bool = False` flag to `RunTestsInput` to include full tracebacks, stdout, and stderr for failing tests in the JSON payload.
+  2. Implement a validator that restricts `verbose=True` only to runs targeting specific test files via `path` (prohibiting it for `scope='full'` to prevent payload explosion).
+  3. Emit a `RecoveryNote` (via `NoteContext`) when tests fail and `verbose=False`, explicitly instructing the agent to rerun the tests with `verbose=True` and providing the suggested `path='<failing_test_files>'` argument.
 
 ## Related Documentation
 None
@@ -101,3 +105,4 @@ None
 |---------|------|--------|---------|
 | 1.0 | 2026-06-11 | Agent | Initial draft |
 | 1.1 | 2026-06-11 | Agent | Documented Quality Gate DX friction as deferred work |
+| 1.2 | 2026-06-11 | Agent | Documented Test Runner DX friction and traceback verbose proposal as deferred work |
