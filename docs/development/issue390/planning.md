@@ -35,18 +35,16 @@ Before implementation begins, the following must be in place:
 * Central test helper `assert_structured_result` implementation.
 
 **Out of Scope:**
-* Migration of non-JSON tools.
-* Altering the core execution logic of `EnforcementRunner` or unrelated managers.
+### Cycle 2: Cycle 2: GetIssueTool Migratie
 
----
+**Goal:** Migrate GetIssueTool to StructuredTool and introduce assert_structured_result helper.
 
-## Cycle Strategy
+**Tests:**
+- tests/mcp_server/unit/tools/test_issue_tools.py
 
-The implementation is broken down into 8 sequential cycles to allow for step-by-step TDD verification and minimal regression risk:
-
-| Cycle | Focus | Why this boundary exists | Main affected surfaces | Primary proof |
-| :--- | :--- | :--- | :--- | :--- |
-| **Cycle 1** | StructuredTool & Converters | Core base infrastructure. | `base.py`, `mcp_converters.py` | Unit tests for converters |
+**Success Criteria:**
+* GetIssueTool tests succeed using assert_structured_result helper.
+* **Manual Stop-Go Check**: Restart the MCP server, run the `get_issue` tool, and demonstrate the structured JSON output format in the chat to the user. Wait for explicit user confirmation before transitioning to Cycle 3.
 | **Cycle 2** | GetIssueTool Migratie | First tool migration, validates base. | `issue_tools.py`, `test_support.py` | GetIssueTool unit tests |
 | **Cycle 3** | GetPRTool Migratie | Second tool migration. | `pr_tools.py` | GetPRTool unit tests |
 | **Cycle 4** | GetProjectPlanTool Migratie | Third tool migration. | `project_tools.py` | GetProjectPlanTool unit tests |

@@ -53,7 +53,7 @@
                 }
               }
             ],
-            "exit_criteria": "GetIssueTool tests succeed using assert_structured_result helper."
+            "exit_criteria": "GetIssueTool tests succeed using assert_structured_result helper. Manual verification: restart server, demonstrate structured get_issue output in chat, and obtain user approval."
           },
           {
             "cycle_number": 3,
