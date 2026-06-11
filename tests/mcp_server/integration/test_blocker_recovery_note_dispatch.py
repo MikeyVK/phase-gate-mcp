@@ -141,6 +141,7 @@ class TestBlockerRecoveryNoteDispatch:
         notes_text = rendered.content[1]["text"]
         lines = notes_text.split("\n")
         assert lines[0] == "Blocker: First blocker"
-        assert lines[1] == "Recovery: Try this recovery"
-        assert lines[2] == "Suggestion: Also a suggestion"
-        assert lines[3] == "Blocker: Second blocker"
+        assert lines[1] == ""
+        assert lines[2] == "🩹 Recovery: Try this recovery"
+        assert lines[3] == "Suggestion: Also a suggestion"
+        assert lines[4] == "Blocker: Second blocker"

@@ -49,14 +49,44 @@ class RunTestsInput(BaseModel):
         default=False,
         description="Enable branch coverage and enforce the 90% threshold.",
     )
+    verbose: bool = Field(
+        default=False,
+        description=(
+            "Enable verbose mode to capture complete tracebacks and stdout/stderr output "
+            "from failed tests. Only permitted in path-based execution mode targeting "
+            "specific test files (directories or the full suite run are not supported)."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_path_or_scope(self) -> RunTestsInput:
-        """Ensure exactly one of path or scope is provided."""
+        """Ensure exactly one of path or scope is provided and validate verbose constraints."""
         if self.path is None and self.scope is None:
             raise ValueError("Either 'path' or 'scope' must be provided")
         if self.path is not None and self.scope is not None:
             raise ValueError("'path' and 'scope' are mutually exclusive — provide one, not both")
+
+        if self.verbose:
+            if self.path is None:
+                msg = (
+                    "verbose mode requires a path-based execution mode "
+                    "(directories or the full suite are not supported)"
+                )
+                raise ValueError(msg)
+            for p in self.path.split():
+                if os.path.isdir(p):
+                    msg = (
+                        "verbose mode is only permitted on specific files, "
+                        f"but '{p}' is a directory"
+                    )
+                    raise ValueError(msg)
+                # String check fallback for mock/non-existent paths in unit tests
+                if not (p.endswith(".py") or ".py::" in p or "::" in p):
+                    msg = (
+                        "verbose mode is only permitted on specific test files, "
+                        f"but '{p}' is not a valid python file path"
+                    )
+                    raise ValueError(msg)
         return self
 
 
@@ -139,7 +169,8 @@ class RunTestsTool(BaseTool):
 
     def _build_cmd(self, params: RunTestsInput) -> list[str]:
         """Build the pytest command from input parameters."""
-        cmd = [sys.executable, "-m", "pytest", "--tb=short"]
+        tb_style = "--tb=long" if params.verbose else "--tb=short"
+        cmd = [sys.executable, "-m", "pytest", tb_style]
         if params.path is not None:
             cmd.extend(params.path.split())
         if params.last_failed_only:
@@ -168,6 +199,7 @@ class RunTestsTool(BaseTool):
                 cmd,
                 self._workspace_root,
                 effective_timeout,
+                verbose=params.verbose,
             )
         except Exception as exc:
             if _find_timeout_expired(exc) is not None:
@@ -188,6 +220,17 @@ class RunTestsTool(BaseTool):
         if result.note is not None:
             context.produce(result.note)
         _emit_lf_cache_note(result, params, context)
+
+        if not params.verbose and result.failures:
+            failing_files = sorted({f.location for f in result.failures if f.location})
+            if failing_files:
+                failing_files_str = " ".join(failing_files)
+                msg = (
+                    "Some tests failed. To see detailed tracebacks and stdout/stderr, "
+                    "rerun with verbose=True. Suggested command: "
+                    f"run_tests(path='{failing_files_str}', verbose=True)"
+                )
+                context.produce(RecoveryNote(msg))
 
         if result.should_raise:
             raise ExecutionError(f"pytest exited with returncode {result.exit_code}")

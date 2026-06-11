@@ -20,8 +20,8 @@ class FakePytestRunner:
     result: PytestResult
     captured_cmd: list[str] | None = None
 
-    def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
+    def run(self, cmd: list[str], cwd: str, timeout: int, *, verbose: bool = False) -> PytestResult:
         """Capture the built pytest command and return the pre-baked result."""
-        del cwd, timeout
+        del cwd, timeout, verbose
         self.captured_cmd = cmd
         return self.result

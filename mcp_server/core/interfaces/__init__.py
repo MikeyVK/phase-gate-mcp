@@ -42,7 +42,7 @@ class IPRStatusWriter(Protocol):
 class IPytestRunner(Protocol):
     """Run a pytest invocation and return a structured PytestResult."""
 
-    def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
+    def run(self, cmd: list[str], cwd: str, timeout: int, *, verbose: bool = False) -> PytestResult:
         raise NotImplementedError
 
 

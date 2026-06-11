@@ -735,3 +735,8 @@ class TestRunQualityGatesConflictErrorC3:
         assert "retry" in notes[0].message.lower(), (
             f"recovery hint must mention retry, got: {notes[0].message!r}"
         )
+
+
+def test_c5_render_text_output_is_removed() -> None:
+    """Verify that _render_text_output has been removed from RunQualityGatesTool."""
+    assert not hasattr(RunQualityGatesTool, "_render_text_output")

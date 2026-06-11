@@ -135,7 +135,7 @@ class RecoveryNote:
     message: str
 
     def to_message(self) -> str:
-        return f"Recovery: {self.message}"
+        return f"\n🩹 Recovery: {self.message}"
 
 
 @dataclass(frozen=True)

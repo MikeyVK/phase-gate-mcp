@@ -86,11 +86,13 @@ Baseline mutation is allowed only for effective `scope="auto"` runs.
 | `last_failed_only` | `bool` | No | `false` | Re-run only last-failed tests (`--lf`). Skipped if lf-cache is empty |
 | `timeout` | `int` | No | `300` | Hard kill timeout in seconds |
 | `coverage` | `bool` | No | `false` | Enable pytest-cov coverage reporting (`--cov`) |
+| `verbose` | `bool` | No | `false` | Enable verbose mode to capture tracebacks and stdout/stderr. Only allowed in path-based execution targeting specific files |
 
 ### Validation rules
 
 - `path` and `scope` are mutually exclusive. Providing both → validation error.
 - Providing neither `path` nor `scope` → validation error.
+- `verbose=true` is only allowed when executing with `path` targeting specific test files. Rerunning folders or the entire suite with `verbose=true` is forbidden.
 - `coverage=true` requires `pytest-cov` installed; otherwise pytest exits with an error (exit code 3).
 
 ### Output contract
@@ -138,7 +140,7 @@ Payload keys:
 - `exit_code`: raw pytest exit code
 - `summary`: counts `{passed, failed, skipped, errors}`
 - `summary_line`: human-readable one-liner from pytest output
-- `failures`: list of failure objects (empty `[]` when no failures)
+- `failures`: list of failure objects (empty `[]` when no failures). Each failure object contains `test_id`, `location`, `short_reason`, and `traceback` (which includes captured stdout/stderr). The `traceback` field is only populated when `verbose=true` is set and is capped to the first 3 failing tests; otherwise it is empty (`""`).
 - `coverage_pct`: `float` when `coverage=true` and coverage data available; `null` otherwise
 - `lf_cache_was_empty`: `true` when `last_failed_only=true` but no lf-cache existed (full run was performed)
 - `stderr`: full pytest stderr (last 50 lines). Always present; empty string `""` when no stderr
@@ -208,6 +210,7 @@ Payload keys:
 - Do **not** treat `run_quality_gates` as test runner replacement; use `run_tests` for pytest execution.
 - Do **not** infer compact payload from legacy `json_data` examples; use `content[0]/content[1]` contract.
 - Do **not** use `path` and `scope` together in `run_tests`; they are mutually exclusive.
+- Do **not** use `verbose=true` with `scope="full"` or when targeting directories in `run_tests`; it is only allowed when targeting specific test files.
 - Do **not** assume `is_error=False` means all tests passed; exits 0 and 5 both produce `is_error=False`.
 - Do **not** parse `content[0]` text for structured data; use `content[1]` JSON payload instead.
 - Do **not** omit checking `lf_cache_was_empty` when using `last_failed_only`; if `true`, a full run was performed.
