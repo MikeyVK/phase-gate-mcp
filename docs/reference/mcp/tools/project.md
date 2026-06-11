@@ -354,7 +354,7 @@ Save TDD cycle planning deliverables for an issue to deliverables.json. Validate
 **Class:** `UpdatePlanningDeliverablesTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py)
 
-Merge-update TDD cycle planning deliverables for an issue in deliverables.json. Must be preceded by `save_planning_deliverables`. New cycles are appended; deliverables within existing cycles are merged by id.
+Merge-update cycle planning deliverables for an issue in deliverables.json. Must be preceded by `save_planning_deliverables`. New cycles are appended; deliverables within existing cycles are merged by id.
 
 #### Parameters
 

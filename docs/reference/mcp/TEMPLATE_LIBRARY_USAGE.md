@@ -64,7 +64,7 @@ Return the JSON Schema for the `context` parameter of an artifact type. Use this
 **Example:**
 ```
 scaffold_schema(artifact_type="design")
-→ { "properties": { "title": {...}, "summary": {...}, ... }, "required": ["title", "summary", "tdd_cycles"], ... }
+→ { "properties": { "title": {...}, "summary": {...}, ... }, "required": ["title", "summary", "cycles"], ... }
 ```
 
 ---
@@ -133,7 +133,7 @@ This eliminates trial-and-error context validation failures.
   "context": {
     "title": "Payment Gateway Integration Design",
     "summary": "Design for integrating Stripe and PayPal payment providers",
-    "tdd_cycles": []
+    "cycles": []
   }
 }
 ```

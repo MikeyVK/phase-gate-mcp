@@ -361,7 +361,7 @@ workflows:
 
             [ ] Build the save_planning_deliverables payload from the finalized plan.
                 Ensure:
-                - tdd_cycles.total equals the number of cycles
+                - cycles.total equals the number of cycles
                 - cycle_number values are sequential and 1-based
                 - every cycle has a non-empty deliverables list
                 - every cycle has a non-empty exit_criteria string
@@ -1127,7 +1127,7 @@ workflows:
 
             [ ] Build the save_planning_deliverables payload from the finalized plan.
                 Ensure:
-                - tdd_cycles.total equals the number of cycles
+                - cycles.total equals the number of cycles
                 - cycle_number values are sequential and 1-based
                 - every cycle has a non-empty deliverables list
                 - every cycle has a non-empty exit_criteria string
@@ -2166,7 +2166,7 @@ workflows:
 
             [ ] Build the save_planning_deliverables payload from the finalized plan.
                 Ensure:
-                - tdd_cycles.total equals the number of cycles
+                - cycles.total equals the number of cycles
                 - cycle_number values are sequential and 1-based
                 - every cycle has a non-empty deliverables list
                 - every cycle has a non-empty exit_criteria string
