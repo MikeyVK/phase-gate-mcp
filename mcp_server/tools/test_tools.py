@@ -169,7 +169,8 @@ class RunTestsTool(BaseTool):
 
     def _build_cmd(self, params: RunTestsInput) -> list[str]:
         """Build the pytest command from input parameters."""
-        cmd = [sys.executable, "-m", "pytest", "--tb=short"]
+        tb_style = "--tb=long" if params.verbose else "--tb=short"
+        cmd = [sys.executable, "-m", "pytest", tb_style]
         if params.path is not None:
             cmd.extend(params.path.split())
         if params.last_failed_only:

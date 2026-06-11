@@ -115,6 +115,9 @@ _COVERAGE_RE = re.compile(r"^TOTAL\b(?:\s+\d+)+\s+(\d+(?:\.\d+)?)%$", re.MULTILI
 _LF_EMPTY_RE = re.compile(r"no previously failed tests,\s*not deselecting", re.IGNORECASE)
 
 
+MAX_FAILURES_DETAILED = 3
+
+
 class PytestRunner:
     """Domain manager: command execution, output parsing, exit-code classification."""
 
@@ -165,11 +168,11 @@ class PytestRunner:
         verbose: bool = False,
     ) -> PytestResult:
         """Parse raw pytest stdout and return a fully typed PytestResult."""
-        del verbose  # Unused in Cycle 1
+        policy = _EXIT_CODE_POLICY.get(returncode, _UNKNOWN_CODE_POLICY)
         policy = _EXIT_CODE_POLICY.get(returncode, _UNKNOWN_CODE_POLICY)
 
         passed, failed, skipped, errors = self._parse_counts(stdout)
-        failures = self._parse_failures(stdout)
+        failures = self._parse_failures(stdout, verbose=verbose)
         coverage_pct = self._parse_coverage(stdout)
         lf_cache_was_empty = bool(_LF_EMPTY_RE.search(stdout))
         summary_line = self._parse_summary_line(stdout, returncode, policy)
@@ -199,17 +202,23 @@ class PytestRunner:
 
         return _count("passed"), _count("failed"), _count("skipped"), _count("error")
 
-    def _parse_failures(self, stdout: str) -> tuple[FailureDetail, ...]:
+    def _parse_failures(self, stdout: str, *, verbose: bool = False) -> tuple[FailureDetail, ...]:
+        """Extract FailureDetail entries from FAILED lines in short summary."""
         """Extract FailureDetail entries from FAILED lines in short summary."""
         details: list[FailureDetail] = []
-        for match in _FAILED_LINE_RE.finditer(stdout):
+        for i, match in enumerate(_FAILED_LINE_RE.finditer(stdout)):
             test_id = match.group(1).strip()
-            traceback = self._extract_traceback(stdout, test_id)
+            raw_traceback = self._extract_traceback(stdout, test_id)
             inline_reason = match.group(2)
             short_reason = (
-                inline_reason.strip() if inline_reason else self._extract_short_reason(traceback)
+                inline_reason.strip() if inline_reason else self._extract_short_reason(raw_traceback)
             )
             location, _, _ = test_id.partition("::")
+            
+            traceback = ""
+            if verbose and i < MAX_FAILURES_DETAILED:
+                traceback = raw_traceback
+
             details.append(
                 FailureDetail(
                     test_id=test_id,

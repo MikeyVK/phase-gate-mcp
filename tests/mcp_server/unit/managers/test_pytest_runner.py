@@ -114,6 +114,7 @@ def _run(
     returncode: int,
     *,
     stderr: str = "",
+    verbose: bool = False,
 ) -> PytestResult:
     """Helper to exercise PytestRunner.run() through a controlled subprocess seam."""
     completed: subprocess.CompletedProcess[str] = subprocess.CompletedProcess(
@@ -147,7 +148,7 @@ def _run(
         return completed
 
     monkeypatch.setattr(pytest_runner_module.subprocess, "run", fake_run)
-    return PytestRunner().run(["pytest"], cwd=".", timeout=30)
+    return PytestRunner().run(["pytest"], cwd=".", timeout=30, verbose=verbose)
 
 
 # ---------------------------------------------------------------------------
@@ -397,7 +398,7 @@ class TestC4XdistTracebackExtraction:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """xdist stdout with [gw0] prefix on FAILURES header ÔåÆ traceback non-empty."""
-        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW0, returncode=1)
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW0, returncode=1, verbose=True)
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
@@ -406,7 +407,7 @@ class TestC4XdistTracebackExtraction:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """xdist stdout with double-digit [gw12] prefix ÔåÆ traceback non-empty."""
-        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW12, returncode=1)
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW12, returncode=1, verbose=True)
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
@@ -415,7 +416,7 @@ class TestC4XdistTracebackExtraction:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Standard (non-xdist) FAILURES header ÔåÆ traceback still extracted (regression guard)."""
-        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
+        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1, verbose=True)
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
