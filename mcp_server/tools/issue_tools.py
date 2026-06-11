@@ -1,6 +1,5 @@
 """Issue management tools."""
 
-import json
 import unicodedata
 from typing import Any, Literal
 
@@ -17,7 +16,7 @@ from mcp_server.schemas import (
     IssueConfig,
     MilestoneConfig,
 )
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import BaseTool, StructuredTool
 from mcp_server.tools.tool_result import ToolResult
 
 IssueState = Literal["open", "closed", "all"]
@@ -218,7 +217,7 @@ class GetIssueInput(BaseModel):
     issue_number: int = Field(..., description="The issue number to retrieve")
 
 
-class GetIssueTool(BaseTool):
+class GetIssueTool(StructuredTool):
     """Tool to get issue details."""
 
     name = "get_issue"
@@ -226,15 +225,19 @@ class GetIssueTool(BaseTool):
     args_model = GetIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
+        super().__init__()
         self.manager = manager
 
-    async def execute(self, params: GetIssueInput, context: NoteContext) -> ToolResult:
+    async def execute_structured(
+        self,
+        params: GetIssueInput,
+        context: NoteContext,  # noqa: ANN401
+    ) -> tuple[dict[str, Any], str]:
         del context  # Not used
-        try:
-            issue = self.manager.get_issue(params.issue_number)
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-        return ToolResult.text(json.dumps(issue.model_dump(), indent=2))
+        issue = self.manager.get_issue(params.issue_number)
+        data = issue.model_dump()
+        summary = f"Retrieved issue #{params.issue_number}: {data.get('title', '')}"
+        return data, summary
 
 
 class ListIssuesInput(BaseModel):

@@ -15,6 +15,7 @@ from mcp_server.tools.scaffold_artifact import (
     ScaffoldArtifactInput,
     ScaffoldArtifactTool,
 )
+from tests.mcp_server.test_support import assert_structured_result
 
 
 class TestScaffoldArtifactTool:
@@ -68,8 +69,14 @@ class TestScaffoldArtifactTool:
         )
 
         # Verify result
-        assert not result.is_error
-        assert "UserDTO.py" in result.content[0]["text"]
+
+        assert_structured_result(
+            result,
+            {
+                "artifact_type": "dto",
+                "artifact_path": "mcp_server/dtos/UserDTO.py",
+            },
+        )
 
     @pytest.mark.asyncio
     async def test_scaffolds_document_artifact(
@@ -98,8 +105,14 @@ class TestScaffoldArtifactTool:
         )
 
         # Verify result
-        assert not result.is_error
-        assert "design.md" in result.content[0]["text"]
+
+        assert_structured_result(
+            result,
+            {
+                "artifact_type": "design",
+                "artifact_path": "docs/development/design.md",
+            },
+        )
 
     def test_manager_requires_explicit_di(self) -> None:
         """Should require explicit manager dependency injection."""
@@ -185,5 +198,11 @@ class TestScaffoldArtifactTool:
 
         result = await tool.execute(input_data, NoteContext())
 
-        assert not result.is_error
+        assert_structured_result(
+            result,
+            {
+                "artifact_type": "dto",
+                "artifact_path": "mcp_server/dtos/UserDTO.py",
+            },
+        )
         mock_manager.scaffold_artifact.assert_called_once()

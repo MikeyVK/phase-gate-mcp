@@ -40,8 +40,8 @@ async def test_run_tests_tool(tmp_path: Path) -> None:
 
     result = await tool.execute(RunTestsInput(path="tests/unit"), NoteContext())
 
-    assert result.content[0]["type"] == "text"
-    assert result.content[1]["json"]["summary"]["passed"] == 2
+    assert result.content[1]["type"] == "text"
+    assert result.content[0]["json"]["summary"]["passed"] == 2
     assert runner.captured_cmd is not None
     assert any("pytest" in str(arg) for arg in runner.captured_cmd)
     assert "tests/unit" in runner.captured_cmd

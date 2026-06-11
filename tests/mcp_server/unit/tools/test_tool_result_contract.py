@@ -3,9 +3,9 @@
 C27: ToolResult content contract for RunQualityGatesTool.
 
 Contract (planning.md Cycle 27):
-  content[0] = {"type": "text", "text": <summary_line>}   — human-readable one-liner
-  content[1] = {"type": "json", "json": <compact_payload>} — structured gate results
-  len(content) == 2 — exactly two items, no more
+   content[0] = {"type": "json", "json": <compact_payload>} — structured gate results
+   content[1] = {"type": "text", "text": <summary_line>}   — human-readable one-liner
+   len(content) == 2 — exactly two items, no more
 
 @layer: Tests (Unit)
 @dependencies: [pytest, typing, mcp_server.tools.quality_tools]
@@ -57,7 +57,7 @@ def _make_qg_result(
 
 
 class TestToolResultContentContract:
-    """content[0] must be text; content[1] must be json; exactly two items."""
+    """content[0] must be json; content[1] must be text; exactly two items."""
 
     @pytest.mark.asyncio
     async def test_content_has_exactly_two_items(self) -> None:
@@ -73,8 +73,8 @@ class TestToolResultContentContract:
         assert len(result.content) == 2, f"Expected 2 content items, got {len(result.content)}"
 
     @pytest.mark.asyncio
-    async def test_content_zero_is_text(self) -> None:
-        """content[0] must be type='text' (human-readable summary line)."""
+    async def test_content_zero_is_json(self) -> None:
+        """content[0] must be type='json' (compact structured payload)."""
         mock_manager = MagicMock()
         mock_manager.run_quality_gates.return_value = _make_qg_result()
         tool = RunQualityGatesTool(manager=mock_manager)
@@ -83,13 +83,13 @@ class TestToolResultContentContract:
             RunQualityGatesInput(scope="files", files=["foo.py"]), NoteContext()
         )
 
-        assert result.content[0]["type"] == "text", (
-            f"content[0] must be 'text', got '{result.content[0]['type']}'"
+        assert result.content[0]["type"] == "json", (
+            f"content[0] must be 'json', got '{result.content[0]['type']}'"
         )
 
     @pytest.mark.asyncio
-    async def test_content_one_is_json(self) -> None:
-        """content[1] must be type='json' (compact structured payload)."""
+    async def test_content_one_is_text(self) -> None:
+        """content[1] must be type='text' (human-readable summary line)."""
         mock_manager = MagicMock()
         mock_manager.run_quality_gates.return_value = _make_qg_result()
         tool = RunQualityGatesTool(manager=mock_manager)
@@ -98,8 +98,8 @@ class TestToolResultContentContract:
             RunQualityGatesInput(scope="files", files=["foo.py"]), NoteContext()
         )
 
-        assert result.content[1]["type"] == "json", (
-            f"content[1] must be 'json', got '{result.content[1]['type']}'"
+        assert result.content[1]["type"] == "text", (
+            f"content[1] must be 'text', got '{result.content[1]['type']}'"
         )
 
     @pytest.mark.asyncio
@@ -113,7 +113,7 @@ class TestToolResultContentContract:
             RunQualityGatesInput(scope="files", files=["foo.py"]), NoteContext()
         )
 
-        text = result.content[0]["text"]
+        text = result.content[1]["text"]
         assert "✅" in text or "❌" in text or "⚠️" in text, (
             f"Summary line must start with status emoji, got: {text!r}"
         )
@@ -146,7 +146,7 @@ class TestToolResultContentContract:
             RunQualityGatesInput(scope="files", files=["foo.py"]), NoteContext()
         )
 
-        payload = result.content[1]["json"]
+        payload = result.content[0]["json"]
         assert isinstance(payload, dict)
         assert "gates" in payload, f"Compact payload must have 'gates' key, got: {payload.keys()}"
 
@@ -164,6 +164,6 @@ class TestToolResultContentContract:
             RunQualityGatesInput(scope="files", files=["foo.py"]), NoteContext()
         )
 
-        gate = result.content[1]["json"]["gates"][0]
+        gate = result.content[0]["json"]["gates"][0]
         assert "command" not in gate, "command must not appear in compact payload"
         assert "duration_ms" not in gate, "duration_ms must not appear in compact payload"

@@ -24,10 +24,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from pydantic import ValidationError
+
 # Project modules
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.schemas import ContractsConfig, WorkphasesConfig
+from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
 if TYPE_CHECKING:
@@ -35,7 +38,7 @@ if TYPE_CHECKING:
 
 # Per-phase keys recognised in planning_deliverables (C8/GAP-15)
 _known_phase_keys: frozenset[str] = frozenset(
-    {"tdd_cycles", "design", "validation", "documentation", "validates"}
+    {"cycles", "design", "validation", "documentation", "validates"}
 )
 
 
@@ -201,14 +204,10 @@ class ProjectManager:
 
         Args:
             issue_number: GitHub issue number
-            planning_deliverables: Planning deliverables dict (tdd_cycles, validation_plan, etc.)
+            planning_deliverables: Planning deliverables dict (cycles, validation, etc.)
 
         Raises:
-            ValueError: If project not found, deliverables already exist, or schema invalid:
-                - total != len(cycles)
-                - Non-sequential or duplicate cycle numbers
-                - Empty deliverables arrays
-                - Empty exit_criteria strings
+            ValueError: If project not found, deliverables already exist, or schema invalid.
         """
         if not self.deliverables_file.exists():
             msg = f"Project {issue_number} not found - initialize_project must be called first"
@@ -222,100 +221,35 @@ class ProjectManager:
             msg = f"Project {issue_number} not found - initialize_project must be called first"
             raise ValueError(msg)
 
+        project = projects[str(issue_number)]
+
         # Guard: Check if planning_deliverables already exist
-        if "planning_deliverables" in projects[str(issue_number)]:
+        if "planning_deliverables" in project:
             msg = (
                 f"Planning deliverables already exist for issue {issue_number}. "
                 "Cannot overwrite existing deliverables."
             )
             raise ValueError(msg)
 
-        # Validate schema: tdd_cycles required
-        if "tdd_cycles" not in planning_deliverables:
-            msg = "planning_deliverables must contain 'tdd_cycles' key"
-            raise ValueError(msg)
+        # Determine if cycle-based validation is required
+        workflow_name = project.get("workflow_name")
+        workflow = self._contracts_config.workflows.get(workflow_name)
+        is_cycle_based = False
+        if workflow:
+            is_cycle_based = any(phase.cycle_based for phase in workflow.phases)
 
-        tdd_cycles = planning_deliverables["tdd_cycles"]
+        try:
+            model = CyclePlanningModel.model_validate(planning_deliverables, strict=True)
+        except ValidationError as e:
+            raise ValueError(f"Invalid planning deliverables schema: {e}") from e
 
-        # Validate tdd_cycles structure
-        if not isinstance(tdd_cycles, dict):
-            msg = "tdd_cycles must be a dict"
-            raise ValueError(msg)
-
-        if "total" not in tdd_cycles:
-            msg = "tdd_cycles must contain 'total' key"
-            raise ValueError(msg)
-
-        if not isinstance(tdd_cycles["total"], int) or tdd_cycles["total"] < 1:
-            msg = "tdd_cycles.total must be a positive integer"
-            raise ValueError(msg)
-
-        if "cycles" not in tdd_cycles:
-            msg = "tdd_cycles must contain 'cycles' key"
-            raise ValueError(msg)
-        if not isinstance(tdd_cycles["cycles"], list):
-            msg = "tdd_cycles.cycles must be a list"
-            raise ValueError(msg)
-
-        # Validate: total must match actual cycle count
-        if tdd_cycles["total"] != len(tdd_cycles["cycles"]):
-            msg = (
-                f"tdd_cycles.total ({tdd_cycles['total']}) must equal "
-                f"len(tdd_cycles.cycles) ({len(tdd_cycles['cycles'])})"
+        if is_cycle_based and model.cycles is None:
+            raise ValueError(
+                "planning_deliverables must contain 'cycles' key for cycle-based workflows"
             )
-            raise ValueError(msg)
 
-        # Validate each cycle: sequential numbers, non-empty fields
-        for idx, cycle in enumerate(tdd_cycles["cycles"]):
-            expected_number = idx + 1
-
-            # Check cycle_number exists and is sequential
-            if "cycle_number" not in cycle:
-                msg = f"Cycle at index {idx} missing 'cycle_number' key"
-                raise ValueError(msg)
-
-            if cycle["cycle_number"] != expected_number:
-                msg = (
-                    f"Cycle at index {idx} has cycle_number {cycle['cycle_number']}, "
-                    f"expected {expected_number} (must be sequential 1-based)"
-                )
-                raise ValueError(msg)
-
-            # Check deliverables array
-            if "deliverables" not in cycle:
-                msg = f"Cycle {expected_number} missing 'deliverables' key"
-                raise ValueError(msg)
-
-            if not isinstance(cycle["deliverables"], list) or not cycle["deliverables"]:
-                msg = f"Cycle {expected_number} deliverables must be a non-empty list"
-                raise ValueError(msg)
-
-            # Check exit_criteria string
-            if "exit_criteria" not in cycle:
-                msg = f"Cycle {expected_number} missing 'exit_criteria' key"
-                raise ValueError(msg)
-
-            if not isinstance(cycle["exit_criteria"], str) or not cycle["exit_criteria"].strip():
-                msg = f"Cycle {expected_number} exit_criteria must be a non-empty string"
-                raise ValueError(msg)
-
-        # Validate optional phase keys (D7.1 — Issue #229 C7)
-        _phase_entry_keys = {"design", "validation", "documentation"}
-        for key, value in planning_deliverables.items():
-            if key not in _known_phase_keys:
-                msg = (
-                    f"Unknown key '{key}' in planning_deliverables. "
-                    "Valid phase keys: tdd_cycles, design, validation, documentation"
-                )
-                raise ValueError(msg)
-            if key in _phase_entry_keys and (
-                not isinstance(value, dict) or not isinstance(value.get("deliverables"), list)
-            ):
-                msg = f"planning_deliverables['{key}'] must be a dict with a 'deliverables' list"
-                raise ValueError(msg)
-
-        # Add planning_deliverables to project
-        projects[str(issue_number)]["planning_deliverables"] = planning_deliverables
+        # Save to projects
+        project["planning_deliverables"] = planning_deliverables
 
         # Write to file
         self._write_deliverables(projects)
@@ -323,27 +257,14 @@ class ProjectManager:
     def update_planning_deliverables(
         self, issue_number: int, planning_deliverables: dict[str, Any]
     ) -> None:
-        """Merge incoming planning deliverables into existing ones (Issue #229, C5/C8).
-
-        Merge strategy for ``tdd_cycles.cycles``:
-        - New ``cycle_number`` → append cycle
-        - Existing ``cycle_number`` + new deliverable ``id`` → append deliverable
-        - Existing ``cycle_number`` + existing deliverable ``id`` → overwrite in place
-        - ``exit_criteria`` on existing cycle → overwritten when provided (C8/GAP-12)
-        - ``tdd_cycles.total`` updated to max(existing, highest incoming cycle_number)
-
-        Merge strategy for per-phase keys (design, validation, documentation) (C8/GAP-15):
-        - Key absent in existing → set from incoming
-        - Key present in existing → merge deliverables by id (same strategy as tdd_cycles)
-        - New deliverable ``id`` → append; existing ``id`` → overwrite in place
+        """Merge incoming planning deliverables into existing ones.
 
         Args:
             issue_number: GitHub issue number
             planning_deliverables: Partial or full planning deliverables to merge in.
 
         Raises:
-            ValueError: If project not found or planning_deliverables not yet initialised
-                (call save_planning_deliverables first).
+            ValueError: If project not found or planning_deliverables not yet initialised.
         """
         if not self.deliverables_file.exists():
             msg = f"Project {issue_number} not found - initialize_project must be called first"
@@ -364,52 +285,59 @@ class ProjectManager:
             )
             raise ValueError(msg)
 
+        try:
+            UpdatePlanningModel.model_validate(planning_deliverables, strict=True)
+        except ValidationError as e:
+            raise ValueError(f"Invalid planning deliverables schema: {e}") from e
+
         existing_pd = project["planning_deliverables"]
-        incoming_tc = planning_deliverables.get("tdd_cycles", {})
+        incoming_tc = planning_deliverables.get("cycles", {})
         incoming_cycles = incoming_tc.get("cycles", [])
 
-        existing_tc = existing_pd.setdefault("tdd_cycles", {})
-        existing_cycles_list: list[dict[str, Any]] = existing_tc.setdefault("cycles", [])
+        # If incoming has cycles, merge them
+        if incoming_tc:
+            existing_tc = existing_pd.setdefault("cycles", {})
+            existing_cycles_list: list[dict[str, Any]] = existing_tc.setdefault("cycles", [])
 
-        # Build lookup: cycle_number → index in existing_cycles_list
-        existing_cycle_index: dict[int, int] = {
-            c["cycle_number"]: i for i, c in enumerate(existing_cycles_list)
-        }
+            # Build lookup: cycle_number → index in existing_cycles_list
+            existing_cycle_index: dict[int, int] = {
+                c["cycle_number"]: i for i, c in enumerate(existing_cycles_list)
+            }
 
-        for incoming_cycle in incoming_cycles:
-            cn: int = incoming_cycle["cycle_number"]
-            if cn not in existing_cycle_index:
-                # New cycle → append
-                existing_cycles_list.append(incoming_cycle)
-                existing_cycle_index[cn] = len(existing_cycles_list) - 1
-            else:
-                # Existing cycle → merge deliverables by id + overwrite exit_criteria (C8/GAP-12)
-                target_cycle = existing_cycles_list[existing_cycle_index[cn]]
-                if "exit_criteria" in incoming_cycle:
-                    target_cycle["exit_criteria"] = incoming_cycle["exit_criteria"]
-                existing_deliverables: list[dict[str, Any]] = target_cycle.setdefault(
-                    "deliverables", []
-                )
-                existing_deliv_index: dict[str, int] = {
-                    d["id"]: i for i, d in enumerate(existing_deliverables)
-                }
-                for incoming_deliv in incoming_cycle.get("deliverables", []):
-                    d_id: str = incoming_deliv["id"]
-                    if d_id in existing_deliv_index:
-                        # Overwrite in place
-                        existing_deliverables[existing_deliv_index[d_id]] = incoming_deliv
-                    else:
-                        # Append new deliverable
-                        existing_deliverables.append(incoming_deliv)
-                        existing_deliv_index[d_id] = len(existing_deliverables) - 1
+            for incoming_cycle in incoming_cycles:
+                cn: int = incoming_cycle["cycle_number"]
+                if cn not in existing_cycle_index:
+                    # New cycle → append
+                    existing_cycles_list.append(incoming_cycle)
+                    existing_cycle_index[cn] = len(existing_cycles_list) - 1
+                else:
+                    # Existing cycle → merge deliverables by id + overwrite exit_criteria
+                    target_cycle = existing_cycles_list[existing_cycle_index[cn]]
+                    if "exit_criteria" in incoming_cycle:
+                        target_cycle["exit_criteria"] = incoming_cycle["exit_criteria"]
+                    existing_deliverables: list[dict[str, Any]] = target_cycle.setdefault(
+                        "deliverables", []
+                    )
+                    existing_deliv_index: dict[str, int] = {
+                        d["id"]: i for i, d in enumerate(existing_deliverables)
+                    }
+                    for incoming_deliv in incoming_cycle.get("deliverables", []):
+                        d_id: str = incoming_deliv["id"]
+                        if d_id in existing_deliv_index:
+                            # Overwrite in place
+                            existing_deliverables[existing_deliv_index[d_id]] = incoming_deliv
+                        else:
+                            # Append new deliverable
+                            existing_deliverables.append(incoming_deliv)
+                            existing_deliv_index[d_id] = len(existing_deliverables) - 1
 
-        # Update total to reflect highest cycle number seen
-        if existing_cycles_list:
-            highest_cn = max(c["cycle_number"] for c in existing_cycles_list)
-            existing_tc["total"] = max(existing_tc.get("total", 0), highest_cn)
+            # Update total to reflect highest cycle number seen
+            if existing_cycles_list:
+                highest_cn = max(c["cycle_number"] for c in existing_cycles_list)
+                existing_tc["total"] = max(existing_tc.get("total", 0), highest_cn)
 
-        # Merge per-phase keys (design, validation, documentation) (C8/GAP-15)
-        _phase_keys = _known_phase_keys - {"tdd_cycles", "validates"}
+        # Merge per-phase keys (design, validation, documentation)
+        _phase_keys = {"design", "validation", "documentation"}
         for incoming_phase in _phase_keys:
             if incoming_phase not in planning_deliverables:
                 continue

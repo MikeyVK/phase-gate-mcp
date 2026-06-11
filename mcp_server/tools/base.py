@@ -73,3 +73,19 @@ class BranchMutatingTool(BaseTool):
     """
 
     tool_category: str | None = "branch_mutating"
+
+
+class StructuredTool(BaseTool, ABC):
+    """Abstract base class for all tools that return structured JSON data."""
+
+    @abstractmethod
+    async def execute_structured(
+        self,
+        params: Any,  # noqa: ANN401
+        context: NoteContext,
+    ) -> tuple[dict[str, Any], str]:
+        """Execute the tool and return (data_dict, summary_text)."""
+
+    async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401
+        data, text = await self.execute_structured(params, context)
+        return ToolResult.json_data(data, text=text)

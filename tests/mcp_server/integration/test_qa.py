@@ -50,16 +50,14 @@ async def test_quality_tool_output_format() -> None:
         RunQualityGatesInput(scope="files", files=["mcp_server/server.py"]), NoteContext()
     )
 
-    # Text summary first (content[0]), JSON payload second (content[1])
-    assert result.content[0]["type"] == "text"
-    assert isinstance(result.content[0]["text"], str)
-
-    data = result.content[1]["json"]
+    # JSON payload first (content[0]), Text summary second (content[1])
+    assert result.content[0]["type"] == "json"
+    data = result.content[0]["json"]
     assert isinstance(data, dict)
 
-    # JSON payload is compact (content[1]) — only contains gates summary
-    assert result.content[1]["type"] == "json"
-
+    # Text summary is second (content[1])
+    assert result.content[1]["type"] == "text"
+    assert isinstance(result.content[1]["text"], str)
     assert "gates" in data
     assert len(data["gates"]) >= 6, f"Expected at least 6 gates, got {len(data['gates'])}"
     for gate in data["gates"]:

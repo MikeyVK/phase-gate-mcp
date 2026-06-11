@@ -5,7 +5,6 @@
 @dependencies: [pytest, unittest.mock, mcp_server.tools.issue_tools]
 """
 
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,7 +21,7 @@ from mcp_server.tools.issue_tools import (
     UpdateIssueInput,
     UpdateIssueTool,
 )
-from tests.mcp_server.test_support import make_create_issue_tool
+from tests.mcp_server.test_support import assert_structured_result, make_create_issue_tool
 
 
 @pytest.fixture
@@ -145,7 +144,7 @@ async def test_get_issue_tool(mock_github_manager: MagicMock) -> None:
     tool = GetIssueTool(manager=mock_github_manager)
 
     mock_model = MagicMock()
-    mock_model.model_dump.return_value = {
+    issue_data = {
         "number": 1,
         "url": "https://github.com/owner/repo/issues/1",
         "title": "Bug",
@@ -159,16 +158,13 @@ async def test_get_issue_tool(mock_github_manager: MagicMock) -> None:
         "closed_at": None,
         "author": "alice",
     }
+    mock_model.model_dump.return_value = issue_data
     mock_github_manager.get_issue.return_value = mock_model
 
     result = await tool.execute(GetIssueInput(issue_number=1), NoteContext())
 
     mock_github_manager.get_issue.assert_called_with(1)
-    data = json.loads(result.content[0]["text"])
-    assert data["number"] == 1
-    assert data["title"] == "Bug"
-    assert data["author"] == "alice"
-    assert data["closed_at"] is None
+    assert_structured_result(result, expected_data=issue_data)
 
 
 @pytest.mark.asyncio

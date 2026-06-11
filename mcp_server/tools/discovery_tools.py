@@ -18,7 +18,7 @@ from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.schemas import WorkphasesConfig
 from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import BaseTool, StructuredTool
 from mcp_server.tools.tool_result import ToolResult
 
 if TYPE_CHECKING:
@@ -102,7 +102,7 @@ class GetWorkContextInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class GetWorkContextTool(BaseTool):
+class GetWorkContextTool(StructuredTool):
     """Tool to aggregate work context from Git and GitHub."""
 
     name = "get_work_context"
@@ -136,7 +136,11 @@ class GetWorkContextTool(BaseTool):
         self._contracts_config = contracts_config
         self._context_loaded_writer = context_loaded_writer
 
-    async def execute(self, params: GetWorkContextInput, context: NoteContext) -> ToolResult:  # noqa: ARG002
+    async def execute_structured(
+        self,
+        params: GetWorkContextInput,
+        context: NoteContext,  # noqa: ANN401, ARG002
+    ) -> tuple[dict[str, Any], str]:
         """Execute work context aggregation."""
         _ = params  # GetWorkContextInput has no fields after C1 (issue #268)
 
@@ -203,7 +207,7 @@ class GetWorkContextTool(BaseTool):
         formatted = self._format_context(ctx)
         if self._context_loaded_writer is not None:
             self._context_loaded_writer.set_context_loaded(branch, value=True)
-        return ToolResult.text(formatted)
+        return ctx, formatted
 
     def _build_invalid_phase_warning(
         self,

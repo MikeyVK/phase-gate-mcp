@@ -159,20 +159,20 @@ class TestPlanningTemplate:
             name="test-planning",
             timestamp="2026-01-27T15:00:00Z",
             summary="Test planning",
-            tdd_cycles=[],
+            cycles=[],
             **_DOC_HEADER,
         )
         assert "**Status:** DRAFT" in result
         assert "**Version:** 1.0" in result
         assert "**Last Updated:** 2026-01-27" in result
 
-    def test_renders_tdd_cycles(self, template: Template) -> None:
+    def test_renders_cycles(self, template: Template) -> None:
         """Planning doc must render TDD cycles with Goal/Tests/Success Criteria."""
         result = template.render(
             name="test-planning",
             timestamp="2026-01-27T15:00:00Z",
             summary="Test",
-            tdd_cycles=[
+            cycles=[
                 {
                     "goal": "Create async client",
                     "tests": ["test_client_creation", "test_async_fetch"],
@@ -195,7 +195,7 @@ class TestPlanningTemplate:
             name="test-planning",
             timestamp="2026-01-27T15:00:00Z",
             summary="Test",
-            tdd_cycles=[
+            cycles=[
                 {
                     "goal": "Test",
                     "tests": ["test1"],
@@ -214,7 +214,7 @@ class TestPlanningTemplate:
             name="test-planning",
             timestamp="2026-01-27T15:00:00Z",
             summary="Test",
-            tdd_cycles=[
+            cycles=[
                 {
                     "goal": "Test",
                     "tests": ["test1"],

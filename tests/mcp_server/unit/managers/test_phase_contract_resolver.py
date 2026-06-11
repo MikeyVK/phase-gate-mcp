@@ -120,7 +120,7 @@ workflows:
     deliverables = {
         "257": {
             "planning_deliverables": {
-                "tdd_cycles": {
+                "cycles": {
                     "total": 1,
                     "cycles": [
                         {

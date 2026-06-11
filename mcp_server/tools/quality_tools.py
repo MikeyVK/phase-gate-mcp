@@ -120,12 +120,7 @@ class RunQualityGatesTool(BaseTool):
             file_count=len(resolved_files),
         )
         compact_payload = self.manager._build_compact_result(result)  # pyright: ignore[reportPrivateUsage]
-        return ToolResult(
-            content=[
-                {"type": "text", "text": summary_line},
-                {"type": "json", "json": compact_payload},
-            ]
-        )
+        return ToolResult.json_data(compact_payload, text=summary_line)
 
     @staticmethod
     def _render_text_output(result: dict[str, Any]) -> str:

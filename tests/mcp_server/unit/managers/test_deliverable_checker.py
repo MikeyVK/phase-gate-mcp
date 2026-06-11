@@ -204,7 +204,7 @@ class TestDeliverableChecker:
         json_file = tmp_path / ".phase-gate" / "deliverables.json"
         json_file.parent.mkdir(parents=True)
         json_file.write_text(
-            json.dumps({"229": {"planning_deliverables": {"tdd_cycles": {"total": 2}}}})
+            json.dumps({"229": {"planning_deliverables": {"cycles": {"total": 2}}}})
         )
 
         # Must not raise

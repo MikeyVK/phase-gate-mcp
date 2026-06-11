@@ -307,7 +307,7 @@ class PhaseStateEngine:
         """Execute one strict sequential cycle transition inside the active cycle-based phase."""
         state = self._load_state_or_reconstruct(branch)
         issue_number = self._require_issue_number(branch, state)
-        cycles, total_cycles = self._get_tdd_cycles(issue_number)
+        cycles, total_cycles = self._get_cycles(issue_number)
         runner = gate_runner or self._workflow_gate_runner
         self._validate_cycle_phase(
             workflow_name=state.workflow_name,
@@ -374,7 +374,7 @@ class PhaseStateEngine:
 
         state = self._load_state_or_reconstruct(branch)
         issue_number = self._require_issue_number(branch, state)
-        cycles, total_cycles = self._get_tdd_cycles(issue_number)
+        cycles, total_cycles = self._get_cycles(issue_number)
         runner = gate_runner or self._workflow_gate_runner
         self._validate_cycle_phase(
             workflow_name=state.workflow_name,
@@ -502,15 +502,15 @@ class PhaseStateEngine:
             raise ValueError(f"Branch '{branch}' has no issue_number in state")
         return issue_number
 
-    def _get_tdd_cycles(self, issue_number: int) -> tuple[list[dict[str, Any]], int]:
-        """Return planned TDD cycles and total count for one issue."""
+    def _get_cycles(self, issue_number: int) -> tuple[list[dict[str, Any]], int]:
+        """Return planned cycles and total count for one issue."""
         self._validate_planning_deliverables_exist(issue_number)
         plan = self.project_manager.get_project_plan(issue_number)
         assert plan is not None
         planning_deliverables = plan["planning_deliverables"]
-        tdd_cycles = planning_deliverables.get("tdd_cycles", {})
-        cycles = tdd_cycles.get("cycles", [])
-        total_cycles = tdd_cycles.get("total", 0)
+        cycles_data = planning_deliverables.get("cycles", {})
+        cycles = cycles_data.get("cycles", [])
+        total_cycles = cycles_data.get("total", 0)
         return cycles, total_cycles
 
     def _is_cycle_based_phase(
@@ -607,7 +607,7 @@ class PhaseStateEngine:
 
         Issue #146 Cycle 2: Range validation for TDD cycle transitions.
         """
-        _cycles, total_cycles = self._get_tdd_cycles(issue_number)
+        _cycles, total_cycles = self._get_cycles(issue_number)
 
         if cycle_number < 1 or cycle_number > total_cycles:
             msg = f"cycle_number must be in range [1..{total_cycles}], got {cycle_number}"

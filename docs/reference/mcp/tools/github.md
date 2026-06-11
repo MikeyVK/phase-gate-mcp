@@ -150,7 +150,7 @@ Retrieve detailed information about a specific issue.
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | Issue number to retrieve |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 ```json
 {
@@ -664,7 +664,7 @@ Retrieve detailed information about a specific pull request.
 |-----------|------|----------|-------------|
 | `pr_number` | `int` | **Yes** | Pull request number to retrieve |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 ```json
 {

@@ -41,6 +41,10 @@ from mcp_server.tools.phase_tools import (
     TRANSITION_ADVISORY_NOTE,
 )
 from mcp_server.tools.tool_result import ToolResult
+from mcp_server.utils.mcp_converters import (
+    convert_tool_result_to_content,
+    convert_tool_result_to_mcp_result,
+)
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
@@ -163,36 +167,11 @@ class MCPServer:
         self, result: ToolResult
     ) -> list[TextContent | ImageContent | EmbeddedResource]:
         """Convert ToolResult to MCP content list."""
-        response_content: list[TextContent | ImageContent | EmbeddedResource] = []
-
-        for content in result.content:
-            if content.get("type") == "text":
-                text = content["text"]
-                response_content.append(TextContent(type="text", text=text))
-            elif content.get("type") == "json":
-                response_content.append(
-                    TextContent(
-                        type="text",
-                        text=json.dumps(content["json"], indent=2, default=str),
-                    )
-                )
-            elif content.get("type") == "image":
-                response_content.append(
-                    ImageContent(type="image", data=content["data"], mimeType=content["mimeType"])
-                )
-            elif content.get("type") == "resource":
-                response_content.append(
-                    EmbeddedResource(type="resource", resource=content["resource"])
-                )
-
-        return response_content
+        return convert_tool_result_to_content(result.content)
 
     def _convert_tool_result_to_mcp_result(self, result: ToolResult) -> CallToolResult:
         """Convert ToolResult to CallToolResult while preserving error semantics."""
-        return CallToolResult(
-            content=self._convert_tool_result_to_content(result),
-            isError=result.is_error,
-        )
+        return convert_tool_result_to_mcp_result(result)
 
     def _run_tool_enforcement(
         self,

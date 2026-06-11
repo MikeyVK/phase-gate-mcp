@@ -20,7 +20,8 @@ class TemplateValidator(BaseValidator):
         """Return string representation."""
         return f"TemplateValidator(type={self.template_type}) [DEPRECATED]"
 
-    async def validate(self, _path: str, _content: str | None = None) -> ValidationResult:
+    async def validate(self, path: str, content: str | None = None) -> ValidationResult:
         """Validate content (deprecated - always passes)."""
+        _ = (path, content)
         # Deprecated: Return passing result to avoid breaking existing code
         return ValidationResult(passed=True, score=10.0, issues=[])

@@ -22,7 +22,7 @@ class PlanningRenderContext(BaseRenderContext, PlanningContext):
     Templates receive this schema for rendering.
 
     Inherits:
-        - title, summary, tdd_cycles, purpose, scope_in, scope_out,
+        - title, summary, cycles, purpose, scope_in, scope_out,
           prerequisites, dependencies, risks, milestones, related_docs
           (from PlanningContext)
         - output_path, scaffold_created, template_id, version_hash
