@@ -4,7 +4,8 @@ Verifies that TemplateScaffolder correctly loads and uses
 artifact definitions from the registry configuration.
 
 @layer: Tests (Unit)
-@dependencies: pytest, mcp_server.scaffolders.template_scaffolder, mcp_server.config.schemas.artifact_registry_config
+@dependencies: pytest, mcp_server.scaffolders.template_scaffolder,
+               mcp_server.config.schemas.artifact_registry_config
 """
 
 from unittest.mock import Mock
@@ -17,13 +18,13 @@ from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 
 
 @pytest.fixture(name="registry")
-def mock_registry_fixture():
+def mock_registry_fixture() -> Mock:
     """Provide mock artifact registry for testing."""
     return Mock(spec=ArtifactRegistryConfig)
 
 
 @pytest.fixture(name="scaffolder_fixture")
-def scaffolder_with_registry(registry):
+def scaffolder_with_registry(registry: Mock) -> TemplateScaffolder:
     """Provide TemplateScaffolder with mock registry."""
     return TemplateScaffolder(registry=registry)
 
@@ -31,7 +32,9 @@ def scaffolder_with_registry(registry):
 class TestTemplateRegistryLoading:
     """Tests for artifact registry integration."""
 
-    def test_loads_artifact_from_registry(self, scaffolder_fixture, registry) -> None:
+    def test_loads_artifact_from_registry(
+        self, scaffolder_fixture: TemplateScaffolder, registry: Mock
+    ) -> None:
         """Should load artifact definition from registry."""
         artifact = Mock()
         artifact.type_id = "dto"
@@ -60,7 +63,9 @@ class TestTemplateRegistryLoading:
         # Called in validate() and scaffold()
         assert registry.get_artifact.call_count == 2
 
-    def test_uses_template_path_from_artifact(self, scaffolder_fixture, registry) -> None:
+    def test_uses_template_path_from_artifact(
+        self, scaffolder_fixture: TemplateScaffolder, registry: Mock
+    ) -> None:
         """Should use template_path from artifact definition."""
         artifact = Mock()
         artifact.type_id = "worker"
@@ -86,7 +91,9 @@ class TestTemplateRegistryLoading:
         assert hasattr(result, "content")
         assert "TestWorker" in result.content
 
-    def test_error_when_no_template_defined(self, scaffolder_fixture, registry) -> None:
+    def test_error_when_no_template_defined(
+        self, scaffolder_fixture: TemplateScaffolder, registry: Mock
+    ) -> None:
         """Should raise error when artifact has no template defined."""
         artifact = Mock()
         artifact.type_id = "broken"

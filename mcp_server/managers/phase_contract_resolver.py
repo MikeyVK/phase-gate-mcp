@@ -182,8 +182,8 @@ class PhaseContractResolver:
 
         deliverables: list[dict[str, Any]] = []
         if self.is_cycle_based_phase(workflow_name, phase) and cycle_number is not None:
-            tdd_cycles = planning_deliverables.get("tdd_cycles", {})
-            cycles = tdd_cycles.get("cycles", [])
+            cycles_data = planning_deliverables.get("cycles", {})
+            cycles = cycles_data.get("cycles", [])
             matching_cycle = next(
                 (
                     cycle

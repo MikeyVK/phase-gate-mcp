@@ -47,6 +47,8 @@ class ComponentScaffolder(Protocol):
 
     def validate(self, **kwargs: Any) -> bool:  # noqa: ANN401
         """Validate scaffolding arguments."""
+        ...
 
     def scaffold(self, name: str, **kwargs: Any) -> str:  # noqa: ANN401
         """Scaffold a component."""
+        ...

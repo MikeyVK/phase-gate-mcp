@@ -44,7 +44,7 @@ Registry: `.phase-gate/config/artifacts.yaml`
 | Type | Minimum required context | Template |
 |---|---|---|
 | `research` | `title: str`, `problem_statement: str`, `goals: list[str]` | `concrete/research.md.jinja2` |
-| `planning` | `title: str`, `summary: str`, `tdd_cycles: list` | `concrete/planning.md.jinja2` |
+| `planning` | `title: str`, `summary: str`, `cycles: list` | `concrete/planning.md.jinja2` |
 | `design` | `title: str`, `status: str`, `version: str`, `problem_statement: str`, `requirements_functional: list[str]`, `requirements_nonfunctional: list[str]`, `decision: str`, `rationale: str` | `concrete/design.md.jinja2` |
 | `architecture` | `title: str`, `concepts: list[str]` | `concrete/architecture.md.jinja2` |
 | `reference` | `title: str` | `concrete/reference.md.jinja2` |

@@ -62,7 +62,7 @@ Generate any artifact type (code or document) from unified registry.
 | `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.phase-gate/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 ```json
 {
@@ -154,7 +154,7 @@ Return the JSON Schema for the `context` parameter of an artifact type. Use this
 |-----------|------|----------|-------------|
 | `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available enum values are populated at runtime from `artifacts.yaml`. |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 A JSON Schema object (Pydantic `model_json_schema()` with `$defs` resolved inline) describing the `context` parameter for the specified type.
 

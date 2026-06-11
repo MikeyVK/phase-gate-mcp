@@ -403,8 +403,8 @@ class TestQualityToolsIntegration:
             RunQualityGatesInput(scope="files", files=["test.py"]), NoteContext()
         )
 
-        assert result.content[0]["type"] == "text"
-        data = result.content[1]["json"]
+        assert result.content[1]["type"] == "text"
+        data = result.content[0]["json"]
         assert "gates" in data
         assert data["gates"][0]["passed"] is True
 

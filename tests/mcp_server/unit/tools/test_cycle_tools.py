@@ -118,19 +118,19 @@ class TestCycleTools:
         project_manager.save_planning_deliverables(
             257,
             {
-                "tdd_cycles": {
+                "cycles": {
                     "total": 2,
                     "cycles": [
                         {
                             "cycle_number": 1,
                             "name": "One",
-                            "deliverables": ["cycle-1"],
+                            "deliverables": [{"id": "D1.1", "description": "cycle-1"}],
                             "exit_criteria": "pass",
                         },
                         {
                             "cycle_number": 2,
                             "name": "Two",
-                            "deliverables": ["cycle-2"],
+                            "deliverables": [{"id": "D2.1", "description": "cycle-2"}],
                             "exit_criteria": "pass",
                         },
                     ],
@@ -283,19 +283,19 @@ class TestCycleTools:
         project_manager.save_planning_deliverables(
             257,
             {
-                "tdd_cycles": {
+                "cycles": {
                     "total": 2,
                     "cycles": [
                         {
                             "cycle_number": 1,
                             "name": "One",
-                            "deliverables": ["cycle-1"],
+                            "deliverables": [{"id": "D1.1", "description": "cycle-1"}],
                             "exit_criteria": "pass",
                         },
                         {
                             "cycle_number": 2,
                             "name": "Two",
-                            "deliverables": ["cycle-2"],
+                            "deliverables": [{"id": "D2.1", "description": "cycle-2"}],
                             "exit_criteria": "pass",
                         },
                     ],

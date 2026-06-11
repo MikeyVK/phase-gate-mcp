@@ -149,31 +149,31 @@ def _create_cycle_engine(
     project_manager.save_planning_deliverables(
         issue_number,
         {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Gate API",
-                        "deliverables": ["c1"],
+                        "deliverables": [{"id": "D1", "description": "c1"}],
                         "exit_criteria": "gate runner ready",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Gate wiring",
-                        "deliverables": ["c2"],
+                        "deliverables": [{"id": "D2", "description": "c2"}],
                         "exit_criteria": "phase transitions delegated",
                     },
                     {
                         "cycle_number": 3,
                         "name": "State recovery",
-                        "deliverables": ["c3"],
+                        "deliverables": [{"id": "D3", "description": "c3"}],
                         "exit_criteria": "get_state is pure",
                     },
                     {
                         "cycle_number": 4,
                         "name": "Cycle orchestration",
-                        "deliverables": ["c4"],
+                        "deliverables": [{"id": "D4", "description": "c4"}],
                         "exit_criteria": "cycle tools are thin",
                     },
                 ],
@@ -284,19 +284,19 @@ def _create_config_driven_cycle_engine(
     project_manager.save_planning_deliverables(
         issue_number,
         {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 2,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "Cycle 1",
-                        "deliverables": ["c1"],
+                        "deliverables": [{"id": "D1", "description": "c1"}],
                         "exit_criteria": "first cycle ready",
                     },
                     {
                         "cycle_number": 2,
                         "name": "Cycle 2",
-                        "deliverables": ["c2"],
+                        "deliverables": [{"id": "D2", "description": "c2"}],
                         "exit_criteria": "second cycle ready",
                     },
                 ],

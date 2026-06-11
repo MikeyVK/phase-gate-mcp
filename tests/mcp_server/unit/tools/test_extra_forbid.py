@@ -125,7 +125,18 @@ class TestExtraForbidOnAllInputModels:
                 SavePlanningDeliverablesInput,
                 {
                     "issue_number": 1,
-                    "planning_deliverables": {"tdd_cycles": {"total": 1}, "cycles": []},
+                    "planning_deliverables": {
+                        "cycles": {
+                            "total": 1,
+                            "cycles": [
+                                {
+                                    "cycle_number": 1,
+                                    "deliverables": [{"id": "D1.1", "description": "d"}],
+                                    "exit_criteria": "c",
+                                }
+                            ],
+                        }
+                    },
                 },
             ),
             (UpdatePlanningDeliverablesInput, {"issue_number": 1, "planning_deliverables": {}}),

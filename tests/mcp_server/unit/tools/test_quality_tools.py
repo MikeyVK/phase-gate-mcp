@@ -25,16 +25,16 @@ from tests.mcp_server.test_support import make_qa_manager
 
 
 def _summary_text(result: ToolResult) -> str:
-    """Extract summary text from content[0] (type='text')."""
-    item = result.content[0]
-    assert item["type"] == "text", f"Expected content[0] type='text', got '{item['type']}'"
+    """Extract summary text from content[1] (type='text')."""
+    item = result.content[1]
+    assert item["type"] == "text", f"Expected content[1] type='text', got '{item['type']}'"
     return item["text"]
 
 
 def _compact_payload(result: ToolResult) -> dict[str, Any]:
-    """Extract compact JSON payload from content[1] (type='json')."""
-    item = result.content[1]
-    assert item["type"] == "json", f"Expected content[1] type='json', got '{item['type']}'"
+    """Extract compact JSON payload from content[0] (type='json')."""
+    item = result.content[0]
+    assert item["type"] == "json", f"Expected content[0] type='json', got '{item['type']}'"
     return item["json"]
 
 
@@ -268,15 +268,15 @@ class TestRunQualityGatesTool:
             RunQualityGatesInput(scope="files", files=["foo.py"]), NoteContext()
         )
 
-        # content[0] is text summary
-        assert result.content[0]["type"] == "text"
-        assert isinstance(result.content[0]["text"], str)
-
-        # content[1] is compact JSON payload
-        assert result.content[1]["type"] == "json"
-        data = result.content[1]["json"]
+        # content[0] is compact JSON payload
+        assert result.content[0]["type"] == "json"
+        data = result.content[0]["json"]
         assert isinstance(data, dict)
         assert "gates" in data
+
+        # content[1] is text summary
+        assert result.content[1]["type"] == "text"
+        assert isinstance(result.content[1]["text"], str)
 
     def test_schema(self) -> None:
         """Test tool schema has files property."""
@@ -393,7 +393,7 @@ class TestRunQualityGatesInputC28:
             ["src/foo.py"],
             effective_scope="files",
         )
-        assert result.content[0]["type"] == "text"
+        assert result.content[1]["type"] == "text"
 
 
 class TestRunQualityGatesScopeGuardC41:

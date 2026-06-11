@@ -247,13 +247,13 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     pm.save_planning_deliverables(
         999,
         {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 1,
                 "cycles": [
                     {
                         "cycle_number": 1,
                         "name": "End-to-end TDD cycle",
-                        "deliverables": ["test_workflow_cycle_e2e"],
+                        "deliverables": [{"id": "D1", "description": "test_workflow_cycle_e2e"}],
                         "exit_criteria": "E2E test passes",
                     }
                 ],

@@ -51,7 +51,7 @@ TEMPLATE_METADATA:
       required:
         - title
         - summary
-        - tdd_cycles
+        - cycles
       optional:
         - purpose
         - scope_in
@@ -137,7 +137,7 @@ TEMPLATE_METADATA:
 
 ## TDD Cycles
 
-{% for cycle in tdd_cycles %}
+{% for cycle in cycles %}
 
 ### Cycle {{ loop.index }}: {{ cycle.name }}
 

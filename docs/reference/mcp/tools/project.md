@@ -71,7 +71,7 @@ Initialize project with phase plan selection. Human selects workflow_name (featu
 | `epic` | 2 phases | Epic coordination (planning → tracking) |
 | `custom` | User-defined | Custom workflows (requires `custom_phases` and `skip_reason`) |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 ```json
 {
@@ -149,7 +149,7 @@ Get project phase plan for issue number.
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 
-#### Returns
+#### Returns (via MCP structuredContent)
 
 ```json
 {
@@ -332,14 +332,23 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 **Class:** `SavePlanningDeliverablesTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py)
 
-Save TDD cycle planning deliverables for an issue to deliverables.json. Validates each `validates` entry schema before persisting.
+Save cycle planning deliverables for an issue to deliverables.json. Validates each `validates` entry schema before persisting.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
-| `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `tdd_cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
+| `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
+
+#### Returns (via MCP structuredContent)
+
+```json
+{
+  "success": true,
+  "issue_number": 123
+}
+```
 
 #### Behavior Notes
 
@@ -354,7 +363,7 @@ Save TDD cycle planning deliverables for an issue to deliverables.json. Validate
 **Class:** `UpdatePlanningDeliverablesTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py)
 
-Merge-update TDD cycle planning deliverables for an issue in deliverables.json. Must be preceded by `save_planning_deliverables`. New cycles are appended; deliverables within existing cycles are merged by id.
+Merge-update cycle planning deliverables for an issue in deliverables.json. Must be preceded by `save_planning_deliverables`. New cycles are appended; deliverables within existing cycles are merged by id.
 
 #### Parameters
 
@@ -362,6 +371,15 @@ Merge-update TDD cycle planning deliverables for an issue in deliverables.json. 
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 | `planning_deliverables` | `dict` | **Yes** | Partial or full planning deliverables to merge. New cycles are appended; existing cycles have deliverables merged by id. Deliverable entries may include a `validates` spec with `type` + required fields (Layer 2 validation). |
+
+#### Returns (via MCP structuredContent)
+
+```json
+{
+  "success": true,
+  "issue_number": 123
+}
+```
 
 #### Behavior Notes
 
@@ -432,7 +450,7 @@ Workflow definition and planning deliverables (branch-local artifact):
     "parent_branch": "main",
     "created_at": "2026-02-08T10:00:00Z",
     "planning_deliverables": {
-      "tdd_cycles": {
+      "cycles": {
         "total": 3,
         "cycles": []
       }
@@ -563,6 +581,6 @@ Phase state is **synchronized** with git branch operations:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
 | 2.1 | 2026-05-24 | Agent | Document the required `get_work_context` follow-up note on successful phase transitions |
-| 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |

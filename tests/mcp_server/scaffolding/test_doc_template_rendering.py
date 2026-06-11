@@ -36,7 +36,7 @@ def test_planning_md_renders_with_patterns(jinja_env: Environment) -> None:
         "prerequisites": ["Read design.md", "Read architecture.md"],
         "related_docs": ["docs/design.md", "docs/research.md"],
         "summary": "Test planning summary",
-        "tdd_cycles": [
+        "cycles": [
             {
                 "name": "Setup",
                 "goal": "Create structure",

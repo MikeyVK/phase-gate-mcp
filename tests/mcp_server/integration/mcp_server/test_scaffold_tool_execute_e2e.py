@@ -17,6 +17,7 @@ import pytest
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput, ScaffoldArtifactTool
+from tests.mcp_server.test_support import assert_structured_result
 
 
 @pytest.fixture(autouse=True)
@@ -53,17 +54,11 @@ async def test_tool_execute_scaffolds_design_doc(
     result = await tool.execute(params, NoteContext())
 
     # Assert
-    assert result is not None
-    assert hasattr(result, "content")
-    assert len(result.content) > 0
-    # ToolResult.text creates {"type": "text", "text": "..."}
-    content_item = result.content[0]
-    assert isinstance(content_item, dict)
-    content_text = content_item.get("text", "")
+    assert_structured_result(result)
+    content_text = result.content[1]["text"]
     assert isinstance(content_text, str)
     assert len(content_text) > 0
     assert "test-design" in content_text or "test_design.md" in content_text
-
     # Verify file on disk
     output_file = temp_workspace / output_path
     assert output_file.exists(), f"Expected file at {output_file}"
@@ -105,15 +100,10 @@ async def test_tool_execute_scaffolds_dto(
     result = await tool.execute(params, NoteContext())
 
     # Assert
-    assert result is not None
-    assert hasattr(result, "content")
-    assert len(result.content) > 0
-    content_item = result.content[0]
-    assert isinstance(content_item, dict)
-    content_text = content_item.get("text", "")
+    assert_structured_result(result)
+    content_text = result.content[1]["text"]
     assert isinstance(content_text, str)
     assert "TestDTO" in content_text or "test_dto.py" in content_text
-
     # Verify file on disk
     output_file = temp_workspace / output_path
     assert output_file.exists()

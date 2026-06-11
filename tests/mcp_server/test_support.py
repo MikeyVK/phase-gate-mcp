@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
 from mcp_server.config.loader import (
@@ -46,6 +46,7 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.tools.issue_tools import CreateIssueTool
+from mcp_server.tools.tool_result import ToolResult
 
 if TYPE_CHECKING:
     from mcp_server.config.settings import Settings
@@ -565,3 +566,22 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
     resolved_settings = settings or ServerSettings.from_env()
     bootstrapper = ServerBootstrapper(resolved_settings)
     return bootstrapper.bootstrap()
+
+
+def assert_structured_result(
+    result: ToolResult,
+    expected_data: dict[str, Any] | None = None,
+) -> None:
+    """Assert that a ToolResult is a valid structured result and optional checks on data."""
+    assert not result.is_error, f"Expected successful tool result, got error: {result}"
+
+    # Check that it contains a json block and a text block
+    json_blocks = [c for c in result.content if c.get("type") == "json"]
+    text_blocks = [c for c in result.content if c.get("type") == "text"]
+
+    assert len(json_blocks) == 1, f"Expected exactly one json block, got {len(json_blocks)}"
+    assert len(text_blocks) == 1, f"Expected exactly one text block, got {len(text_blocks)}"
+
+    if expected_data is not None:
+        actual = json_blocks[0]["json"]
+        assert actual == expected_data, f"Data mismatch: {actual} != {expected_data}"

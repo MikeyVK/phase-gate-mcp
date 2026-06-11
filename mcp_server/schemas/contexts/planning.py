@@ -25,7 +25,7 @@ class PlanningContext(DocArtifactContext):
     """
 
     summary: str = Field(description="High-level summary of what is being planned")
-    tdd_cycles: list[dict[str, object]] = Field(
+    cycles: list[dict[str, object]] = Field(
         description=(
             "TDD cycle breakdown. Each entry is a dict with keys: "
             "name (str), goal (str), tests (list[str]), "

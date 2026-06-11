@@ -419,12 +419,12 @@ class TestCycleValidationLogic:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": i,
-                        "deliverables": [f"Deliverable {i}"],
+                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
                         "exit_criteria": f"Criteria {i}",
                     }
                     for i in range(1, 5)
@@ -452,12 +452,12 @@ class TestCycleValidationLogic:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": i,
-                        "deliverables": [f"Deliverable {i}"],
+                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
                         "exit_criteria": f"Criteria {i}",
                     }
                     for i in range(1, 5)
@@ -485,12 +485,12 @@ class TestCycleValidationLogic:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": i,
-                        "deliverables": [f"Deliverable {i}"],
+                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
                         "exit_criteria": f"Criteria {i}",
                     }
                     for i in range(1, 5)
@@ -518,12 +518,12 @@ class TestCycleValidationLogic:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": i,
-                        "deliverables": [f"Deliverable {i}"],
+                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
                         "exit_criteria": f"Criteria {i}",
                     }
                     for i in range(1, 5)
@@ -569,12 +569,12 @@ class TestCycleValidationLogic:
             issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
         )
         planning_deliverables = {
-            "tdd_cycles": {
+            "cycles": {
                 "total": 4,
                 "cycles": [
                     {
                         "cycle_number": i,
-                        "deliverables": [f"Deliverable {i}"],
+                        "deliverables": [{"id": f"D{i}", "description": f"Deliverable {i}"}],
                         "exit_criteria": f"Criteria {i}",
                     }
                     for i in range(1, 5)
