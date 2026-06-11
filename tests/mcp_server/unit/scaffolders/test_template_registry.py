@@ -4,7 +4,8 @@ Verifies that TemplateScaffolder correctly loads and uses
 artifact definitions from the registry configuration.
 
 @layer: Tests (Unit)
-@dependencies: pytest, mcp_server.scaffolders.template_scaffolder, mcp_server.config.schemas.artifact_registry_config
+@dependencies: pytest, mcp_server.scaffolders.template_scaffolder,
+               mcp_server.config.schemas.artifact_registry_config
 """
 
 from unittest.mock import Mock

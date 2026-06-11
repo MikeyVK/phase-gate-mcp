@@ -24,7 +24,6 @@ from backend.utils.translator import Translator
 
 if TYPE_CHECKING:
     from backend.core.interfaces.config import BuildSpec
-
     from backend.core.interfaces.strategy_cache import IStrategyCache
 
 __all__ = ["BaselineTestWorker"]
