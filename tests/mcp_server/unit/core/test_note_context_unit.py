@@ -90,6 +90,16 @@ def test_render_renderable_appends_text_content() -> None:
     )
 
 
+def test_recovery_note_formatting() -> None:
+    """RecoveryNote.to_message() starts with a newline and includes a plaster emoji."""
+    module = _load_operation_notes_module()
+    recovery_note_type = _get_attr(module, "RecoveryNote")
+
+    note = recovery_note_type(message="Run tests again")
+    msg = note.to_message()
+    assert msg == "\n🩹 Recovery: Run tests again"
+
+
 def test_commit_note_not_renderable() -> None:
     """CommitNote must stay machine-only and never appear in rendered output."""
     module = _load_operation_notes_module()
