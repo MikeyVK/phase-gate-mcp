@@ -5,7 +5,9 @@
 """
 
 import subprocess
+import sys
 from collections.abc import Awaitable, Callable
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -589,20 +591,11 @@ async def test_c3_run_tests_build_cmd_verbose_tb_styles(injected_settings: Setti
     assert "--tb=long" not in runner.captured_cmd
 
 
-class _VerboseCapturingRunner:
-    def __init__(self, result: PytestResult) -> None:
-        self.result = result
-        self.captured_verbose = False
-
-    def run(self, cmd: list[str], cwd: str, timeout: int, *, verbose: bool = False) -> PytestResult:
-        self.captured_verbose = verbose
-        return self.result
-
-
 @pytest.mark.asyncio
 async def test_c4_run_tests_propagates_verbose_flag(injected_settings: Settings) -> None:
     """RunTestsTool.execute propagates verbose=True to the runner."""
-    runner = _VerboseCapturingRunner(result=_make_pytest_result())
+    runner = MagicMock()
+    runner.run.return_value = _make_pytest_result()
     tool = RunTestsTool(runner=runner, settings=injected_settings)
 
     await tool.execute(
@@ -612,7 +605,18 @@ async def test_c4_run_tests_propagates_verbose_flag(injected_settings: Settings)
         ),
         NoteContext(),
     )
-    assert runner.captured_verbose is True
+    runner.run.assert_called_with(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "--tb=long",
+            "tests/mcp_server/unit/tools/test_test_tools.py",
+        ],
+        "/workspace",
+        300,
+        verbose=True,
+    )
 
     await tool.execute(
         RunTestsInput(
@@ -621,7 +625,18 @@ async def test_c4_run_tests_propagates_verbose_flag(injected_settings: Settings)
         ),
         NoteContext(),
     )
-    assert runner.captured_verbose is False
+    runner.run.assert_called_with(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "--tb=short",
+            "tests/mcp_server/unit/tools/test_test_tools.py",
+        ],
+        "/workspace",
+        300,
+        verbose=False,
+    )
 
 
 @pytest.mark.asyncio
@@ -639,7 +654,7 @@ async def test_c4_run_tests_recovery_note_on_failure(injected_settings: Settings
         short_reason="AssertionError: 2",
         traceback="",
     )
-    
+
     runner = FakePytestRunner(
         result=_make_pytest_result(
             exit_code=1,
@@ -659,7 +674,7 @@ async def test_c4_run_tests_recovery_note_on_failure(injected_settings: Settings
         ),
         context,
     )
-    
+
     notes = context.of_type(RecoveryNote)
     assert len(notes) == 1
     expected_msg = (
@@ -700,7 +715,7 @@ async def test_c4_run_tests_no_recovery_note_when_verbose_true(
         ),
         context,
     )
-    
+
     notes = context.of_type(RecoveryNote)
     rerun_notes = [n for n in notes if "verbose=True" in n.message]
     assert len(rerun_notes) == 0

@@ -222,7 +222,7 @@ class RunTestsTool(BaseTool):
         _emit_lf_cache_note(result, params, context)
 
         if not params.verbose and result.failures:
-            failing_files = sorted(list({f.location for f in result.failures if f.location}))
+            failing_files = sorted({f.location for f in result.failures if f.location})
             if failing_files:
                 failing_files_str = " ".join(failing_files)
                 msg = (
