@@ -68,14 +68,14 @@ def test_c1_fake_pytest_runner_run_accepts_verbose_kwarg() -> None:
 
 
 class _TimeoutPytestRunner:
-    def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
-        del cwd
+    def run(self, cmd: list[str], cwd: str, timeout: int, *, verbose: bool = False) -> PytestResult:
+        del cwd, verbose
         raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
 
 
 class _OSErrorPytestRunner:
-    def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
-        del cmd, cwd, timeout
+    def run(self, cmd: list[str], cwd: str, timeout: int, *, verbose: bool = False) -> PytestResult:
+        del cmd, cwd, timeout, verbose
         raise OSError("Boom")
 
 
