@@ -536,16 +536,25 @@ def test_c2_run_tests_input_verbose_validation() -> None:
 
     # 4. verbose=True rejects space-separated list containing directory
     with pytest.raises(ValueError, match="directory"):
-        RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools.py tests/mcp_server/unit", verbose=True)
+        RunTestsInput(
+            path="tests/mcp_server/unit/tools/test_test_tools.py tests/mcp_server/unit",
+            verbose=True,
+        )
 
     # 5. verbose=True rejects paths that are not python files
     with pytest.raises(ValueError, match="file"):
         RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools", verbose=True)
 
     # 6. verbose=True accepts valid test files
-    valid_file = RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools.py", verbose=True)
+    valid_file = RunTestsInput(
+        path="tests/mcp_server/unit/tools/test_test_tools.py",
+        verbose=True,
+    )
     assert valid_file.verbose is True
 
     # 7. verbose=True accepts valid test files with test methods
-    valid_method = RunTestsInput(path="tests/mcp_server/unit/tools/test_test_tools.py::test_foo", verbose=True)
+    valid_method = RunTestsInput(
+        path="tests/mcp_server/unit/tools/test_test_tools.py::test_foo",
+        verbose=True,
+    )
     assert valid_method.verbose is True

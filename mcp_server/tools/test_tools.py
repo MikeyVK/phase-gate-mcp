@@ -68,13 +68,25 @@ class RunTestsInput(BaseModel):
 
         if self.verbose:
             if self.path is None:
-                raise ValueError("verbose mode requires a path-based execution mode (directories or the full suite are not supported)")
+                msg = (
+                    "verbose mode requires a path-based execution mode "
+                    "(directories or the full suite are not supported)"
+                )
+                raise ValueError(msg)
             for p in self.path.split():
                 if os.path.isdir(p):
-                    raise ValueError(f"verbose mode is only permitted on specific files, but '{p}' is a directory")
+                    msg = (
+                        "verbose mode is only permitted on specific files, "
+                        f"but '{p}' is a directory"
+                    )
+                    raise ValueError(msg)
                 # String check fallback for mock/non-existent paths in unit tests
                 if not (p.endswith(".py") or ".py::" in p or "::" in p):
-                    raise ValueError(f"verbose mode is only permitted on specific test files, but '{p}' is not a valid python file path")
+                    msg = (
+                        "verbose mode is only permitted on specific test files, "
+                        f"but '{p}' is not a valid python file path"
+                    )
+                    raise ValueError(msg)
         return self
 
 
