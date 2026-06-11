@@ -61,6 +61,12 @@ def _make_pytest_result(
     )
 
 
+def test_c1_fake_pytest_runner_run_accepts_verbose_kwarg() -> None:
+    """FakePytestRunner.run accepts verbose keyword-only argument."""
+    runner = FakePytestRunner(result=_make_pytest_result())
+    runner.run(["pytest"], cwd=".", timeout=30, verbose=True)
+
+
 class _TimeoutPytestRunner:
     def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
         del cwd
