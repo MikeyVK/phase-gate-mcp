@@ -89,6 +89,7 @@ Since the change affects only the internal serialization structure of tool resul
 
 ## Residual Risks & Caveats
 * **Client Compatibility**: Because this is a Clean Break, any external scripts or tools that manually call the migrated MCP tools and expect a raw string in the text response (instead of reading the `structuredContent` JSON list) will require updating. This has been documented in `docs/development/issue390/migration.md`.
+* **Quality Gate Friction (Deferred Work)**: Fixing minor formatting or linting errors (like Ruff autofixes) currently requires executing terminal commands and manually approving sandbox permissions. The lack of detailed verbose error reporting in the text response of `run_quality_gates` and the absence of a dedicated `fix_quality_gates` MCP tool creates unnecessary friction. A new follow-up issue should be created for `@co` to prioritize and implement this auto-fix capability.
 
 ## Related Documentation
 None
@@ -99,3 +100,4 @@ None
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-11 | Agent | Initial draft |
+| 1.1 | 2026-06-11 | Agent | Documented Quality Gate DX friction as deferred work |
