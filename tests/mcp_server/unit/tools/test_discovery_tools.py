@@ -200,8 +200,11 @@ class TestGetWorkContextTool:
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert not result.is_error
-        assert "main" in result.content[0]["text"]
-
+        from tests.mcp_server.test_support import assert_structured_result
+        assert_structured_result(result)
+        
+        data = result.content[0]["json"]
+        assert data["current_branch"] == "main"
     @pytest.mark.asyncio
     async def test_get_context_extracts_issue_number(self, tool: GetWorkContextTool) -> None:
         """Issue number comes from BranchState after C1 (issue #268)."""

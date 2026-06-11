@@ -2,10 +2,23 @@
   "branch": "bug/390-improve-validation-logic-of-save-update-deliverables",
   "issue_number": 390,
   "workflow_name": "bug",
-  "current_phase": "research",
-  "current_cycle": null,
-  "last_cycle": null,
-  "cycle_history": [],
+  "current_phase": "implementation",
+  "current_cycle": 3,
+  "last_cycle": 2,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Unknown",
+      "forced": false,
+      "entered": "2026-06-11T07:03:49.250566+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Unknown",
+      "forced": false,
+      "entered": "2026-06-11T07:16:23.666875+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -20,7 +33,32 @@
   "issue_title": "Improve validation logic of save/update deliverables tools",
   "parent_branch": "main",
   "created_at": "2026-06-10T18:15:32.509975+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-10T19:26:53.159237+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-06-11T06:22:15.746755+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-11T06:37:22.219768+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
