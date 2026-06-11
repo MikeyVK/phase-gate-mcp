@@ -1,0 +1,105 @@
+{
+  "397": {
+    "issue_title": "tooling: Add verbose traceback and stdout capture to run_tests tool",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
+    "created_at": "2026-06-11T13:35:28.905462+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 5,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "IPytestRunner Protocol & FakePytestRunner alignment",
+            "deliverables": [
+              {
+                "id": "D1.1",
+                "description": "IPytestRunner.run signature includes *, verbose: bool = False"
+              },
+              {
+                "id": "D1.2",
+                "description": "FakePytestRunner signature updated and all existing unit tests compile and pass"
+              }
+            ],
+            "exit_criteria": "All unit tests compile and pass."
+          },
+          {
+            "cycle_number": 2,
+            "name": "RunTestsInput Schema & Path-based Validation",
+            "deliverables": [
+              {
+                "id": "D2.1",
+                "description": "RunTestsInput schema includes verbose parameter with detailed agent description"
+              },
+              {
+                "id": "D2.2",
+                "description": "ValueError raised if verbose=True is set when path is None or contains directories"
+              }
+            ],
+            "exit_criteria": "Pydantic schema validation correctly handles verbose constraints."
+          },
+          {
+            "cycle_number": 3,
+            "name": "PytestRunner Verbose Execution & Capping",
+            "deliverables": [
+              {
+                "id": "D3.1",
+                "description": "PytestRunner command execution builds --tb=long when verbose=True, and --tb=short when verbose=False"
+              },
+              {
+                "id": "D3.2",
+                "description": "Traceback extraction caps detailed tracebacks at 3, leaving others empty"
+              },
+              {
+                "id": "D3.3",
+                "description": "All traceback strings are empty when verbose=False"
+              }
+            ],
+            "exit_criteria": "PytestRunner captures tracebacks up to the cap limit."
+          },
+          {
+            "cycle_number": 4,
+            "name": "RunTestsTool Execution & RecoveryNote",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "ToolResult JSON contains empty tracebacks when verbose=False"
+              },
+              {
+                "id": "D4.2",
+                "description": "RecoveryNote suggesting failing test files is generated when verbose=False and tests fail"
+              }
+            ],
+            "exit_criteria": "RunTestsTool output returns empty tracebacks and a RecoveryNote on failure if verbose=False."
+          },
+          {
+            "cycle_number": 5,
+            "name": "RunQualityGatesTool Dead Code Cleanup",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "_render_text_output is completely removed from quality_tools.py"
+              },
+              {
+                "id": "D5.2",
+                "description": "All existing unit tests and quality gates pass cleanly"
+              }
+            ],
+            "exit_criteria": "Dead code is cleaned up and all quality gates pass."
+          }
+        ]
+      }
+    }
+  }
+}

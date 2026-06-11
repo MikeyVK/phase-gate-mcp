@@ -1,0 +1,43 @@
+{
+  "branch": "feature/397-add-verbose-traceback-and-stdout-capture-to-run-tests",
+  "issue_number": 397,
+  "workflow_name": "feature",
+  "current_phase": "planning",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": null,
+  "issue_title": "tooling: Add verbose traceback and stdout capture to run_tests tool",
+  "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
+  "created_at": "2026-06-11T13:35:28.980679+00:00",
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-11T14:06:03.379444+00:00",
+      "human_approval": "User approved strategy in chat",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-06-11T14:36:12.267588+00:00",
+      "human_approval": "QA design review passed successfully",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
