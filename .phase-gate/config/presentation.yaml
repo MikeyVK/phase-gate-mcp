@@ -1,0 +1,16 @@
+global:
+  emojis:
+    success: "✅"
+    failure: "❌"
+    warning: "⚠️"
+    query: "📋"
+    bootstrap: "🚀"
+  json_reference: "*(Full details available in the structured JSON payload)*"
+  default_failure_template: "Failed: {error_message}"
+  advisories:
+    context_reset: "\n\n🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
+    server_restart: "\n\n⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
+    branch_lockdown: "\n\n⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
+    todo_discipline: "\n\n📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
+
+tools: {}

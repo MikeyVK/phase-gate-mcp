@@ -30,11 +30,12 @@ from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.base import BaseResource
 
 # Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import BaseTool, StructuredTool
 
 # Tools
 from mcp_server.tools.phase_tools import (
@@ -67,7 +68,12 @@ class MCPServer:
         managers: ManagerGraph,
         tools: list[BaseTool],
         resources: list[BaseResource],
+        presenter: TextPresenter | None = None,
     ) -> None:
+        """Initialize the MCP server with resources and tools."""
+        self._settings = settings
+        self._configs = configs
+        self.presenter = presenter
         """Initialize the MCP server with resources and tools."""
         self._settings = settings
         self._configs = configs
@@ -232,10 +238,23 @@ class MCPServer:
 
         @self.server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
         async def handle_list_tools() -> list[Tool]:
-            return [
-                Tool(name=t.name, description=t.description, inputSchema=t.input_schema)
-                for t in self.tools
-            ]
+            tools_list = []
+            for t in self.tools:
+                output_schema = None
+                if isinstance(t, StructuredTool):
+                    if t.output_model is not None:
+                        output_schema = t.output_model.model_json_schema()
+                    else:
+                        output_schema = {"type": "object"}
+                tools_list.append(
+                    Tool(
+                        name=t.name,
+                        description=t.description,
+                        inputSchema=t.input_schema,
+                        outputSchema=output_schema,
+                    )
+                )
+            return tools_list
 
         @self.server.call_tool()  # type: ignore[untyped-decorator]
         async def handle_call_tool(
@@ -274,7 +293,31 @@ class MCPServer:
                             return self._convert_tool_result_to_mcp_result(pre_result)
 
                         # Execute tool
-                        raw_result = await tool.execute(validated, note_context)
+                        if isinstance(tool, StructuredTool):
+                            raw_result = await tool.execute_structured(validated, note_context)
+                            if isinstance(raw_result, BaseModel):
+                                if self.presenter is not None:
+                                    text = self.presenter.present(
+                                        tool_name=tool.name,
+                                        success=raw_result.success,
+                                        presentation_category=getattr(
+                                            tool, "presentation_category", None
+                                        )
+                                        or "query",
+                                        data=raw_result,
+                                    )
+                                else:
+                                    text = str(raw_result)
+                                raw_result = ToolResult.json_data(
+                                    data=raw_result.model_dump(),
+                                    text=text,
+                                    is_error=not raw_result.success,
+                                )
+                            else:
+                                data, text = raw_result
+                                raw_result = ToolResult.json_data(data, text=text)
+                        else:
+                            raw_result = await tool.execute(validated, note_context)
 
                         if not raw_result.is_error:
                             post_result = self._run_tool_enforcement(

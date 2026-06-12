@@ -26,6 +26,7 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
+    PresentationConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScopeConfig,
@@ -72,6 +73,7 @@ class TestBootstrap:
             "operation_policies_config": MagicMock(spec=OperationPoliciesConfig),
             "enforcement_config": MagicMock(spec=EnforcementConfig),
             "contracts_config": MagicMock(spec=ContractsConfig),
+            "presentation_config": MagicMock(spec=PresentationConfig),
         }
         layer = ConfigLayer(**mock_configs)
 
@@ -146,7 +148,10 @@ def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
     mock_contracts.merge_policy = MagicMock()
     mock_contracts.merge_policy.branch_local_artifacts = []
     mock_loader.load_contracts_config.return_value = mock_contracts
-
+    mock_pres = MagicMock(spec=PresentationConfig)
+    mock_pres.global_settings = MagicMock()
+    mock_pres.tools = {}
+    mock_loader.load_presentation_config.return_value = mock_pres
     return mock_loader
 
 

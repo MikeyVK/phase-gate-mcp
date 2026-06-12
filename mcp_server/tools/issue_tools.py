@@ -16,6 +16,7 @@ from mcp_server.schemas import (
     IssueConfig,
     MilestoneConfig,
 )
+from mcp_server.state.github_read_models import IssueReadModel
 from mcp_server.tools.base import BaseTool, StructuredTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -223,6 +224,7 @@ class GetIssueTool(StructuredTool):
     name = "get_issue"
     description = "Get detailed information about a specific GitHub issue"
     args_model = GetIssueInput
+    output_model = IssueReadModel
 
     def __init__(self, manager: GitHubManager) -> None:
         super().__init__()

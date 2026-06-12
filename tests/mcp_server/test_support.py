@@ -585,3 +585,28 @@ def assert_structured_result(
     if expected_data is not None:
         actual = json_blocks[0]["json"]
         assert actual == expected_data, f"Data mismatch: {actual} != {expected_data}"
+
+
+def assert_structured_tool_result(
+    result: ToolResult,
+    text_contains: str | None = None,
+    json_keys: list[str] | None = None,
+    expected_json: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Verifies the ToolResult dual-payload structure and content."""
+    assert len(result.content) == 2, f"Expected 2 content items, got {len(result.content)}"
+    assert result.content[0]["type"] == "json"
+    assert result.content[1]["type"] == "text"
+
+    json_data = result.content[0]["json"]
+    text_content = result.content[1]["text"]
+
+    if text_contains:
+        assert text_contains in text_content
+    if json_keys:
+        for key in json_keys:
+            assert key in json_data
+    if expected_json:
+        assert json_data == expected_json
+
+    return json_data

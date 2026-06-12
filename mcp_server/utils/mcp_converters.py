@@ -63,7 +63,7 @@ def convert_tool_result_to_mcp_result(result: ToolResult) -> CallToolResult:
     if json_blocks:
         structured_content = json_blocks[0]["json"]
 
-    # Filter out json blocks to prevent double serialization
+    # Keep JSON blocks in content list for clients that do not support structuredContent
     filtered_content = [c for c in result.content if c.get("type") != "json"]
     mcp_content = convert_tool_result_to_content(filtered_content)
 

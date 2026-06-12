@@ -1,7 +1,7 @@
 """Base class for MCP tools."""
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
@@ -25,6 +25,7 @@ class BaseTool(ABC):
     args_model: type[BaseModel] | None = None
     enforcement_event: str | None = None
     tool_category: str | None = None
+    presentation_category: ClassVar[str | None] = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         """Automatically wrap execute() with error handler on subclass creation."""
@@ -78,14 +79,21 @@ class BranchMutatingTool(BaseTool):
 class StructuredTool(BaseTool, ABC):
     """Abstract base class for all tools that return structured JSON data."""
 
+    output_model: ClassVar[type[BaseModel] | None] = None
+
     @abstractmethod
     async def execute_structured(
         self,
         params: Any,  # noqa: ANN401
         context: NoteContext,
-    ) -> tuple[dict[str, Any], str]:
-        """Execute the tool and return (data_dict, summary_text)."""
+    ) -> tuple[dict[str, Any], str] | BaseModel:
+        """Execute the tool and return either a Pydantic DTO (new) or a legacy tuple."""
 
     async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401
-        data, text = await self.execute_structured(params, context)
+        result = await self.execute_structured(params, context)
+        if isinstance(result, BaseModel):
+            return ToolResult.json_data(
+                result.model_dump(), text=None, is_error=not getattr(result, "success", True)
+            )
+        data, text = result
         return ToolResult.json_data(data, text=text)

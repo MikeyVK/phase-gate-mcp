@@ -41,6 +41,7 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
+    PresentationConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScopeConfig,
@@ -159,6 +160,7 @@ class ConfigLayer:
     operation_policies_config: OperationPoliciesConfig
     enforcement_config: EnforcementConfig
     contracts_config: ContractsConfig
+    presentation_config: PresentationConfig
 
 
 @dataclass(frozen=True)
@@ -225,6 +227,14 @@ class ServerBootstrapper:
         tools = self._build_tools(configs, managers)
         resources = self._build_resources(configs, managers)
 
+        from mcp_server.presenters.text_presenter import (  # noqa: PLC0415
+            TextPresenter,
+            validate_presentation_alignment,
+        )
+
+        presenter = TextPresenter(config=configs.presentation_config)
+        validate_presentation_alignment(presenter, tools)
+
         # Import dynamically to avoid circular dependencies
         from mcp_server.server import MCPServer  # noqa: PLC0415
 
@@ -234,6 +244,7 @@ class ServerBootstrapper:
             managers=managers,
             tools=tools,
             resources=resources,
+            presenter=presenter,
         )
 
     def _build_config_layer(self) -> ConfigLayer:
@@ -259,6 +270,7 @@ class ServerBootstrapper:
         operation_policies_config = config_loader.load_operation_policies_config()
         enforcement_config = config_loader.load_enforcement_config()
         contracts_config = config_loader.load_contracts_config()
+        presentation_config = config_loader.load_presentation_config()
 
         ConfigValidator().validate_startup(
             policies=operation_policies_config,
@@ -284,6 +296,7 @@ class ServerBootstrapper:
             operation_policies_config=operation_policies_config,
             enforcement_config=enforcement_config,
             contracts_config=contracts_config,
+            presentation_config=presentation_config,
         )
 
     def _build_manager_graph(
