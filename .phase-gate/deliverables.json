@@ -30,6 +30,107 @@
     ],
     "skip_reason": null,
     "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
-    "created_at": "2026-06-12T05:42:13.646251+00:00"
+    "created_at": "2026-06-12T05:42:13.646251+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 6,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "Cycle 1: Core Presenter & Infrastructure",
+            "deliverables": [
+              {
+                "id": "D1.1",
+                "description": "Base output schemas in tool_outputs.py and global presentation.yaml config",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/schemas/tool_outputs.py"
+                }
+              },
+              {
+                "id": "D1.2",
+                "description": "TextPresenter implementation and validate_presentation_alignment drift validator"
+              },
+              {
+                "id": "D1.3",
+                "description": "assert_structured_tool_result pytest helper",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "tests/mcp_server/test_support.py"
+                }
+              }
+            ],
+            "exit_criteria": "TextPresenter and startup validator pass all unit tests."
+          },
+          {
+            "cycle_number": 2,
+            "name": "Cycle 2: Batch 1 (Admin, Health & Cycle Tools)",
+            "deliverables": [
+              {
+                "id": "D2.1",
+                "description": "Migration of HealthCheckTool, RestartServerTool, TransitionCycleTool, and ForceCycleTransitionTool"
+              }
+            ],
+            "exit_criteria": "All Batch 1 tools return Pydantic DTOs and compact text fallbacks, verified by assert_structured_tool_result."
+          },
+          {
+            "cycle_number": 3,
+            "name": "Cycle 3: Batch 2 & 3 (Discovery & Git Tools)",
+            "deliverables": [
+              {
+                "id": "D3.1",
+                "description": "Migration of Discovery, Search, and Project tools (Batch 2)"
+              },
+              {
+                "id": "D3.2",
+                "description": "Migration of Git Analysis and Mutation tools (Batch 3)"
+              }
+            ],
+            "exit_criteria": "All Git and Discovery tools return Pydantic DTOs, and git_status/git_restore/git_list_branches templates are fully compatible with string.Formatter."
+          },
+          {
+            "cycle_number": 4,
+            "name": "Cycle 4: Batch 4 (GitHub Integration Tools)",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "Move read models to github_models.py",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/schemas/github_models.py"
+                }
+              },
+              {
+                "id": "D4.2",
+                "description": "Migration of Issues, PRs, Labels, and Milestones tools (Batch 4)"
+              }
+            ],
+            "exit_criteria": "All GitHub tools successfully migrated and return flattened DTO presentation fields."
+          },
+          {
+            "cycle_number": 5,
+            "name": "Cycle 5: Batch 5 (Phase, Scaffold, Quality & Testing Tools)",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "Migration of Phase, Scaffold, Quality, Pytest, and Safe Edit tools (Batch 5)"
+              }
+            ],
+            "exit_criteria": "Batch 5 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally."
+          },
+          {
+            "cycle_number": 6,
+            "name": "Cycle 6: Validation, Quality Gates, and Cleanup",
+            "deliverables": [
+              {
+                "id": "D6.1",
+                "description": "Green full test suite run and clean quality gates check"
+              }
+            ],
+            "exit_criteria": "All 2880+ tests pass, and quality gates pass with zero lint or typing violations."
+          }
+        ]
+      }
+    }
   }
 }
