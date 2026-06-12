@@ -2,7 +2,7 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -20,7 +20,16 @@
   "issue_title": "tooling: Expose JSON data in MCP tools",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-12T05:42:13.722630+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-12T12:57:14.101780+00:00",
+      "human_approval": "User approved transition to design",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
