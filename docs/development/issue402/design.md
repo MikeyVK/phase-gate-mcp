@@ -211,6 +211,63 @@ To maximize token efficiency and robust behavior, the following tool-specific op
 4. **`RunTestsTool` (Verbose Traceback Management)**:
    This tool is already a `StructuredTool`. Complete long tracebacks triggered by the `verbose` option will be stored in the `"failures"` block of the JSON payload. The chat-text fallback will strictly remain a compact summary (`FAILED test_id — short_reason`) to protect the context window.
 
+### 3.7. Batch-by-Batch Specifications
+
+To ensure no information loss (maintaining 100% data fidelity) while optimizing chat token usage, the following specific JSON schemas and text fallback structures are defined:
+
+#### Batch 1 & 2: Git Local & Remote Operations
+* **`GitStatusTool` (`GitStatusOutput`)**:
+  * JSON: `{"branch": str, "is_clean": bool, "modified_files": list[str], "untracked_files": list[str]}`
+  * Text: Summarizes branch name and status. Lists changed files up to a maximum of 5 items, appending a summary line for remaining files.
+* **`CreateBranchTool` (`CreateBranchOutput` inherits `BranchOperationOutput`)**:
+  * JSON: `{"success": bool, "branch_name": str, "base_branch": str}`
+  * Text: `✅ Created branch '{branch_name}' from base '{base_branch}'.`
+* **`GitCheckoutTool` (`GitCheckoutOutput`)**:
+  * JSON: `{"success": bool, "branch": str, "from_branch": str}`
+  * Text: `✅ Checked out branch '{branch}' (switched from '{from_branch}').`
+* **`GitCommitTool` (`GitCommitOutput`)**:
+  * JSON: `{"sha": str, "branch": str, "message": str, "files": list[str]}`
+  * Text: Summary of branch and SHA. Lists total count of files committed (full list in JSON).
+* **`GitRestoreTool` / `GitStashTool`**:
+  * JSON: Inherits `SuccessOutput` (with extra `files` / `action` properties).
+  * Text: Compact verification message (e.g. `✅ Successfully performed stash action: {action}`).
+* **`GitListBranchesTool` (`GitListBranchesOutput`)**:
+  * JSON: `{"branches": list[str], "current_branch": str}`
+  * Text: Compact list of first 5 branches, showing active branch, with counts of hidden branches.
+
+#### Batch 3: Project & Workflow Management
+* **`TransitionPhaseTool` / `TransitionCycleTool`**:
+  * JSON: `{"success": bool, "branch": str, "old_phase/cycle": str, "new_phase/cycle": str}`
+  * Text: `✅ Transitioned phase/cycle on branch '{branch}' from '{old}' to '{new}'.`
+* **`ForcePhaseTransitionTool` / `ForceCycleTransitionTool`**:
+  * JSON: `{"success": bool, "branch": str, "from_phase/cycle": str, "to_phase/cycle": str, "forced_reason": str, "human_approval": str, "skipped_gates": list[str], "passing_gates": list[str]}`
+  * Text: High-visibility warnings highlighting `forced_reason`, `human_approval`, and bullet-pointing all `skipped_gates` (vital for human inspection).
+* **`InitializeProjectTool` (`InitializeProjectOutput`)**:
+  * JSON: Complete metadata including issue title, parent branch, required phases, and files created.
+  * Text: Rich markdown summary presenting all initialization details to give the human moderator a 100% verified status check.
+* **`GetProjectPlanTool` (`GetProjectPlanOutput`)**:
+  * JSON: Full list of phases, statuses, and phase tasks.
+  * Text: Dynamically rendered markdown status table showing phases and active status (detailed task lists left in JSON payload).
+
+#### Batch 4: GitHub Issues (Reusing `IssueReadModel`)
+* **`CreateIssueTool` / `UpdateIssueTool` / `GetIssueTool`**:
+  * JSON: Wraps `IssueReadModel`.
+  * Text: High-level metadata summary (Issue number, title, url, state, labels). Detailed issue body is skipped in text to save tokens.
+* **`ListIssuesTool` (`ListIssuesOutput`)**:
+  * JSON: `{"issues": list[IssueReadModel]}`
+  * Text: Lists up to 5 issues with status, showing remaining count.
+
+#### Batch 5: GitHub Labels & Milestones (Reusing `MilestoneReadModel`)
+* **`ListLabelsTool` (`ListLabelsOutput`)**:
+  * JSON: `{"labels": list[LabelOutputModel]}`
+  * Text: Simple summary of total available label count (e.g. `📋 GitHub Labels: 12 labels available`) to avoid verbose list duplication.
+* **`DeleteLabelTool`**:
+  * JSON: `{"success": bool, "label": str}` (limited to 1 label per input specification).
+  * Text: `✅ Deleted GitHub label '{label}'.`
+* **`ListMilestonesTool` / `GetMilestoneTool`**:
+  * JSON: Wraps `MilestoneReadModel`.
+  * Text: Compact count or metadata summary.
+
 ## Related Documentation
 - **[docs/development/issue402/research.md][related-1]**
 - **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-2]**
