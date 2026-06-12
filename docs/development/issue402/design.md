@@ -67,18 +67,18 @@ MCP tools currently return plain text responses. We need to expose structured JS
 
 **Rationale:** Option B provides static type safety at boundary interfaces, ensures explicit contract definitions, and aligns fully with CQS and type-checking standards, preventing client serialization drift.
 
-### 3.1. Key Design Decisions
-
 | Decision | Rationale |
 |---|---|
 | **Dedicated Schemas File** | Define all output models (DTOs) in `mcp_server/schemas/tool_outputs.py` to prevent circular imports and centralize API contracts. |
 | **CQS Compliant Schemas** | Use `frozen=True` or `ConfigDict(frozen=True)` on all output DTOs to enforce immutability at the boundary. |
 | **Unified Structured Path** | Migrate all tools (including `RestartServerTool` and `HealthCheckTool`) to `StructuredTool` returning simple DTOs (e.g. `RestartServerOutput` or `HealthCheckOutput`), eliminating exceptions and ensuring 100% architectural consistency. |
 | **Config-First Presentation** | Manage all text summaries and layouts in a centralized YAML file (`mcp_server/config/presentation.yaml`). No hardcoded emojis or string literals in Python. |
+| **Config Loader Integration** | Load `presentation.yaml` via the existing `ConfigLoader` class at the composition root (`server.py` bootstrap), validating it into a `PresentationConfig` model and storing it in `ConfigLayer` (complying with ARCHITECTURE_PRINCIPLES.md §12). |
+| **Server-Level Presenter Routing** | Inject `TextPresenter` directly into `MCPServer`. The server handles result formatting, keeping tool classes focused on logic (SRP) and avoiding modifying 28+ tool constructors. |
+| **Compatibility Bridge** | Allow `StructuredTool.execute_structured` to return *either* a `BaseModel` DTO *or* the legacy `tuple[dict[str, Any], str]` during the migration, ensuring the server and tests never break. |
 | **No Custom Python Formatters** | Avoid code smells by keeping the presentation layer completely declarative. Dynamic summary-level data (e.g. counts, comma-separated lists) is computed by the business logic/tool and included in the Pydantic DTOs, allowing simple string-formatting in YAML. |
 | **Static Drift Validation** | Scan and validate all templates in `presentation.yaml` against their Pydantic models at server startup and test-time (Fail-Fast). |
 | **Unified Test Assertions** | Implement `assert_structured_tool_result` helper in `tests/mcp_server/test_support.py` to enforce the dual-payload contract and reduce test boilerplate (DRY). |
-
 ### 3.2. Schema Hierarchy & Code Reuse (DRY)
 
 We will implement a schema hierarchy using inheritance and reuse existing domain read models from `mcp_server/state/github_read_models.py`:
@@ -123,21 +123,20 @@ graph TD
 
 ### 3.4. Affected Interfaces
 
-All migrated tools will inherit from `StructuredTool` (which inherits from `BaseTool`) and implement `execute_structured` instead of `execute`.
+All migrated tools will inherit from `StructuredTool` (which inherits from `BaseTool`) and implement `execute_structured` instead of `execute`. During the migration, a compatibility bridge is preserved: `execute_structured` may return either a `BaseModel` DTO (migrated) or a legacy `tuple[dict[str, Any], str]` (unmigrated).
 
 ```python
 class StructuredTool(BaseTool, ABC):
-    output_model: ClassVar[type[BaseModel]]
+    output_model: ClassVar[type[BaseModel]] | None = None
 
     @abstractmethod
     async def execute_structured(
         self,
         params: Any,
         context: NoteContext,
-    ) -> BaseModel:
-        """Execute the tool and return a validated Pydantic output model (DTO)."""
+    ) -> tuple[dict[str, Any], str] | BaseModel:
+        """Execute the tool and return either a Pydantic DTO (new) or a legacy tuple."""
 ```
-
 ### 3.5. Config-Driven Text Presenter
 
 The presentation configuration is managed in `mcp_server/config/presentation.yaml`:
@@ -195,12 +194,28 @@ The `TextPresenter` dynamically formats the fallback text by mapping fields from
 4. **Conditional JSON Reference**: It dynamically appends the standard JSON reference `*(Full details available in the structured JSON payload)*` under the following conditions:
    - If `append_json_reference` is statically configured as `true` in the tool config.
    - OR dynamically if the DTO contains rich structured data (such as a non-empty `diff`, `failures` list, `validation_schema`, or lists of items). This keeps simple results clean and uncluttered.
+#### Config Loader Integration:
+In compliance with `ARCHITECTURE_PRINCIPLES.md` §12:
+- `presentation.yaml` is loaded and validated by `ConfigLoader` at composition root (`mcp_server/bootstrap.py`), producing a `PresentationConfig` model.
+- The `PresentationConfig` is stored in the immutable `ConfigLayer`.
+- At composition root, `TextPresenter` is instantiated with the `PresentationConfig` injected into its constructor: `TextPresenter(config=configs.presentation_config)`.
+- `TextPresenter` is then constructor-injected into `MCPServer`.
+
+#### Server-Level Presenter Routing:
+- The `MCPServer` manages the routing and execution of tools.
+- When `MCPServer` executes a `StructuredTool`, it calls `await tool.execute_structured(validated, note_context)`.
+- If the result is a Pydantic `BaseModel` DTO (migrated tool):
+  - `MCPServer` delegates formatting to the injected `TextPresenter`: `text = self.presenter.present(tool_name=tool.name, success=dto.success, tool_category=tool.tool_category or "query", data=dto)`.
+  - It then packs the serialized DTO and the formatted text fallback into a dual-payload `ToolResult`.
+- If the result is a `tuple[dict, str]` (unmigrated tool):
+  - It bypasses the presenter and directly packs the dict and text fallback into `ToolResult`.
+- This ensures that individual tool classes remain completely unaware of formatting templates, emojis, and advisories, complying with SRP (Single Responsibility Principle) and DIP (Dependency Inversion Principle).
+
 #### Fail-Fast Drift Validation:
-At server startup and within the unit test suite, `validate_presentation_alignment` will:
+At server startup (within `ConfigValidator().validate_startup`) and within the unit test suite, `validate_presentation_alignment` will:
 1. Parse all placeholder keys from `presentation.yaml` templates using `string.Formatter().parse()`.
 2. Verify that every placeholder (except those prefixed with `emoji_`) matches a field defined in the corresponding tool's Pydantic `output_model`.
 3. Raise a `ConfigError` immediately if drift is detected, blocking server start and failing the build.
-
 ### 3.6. Test Suite Strategy & DRY Reparations
 
 To prevent a massive test-suite break and clean up boilerplate code, we apply two key reparations:
@@ -260,6 +275,7 @@ The following table provides the mapping for candidate Pydantic model fields des
 | `TransitionPhaseTool` | `PhaseTransitionOutput` | `passing_gates_count` | Phase transition details and total passed gates. |
 | `ForcePhaseTransitionTool` | `PhaseTransitionOutput` | `skipped_gates_count`, `passing_gates_count` | Forced phase transition audit trail with passed/skipped gate counts. |
 | `ScaffoldArtifactTool` | `ScaffoldArtifactOutput` | `schema_info` | Scaffolded files or inline validation schema if validation fails. |
+| `ScaffoldSchemaTool` | `ScaffoldSchemaOutput` | `schema_data` | Retrieved schema for artifact type. |
 
 ---
 

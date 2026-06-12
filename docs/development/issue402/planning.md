@@ -154,7 +154,29 @@ GitHub Labels and Milestones tools successfully migrated and return flattened DT
 **Tests:**
 - `tests/mcp_server/unit/tools/test_test_tools.py`
 - `tests/mcp_server/unit/tools/test_safe_edit_tool.py`
+## Test Suite Strategy & Refactoring
 
+De overgang naar tweevoudige JSON+tekst-outputs en Pydantic DTO's vereist aanpassingen in de testsuite om breuken te voorkomen en de tests DRY te maken:
+
+### 1. Introductie van `assert_structured_tool_result`
+We voegen een gedeelde helper toe in `tests/mcp_server/test_support.py` die de dual-payload structuur valideert. Alle aangepaste tests stappen over van directe assertions op `result.content` naar deze helper:
+- Controleert of `len(result.content) == 2` is.
+- Controleert of `content[0]["type"] == "json"` en `content[1]["type"] == "text"`.
+- Valideert de JSON-inhoud tegen de verwachte DTO-key-values.
+- Controleert of de tekst-fallback de gezochte substring bevat.
+
+### 2. Consolidatie van Pytest Fixtures
+Veel testbestanden (zoals `test_git_tools.py` en `test_pr_tools.py`) bevatten momenteel herhalende mock-setupcode voor managers en tool-instanties. We gaan deze herstructureren:
+- We introduceren herbruikbare module- en klasse-level fixtures voor het instantiëren van de tools met gemockte managers.
+- Standaard mock-gedrag (zoals het retourneren van een schone git-status of de actieve branch) wordt gecentraliseerd in fixtures om test-boilersplate te minimaliseren.
+
+### 3. Incrementele Aanpassing van Testcases
+Door de compatibiliteitsbrug in `StructuredTool` kunnen we de tests batched en per cyclus migreren:
+- In elke cyclus migreren we een batch tools én passen we gelijktijdig de bijbehorende testcases in de testsuite aan naar de nieuwe DTO-structuur.
+- Niet-gemigreerde tools blijven gebruikmaken van hun bestaande tests en slagen via de legacy-tuple fallback route.
+- Dit garandeert dat de testsuite bij elke commit 100% groen blijft.
+
+---
 **Success/Exit Criteria:**
 Batch 8 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally. If tests fail and verbose=False, post_tool_instruction recommends running with verbose=True.
 
