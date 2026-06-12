@@ -62,9 +62,33 @@
                   "type": "file_exists",
                   "file": "tests/mcp_server/test_support.py"
                 }
+              },
+              {
+                "id": "D1.4",
+                "description": "Update StructuredTool.execute() dispatcher and signature to support BaseModel | tuple return types",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/tools/base.py"
+                }
+              },
+              {
+                "id": "D1.5",
+                "description": "Add presentation_config: PresentationConfig to ConfigLayer in bootstrap.py and implement parsing in ConfigLoader",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/config/loader.py"
+                }
+              },
+              {
+                "id": "D1.6",
+                "description": "Extend MCPServer.__init__ and ServerBootstrapper to inject TextPresenter",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/server.py"
+                }
               }
             ],
-            "exit_criteria": "TextPresenter and startup validator pass all unit tests."
+            "exit_criteria": "TextPresenter, server injection, config loader, and startup validator pass all unit tests."
           },
           {
             "cycle_number": 2,
@@ -121,6 +145,10 @@
                   "type": "file_exists",
                   "file": "mcp_server/schemas/github_models.py"
                 }
+              },
+              {
+                "id": "D6.2",
+                "description": "Check that nested read models validation in IssueOutput and PROutput does not trigger extra fields errors or serialization mismatch under frozen=True"
               }
             ],
             "exit_criteria": "GitHub Issues and PR tools successfully migrated and return flattened DTO presentation fields."
@@ -154,9 +182,17 @@
               {
                 "id": "D9.1",
                 "description": "Green full test suite run and clean quality gates check"
+              },
+              {
+                "id": "D9.2",
+                "description": "Remove the compatibility bridge in StructuredTool so it only supports BaseModel DTOs, satisfying YAGNI \u00a79",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/tools/base.py"
+                }
               }
             ],
-            "exit_criteria": "All 2880+ tests pass, and quality gates pass with zero lint or typing violations."
+            "exit_criteria": "All 2880+ tests pass, and quality gates pass with zero lint or typing violations. Compatibility bridge removed cleanly."
           }
         ]
       }

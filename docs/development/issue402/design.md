@@ -3,7 +3,7 @@
 # Design — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** 2026-06-12
 
 ---

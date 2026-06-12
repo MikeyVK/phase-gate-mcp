@@ -3,7 +3,7 @@
 # Planning — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-06-12
 
 ---
@@ -49,14 +49,15 @@ Plan for migrating all active MCP tools to return Pydantic DTOs alongside declar
 - **[D1.1]** Base output schemas in `tool_outputs.py` and global `presentation.yaml` config (File: `mcp_server/schemas/tool_outputs.py`)
 - **[D1.2]** `TextPresenter` implementation and `validate_presentation_alignment` drift validator (File: `mcp_server/presenters/text_presenter.py`)
 - **[D1.3]** `assert_structured_tool_result` pytest helper (File: `tests/mcp_server/test_support.py`)
+- **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types (File: `mcp_server/tools/base.py`)
+- **[D1.5]** Add `presentation_config: PresentationConfig` to `ConfigLayer` in `bootstrap.py` and implement parsing in `ConfigLoader` (Files: `mcp_server/config/loader.py`, `mcp_server/bootstrap.py`)
+- **[D1.6]** Extend `MCPServer.__init__` and `ServerBootstrapper` to inject `TextPresenter` (Files: `mcp_server/server.py`, `mcp_server/bootstrap.py`)
 
 **Tests:**
 - `tests/mcp_server/unit/test_presenter.py`
 
 **Success/Exit Criteria:**
-TextPresenter and startup validator pass all unit tests.
-
-
+TextPresenter, server injection, config loader, and startup validator pass all unit tests.
 ### Cycle 2: Batch 1 (Admin, Health & Cycle Tools)
 
 **Goal:** Migrate HealthCheckTool, RestartServerTool, TransitionCycleTool, and ForceCycleTransitionTool to StructuredTool with DTOs and configs.
@@ -118,9 +119,8 @@ Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetc
 
 **Goal:** Move read models to github_models.py and migrate Issue and PR tools.
 
-**Deliverables:**
 - **[D6.1]** Move read models to `github_models.py` and migrate Issue and PR tools (File: `mcp_server/schemas/github_models.py`).
-
+- **[D6.2]** Check that nested read models validation in `IssueOutput` and `PROutput` does not trigger extra fields errors or serialization mismatch under `frozen=True` (Files: `tests/mcp_server/unit/tools/test_issue_tools.py`, `tests/mcp_server/unit/tools/test_pr_tools.py`).
 **Tests:**
 - `tests/mcp_server/unit/tools/test_issue_tools.py`
 - `tests/mcp_server/unit/tools/test_pr_tools.py`
@@ -156,25 +156,25 @@ GitHub Labels and Milestones tools successfully migrated and return flattened DT
 - `tests/mcp_server/unit/tools/test_safe_edit_tool.py`
 ## Test Suite Strategy & Refactoring
 
-De overgang naar tweevoudige JSON+tekst-outputs en Pydantic DTO's vereist aanpassingen in de testsuite om breuken te voorkomen en de tests DRY te maken:
+Transitioning to dual JSON+text outputs and Pydantic DTOs requires modifications to the test suite to prevent breaking changes and ensure tests remain DRY:
 
-### 1. Introductie van `assert_structured_tool_result`
-We voegen een gedeelde helper toe in `tests/mcp_server/test_support.py` die de dual-payload structuur valideert. Alle aangepaste tests stappen over van directe assertions op `result.content` naar deze helper:
-- Controleert of `len(result.content) == 2` is.
-- Controleert of `content[0]["type"] == "json"` en `content[1]["type"] == "text"`.
-- Valideert de JSON-inhoud tegen de verwachte DTO-key-values.
-- Controleert of de tekst-fallback de gezochte substring bevat.
+### 1. Introduction of `assert_structured_tool_result`
+We will add a shared helper in `tests/mcp_server/test_support.py` to validate the dual-payload structure. All modified tests will transition from asserting directly on `result.content` to using this helper:
+- Verifies that `len(result.content) == 2`.
+- Verifies that `content[0]["type"] == "json"` and `content[1]["type"] == "text"`.
+- Validates the JSON content against the expected DTO key-values.
+- Verifies that the text fallback contains the expected substring.
 
-### 2. Consolidatie van Pytest Fixtures
-Veel testbestanden (zoals `test_git_tools.py` en `test_pr_tools.py`) bevatten momenteel herhalende mock-setupcode voor managers en tool-instanties. We gaan deze herstructureren:
-- We introduceren herbruikbare module- en klasse-level fixtures voor het instantiëren van de tools met gemockte managers.
-- Standaard mock-gedrag (zoals het retourneren van een schone git-status of de actieve branch) wordt gecentraliseerd in fixtures om test-boilersplate te minimaliseren.
+### 2. Pytest Fixture Consolidation
+Many test files (such as `test_git_tools.py` and `test_pr_tools.py`) currently duplicate mock setup code for managers and tool instances. We will refactor these to use reusable fixtures:
+- Introduce module- and class-level fixtures for instantiating tools with mocked managers.
+- Centralize default mock behavior (such as returning a clean git status or the active branch) in fixtures to minimize boilerplate.
 
-### 3. Incrementele Aanpassing van Testcases
-Door de compatibiliteitsbrug in `StructuredTool` kunnen we de tests batched en per cyclus migreren:
-- In elke cyclus migreren we een batch tools én passen we gelijktijdig de bijbehorende testcases in de testsuite aan naar de nieuwe DTO-structuur.
-- Niet-gemigreerde tools blijven gebruikmaken van hun bestaande tests en slagen via de legacy-tuple fallback route.
-- Dit garandeert dat de testsuite bij elke commit 100% groen blijft.
+### 3. Incremental Test Adaptation
+The compatibility bridge in `StructuredTool` allows us to migrate tests incrementally:
+- In each cycle, we migrate a batch of tools and simultaneously update their corresponding test cases to the new DTO structure.
+- Unmigrated tools continue to use their existing tests and succeed via the legacy-tuple fallback route.
+- This ensures the test suite remains 100% green at every commit.
 
 ---
 **Success/Exit Criteria:**
@@ -183,17 +183,18 @@ Batch 8 tools migrated; pytest tracebacks and safe edit diffs are only returned 
 
 ### Cycle 9: Validation, Quality Gates, and Cleanup
 
-**Goal:** Perform full test suite run and ruff quality gate checks on the entire changed codebase.
+**Goal:** Perform full test suite run and ruff quality gate checks on the entire changed codebase, and remove the temporary compatibility layer.
 
 **Deliverables:**
 - **[D9.1]** Green full test suite run and clean quality gates check.
+- **[D9.2]** Remove the compatibility bridge in `StructuredTool` so it only supports `BaseModel` DTOs, satisfying YAGNI §9 (File: `mcp_server/tools/base.py`).
 
 **Tests:**
 - Run full test suite: `pytest`
 - Run quality gates: `ruff check` and type checks
 
 **Success/Exit Criteria:**
-All 2880+ tests pass, and quality gates pass with zero lint or typing violations.
+All 2880+ tests pass, and quality gates pass with zero lint or typing violations. Compatibility bridge removed cleanly.
 
 ---
 
@@ -230,3 +231,4 @@ All 2880+ tests pass, and quality gates pass with zero lint or typing violations
 |---------|------|--------|---------|
 | 1.0 | 2026-06-12 | Agent | Initial draft |
 | 1.1 | 2026-06-12 | Agent | Refined cycles and deliverables to 9 sequential TDD cycles |
+| 1.2 | 2026-06-12 | Agent | Translated test suite strategy to English, resolved QA blockers and warnings |
