@@ -40,7 +40,7 @@ Every DTO schema inherits from `BaseToolOutput` to enforce immutability, disallo
 ```python
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
-from mcp_server.state.github_read_models import PRReadModel, IssueReadModel, MilestoneReadModel
+
 
 class BaseToolOutput(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -568,9 +568,18 @@ class BranchPairOutput(BaseToolOutput):
 
 * **DTO (`ListIssuesOutput`):**
   ```python
+  class IssueSummaryDTO(BaseModel):
+      number: int
+      title: str
+      state: str
+      html_url: str
+      labels: list[str] = []
+      assignees_summary: str = "Unassigned"
+      created_at: str
+
   class ListIssuesOutput(BaseToolOutput):
       issues_count: int
-      issues: list[IssueReadModel] = []
+      issues: list[IssueSummaryDTO] = []
   ```
 * **YAML Config:**
   ```yaml
@@ -625,9 +634,17 @@ class BranchPairOutput(BaseToolOutput):
 
 * **DTO (`ListPRsOutput`):**
   ```python
+  class PRSummaryDTO(BaseModel):
+      number: int
+      title: str
+      state: str
+      html_url: str
+      base_ref: str
+      head_ref: str
+
   class ListPRsOutput(BaseToolOutput):
       prs_count: int
-      pull_requests: list[PRReadModel] = []
+      pull_requests: list[PRSummaryDTO] = []
   ```
 * **YAML Config:**
   ```yaml
@@ -696,9 +713,14 @@ class BranchPairOutput(BaseToolOutput):
 
 * **DTO (`ListMilestonesOutput`):**
   ```python
+  class MilestoneSummaryDTO(BaseModel):
+      number: int
+      title: str
+      state: str
+
   class ListMilestonesOutput(BaseToolOutput):
       total_milestones: int
-      milestones: list[MilestoneReadModel] = []
+      milestones: list[MilestoneSummaryDTO] = []
   ```
 * **YAML Config:**
   ```yaml

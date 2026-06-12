@@ -3,7 +3,7 @@
 # Planning — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.3
+**Version:** 1.4
 **Last Updated:** 2026-06-12
 
 ---
@@ -47,12 +47,13 @@ Plan for migrating all active MCP tools to return Pydantic DTOs alongside declar
 
 **Deliverables:**
 - **[D1.1]** Base output schemas in `tool_outputs.py` and global `presentation.yaml` config (File: `mcp_server/schemas/tool_outputs.py`)
-- **[D1.2]** `TextPresenter` implementation and `validate_presentation_alignment` drift validator, verifying that YAML anchors and aliases are parsed and resolved safely (File: `mcp_server/presenters/text_presenter.py`)
+- **[D1.2]** `TextPresenter` implementation and `validate_presentation_alignment` drift validator, verifying that YAML anchors and aliases are resolved safely and that the validator gracefully ignores tools without an `output_model` ClassVar during the migration phase, preventing validation crashes (File: `mcp_server/presenters/text_presenter.py`)
 - **[D1.3]** `assert_structured_tool_result` pytest helper (File: `tests/mcp_server/test_support.py`)
-- **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types (File: `mcp_server/tools/base.py`)
+- **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types, and update `MCPServer.handle_call_tool()` routing to explicitly check and distinguish between a `BaseModel` response and a legacy `tuple[dict, str]` response to prevent tool call crashes (Files: `mcp_server/tools/base.py`, `mcp_server/server.py`)
 - **[D1.5]** Add `presentation_config: PresentationConfig` to `ConfigLayer` in `bootstrap.py` and implement parsing in `ConfigLoader` (Files: `mcp_server/config/loader.py`, `mcp_server/bootstrap.py`)
-- **[D1.6]** Extend `MCPServer.__init__` and `ServerBootstrapper` to inject `TextPresenter` (Files: `mcp_server/server.py`, `mcp_server/bootstrap.py`)
+- **[D1.6]** Extend `MCPServer.__init__` and `ServerBootstrapper` to inject `TextPresenter`, and update `MCPServer.handle_call_tool()` routing to format `BaseModel` outputs using the presenter into a dual-payload `ToolResult` (Files: `mcp_server/server.py`, `mcp_server/bootstrap.py`)
 - **[D1.7]** Infrastructure test suite refactor: update all test instantiations of `MCPServer` and mock configs to support `PresentationConfig` and `TextPresenter` constructor-injection (Files: `tests/**/*.py`)
+- **[D1.8]** Define `presentation_category: ClassVar[str | None] = None` on `BaseTool` (or `StructuredTool`) to resolve the emoji-mapping conflict with `tool_category` (which is reserved for policy enforcement like `"branch_mutating"`). The presenter will map `presentation_category` (values: `"mutation"`, `"query"`, `"admin"`, `"bootstrap"`, `"testing"`) to emojis, avoiding any clash (File: `mcp_server/tools/base.py`)
 
 **Tests:**
 - `tests/mcp_server/unit/test_presenter.py`
@@ -235,3 +236,4 @@ All 2880+ tests pass, and quality gates pass with zero lint or typing violations
 | 1.1 | 2026-06-12 | Agent | Refined cycles and deliverables to 9 sequential TDD cycles |
 | 1.2 | 2026-06-12 | Agent | Resolved QA blockers, warnings, and added YAML anchor parsing verification |
 | 1.3 | 2026-06-12 | Agent | Resolved QA NOGO feedback (flattened DTOs, server-level routing, presentation_category, test suite impact) |
+| 1.4 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (flattened lists, explicit handle_call_tool routing, presentation_category & validator deliverables) |

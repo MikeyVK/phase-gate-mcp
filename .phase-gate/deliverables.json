@@ -49,7 +49,7 @@
               },
               {
                 "id": "D1.2",
-                "description": "TextPresenter implementation and validate_presentation_alignment drift validator, verifying that YAML anchors and aliases are parsed and resolved safely",
+                "description": "TextPresenter implementation and validate_presentation_alignment drift validator, verifying that YAML anchors and aliases are resolved safely and that the validator gracefully ignores tools without an output_model during the migration phase",
                 "validates": {
                   "type": "file_exists",
                   "file": "mcp_server/presenters/text_presenter.py"
@@ -81,7 +81,7 @@
               },
               {
                 "id": "D1.6",
-                "description": "Extend MCPServer.__init__ and ServerBootstrapper to inject TextPresenter",
+                "description": "Extend MCPServer.__init__ and ServerBootstrapper to inject TextPresenter, and update MCPServer.handle_call_tool() routing to support both BaseModel DTO (presenter-formatted) and legacy tuple outputs",
                 "validates": {
                   "type": "file_exists",
                   "file": "mcp_server/server.py"
@@ -90,6 +90,14 @@
               {
                 "id": "D1.7",
                 "description": "Infrastructure test suite refactor: update all test instantiations of MCPServer and mock configs to support PresentationConfig and TextPresenter constructor-injection"
+              },
+              {
+                "id": "D1.8",
+                "description": "Define presentation_category: ClassVar[str | None] = None on BaseTool (or StructuredTool) to resolve the emoji-mapping conflict with tool_category",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/tools/base.py"
+                }
               }
             ],
             "exit_criteria": "TextPresenter, server injection, config loader, and startup validator pass all unit tests."

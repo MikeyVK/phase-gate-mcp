@@ -3,7 +3,7 @@
 # Design — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.4
+**Version:** 1.5
 **Last Updated:** 2026-06-12
 
 ---
@@ -188,14 +188,14 @@ tools:
 
 The `TextPresenter` dynamically formats the fallback text by mapping fields from the tool's Pydantic DTO:
 1. **Emoji Prefixing**: It automatically prepends the correct status emoji based on the tool's metadata and execution status. To make this metadata explicit and avoid implicit conventions:
-   - Every tool class (inheriting from `BaseTool` / `StructuredTool`) declares a class-level attribute `tool_category: ClassVar[str]` (with values like `"mutation"`, `"query"`, `"bootstrap"`, `"admin"`, or `"testing"`).
-   - If execution fails (`success` is False), the presenter always prepends `emoji_failure` (`❌`).
-   - If execution succeeds, the presenter maps the `tool_category` to the corresponding global emoji: `"mutation"`/`"admin"` maps to `emoji_success` (`✅`), `"query"`/`"testing"` maps to `emoji_query` (`📋`), and `"bootstrap"` maps to `emoji_bootstrap` (`🚀`).
+    - Every tool class (inheriting from `BaseTool` / `StructuredTool`) declares a class-level attribute `presentation_category: ClassVar[str | None] = None` (with values like `"mutation"`, `"query"`, `"admin"`, `"bootstrap"`, or `"testing"`).
+    - If execution fails (`success` is False), the presenter always prepends `emoji_failure` (`❌`).
+    - If execution succeeds, the presenter maps the `presentation_category` to the corresponding global emoji: `"mutation"`/`"admin"` maps to `emoji_success` (`✅`), `"query"`/`"testing"` maps to `emoji_query` (`📋`), and `"bootstrap"` maps to `emoji_bootstrap` (`🚀`).
 2. **Default Failure Handling**: If a tool execution fails and does not define a custom `template_failure` in the configuration, the presenter automatically falls back to rendering the `default_failure_template` (`Failed: {error_message}`).
 3. **Advisory Resolution**: If the tool config defines an `advisory` key, the presenter resolves the advisory text from the global advisories lookup and appends it.
 4. **Conditional JSON Reference**: It dynamically appends the standard JSON reference `*(Full details available in the structured JSON payload)*` under the following conditions:
-   - If `append_json_reference` is statically configured as `true` in the tool config.
-   - OR dynamically if the DTO contains rich structured data (such as a non-empty `diff`, `failures` list, `validation_schema`, or lists of items). This keeps simple results clean and uncluttered.
+    - If `append_json_reference` is statically configured as `true` in the tool config.
+    - OR dynamically if the DTO contains rich structured data (such as a non-empty `diff`, `failures` list, `validation_schema`, or lists of items). This keeps simple results clean and uncluttered.
 #### Config Loader Integration:
 In compliance with `ARCHITECTURE_PRINCIPLES.md` §12:
 - `presentation.yaml` is loaded and validated by `ConfigLoader` at composition root (`mcp_server/bootstrap.py`), producing a `PresentationConfig` model.
@@ -207,10 +207,8 @@ In compliance with `ARCHITECTURE_PRINCIPLES.md` §12:
 - The `MCPServer` manages the routing and execution of tools.
 - When `MCPServer` executes a `StructuredTool`, it calls `await tool.execute_structured(validated, note_context)`.
 - If the result is a Pydantic `BaseModel` DTO (migrated tool):
-  - `MCPServer` delegates formatting to the injected `TextPresenter`: `text = self.presenter.present(tool_name=tool.name, success=dto.success, tool_category=tool.tool_category or "query", data=dto)`.
+  - `MCPServer` delegates formatting to the injected `TextPresenter`: `text = self.presenter.present(tool_name=tool.name, success=dto.success, presentation_category=tool.presentation_category or "query", data=dto)`.
   - It then packs the serialized DTO and the formatted text fallback into a dual-payload `ToolResult`.
-- If the result is a `tuple[dict, str]` (unmigrated tool):
-  - It bypasses the presenter and directly packs the dict and text fallback into `ToolResult`.
 - This ensures that individual tool classes remain completely unaware of formatting templates, emojis, and advisories, complying with SRP (Single Responsibility Principle) and DIP (Dependency Inversion Principle).
 
 #### Fail-Fast Drift Validation:
@@ -294,3 +292,4 @@ The following table provides the mapping for candidate Pydantic model fields des
 |---------|------|--------|---------|
 | 1.3 | 2026-06-12 | Agent | Update to incorporate Batch 5 comments (transition gates counts, verbose test tracebacks, safe edit diffs, scaffold schemas) |
 | 1.4 | 2026-06-12 | Agent | Resolved QA NOGO verification feedback (flattened DTOs, presenter routing, separate presentation_category, test suite impact) |
+| 1.5 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (presentation_category fix, server routing clarifications) |
