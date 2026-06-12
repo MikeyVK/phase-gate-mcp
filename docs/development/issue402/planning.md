@@ -3,7 +3,7 @@
 # Planning — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.2  
+**Version:** 1.3
 **Last Updated:** 2026-06-12
 
 ---
@@ -52,6 +52,7 @@ Plan for migrating all active MCP tools to return Pydantic DTOs alongside declar
 - **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types (File: `mcp_server/tools/base.py`)
 - **[D1.5]** Add `presentation_config: PresentationConfig` to `ConfigLayer` in `bootstrap.py` and implement parsing in `ConfigLoader` (Files: `mcp_server/config/loader.py`, `mcp_server/bootstrap.py`)
 - **[D1.6]** Extend `MCPServer.__init__` and `ServerBootstrapper` to inject `TextPresenter` (Files: `mcp_server/server.py`, `mcp_server/bootstrap.py`)
+- **[D1.7]** Infrastructure test suite refactor: update all test instantiations of `MCPServer` and mock configs to support `PresentationConfig` and `TextPresenter` constructor-injection (Files: `tests/**/*.py`)
 
 **Tests:**
 - `tests/mcp_server/unit/test_presenter.py`
@@ -150,6 +151,7 @@ GitHub Labels and Milestones tools successfully migrated and return flattened DT
 
 **Deliverables:**
 - **[D8.1]** Migration of transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
+- **[D8.2]** Remove transition constants (`TRANSITION_ADVISORY_NOTE`, `TRANSITION_ADVISORY_TOOL_NAMES`) and discard logic from `phase_tools.py` and `server.py`, resolving the double-SSOT advisory issue (Files: `mcp_server/tools/phase_tools.py`, `mcp_server/server.py`).
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_test_tools.py`
@@ -232,3 +234,4 @@ All 2880+ tests pass, and quality gates pass with zero lint or typing violations
 | 1.0 | 2026-06-12 | Agent | Initial draft |
 | 1.1 | 2026-06-12 | Agent | Refined cycles and deliverables to 9 sequential TDD cycles |
 | 1.2 | 2026-06-12 | Agent | Resolved QA blockers, warnings, and added YAML anchor parsing verification |
+| 1.3 | 2026-06-12 | Agent | Resolved QA NOGO feedback (flattened DTOs, server-level routing, presentation_category, test suite impact) |

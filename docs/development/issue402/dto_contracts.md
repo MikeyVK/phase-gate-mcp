@@ -228,10 +228,20 @@ class BranchPairOutput(BaseToolOutput):
 
 * **DTO (`ProjectPlanOutput`):**
   ```python
+  class PhaseTaskDTO(BaseModel):
+      id: str
+      title: str
+      status: str
+
+  class PhaseDTO(BaseModel):
+      name: str
+      status: str
+      tasks: list[PhaseTaskDTO] = []
+
   class ProjectPlanOutput(BaseToolOutput):
       issue_number: int
       workflow_name: str
-      phases: list[dict[str, Any]] = []
+      phases: list[PhaseDTO] = []
   ```
 * **YAML Config:**
   ```yaml
@@ -501,7 +511,7 @@ class BranchPairOutput(BaseToolOutput):
 
   git_pull:
     template_success: "Pulled updates from remote '{remote}'."
-    advisory: "branch_lockdown"
+    advisory: "context_reset"
   ```
 
 ---
@@ -513,12 +523,17 @@ class BranchPairOutput(BaseToolOutput):
 * **Shared DTO (`IssueOutput`):**
   ```python
   class IssueOutput(GitHubObjectOutput):
-      issue: IssueReadModel
       # Flattened presentation-friendly fields
       state: str
       milestone_title: str = "None"
       assignees_summary: str = "Unassigned"
       html_url: str
+      body: str = ""
+      labels: list[str] = []
+      created_at: str
+      updated_at: str
+      closed_at: str | None = None
+      author: str
   ```
 * **YAML Config:**
   ```yaml
@@ -568,11 +583,14 @@ class BranchPairOutput(BaseToolOutput):
 * **Shared DTO (`PROutput`):**
   ```python
   class PROutput(GitHubObjectOutput):
-      pull_request: PRReadModel
       # Flattened presentation fields
       html_url: str
+      state: str
       base_ref: str
       head_ref: str
+      merged_at: str | None = None
+      merge_sha: str | None = None
+      body: str = ""
   ```
 * **YAML Config:**
   ```yaml
@@ -693,7 +711,7 @@ class BranchPairOutput(BaseToolOutput):
 * **Shared DTO (`MilestoneOutput`):**
   ```python
   class MilestoneOutput(GitHubObjectOutput):
-      milestone: MilestoneReadModel
+      state: str
   ```
 * **YAML Config:**
   ```yaml

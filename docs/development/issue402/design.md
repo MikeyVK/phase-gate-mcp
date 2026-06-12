@@ -3,7 +3,7 @@
 # Design — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.3  
+**Version:** 1.4
 **Last Updated:** 2026-06-12
 
 ---
@@ -71,13 +71,15 @@ MCP tools currently return plain text responses. We need to expose structured JS
 |---|---|
 | **Dedicated Schemas File** | Define all output models (DTOs) in `mcp_server/schemas/tool_outputs.py` to prevent circular imports and centralize API contracts. |
 | **CQS Compliant Schemas** | Use `frozen=True` or `ConfigDict(frozen=True)` on all output DTOs to enforce immutability at the boundary. |
+| **Flattened Output DTOs** | To comply with historical precedents (`392140ce`, `5a708277`) and prevent LLM (Claude/Copilot) parsing/serialization errors, nested read models are completely flattened. Only flat primitive types, lists, and validated sub-DTOs (e.g. `PhaseDTO` and `LabelOutputModel`) are returned. |
 | **Unified Structured Path** | Migrate all tools (including `RestartServerTool` and `HealthCheckTool`) to `StructuredTool` returning simple DTOs (e.g. `RestartServerOutput` or `HealthCheckOutput`), eliminating exceptions and ensuring 100% architectural consistency. |
 | **Config-First Presentation** | Manage all text summaries and layouts in a centralized YAML file (`mcp_server/config/presentation.yaml`). No hardcoded emojis or string literals in Python. |
 | **Config Loader Integration** | Load `presentation.yaml` via the existing `ConfigLoader` class at the composition root (`server.py` bootstrap), validating it into a `PresentationConfig` model and storing it in `ConfigLayer` (complying with ARCHITECTURE_PRINCIPLES.md §12). |
-| **Server-Level Presenter Routing** | Inject `TextPresenter` directly into `MCPServer`. The server handles result formatting, keeping tool classes focused on logic (SRP) and avoiding modifying 28+ tool constructors. |
-| **Compatibility Bridge** | Allow `StructuredTool.execute_structured` to return *either* a `BaseModel` DTO *or* the legacy `tuple[dict[str, Any], str]` during the migration, ensuring the server and tests never break. |
+| **Server-Level Presenter Routing** | Inject `TextPresenter` directly into `MCPServer`. The server intercepts `StructuredTool` execution in `handle_call_tool()`, formats it using the presenter, and creates the dual-payload `ToolResult`, keeping tool classes focused on logic (SRP) and avoiding modifying 28+ tool constructors. |
+| **Compatibility Bridge** | Allow `StructuredTool.execute_structured` to return *either* a `BaseModel` DTO *or* the legacy `tuple[dict[str, Any], str]` during the migration, ensuring the server and tests never break. This bridge will be completely removed in Cycle 9. |
+| **Separate Presentation Category** | To avoid conflicts with enforcement runner policies (which use `tool_category` like `"branch_mutating"`), tools will declare a separate `presentation_category: ClassVar[str]` attribute (values: `"mutation"`, `"query"`, `"admin"`, `"bootstrap"`, `"testing"`) for presenter emoji mapping. |
 | **No Custom Python Formatters** | Avoid code smells by keeping the presentation layer completely declarative. Dynamic summary-level data (e.g. counts, comma-separated lists) is computed by the business logic/tool and included in the Pydantic DTOs, allowing simple string-formatting in YAML. |
-| **Static Drift Validation** | Scan and validate all templates in `presentation.yaml` against their Pydantic models at server startup and test-time (Fail-Fast). |
+| **Static Drift Validation** | Scan and validate all templates in `presentation.yaml` against their Pydantic models at server startup and test-time (Fail-Fast). The validator ignores tools that do not define an `output_model` yet, allowing incremental migration. |
 | **Unified Test Assertions** | Implement `assert_structured_tool_result` helper in `tests/mcp_server/test_support.py` to enforce the dual-payload contract and reduce test boilerplate (DRY). |
 ### 3.2. Schema Hierarchy & Code Reuse (DRY)
 
@@ -291,3 +293,4 @@ The following table provides the mapping for candidate Pydantic model fields des
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.3 | 2026-06-12 | Agent | Update to incorporate Batch 5 comments (transition gates counts, verbose test tracebacks, safe edit diffs, scaffold schemas) |
+| 1.4 | 2026-06-12 | Agent | Resolved QA NOGO verification feedback (flattened DTOs, presenter routing, separate presentation_category, test suite impact) |
