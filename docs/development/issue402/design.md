@@ -194,6 +194,23 @@ def get_text_content(result: ToolResult) -> str:
     raise ValueError("No text content found in ToolResult")
 ```
 All unit tests will be updated to use this helper instead of direct index assertions.
+
+### 3.6. Tool-Specific Optimization Decisions
+
+To maximize token efficiency and robust behavior, the following tool-specific optimizations are applied:
+
+1. **`RunQualityGatesTool` (Dynamic Text Fallback)**:
+   Because the set of active quality gates is dynamic and configurable (via `quality.yaml`), the chat presentation text will be generated dynamically by iterating over the list of executed gates, instead of using a hardcoded template structure.
+
+2. **`SafeEditTool` (Conditional Diff Generation)**:
+   To prevent massive token consumption during routine file edits (where agents usually read the file immediately afterwards anyway), we introduce a `return_diff: bool = False` parameter to the input schema. Diff generation and transmission will be completely bypassed unless this parameter is explicitly set to `True`.
+
+3. **`TemplateValidationTool` (Exposure Clarification)**:
+   The tool is registered and exposed to the server under the public name `validate_template`. We retain the class name `TemplateValidationTool` for design consistency.
+
+4. **`RunTestsTool` (Verbose Traceback Management)**:
+   This tool is already a `StructuredTool`. Complete long tracebacks triggered by the `verbose` option will be stored in the `"failures"` block of the JSON payload. The chat-text fallback will strictly remain a compact summary (`FAILED test_id — short_reason`) to protect the context window.
+
 ## Related Documentation
 - **[docs/development/issue402/research.md][related-1]**
 - **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-2]**

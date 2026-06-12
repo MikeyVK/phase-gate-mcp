@@ -85,7 +85,6 @@ Our MCP server uses a two-tiered tool response model:
 | `DeleteLabelTool` | `label_tools.py` | JSON + Text | `{"success": true, "label": str}` | Confirmation of the deleted label. | |
 | `RemoveLabelsTool` | `label_tools.py` | JSON + Text | `{"issue_number": int, "labels": [str]}` | List of labels removed from the issue. | |
 | `AddLabelsTool` | `label_tools.py` | JSON + Text | `{"issue_number": int, "labels": [str]}` | List of labels added to the issue. | |
-| `DetectLabelDriftTool` | `label_tools.py` | JSON + Text | `{"github_only": [str], "yaml_only": [str], "mismatches": [dict]}` | Overview of drift and discrepancies between local configurations and GitHub labels. | |
 | `ListMilestonesTool` | `milestone_tools.py` | JSON + Text | `{"milestones": [{"number": int, "title": str, "state": str}]}` | List of active milestones and their status. | |
 | `CreateMilestoneTool` | `milestone_tools.py` | JSON + Text | `{"milestone": {"number": int, "title": str, "state": str}}` | Confirmation of the new milestone with its title and due date if applicable. | |
 | `CloseMilestoneTool` | `milestone_tools.py` | JSON + Text | `{"milestone": {"number": int, "title": str, "state": str}}` | Confirmation of the closed milestone. | |
