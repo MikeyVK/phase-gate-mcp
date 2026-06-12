@@ -186,7 +186,10 @@ tools:
 ```
 
 The `TextPresenter` dynamically formats the fallback text by mapping fields from the tool's Pydantic DTO:
-1. **Emoji Prefixing**: It automatically prepends the correct status emoji based on the tool's metadata and execution status (e.g. prepending `✅ ` for successful mutation tools, `❌ ` for failures, `📋 ` for query tools, `🚀 ` for bootstrap tools).
+1. **Emoji Prefixing**: It automatically prepends the correct status emoji based on the tool's metadata and execution status. To make this metadata explicit and avoid implicit conventions:
+   - Every tool class (inheriting from `BaseTool` / `StructuredTool`) declares a class-level attribute `tool_category: ClassVar[str]` (with values like `"mutation"`, `"query"`, `"bootstrap"`, `"admin"`, or `"testing"`).
+   - If execution fails (`success` is False), the presenter always prepends `emoji_failure` (`❌`).
+   - If execution succeeds, the presenter maps the `tool_category` to the corresponding global emoji: `"mutation"`/`"admin"` maps to `emoji_success` (`✅`), `"query"`/`"testing"` maps to `emoji_query` (`📋`), and `"bootstrap"` maps to `emoji_bootstrap` (`🚀`).
 2. **Default Failure Handling**: If a tool execution fails and does not define a custom `template_failure` in the configuration, the presenter automatically falls back to rendering the `default_failure_template` (`Failed: {error_message}`).
 3. **Advisory Resolution**: If the tool config defines an `advisory` key, the presenter resolves the advisory text from the global advisories lookup and appends it.
 4. **Conditional JSON Reference**: It dynamically appends the standard JSON reference `*(Full details available in the structured JSON payload)*` under the following conditions:

@@ -133,13 +133,13 @@ To define JSON schemas for tool output data, we consider two options:
 ## Approved Strategy
 
 ### Boundary / consumer scope
-All MCP tools in `mcp_server/tools/` except `HealthCheckTool` and `RestartServerTool`.
+All MCP tools in `mcp_server/tools/` without exception (including admin, health, and signal tools such as `HealthCheckTool` and `RestartServerTool` to ensure 100% uniformity and avoid custom python formatters/circular logic).
 
 ### Selected strategy
-Option B: Pydantic-defined schemas for tool outputs, with migration of all remaining tools to `StructuredTool`.
+Option B: Pydantic-defined schemas for tool outputs, with migration of all tools to `StructuredTool`.
 
 ### Rationale
-Provides explicit boundary validation, preventing drift and ensuring client compatibility without violating SRP/CQS.
+Provides explicit boundary validation, preventing drift and ensuring client compatibility without violating SRP/CQS. Migrating all tools guarantees architectural consistency and a single presentation flow.
 
 ### Constraints for later phases
 - Do not instantiate outputs inside `execute_structured` directly if they bypass defined schema models.
