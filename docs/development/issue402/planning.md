@@ -1,16 +1,16 @@
 <!-- docs\development\issue402\planning.md -->
-<!-- template=planning version=130ac5ea created=2026-06-12T19:42Z updated= -->
+<!-- template=planning version=130ac5ea created=2026-06-12T19:45Z updated= -->
 # Planning — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-06-12
 
 ---
 
 ## Purpose
 
-Slice the implementation of Issue #402 into 8 manageable cycles for TDD execution.
+Slice the implementation of Issue #402 into 9 manageable cycles for TDD execution.
 
 ## Scope
 
@@ -40,24 +40,21 @@ Plan for migrating all active MCP tools to return Pydantic DTOs alongside declar
 ---
 
 ## TDD Cycles
-## TDD Cycles
-
 
 ### Cycle 1: Core Presenter & Infrastructure
 
 **Goal:** Build the base DTO schemas, global presentation.yaml config, TextPresenter logic, fail-fast template validation, and pytest helper.
 
 **Deliverables:**
-- `D1.1`: Base output schemas in `tool_outputs.py` and global `presentation.yaml` config
-- `D1.2`: `TextPresenter` implementation and `validate_presentation_alignment` drift validator
-- `D1.3`: `assert_structured_tool_result` pytest helper
+- **[D1.1]** Base output schemas in `tool_outputs.py` and global `presentation.yaml` config (File: `mcp_server/schemas/tool_outputs.py`)
+- **[D1.2]** `TextPresenter` implementation and `validate_presentation_alignment` drift validator (File: `mcp_server/presenters/text_presenter.py`)
+- **[D1.3]** `assert_structured_tool_result` pytest helper (File: `tests/mcp_server/test_support.py`)
 
 **Tests:**
-- tests/mcp_server/unit/test_presenter.py
+- `tests/mcp_server/unit/test_presenter.py`
 
-**Success Criteria:**
+**Success/Exit Criteria:**
 TextPresenter and startup validator pass all unit tests.
-
 
 
 ### Cycle 2: Batch 1 (Admin, Health & Cycle Tools)
@@ -65,16 +62,14 @@ TextPresenter and startup validator pass all unit tests.
 **Goal:** Migrate HealthCheckTool, RestartServerTool, TransitionCycleTool, and ForceCycleTransitionTool to StructuredTool with DTOs and configs.
 
 **Deliverables:**
-- `D2.1`: Migration of `HealthCheckTool` and `RestartServerTool`
-- `D2.2`: Migration of `TransitionCycleTool` and `ForceCycleTransitionTool`
+- **[D2.1]** Migration of HealthCheckTool, RestartServerTool, TransitionCycleTool, and ForceCycleTransitionTool.
 
 **Tests:**
-- tests/mcp_server/unit/tools/test_cycle_tools.py
-- tests/mcp_server/unit/tools/test_health_tools.py
+- `tests/mcp_server/unit/tools/test_cycle_tools.py`
+- `tests/mcp_server/unit/tools/test_health_tools.py`
 
-**Success Criteria:**
+**Success/Exit Criteria:**
 All Batch 1 tools return Pydantic DTOs and compact text fallbacks, verified by assert_structured_tool_result.
-
 
 
 ### Cycle 3: Batch 2 (Discovery & Project Tools)
@@ -82,102 +77,102 @@ All Batch 1 tools return Pydantic DTOs and compact text fallbacks, verified by a
 **Goal:** Migrate all search, project, and context tools to StructuredTool with flattened DTOs.
 
 **Deliverables:**
-- `D3.1`: Migration of `SearchDocumentationTool` and `GetWorkContextTool`
-- `D3.2`: Migration of `InitializeProjectTool` and `GetProjectPlanTool`
-- `D3.3`: Migration of `SavePlanningDeliverablesTool` and `UpdatePlanningDeliverablesTool`
+- **[D3.1]** Migration of Discovery, Search, and Project tools (Batch 2).
 
 **Tests:**
-- tests/mcp_server/unit/tools/test_discovery_tools.py
+- `tests/mcp_server/unit/tools/test_discovery_tools.py`
 
-**Success Criteria:**
+**Success/Exit Criteria:**
 All Discovery & Project tools return Pydantic DTOs and match templates in presentation.yaml.
 
 
+### Cycle 4: Batch 3a (Git Analysis & Info Tools)
 
-### Cycle 4: Batch 3 (Git Analysis & Mutation Tools)
-
-**Goal:** Migrate all Git List, Diff, Parent, Merge Check, Create Branch, Status, Commit, Restore, Checkout, Push, Merge, Delete, Stash, Fetch, and Pull tools.
+**Goal:** Migrate Git list, diff, parent, merge check, and status tools.
 
 **Deliverables:**
-- `D4.1`: Migration of Git List, Diff, Parent, Merge Check, and Create Branch tools
-- `D4.2`: Migration of Git Status, Commit, Restore, and Checkout tools
-- `D4.3`: Migration of Git Push, Merge, Delete, Stash, Fetch, and Pull tools
+- **[D4.1]** Migration of Git status, list, diff, parent, and merge check tools.
 
 **Tests:**
-- tests/mcp_server/unit/tools/test_git_tools.py
+- `tests/mcp_server/unit/tools/test_git_tools.py`
 
-**Success Criteria:**
-All Git tools return Pydantic DTOs, and git_status/git_restore/git_list_branches templates are fully compatible with string.Formatter.
+**Success/Exit Criteria:**
+Git status, list, diff, parent, and merge check tools migrated and return DTOs.
 
 
+### Cycle 5: Batch 3b (Git Mutation & Action Tools)
 
-### Cycle 5: Batch 4a (GitHub Issues & PRs)
+**Goal:** Migrate Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools.
+
+**Deliverables:**
+- **[D5.1]** Migration of Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools.
+
+**Tests:**
+- `tests/mcp_server/unit/tools/test_git_tools.py`
+
+**Success/Exit Criteria:**
+Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools migrated.
+
+
+### Cycle 6: Batch 4a (GitHub Issues & PRs)
 
 **Goal:** Move read models to github_models.py and migrate Issue and PR tools.
 
 **Deliverables:**
-- `D5.1`: Move read models to `github_models.py`
-- `D5.2`: Migration of Issue creation, retrieval, updating, closing, and listing tools
-- `D5.3`: Migration of PR submission, retrieval, merging, and listing tools
+- **[D6.1]** Move read models to `github_models.py` and migrate Issue and PR tools (File: `mcp_server/schemas/github_models.py`).
 
 **Tests:**
-- tests/mcp_server/unit/tools/test_issue_tools.py
-- tests/mcp_server/unit/tools/test_pr_tools.py
+- `tests/mcp_server/unit/tools/test_issue_tools.py`
+- `tests/mcp_server/unit/tools/test_pr_tools.py`
 
-**Success Criteria:**
+**Success/Exit Criteria:**
 GitHub Issues and PR tools successfully migrated and return flattened DTO presentation fields.
 
 
-
-### Cycle 6: Batch 4b (GitHub Labels & Milestones)
+### Cycle 7: Batch 4b (GitHub Labels & Milestones)
 
 **Goal:** Migrate GitHub Label and Milestone tools.
 
 **Deliverables:**
-- `D6.1`: Migration of Label list, create, delete, add, and remove tools
-- `D6.2`: Migration of Milestone list, create, and close tools
+- **[D7.1]** Migration of GitHub Label and Milestone tools.
 
 **Tests:**
-- tests/mcp_server/unit/tools/test_label_tools.py
-- tests/mcp_server/unit/tools/test_milestone_tools.py
+- `tests/mcp_server/unit/tools/test_label_tools.py`
+- `tests/mcp_server/unit/tools/test_milestone_tools.py`
 
-**Success Criteria:**
+**Success/Exit Criteria:**
 GitHub Labels and Milestones tools successfully migrated and return flattened DTO presentation fields.
 
 
-
-### Cycle 7: Batch 5 (Phase, Scaffold, Quality & Testing Tools)
+### Cycle 8: Batch 5 (Phase, Scaffold, Quality & Testing Tools)
 
 **Goal:** Migrate transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
 
 **Deliverables:**
-- `D7.1`: Migration of `TransitionPhaseTool` and `ForcePhaseTransitionTool`
-- `D7.2`: Migration of `ScaffoldArtifactTool` and `ScaffoldSchemaTool`
-- `D7.3`: Migration of `RunQualityGatesTool` and `RunTestsTool`
-- `D7.4`: Migration of `SafeEditTool` and `TemplateValidationTool`
+- **[D8.1]** Migration of transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
 
 **Tests:**
-- tests/mcp_server/unit/tools/test_test_tools.py
-- tests/mcp_server/unit/tools/test_safe_edit_tool.py
+- `tests/mcp_server/unit/tools/test_test_tools.py`
+- `tests/mcp_server/unit/tools/test_safe_edit_tool.py`
 
-**Success Criteria:**
-Batch 7 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally.
+**Success/Exit Criteria:**
+Batch 8 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally. If tests fail and verbose=False, post_tool_instruction recommends running with verbose=True.
 
 
-
-### Cycle 8: Validation, Quality Gates, and Cleanup
+### Cycle 9: Validation, Quality Gates, and Cleanup
 
 **Goal:** Perform full test suite run and ruff quality gate checks on the entire changed codebase.
 
 **Deliverables:**
-- `D8.1`: Green full test suite run and clean quality gates check
+- **[D9.1]** Green full test suite run and clean quality gates check.
 
 **Tests:**
-- run_tests(scope='full')
-- run_quality_gates(scope='branch')
+- Run full test suite: `pytest`
+- Run quality gates: `ruff check` and type checks
 
-**Success Criteria:**
+**Success/Exit Criteria:**
 All 2880+ tests pass, and quality gates pass with zero lint or typing violations.
+
 ---
 
 ## Risks & Mitigation
@@ -192,9 +187,9 @@ All 2880+ tests pass, and quality gates pass with zero lint or typing violations
 ## Milestones
 
 - Cycle 1 Complete: present presenter architecture to user.
-- Cycle 4 Complete: check Git tools.
-- Cycle 7 Complete: check Batch 5 tools.
-- Cycle 8 Complete: ready for QA PR.
+- Cycle 5 Complete: check Git tools.
+- Cycle 8 Complete: check Batch 5 tools.
+- Cycle 9 Complete: ready for QA PR.
 
 ## Related Documentation
 - **[docs/development/issue402/research.md][related-1]**
@@ -212,3 +207,4 @@ All 2880+ tests pass, and quality gates pass with zero lint or typing violations
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-12 | Agent | Initial draft |
+| 1.1 | 2026-06-12 | Agent | Refined cycles and deliverables to 9 sequential TDD cycles |

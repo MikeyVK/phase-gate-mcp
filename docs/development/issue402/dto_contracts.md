@@ -33,19 +33,43 @@ global:
 
 ---
 
-## Shared Base Schema
+## Shared Base Schemas
 
 Every DTO schema inherits from `BaseToolOutput` to enforce immutability, disallow extra fields, and guarantee a unified structure for error handling and agent instruction propagation.
 
 ```python
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
+from mcp_server.state.github_read_models import PRReadModel, IssueReadModel, MilestoneReadModel
 
 class BaseToolOutput(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     success: bool = True
     error_message: str | None = None
     post_tool_instruction: str | None = None
+
+class GitHubObjectOutput(BaseToolOutput):
+    """Base class for GitHub resources that have a number and title."""
+    number: int
+    title: str
+
+class GateTransitionOutput(BaseToolOutput):
+    """Base class for workflows verifying gates during phase or cycle transitions."""
+    branch: str
+    passing_gates: list[str] = []
+    skipped_gates: list[str] = []
+    passing_gates_count: int = 0
+    skipped_gates_count: int = 0
+
+class GitFetchPullOutput(BaseToolOutput):
+    """Base class for Git remote operations returning output."""
+    remote: str
+    raw_output: str
+
+class BranchPairOutput(BaseToolOutput):
+    """Base class for Git operations comparing or merging two branches."""
+    source_branch: str
+    target_branch: str
 ```
 
 ---
@@ -96,47 +120,28 @@ class BaseToolOutput(BaseModel):
     advisory: "server_restart"
   ```
 
-### 3. TransitionCycleTool
+### 3. TransitionCycleTool & ForceCycleTransitionTool
 
-* **DTO (`CycleTransitionOutput`):**
+* **DTOs (`CycleTransitionOutput`, `ForceCycleTransitionOutput`):**
   ```python
-  class CycleTransitionOutput(BaseToolOutput):
-      branch: str
+  class CycleTransitionOutput(GateTransitionOutput):
       from_cycle: int | None = None
       to_cycle: int
       total_cycles: int
       cycle_name: str
-      passed_gates: list[str] = []
-      passed_gates_count: int = 0
+
+  class ForceCycleTransitionOutput(CycleTransitionOutput):
+      skip_reason: str
+      human_approval: str
   ```
 * **YAML Config:**
   ```yaml
   transition_cycle:
-    template_success: "Transitioned to TDD Cycle {to_cycle}/{total_cycles}: {cycle_name} on branch '{branch}' (Passed gates: {passed_gates_count})."
+    template_success: &cycle_transition_template "Transitioned to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     advisory: "context_reset"
-  ```
 
-### 4. ForceCycleTransitionTool
-
-* **DTO (`ForceCycleTransitionOutput`):**
-  ```python
-  class ForceCycleTransitionOutput(BaseToolOutput):
-      branch: str
-      from_cycle: int
-      to_cycle: int
-      total_cycles: int
-      cycle_name: str
-      skip_reason: str
-      human_approval: str
-      skipped_gates: list[str] = []
-      passing_gates: list[str] = []
-      skipped_gates_count: int = 0
-      passing_gates_count: int = 0
-  ```
-* **YAML Config:**
-  ```yaml
   force_cycle_transition:
-    template_success: "Forced transition to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    template_success: *cycle_transition_template
     advisory: "context_reset"
   ```
 
@@ -251,10 +256,10 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   save_planning_deliverables:
-    template_success: "Planning deliverables saved for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
+    template_success: &planning_success_template "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
 
   update_planning_deliverables:
-    template_success: "Planning deliverables updated for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
+    template_success: *planning_success_template
   ```
 
 ---
@@ -286,9 +291,7 @@ class BaseToolOutput(BaseModel):
 
 * **DTO (`GitDiffOutput`):**
   ```python
-  class GitDiffOutput(BaseToolOutput):
-      target_branch: str
-      source_branch: str
+  class GitDiffOutput(BranchPairOutput):
       stats: str
       files_changed: int | None = None
       insertions: int | None = None
@@ -442,9 +445,8 @@ class BaseToolOutput(BaseModel):
 
 * **DTO (`GitMergeOutput`):**
   ```python
-  class GitMergeOutput(BaseToolOutput):
-      source_branch: str
-      target_branch: str
+  class GitMergeOutput(BranchPairOutput):
+      pass
   ```
 * **YAML Config:**
   ```yaml
@@ -482,34 +484,24 @@ class BaseToolOutput(BaseModel):
     template_success: "Stash action '{action}' executed successfully."
   ```
 
-### 14. GitFetchTool
+### 14. GitFetchTool & GitPullTool
 
-* **DTO (`GitFetchOutput`):**
+* **DTOs (`GitFetchOutput`, `GitPullOutput`):**
   ```python
-  class GitFetchOutput(BaseToolOutput):
-      remote: str
+  class GitFetchOutput(GitFetchPullOutput):
       prune: bool
-      raw_output: str
+
+  class GitPullOutput(GitFetchPullOutput):
+      rebase: bool
   ```
 * **YAML Config:**
   ```yaml
   git_fetch:
     template_success: "Fetched updates from remote '{remote}'."
-  ```
 
-### 15. GitPullTool
-
-* **DTO (`GitPullOutput`):**
-  ```python
-  class GitPullOutput(BaseToolOutput):
-      remote: str
-      rebase: bool
-      raw_output: str
-  ```
-* **YAML Config:**
-  ```yaml
   git_pull:
     template_success: "Pulled updates from remote '{remote}'."
+    advisory: "branch_lockdown"
   ```
 
 ---
@@ -520,13 +512,9 @@ class BaseToolOutput(BaseModel):
 
 * **Shared DTO (`IssueOutput`):**
   ```python
-  from mcp_server.state.github_read_models import IssueReadModel
-
-  class IssueOutput(BaseToolOutput):
+  class IssueOutput(GitHubObjectOutput):
       issue: IssueReadModel
       # Flattened presentation-friendly fields
-      number: int
-      title: str
       state: str
       milestone_title: str = "None"
       assignees_summary: str = "Unassigned"
@@ -535,10 +523,10 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   create_issue:
-    template_success: "Created issue #{number}: {title}.\nURL: {html_url}"
+    template_success: &issue_success_template "Issue #{number}: {title}.\nURL: {html_url}"
 
   update_issue:
-    template_success: "Updated issue #{number} successfully.\nURL: {html_url}"
+    template_success: *issue_success_template
 
   get_issue:
     template_success: |
@@ -579,33 +567,25 @@ class BaseToolOutput(BaseModel):
 
 * **Shared DTO (`PROutput`):**
   ```python
-  from mcp_server.state.github_read_models import PRReadModel
-
-  class PROutput(BaseToolOutput):
+  class PROutput(GitHubObjectOutput):
       pull_request: PRReadModel
       # Flattened presentation fields
-      number: int
-      title: str
       html_url: str
       base_ref: str
       head_ref: str
   ```
 * **YAML Config:**
   ```yaml
-  submit_pr:
-    template_success: |
-      Submitted PR #{number}: {title}.
-      URL: {html_url}
-      - Target: {base_ref}
-      - Source: {head_ref}
-    advisory: "branch_lockdown"
-
   get_pr:
-    template_success: |
-      Retrieved PR #{number}: {title}.
+    template_success: &pr_detail_template |
+      PR #{number}: {title}
       URL: {html_url}
       - Target: {base_ref}
       - Source: {head_ref}
+
+  submit_pr:
+    template_success: *pr_detail_template
+    advisory: "branch_lockdown"
   ```
 
 ### 5. MergePRTool
@@ -698,8 +678,6 @@ class BaseToolOutput(BaseModel):
 
 * **DTO (`ListMilestonesOutput`):**
   ```python
-  from mcp_server.state.github_read_models import MilestoneReadModel
-
   class ListMilestonesOutput(BaseToolOutput):
       total_milestones: int
       milestones: list[MilestoneReadModel] = []
@@ -714,19 +692,16 @@ class BaseToolOutput(BaseModel):
 
 * **Shared DTO (`MilestoneOutput`):**
   ```python
-  class MilestoneOutput(BaseToolOutput):
+  class MilestoneOutput(GitHubObjectOutput):
       milestone: MilestoneReadModel
-      # Flattened presentation fields
-      title: str
-      number: int
   ```
 * **YAML Config:**
   ```yaml
   create_milestone:
-    template_success: "Created milestone '{title}' (Number: #{number})."
+    template_success: &milestone_success_template "Milestone '{title}' (Number: #{number})."
 
   close_milestone:
-    template_success: "Closed milestone '{title}' (Number: #{number}) successfully."
+    template_success: *milestone_success_template
   ```
 
 ---
@@ -735,25 +710,24 @@ class BaseToolOutput(BaseModel):
 
 ### 1. TransitionPhaseTool & ForcePhaseTransitionTool
 
-* **Shared DTO (`PhaseTransitionOutput`):**
+* **DTOs (`PhaseTransitionOutput`, `ForcePhaseTransitionOutput`):**
   ```python
-  class PhaseTransitionOutput(BaseToolOutput):
-      branch: str
+  class PhaseTransitionOutput(GateTransitionOutput):
       from_phase: str
       to_phase: str
-      skipped_gates: list[str] = []
-      passing_gates: list[str] = []
-      skipped_gates_count: int = 0
-      passing_gates_count: int = 0
+
+  class ForcePhaseTransitionOutput(PhaseTransitionOutput):
+      skip_reason: str
+      human_approval: str
   ```
 * **YAML Config:**
   ```yaml
   transition_phase:
-    template_success: "Transitioned phase successfully on branch '{branch}' from '{from_phase}' to '{to_phase}' (Passed gates: {passing_gates_count})."
+    template_success: &phase_transition_template "Phase transition on branch '{branch}' from '{from_phase}' to '{to_phase}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     advisory: "context_reset"
 
   force_phase_transition:
-    template_success: "Forced phase transition on branch '{branch}' from '{from_phase}' to '{to_phase}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    template_success: *phase_transition_template
     advisory: "context_reset"
   ```
 
