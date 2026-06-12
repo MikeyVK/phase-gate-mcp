@@ -14,5 +14,22 @@
     "skip_reason": null,
     "parent_branch": "main",
     "created_at": "2026-06-11T20:12:19.021292+00:00"
+  },
+  "402": {
+    "issue_title": "tooling: Expose JSON data in MCP tools",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
+    "created_at": "2026-06-12T05:42:13.646251+00:00"
   }
 }
