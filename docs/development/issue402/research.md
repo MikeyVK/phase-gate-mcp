@@ -52,61 +52,59 @@ Our MCP server uses a two-tiered tool response model:
 - **`StructuredTool` / `StructuredTool.execute_structured`:** Returns a tuple `(data_dict, summary_text)`. The base class maps this to `ToolResult.json_data(data_dict, text=summary_text)`, creating two content blocks: `content[0]` of type `"json"`, and `content[1]` of type `"text"`. The server's `convert_tool_result_to_mcp_result` extracts the JSON block to `CallToolResult.structuredContent` and leaves the text fallback block in `CallToolResult.content`.
 
 ### 2. Comprehensive Tool-by-Tool Analysis
-The following table lists all 51 tools in the codebase, assessing whether they should produce JSON, the available data, and the designed chat presentation text:
-
-| Tool Class | File | Target Output | Available Data | Designed Chat Text | Exclusion Rationale / Notes |
+| Tool Class | File | Target Output | Available Data | Text Fallback Focus | Exclusion Rationale / Notes |
 |---|---|---|---|---|---|
-| `RestartServerTool` | `admin_tools.py` | Excluded | None | `Server restarting...` | Signal tool; no domain data. |
-| `TransitionCycleTool` | `cycle_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_cycle": str, "new_cycle": str}` | `Transitioned cycle on branch {branch} from {old} to {new}.` | |
-| `ForceCycleTransitionTool` | `cycle_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_cycle": str, "new_cycle": str}` | `Force transitioned cycle on branch {branch} from {old} to {new}.` | |
-| `SearchDocumentationTool` | `discovery_tools.py` | JSON + Text | `{"query": str, "results": [{"title": str, "path": str, "score": float, "snippet": str}]}` | List of found doc results. | |
-| `GetWorkContextTool` | `discovery_tools.py` | JSON + Text | *Already Structured* | Renders context. | Structured in #390. |
-| `GitListBranchesTool` | `git_analysis_tools.py` | JSON + Text | `{"branches": [str], "current_branch": str}` | List of branches. | |
-| `GitDiffTool` | `git_analysis_tools.py` | JSON + Text | `{"target_branch": str, "source_branch": str, "stats": str}` | Diff statistics. | |
-| `GitFetchTool` | `git_fetch_tool.py` | JSON + Text | `{"success": true, "remote": str}` | `Fetched remote {remote}.` | |
-| `GitPullTool` | `git_pull_tool.py` | JSON + Text | `{"success": true, "remote": str, "branch": str}` | `Pulled from {remote}/{branch}.` | |
-| `CreateBranchTool` | `git_tools.py` | JSON + Text | `{"success": true, "branch_name": str, "base_branch": str}` | `Created branch {branch_name} from {base_branch}.` | |
-| `GitStatusTool` | `git_tools.py` | JSON + Text | `{"branch": str, "is_clean": bool, "modified_files": [str], "untracked_files": [str]}` | Branch status details. | |
-| `GitCommitTool` | `git_tools.py` | JSON + Text | `{"sha": str, "branch": str, "message": str, "files": [str]}` | Commit details. | |
-| `GitRestoreTool` | `git_tools.py` | JSON + Text | `{"success": true, "files": [str]}` | `Restored files: ...` | |
-| `GitCheckoutTool` | `git_tools.py` | JSON + Text | `{"branch": str}` | `Checked out {branch}.` | |
-| `GitPushTool` | `git_tools.py` | JSON + Text | `{"success": true, "remote": str, "branch": str}` | `Pushed to {remote}/{branch}.` | |
-| `GitMergeTool` | `git_tools.py` | JSON + Text | `{"success": true, "merge_sha": str}` | `Merged successfully.` | |
-| `GitDeleteBranchTool` | `git_tools.py` | JSON + Text | `{"success": true, "branch": str}` | `Deleted branch {branch}.` | |
-| `GitStashTool` | `git_tools.py` | JSON + Text | `{"success": true, "action": str}` | `Stashed changes.` | |
-| `GetParentBranchTool` | `git_tools.py` | JSON + Text | `{"branch": str, "parent_branch": str}` | `Parent branch is {parent_branch}.` | |
-| `CheckMergeTool` | `git_tools.py` | JSON + Text | `{"target_branch": str, "source_branch": str, "is_ancestor": bool}` | `Branch is merged: {is_ancestor}` | |
-| `HealthCheckTool` | `health_tools.py` | Excluded | None | `OK` | Standard ping tool; no complex data. |
-| `CreateIssueTool` | `issue_tools.py` | JSON + Text | `{"issue": {"number": int, "title": str, "state": str, "labels": [str]}}` | `Created issue #{number}: {title}` | |
-| `GetIssueTool` | `issue_tools.py` | JSON + Text | *Already Structured* | Issue details. | Structured in #390. |
-| `ListIssuesTool` | `issue_tools.py` | JSON + Text | `{"issues": [{"number": int, "title": str, "state": str}]}` | List of issues. | |
-| `UpdateIssueTool` | `issue_tools.py` | JSON + Text | `{"issue": {"number": int, "title": str, "state": str}}` | `Updated issue #{number}` | |
-| `CloseIssueTool` | `issue_tools.py` | JSON + Text | `{"issue_number": int, "success": bool}` | `Closed issue #{issue_number}` | |
-| `ListLabelsTool` | `label_tools.py` | JSON + Text | `{"labels": [{"name": str, "color": str, "description": str}]}` | List of labels. | |
-| `CreateLabelTool` | `label_tools.py` | JSON + Text | `{"label": {"name": str, "color": str}}` | `Created label {name}` | |
-| `DeleteLabelTool` | `label_tools.py` | JSON + Text | `{"success": true, "label": str}` | `Deleted label {label}` | |
-| `RemoveLabelsTool` | `label_tools.py` | JSON + Text | `{"issue_number": int, "labels": [str]}` | `Removed labels from #{issue_number}` | |
-| `AddLabelsTool` | `label_tools.py` | JSON + Text | `{"issue_number": int, "labels": [str]}` | `Added labels to #{issue_number}` | |
-| `DetectLabelDriftTool` | `label_tools.py` | JSON + Text | `{"github_only": [str], "yaml_only": [str], "mismatches": [dict]}` | Label drift report. | |
-| `ListMilestonesTool` | `milestone_tools.py` | JSON + Text | `{"milestones": [{"number": int, "title": str, "state": str}]}` | List of milestones. | |
-| `CreateMilestoneTool` | `milestone_tools.py` | JSON + Text | `{"milestone": {"number": int, "title": str, "state": str}}` | `Created milestone {title}` | |
-| `CloseMilestoneTool` | `milestone_tools.py` | JSON + Text | `{"milestone": {"number": int, "title": str, "state": str}}` | `Closed milestone {title}` | |
-| `TransitionPhaseTool` | `phase_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_phase": str, "new_phase": str}` | Phase transition report. | |
-| `ForcePhaseTransitionTool` | `phase_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_phase": str, "new_phase": str, "skip_reason": str}` | Force transition report. | |
-| `ListPRsTool` | `pr_tools.py` | JSON + Text | `{"pull_requests": [{"number": int, "title": str, "state": str}]}` | List of PRs. | |
-| `MergePRTool` | `pr_tools.py` | JSON + Text | `{"success": true, "pr_number": int}` | `Merged pull request #{pr_number}` | |
-| `GetPRTool` | `pr_tools.py` | JSON + Text | *Already Structured* | PR details. | Structured in #390. |
-| `SubmitPRTool` | `pr_tools.py` | JSON + Text | `{"pull_request": {"number": int, "title": str, "state": str}}` | `Submitted pull request #{number}` | |
-| `InitializeProjectTool` | `project_tools.py` | JSON + Text | *Already Structured* | Project initialization. | Structured in #390. |
-| `GetProjectPlanTool` | `project_tools.py` | JSON + Text | *Already Structured* | Project plan. | Structured in #390. |
-| `SavePlanningDeliverablesTool` | `project_tools.py` | JSON + Text | *Already Structured* | Deliverables saved. | Structured in #390. |
-| `UpdatePlanningDeliverablesTool` | `project_tools.py` | JSON + Text | *Already Structured* | Deliverables updated. | Structured in #390. |
-| `RunQualityGatesTool` | `quality_tools.py` | JSON + Text | `{"overall_pass": bool, "gates": [dict]}` | Quality gates summary. | Currently custom dual-result. |
-| `SafeEditTool` | `safe_edit_tool.py` | JSON + Text | `{"passed": bool, "issues": str, "diff": str}` | Edit result details. | |
-| `ScaffoldArtifactTool` | `scaffold_artifact.py` | JSON + Text | *Already Structured* | Scaffold summary. | Structured in #390. |
-| `ScaffoldSchemaTool` | `scaffold_schema_tool.py` | JSON + Text | *Already Structured* | Schema output. | Structured in #390. |
-| `TemplateValidationTool` | `template_validation_tool.py` | JSON + Text | `{"passed": bool, "issues": [{"severity": str, "message": str}]}` | Template validation details. | |
-| `RunTestsTool` | `test_tools.py` | JSON + Text | `{"exit_code": int, "summary": dict}` | Tests summary. | Currently custom dual-result. |
+| `RestartServerTool` | `admin_tools.py` | Excluded | None | N/A | Signal tool; no domain data. |
+| `TransitionCycleTool` | `cycle_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_cycle": str, "new_cycle": str}` | Samenvatting van de transitie inclusief branch-naam, oude en nieuwe cycle-fase. | |
+| `ForceCycleTransitionTool` | `cycle_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_cycle": str, "new_cycle": str}` | Samenvatting van de geforceerde transitie inclusief branch-naam, oude en nieuwe cycle-fase. | |
+| `SearchDocumentationTool` | `discovery_tools.py` | JSON + Text | `{"query": str, "results": [{"title": str, "path": str, "score": float, "snippet": str}]}` | Lijst met titels, paden en scores van relevante gevonden documentatie-overeenkomsten. | |
+| `GetWorkContextTool` | `discovery_tools.py` | JSON + Text | *Already Structured* | Gestructureerd overzicht van de huidige actieve branch, fase en taakcontext. | Structured in #390. |
+| `GitListBranchesTool` | `git_analysis_tools.py` | JSON + Text | `{"branches": [str], "current_branch": str}` | Overzicht van alle beschikbare branches en de momenteel actieve branch. | |
+| `GitDiffTool` | `git_analysis_tools.py` | JSON + Text | `{"target_branch": str, "source_branch": str, "stats": str}` | Statistisch overzicht van gewijzigde regels en bestanden tussen de doel- en bronbranch. | |
+| `GitFetchTool` | `git_fetch_tool.py` | JSON + Text | `{"success": true, "remote": str}` | Bevestiging van de bijgewerkte remote en eventueel opgeschoonde branches. | |
+| `GitPullTool` | `git_pull_tool.py` | JSON + Text | `{"success": true, "remote": str, "branch": str}` | Status van de binnengehaalde wijzigingen inclusief remote- en branchnaam. | |
+| `CreateBranchTool` | `git_tools.py` | JSON + Text | `{"success": true, "branch_name": str, "base_branch": str}` | Bevestiging van de nieuw aangemaakte branch en de specifieke bronbranch. | |
+| `GitStatusTool` | `git_tools.py` | JSON + Text | `{"branch": str, "is_clean": bool, "modified_files": [str], "untracked_files": [str]}` | Overzicht van de huidige branch-status en gewijzigde/ongetrackte bestanden. | |
+| `GitCommitTool` | `git_tools.py` | JSON + Text | `{"sha": str, "branch": str, "message": str, "files": [str]}` | Details van de nieuwe commit zoals SHA, branch, commit-bericht en beïnvloede bestanden. | |
+| `GitRestoreTool` | `git_tools.py` | JSON + Text | `{"success": true, "files": [str]}` | Lijst van herstelde bestanden. | |
+| `GitCheckoutTool` | `git_tools.py` | JSON + Text | `{"branch": str}` | Naam van de nieuw actieve branch. | |
+| `GitPushTool` | `git_tools.py` | JSON + Text | `{"success": true, "remote": str, "branch": str}` | Status van de push-operatie inclusief remote- en branchnaam. | |
+| `GitMergeTool` | `git_tools.py` | JSON + Text | `{"success": true, "merge_sha": str}` | Bevestiging van de succesvolle merge en de resulterende commit SHA. | |
+| `GitDeleteBranchTool` | `git_tools.py` | JSON + Text | `{"success": true, "branch": str}` | Bevestiging van de verwijderde branch. | |
+| `GitStashTool` | `git_tools.py` | JSON + Text | `{"success": true, "action": str}` | Status van de stash-operatie en de uitgevoerde actie. | |
+| `GetParentBranchTool` | `git_tools.py` | JSON + Text | `{"branch": str, "parent_branch": str}` | Naam van de actieve branch en de geïdentificeerde parentbranch. | |
+| `CheckMergeTool` | `git_tools.py` | JSON + Text | `{"target_branch": str, "source_branch": str, "is_ancestor": bool}` | Status of de bronbranch volledig is opgenomen (merged) in de doelbranch. | |
+| `HealthCheckTool` | `health_tools.py` | Excluded | None | N/A | Standard ping tool; no complex data. |
+| `CreateIssueTool` | `issue_tools.py` | JSON + Text | `{"issue": {"number": int, "title": str, "state": str, "labels": [str]}}` | Overzicht van het nieuw aangemaakte GitHub-issue, inclusief nummer, titel en labels. | |
+| `GetIssueTool` | `issue_tools.py` | JSON + Text | *Already Structured* | Uitgebreide details van het opgevraagde issue inclusief status, beschrijving en toewijzingen. | Structured in #390. |
+| `ListIssuesTool` | `issue_tools.py` | JSON + Text | `{"issues": [{"number": int, "title": str, "state": str}]}` | Lijst met open/gesloten issues gefilterd op labels of milestone. | |
+| `UpdateIssueTool` | `issue_tools.py` | JSON + Text | `{"issue": {"number": int, "title": str, "state": str}}` | Samenvatting van de gewijzigde issue-eigenschappen en status. | |
+| `CloseIssueTool` | `issue_tools.py` | JSON + Text | `{"issue_number": int, "success": bool}` | Bevestiging dat het specifieke issue is gesloten. | |
+| `ListLabelsTool` | `label_tools.py` | JSON + Text | `{"labels": [{"name": str, "color": str, "description": str}]}` | Overzicht van beschikbare labels met bijbehorende kleuren en beschrijvingen. | |
+| `CreateLabelTool` | `label_tools.py` | JSON + Text | `{"label": {"name": str, "color": str}}` | Details van het nieuw aangemaakte label. | |
+| `DeleteLabelTool` | `label_tools.py` | JSON + Text | `{"success": true, "label": str}` | Bevestiging van het verwijderde label. | |
+| `RemoveLabelsTool` | `label_tools.py` | JSON + Text | `{"issue_number": int, "labels": [str]}` | Lijst van labels die van het issue zijn verwijderd. | |
+| `AddLabelsTool` | `label_tools.py` | JSON + Text | `{"issue_number": int, "labels": [str]}` | Lijst van labels die aan het issue zijn toegevoegd. | |
+| `DetectLabelDriftTool` | `label_tools.py` | JSON + Text | `{"github_only": [str], "yaml_only": [str], "mismatches": [dict]}` | Overzicht van inconsistenties tussen lokale configuratie en GitHub-labels. | |
+| `ListMilestonesTool` | `milestone_tools.py` | JSON + Text | `{"milestones": [{"number": int, "title": str, "state": str}]}` | Lijst met actieve milestones en hun status. | |
+| `CreateMilestoneTool` | `milestone_tools.py` | JSON + Text | `{"milestone": {"number": int, "title": str, "state": str}}` | Bevestiging van de nieuwe milestone met titel en eventuele vervaldatum. | |
+| `CloseMilestoneTool` | `milestone_tools.py` | JSON + Text | `{"milestone": {"number": int, "title": str, "state": str}}` | Bevestiging van de gesloten milestone. | |
+| `TransitionPhaseTool` | `phase_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_phase": str, "new_phase": str}` | Status van de faseovergang inclusief branch-naam, oude fase en nieuwe fase. | |
+| `ForcePhaseTransitionTool` | `phase_tools.py` | JSON + Text | `{"success": true, "branch": str, "old_phase": str, "new_phase": str, "skip_reason": str}` | Details van de geforceerde faseovergang, inclusief branch-naam, oude/nieuwe fase en de reden voor overslaan. | |
+| `ListPRsTool` | `pr_tools.py` | JSON + Text | `{"pull_requests": [{"number": int, "title": str, "state": str}]}` | Overzicht van pull requests en hun actuele status. | |
+| `MergePRTool` | `pr_tools.py` | JSON + Text | `{"success": true, "pr_number": int}` | Bevestiging van de succesvol gemergde pull request. | |
+| `GetPRTool` | `pr_tools.py` | JSON + Text | *Already Structured* | Details van de opgevraagde pull request inclusief status en reviews. | Structured in #390. |
+| `SubmitPRTool` | `pr_tools.py` | JSON + Text | `{"pull_request": {"number": int, "title": str, "state": str}}` | Details van de ingediende pull request met link en PR-nummer. | |
+| `InitializeProjectTool` | `project_tools.py` | JSON + Text | *Already Structured* | Bevestiging van de projectinitialisatie met de gekozen workflow en issues. | Structured in #390. |
+| `GetProjectPlanTool` | `project_tools.py` | JSON + Text | *Already Structured* | Overzicht van de fasen en taken in het projectplan. | Structured in #390. |
+| `SavePlanningDeliverablesTool` | `project_tools.py` | JSON + Text | *Already Structured* | Status van de opgeslagen planning-deliverables. | Structured in #390. |
+| `UpdatePlanningDeliverablesTool` | `project_tools.py` | JSON + Text | *Already Structured* | Status van de bijgewerkte planning-deliverables. | Structured in #390. |
+| `RunQualityGatesTool` | `quality_tools.py` | JSON + Text | `{"overall_pass": bool, "gates": [dict]}` | Samenvatting van de uitgevoerde kwaliteitspoortjes en of deze zijn behaald. | Currently custom dual-result. |
+| `SafeEditTool` | `safe_edit_tool.py` | JSON + Text | `{"passed": bool, "issues": str, "diff": str}` | Resultaat van de bestandswijziging, inclusief diff-preview en eventuele validatiefouten. | |
+| `ScaffoldArtifactTool` | `scaffold_artifact.py` | JSON + Text | *Already Structured* | Bevestiging van de gegenereerde bestanden en hun template-type. | Structured in #390. |
+| `ScaffoldSchemaTool` | `scaffold_schema_tool.py` | JSON + Text | *Already Structured* | Gestructureerd schema voor het opgegeven artifact-type. | Structured in #390. |
+| `TemplateValidationTool` | `template_validation_tool.py` | JSON + Text | `{"passed": bool, "issues": [{"severity": str, "message": str}]}` | Rapport van de sjabloonvalidatie met eventuele waarschuwingen of fouten. | |
+| `RunTestsTool` | `test_tools.py` | JSON + Text | `{"exit_code": int, "summary": dict}` | Samenvatting van de testresultaten inclusief het aantal geslaagde/mislukte tests en de exitcode. | Currently custom dual-result. |
 
 ### 3. JSON Schema Options & Architecture Principles
 To define JSON schemas for tool output data, we consider two options:
