@@ -47,7 +47,7 @@ Plan for migrating all active MCP tools to return Pydantic DTOs alongside declar
 
 **Deliverables:**
 - **[D1.1]** Base output schemas in `tool_outputs.py` and global `presentation.yaml` config (File: `mcp_server/schemas/tool_outputs.py`)
-- **[D1.2]** `TextPresenter` implementation and `validate_presentation_alignment` drift validator (File: `mcp_server/presenters/text_presenter.py`)
+- **[D1.2]** `TextPresenter` implementation and `validate_presentation_alignment` drift validator, verifying that YAML anchors and aliases are parsed and resolved safely (File: `mcp_server/presenters/text_presenter.py`)
 - **[D1.3]** `assert_structured_tool_result` pytest helper (File: `tests/mcp_server/test_support.py`)
 - **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types (File: `mcp_server/tools/base.py`)
 - **[D1.5]** Add `presentation_config: PresentationConfig` to `ConfigLayer` in `bootstrap.py` and implement parsing in `ConfigLoader` (Files: `mcp_server/config/loader.py`, `mcp_server/bootstrap.py`)
@@ -231,4 +231,4 @@ All 2880+ tests pass, and quality gates pass with zero lint or typing violations
 |---------|------|--------|---------|
 | 1.0 | 2026-06-12 | Agent | Initial draft |
 | 1.1 | 2026-06-12 | Agent | Refined cycles and deliverables to 9 sequential TDD cycles |
-| 1.2 | 2026-06-12 | Agent | Translated test suite strategy to English, resolved QA blockers and warnings |
+| 1.2 | 2026-06-12 | Agent | Resolved QA blockers, warnings, and added YAML anchor parsing verification |

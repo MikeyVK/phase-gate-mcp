@@ -49,7 +49,7 @@
               },
               {
                 "id": "D1.2",
-                "description": "TextPresenter implementation and validate_presentation_alignment drift validator",
+                "description": "TextPresenter implementation and validate_presentation_alignment drift validator, verifying that YAML anchors and aliases are parsed and resolved safely",
                 "validates": {
                   "type": "file_exists",
                   "file": "mcp_server/presenters/text_presenter.py"

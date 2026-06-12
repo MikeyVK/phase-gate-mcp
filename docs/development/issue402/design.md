@@ -213,7 +213,7 @@ In compliance with `ARCHITECTURE_PRINCIPLES.md` §12:
 
 #### Fail-Fast Drift Validation:
 At server startup (within `ConfigValidator().validate_startup`) and within the unit test suite, `validate_presentation_alignment` will:
-1. Parse all placeholder keys from `presentation.yaml` templates using `string.Formatter().parse()`.
+1. Parse all placeholder keys from `presentation.yaml` templates using `string.Formatter().parse()`. The parser uses `yaml.safe_load()` which automatically and safely resolves YAML anchors and aliases at parse-time, preventing raw string scanning risks, circular references, or injection vulnerabilities.
 2. Verify that every placeholder (except those prefixed with `emoji_`) matches a field defined in the corresponding tool's Pydantic `output_model`.
 3. Raise a `ConfigError` immediately if drift is detected, blocking server start and failing the build.
 ### 3.6. Test Suite Strategy & DRY Reparations
