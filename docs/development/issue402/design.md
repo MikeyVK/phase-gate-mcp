@@ -268,6 +268,35 @@ To ensure no information loss (maintaining 100% data fidelity) while optimizing 
   * JSON: Wraps `MilestoneReadModel`.
   * Text: Compact count or metadata summary.
 
+### 3.8. Text Fallback Formatting Guidelines
+
+To enforce consistency across all MCP tool text responses and prevent implementation agents from introducing ad-hoc formatting styles, all text fallbacks must comply with the following strict guidelines:
+
+1. **Consistent Emoji Usage**:
+   - `✅` (Success): Used for all successful state changes, mutations, and creations (e.g., branch creation, commit, merge, phase transition).
+   - `❌` (Failure): Used for all errors, failed actions, or strict validation rejections.
+   - `⚠️` (Warning): Used for all forced actions, skipped checks, drift warnings, or interactive overrides.
+   - `📋` (Query/Status): Used for all read-only information retrieval, listings, and status checks (e.g., status, list issues, get project plan).
+   - `🚀` (Bootstrap): Exclusively used for project initialization (`initialize_project`).
+
+2. **Standardized JSON Reference**:
+   Whenever details are omitted or summarized in the text fallback to conserve tokens, the text fallback **must** conclude with the exact trailing string:
+   `*(Full details available in the structured JSON payload)*`
+   No variation of this phrase is permitted.
+
+3. **Logical Text Layout**:
+   - **Action/Mutation Results**: Must follow the format:
+     `[Emoji] [Action verb in past tense] [resource] successfully. [Immediate key-details if applicable]. *(Full details available in the structured JSON payload)*`
+     *Example:* `✅ Pushed active branch to remote 'origin/feature/123'.`
+   - **Query/List Results**: Must follow a key-value list structure:
+     `[Emoji] **[Resource Type] List / Status Summary**`
+     `- [Key]: [Value]`
+     `*(Full details available in the structured JSON payload)*`
+     *Example:*
+     `📋 **GitHub Milestones Summary**`
+     `- Total Milestones: 12`
+     `*(Full details available in the structured JSON payload)*`
+
 ## Related Documentation
 - **[docs/development/issue402/research.md][related-1]**
 - **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-2]**
