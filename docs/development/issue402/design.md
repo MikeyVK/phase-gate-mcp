@@ -151,44 +151,47 @@ global:
     query: "📋"
     bootstrap: "🚀"
   json_reference: "*(Full details available in the structured JSON payload)*"
+  default_failure_template: "Failed: {error_message}"
   advisories:
     context_reset: "\n\n🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
     server_restart: "\n\n⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
-    pr_submitted: "\n\n⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
+    branch_lockdown: "\n\n⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
+    todo_discipline: "\n\n📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
 
 tools:
   git_checkout:
-    template: "{emoji_success} Checked out branch '{branch}' successfully."
+    template_success: "Switched branch '{previous_branch}' -> '{branch}' (Current Phase: '{current_phase}')."
     advisory: "context_reset"
-    append_json_reference: false
     
   git_status:
-    template: |
-      {emoji_query} **Git Status Summary**
+    template_success: |
+      **Git Status Summary**
       - Branch: {branch}
       - Clean: {is_clean}
       - Modified: {modified_count} files
       - Untracked: {untracked_count} files
-    append_json_reference: true
 
   health_check:
-    template: "{emoji_success} Server status: {status}."
-    append_json_reference: false
+    template_success: |
+      **Server Health Status**
+      - Status: {status}
+      - Version: {version}
+      - Process ID: {pid}
+      - Platform: {platform}
+      - Uptime: {uptime_seconds} seconds
 
   restart_server:
-    template: "{emoji_success} Server restart initiated successfully."
+    template_success: "Server restart initiated successfully (Reason: {reason})."
     advisory: "server_restart"
-    append_json_reference: false
 ```
 
-The `TextPresenter` dynamically formats the template by mapping the fields from the tool's Pydantic model:
-1. It replaces `{emoji_*}` with global emojis.
-2. It interpolates tool data fields (e.g. `{branch}`).
-3. It appends preconfigured advisories.
-4. It appends the standard JSON reference dynamically:
-   - If `append_json_reference` is statically configured as `true`.
-   - OR if the DTO contains a non-empty `diff` or `has_diff` is true (conditional JSON reference).
-
+The `TextPresenter` dynamically formats the fallback text by mapping fields from the tool's Pydantic DTO:
+1. **Emoji Prefixing**: It automatically prepends the correct status emoji based on the tool's metadata and execution status (e.g. prepending `✅ ` for successful mutation tools, `❌ ` for failures, `📋 ` for query tools, `🚀 ` for bootstrap tools).
+2. **Default Failure Handling**: If a tool execution fails and does not define a custom `template_failure` in the configuration, the presenter automatically falls back to rendering the `default_failure_template` (`Failed: {error_message}`).
+3. **Advisory Resolution**: If the tool config defines an `advisory` key, the presenter resolves the advisory text from the global advisories lookup and appends it.
+4. **Conditional JSON Reference**: It dynamically appends the standard JSON reference `*(Full details available in the structured JSON payload)*` under the following conditions:
+   - If `append_json_reference` is statically configured as `true` in the tool config.
+   - OR dynamically if the DTO contains rich structured data (such as a non-empty `diff`, `failures` list, `validation_schema`, or lists of items). This keeps simple results clean and uncluttered.
 #### Fail-Fast Drift Validation:
 At server startup and within the unit test suite, `validate_presentation_alignment` will:
 1. Parse all placeholder keys from `presentation.yaml` templates using `string.Formatter().parse()`.

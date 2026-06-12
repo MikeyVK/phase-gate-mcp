@@ -4,6 +4,35 @@ This document serves as the Single Source of Truth (SSOT) for the Pydantic DTO c
 
 ---
 
+## Centralized Presentation Configuration (`presentation.yaml`)
+
+To enforce DRY and prevent presentation leakage into the codebase, emojis, default error handlers, advisories, and the structured JSON payload reference are declared centrally:
+
+```yaml
+global:
+  emojis:
+    success: "✅"
+    failure: "❌"
+    warning: "⚠️"
+    query: "📋"
+    bootstrap: "🚀"
+  json_reference: "*(Full details available in the structured JSON payload)*"
+  default_failure_template: "Failed: {error_message}"
+  advisories:
+    context_reset: "\n\n🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
+    server_restart: "\n\n⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
+    branch_lockdown: "\n\n⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
+    todo_discipline: "\n\n📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
+```
+
+### Presentation Rules:
+1. **Status Emoji Prefixes**: Emojis are prepended automatically by the `TextPresenter` based on the status and metadata of the tool execution (`success` is True -> prepend `emoji_success`; `success` is False -> prepend `emoji_failure`; query tools -> prepend `emoji_query`; initialization tools -> prepend `emoji_bootstrap`).
+2. **Default Failure Text**: If a tool fails and does not define a custom `template_failure`, the presenter falls back to the `default_failure_template` (`Failed: {error_message}`), prefixed by the failure emoji.
+3. **Dynamic JSON Reference Appending**: The reference `*(Full details available in the structured JSON payload)*` is appended dynamically by the presenter only when rich structured data (like `diff`, `failures`, `validation_schema`, or lists of items) is present in the DTO, keeping simple messages clean and uncluttered.
+4. **Advisories**: Advisories are resolved from the global lookup table and appended automatically.
+
+---
+
 ## Shared Base Schema
 
 Every DTO schema inherits from `BaseToolOutput` to enforce immutability, disallow extra fields, and guarantee a unified structure for error handling and agent instruction propagation.
@@ -42,14 +71,12 @@ class BaseToolOutput(BaseModel):
   ```yaml
   health_check:
     template_success: |
-      {emoji_success} **Server Health Status**
+      **Server Health Status**
       - Status: {status}
       - Version: {version}
       - Process ID: {pid}
       - Platform: {platform}
       - Uptime: {uptime_seconds} seconds
-      *(Full details available in the structured JSON payload)*
-    template_failure: "{emoji_failure} Health check failed: {error_message}"
   ```
 
 ### 2. RestartServerTool
@@ -65,9 +92,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   restart_server:
-    template_success: "{emoji_success} Server restart initiated successfully (Reason: {reason})."
-    template_failure: "{emoji_failure} Restart failed: {error_message}"
-    post_tool_instruction: "WAIT 3 SECONDS before calling any other tool. The server needs time to reload."
+    template_success: "Server restart initiated successfully (Reason: {reason})."
+    advisory: "server_restart"
   ```
 
 ### 3. TransitionCycleTool
@@ -86,9 +112,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   transition_cycle:
-    template_success: "{emoji_success} Transitioned to TDD Cycle {to_cycle}/{total_cycles}: {cycle_name} on branch '{branch}' (Passed gates: {passed_gates_count})."
-    template_failure: "{emoji_failure} Cycle transition failed: {error_message}"
-    post_tool_instruction: "Call get_work_context immediately to load the new context for this phase."
+    template_success: "Transitioned to TDD Cycle {to_cycle}/{total_cycles}: {cycle_name} on branch '{branch}' (Passed gates: {passed_gates_count})."
+    advisory: "context_reset"
   ```
 
 ### 4. ForceCycleTransitionTool
@@ -111,10 +136,10 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   force_cycle_transition:
-    template_success: "{emoji_warning} Forced transition to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count}).\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Forced transition failed: {error_message}"
-    post_tool_instruction: "Present the skipped gates (found in structuredContent.skipped_gates) to the human moderator for verification before proceeding, then call get_work_context immediately."
+    template_success: "Forced transition to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    advisory: "context_reset"
   ```
+
 ---
 
 ## Batch 2: Discovery, Search & Project Tools
@@ -140,8 +165,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   search_documentation:
-    template_success: "{emoji_query} Found {results_count} documentation matches for query '{query}' in scope '{scope}'.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Documentation search failed: {error_message}"
+    template_success: "Found {results_count} documentation matches for query '{query}' in scope '{scope}'."
   ```
 
 ### 2. GetWorkContextTool
@@ -168,12 +192,10 @@ class BaseToolOutput(BaseModel):
   get_work_context:
     template_success: |
       Branch: `{current_branch}` | Workflow: {workflow_name} | Issue: #{issue_number}
-      Phase: {emoji_phase} {phase} (confidence={phase_confidence})
+      Phase: {phase} (confidence={phase_confidence})
       Role: {sub_role_hint}
       Parent: {parent_branch}
-      *(Full details available in the structured JSON payload)*
-    template_failure: "{emoji_failure} Failed to retrieve work context: {error_message}"
-    post_tool_instruction: "TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
+    advisory: "todo_discipline"
   ```
 
 ### 3. InitializeProjectTool
@@ -193,9 +215,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   initialize_project:
-    template_success: "{emoji_bootstrap} Initialized project for issue #{issue_number} on branch '{branch}' (Initial Phase: '{initial_phase}').\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Project initialization failed: {error_message}"
-    post_tool_instruction: "Call get_work_context immediately to load the new context for this phase."
+    template_success: "Initialized project for issue #{issue_number} on branch '{branch}' (Initial Phase: '{initial_phase}')."
+    advisory: "context_reset"
   ```
 
 ### 4. GetProjectPlanTool
@@ -210,8 +231,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   get_project_plan:
-    template_success: "{emoji_query} **Project Plan for Issue #{issue_number}** (Workflow: {workflow_name}).\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to retrieve project plan: {error_message}"
+    template_success: "**Project Plan for Issue #{issue_number}** (Workflow: {workflow_name})."
   ```
 
 ### 5. SavePlanningDeliverablesTool & UpdatePlanningDeliverablesTool
@@ -231,12 +251,10 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   save_planning_deliverables:
-    template_success: "{emoji_success} Planning deliverables saved for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables).\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to save planning deliverables: {error_message}"
+    template_success: "Planning deliverables saved for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
 
   update_planning_deliverables:
-    template_success: "{emoji_success} Planning deliverables updated for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables).\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to update planning deliverables: {error_message}"
+    template_success: "Planning deliverables updated for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
   ```
 
 ---
@@ -261,8 +279,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_list_branches:
-    template_success: "{emoji_query} Found {branches_count} branches. Current branch is '{current_branch}'.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to list branches: {error_message}"
+    template_success: "Found {branches_count} branches. Current branch is '{current_branch}'."
+  ```
 
 ### 2. GitDiffTool
 
@@ -280,12 +298,10 @@ class BaseToolOutput(BaseModel):
   ```yaml
   git_diff_stat:
     template_success: |
-      {emoji_query} **Git Diff Summary** (Comparing {source_branch} -> {target_branch})
+      **Git Diff Summary** (Comparing {source_branch} -> {target_branch})
       - Files changed: {files_changed}
       - Insertions: +{insertions}
       - Deletions: -{deletions}
-      *(Full details available in the structured JSON payload)*
-    template_failure: "{emoji_failure} Failed to compare branches: {error_message}"
   ```
 
 ### 3. GetParentBranchTool
@@ -299,8 +315,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   get_parent_branch:
-    template_success: "{emoji_query} Branch '{branch}' has parent branch: '{parent_branch}'."
-    template_failure: "{emoji_failure} Failed to get parent branch: {error_message}"
+    template_success: "Branch '{branch}' has parent branch: '{parent_branch}'."
   ```
 
 ### 4. CheckMergeTool
@@ -314,12 +329,11 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   check_merge:
-    template_success: "{emoji_success} Merge verification confirmed: SHA {merge_sha} is reachable from HEAD."
-    template_failure: "{emoji_failure} Merge verification failed: SHA {merge_sha} is NOT reachable from HEAD."
+    template_success: "Merge verification confirmed: SHA {merge_sha} is reachable from HEAD."
+    template_failure: "Merge verification failed: SHA {merge_sha} is NOT reachable from HEAD."
   ```
 
 ### 5. CreateBranchTool
-*Note: Now dynamically generates branch name from issue_number and slug to prevent human naming errors.*
 
 * **DTO (`CreateBranchOutput`):**
   ```python
@@ -331,9 +345,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   create_branch:
-    template_success: "{emoji_success} Created branch '{branch_name}' of type '{branch_type}' from '{base_branch}'."
-    template_failure: "{emoji_failure} Failed to create branch: {error_message}"
-    post_tool_instruction: "Call get_work_context immediately to load the new context for this branch."
+    template_success: "Created branch '{branch_name}' of type '{branch_type}' from '{base_branch}'."
+    advisory: "context_reset"
   ```
 
 ### 6. GitStatusTool
@@ -352,13 +365,11 @@ class BaseToolOutput(BaseModel):
   ```yaml
   git_status:
     template_success: |
-      {emoji_query} **Git Status Summary**
+      **Git Status Summary**
       - Branch: {branch}
       - Clean: {is_clean}
       - Modified: {modified_count} files
       - Untracked: {untracked_count} files
-      *(Full details available in the structured JSON payload)*
-    template_failure: "{emoji_failure} Git status failed: {error_message}"
   ```
 
 ### 7. GitCommitTool
@@ -377,8 +388,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_add_or_commit:
-    template_success: "{emoji_success} Committed changes to '{branch}' with hash {commit_hash} (Phase: {workflow_phase}, Type: {commit_type}).\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Commit failed: {error_message}"
+    template_success: "Committed changes to '{branch}' with hash {commit_hash} (Phase: {workflow_phase}, Type: {commit_type})."
   ```
 
 ### 8. GitRestoreTool
@@ -393,8 +403,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_restore:
-    template_success: "{emoji_success} Restored {files_count} file(s) from {source}.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Restore failed: {error_message}"
+    template_success: "Restored {files_count} file(s) from {source}."
+  ```
 
 ### 9. GitCheckoutTool
 
@@ -409,9 +419,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_checkout:
-    template_success: "{emoji_success} Switched branch '{previous_branch}' -> '{branch}' (Current Phase: '{current_phase}')."
-    template_failure: "{emoji_failure} Checkout failed: {error_message}"
-    post_tool_instruction: "Call get_work_context immediately to load the context for this branch."
+    template_success: "Switched branch '{previous_branch}' -> '{branch}' (Current Phase: '{current_phase}')."
+    advisory: "context_reset"
   ```
 
 ### 10. GitPushTool
@@ -426,8 +435,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_push:
-    template_success: "{emoji_success} Pushed branch '{branch}' to origin (Upstream branch created: {new_upstream_created})."
-    template_failure: "{emoji_failure} Push failed: {error_message}"
+    template_success: "Pushed branch '{branch}' to origin (Upstream branch created: {new_upstream_created})."
   ```
 
 ### 11. GitMergeTool
@@ -441,8 +449,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_merge:
-    template_success: "{emoji_success} Merged branch '{source_branch}' into '{target_branch}' successfully."
-    template_failure: "{emoji_failure} Merge failed: {error_message}"
+    template_success: "Merged branch '{source_branch}' into '{target_branch}' successfully."
   ```
 
 ### 12. GitDeleteBranchTool
@@ -457,8 +464,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_delete_branch:
-    template_success: "{emoji_success} Deleted branch '{branch}' (Local: {local_status}, Remote: {remote_status}).\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to delete branch: {error_message}"
+    template_success: "Deleted branch '{branch}' (Local: {local_status}, Remote: {remote_status})."
   ```
 
 ### 13. GitStashTool
@@ -473,8 +479,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_stash:
-    template_success: "{emoji_success} Stash action '{action}' executed successfully.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Stash action failed: {error_message}"
+    template_success: "Stash action '{action}' executed successfully."
   ```
 
 ### 14. GitFetchTool
@@ -489,8 +494,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_fetch:
-    template_success: "{emoji_success} Fetched updates from remote '{remote}'.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Fetch failed: {error_message}"
+    template_success: "Fetched updates from remote '{remote}'."
   ```
 
 ### 15. GitPullTool
@@ -505,8 +509,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   git_pull:
-    template_success: "{emoji_success} Pulled updates from remote '{remote}'.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Pull failed: {error_message}"
+    template_success: "Pulled updates from remote '{remote}'."
   ```
 
 ---
@@ -514,7 +517,6 @@ class BaseToolOutput(BaseModel):
 ## Batch 4: Issue, PR, Label & Milestone Tools
 
 ### 1. CreateIssueTool, GetIssueTool & UpdateIssueTool
-*Note: Shared structure reusing the domain `IssueReadModel`.*
 
 * **Shared DTO (`IssueOutput`):**
   ```python
@@ -533,21 +535,18 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   create_issue:
-    template_success: "{emoji_success} Created issue #{number}: {title}.\nURL: {html_url}"
-    template_failure: "{emoji_failure} Issue creation failed: {error_message}"
+    template_success: "Created issue #{number}: {title}.\nURL: {html_url}"
 
   update_issue:
-    template_success: "{emoji_success} Updated issue #{number} successfully.\nURL: {html_url}"
-    template_failure: "{emoji_failure} Issue update failed: {error_message}"
+    template_success: "Updated issue #{number} successfully.\nURL: {html_url}"
 
   get_issue:
     template_success: |
-      {emoji_query} **Issue #{number}: {title}**
+      **Issue #{number}: {title}**
       - State: {state}
       - Milestone: {milestone_title}
       - Assignees: {assignees_summary}
-      *(Full details available in the structured JSON payload)*
-    template_failure: "{emoji_failure} Failed to retrieve issue: {error_message}"
+  ```
 
 ### 2. CloseIssueTool
 
@@ -559,8 +558,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   close_issue:
-    template_success: "{emoji_success} Closed issue #{issue_number} successfully."
-    template_failure: "{emoji_failure} Failed to close issue: {error_message}"
+    template_success: "Closed issue #{issue_number} successfully."
   ```
 
 ### 3. ListIssuesTool
@@ -574,12 +572,10 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   list_issues:
-    template_success: "{emoji_query} Found {issues_count} issues matching criteria.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to list issues: {error_message}"
+    template_success: "Found {issues_count} issues matching criteria."
   ```
 
 ### 4. SubmitPRTool & GetPRTool
-*Note: Aligned fallback layout and shared structure reusing the domain `PRReadModel`.*
 
 * **Shared DTO (`PROutput`):**
   ```python
@@ -598,22 +594,19 @@ class BaseToolOutput(BaseModel):
   ```yaml
   submit_pr:
     template_success: |
-      {emoji_success} Submitted PR #{number}: {title}.
+      Submitted PR #{number}: {title}.
       URL: {html_url}
       - Target: {base_ref}
       - Source: {head_ref}
-      *(Full details available in the structured JSON payload)*
-    template_failure: "{emoji_failure} PR submission failed: {error_message}"
-    post_tool_instruction: "Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
+    advisory: "branch_lockdown"
 
   get_pr:
     template_success: |
-      {emoji_query} Retrieved PR #{number}: {title}.
+      Retrieved PR #{number}: {title}.
       URL: {html_url}
       - Target: {base_ref}
       - Source: {head_ref}
-      *(Full details available in the structured JSON payload)*
-    template_failure: "{emoji_failure} Failed to retrieve PR: {error_message}"
+  ```
 
 ### 5. MergePRTool
 
@@ -627,8 +620,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   merge_pr:
-    template_success: "{emoji_success} Merged PR #{pr_number} using strategy '{merge_method}' (SHA: {merge_sha})."
-    template_failure: "{emoji_failure} Merge failed: {error_message}"
+    template_success: "Merged PR #{pr_number} using strategy '{merge_method}' (SHA: {merge_sha})."
   ```
 
 ### 6. ListPRsTool
@@ -642,8 +634,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   list_prs:
-    template_success: "{emoji_query} Found {prs_count} pull requests matching criteria.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to list PRs: {error_message}"
+    template_success: "Found {prs_count} pull requests matching criteria."
   ```
 
 ### 7. ListLabelsTool
@@ -662,8 +653,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   list_labels:
-    template_success: "{emoji_query} Found {total_labels} labels.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to list labels: {error_message}"
+    template_success: "Found {total_labels} labels."
   ```
 
 ### 8. CreateLabelTool & DeleteLabelTool
@@ -680,12 +670,10 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   create_label:
-    template_success: "{emoji_success} Created label '{label_name}' (Color: #{color})."
-    template_failure: "{emoji_failure} Failed to create label: {error_message}"
+    template_success: "Created label '{label_name}' (Color: #{color})."
 
   delete_label:
-    template_success: "{emoji_success} Deleted label '{label_name}' successfully."
-    template_failure: "{emoji_failure} Failed to delete label: {error_message}"
+    template_success: "Deleted label '{label_name}' successfully."
   ```
 
 ### 9. AddLabelsTool & RemoveLabelsTool
@@ -700,12 +688,11 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   add_labels:
-    template_success: "{emoji_success} Added labels {formatted_labels} to issue #{issue_number}."
-    template_failure: "{emoji_failure} Failed to add labels: {error_message}"
+    template_success: "Added labels {formatted_labels} to issue #{issue_number}."
 
   remove_labels:
-    template_success: "{emoji_success} Removed labels {formatted_labels} from issue #{issue_number}."
-    template_failure: "{emoji_failure} Failed to remove labels: {error_message}"
+    template_success: "Removed labels {formatted_labels} from issue #{issue_number}."
+  ```
 
 ### 10. ListMilestonesTool
 
@@ -720,8 +707,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   list_milestones:
-    template_success: "{emoji_query} Found {total_milestones} milestones.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to list milestones: {error_message}"
+    template_success: "Found {total_milestones} milestones."
   ```
 
 ### 11. CreateMilestoneTool & CloseMilestoneTool
@@ -737,12 +723,11 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   create_milestone:
-    template_success: "{emoji_success} Created milestone '{title}' (Number: #{number})."
-    template_failure: "{emoji_failure} Failed to create milestone: {error_message}"
+    template_success: "Created milestone '{title}' (Number: #{number})."
 
   close_milestone:
-    template_success: "{emoji_success} Closed milestone '{title}' (Number: #{number}) successfully."
-    template_failure: "{emoji_failure} Failed to close milestone: {error_message}"
+    template_success: "Closed milestone '{title}' (Number: #{number}) successfully."
+  ```
 
 ---
 
@@ -764,14 +749,12 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   transition_phase:
-    template_success: "{emoji_success} Transitioned phase successfully on branch '{branch}' from '{from_phase}' to '{to_phase}' (Passed gates: {passing_gates_count})."
-    template_failure: "{emoji_failure} Phase transition failed: {error_message}"
-    post_tool_instruction: "Call get_work_context immediately to load the new context for this phase."
+    template_success: "Transitioned phase successfully on branch '{branch}' from '{from_phase}' to '{to_phase}' (Passed gates: {passing_gates_count})."
+    advisory: "context_reset"
 
   force_phase_transition:
-    template_success: "{emoji_warning} Forced phase transition on branch '{branch}' from '{from_phase}' to '{to_phase}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count}).\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Forced phase transition failed: {error_message}"
-    post_tool_instruction: "Call get_work_context immediately to load the new context for this phase."
+    template_success: "Forced phase transition on branch '{branch}' from '{from_phase}' to '{to_phase}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    advisory: "context_reset"
   ```
 
 ### 2. ScaffoldArtifactTool
@@ -791,10 +774,9 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   scaffold_artifact:
-    template_success: "{emoji_success} Scaffolded artifact '{name}' of type '{artifact_type}' successfully (Created: {formatted_files_created})."
-    template_failure: |
-      {emoji_failure} Scaffolding failed: {error_message}
-      {schema_info}
+    template_success: "Scaffolded artifact '{name}' of type '{artifact_type}' successfully (Created: {formatted_files_created})."
+    template_failure: "Scaffolding failed: {error_message}.\n{schema_info}"
+  ```
 
 ### 3. ScaffoldSchemaTool
 
@@ -807,8 +789,7 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   scaffold_schema:
-    template_success: "{emoji_query} Retrieved schema for artifact type '{artifact_type}'.\n*(Full details available in the structured JSON payload)*"
-    template_failure: "{emoji_failure} Failed to retrieve schema: {error_message}"
+    template_success: "Retrieved schema for artifact type '{artifact_type}'."
   ```
 
 ### 4. RunQualityGatesTool
@@ -830,8 +811,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   run_quality_gates:
-    template_success: "{emoji_success} All quality gates passed successfully for scope '{scope}' ({file_count} files checked)."
-    template_failure: "{emoji_failure} Quality gates failed for scope '{scope}' ({file_count} files checked).\n*(Full details available in the structured JSON payload)*"
+    template_success: "All quality gates passed successfully for scope '{scope}' ({file_count} files checked)."
+    template_failure: "Quality gates failed for scope '{scope}' ({file_count} files checked)."
   ```
 
 ### 5. RunTestsTool
@@ -856,12 +837,10 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   run_tests:
-    template_success: "{emoji_success} Test suite passed: {summary_line}."
-    template_failure: |
-      {emoji_failure} Test suite failed (exit code {exit_code}): {summary_line}.
-      {verbose_output}
-      *(Full details available in the structured JSON payload)*
+    template_success: "Test suite passed: {summary_line}."
+    template_failure: "Test suite failed (exit code {exit_code}): {summary_line}."
   ```
+  *(Note: If tests fail and verbose=False, the tool populates `post_tool_instruction` with advice to rerun with verbose=True).*
 
 ### 6. SafeEditTool
 
@@ -879,8 +858,8 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   safe_edit_file:
-    template_success: "{emoji_success} Safely modified file '{path}' (Mode: {mode})."
-    template_failure: "{emoji_failure} Safe edit rejected for '{path}' due to validation errors (Mode: {mode}): {issues}.\n*(Full details available in the structured JSON payload)*"
+    template_success: "Safely modified file '{path}' (Mode: {mode})."
+    template_failure: "Safe edit rejected for '{path}' due to validation errors (Mode: {mode}): {issues}."
   ```
 
 ### 7. TemplateValidationTool
@@ -899,5 +878,6 @@ class BaseToolOutput(BaseModel):
 * **YAML Config:**
   ```yaml
   validate_template:
-    template_success: "{emoji_success} Template validation passed successfully."
-    template_failure: "{emoji_failure} Template validation failed with {errors_count} issues.\n*(Full details available in the structured JSON payload)*"
+    template_success: "Template validation passed successfully."
+    template_failure: "Template validation failed with {errors_count} issues."
+  ```
