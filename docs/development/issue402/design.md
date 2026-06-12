@@ -1,29 +1,29 @@
 <!-- c:\temp\pgmcp\docs\development\issue402\design.md -->
-<!-- template=design version=5827e841 created=2026-06-12T12:57Z updated= -->
+<!-- template=design version=5827e841 created=2026-06-12T12:57Z updated=2026-06-12T18:50Z -->
 # Design — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.0  
+**Version:** 1.2  
 **Last Updated:** 2026-06-12
 
 ---
 
 ## Purpose
 
-Establish the architectural and data-flow design for exposing structured JSON data in MCP tools.
+Establish the architectural and data-flow design for exposing structured JSON data in MCP tools via a declarative, config-driven presentation layer, using Pydantic Data Transfer Objects (DTOs) for all tools without exception.
 
 ## Scope
 
 **In Scope:**
-All tools in mcp_server/tools/ except admin/health tools.
+All active, registered tools in the `mcp_server/tools/` directory (including admin/health/signal tools).
 
 **Out of Scope:**
-Protocol changes outside MCP, client-side UI rendering implementations.
-
+Protocol changes outside MCP, client-side UI rendering implementations, and legacy or unregistered tools (specifically `DetectLabelDriftTool` in `label_tools.py` which is not loaded in `bootstrap.py`).
 ## Prerequisites
 
 Read these first:
 1. Approved Research Document under Issue #402.
+
 ---
 
 ## 1. Context & Requirements
@@ -35,49 +35,35 @@ MCP tools currently return plain text responses. We need to expose structured JS
 ### 1.2. Requirements
 
 **Functional:**
-- [ ] Migrate all MCP tools (except HealthCheckTool and RestartServerTool) to StructuredTool.
-- [ ] Return structured JSON payload as first block (content[0]) and text fallback summary as second block (content[1]) in ToolResult.
-- [ ] Define explicit Pydantic models for all tool outputs to ensure schema enforcement.
+- Migrate all MCP tools to `StructuredTool` (eliminating direct use of `BaseTool` for active tools).
+- Return structured JSON payload as the first block (`content[0]` of type `"json"`) and text fallback summary as the second block (`content[1]` of type `"text"`) in `ToolResult`.
+- Define explicit, frozen Pydantic models (DTOs) for all tool outputs to ensure schema enforcement and CQS compliance.
+- Implement a declarative, config-first text presentation layer (`presentation.yaml`) to generate human-readable summaries without hardcoded text formatters, covering all tools.
 
 **Non-Functional:**
-- [ ] Adhere to ARCHITECTURE_PRINCIPLES.md, specifically CQS (§5) and Explicit over Implicit (§8).
-- [ ] Ensure backwards compatibility with test assertions checking result.content[0]['text'] by introducing a test helper.
+- Adhere to `ARCHITECTURE_PRINCIPLES.md`, specifically CQS (§5), Config-First (§3), Fail-Fast (§4), and Explicit over Implicit (§8).
+- Ensure backwards compatibility and improve DRY principles in test assertions by introducing test helpers and pytest fixtures.
+- Prevent schema/template drift through automated startup and test-time validation checks.
 
-### 1.3. Constraints
-
-- Must not violate the single responsibility principle.
-- No breaking changes for tools expecting non-JSON output (HealthCheck, RestartServer).
 ---
 
 ## 2. Design Options
 
-To expose JSON data in the MCP tools, two design options were considered:
-
 ### Option A: Raw Untyped Python Dicts (`dict[str, Any]`)
 * **Description:** Tools return raw Python dictionaries directly from their `execute_structured` methods, bypassing any explicit schema definitions.
-* **Pros:** 
-  * Minimal development overhead.
-  * No extra boilerplate files to manage.
-* **Cons:**
-  * Violates `ARCHITECTURE_PRINCIPLES.md` §8 (Explicit over Implicit) and §5 (CQS).
-  * No validation at system boundaries, raising the risk of deserialization errors on the client side.
-  * Difficult to type-check and document.
+* **Pros:** Minimal development overhead; no extra boilerplate files.
+* **Cons:** Violates `ARCHITECTURE_PRINCIPLES.md` §8 (Explicit over Implicit) and §5 (CQS); no validation at system boundaries.
 
-### Option B: Declarative Pydantic Models for Tool Output (Recommended)
-* **Description:** Explicitly define output schemas for every tool (where applicable) using Pydantic models in `mcp_server/schemas/tool_outputs.py`.
-* **Pros:**
-  * Highly explicit and type-safe boundary contracts.
-  * Automatic validation of structured output at execution time.
-  * Directly aligned with the project's type-checking policies and architecture directives.
-  * Allows frozen models (`ConfigDict(frozen=True)`) to maintain CQS and prevent mutation.
-* **Cons:**
-  * Requires creating and maintaining output schemas in `mcp_server/schemas/tool_outputs.py`.
+### Option B: Declarative Pydantic Models (DTOs) for Tool Output (Recommended)
+* **Description:** Explicitly define output schemas for every tool using Pydantic models in `mcp_server/schemas/tool_outputs.py`.
+* **Pros:** Highly explicit and type-safe boundary contracts; automatic validation; compliance with CQS.
+* **Cons:** Requires creating and maintaining output schemas.
 
 ---
 
 ## 3. Chosen Design
 
-**Decision:** Option B: Define declarative Pydantic models in `mcp_server/schemas/tool_outputs.py` and migrate tools to `StructuredTool` using `execute_structured`.
+**Decision:** Option B: Define declarative Pydantic DTOs in `mcp_server/schemas/tool_outputs.py` and migrate all tools to `StructuredTool` using `execute_structured`.
 
 **Rationale:** Option B provides static type safety at boundary interfaces, ensures explicit contract definitions, and aligns fully with CQS and type-checking standards, preventing client serialization drift.
 
@@ -85,14 +71,17 @@ To expose JSON data in the MCP tools, two design options were considered:
 
 | Decision | Rationale |
 |---|---|
-| **Dedicated Schemas File** | Define all output models in `mcp_server/schemas/tool_outputs.py` to prevent circular imports and centralize API contracts. |
-| **CQS Compliant Schemas** | Use `frozen=True` or `ConfigDict(frozen=True)` on all output models to enforce immutability at the boundary. |
-| **Signal-Only Exclusions** | Exclude `RestartServerTool` and `HealthCheckTool` from migration. They return plain text since they carry no domain payload. |
-| **Unified Test Helper** | Implement `get_text_content(result: ToolResult) -> str` to extract the text block regardless of its position, preventing a massive test-suite break. |
+| **Dedicated Schemas File** | Define all output models (DTOs) in `mcp_server/schemas/tool_outputs.py` to prevent circular imports and centralize API contracts. |
+| **CQS Compliant Schemas** | Use `frozen=True` or `ConfigDict(frozen=True)` on all output DTOs to enforce immutability at the boundary. |
+| **Unified Structured Path** | Migrate all tools (including `RestartServerTool` and `HealthCheckTool`) to `StructuredTool` returning simple DTOs (e.g. `RestartServerOutput` or `HealthCheckOutput`), eliminating exceptions and ensuring 100% architectural consistency. |
+| **Config-First Presentation** | Manage all text summaries and layouts in a centralized YAML file (`mcp_server/config/presentation.yaml`). No hardcoded emojis or string literals in Python. |
+| **No Custom Python Formatters** | Avoid code smells by keeping the presentation layer completely declarative. Dynamic summary-level data (e.g. counts, comma-separated lists) is computed by the business logic/tool and included in the Pydantic DTOs, allowing simple string-formatting in YAML. |
+| **Static Drift Validation** | Scan and validate all templates in `presentation.yaml` against their Pydantic models at server startup and test-time (Fail-Fast). |
+| **Unified Test Assertions** | Implement `assert_structured_tool_result` helper in `tests/mcp_server/test_support.py` to enforce the dual-payload contract and reduce test boilerplate (DRY). |
 
 ### 3.2. Schema Hierarchy & Code Reuse (DRY)
 
-To avoid declaring 48 boilerplate schemas and violating the DRY principle, we will implement a schema hierarchy using inheritance and reuse existing domain read models from `mcp_server/state/github_read_models.py`:
+We will implement a schema hierarchy using inheritance and reuse existing domain read models from `mcp_server/state/github_read_models.py`:
 
 ```mermaid
 classDiagram
@@ -113,38 +102,9 @@ classDiagram
     BaseToolOutput <|-- SuccessOutput
     SuccessOutput <|-- BranchOperationOutput
     BranchOperationOutput <|-- CycleTransitionOutput
-    
-    class IssueOutput {
-        +IssueReadModel issue
-    }
-    class PROutput {
-        +PRReadModel pull_request
-    }
-    class MilestoneOutput {
-        +MilestoneReadModel milestone
-    }
-    
-    BaseToolOutput <|-- IssueOutput
-    BaseToolOutput <|-- PROutput
-    BaseToolOutput <|-- MilestoneOutput
 ```
 
-#### Shared Base Schemas:
-1. **`BaseToolOutput`**: Base model enforcing `frozen=True` and `extra="forbid"` for CQS compliance.
-2. **`SuccessOutput(BaseToolOutput)`**: Used by simple status tools. Contains `success: bool = True`.
-3. **`BranchOperationOutput(SuccessOutput)`**: Adds `branch: str`. Used by branch operations.
-4. **`CycleTransitionOutput(BranchOperationOutput)`**: Adds `old_cycle: str` and `new_cycle: str`. Used by cycle transition tools.
-
-#### Resource Wrappers (Reusing `github_read_models.py`):
-1. **`IssueOutput(BaseToolOutput)`**: Wraps `IssueReadModel` (used by `CreateIssueTool`, `GetIssueTool`, `UpdateIssueTool`).
-2. **`PROutput(BaseToolOutput)`**: Wraps `PRReadModel` (used by `GetPRTool`, `SubmitPRTool`).
-3. **`MilestoneOutput(BaseToolOutput)`**: Wraps `MilestoneReadModel` (used by `CreateMilestoneTool`, `CloseMilestoneTool`).
-
-#### Collection List Schemas:
-1. **`ListIssuesOutput(BaseToolOutput)`**: Contains `issues: list[IssueReadModel]`.
-2. **`ListPRsOutput(BaseToolOutput)`**: Contains `pull_requests: list[PRReadModel]`.
-3. **`ListMilestonesOutput(BaseToolOutput)`**: Contains `milestones: list[MilestoneReadModel]`.
-4. **`ListLabelsOutput(BaseToolOutput)`**: Contains `labels: list[LabelOutputModel]`.
+Every tool's output schema will inherit from `BaseToolOutput` (enforcing `frozen=True` and `extra="forbid"`).
 
 ### 3.3. Architecture & Data Flow
 
@@ -153,116 +113,154 @@ graph TD
     Client[MCP Client] -->|Call Tool| Server[MCPServer]
     Server -->|Invoke| Tool[StructuredTool Subclass]
     Tool -->|execute_structured| Exec[Business Logic]
-    Exec -->|Return Pydantic Model| Tool
-    Tool -->|Serialize & Wrap| Result[ToolResult json_data]
-    Result -->|Convert| Conv[mcp_converters.py]
-    Conv -->|Extract JSON| Struct[structuredContent = JSON data]
-    Conv -->|Filter Text| Cont[content = Text fallback]
-    Struct --> MCPResult[CallToolResult]
-    Cont --> MCPResult
-    MCPResult -->|Return| Client
+    Exec -->|Return Pydantic DTO| Tool
+    Tool -->|Serialize to Dict| Server
+    Server -->|Pass to| Presenter[TextPresenter]
+    Presenter -->|Interpolate YAML Template| Text[Generated Text Fallback]
+    Server -->|Combine JSON + Text| Result[ToolResult]
+    Result -->|Return| Client
 ```
 
-### 3.4. Affected Interfaces & Class Diagram
+### 3.4. Affected Interfaces
 
 All migrated tools will inherit from `StructuredTool` (which inherits from `BaseTool`) and implement `execute_structured` instead of `execute`.
 
 ```python
 class StructuredTool(BaseTool, ABC):
+    output_model: ClassVar[type[BaseModel]]
+
     @abstractmethod
     async def execute_structured(
         self,
         params: Any,
         context: NoteContext,
-    ) -> tuple[dict[str, Any], str]:
-        """Execute the tool and return (data_dict, summary_text)."""
+    ) -> BaseModel:
+        """Execute the tool and return a validated Pydantic output model (DTO)."""
 ```
 
-Each tool will import its corresponding model from `mcp_server/schemas/tool_outputs.py` and call `model.model_dump()` or return the raw dict matching the schema definition.
+### 3.5. Config-Driven Text Presenter
 
-### 3.5. Test Suite Strategy & Backward Compatibility
+The presentation configuration is managed in `mcp_server/config/presentation.yaml`:
 
-Because converting tools to dual-payload output shifts the text payload from `content[0]` to `content[1]` (or similar), more than 200 unit tests checking `result.content[0]["text"]` would throw `KeyError`.
+```yaml
+global:
+  emojis:
+    success: "✅"
+    failure: "❌"
+    warning: "⚠️"
+    query: "📋"
+    bootstrap: "🚀"
+  json_reference: "*(Full details available in the structured JSON payload)*"
+  advisories:
+    context_reset: "\n\n🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
+    server_restart: "\n\n⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
+    pr_submitted: "\n\n⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
 
-We will introduce a helper in `tests/mcp_server/test_support.py`:
+tools:
+  git_checkout:
+    template: "{emoji_success} Checked out branch '{branch}' successfully."
+    advisory: "context_reset"
+    append_json_reference: false
+    
+  git_status:
+    template: |
+      {emoji_query} **Git Status Summary**
+      - Branch: {branch}
+      - Clean: {is_clean}
+      - Modified: {modified_count} files
+      - Untracked: {untracked_count} files
+    append_json_reference: true
+
+  health_check:
+    template: "{emoji_success} Server status: {status}."
+    append_json_reference: false
+
+  restart_server:
+    template: "{emoji_success} Server restart initiated successfully."
+    advisory: "server_restart"
+    append_json_reference: false
+```
+
+The `TextPresenter` dynamically formats the template by mapping the fields from the tool's Pydantic model:
+1. It replaces `{emoji_*}` with global emojis.
+2. It interpolates tool data fields (e.g. `{branch}`).
+3. It appends preconfigured advisories.
+4. It appends the standard JSON reference dynamically:
+   - If `append_json_reference` is statically configured as `true`.
+   - OR if the DTO contains a non-empty `diff` or `has_diff` is true (conditional JSON reference).
+
+#### Fail-Fast Drift Validation:
+At server startup and within the unit test suite, `validate_presentation_alignment` will:
+1. Parse all placeholder keys from `presentation.yaml` templates using `string.Formatter().parse()`.
+2. Verify that every placeholder (except those prefixed with `emoji_`) matches a field defined in the corresponding tool's Pydantic `output_model`.
+3. Raise a `ConfigError` immediately if drift is detected, blocking server start and failing the build.
+
+### 3.6. Test Suite Strategy & DRY Reparations
+
+To prevent a massive test-suite break and clean up boilerplate code, we apply two key reparations:
+
+#### 1. Contract Assertion Helper (`assert_structured_tool_result`)
+We introduce a shared assertion helper in `tests/mcp_server/test_support.py` to enforce the dual-payload structure:
+
 ```python
-def get_text_content(result: ToolResult) -> str:
-    """Extract the text fallback content block from ToolResult, regardless of position."""
-    for item in result.content:
-        if item.get("type") == "text":
-            return item["text"]
-    raise ValueError("No text content found in ToolResult")
-```
-All unit tests will be updated to use this helper instead of direct index assertions.
-
-### 3.6. Tool-Specific Optimization Decisions
-
-To maximize token efficiency and robust behavior, the following tool-specific optimizations are applied:
-
-1. **`RunQualityGatesTool` (Dynamic Text Fallback)**:
-   Because the set of active quality gates is dynamic and configurable (via `quality.yaml`), the chat presentation text will be generated dynamically by iterating over the list of executed gates, instead of using a hardcoded template structure.
-
-2. **`SafeEditTool` (Conditional Diff Generation)**:
-   To prevent massive token consumption during routine file edits (where agents usually read the file immediately afterwards anyway), we introduce a `return_diff: bool = False` parameter to the input schema. Diff generation and transmission will be completely bypassed unless this parameter is explicitly set to `True`.
-
-3. **`TemplateValidationTool` (Exposure Clarification)**:
-   The tool is registered and exposed to the server under the public name `validate_template`. We retain the class name `TemplateValidationTool` for design consistency.
-
-4. **`RunTestsTool` (Verbose Traceback Management)**:
-   This tool is already a `StructuredTool`. Complete long tracebacks triggered by the `verbose` option will be stored in the `"failures"` block of the JSON payload. The chat-text fallback will strictly remain a compact summary (`FAILED test_id — short_reason`) to protect the context window.
-
-### 3.8. Text Fallback Formatting Guidelines
-
-To enforce consistency across all MCP tool text responses and prevent implementation agents from introducing ad-hoc formatting styles, all text fallbacks must comply with the following strict guidelines:
-
-1. **Consistent Emoji Usage**:
-   - `✅` (Success): Used for all successful state changes, mutations, and creations (e.g., branch creation, commit, merge, phase transition).
-   - `❌` (Failure): Used for all errors, failed actions, or strict validation rejections.
-   - `⚠️` (Warning): Used for all forced actions, skipped checks, drift warnings, or interactive overrides.
-   - `📋` (Query/Status): Used for all read-only information retrieval, listings, and status checks (e.g., status, list issues, get project plan).
-   - `🚀` (Bootstrap): Exclusively used for project initialization (`initialize_project`).
-
-2. **Standardized JSON Reference**:
-   Whenever details are omitted or summarized in the text fallback to conserve tokens, the text fallback **must** conclude with the exact trailing string:
-   `*(Full details available in the structured JSON payload)*`
-   No variation of this phrase is permitted.
-
-3. **Context Reset & Next-Step Advisories**:
-   Specific tools that alter the active branch state or process lifecycle must append standard next-step advisory notices to guide the calling agent or human operator:
-   - **Phase/Cycle Transitions, Checkouts, and Initializations** (`transition_phase`, `force_phase_transition`, `transition_cycle`, `force_cycle_transition`, `git_checkout`, `initialize_project`): Must append the exact advisory:
-     `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
-   - **Server Restarts** (`restart_server`): Must append:
-     `⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart.`
-   - **PR Submissions** (`submit_pr`): Must append:
-     `⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged.`
-
-4. **Logical Text Layout & Error Handling**:
-   - **Action/Mutation Results**: `[Emoji] [Action verb in past tense] [resource] successfully. [Immediate key-details if applicable]. *(Full details available in the structured JSON payload)*`
-   - **Query/List Results**: `[Emoji] **[Resource Type] List / Status Summary**\n- [Key]: [Value]\n*(Full details available in the structured JSON payload)*`
-   - **Error/Failure Messages**: `❌ [Error Type/Title] failed. [Detailed error message]. *(Full details available in the structured JSON payload)*`
-
-### 3.9. Centralized Presenter Architecture (Clean Code & SRP)
-
-To prevent hardcoding emojis and presentation formatting logic inside the business-logic of 50 individual tool files, we will introduce a centralized **`TextPresenter`** utility (located in `mcp_server/core/presenter.py` or `mcp_server/utils/presenter.py`).
-
-```mermaid
-graph LR
-    Tool[StructuredTool] -->|Return JSON dict| Server[MCPServer / Converter]
-    Server -->|Pass to| Presenter[TextPresenter]
-    Presenter -->|Lookup template & format| Text[Generated Text Fallback]
-    Text --> Server
+def assert_structured_tool_result(
+    result: ToolResult,
+    text_contains: str | None = None,
+    json_keys: list[str] | None = None,
+    expected_json: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Verifies the ToolResult dual-payload structure and content."""
+    assert len(result.content) == 2, f"Expected 2 content items, got {len(result.content)}"
+    assert result.content[0]["type"] == "json"
+    assert result.content[1]["type"] == "text"
+    
+    json_data = result.content[0]["json"]
+    text_content = result.content[1]["text"]
+    
+    if text_contains:
+        assert text_contains in text_content
+    if json_keys:
+        for key in json_keys:
+            assert key in json_data
+    if expected_json:
+        assert json_data == expected_json
+        
+    return json_data
 ```
 
-#### Key Architecture Rules:
-1. **Separation of Concerns (SRP)**: Subclasses of `StructuredTool` must only return their validated data dictionaries (Pydantic model dumps) from `execute_structured`. They are prohibited from defining or formatting text outputs.
-2. **Centralized Template Registry**: `TextPresenter` maintains a centralized registry mapping `tool_name` to its corresponding parameterized formatting string.
-3. **Automatic Interpolation**: The server converter (or the base `StructuredTool.execute` wrapper) passes the JSON data dictionary to `TextPresenter.format(tool_name, data)`, which automatically interpolates fields, adds the consistent emojis, and appends context-advisories and standard JSON references.
-4. **Consistency**: Changes to formatting, emojis, or translations can be performed in a single location, safeguarding the entire server's output contract against drift.
+#### 2. Mock Fixture Consolidation
+Test suites (e.g. `test_git_tools.py`, `test_pr_tools.py`) will be refactored to reuse class- or module-level pytest fixtures for tool instantiation and manager mock configuration, eliminating repetitive mock setup code.
+
+---
+
+## 4. Tool-Specific Summary & Schema Mapping
+
+The following table provides the mapping for candidate Pydantic model fields designed to support simple, declarative templates:
+
+| Tool Class | Model Type | Core Custom Veld (Summary Data) | Fallback template focus |
+|---|---|---|---|
+| `GitStatusTool` | `GitStatusOutput` | `modified_count`, `untracked_count` | Summary of branch status, clean state, and counts. |
+| `RunQualityGatesTool` | `RunQualityGatesOutput` | `gates` | Status of all gates, explicitly showing failed gates if applicable. |
+| `RunTestsTool` | `RunTestsOutput` | `verbose_output` | Total passed/failed counts, plus tracebacks in verbose mode. |
+| `SearchDocumentationTool` | `SearchDocumentationOutput` | `results_count` | Number of found documents matching the query. |
+| `ListIssuesTool` | `ListIssuesOutput` | `issues_count` | Total count of issues matching the filter. |
+| `ListPRsTool` | `ListPRsOutput` | `prs_count` | Total count of pull requests. |
+| `SafeEditTool` | `SafeEditOutput` | `issues`, `diff`, `has_diff` | Success status, validation warnings, and conditional diff output. |
+| `TemplateValidationTool` | `TemplateValidationOutput` | `errors_count` | Summary of linting errors and validation status. |
+| `HealthCheckTool` | `HealthCheckOutput` | `status`, `version` | Simple server health status and version exposure. |
+| `RestartServerTool` | `RestartServerOutput` | `reason` | Server restart status and reason. |
+| `TransitionCycleTool` | `CycleTransitionOutput` | `passed_gates_count` | TDD cycle transition details and total passed gates. |
+| `ForceCycleTransitionTool` | `ForceCycleTransitionOutput` | `skipped_gates_count`, `passing_gates_count` | Forced cycle transition audit trail with passed/skipped gate counts. |
+| `TransitionPhaseTool` | `PhaseTransitionOutput` | `passing_gates_count` | Phase transition details and total passed gates. |
+| `ForcePhaseTransitionTool` | `PhaseTransitionOutput` | `skipped_gates_count`, `passing_gates_count` | Forced phase transition audit trail with passed/skipped gate counts. |
+| `ScaffoldArtifactTool` | `ScaffoldArtifactOutput` | `schema_info` | Scaffolded files or inline validation schema if validation fails. |
+
+---
 
 ## Related Documentation
 
-[related-1]: docs/development/issue402/research.md
-[related-2]: docs/coding_standards/ARCHITECTURE_PRINCIPLES.md
+- **[docs/development/issue402/research.md](file:///c:/temp/pgmcp/docs/development/issue402/research.md)**
+- **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](file:///c:/temp/pgmcp/docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)**
 
 ---
 
@@ -270,33 +268,4 @@ graph LR
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-06-12 | Agent | Initial draft |
-3. **Logical Text Layout**:
-   - **Action/Mutation Results**: Must follow the format:
-     `[Emoji] [Action verb in past tense] [resource] successfully. [Immediate key-details if applicable]. *(Full details available in the structured JSON payload)*`
-     *Example:* `✅ Pushed active branch to remote 'origin/feature/123'.`
-   - **Query/List Results**: Must follow a key-value list structure:
-     `[Emoji] **[Resource Type] List / Status Summary**`
-     `- [Key]: [Value]`
-     `*(Full details available in the structured JSON payload)*`
-     *Example:*
-     `📋 **GitHub Milestones Summary**`
-     `- Total Milestones: 12`
-     `*(Full details available in the structured JSON payload)*`
-
-## Related Documentation
-- **[docs/development/issue402/research.md][related-1]**
-- **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-2]**
-
-<!-- Link definitions -->
-
-[related-1]: docs/development/issue402/research.md
-[related-2]: docs/coding_standards/ARCHITECTURE_PRINCIPLES.md
-
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-06-12 | Agent | Initial draft |
+| 1.3 | 2026-06-12 | Agent | Update to incorporate Batch 5 comments (transition gates counts, verbose test tracebacks, safe edit diffs, scaffold schemas) |
