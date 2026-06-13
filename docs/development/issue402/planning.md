@@ -146,21 +146,57 @@ GitHub Issues and PR tools successfully migrated and return flattened DTO presen
 GitHub Labels and Milestones tools successfully migrated and return flattened DTO presentation fields.
 
 
-### Cycle 8: Batch 5 (Phase, Scaffold, Quality & Testing Tools)
+### Cycle 8: Auto-Fix Tool & MCP Resource Pilot
 
-**Goal:** Migrate transition, scaffold, quality, pytest, and safe edit tools, and implement the new tool-agnostic Auto-Fix tool, ensuring strict separation of details (verbose/diffs/schemas/counts only in JSON).
+**Goal:** Implement the new tool-agnostic `AutoFixTool` (with startup config-loader validation checks) and utilize it as the pilot to test the MCP Resource route.
 
 **Deliverables:**
-- **[D8.1]** Migration of transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
-- **[D8.2]** Remove transition constants (`TRANSITION_ADVISORY_NOTE`, `TRANSITION_ADVISORY_TOOL_NAMES`) and discard logic from `phase_tools.py` and `server.py`, resolving the double-SSOT advisory issue (Files: `mcp_server/tools/phase_tools.py`, `mcp_server/server.py`).
-- **[D8.3]** Implement `AutoFixTool` (with `AutoFixInput` and `AutoFixOutput` DTOs) and `QAManager.run_auto_fix()` (Files: `mcp_server/tools/quality_tools.py`, `mcp_server/managers/qa_manager.py`).
-- **[D8.4]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
-- **[D8.5]** Add declarative presentation template and advisory mapping for `auto_fix` in `presentation.yaml` (File: `mcp_server/config/presentation.yaml`).
+- **[D8.1]** Implement `AutoFixTool` (with `AutoFixInput` and `AutoFixOutput` DTOs) and `QAManager.run_auto_fix()` (Files: `mcp_server/tools/quality_tools.py`, `mcp_server/managers/qa_manager.py`).
+- **[D8.2]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
+- **[D8.3]** Register dynamic resource URIs for auto-fix runs (e.g. `quality://auto_fix/runs/{run_id}/json`) with the server's resource registry, allowing programmatic retrieval of run outputs.
+- **[D8.4]** Implement the `read_resource` MCP handler on the server to serve the structured DTO output for the run, demonstrating dynamic resource lookup (File: `mcp_server/server.py`).
+- **[D8.5]** Add declarative presentation template and advisory mapping for `auto_fix` in `presentation.yaml`, returning the lightweight summary referencing the resource URI (File: `mcp_server/config/presentation.yaml`).
+
+**Tests:**
+- `tests/mcp_server/unit/tools/test_quality_tools.py` (verifies auto-fix tool functionality, loader validation, and resource registration/reading)
+
+---
+**Success/Exit Criteria:**
+AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; and the model can successfully retrieve the run's JSON data using the `read_resource` tool.
+
+
+### Cycle 9: Batch 5 (Phase, Scaffold, Quality & Testing Tools)
+
+**Goal:** Migrate transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
+
+**Deliverables:**
+- **[D9.1]** Migration of transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
+- **[D9.2]** Remove transition constants (`TRANSITION_ADVISORY_NOTE`, `TRANSITION_ADVISORY_TOOL_NAMES`) and discard logic from `phase_tools.py` and `server.py`, resolving the double-SSOT advisory issue (Files: `mcp_server/tools/phase_tools.py`, `mcp_server/server.py`).
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_test_tools.py`
 - `tests/mcp_server/unit/tools/test_safe_edit_tool.py`
-- `tests/mcp_server/unit/tools/test_quality_tools.py` (verifies auto-fix tool functionality and loader validation)
+
+---
+**Success/Exit Criteria:**
+Batch 9 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally. If tests fail and verbose=False, post_tool_instruction recommends running with verbose=True.
+
+
+### Cycle 10: Validation, Quality Gates, and Cleanup
+
+**Goal:** Perform full test suite run and ruff quality gate checks on the entire changed codebase, and remove the temporary compatibility layer.
+
+**Deliverables:**
+- **[D10.1]** Green full test suite run and clean quality gates check.
+- **[D10.2]** Remove the compatibility bridge in `StructuredTool` so it only supports `BaseModel` DTOs, satisfying YAGNI §9 (File: `mcp_server/tools/base.py`).
+
+**Tests:**
+- Run full test suite: `pytest`
+- Run quality gates: `ruff check` and type checks
+
+**Success/Exit Criteria:**
+All 2880+ tests pass, and quality gates pass with zero lint or typing violations. Compatibility bridge removed cleanly.
+
 ## Test Suite Strategy & Refactoring
 
 Transitioning to dual JSON+text outputs and Pydantic DTOs requires modifications to the test suite to prevent breaking changes and ensure tests remain DRY:
@@ -184,26 +220,6 @@ The compatibility bridge in `StructuredTool` allows us to migrate tests incremen
 - This ensures the test suite remains 100% green at every commit.
 
 ---
-**Success/Exit Criteria:**
-Batch 8 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally. If tests fail and verbose=False, post_tool_instruction recommends running with verbose=True.
-
-
-### Cycle 9: Validation, Quality Gates, and Cleanup
-
-**Goal:** Perform full test suite run and ruff quality gate checks on the entire changed codebase, and remove the temporary compatibility layer.
-
-**Deliverables:**
-- **[D9.1]** Green full test suite run and clean quality gates check.
-- **[D9.2]** Remove the compatibility bridge in `StructuredTool` so it only supports `BaseModel` DTOs, satisfying YAGNI §9 (File: `mcp_server/tools/base.py`).
-
-**Tests:**
-- Run full test suite: `pytest`
-- Run quality gates: `ruff check` and type checks
-
-**Success/Exit Criteria:**
-All 2880+ tests pass, and quality gates pass with zero lint or typing violations. Compatibility bridge removed cleanly.
-
----
 
 ## Risks & Mitigation
 
@@ -218,8 +234,9 @@ All 2880+ tests pass, and quality gates pass with zero lint or typing violations
 
 - Cycle 1 Complete: present presenter architecture to user.
 - Cycle 5 Complete: check Git tools.
-- Cycle 8 Complete: check Batch 5 tools.
-- Cycle 9 Complete: ready for QA PR.
+- Cycle 8 Complete: AutoFixTool and MCP Resource pilot verified.
+- Cycle 9 Complete: check Batch 5 tools.
+- Cycle 10 Complete: ready for QA PR.
 
 ## Related Documentation
 - **[docs/development/issue402/research.md][related-1]**
