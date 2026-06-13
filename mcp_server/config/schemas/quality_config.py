@@ -81,6 +81,7 @@ class ExecutionConfig(BaseModel):
     command: list[str] = Field(..., min_length=1)
     timeout_seconds: int = Field(..., gt=0)
     working_dir: str | None = Field(default=None)
+    fix_command: list[str] | None = Field(default=None)
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -146,6 +147,14 @@ class QualityGate(BaseModel):
     success: SuccessCriteria
     capabilities: CapabilitiesMetadata
     scope: GateScope | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _validate_autofix_command(self) -> QualityGate:
+        if self.capabilities.supports_autofix and not self.execution.fix_command:
+            raise ValueError(
+                f"Gate '{self.name}' supports autofix but is missing execution.fix_command"
+            )
+        return self
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

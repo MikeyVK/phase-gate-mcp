@@ -1,13 +1,16 @@
 """Quality tools."""
 
+import uuid
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from mcp_server.core.interfaces import IToolResponseCache
 from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import QualityStateMutationConflictError
-from mcp_server.tools.base import BaseTool
+from mcp_server.schemas.tool_outputs import AutoFixOutput
+from mcp_server.tools.base import BaseTool, StructuredTool
 from mcp_server.tools.tool_result import ToolResult
 
 
@@ -121,3 +124,77 @@ class RunQualityGatesTool(BaseTool):
         )
         compact_payload = self.manager._build_compact_result(result)  # pyright: ignore[reportPrivateUsage]
         return ToolResult.json_data(compact_payload, text=summary_line)
+
+
+class AutoFixInput(BaseModel):
+    """Input for AutoFixTool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    scope: Literal["auto", "branch", "project", "files"] = Field(
+        default="auto",
+        description=(
+            "Scope of the auto fix run. "
+            "'auto' = union of changed files and previously failed files; "
+            "'branch' = files changed on this branch vs parent; "
+            "'project' = all files matching project_scope.include_globs; "
+            "'files' = explicit list supplied via the 'files' field."
+        ),
+    )
+    files: list[str] | None = Field(
+        default=None,
+        description=(
+            "Explicit list of files to check. "
+            "Required (and non-empty) when scope='files'. "
+            "Must be omitted (or null) for all other scope values."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _validate_files_scope_contract(self) -> "AutoFixInput":
+        if self.scope == "files":
+            if not self.files:
+                raise ValueError("files must be a non-empty list when scope='files'")
+        else:
+            if self.files is not None:
+                raise ValueError(
+                    f"files must be omitted when scope='{self.scope}' "
+                    "(only allowed with scope='files')"
+                )
+        return self
+
+
+class AutoFixTool(StructuredTool):
+    """Tool to run auto fixes."""
+
+    name = "auto_fix"
+    description = (
+        "Execute configured fixer commands on matching files. "
+        "scope='auto' (default): union of changed + failed files; "
+        "scope='branch': files changed on this branch; "
+        "scope='project': all project files; "
+        "scope='files': explicit file list supplied via the 'files' field."
+    )
+    args_model = AutoFixInput
+    output_model = AutoFixOutput
+    presentation_category = "mutation"
+
+    def __init__(self, qa_manager: QAManager, cache: IToolResponseCache) -> None:
+        self.qa_manager = qa_manager
+        self.cache = cache
+
+    async def execute_structured(self, params: AutoFixInput, context: NoteContext) -> AutoFixOutput:
+        """Execute the auto fixes and cache the result."""
+        _ = context
+        # 1. Run the auto fix logic via QAManager
+        output = self.qa_manager.run_auto_fix(scope=params.scope, files=params.files)
+
+        # 2. Generate run_id and copy output with the run_id
+        run_id = uuid.uuid4().hex
+        uri = f"pgmcp://cache/runs/{run_id}"
+
+        # 3. Cache the original output (so cached_dto == expected_output matches)
+        self.cache.put(uri, output)
+
+        # 4. Return the output DTO containing run_id
+        return output.model_copy(update={"run_id": run_id})

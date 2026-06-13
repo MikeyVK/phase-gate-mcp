@@ -7,9 +7,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
+    from pydantic import BaseModel
+
     from mcp_server.managers.pytest_runner import PytestResult
     from mcp_server.managers.state_repository import BranchState
     from mcp_server.state.quality_state import QualityState
@@ -133,6 +135,9 @@ class IGitContextReader(Protocol):
     def get_recent_commits(self, limit: int = 5) -> list[str]:
         raise NotImplementedError
 
+    def get_status(self) -> dict[str, Any]:
+        raise NotImplementedError
+
 
 @runtime_checkable
 class IBranchParentReader(Protocol):
@@ -190,4 +195,18 @@ class IContextLoadedWriter(Protocol):
     """Record that get_work_context has been called for a branch this session."""
 
     def set_context_loaded(self, branch: str, *, value: bool) -> None:
+        raise NotImplementedError
+
+
+@runtime_checkable
+class IToolResponseCache(Protocol):
+    """Protocol for response cache managers."""
+
+    def put(self, uri: str, output: BaseModel) -> None:
+        raise NotImplementedError
+
+    def get(self, uri: str) -> BaseModel | None:
+        raise NotImplementedError
+
+    def exists(self, uri: str) -> bool:
         raise NotImplementedError

@@ -27,9 +27,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from mcp_server.server import MCPServer
-
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
@@ -51,6 +48,7 @@ from mcp_server.config.schemas import (
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
+from mcp_server.core.interfaces import IToolResponseCache
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.artifact_manager import ArtifactManager
@@ -75,12 +73,14 @@ from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 from mcp_server.resources.base import BaseResource
+from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.resources.github import GitHubIssuesResource
 from mcp_server.resources.standards import StandardsResource
 from mcp_server.resources.status import StatusResource
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
+from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.admin_tools import RestartServerTool
 from mcp_server.tools.base import BaseTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
@@ -131,13 +131,15 @@ from mcp_server.tools.project_tools import (
     SavePlanningDeliverablesTool,
     UpdatePlanningDeliverablesTool,
 )
-from mcp_server.tools.quality_tools import RunQualityGatesTool
+from mcp_server.tools.quality_tools import AutoFixTool, RunQualityGatesTool
 from mcp_server.tools.safe_edit_tool import SafeEditTool
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
 from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.template_validation_tool import TemplateValidationTool
 from mcp_server.tools.test_tools import RunTestsTool
 
+if TYPE_CHECKING:
+    from mcp_server.server import MCPServer
 logger = get_logger("bootstrap")
 lifecycle_logger = get_logger("server_lifecycle")
 
@@ -184,6 +186,7 @@ class ManagerGraph:
     artifact_manager: ArtifactManager
     pr_status_cache: PRStatusCache
     enforcement_runner: EnforcementRunner
+    response_cache: IToolResponseCache
 
 
 class ServerBootstrapper:
@@ -403,7 +406,7 @@ class ServerBootstrapper:
             server_root=server_root,
             context_loaded_reader=context_loaded_cache,
         )
-
+        response_cache = ResponseCacheManager(max_size=50)
         return ManagerGraph(
             template_registry=template_registry,
             git_manager=git_manager,
@@ -422,6 +425,7 @@ class ServerBootstrapper:
             artifact_manager=artifact_manager,
             pr_status_cache=pr_status_cache,
             enforcement_runner=enforcement_runner,
+            response_cache=response_cache,
         )
 
     def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[BaseTool]:
@@ -625,6 +629,7 @@ class ServerBootstrapper:
                 ]
             )
 
+        tools.append(AutoFixTool(qa_manager=managers.qa_manager, cache=managers.response_cache))
         return tools
 
     def _build_resources(
@@ -636,6 +641,7 @@ class ServerBootstrapper:
         resources: list[BaseResource] = [
             StandardsResource(),
             StatusResource(),
+            CachedResponseResource(cache=managers.response_cache),
         ]
 
         if self._settings.github.token:

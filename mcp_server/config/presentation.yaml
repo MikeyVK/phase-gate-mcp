@@ -14,4 +14,18 @@ global:
     branch_lockdown: "\n\n⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
     todo_discipline: "\n\n📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
 
-tools: {}
+tools:
+  auto_fix:
+    template_success: |
+      **Auto-Fix Run Completed Successfully**
+      - Gates executed: {gates_executed_count} ({gates_executed})
+      - Files modified: {modified_files_count}
+      {formatted_modified_files}
+
+      Cache URI: pgmcp://cache/runs/{run_id}
+    template_failure: |
+      **Auto-Fix Run Failed**
+      - Error: {error_message}
+      - Gates executed: {gates_executed_count} ({gates_executed})
+      - Files modified: {modified_files_count}
+    advisory: todo_discipline

@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
+    from mcp_server.schemas.tool_outputs import AutoFixOutput
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas import (
     JsonViolationsParsing,
@@ -1219,3 +1220,94 @@ class QAManager:
                 )
             )
         return result
+
+    def run_auto_fix(
+        self,
+        scope: str = "auto",
+        files: list[str] | None = None,
+    ) -> AutoFixOutput:
+        """Run all autofix-capable quality gates on files resolved for scope.
+
+        Returns an AutoFixOutput DTO.
+        """
+        from mcp_server.schemas.tool_outputs import AutoFixOutput  # noqa: PLC0415
+
+        # 1. Retrieve quality config and gates
+        quality_config = self._require_quality_config()
+
+        # 2. Filter gates where supports_autofix is True
+        autofix_gates = {
+            gate_id: gate
+            for gate_id, gate in quality_config.gates.items()
+            if gate.capabilities.supports_autofix
+        }
+
+        # 3. Resolve target files using _resolve_scope
+        resolved_files = self._resolve_scope(scope, files)
+
+        # 4. Track executed gates and before/after git status
+        gates_executed: list[str] = []
+
+        status_before = self._git_context_reader.get_status()
+        before_dirty = set(status_before.get("modified_files", [])) | set(
+            status_before.get("untracked_files", [])
+        )
+        # 5. Run fixers
+        success = True
+        error_message: str | None = None
+
+        for gate in autofix_gates.values():
+            # Filter files for the gate
+            gate_files = self._files_for_gate(gate, resolved_files)
+            if not gate_files:
+                continue
+
+            gates_executed.append(gate.name)
+
+            # Resolve command and execute
+            cmd = self._resolve_command(gate.execution.fix_command or [], gate_files)
+            try:
+                proc = subprocess.run(
+                    cmd,
+                    stdin=subprocess.DEVNULL,
+                    capture_output=True,
+                    text=True,
+                    timeout=gate.execution.timeout_seconds,
+                    check=False,
+                    cwd=gate.execution.working_dir,
+                )
+                if proc.returncode not in gate.success.exit_codes_ok:
+                    success = False
+                    if not error_message:
+                        error_message = (
+                            f"Gate '{gate.name}' failed with exit code {proc.returncode}"
+                        )
+            except subprocess.TimeoutExpired:
+                success = False
+                if not error_message:
+                    error_message = f"Gate '{gate.name}' timed out"
+            except Exception as e:
+                success = False
+                if not error_message:
+                    error_message = f"Gate '{gate.name}' failed: {e}"
+
+        # 6. Detect modified/dirty files
+        status_after = self._git_context_reader.get_status()
+        after_dirty = set(status_after.get("modified_files", [])) | set(
+            status_after.get("untracked_files", [])
+        )
+
+        # Include any file that became dirty, and any file that was dirty and target of resolving
+        modified_files = sorted((after_dirty - before_dirty) | (after_dirty & set(resolved_files)))
+
+        return AutoFixOutput(
+            success=success,
+            error_message=error_message,
+            modified_files=modified_files,
+            modified_files_count=len(modified_files),
+            formatted_modified_files=(
+                "\n".join(f"- {f}" for f in modified_files) if modified_files else ""
+            ),
+            gates_executed=gates_executed,
+            gates_executed_count=len(gates_executed),
+        )

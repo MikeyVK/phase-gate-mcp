@@ -2,10 +2,27 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "planning",
-  "current_cycle": 1,
+  "current_phase": "implementation",
+  "current_cycle": 8,
   "last_cycle": 1,
-  "cycle_history": [],
+  "cycle_history": [
+    {
+      "cycle_number": 8,
+      "name": "Cycle 8: Auto-Fix Tool & MCP Resource Pilot",
+      "entered": "2026-06-13T19:22:11.421275+00:00",
+      "forced": true,
+      "skip_reason": "User requested to start implementation directly with Cycle 8 (Auto-Fix Tool & Response Cache / Resource Pilot).",
+      "human_approval": "User approved the transition and requested to jump directly to Cycle 8.",
+      "skipped_cycles": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -16,7 +33,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested transition to planning to schedule the auto_fix tool implementation",
+  "skip_reason": "User requested direct transition to implementation to start Cycle 8.",
   "issue_title": "tooling: Expose JSON data in MCP tools",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-12T05:42:13.722630+00:00",
@@ -108,8 +125,16 @@
       "human_approval": "User requested transition to planning first",
       "forced": true,
       "skip_reason": "User requested transition to planning to schedule the auto_fix tool implementation"
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-13T19:22:01.290924+00:00",
+      "human_approval": "User approved the transition and requested to jump directly to implementation/cycle 8.",
+      "forced": true,
+      "skip_reason": "User requested direct transition to implementation to start Cycle 8."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": null
+  "current_sub_phase": "red"
 }
