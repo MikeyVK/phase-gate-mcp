@@ -72,7 +72,7 @@ def convert_tool_result_to_mcp_result(result: ToolResult) -> CallToolResult:
     if structured_content is not None:
         json_dump_str = json.dumps(structured_content, indent=2, default=str)
         markdown_json = f"\n\n```json\n{json_dump_str}\n```"
-        
+
         # Find the first TextContent block and append to it
         text_content_blocks = [c for c in mcp_content if isinstance(c, TextContent)]
         if text_content_blocks:
