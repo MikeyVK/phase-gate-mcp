@@ -18,9 +18,9 @@ Investigate the migration of MCP tools to StructuredTool, address the client-sid
 - All registered MCP tools in the `mcp_server/tools/` directory.
 - Standardisation of JSON output payloads for tools.
 - Resolution of the client-side `structuredContent` limitation (where the Antigravity LLM runner stript/discards `type: "json"` payloads from the chat context).
-- Designing a tool-agnostic `auto_fix` tool that integrates with the existing quality gates configuration.
-- Reusing the `QAManager`'s file resolution, gate filtering, and venv command execution.
-- Defining explicit `fix_command` structures in `quality.yaml` to avoid implicit string manipulation.
+- **Scope Expansion: Agnostic Auto-Fixing Tool:** Designing and implementing a tool-agnostic `auto_fix` (or `lint_fix`) tool that integrates with the existing quality gates configuration in `quality.yaml` rather than being hardcoded to a single linter (e.g. Ruff).
+- **Code Reuse:** Reusing the internal mechanics of the quality gates tool (under `QAManager`), specifically file resolution (`_resolve_scope`), gate/glob filtering (`_files_for_gate`), and venv-aware execution (`_resolve_command`).
+- **Configuration Integration:** Defining explicit `fix_command` structures in `quality.yaml` for each gate to support a clear and explicit configuration mapping instead of implicit string parsing/replacement to derive fix commands from check commands.
 
 **Out of Scope:**
 - Modifications to client-side runner implementations or the core Antigravity platform.
