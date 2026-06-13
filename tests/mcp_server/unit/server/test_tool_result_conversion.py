@@ -51,7 +51,9 @@ class TestToolResultConversion:
         # The JSON content block must be popped, leaving only the TextContent block
         assert len(mcp_result.content) == 1
         assert isinstance(mcp_result.content[0], TextContent)
-        assert mcp_result.content[0].text == "Summary text"
+        assert "Summary text" in mcp_result.content[0].text
+        assert "```json" in mcp_result.content[0].text
+        assert '"key": "value"' in mcp_result.content[0].text
 
         # The structuredContent field must contain the original dict data
         assert getattr(mcp_result, "structuredContent", None) == test_data
