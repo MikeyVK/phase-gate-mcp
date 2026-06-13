@@ -14,6 +14,7 @@ class BaseToolOutput(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     success: bool = True
+
     error_message: str | None = None
     post_tool_instruction: str | None = None
 

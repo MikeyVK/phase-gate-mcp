@@ -231,10 +231,11 @@ class MCPServer:
 
         @self.server.read_resource()  # type: ignore[no-untyped-call, untyped-decorator]
         async def handle_read_resource(uri: str) -> str:
+            uri_str = str(uri)
             for resource in self.resources:
-                if resource.matches(uri):
-                    return await resource.read(uri)
-            raise ValueError(f"Resource not found: {uri}")
+                if resource.matches(uri_str):
+                    return await resource.read(uri_str)
+            raise ValueError(f"Resource not found: {uri_str}")
 
         @self.server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
         async def handle_list_tools() -> list[Tool]:
