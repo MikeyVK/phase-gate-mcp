@@ -178,7 +178,7 @@
           },
           {
             "cycle_number": 8,
-            "name": "Cycle 8: Batch 5 (Phase, Scaffold, Quality & Testing Tools)",
+            "name": "Cycle 8: Auto-Fix Tool & MCP Resource Pilot",
             "deliverables": [
               {
                 "id": "D8.1",
@@ -221,7 +221,7 @@
           },
           {
             "cycle_number": 9,
-            "name": "Cycle 9: Validation, Quality Gates, and Cleanup",
+            "name": "Cycle 9: Batch 5 (Phase, Scaffold, Quality & Testing Tools)",
             "deliverables": [
               {
                 "id": "D9.1",
