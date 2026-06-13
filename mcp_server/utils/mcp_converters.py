@@ -67,6 +67,19 @@ def convert_tool_result_to_mcp_result(result: ToolResult) -> CallToolResult:
     filtered_content = [c for c in result.content if c.get("type") != "json"]
     mcp_content = convert_tool_result_to_content(filtered_content)
 
+    # QUICKFIX: If structured JSON is present, embed it as a markdown JSON code block
+    # in the text content block so the model can read it!
+    if structured_content is not None:
+        json_dump_str = json.dumps(structured_content, indent=2, default=str)
+        markdown_json = f"\n\n```json\n{json_dump_str}\n```"
+        
+        # Find the first TextContent block and append to it
+        text_content_blocks = [c for c in mcp_content if isinstance(c, TextContent)]
+        if text_content_blocks:
+            text_content_blocks[0].text += markdown_json
+        else:
+            mcp_content.append(TextContent(type="text", text=markdown_json))
+
     return CallToolResult(
         content=cast(list[Any], mcp_content),
         isError=result.is_error,
