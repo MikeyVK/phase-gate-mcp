@@ -2,7 +2,7 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "implementation",
+  "current_phase": "research",
   "current_cycle": 1,
   "last_cycle": 1,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Scope uitbreiding en expliciete toevoeging van de auto-fix tool vereisen her-evaluatie in de research fase",
+  "skip_reason": "Re-evaluatie van alternatieven (MCP Resources) in de research fase omdat structuredContent niet bruikbaar is.",
   "issue_title": "tooling: Expose JSON data in MCP tools",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-12T05:42:13.722630+00:00",
@@ -92,8 +92,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-06-13T17:04:54.452610+00:00",
+      "human_approval": "User requested forced transition to research to explore MCP Resources alternative",
+      "forced": true,
+      "skip_reason": "Re-evaluatie van alternatieven (MCP Resources) in de research fase omdat structuredContent niet bruikbaar is."
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": null
 }

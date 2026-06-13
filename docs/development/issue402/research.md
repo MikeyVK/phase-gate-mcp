@@ -116,6 +116,12 @@ To define JSON schemas for tool output data, we consider two options:
 
 **Architectural Alignment:** Option B is recommended because it respects type safety at system boundaries and avoids implicit data structures, fulfilling the prime directives.
 
+### 3. The structuredContent Limitation & MCP Resources Alternative
+- **Core Finding:** We discovered during implementation that the Antigravity LLM runner (the client runner) completely discards/strips the `CallToolResult.structuredContent` field before presenting the response to the model. Returning JSON payloads solely through `structuredContent` leaves the model blind to the structured data.
+- **Immediate Mitigation (Quickfix):** Modify the MCP converter layer (`convert_tool_result_to_mcp_result`) to format and append the structured JSON payload directly as a markdown code block (` ```json ... ``` `) within the text block, restoring visibility.
+- **MCP Resources Alternative:** For a clean architectural solution, we will investigate and try out the MCP Resources feature. Instead of returning raw JSON inside the tool's text response, the tool returns a lightweight summary along with a resource URI (e.g. `issue://402/json`). The model can then explicitly retrieve the full JSON payload by calling `read_resource`.
+- **First Trial:** We will implement and test this Resource alternative first on a single tool (e.g. `GetIssueTool` or `GetWorkContextTool`) before evaluating a full rollout.
+
 ### 4. Blast Radius and Test-Suite Impact
 - **The Issue:** Dual-payload `ToolResult` (from `ToolResult.json_data()`) sets the JSON block as `content[0]` and the text block as `content[1]`.
 - **The Blast Radius:** More than 200 unit test assertions in `tests/mcp_server/unit/tools/` check `result.content[0]["text"]` to verify text outputs. Converting all tools to `StructuredTool` will cause all these assertions to fail with a `KeyError`, as index 0 becomes a JSON block.
@@ -136,11 +142,14 @@ To define JSON schemas for tool output data, we consider two options:
 All MCP tools in `mcp_server/tools/` without exception (including admin, health, and signal tools such as `HealthCheckTool` and `RestartServerTool` to ensure 100% uniformity and avoid custom python formatters/circular logic).
 
 ### Selected strategy
-Option B: Pydantic-defined schemas for tool outputs, with migration of all tools to `StructuredTool`.
+1. **JSON DTO Migration:** Option B (Pydantic-defined DTOs for all tool outputs with migration to `StructuredTool`).
+2. **Immediate Exposure (Quickfix):** Embed structured JSON inside the human-readable text block via the MCP converter layer as a markdown block (` ```json ... ``` `) to resolve immediate LLM client blindness.
+3. **MCP Resources Alternative:** Trial the MCP Resources feature on a single tool (specifically `GetIssueTool`) as a clean alternative, allowing the model to explicitly retrieve the structured JSON via `read_resource`.
 
 ### Rationale
-Provides explicit boundary validation, preventing drift and ensuring client compatibility without violating SRP/CQS. Migrating all tools guarantees architectural consistency and a single presentation flow.
+Pydantic DTOs provide explicit type validation at system boundaries. Embed-in-text serves as an immediate, robust fallback for client runners that discard `structuredContent`. Testing MCP Resources on a single tool provides a concrete proof of concept for a cleaner, resource-based payload retrieval architecture without breaking other tools.
 
 ### Constraints for later phases
 - Do not instantiate outputs inside `execute_structured` directly if they bypass defined schema models.
 - All unit tests must use the new index-agnostic assertion helper.
+- The trial tool must define a corresponding resource URI and register it with the MCP server's resource list.
