@@ -190,6 +190,14 @@
               },
               {
                 "id": "D8.2",
+                "description": "Extend ExecutionConfig schema in quality_config.py to support optional fix_command",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/config/schemas/quality_config.py"
+                }
+              },
+              {
+                "id": "D8.3",
                 "description": "Update the startup configuration loader/validator to fail-fast if any quality gate has supports_autofix: true but lacks fix_command",
                 "validates": {
                   "type": "file_exists",
@@ -197,27 +205,31 @@
                 }
               },
               {
-                "id": "D8.3",
-                "description": "Register dynamic resource URIs for auto-fix runs (e.g. quality://auto_fix/runs/{run_id}/json) with the server's resource registry"
-              },
-              {
                 "id": "D8.4",
-                "description": "Implement the read_resource MCP handler on the server to serve the structured DTO output for the run",
+                "description": "Implement IToolResponseCache interface and ResponseCacheManager with FIFO eviction (OrderedDict) and store Pydantic DTO instances directly in memory",
                 "validates": {
                   "type": "file_exists",
-                  "file": "mcp_server/server.py"
+                  "file": "mcp_server/state/response_cache.py"
                 }
               },
               {
                 "id": "D8.5",
-                "description": "Add declarative presentation template and advisory mapping for auto_fix in presentation.yaml",
+                "description": "Implement CachedResponseResource (inheriting from BaseResource) matching uniform pattern pgmcp://cache/runs/.*, register it in bootstrap.py's _build_resources(), and inject the cache manager into the server and resource constructor",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/resources/cache.py"
+                }
+              },
+              {
+                "id": "D8.6",
+                "description": "Add declarative presentation template and advisory mapping for auto_fix in presentation.yaml, returning the lightweight summary referencing the uniform resource URI",
                 "validates": {
                   "type": "file_exists",
                   "file": "mcp_server/config/presentation.yaml"
                 }
               }
             ],
-            "exit_criteria": "AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; and the model can successfully retrieve the run's JSON data using the read_resource tool."
+            "exit_criteria": "AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; response cache evicts oldest runs correctly; and the model can successfully retrieve the run's JSON data using the read_resource tool from the uniform cache resource."
           },
           {
             "cycle_number": 9,

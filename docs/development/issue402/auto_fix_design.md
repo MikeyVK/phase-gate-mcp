@@ -101,6 +101,7 @@ Add an explicit, optional 'fix_command' string array to each quality gate config
 sequenceDiagram
     participant Client as MCP Client
     participant Server as MCPServer
+    participant Cache as ResponseCacheManager
     participant Tool as AutoFixTool
     participant QA as QAManager
     participant Subprocess as Ruff / Fixer Subprocess
@@ -115,10 +116,18 @@ sequenceDiagram
         QA->>Subprocess: Execute fixer binary in .venv
         Subprocess-->>QA: Execution result (success/failure)
     end
-    QA-->>Tool: Return AutoFixOutput (success, modified_files, modified_files_count, formatted_modified_files, gates_executed, gates_executed_count)
+    QA-->>Tool: Return AutoFixOutput DTO
+    Tool->>Cache: put("pgmcp://cache/runs/{run_id}", AutoFixOutput)
     Tool-->>Server: Return DTO
-    Server->>Server: TextPresenter formats fallback text
-    Server-->>Client: Return ToolResult (JSON + formatted Text)
+    Server->>Server: TextPresenter formats lightweight summary with URI
+    Server-->>Client: Return ToolResult (Text summary with URI)
+    
+    Note over Client, Server: Later, when client/LLM reads the cache resource:
+    Client->>Server: Call read_resource(uri="pgmcp://cache/runs/{run_id}")
+    Server->>Server: Route to CachedResponseResource
+    Server->>Cache: get("pgmcp://cache/runs/{run_id}")
+    Cache-->>Server: Return AutoFixOutput DTO
+    Server-->>Client: Return compact JSON (whitespace-stripped)
 ```
 
 ### 3.3. DTO Schema & Interface Contracts
@@ -163,26 +172,40 @@ class AutoFixOutput(BaseToolOutput):
 
 ### 3.4. Configuration Extension
 
-We will extend the `ExecutionConfig` in `quality.yaml` to include the optional `fix_command` list:
+We will extend `ExecutionConfig` and `CapabilitiesMetadata` in `quality_config.py` to support the configuration of auto-fixes. In `quality.yaml`, the `fix_command` must be nested under `execution` (matching `command`), and `supports_autofix` must be nested under `capabilities`:
 
 ```yaml
 # .phase-gate/config/quality.yaml
 gates:
   gate0_ruff_format:
-    name: "Ruff Format"
-    priority: 0
-    glob_patterns: ["*.py"]
-    check_command: ["ruff", "format", "--check"]
-    fix_command: ["ruff", "format"]
-    supports_autofix: true
+    name: "Gate 0: Ruff Format"
+    description: "Code formatting (ruff format --check)"
+    execution:
+      command: ["python", "-m", "ruff", "format", "--check", "--diff", "--isolated", "--line-length=100"]
+      fix_command: ["python", "-m", "ruff", "format", "--isolated", "--line-length=100"]
+      timeout_seconds: 60
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: true
+      parsing_strategy: "text_violations"
 
   gate1_formatting:
-    name: "Ruff Lint"
-    priority: 1
-    glob_patterns: ["*.py"]
-    check_command: ["ruff", "check"]
-    fix_command: ["ruff", "check", "--fix"]
-    supports_autofix: true
+    name: "Gate 1: Ruff Strict Lint"
+    description: "Strict linting (stricter than VS Code/IDE baseline)"
+    execution:
+      command: ["python", "-m", "ruff", "check", "--isolated", "--output-format=json"]
+      fix_command: ["python", "-m", "ruff", "check", "--isolated", "--fix"]
+      timeout_seconds: 60
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: true
+      parsing_strategy: "json_violations"
 ```
 
 We will also define the declarative presentation template in `presentation.yaml`:
@@ -210,7 +233,7 @@ The `QAManager` will implement `run_auto_fix` by:
 2. Filtering gates where `supports_autofix` is True (validated at startup to ensure `fix_command` is non-empty).
 3. Resolving the target files based on the requested `scope` using `_resolve_scope(scope, files)`.
 4. For each gate, filtering the target files using `_files_for_gate(gate, resolved_files)` to check if they match `glob_patterns`.
-5. Resolving the full execution command using `_resolve_command(gate.fix_command, filtered_files)`.
+5. Resolving the full execution command using `_resolve_command(gate.execution.fix_command, filtered_files)`.
 6. Executing the resolved command in the correct virtual environment using subprocess.
 7. Detecting any modified/dirty files in git or via file status to populate the `modified_files` list, pre-computing counts and formatted fields.
 
@@ -219,15 +242,17 @@ The `QAManager` will implement `run_auto_fix` by:
 
 | Question | Options | Status |
 |----------|---------|--------|
-| Should the auto_fix tool accept a dry-run flag to preview changes as a diff before applying? (Deferred to future YAGNI decision) |  |  |
+| Should the auto_fix tool accept a dry-run flag to preview changes as a diff before applying? (Deferred to future YAGNI decision) | | |
 ## Related Documentation
 - **[docs/development/issue402/research.md][related-1]**
 - **[docs/development/issue402/design.md][related-2]**
+- **[docs/development/issue402/response_cache_design.md][related-3]**
 
 <!-- Link definitions -->
 
 [related-1]: docs/development/issue402/research.md
 [related-2]: docs/development/issue402/design.md
+[related-3]: docs/development/issue402/response_cache_design.md
 
 ---
 
@@ -236,3 +261,4 @@ The `QAManager` will implement `run_auto_fix` by:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-13 | Agent | Initial draft |
+| 1.1 | 2026-06-13 | Agent | Corrected quality.yaml nesting structure and integrated ResponseCacheManager / CachedResponseResource |

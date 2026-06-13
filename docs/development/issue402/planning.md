@@ -146,23 +146,24 @@ GitHub Issues and PR tools successfully migrated and return flattened DTO presen
 GitHub Labels and Milestones tools successfully migrated and return flattened DTO presentation fields.
 
 
-### Cycle 8: Auto-Fix Tool & MCP Resource Pilot
+### Cycle 8: Auto-Fix Tool & Response Cache / Resource Pilot
 
-**Goal:** Implement the new tool-agnostic `AutoFixTool` (with startup config-loader validation checks) and utilize it as the pilot to test the MCP Resource route.
+**Goal:** Implement the new tool-agnostic `AutoFixTool`, the generic `ResponseCacheManager` and `CachedResponseResource` provider, and verify it as the pilot to test the MCP Resource route.
 
 **Deliverables:**
 - **[D8.1]** Implement `AutoFixTool` (with `AutoFixInput` and `AutoFixOutput` DTOs) and `QAManager.run_auto_fix()` (Files: `mcp_server/tools/quality_tools.py`, `mcp_server/managers/qa_manager.py`).
-- **[D8.2]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
-- **[D8.3]** Register dynamic resource URIs for auto-fix runs (e.g. `quality://auto_fix/runs/{run_id}/json`) with the server's resource registry, allowing programmatic retrieval of run outputs.
-- **[D8.4]** Implement the `read_resource` MCP handler on the server to serve the structured DTO output for the run, demonstrating dynamic resource lookup (File: `mcp_server/server.py`).
-- **[D8.5]** Add declarative presentation template and advisory mapping for `auto_fix` in `presentation.yaml`, returning the lightweight summary referencing the resource URI (File: `mcp_server/config/presentation.yaml`).
+- **[D8.2]** Extend `ExecutionConfig` schema in `quality_config.py` to support optional `fix_command: list[str] | None = Field(default=None)` (File: `mcp_server/config/schemas/quality_config.py`).
+- **[D8.3]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
+- **[D8.4]** Implement `IToolResponseCache` interface and `ResponseCacheManager` with FIFO eviction (OrderedDict) and store Pydantic DTO instances directly in memory (File: `mcp_server/state/response_cache.py` [NEW]).
+- **[D8.5]** Implement `CachedResponseResource` (inheriting from `BaseResource`) matching uniform pattern `pgmcp://cache/runs/.*`, register it in `bootstrap.py`'s `_build_resources()`, and inject the cache manager into the server and resource constructor (Files: `mcp_server/resources/cache.py` [NEW], `mcp_server/bootstrap.py`, `mcp_server/server.py`).
+- **[D8.6]** Add declarative presentation template and advisory mapping for `auto_fix` in `presentation.yaml`, returning the lightweight summary referencing the uniform resource URI (File: `mcp_server/config/presentation.yaml`).
 
 **Tests:**
-- `tests/mcp_server/unit/tools/test_quality_tools.py` (verifies auto-fix tool functionality, loader validation, and resource registration/reading)
+- `tests/mcp_server/unit/tools/test_quality_tools.py` (verifies auto-fix tool functionality, config validation, cache eviction, and uniform resource reading)
 
 ---
 **Success/Exit Criteria:**
-AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; and the model can successfully retrieve the run's JSON data using the `read_resource` tool.
+AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; response cache evicts oldest runs correctly; and the model can successfully retrieve the run's JSON data using the `read_resource` tool from the uniform cache resource.
 
 
 ### Cycle 9: Batch 5 (Phase, Scaffold, Quality & Testing Tools)
@@ -258,3 +259,4 @@ The compatibility bridge in `StructuredTool` allows us to migrate tests incremen
 | 1.2 | 2026-06-12 | Agent | Resolved QA blockers, warnings, and added YAML anchor parsing verification |
 | 1.3 | 2026-06-12 | Agent | Resolved QA NOGO feedback (flattened DTOs, server-level routing, presentation_category, test suite impact) |
 | 1.4 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (flattened lists, explicit handle_call_tool routing, presentation_category & validator deliverables) |
+| 1.5 | 2026-06-13 | Agent | Resolved QA NOGO feedback for Cycle 8 (quality_config schema mismatch, ResponseCacheManager integration, and uniform CachedResponseResource provider) |
