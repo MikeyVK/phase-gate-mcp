@@ -148,15 +148,19 @@ GitHub Labels and Milestones tools successfully migrated and return flattened DT
 
 ### Cycle 8: Batch 5 (Phase, Scaffold, Quality & Testing Tools)
 
-**Goal:** Migrate transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
+**Goal:** Migrate transition, scaffold, quality, pytest, and safe edit tools, and implement the new tool-agnostic Auto-Fix tool, ensuring strict separation of details (verbose/diffs/schemas/counts only in JSON).
 
 **Deliverables:**
 - **[D8.1]** Migration of transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
 - **[D8.2]** Remove transition constants (`TRANSITION_ADVISORY_NOTE`, `TRANSITION_ADVISORY_TOOL_NAMES`) and discard logic from `phase_tools.py` and `server.py`, resolving the double-SSOT advisory issue (Files: `mcp_server/tools/phase_tools.py`, `mcp_server/server.py`).
+- **[D8.3]** Implement `AutoFixTool` (with `AutoFixInput` and `AutoFixOutput` DTOs) and `QAManager.run_auto_fix()` (Files: `mcp_server/tools/quality_tools.py`, `mcp_server/managers/qa_manager.py`).
+- **[D8.4]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
+- **[D8.5]** Add declarative presentation template and advisory mapping for `auto_fix` in `presentation.yaml` (File: `mcp_server/config/presentation.yaml`).
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_test_tools.py`
 - `tests/mcp_server/unit/tools/test_safe_edit_tool.py`
+- `tests/mcp_server/unit/tools/test_quality_tools.py` (verifies auto-fix tool functionality and loader validation)
 ## Test Suite Strategy & Refactoring
 
 Transitioning to dual JSON+text outputs and Pydantic DTOs requires modifications to the test suite to prevent breaking changes and ensure tests remain DRY:
