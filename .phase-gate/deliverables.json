@@ -191,6 +191,30 @@
                   "type": "file_exists",
                   "file": "mcp_server/tools/phase_tools.py"
                 }
+              },
+              {
+                "id": "D8.3",
+                "description": "Implement AutoFixTool (with AutoFixInput and AutoFixOutput DTOs) and QAManager.run_auto_fix()",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/tools/quality_tools.py"
+                }
+              },
+              {
+                "id": "D8.4",
+                "description": "Update the startup configuration loader/validator to fail-fast if any quality gate has supports_autofix: true but lacks fix_command",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/config/loader.py"
+                }
+              },
+              {
+                "id": "D8.5",
+                "description": "Add declarative presentation template and advisory mapping for auto_fix in presentation.yaml",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/config/presentation.yaml"
+                }
               }
             ],
             "exit_criteria": "Batch 8 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally."
