@@ -318,7 +318,7 @@ class MCPServer:
                                 raw_result = ToolResult.json_data(
                                     data=raw_result.model_dump(),
                                     text=text,
-                                    is_error=not raw_result.success,
+                                    is_error=False,
                                 )
                             else:
                                 data, text = raw_result

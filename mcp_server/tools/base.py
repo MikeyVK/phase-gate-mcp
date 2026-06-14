@@ -92,8 +92,6 @@ class StructuredTool(BaseTool, ABC):
     async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401
         result = await self.execute_structured(params, context)
         if isinstance(result, BaseModel):
-            return ToolResult.json_data(
-                result.model_dump(), text=None, is_error=not getattr(result, "success", True)
-            )
+            return ToolResult.json_data(result.model_dump(), text=None, is_error=False)
         data, text = result
         return ToolResult.json_data(data, text=text)
