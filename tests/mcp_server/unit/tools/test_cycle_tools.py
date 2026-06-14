@@ -486,12 +486,14 @@ class TestTransitionCycleToolAdvisoryNote:
         )
         context = NoteContext()
 
+        from mcp_server.schemas.tool_outputs import CycleTransitionOutput  # noqa: PLC0415
         result = await tool.execute(
             TransitionCycleInput(to_cycle=3, issue_number=257),
             context,
         )
 
-        assert not result.is_error
+        assert isinstance(result, CycleTransitionOutput)
+        assert result.success
         assert state_engine.last_call is not None
         assert state_engine.last_call["gate_runner"] is gate_runner
         notes = context.of_type(InfoNote)
@@ -500,12 +502,6 @@ class TestTransitionCycleToolAdvisoryNote:
             "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
             "to load the current phase context for this branch."
         )
-
-        rendered = context.render_to_response(result)
-        assert len(rendered.content) == 2
-        assert rendered.content[0]["text"] == result.content[0]["text"]
-        assert rendered.content[1]["text"] == notes[0].message
-
 
 class TestForceCycleToolAdvisoryNote:
     """Success-path advisory note tests for forced cycle transitions."""
@@ -549,7 +545,9 @@ class TestForceCycleToolAdvisoryNote:
             context,
         )
 
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
+        assert isinstance(result, ForceCycleTransitionOutput)
+        assert result.success
         notes = context.of_type(InfoNote)
         assert len(notes) == 1
         assert notes[0].message == (
@@ -600,14 +598,15 @@ class TestForceCycleToolFormatting:
             NoteContext(),
         )
 
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
+        assert isinstance(result, ForceCycleTransitionOutput)
+        assert result.success
         assert state_engine.last_call is not None
         assert state_engine.last_call["gate_runner"] is gate_runner
-        text = result.content[0]["text"]
-        assert "ACTION REQUIRED" in text
-        assert "cycle-checklist" in text
-        assert text.index("ACTION REQUIRED") < text.index("✅")
-
+        assert result.skipped_gates == ["cycle-checklist"]
+        assert result.passing_gates == ["cycle-docs"]
+        assert result.skipped_gates_count == 1
+        assert result.passing_gates_count == 1
     @pytest.mark.asyncio
     async def test_force_cycle_tool_formats_passing_gates_after_success(
         self,
@@ -646,8 +645,10 @@ class TestForceCycleToolFormatting:
             NoteContext(),
         )
 
-        assert not result.is_error
-        text = result.content[0]["text"]
-        assert "✅" in text
-        assert "cycle-docs" in text
-        assert text.index("✅") < text.index("cycle-docs")
+        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
+        assert isinstance(result, ForceCycleTransitionOutput)
+        assert result.success
+        assert result.skipped_gates == []
+        assert result.passing_gates == ["cycle-docs"]
+        assert result.skipped_gates_count == 0
+        assert result.passing_gates_count == 1
