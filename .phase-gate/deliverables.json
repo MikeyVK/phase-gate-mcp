@@ -43,9 +43,9 @@
               { "id": "D1.2", "description": "Implement ResourcePublishingDecorator" },
               { "id": "D1.3", "description": "Implement ToolFactory" },
               { "id": "D1.4", "description": "Refactor MCPServer.handle_call_tool()" },
-              { "id": "D1.5", "description": "Remove structuredContent logic from converters" },
+              { "id": "D1.5", "description": "Update MCPServer to support a temporary bridge: new ITool tools return pure TextContent, legacy StructuredTool tools still return structuredContent/QUICKFIX JSON" },
               { "id": "D1.6", "description": "Ensure all pure domain DTOs enforce frozen=True for immutability" },
-              { "id": "D1.7", "description": "Update assert_structured_tool_result helper" }
+              { "id": "D1.7", "description": "Introduce a new assert_itool_result helper for ITool tests, leaving assert_structured_tool_result intact for legacy tools" }
             ],
             "exit_criteria": "The server successfully routes a tool call through the factory-assembled decorated pipeline, caches the DTO, and returns pure text to the client."
           },
@@ -134,7 +134,7 @@
             "name": "Validation, Quality Gates & Cleanup",
             "deliverables": [
               { "id": "D10.1", "description": "Delete legacy StructuredTool and unused BaseTool execution paths" },
-              { "id": "D10.2", "description": "Clean up any unused legacy converter functions" },
+              { "id": "D10.2", "description": "Remove structuredContent, QUICKFIX, legacy converter functions, and the old assert_structured_tool_result helper" },
               { "id": "D10.3", "description": "Green full test suite run" },
               { "id": "D10.4", "description": "Clean quality gates check" }
             ],

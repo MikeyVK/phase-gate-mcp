@@ -56,9 +56,9 @@ The planning follows the Approved Strategy: we will first build the core archite
 - **[D1.2]** Implement `ResourcePublishingDecorator` in `mcp_server/tools/decorators.py` to cache DTOs using `ResponseCacheManager`.
 - **[D1.3]** Implement `ToolFactory` in `mcp_server/bootstrap.py` to assemble tools and decorators.
 - **[D1.4]** Refactor `MCPServer.handle_call_tool()` to use the MVP pipeline: execute tool -> extract DTO and `run_id` from envelope -> format with `TextPresenter` -> return pure `TextContent`.
-- **[D1.5]** Remove `structuredContent` injection and `QUICKFIX` markdown JSON duplication from `mcp_converters.py`.
+- **[D1.5]** Update `MCPServer` to support a temporary bridge: new `ITool` tools return pure `TextContent`, legacy `StructuredTool` tools still return `structuredContent`/`QUICKFIX` JSON.
 - **[D1.6]** Ensure all pure domain DTOs enforce `frozen=True` for immutability.
-- **[D1.7]** Update test helpers (e.g., `assert_structured_tool_result`) to assert against the new `TextContent` and envelope structures.
+- **[D1.7]** Introduce a new `assert_itool_result` helper for `ITool` tests, leaving `assert_structured_tool_result` intact for legacy tools.
 
 **Tests:**
 - `tests/mcp_server/unit/test_server.py`
@@ -200,7 +200,7 @@ Batch 5 tools migrated; JSON separation implemented correctly.
 
 **Deliverables:**
 - **[D10.1]** Delete legacy `StructuredTool` and unused `BaseTool` execution paths from `mcp_server/tools/base.py`.
-- **[D10.2]** Clean up any unused legacy converter functions in `mcp_converters.py`.
+- **[D10.2]** Remove `structuredContent`, `QUICKFIX`, legacy converter functions, and the old `assert_structured_tool_result` helper.
 - **[D10.3]** Green full test suite run.
 - **[D10.4]** Clean quality gates check (Ruff, MyPy).
 
