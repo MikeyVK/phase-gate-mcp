@@ -2,9 +2,9 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 11,
-  "last_cycle": 10,
+  "last_cycle": 11,
   "cycle_history": [
     {
       "cycle_number": 8,
@@ -352,8 +352,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-14T22:34:39.486764+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
