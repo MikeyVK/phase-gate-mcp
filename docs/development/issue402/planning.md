@@ -3,8 +3,8 @@
 # Planning — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.4
-**Last Updated:** 2026-06-12
+**Version:** 1.6  
+**Last Updated:** 2026-06-14
 
 ---
 
@@ -47,10 +47,10 @@ Plan for migrating all active MCP tools to return Pydantic DTOs alongside declar
 
 **Deliverables:**
 - **[D1.1]** Base output schemas in `tool_outputs.py` and global `presentation.yaml` config (File: `mcp_server/schemas/tool_outputs.py`)
-- **[D1.2]** `TextPresenter` implementation and `validate_presentation_alignment` drift validator, verifying that YAML anchors and aliases are resolved safely and that the validator gracefully ignores tools without an `output_model` ClassVar during the migration phase, preventing validation crashes (File: `mcp_server/presenters/text_presenter.py`)
+- **[D1.2]** `TextPresenter` implementation (supporting list-based `next_instructions` formatted on individual lines preceded by a blank line `\n\n`) and `validate_presentation_alignment` drift validator, verifying that YAML anchors and aliases are resolved safely, templates and their next instructions are validated against tool DTO fields, and that the validator gracefully ignores tools without an `output_model` ClassVar during the migration phase, preventing validation crashes (File: `mcp_server/presenters/text_presenter.py`)
 - **[D1.3]** `assert_structured_tool_result` pytest helper (File: `tests/mcp_server/test_support.py`)
 - **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types, and update `MCPServer.handle_call_tool()` routing to explicitly check and distinguish between a `BaseModel` response and a legacy `tuple[dict, str]` response to prevent tool call crashes (Files: `mcp_server/tools/base.py`, `mcp_server/server.py`)
-- **[D1.5]** Add `presentation_config: PresentationConfig` to `ConfigLayer` in `bootstrap.py` and implement parsing in `ConfigLoader` (Files: `mcp_server/config/loader.py`, `mcp_server/bootstrap.py`)
+- **[D1.5]** Add `presentation_config: PresentationConfig` to `ConfigLayer` in `bootstrap.py` and implement parsing in `ConfigLoader` (parsing list-based `next_instructions` per tool and global `next_instruction_texts`, completely eliminating `json_reference` as a config entity) (Files: `mcp_server/config/loader.py`, `mcp_server/bootstrap.py`)
 - **[D1.6]** Extend `MCPServer.__init__` and `ServerBootstrapper` to inject `TextPresenter`, and update `MCPServer.handle_call_tool()` routing to format `BaseModel` outputs using the presenter into a dual-payload `ToolResult` (Files: `mcp_server/server.py`, `mcp_server/bootstrap.py`)
 - **[D1.7]** Infrastructure test suite refactor: update all test instantiations of `MCPServer` and mock configs to support `PresentationConfig` and `TextPresenter` constructor-injection (Files: `tests/**/*.py`)
 - **[D1.8]** Define `presentation_category: ClassVar[str | None] = None` on `BaseTool` (or `StructuredTool`) to resolve the emoji-mapping conflict with `tool_category` (which is reserved for policy enforcement like `"branch_mutating"`). The presenter will map `presentation_category` (values: `"mutation"`, `"query"`, `"admin"`, `"bootstrap"`, `"testing"`) to emojis, avoiding any clash (File: `mcp_server/tools/base.py`)
@@ -155,7 +155,7 @@ GitHub Labels and Milestones tools successfully migrated and return flattened DT
 - **[D8.2]** Extend `ExecutionConfig` schema in `quality_config.py` to support optional `fix_command: list[str] | None = Field(default=None)` (File: `mcp_server/config/schemas/quality_config.py`).
 - **[D8.3]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
 - **[D8.4]** Implement `IToolResponseCache` interface and `ResponseCacheManager` with FIFO eviction (OrderedDict) and store Pydantic DTO instances directly in memory (File: `mcp_server/state/response_cache.py` [NEW]).
-- **[D8.5]** Implement `CachedResponseResource` (inheriting from `BaseResource`) matching uniform pattern `pgmcp://cache/runs/.*`, register it in `bootstrap.py`'s `_build_resources()`, and inject the cache manager into the server and resource constructor (Files: `mcp_server/resources/cache.py` [NEW], `mcp_server/bootstrap.py`, `mcp_server/server.py`).
+- **[D8.6]** Add declarative presentation template and `next_instructions` (including `uri_reference`) for `auto_fix` in `presentation.yaml`, returning the lightweight summary referencing the uniform resource URI (File: `mcp_server/config/presentation.yaml`).
 - **[D8.6]** Add declarative presentation template and advisory mapping for `auto_fix` in `presentation.yaml`, returning the lightweight summary referencing the uniform resource URI (File: `mcp_server/config/presentation.yaml`).
 
 **Tests:**
@@ -260,3 +260,4 @@ The compatibility bridge in `StructuredTool` allows us to migrate tests incremen
 | 1.3 | 2026-06-12 | Agent | Resolved QA NOGO feedback (flattened DTOs, server-level routing, presentation_category, test suite impact) |
 | 1.4 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (flattened lists, explicit handle_call_tool routing, presentation_category & validator deliverables) |
 | 1.5 | 2026-06-13 | Agent | Resolved QA NOGO feedback for Cycle 8 (quality_config schema mismatch, ResponseCacheManager integration, and uniform CachedResponseResource provider) |
+| 1.6 | 2026-06-14 | Agent | Updated Cycle 1 planning to include list-based next_instructions, remove json_reference entity, and specify blank line formatting requirements for instructions. |

@@ -2,7 +2,7 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": 8,
   "last_cycle": 8,
   "cycle_history": [
@@ -172,6 +172,14 @@
       "human_approval": "Approved by user michel",
       "forced": true,
       "skip_reason": "User requested to return to design phase to update the design document with refined presenter next instructions."
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-06-14T06:29:51.783967+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

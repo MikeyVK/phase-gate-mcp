@@ -49,11 +49,7 @@
               },
               {
                 "id": "D1.2",
-                "description": "TextPresenter implementation and validate_presentation_alignment drift validator, verifying that YAML anchors and aliases are resolved safely and that the validator gracefully ignores tools without an output_model during the migration phase",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/presenters/text_presenter.py"
-                }
+                "description": "TextPresenter implementation (supporting list-based next_instructions formatted on individual lines preceded by a blank line \\n\\n) and validate_presentation_alignment drift validator, verifying that YAML anchors and aliases are resolved safely, templates and their next instructions are validated against tool DTO fields, and that the validator gracefully ignores tools without an output_model ClassVar during the migration phase, preventing validation crashes"
               },
               {
                 "id": "D1.3",
@@ -73,11 +69,7 @@
               },
               {
                 "id": "D1.5",
-                "description": "Add presentation_config: PresentationConfig to ConfigLayer in bootstrap.py and implement parsing in ConfigLoader",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/config/loader.py"
-                }
+                "description": "Add presentation_config: PresentationConfig to ConfigLayer in bootstrap.py and implement parsing in ConfigLoader (parsing list-based next_instructions per tool and global next_instruction_texts, completely eliminating json_reference as a config entity)"
               },
               {
                 "id": "D1.6",
@@ -222,11 +214,7 @@
               },
               {
                 "id": "D8.6",
-                "description": "Add declarative presentation template and advisory mapping for auto_fix in presentation.yaml, returning the lightweight summary referencing the uniform resource URI",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/config/presentation.yaml"
-                }
+                "description": "Add declarative presentation template and next_instructions (including uri_reference) for auto_fix in presentation.yaml, returning the lightweight summary referencing the uniform resource URI"
               }
             ],
             "exit_criteria": "AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; response cache evicts oldest runs correctly; and the model can successfully retrieve the run's JSON data using the read_resource tool from the uniform cache resource."
