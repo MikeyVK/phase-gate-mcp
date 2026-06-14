@@ -12,4 +12,17 @@ global:
     server_restart: "⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
     branch_lockdown: "⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
     todo_discipline: "📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
-tools: {}
+tools:
+  auto_fix:
+    template_success: |
+      **Auto-Fix Run Completed Successfully**
+      - Gates executed: {gates_executed_count} ({gates_executed})
+      - Files modified: {modified_files_count}
+      {formatted_modified_files}
+    template_failure: |
+      **Auto-Fix Run Failed**
+      - Error: {error_message}
+      - Gates executed: {gates_executed_count} ({gates_executed})
+      - Files modified: {modified_files_count}
+    next_instructions:
+      - "uri_reference"
