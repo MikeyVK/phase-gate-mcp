@@ -9,15 +9,10 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from mcp_server.core.interfaces import IToolResponseCache
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.base import ITool, ToolExecutionEnvelope
 from mcp_server.utils.schema_utils import resolve_schema_refs
-
-
-class IToolResponseCache:
-    """Protocol for the cache manager used by the decorator."""
-
-    def store_run(self, run_id: str, envelope: ToolExecutionEnvelope) -> None: ...
 
 
 class ResourcePublishingDecorator(ITool):
@@ -49,9 +44,14 @@ class ResourcePublishingDecorator(ITool):
         }
 
     async def execute(self, params: Any, context: NoteContext) -> ToolExecutionEnvelope:  # noqa: ANN401
-        envelope = await self._tool.execute(params, context)
-        self._cache.store_run(envelope.run_id, envelope)
-        return envelope
+        import uuid  # noqa: PLC0415
+
+        result = await self._tool.execute(params, context)
+        if isinstance(result, ToolExecutionEnvelope):
+            return result
+        run_id = str(uuid.uuid4())
+        self._cache.put(f"pgmcp://cache/runs/{run_id}", result)
+        return ToolExecutionEnvelope(run_id=run_id, data=result)
 
     def __getattr__(self, name: str) -> Any:  # noqa: ANN401
         return getattr(self._tool, name)

@@ -591,8 +591,8 @@ async def test_call_tool_handles_itool_bridge() -> None:
     from pydantic import BaseModel, ConfigDict  # noqa: PLC0415
 
     # We expect this to fail in RED phase because these don't exist yet
-    from mcp_server.managers.response_cache_manager import ResponseCacheManager  # noqa: PLC0415
-    from mcp_server.tools.base import ITool, ToolExecutionEnvelope  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+    from mcp_server.tools.base import ITool  # noqa: PLC0415
     from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
     from tests.mcp_server.test_support import assert_itool_result  # noqa: PLC0415
 
@@ -617,8 +617,8 @@ async def test_call_tool_handles_itool_bridge() -> None:
             self,
             params: Any,  # noqa: ARG002, ANN401
             context: NoteContext,  # noqa: ARG002
-        ) -> ToolExecutionEnvelope:
-            return ToolExecutionEnvelope(run_id="run-1", data=DummyDTO(val=42))
+        ) -> DummyDTO:
+            return DummyDTO(val=42)
 
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
         _patch_server_settings(mock_settings_cls)
@@ -642,6 +642,12 @@ async def test_call_tool_handles_itool_bridge() -> None:
         text_content = assert_itool_result(response.root)
         assert text_content != ""
 
-        cached = cache_manager.get_run("run-1")
+        import re  # noqa: PLC0415
+
+        match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text_content)
+        assert match is not None
+        run_id = match.group(1)
+
+        cached = cache_manager.get(f"pgmcp://cache/runs/{run_id}")
         assert cached is not None
-        assert cached.data.val == 42
+        assert cached.val == 42

@@ -4,14 +4,14 @@
 """
 
 from typing import Any
+
 import pytest
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.core.operation_notes import NoteContext
-# This will cause an ImportError intentionally for the RED phase
+from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.base import ITool, ToolExecutionEnvelope
 from mcp_server.tools.decorators import ResourcePublishingDecorator
-from mcp_server.managers.response_cache_manager import ResponseCacheManager
 
 
 class DummyDTO(BaseModel):
@@ -20,17 +20,20 @@ class DummyDTO(BaseModel):
 
 
 class DummyITool(ITool):
-    name = "dummy_itool"
-    description = "Dummy ITool"
-    args_model = None
+    @property
+    def name(self) -> str:
+        return "dummy_itool"
 
-    async def execute(self, params: Any, context: NoteContext) -> ToolExecutionEnvelope:
-        dto = DummyDTO(message="success")
-        return ToolExecutionEnvelope(
-            run_id="test-run-123",
-            data=dto,
-            presentation_context={"extra": "info"}
-        )
+    @property
+    def description(self) -> str:
+        return "Dummy ITool"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return None
+
+    async def execute(self, params: Any, context: NoteContext) -> DummyDTO:  # noqa: ARG002, ANN401
+        return DummyDTO(message="success")
 
 
 @pytest.mark.asyncio
@@ -38,7 +41,7 @@ async def test_tool_execution_envelope() -> None:
     """Test the ToolExecutionEnvelope structure."""
     dto = DummyDTO(message="hello")
     envelope = ToolExecutionEnvelope(run_id="run-1", data=dto)
-    
+
     assert envelope.run_id == "run-1"
     assert envelope.data == dto
     assert envelope.presentation_context == {}
@@ -48,18 +51,17 @@ async def test_tool_execution_envelope() -> None:
 async def test_resource_publishing_decorator() -> None:
     """Test that ResourcePublishingDecorator caches the DTO."""
     tool = DummyITool()
-    # Assuming ResponseCacheManager has an interface like this, we'll implement it in GREEN
     cache_manager = ResponseCacheManager()
     decorated_tool = ResourcePublishingDecorator(tool, cache_manager)
-    
+
     context = NoteContext()
     envelope = await decorated_tool.execute(None, context)
-    
-    assert envelope.run_id == "test-run-123"
+
+    assert envelope.run_id is not None
     assert isinstance(envelope.data, DummyDTO)
     assert envelope.data.message == "success"
-    
-    # Verify cache
-    cached = cache_manager.get_run("test-run-123")
+
+    # Verify cache using the generated run_id
+    cached = cache_manager.get(f"pgmcp://cache/runs/{envelope.run_id}")
     assert cached is not None
-    assert cached.data == envelope.data
+    assert cached == envelope.data

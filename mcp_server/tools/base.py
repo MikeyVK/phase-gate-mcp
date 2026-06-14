@@ -120,6 +120,6 @@ class ITool(Protocol):
     @property
     def args_model(self) -> type[BaseModel] | None: ...
 
-    async def execute(self, params: Any, context: NoteContext) -> ToolExecutionEnvelope:  # noqa: ANN401
-        """Execute the tool and return a ToolExecutionEnvelope."""
+    async def execute(self, params: Any, context: NoteContext) -> ToolExecutionEnvelope | BaseModel:  # noqa: ANN401
+        """Execute the tool and return either a ToolExecutionEnvelope or a pure BaseModel."""
         ...
