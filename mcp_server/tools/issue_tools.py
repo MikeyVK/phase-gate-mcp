@@ -129,9 +129,17 @@ def _map_issue_to_output(issue: IssueReadModel) -> IssueOutput:
 class CreateIssueTool(ITool):
     """Tool to create a new GitHub issue."""
 
-    name = "create_issue"
-    description = "Create a new GitHub issue"
-    args_model = CreateIssueInput
+    @property
+    def name(self) -> str:
+        return "create_issue"
+
+    @property
+    def description(self) -> str:
+        return "Create a new GitHub issue"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return CreateIssueInput
 
     def __init__(
         self,
@@ -247,9 +255,17 @@ class GetIssueInput(BaseModel):
 class GetIssueTool(ITool):
     """Tool to get issue details."""
 
-    name = "get_issue"
-    description = "Get detailed information about a specific GitHub issue"
-    args_model = GetIssueInput
+    @property
+    def name(self) -> str:
+        return "get_issue"
+
+    @property
+    def description(self) -> str:
+        return "Get detailed information about a specific GitHub issue"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GetIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
@@ -280,9 +296,17 @@ class ListIssuesInput(BaseModel):
 class ListIssuesTool(ITool):
     """Tool to list issues."""
 
-    name = "list_issues"
-    description = "List GitHub issues with optional filtering by state and labels"
-    args_model = ListIssuesInput
+    @property
+    def name(self) -> str:
+        return "list_issues"
+
+    @property
+    def description(self) -> str:
+        return "List GitHub issues with optional filtering by state and labels"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return ListIssuesInput
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
@@ -351,9 +375,17 @@ class UpdateIssueInput(BaseModel):
 class UpdateIssueTool(ITool):
     """Tool to update an issue."""
 
-    name = "update_issue"
-    description = "Update title, body, state, labels, milestone, or assignees for an issue"
-    args_model = UpdateIssueInput
+    @property
+    def name(self) -> str:
+        return "update_issue"
+
+    @property
+    def description(self) -> str:
+        return "Update title, body, state, labels, milestone, or assignees for an issue"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return UpdateIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
@@ -393,9 +425,17 @@ class CloseIssueInput(BaseModel):
 class CloseIssueTool(ITool):
     """Tool to close an issue."""
 
-    name = "close_issue"
-    description = "Close a GitHub issue with an optional comment"
-    args_model = CloseIssueInput
+    @property
+    def name(self) -> str:
+        return "close_issue"
+
+    @property
+    def description(self) -> str:
+        return "Close a GitHub issue with an optional comment"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return CloseIssueInput
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
