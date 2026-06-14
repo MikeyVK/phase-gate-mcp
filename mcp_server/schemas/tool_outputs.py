@@ -155,3 +155,63 @@ class PlanningDeliverablesOutput(BaseToolOutput):
     total_cycles: int
     total_deliverables: int
     cycles: list[PlannedCycleSummary] = Field(default_factory=list)
+
+
+class BranchPairOutput(BaseToolOutput):
+    """Base class for Git operations comparing or merging two branches."""
+
+    source_branch: str
+    target_branch: str
+
+
+class BranchDetailDTO(BaseModel):
+    """Detail for a single Git branch."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    name: str
+    is_current: bool
+    commit_hash: str | None = None
+    upstream: str | None = None
+
+
+class GitListBranchesOutput(BaseToolOutput):
+    """Output for GitListBranchesTool."""
+
+    current_branch: str
+    branches: list[BranchDetailDTO] = Field(default_factory=list)
+    branches_count: int = 0
+
+
+class GitDiffOutput(BranchPairOutput):
+    """Output for GitDiffTool."""
+
+    stats: str
+    files_changed: int | None = None
+    insertions: int | None = None
+    deletions: int | None = None
+
+
+class GetParentBranchOutput(BaseToolOutput):
+    """Output for GetParentBranchTool."""
+
+    branch: str
+    parent_branch: str | None = None
+
+
+class CheckMergeOutput(BaseToolOutput):
+    """Output for CheckMergeTool."""
+
+    merge_sha: str
+    is_ancestor: bool
+
+
+class GitStatusOutput(BaseToolOutput):
+    """Output for GitStatusTool."""
+
+    branch: str
+    is_clean: bool
+    modified_files: list[str] = Field(default_factory=list)
+    untracked_files: list[str] = Field(default_factory=list)
+    modified_count: int
+    untracked_count: int

@@ -1332,7 +1332,10 @@ async def test_check_merge_manager_delegates_to_adapter() -> None:
 async def test_git_list_branches_tool(mock_git_manager: MagicMock) -> None:
     """Test GitListBranchesTool returns GitListBranchesOutput DTO."""
     from mcp_server.schemas.tool_outputs import GitListBranchesOutput  # noqa: PLC0415
-    from mcp_server.tools.git_analysis_tools import GitListBranchesInput, GitListBranchesTool  # noqa: PLC0415
+    from mcp_server.tools.git_analysis_tools import (  # noqa: PLC0415
+        GitListBranchesInput,
+        GitListBranchesTool,
+    )
 
     tool = GitListBranchesTool(manager=mock_git_manager)
     mock_git_manager.get_current_branch.return_value = "feature/402"

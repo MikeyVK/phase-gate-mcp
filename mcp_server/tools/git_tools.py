@@ -1,6 +1,5 @@
 """Git tools."""
 
-import subprocess
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -15,7 +14,12 @@ from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.tools.base import BaseTool, BranchMutatingTool
+from mcp_server.schemas.tool_outputs import (
+    CheckMergeOutput,
+    GetParentBranchOutput,
+    GitStatusOutput,
+)
+from mcp_server.tools.base import BaseTool, BranchMutatingTool, ITool
 from mcp_server.tools.tool_result import ToolResult
 
 logger = get_logger("tools.git")
@@ -162,12 +166,20 @@ class GitStatusInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class GitStatusTool(BaseTool):
+class GitStatusTool(ITool):
     """Tool to check git status."""
 
-    name = "git_status"
-    description = "Check current git status"
-    args_model = GitStatusInput
+    @property
+    def name(self) -> str:
+        return "git_status"
+
+    @property
+    def description(self) -> str:
+        return "Check current git status"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitStatusInput
 
     def __init__(
         self,
@@ -186,26 +198,42 @@ class GitStatusTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
     async def execute(
         self,
         params: GitStatusInput,
         context: NoteContext,
-    ) -> ToolResult:
+    ) -> GitStatusOutput:
         del params
         del context
 
-        status = self.manager.get_status()
+        try:
+            status = self.manager.get_status()
+            modified_files = status.get("modified_files", [])
+            untracked_files = status.get("untracked_files", [])
 
-        text = f"Branch: {status['branch']}\n"
-        text += f"Clean: {status['is_clean']}\n"
-        if status["untracked_files"]:
-            text += f"Untracked: {', '.join(status['untracked_files'])}\n"
-        if status["modified_files"]:
-            text += f"Modified: {', '.join(status['modified_files'])}\n"
-
-        return ToolResult.text(text)
+            return GitStatusOutput(
+                success=True,
+                branch=status["branch"],
+                is_clean=status["is_clean"],
+                modified_files=modified_files,
+                untracked_files=untracked_files,
+                modified_count=len(modified_files),
+                untracked_count=len(untracked_files),
+            )
+        except Exception as e:
+            return GitStatusOutput(
+                success=False,
+                error_message=str(e),
+                branch="",
+                is_clean=False,
+                modified_files=[],
+                untracked_files=[],
+                modified_count=0,
+                untracked_count=0,
+            )
 
 
 class GitCommitInput(BaseModel):
@@ -685,15 +713,23 @@ class GetParentBranchInput(BaseModel):
     )
 
 
-class GetParentBranchTool(BaseTool):
+class GetParentBranchTool(ITool):
     """Tool to show a branch's configured parent branch.
 
     Issue #79: Parent branch is tracked in PhaseStateEngine state.
     """
 
-    name = "get_parent_branch"
-    description = "Detect parent branch for a branch (via PhaseStateEngine state)"
-    args_model = GetParentBranchInput
+    @property
+    def name(self) -> str:
+        return "get_parent_branch"
+
+    @property
+    def description(self) -> str:
+        return "Detect parent branch for a branch (via PhaseStateEngine state)"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GetParentBranchInput
 
     def __init__(
         self,
@@ -712,29 +748,35 @@ class GetParentBranchTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: GetParentBranchInput, context: NoteContext) -> ToolResult:
+    async def execute(
+        self, params: GetParentBranchInput, context: NoteContext
+    ) -> GetParentBranchOutput:
         del context
 
         if self._state_engine is None:
-            return ToolResult.error("PhaseStateEngine must be injected")
+            return GetParentBranchOutput(
+                success=False, error_message="PhaseStateEngine must be injected", branch=""
+            )
 
         try:
             branch = params.branch or self.manager.get_current_branch()
             state = await anyio.to_thread.run_sync(self._state_engine.get_state, branch)
             parent = state.parent_branch
 
-            if parent:
-                return ToolResult.text(f"Branch: {branch}\nParent branch: {parent}")
-            return ToolResult.text(f"Branch: {branch}\nParent branch: (not set)")
-        except (
-            subprocess.CalledProcessError,
-            subprocess.TimeoutExpired,
-            OSError,
-            StateBranchMismatchError,
-        ) as exc:
-            return ToolResult.error(f"Failed to get parent branch: {exc}")
+            return GetParentBranchOutput(
+                success=True,
+                branch=branch,
+                parent_branch=parent,
+            )
+        except Exception as exc:
+            return GetParentBranchOutput(
+                success=False,
+                error_message=f"Failed to get parent branch: {exc}",
+                branch=params.branch or "",
+            )
 
 
 class CheckMergeInput(BaseModel):
@@ -748,19 +790,27 @@ class CheckMergeInput(BaseModel):
     )
 
 
-class CheckMergeTool(BaseTool):
+class CheckMergeTool(ITool):
     """Read-only tool to verify a merge commit SHA is reachable from HEAD.
 
     Wraps `git merge-base --is-ancestor <sha> HEAD`.
-    Returns ToolResult.text when the SHA is reachable, ToolResult.error when not.
-    Raises ExecutionError on git failures (status >=2).
+    Returns CheckMergeOutput.
     """
 
-    name = "check_merge"
-    description = (
-        "Verify that a merge commit SHA is reachable from HEAD (git merge-base --is-ancestor)"
-    )
-    args_model = CheckMergeInput
+    @property
+    def name(self) -> str:
+        return "check_merge"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Verify that a merge commit SHA is reachable from HEAD (git merge-base --is-ancestor)"
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return CheckMergeInput
+
     enforcement_event: str | None = None
 
     def __init__(self, manager: GitManager | None = None) -> None:
@@ -770,15 +820,28 @@ class CheckMergeTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: CheckMergeInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: CheckMergeInput, context: NoteContext) -> CheckMergeOutput:
         del context
-        reachable = self.manager.is_ancestor(params.merge_sha)
-        if reachable:
-            return ToolResult.text(
-                f"SHA {params.merge_sha} is reachable from HEAD (merge confirmed)"
+        try:
+            reachable = self.manager.is_ancestor(params.merge_sha)
+            return CheckMergeOutput(
+                success=reachable,
+                merge_sha=params.merge_sha,
+                is_ancestor=reachable,
+                error_message=None
+                if reachable
+                else (
+                    f"SHA {params.merge_sha} is NOT reachable from HEAD — "
+                    "merge may not have landed yet"
+                ),
             )
-        return ToolResult.error(
-            f"SHA {params.merge_sha} is NOT reachable from HEAD — merge may not have landed yet"
-        )
+        except Exception as e:
+            return CheckMergeOutput(
+                success=False,
+                merge_sha=params.merge_sha,
+                is_ancestor=False,
+                error_message=str(e),
+            )

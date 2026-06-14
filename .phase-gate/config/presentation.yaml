@@ -67,3 +67,23 @@ tools:
     template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
   update_planning_deliverables:
     template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
+  git_list_branches:
+    template_success: "Found {branches_count} branches. Current branch is '{current_branch}'."
+  git_diff_stat:
+    template_success: |
+      **Git Diff Summary** (Comparing {source_branch} -> {target_branch})
+      - Files changed: {files_changed}
+      - Insertions: +{insertions}
+      - Deletions: -{deletions}
+  get_parent_branch:
+    template_success: "Branch '{branch}' has parent branch: '{parent_branch}'."
+  check_merge:
+    template_success: "Merge verification confirmed: SHA {merge_sha} is reachable from HEAD."
+    template_failure: "Merge verification failed: SHA {merge_sha} is NOT reachable from HEAD."
+  git_status:
+    template_success: |
+      **Git Status Summary**
+      - Branch: {branch}
+      - Clean: {is_clean}
+      - Modified: {modified_count} files
+      - Untracked: {untracked_count} files
