@@ -3,8 +3,8 @@
 # Design — Response Cache & Resource Management
 
 **Status:** DRAFT  
-**Version:** 1.0  
-**Last Updated:** 2026-06-13
+**Version:** 1.1  
+**Last Updated:** 2026-06-14
 
 ---
 
@@ -142,3 +142,4 @@ class CachedResponseResource(BaseResource):
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-13 | Agent | Initial draft |
+| 1.1 | 2026-06-14 | Agent | Updated to reflect the removal of json_reference entity and the transition to list-based next_instructions in the presentation layer. |

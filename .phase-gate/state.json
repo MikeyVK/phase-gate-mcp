@@ -2,8 +2,8 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "implementation",
-  "current_cycle": 9,
+  "current_phase": "design",
+  "current_cycle": 8,
   "last_cycle": 8,
   "cycle_history": [
     {
@@ -27,6 +27,15 @@
       "name": "Cycle 9: Batch 5 (Phase, Scaffold, Quality & Testing Tools)",
       "forced": false,
       "entered": "2026-06-13T19:34:28.325457+00:00"
+    },
+    {
+      "cycle_number": 8,
+      "name": "Cycle 8: Auto-Fix Tool & MCP Resource Pilot",
+      "entered": "2026-06-14T06:04:51.490430+00:00",
+      "forced": true,
+      "skip_reason": "User requested to return to cycle 8 to fine-tune the auto-fix tool.",
+      "human_approval": "Approved by user michel",
+      "skipped_cycles": []
     }
   ],
   "required_phases": [
@@ -39,7 +48,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested direct transition to implementation to start Cycle 8.",
+  "skip_reason": "User requested to return to design phase to update the design document with refined presenter next instructions.",
   "issue_title": "tooling: Expose JSON data in MCP tools",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-12T05:42:13.722630+00:00",
@@ -139,6 +148,30 @@
       "human_approval": "User approved the transition and requested to jump directly to implementation/cycle 8.",
       "forced": true,
       "skip_reason": "User requested direct transition to implementation to start Cycle 8."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "design",
+      "timestamp": "2026-06-13T19:48:55.627107+00:00",
+      "human_approval": "Approved by user michel",
+      "forced": true,
+      "skip_reason": "User requested to return to design phase to refine the design."
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-14T06:04:40.846262+00:00",
+      "human_approval": "Approved by user michel",
+      "forced": true,
+      "skip_reason": "User requested to return to implementation phase to fine-tune Cycle 8."
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "design",
+      "timestamp": "2026-06-14T06:29:03.409099+00:00",
+      "human_approval": "Approved by user michel",
+      "forced": true,
+      "skip_reason": "User requested to return to design phase to update the design document with refined presenter next instructions."
     }
   ],
   "reconstructed": false,

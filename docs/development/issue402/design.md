@@ -3,8 +3,8 @@
 # Design — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.5
-**Last Updated:** 2026-06-12
+**Version:** 1.6  
+**Last Updated:** 2026-06-14
 
 ---
 
@@ -73,7 +73,7 @@ MCP tools currently return plain text responses. We need to expose structured JS
 | **CQS Compliant Schemas** | Use `frozen=True` or `ConfigDict(frozen=True)` on all output DTOs to enforce immutability at the boundary. |
 | **Flattened Output DTOs** | To comply with historical precedents (`392140ce`, `5a708277`) and prevent LLM (Claude/Copilot) parsing/serialization errors, nested read models are completely flattened. Only flat primitive types, lists, and validated sub-DTOs (e.g. `PhaseDTO` and `LabelOutputModel`) are returned. |
 | **Unified Structured Path** | Migrate all tools (including `RestartServerTool` and `HealthCheckTool`) to `StructuredTool` returning simple DTOs (e.g. `RestartServerOutput` or `HealthCheckOutput`), eliminating exceptions and ensuring 100% architectural consistency. |
-| **Config-First Presentation** | Manage all text summaries and layouts in a centralized YAML file (`mcp_server/config/presentation.yaml`). No hardcoded emojis or string literals in Python. |
+| **Config-First Presentation** | Manage all text summaries and layouts in a centralized YAML file (`mcp_server/config/presentation.yaml`), including global `next_instruction_texts` and tool-specific list-based `next_instructions` (with the dynamic `uri_reference`), eliminating the `json_reference` entity. No hardcoded emojis or string literals in Python. |
 | **Config Loader Integration** | Load `presentation.yaml` via the existing `ConfigLoader` class at the composition root (`server.py` bootstrap), validating it into a `PresentationConfig` model and storing it in `ConfigLayer` (complying with ARCHITECTURE_PRINCIPLES.md §12). |
 | **Server-Level Presenter Routing** | Inject `TextPresenter` directly into `MCPServer`. The server intercepts `StructuredTool` execution in `handle_call_tool()`, formats it using the presenter, and creates the dual-payload `ToolResult`, keeping tool classes focused on logic (SRP) and avoiding modifying 28+ tool constructors. |
 | **Compatibility Bridge** | Allow `StructuredTool.execute_structured` to return *either* a `BaseModel` DTO *or* the legacy `tuple[dict[str, Any], str]` during the migration, ensuring the server and tests never break. This bridge will be completely removed in Cycle 9. |
@@ -151,19 +151,20 @@ global:
     warning: "⚠️"
     query: "📋"
     bootstrap: "🚀"
-  json_reference: "*(Full details available in the structured JSON payload)*"
   default_failure_template: "Failed: {error_message}"
-  advisories:
-    context_reset: "\n\n🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
-    server_restart: "\n\n⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
-    branch_lockdown: "\n\n⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
-    todo_discipline: "\n\n📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
+  next_instruction_texts:
+    uri_reference: "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*"
+    context_reset: "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
+    server_restart: "⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
+    branch_lockdown: "⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
+    todo_discipline: "📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
 
 tools:
   git_checkout:
     template_success: "Switched branch '{previous_branch}' -> '{branch}' (Current Phase: '{current_phase}')."
-    advisory: "context_reset"
-    
+    next_instructions:
+      - "context_reset"
+      
   git_status:
     template_success: |
       **Git Status Summary**
@@ -183,7 +184,13 @@ tools:
 
   restart_server:
     template_success: "Server restart initiated successfully (Reason: {reason})."
-    advisory: "server_restart"
+    next_instructions:
+      - "server_restart"
+
+  auto_fix:
+    template_success: "Auto-fix execution completed successfully."
+    next_instructions:
+      - "uri_reference"
 ```
 
 The `TextPresenter` dynamically formats the fallback text by mapping fields from the tool's Pydantic DTO:
@@ -192,10 +199,8 @@ The `TextPresenter` dynamically formats the fallback text by mapping fields from
     - If execution fails (`success` is False), the presenter always prepends `emoji_failure` (`❌`).
     - If execution succeeds, the presenter maps the `presentation_category` to the corresponding global emoji: `"mutation"`/`"admin"` maps to `emoji_success` (`✅`), `"query"`/`"testing"` maps to `emoji_query` (`📋`), and `"bootstrap"` maps to `emoji_bootstrap` (`🚀`).
 2. **Default Failure Handling**: If a tool execution fails and does not define a custom `template_failure` in the configuration, the presenter automatically falls back to rendering the `default_failure_template` (`Failed: {error_message}`).
-3. **Advisory Resolution**: If the tool config defines an `advisory` key, the presenter resolves the advisory text from the global advisories lookup and appends it.
-4. **Conditional JSON Reference**: It dynamically appends the standard JSON reference `*(Full details available in the structured JSON payload)*` under the following conditions:
-    - If `append_json_reference` is statically configured as `true` in the tool config.
-    - OR dynamically if the DTO contains rich structured data (such as a non-empty `diff`, `failures` list, `validation_schema`, or lists of items). This keeps simple results clean and uncluttered.
+3. **Next Instructions Resolution**: If the tool config defines a `next_instructions` list, the presenter resolves each key from the global `next_instruction_texts` lookup, interpolates dynamic fields (such as `{run_id}` or other DTO fields), and appends them. Each instruction is formatted on its own line, preceded by a blank line (joined by `\n\n`).
+4. **No Conditional Formatting / No json_reference entity**: The standard `uri_reference` is treated as a regular next instruction that can be configured explicitly for any tool. No conditional or implicit logic is needed.
 #### Config Loader Integration:
 In compliance with `ARCHITECTURE_PRINCIPLES.md` §12:
 - `presentation.yaml` is loaded and validated by `ConfigLoader` at composition root (`mcp_server/bootstrap.py`), producing a `PresentationConfig` model.
@@ -293,3 +298,4 @@ The following table provides the mapping for candidate Pydantic model fields des
 | 1.3 | 2026-06-12 | Agent | Update to incorporate Batch 5 comments (transition gates counts, verbose test tracebacks, safe edit diffs, scaffold schemas) |
 | 1.4 | 2026-06-12 | Agent | Resolved QA NOGO verification feedback (flattened DTOs, presenter routing, separate presentation_category, test suite impact) |
 | 1.5 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (presentation_category fix, server routing clarifications) |
+| 1.6 | 2026-06-14 | Agent | Removed json_reference config entity, renamed advisories to next_instruction_texts, added support for multiple next_instructions per tool, and formatted each next instruction on a new line preceded by a blank line. |
