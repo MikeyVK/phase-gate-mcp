@@ -33,6 +33,7 @@ from mcp_server.config.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
+from mcp_server.core.interfaces import IToolResponseCache
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -51,7 +52,7 @@ from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.server import MCPServer
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
-from mcp_server.core.interfaces import IToolResponseCache
+
 
 class TestBootstrap:
     """Test suite for bootstrap containers."""

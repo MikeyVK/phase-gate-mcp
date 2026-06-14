@@ -1,29 +1,23 @@
 # c:\temp\pgmcp\tests\mcp_server\unit\tools\test_autofix_tool.py
 # template=unit_test version=3d15d309 created=2026-06-13T19:23Z updated=
-"""
-Unit tests for mcp_server.tools.quality_tools.
-
-None
+"""Unit tests for mcp_server.tools.quality_tools.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, mcp_server.tools.quality_tools, unittest.mock]
 @responsibilities:
     - Test TestAutoFixTool functionality
-    - Verify None
-    - None
 """
 
-# Standard library
-import asyncio
-from typing import Awaitable, AsyncIterator, Optional, Any
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, patch
 
-# Third-party
 import pytest
-from pathlib import Path
+from pydantic import BaseModel, ValidationError
 
-# Project modules
-from mcp_server.tools.quality_tools import AutoFixTool, AutoFixInput, AutoFixOutput
+from mcp_server.config.schemas.quality_config import QualityGate
+from mcp_server.core.operation_notes import NoteContext
+from mcp_server.resources.cache import CachedResponseResource
+from mcp_server.state.response_cache import ResponseCacheManager
+from mcp_server.tools.quality_tools import AutoFixInput, AutoFixOutput, AutoFixTool
 
 
 class TestAutoFixTool:
@@ -31,8 +25,6 @@ class TestAutoFixTool:
 
     def test_response_cache_manager_fifo_eviction(self) -> None:
         """Verify that ResponseCacheManager caches DTOs and applies FIFO eviction."""
-        from mcp_server.state.response_cache import ResponseCacheManager
-        from pydantic import BaseModel
 
         class DummyDTO(BaseModel):
             success: bool
@@ -64,9 +56,6 @@ class TestAutoFixTool:
     @pytest.mark.asyncio
     async def test_cached_response_resource_matching_and_reading(self) -> None:
         """Verify that CachedResponseResource matches URIs and reads compact JSON."""
-        from mcp_server.state.response_cache import ResponseCacheManager
-        from mcp_server.resources.cache import CachedResponseResource
-        from pydantic import BaseModel
 
         class DummyDTO(BaseModel):
             success: bool
@@ -97,53 +86,37 @@ class TestAutoFixTool:
 
     def test_quality_config_validation_rules(self) -> None:
         """Verify that quality_config validation raises error for misconfigured autofix gates."""
-        from mcp_server.config.schemas.quality_config import QualityGate
-        from pydantic import ValidationError
-
         # Gate with supports_autofix=True but missing fix_command should fail validation
         with pytest.raises(ValidationError):
-            QualityGate.model_validate({
+            QualityGate.model_validate(
+                {
+                    "name": "Test Gate",
+                    "description": "desc",
+                    "execution": {"command": ["ruff", "format"], "timeout_seconds": 60},
+                    "success": {"exit_codes_ok": [0]},
+                    "capabilities": {"file_types": [".py"], "supports_autofix": True},
+                }
+            )
+
+        # Correct config should pass validation
+        gate = QualityGate.model_validate(
+            {
                 "name": "Test Gate",
                 "description": "desc",
                 "execution": {
-                    "command": ["ruff", "format"],
-                    "timeout_seconds": 60
+                    "command": ["ruff", "format", "--check"],
+                    "fix_command": ["ruff", "format"],
+                    "timeout_seconds": 60,
                 },
-                "success": {
-                    "exit_codes_ok": [0]
-                },
-                "capabilities": {
-                    "file_types": [".py"],
-                    "supports_autofix": True
-                }
-            })
-
-        # Correct config should pass validation
-        gate = QualityGate.model_validate({
-            "name": "Test Gate",
-            "description": "desc",
-            "execution": {
-                "command": ["ruff", "format", "--check"],
-                "fix_command": ["ruff", "format"],
-                "timeout_seconds": 60
-            },
-            "success": {
-                "exit_codes_ok": [0]
-            },
-            "capabilities": {
-                "file_types": [".py"],
-                "supports_autofix": True
+                "success": {"exit_codes_ok": [0]},
+                "capabilities": {"file_types": [".py"], "supports_autofix": True},
             }
-        })
+        )
         assert gate.execution.fix_command == ["ruff", "format"]
 
     @pytest.mark.asyncio
     async def test_autofix_tool_execution_and_caching(self) -> None:
         """Verify that AutoFixTool executes via QAManager and caches the result."""
-        from mcp_server.core.operation_notes import NoteContext
-        from mcp_server.state.response_cache import ResponseCacheManager
-        from mcp_server.tools.quality_tools import AutoFixTool, AutoFixInput, AutoFixOutput
-
         qa_manager = MagicMock()
         cache = ResponseCacheManager()
         tool = AutoFixTool(qa_manager=qa_manager, cache=cache)
@@ -155,7 +128,7 @@ class TestAutoFixTool:
             modified_files_count=1,
             formatted_modified_files="- foo.py",
             gates_executed=["ruff"],
-            gates_executed_count=1
+            gates_executed_count=1,
         )
         qa_manager.run_auto_fix.return_value = expected_output
 
@@ -176,4 +149,3 @@ class TestAutoFixTool:
         # Check cache storage
         cached_dto = cache.get("pgmcp://cache/runs/test-run-id")
         assert cached_dto == expected_output
-
