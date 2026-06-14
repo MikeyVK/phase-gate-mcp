@@ -390,3 +390,64 @@ class ListPRsOutput(BaseToolOutput):
 
     prs_count: int
     pull_requests: list[PRSummaryDTO] = Field(default_factory=list)
+
+
+class LabelOutputModel(BaseModel):
+    """Output representation of a single label."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    name: str
+    color: str
+    description: str | None = None
+
+
+class ListLabelsOutput(BaseToolOutput):
+    """Output for ListLabelsTool."""
+
+    total_labels: int
+    labels: list[LabelOutputModel] = Field(default_factory=list)
+
+
+class CreateLabelOutput(BaseToolOutput):
+    """Output for CreateLabelTool."""
+
+    label_name: str
+    color: str
+
+
+class DeleteLabelOutput(BaseToolOutput):
+    """Output for DeleteLabelTool."""
+
+    label_name: str
+
+
+class LabelOperationOutput(BaseToolOutput):
+    """Output for AddLabelsTool and RemoveLabelsTool."""
+
+    issue_number: int
+    labels: list[str] = Field(default_factory=list)
+    formatted_labels: str = ""
+
+
+class MilestoneSummaryDTO(BaseModel):
+    """Summary representation of a milestone."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    number: int
+    title: str
+    state: str
+
+
+class ListMilestonesOutput(BaseToolOutput):
+    """Output for ListMilestonesTool."""
+
+    total_milestones: int
+    milestones: list[MilestoneSummaryDTO] = Field(default_factory=list)
+
+
+class MilestoneOutput(GitHubObjectOutput):
+    """Output for CreateMilestoneTool and CloseMilestoneTool."""
+
+    state: str

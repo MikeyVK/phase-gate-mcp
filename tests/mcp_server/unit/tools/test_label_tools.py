@@ -63,10 +63,11 @@ async def test_list_labels_tool(
     mock_github_manager: MagicMock, test_label_config: LabelConfig
 ) -> None:
     tool = ListLabelsTool(manager=mock_github_manager, label_config=test_label_config)
-    mock_github_manager.list_labels.return_value = [
-        MagicMock(name="bug", color="red", description="Its a feature"),
-        MagicMock(name="feat", color="green", description=""),
-    ]
+    bug_mock = MagicMock(color="red", description="Its a feature")
+    bug_mock.name = "bug"
+    feat_mock = MagicMock(color="green", description="")
+    feat_mock.name = "feat"
+    mock_github_manager.list_labels.return_value = [bug_mock, feat_mock]
 
     result = await tool.execute(ListLabelsInput(), NoteContext())
 

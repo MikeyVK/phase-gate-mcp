@@ -141,3 +141,19 @@ tools:
     template_success: "Merged PR #{pr_number} using strategy '{merge_method}' (SHA: {merge_sha})."
   list_prs:
     template_success: "Found {prs_count} pull requests matching criteria."
+  list_labels:
+    template_success: "Found {total_labels} labels."
+  create_label:
+    template_success: "Created label '{label_name}' (Color: #{color})."
+  delete_label:
+    template_success: "Deleted label '{label_name}' successfully."
+  add_labels:
+    template_success: "Added labels {formatted_labels} to issue #{issue_number}."
+  remove_labels:
+    template_success: "Removed labels {formatted_labels} from issue #{issue_number}."
+  list_milestones:
+    template_success: "Found {total_milestones} milestones."
+  create_milestone:
+    template_success: &milestone_success_template "Milestone '{title}' (Number: #{number})."
+  close_milestone:
+    template_success: *milestone_success_template

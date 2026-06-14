@@ -14,7 +14,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import LabelConfig
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
-from mcp_server.schemas.tool_outputs import ListPRsOutput, MergePROutput
+from mcp_server.schemas.tool_outputs import LabelOperationOutput, ListPRsOutput, MergePROutput
 from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
 from mcp_server.tools.pr_tools import (
     ListPRsInput,
@@ -66,7 +66,9 @@ def test_add_labels_tool(mock_adapter: Mock, test_label_config: LabelConfig) -> 
         )
     )
 
-    assert "Added labels to #456" in result.content[0]["text"]
+    assert isinstance(result, LabelOperationOutput)
+    assert result.issue_number == 456
+    assert result.labels == ["bug", "high-priority"]
     mock_adapter.add_labels.assert_called_with(456, ["bug", "high-priority"])
 
 

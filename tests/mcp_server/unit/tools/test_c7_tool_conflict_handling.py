@@ -222,8 +222,9 @@ class TestTransitionCycleToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Lock timeout" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Lock timeout" in result.error_message
 
     @pytest.mark.asyncio
     async def test_transition_cycle_emits_recovery_note_on_conflict(
@@ -293,8 +294,9 @@ class TestForceCycleTransitionToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Lock timeout" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Lock timeout" in result.error_message
 
     @pytest.mark.asyncio
     async def test_force_cycle_transition_emits_recovery_note_on_conflict(

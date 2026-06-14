@@ -69,7 +69,7 @@ class TestInitializeProjectToolMode1:
             result = await tool.execute(params, NoteContext())
 
             # Verify success
-            assert not result.is_error
+            assert result.success
 
             # Verify deliverables.json created
             projects_file = workspace_root / ".phase-gate" / "deliverables.json"
@@ -111,7 +111,7 @@ class TestInitializeProjectToolMode1:
             )
             result = await tool.execute(params, NoteContext())
 
-            assert not result.is_error
+            assert result.success
 
             # Verify state uses detected branch
             state_file = workspace_root / ".phase-gate" / "state.json"
@@ -134,7 +134,7 @@ class TestInitializeProjectToolMode1:
             )
             result = await tool.execute(params, NoteContext())
 
-            assert not result.is_error
+            assert result.success
 
             state_file = workspace_root / ".phase-gate" / "state.json"
             state = json.loads(state_file.read_text())
@@ -184,7 +184,7 @@ class TestInitializeProjectToolMode1:
                 )
                 result = await tool.execute(params, NoteContext())
 
-                assert not result.is_error, f"{workflow_name} workflow must work"
+                assert result.success, f"{workflow_name} workflow must work"
 
                 state = json.loads(state_file.read_text())
                 assert state["branch"] == branch
@@ -204,7 +204,7 @@ class TestInitializeProjectToolMode1:
             result = await tool.execute(params, NoteContext())
 
             # Should return error result
-            assert result.is_error
+            assert not result.success
 
     @pytest.mark.asyncio
     async def test_error_handling_state_creation_failure(
@@ -225,7 +225,7 @@ class TestInitializeProjectToolMode1:
                 result = await tool.execute(params, NoteContext())
 
                 # Should return error result
-                assert result.is_error
+                assert not result.success
 
     @pytest.mark.asyncio
     async def test_no_breaking_changes_to_projects_json(
@@ -240,7 +240,7 @@ class TestInitializeProjectToolMode1:
             )
             result = await tool.execute(params, NoteContext())
 
-            assert not result.is_error
+            assert result.success
 
             # Verify deliverables.json has core required fields
             projects_file = workspace_root / ".phase-gate" / "deliverables.json"
@@ -266,7 +266,7 @@ class TestInitializeProjectToolMode1:
             )
             result = await tool.execute(params, NoteContext())
 
-            assert not result.is_error
+            assert result.success
 
             # Verify separation
             projects_file = workspace_root / ".phase-gate" / "deliverables.json"
