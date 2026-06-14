@@ -62,15 +62,17 @@ class TestTextPresenter:
                     "query": "📋",
                     "bootstrap": "🚀",
                 },
-                "json_reference": "*(Full details available in the structured JSON payload)*",
                 "default_failure_template": "Failed: {error_message}",
-                "advisories": {"test_advisory": "\n\n🚀 TEST ADVISORY WARNING"},
+                "next_instruction_texts": {
+                    "test_advisory": "🚀 TEST ADVISORY WARNING",
+                    "uri_reference": "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*"
+                },
             },
             "tools": {
                 "dummy_tool": {
                     "template_success": "Success: {message}",
                     "template_failure": "Error: {error_message}",
-                    "advisory": "test_advisory",
+                    "next_instructions": ["test_advisory"],
                 },
                 "dummy_no_model": {"template_success": "No model success message"},
             },
@@ -85,7 +87,7 @@ class TestTextPresenter:
             tool_name="dummy_tool", success=True, presentation_category="query", data=dto
         )
 
-        # 'query' category maps to '📋' Success maps to '📋' + template
+        # 'query' category maps to '📋' Success maps to '📋' + template + \n\n + next_instructions
         assert text == "📋 Success: Operation completed\n\n🚀 TEST ADVISORY WARNING"
 
     def test_present_failure_custom(self, mock_yaml_config):
@@ -97,7 +99,6 @@ class TestTextPresenter:
             tool_name="dummy_tool", success=False, presentation_category="query", data=dto
         )
 
-        # Failure maps to '❌' + custom template
         assert text == "❌ Error: Something failed\n\n🚀 TEST ADVISORY WARNING"
 
     def test_present_failure_fallback(self, mock_yaml_config):
@@ -109,30 +110,30 @@ class TestTextPresenter:
             tool_name="dummy_no_model", success=False, presentation_category="mutation", data=dto
         )
 
-        # Failure maps to '❌' + default failure template
         assert text == "❌ Failed: Fallback failure"
 
-    def test_conditional_json_reference_statically_disabled(self, mock_yaml_config):
-        """Test that json reference is not appended for simple data."""
-        presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = DummyOutput(success=True, message="Short message", items=[])
+    def test_multiple_next_instructions(self, mock_yaml_config):
+        """Test that multiple next instructions are formatted on new lines with blank lines."""
+        config = dict(mock_yaml_config)
+        config["tools"]["dummy_tool"]["next_instructions"] = ["test_advisory", "uri_reference"]
+        presenter = TextPresenter(config_data=config)
+        
+        class MockDTO(BaseModel):
+            success: bool = True
+            message: str = "Op"
+            run_id: str = "abc-123"
 
+        dto = MockDTO()
         text = presenter.present(
             tool_name="dummy_tool", success=True, presentation_category="query", data=dto
         )
 
-        assert "*(Full details available in the structured JSON payload)*" not in text
-
-    def test_conditional_json_reference_dynamically_enabled(self, mock_yaml_config):
-        """Test that json reference is dynamically appended when DTO contains complex items."""
-        presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = DummyOutput(success=True, message="Message with items", items=["item1", "item2"])
-
-        text = presenter.present(
-            tool_name="dummy_tool", success=True, presentation_category="query", data=dto
+        expected_text = (
+            "📋 Success: Op\n\n"
+            "🚀 TEST ADVISORY WARNING\n\n"
+            "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/abc-123)*"
         )
-
-        assert "*(Full details available in the structured JSON payload)*" in text
+        assert text == expected_text
 
     def test_drift_validator_success(self, mock_yaml_config):
         """Test that drift validator passes when DTO and template fields align."""
@@ -155,6 +156,20 @@ class TestTextPresenter:
 
         assert "non_existent_field" in str(exc_info.value)
 
+    def test_drift_validator_next_instruction_drift_detected(self, mock_yaml_config):
+        """Test that drift validator raises ConfigError when next instruction references missing field."""
+        corrupt_config = dict(mock_yaml_config)
+        corrupt_config["tools"]["dummy_tool"]["next_instructions"] = ["uri_reference"]
+        # Note: DummyTool's output_model is DummyOutput, which has message and items, but lacks run_id!
+        # So uri_reference (which uses {run_id}) should fail drift validation.
+        
+        presenter = TextPresenter(config_data=corrupt_config)
+        tools = [DummyTool]
+
+        with pytest.raises(ConfigError) as exc_info:
+            validate_presentation_alignment(presenter, tools)
+
+        assert "run_id" in str(exc_info.value)
     def test_assert_structured_tool_result_helper(self):
         """Test that the assert_structured_tool_result helper behaves correctly."""
         result = ToolResult(
