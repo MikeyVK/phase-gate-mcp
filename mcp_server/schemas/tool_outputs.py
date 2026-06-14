@@ -497,6 +497,7 @@ class GateResultDTO(BaseModel):
     passed: bool
     status: str
     score: str | None = None
+    details: str = ""
 
 
 class RunQualityGatesOutput(BaseToolOutput):

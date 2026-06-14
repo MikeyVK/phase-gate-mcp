@@ -35,6 +35,10 @@ class RunQualityGatesInput(BaseModel):
             "Must be omitted (or null) for all other scope values."
         ),
     )
+    verbose: bool = Field(
+        default=False,
+        description="Whether to capture and cache detailed tracebacks/logs of failing gates.",
+    )
 
     @model_validator(mode="after")
     def _validate_files_scope_contract(self) -> "RunQualityGatesInput":
@@ -98,10 +102,15 @@ class RunQualityGatesTool(ITool):
         effective_scope = self._effective_scope(params)
         resolved_files = self.manager._resolve_scope(effective_scope, files=params.files)  # pyright: ignore[reportPrivateUsage]
 
+        kwargs = {}
+        if params.verbose:
+            kwargs["verbose"] = True
+
         try:
             result = self.manager.run_quality_gates(
                 resolved_files,
                 effective_scope=effective_scope,
+                **kwargs,
             )
         except QualityStateMutationConflictError as e:
             context.produce(RecoveryNote(message=e.recovery))
@@ -128,6 +137,20 @@ class RunQualityGatesTool(ITool):
                 gates=[],
             )
 
+        if not result.get("overall_pass", False) and not params.verbose:
+            scope_part = f"scope={params.scope!r}"
+            if params.files:
+                scope_part += f", files={params.files!r}"
+            context.produce(
+                RecoveryNote(
+                    message=(
+                        "Some quality gates failed. Rerun the tool with verbose=True "
+                        "to retrieve complete linter/checker tracebacks. "
+                        f"Suggested command: run_quality_gates({scope_part}, verbose=True)"
+                    )
+                )
+            )
+
         gates_list = []
         for g in result.get("gates", []):
             gates_list.append(
@@ -136,6 +159,7 @@ class RunQualityGatesTool(ITool):
                     passed=g.get("passed", False),
                     status=g.get("status") or "",
                     score=str(g.get("score")) if g.get("score") is not None else None,
+                    details=g.get("details", ""),
                 )
             )
 

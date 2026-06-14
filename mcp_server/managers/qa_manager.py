@@ -96,6 +96,7 @@ class QAManager:
         self,
         files: list[str],
         effective_scope: str = "auto",
+        verbose: bool = False,
     ) -> dict[str, Any]:
         """Run configured quality gates on specified files.
 
@@ -205,7 +206,12 @@ class QAManager:
                     },
                 )
                 continue
-            gate_result = self._execute_gate(gate, gate_files, gate_number=idx, gate_id=gate_id)
+            if verbose:
+                gate_result = self._execute_gate(
+                    gate, gate_files, gate_number=idx, gate_id=gate_id, verbose=True
+                )
+            else:
+                gate_result = self._execute_gate(gate, gate_files, gate_number=idx, gate_id=gate_id)
             self._update_summary_and_append_gate(results, gate_result)
 
         # Build top-level timing breakdown (Improvement E)
@@ -858,7 +864,12 @@ class QAManager:
             return None
 
     def _execute_gate(
-        self, gate: QualityGate, files: list[str], gate_number: int, gate_id: str | None = None
+        self,
+        gate: QualityGate,
+        files: list[str],
+        gate_number: int,
+        gate_id: str | None = None,
+        verbose: bool = False,
     ) -> dict[str, Any]:
         """Execute a single gate using its configured parsing strategy."""
 
@@ -889,6 +900,15 @@ class QAManager:
             duration_ms = round((time.monotonic() - start_time) * 1000)
 
             result["duration_ms"] = duration_ms
+            if verbose:
+                details_parts = [f"Exit code: {proc.returncode}"]
+                if proc.stdout:
+                    details_parts.append(f"STDOUT:\n{proc.stdout}")
+                if proc.stderr:
+                    details_parts.append(f"STDERR:\n{proc.stderr}")
+                result["details"] = "\n\n".join(details_parts)
+            else:
+                result["details"] = ""
             result["command"] = {
                 "executable": cmd[0] if cmd else "",
                 "args": cmd[1:] if len(cmd) > 1 else [],
@@ -973,10 +993,14 @@ class QAManager:
             result["passed"] = False
             result["score"] = "Timeout"
             result["issues"] = [{"message": f"{gate.name} timed out"}]
+            result["details"] = (
+                f"Timeout (after {gate.execution.timeout_seconds}s)" if verbose else ""
+            )
         except FileNotFoundError as e:
             result["passed"] = False
             result["score"] = "Not Found"
             result["issues"] = [{"message": f"Tool not found: {e}"}]
+            result["details"] = f"Tool not found: {e}" if verbose else ""
 
         if not result["passed"]:
             result["status"] = "failed"
