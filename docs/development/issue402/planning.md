@@ -1,264 +1,212 @@
-<!-- docs\development\issue402\planning.md -->
-<!-- template=planning version=130ac5ea created=2026-06-12T19:45Z updated= -->
+<!-- c:\temp\pgmcp\docs\development\issue402\planning.md -->
+<!-- template=planning version=130ac5ea created=2026-06-12T19:45Z updated=2026-06-14T17:30Z -->
 # Planning — Issue #402: Expose JSON data in MCP tools
 
-**Status:** DRAFT  
-**Version:** 1.7  
+**Status:** APPROVED  
+**Version:** 2.0  
 **Last Updated:** 2026-06-14
 
 ---
 
 ## Purpose
 
-Slice the implementation of Issue #402 into 9 manageable cycles for TDD execution.
+Slice the implementation of the `ITool` refactoring and MCP JSON data exposure (Issue #402) into safe, sequential TDD cycles.
 
 ## Scope
 
 **In Scope:**
-All active registered tools in mcp_server/tools/, schemas/tool_outputs.py, presenters/text_presenter.py, and `.phase-gate/config/presentation.yaml`.
+- Implementation of the `ITool` interface, `ToolExecutionEnvelope`, and `ToolFactory`.
+- The `ResourcePublishingDecorator` for caching.
+- Server pipeline refactoring (Controller/Presenter pattern).
+- Migration of all 51 tools to the new architecture.
 
 **Out of Scope:**
-Unregistered or legacy tools (specifically DetectLabelDriftTool).
+- Unregistered or legacy tools.
 
 ## Prerequisites
 
 Read these first:
 1. Approved Research Document
 2. Approved Design Document
+3. `dto_contracts.md` (SSOT for all DTO schemas and templates)
+
 ---
 
 ## Summary
 
-Plan for migrating all active MCP tools to return Pydantic DTOs alongside declarative text fallbacks, resolving DRY and presentation concerns.
+The planning follows the Approved Strategy: we will first build the core architectural pipeline (ITool, Decorator, Factory, MVP Server) and migrate a pilot tool. Subsequently, we will migrate all remaining tool batches to the new architecture, concluding with a massive cleanup of the legacy base classes.
 
 ---
 
 ## Dependencies
 
-- All cycles are sequential, dependencies follow cycle ordering.
+- Cycle 1 (Core Pipeline) is the hard dependency for all subsequent migration cycles.
+- Migration cycles (2-5) can technically be parallelized but will be executed sequentially to maintain branch stability.
 
 ---
 
 ## TDD Cycles
 
-### Cycle 1: Core Presenter & Infrastructure
+### Cycle 1: Core Architecture Pipeline (`ITool` & Factory)
 
-**Goal:** Build the base DTO schemas, global `.phase-gate/config/presentation.yaml` config, TextPresenter logic, fail-fast template validation, and pytest helper.
+**Goal:** Implement the `ITool` interface, `ToolExecutionEnvelope`, `ToolFactory`, `ResourcePublishingDecorator`, and the MVP server pipeline, replacing the `structuredContent` logic.
 
 **Deliverables:**
-- **[D1.1]** Base output schemas in `tool_outputs.py` and global `.phase-gate/config/presentation.yaml` config (Files: `mcp_server/schemas/tool_outputs.py`, `.phase-gate/config/presentation.yaml`)
-- **[D1.2]** `TextPresenter` implementation (supporting list-based `next_instructions` formatted on individual lines preceded by a blank line `\n\n`) and `validate_presentation_alignment` drift validator, verifying that YAML anchors and aliases are resolved safely, templates and their next instructions are validated against tool DTO fields, and that the validator gracefully ignores tools without an `output_model` ClassVar during the migration phase, preventing validation crashes (File: `mcp_server/presenters/text_presenter.py`)
-- **[D1.3]** `assert_structured_tool_result` pytest helper (File: `tests/mcp_server/test_support.py`)
-- **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types, and update `MCPServer.handle_call_tool()` routing to explicitly check and distinguish between a `BaseModel` response and a legacy `tuple[dict, str]` response to prevent tool call crashes (Files: `mcp_server/tools/base.py`, `mcp_server/server.py`)
-- **[D1.5]** Add `presentation_config: PresentationConfig` to `ConfigLayer` in `bootstrap.py` and implement parsing in `ConfigLoader` (parsing list-based `next_instructions` per tool and global `next_instruction_texts`, completely eliminating `json_reference` as a config entity) (Files: `mcp_server/config/loader.py`, `mcp_server/bootstrap.py`)
-- **[D1.6]** Extend `MCPServer.__init__` and `ServerBootstrapper` to inject `TextPresenter`, and update `MCPServer.handle_call_tool()` routing to format `BaseModel` outputs using the presenter into a dual-payload `ToolResult` (Files: `mcp_server/server.py`, `mcp_server/bootstrap.py`)
-- **[D1.7]** Infrastructure test suite refactor: update all test instantiations of `MCPServer` and mock configs to support `PresentationConfig` and `TextPresenter` constructor-injection (Files: `tests/**/*.py`)
-- **[D1.8]** Define `presentation_category: ClassVar[str | None] = None` on `BaseTool` (or `StructuredTool`) to resolve the emoji-mapping conflict with `tool_category` (which is reserved for policy enforcement like `"branch_mutating"`). The presenter will map `presentation_category` (values: `"mutation"`, `"query"`, `"admin"`, `"bootstrap"`, `"testing"`) to emojis, avoiding any clash (File: `mcp_server/tools/base.py`)
+- **[D1.1]** Define `ITool` protocol and `ToolExecutionEnvelope` in `mcp_server/tools/base.py`.
+- **[D1.2]** Implement `ResourcePublishingDecorator` in `mcp_server/tools/decorators.py` to cache DTOs using `ResponseCacheManager`.
+- **[D1.3]** Implement `ToolFactory` in `mcp_server/bootstrap.py` to assemble tools and decorators.
+- **[D1.4]** Refactor `MCPServer.handle_call_tool()` to use the MVP pipeline: execute tool -> extract DTO and `run_id` from envelope -> format with `TextPresenter` -> return pure `TextContent`.
+- **[D1.5]** Remove `structuredContent` injection and `QUICKFIX` markdown JSON duplication from `mcp_converters.py`.
+- **[D1.6]** Ensure all pure domain DTOs enforce `frozen=True` for immutability.
+- **[D1.7]** Update test helpers (e.g., `assert_structured_tool_result`) to assert against the new `TextContent` and envelope structures.
 
 **Tests:**
-- `tests/mcp_server/unit/test_presenter.py`
+- `tests/mcp_server/unit/test_server.py`
+- `tests/mcp_server/unit/tools/test_base.py`
 
 **Success/Exit Criteria:**
-TextPresenter, server injection, config loader, and startup validator pass all unit tests.
+The server successfully routes a tool call through the factory-assembled decorated pipeline, caches the DTO, and returns pure text to the client.
+
 ### Cycle 2: Batch 1 (Admin, Health & Cycle Tools)
 
-**Goal:** Migrate HealthCheckTool, RestartServerTool, TransitionCycleTool, and ForceCycleTransitionTool to StructuredTool with DTOs and configs.
+**Goal:** Migrate Cycle transition, Health, and Admin tools to `ITool`.
 
 **Deliverables:**
-- **[D2.1]** Migration of HealthCheckTool, RestartServerTool, TransitionCycleTool, and ForceCycleTransitionTool.
+- **[D2.1]** Migrate `HealthCheckTool` and `RestartServerTool`.
+- **[D2.2]** Migrate `TransitionCycleTool` and `ForceCycleTransitionTool`.
+- **[D2.3]** Enforce `frozen=True` on all newly defined Batch 1 DTOs.
 
 **Tests:**
-- `tests/mcp_server/unit/tools/test_cycle_tools.py`
 - `tests/mcp_server/unit/tools/test_health_tools.py`
+- `tests/mcp_server/unit/tools/test_cycle_tools.py`
 
 **Success/Exit Criteria:**
-All Batch 1 tools return Pydantic DTOs and compact text fallbacks, verified by assert_structured_tool_result.
-
+All Batch 1 tools return frozen DTOs via `ITool.execute()`, with green tests.
 
 ### Cycle 3: Batch 2 (Discovery & Project Tools)
 
-**Goal:** Migrate all search, project, and context tools to StructuredTool with flattened DTOs.
+**Goal:** Migrate Discovery, Search, and Project management tools to `ITool`.
 
 **Deliverables:**
-- **[D3.1]** Migration of Discovery, Search, and Project tools (Batch 2).
+- **[D3.1]** Migrate Discovery & Search tools (`GetWorkContextTool`, `SearchDocumentationTool`).
+- **[D3.2]** Migrate Project tools (`InitializeProjectTool`, `GetProjectPlanTool`, `SavePlanningDeliverablesTool`, `UpdatePlanningDeliverablesTool`).
+- **[D3.3]** Enforce `frozen=True` on all Batch 2 DTOs.
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_discovery_tools.py`
+- `tests/mcp_server/unit/tools/test_project_tools.py`
 
 **Success/Exit Criteria:**
-All Discovery & Project tools return Pydantic DTOs and match templates in `.phase-gate/config/presentation.yaml`.
-
+All Batch 2 tools return frozen DTOs via `ITool.execute()`, with green tests.
 
 ### Cycle 4: Batch 3a (Git Analysis & Info Tools)
 
-**Goal:** Migrate Git list, diff, parent, merge check, and status tools.
+**Goal:** Migrate Git analysis tools.
 
 **Deliverables:**
-- **[D4.1]** Migration of Git status, list, diff, parent, and merge check tools.
+- **[D4.1]** Migrate Git list, diff, parent, merge check, and status tools.
+- **[D4.2]** Enforce `frozen=True` on Batch 3a DTOs.
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_git_tools.py`
 
 **Success/Exit Criteria:**
-Git status, list, diff, parent, and merge check tools migrated and return DTOs.
-
+Git analysis tools successfully migrated and return frozen DTOs, verified by tests.
 
 ### Cycle 5: Batch 3b (Git Mutation & Action Tools)
 
-**Goal:** Migrate Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools.
+**Goal:** Migrate Git mutation tools.
 
 **Deliverables:**
-- **[D5.1]** Migration of Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools.
+- **[D5.1]** Migrate Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools.
+- **[D5.2]** Enforce `frozen=True` on Batch 3b DTOs.
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_git_tools.py`
 
 **Success/Exit Criteria:**
-Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools migrated.
-
+Git mutation tools successfully migrated and return frozen DTOs.
 
 ### Cycle 6: Batch 4a (GitHub Issues & PRs)
 
-**Goal:** Move read models to github_models.py and migrate Issue and PR tools.
+**Goal:** Migrate GitHub Issue and PR tools.
 
-- **[D6.1]** Move read models to `github_models.py` and migrate Issue and PR tools (File: `mcp_server/schemas/github_models.py`).
-- **[D6.2]** Check that nested read models validation in `IssueOutput` and `PROutput` does not trigger extra fields errors or serialization mismatch under `frozen=True` (Files: `tests/mcp_server/unit/tools/test_issue_tools.py`, `tests/mcp_server/unit/tools/test_pr_tools.py`).
+**Deliverables:**
+- **[D6.1]** Move GitHub read models to `github_models.py`.
+- **[D6.2]** Migrate Issue and PR tools.
+- **[D6.3]** Enforce `frozen=True` on Issue/PR DTOs.
+
 **Tests:**
 - `tests/mcp_server/unit/tools/test_issue_tools.py`
 - `tests/mcp_server/unit/tools/test_pr_tools.py`
 
 **Success/Exit Criteria:**
-GitHub Issues and PR tools successfully migrated and return flattened DTO presentation fields.
-
+GitHub Issue & PR tools successfully migrated and return flattened frozen DTO presentation fields.
 
 ### Cycle 7: Batch 4b (GitHub Labels & Milestones)
 
 **Goal:** Migrate GitHub Label and Milestone tools.
 
 **Deliverables:**
-- **[D7.1]** Migration of GitHub Label and Milestone tools.
+- **[D7.1]** Migrate Label tools.
+- **[D7.2]** Migrate Milestone tools.
+- **[D7.3]** Enforce `frozen=True` on Label/Milestone DTOs.
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_label_tools.py`
 - `tests/mcp_server/unit/tools/test_milestone_tools.py`
 
 **Success/Exit Criteria:**
-GitHub Labels and Milestones tools successfully migrated and return flattened DTO presentation fields.
+Label & Milestone tools successfully migrated and return frozen DTOs.
 
+### Cycle 8: Auto-Fix Tool & MCP Resource Pilot
 
-### Cycle 8: Auto-Fix Tool & Response Cache / Resource Pilot
-
-**Goal:** Implement the new tool-agnostic `AutoFixTool`, the generic `ResponseCacheManager` and `CachedResponseResource` provider, and verify it as the pilot to test the MCP Resource route.
+**Goal:** Implement the new `AutoFixTool`, the `ResponseCacheManager` and `CachedResponseResource` provider as the resource pilot.
 
 **Deliverables:**
-- **[D8.1]** Implement `AutoFixTool` (with `AutoFixInput` and `AutoFixOutput` DTOs) and `QAManager.run_auto_fix()` (Files: `mcp_server/tools/quality_tools.py`, `mcp_server/managers/qa_manager.py`).
-- **[D8.2]** Extend `ExecutionConfig` schema in `quality_config.py` to support optional `fix_command: list[str] | None = Field(default=None)` (File: `mcp_server/config/schemas/quality_config.py`).
-- **[D8.3]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
-- **[D8.4]** Implement `IToolResponseCache` interface and `ResponseCacheManager` with FIFO eviction (OrderedDict) and store Pydantic DTO instances directly in memory (File: `mcp_server/state/response_cache.py` [NEW]).
-- **[D8.5]** Implement `CachedResponseResource` (inheriting from `BaseResource`) matching uniform pattern `pgmcp://cache/runs/.*`, register it in `bootstrap.py`'s `_build_resources()`, and inject the cache manager into the server and resource constructor (Files: `mcp_server/resources/cache.py` [NEW], `mcp_server/bootstrap.py`, `mcp_server/server.py`).
-- **[D8.6]** Add declarative presentation template and `next_instructions` (including `uri_reference`) for `auto_fix` in `.phase-gate/config/presentation.yaml`, returning the lightweight summary referencing the uniform resource URI (File: `.phase-gate/config/presentation.yaml`).
+- **[D8.1]** Implement `AutoFixTool` and its DTOs with `frozen=True`.
+- **[D8.2]** Implement `ResponseCacheManager` with FIFO eviction (OrderedDict).
+- **[D8.3]** Implement `CachedResponseResource` (matching `pgmcp://cache/runs/.*`), register it in `bootstrap.py`.
+- **[D8.4]** Add declarative presentation template for `auto_fix` referencing the uniform resource URI.
 
 **Tests:**
-- `tests/mcp_server/unit/tools/test_quality_tools.py` (verifies auto-fix tool functionality, config validation, cache eviction, and uniform resource reading)
+- `tests/mcp_server/unit/tools/test_quality_tools.py`
 
----
 **Success/Exit Criteria:**
-AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; response cache evicts oldest runs correctly; and the model can successfully retrieve the run's JSON data using the `read_resource` tool from the uniform cache resource.
-
+AutoFixTool modifies files correctly; cache evicts oldest runs correctly; and the model successfully retrieves the run's JSON data using `read_resource`.
 
 ### Cycle 9: Batch 5 (Phase, Scaffold, Quality & Testing Tools)
 
-**Goal:** Migrate transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
+**Goal:** Migrate the remaining complex tools involving gates, validation, and file editing.
 
 **Deliverables:**
-- **[D9.1]** Migration of transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details (verbose/diffs/schemas only in JSON).
-- **[D9.2]** Remove transition constants (`TRANSITION_ADVISORY_NOTE`, `TRANSITION_ADVISORY_TOOL_NAMES`) and discard logic from `phase_tools.py` and `server.py`, resolving the double-SSOT advisory issue (Files: `mcp_server/tools/phase_tools.py`, `mcp_server/server.py`).
+- **[D9.1]** Migrate Phase transition tools.
+- **[D9.2]** Migrate Scaffold artifact and schema tools.
+- **[D9.3]** Migrate Quality gates, Pytest, Safe edit, and Template validation tools.
+- **[D9.4]** Enforce `frozen=True` on all Batch 5 DTOs. Ensure verbose/diff outputs are isolated to JSON.
 
 **Tests:**
+- `tests/mcp_server/unit/tools/test_phase_tools.py`
+- `tests/mcp_server/unit/tools/test_quality_tools.py`
 - `tests/mcp_server/unit/tools/test_test_tools.py`
 - `tests/mcp_server/unit/tools/test_safe_edit_tool.py`
 
----
 **Success/Exit Criteria:**
-Batch 9 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally. If tests fail and verbose=False, post_tool_instruction recommends running with verbose=True.
+Batch 5 tools migrated; JSON separation implemented correctly.
 
+### Cycle 10: Validation, Quality Gates & Cleanup
 
-### Cycle 10: Validation, Quality Gates, and Cleanup
-
-**Goal:** Perform full test suite run and ruff quality gate checks on the entire changed codebase, and remove the temporary compatibility layer.
+**Goal:** Finalize the migration by removing legacy structures and ensuring codebase integrity.
 
 **Deliverables:**
-- **[D10.1]** Green full test suite run and clean quality gates check.
-- **[D10.2]** Remove the compatibility bridge in `StructuredTool` so it only supports `BaseModel` DTOs, satisfying YAGNI §9 (File: `mcp_server/tools/base.py`).
+- **[D10.1]** Delete legacy `StructuredTool` and unused `BaseTool` execution paths from `mcp_server/tools/base.py`.
+- **[D10.2]** Clean up any unused legacy converter functions in `mcp_converters.py`.
+- **[D10.3]** Green full test suite run.
+- **[D10.4]** Clean quality gates check (Ruff, MyPy).
 
 **Tests:**
 - Run full test suite: `pytest`
-- Run quality gates: `ruff check` and type checks
+- Run quality gates: `ruff check` and `mypy`
 
 **Success/Exit Criteria:**
-All 2880+ tests pass, and quality gates pass with zero lint or typing violations. Compatibility bridge removed cleanly.
-
-## Test Suite Strategy & Refactoring
-
-Transitioning to dual JSON+text outputs and Pydantic DTOs requires modifications to the test suite to prevent breaking changes and ensure tests remain DRY:
-
-### 1. Introduction of `assert_structured_tool_result`
-We will add a shared helper in `tests/mcp_server/test_support.py` to validate the dual-payload structure. All modified tests will transition from asserting directly on `result.content` to using this helper:
-- Verifies that `len(result.content) == 2`.
-- Verifies that `content[0]["type"] == "json"` and `content[1]["type"] == "text"`.
-- Validates the JSON content against the expected DTO key-values.
-- Verifies that the text fallback contains the expected substring.
-
-### 2. Pytest Fixture Consolidation
-Many test files (such as `test_git_tools.py` and `test_pr_tools.py`) currently duplicate mock setup code for managers and tool instances. We will refactor these to use reusable fixtures:
-- Introduce module- and class-level fixtures for instantiating tools with mocked managers.
-- Centralize default mock behavior (such as returning a clean git status or the active branch) in fixtures to minimize boilerplate.
-
-### 3. Incremental Test Adaptation
-The compatibility bridge in `StructuredTool` allows us to migrate tests incrementally:
-- In each cycle, we migrate a batch of tools and simultaneously update their corresponding test cases to the new DTO structure.
-- Unmigrated tools continue to use their existing tests and succeed via the legacy-tuple fallback route.
-- This ensures the test suite remains 100% green at every commit.
-
----
-
-## Risks & Mitigation
-
-- **Risk:** Broken tests due to output structure change
-  - **Mitigation:** Implement assert_structured_tool_result helper in Cycle 1 and apply to all migrated test files.
-- **Risk:** Startup failures due to template-DTO drift
-  - **Mitigation:** Implement validate_presentation_alignment and ensure it runs during server startup and test-time.
-
----
-
-## Milestones
-
-- Cycle 1 Complete: present presenter architecture to user.
-- Cycle 5 Complete: check Git tools.
-- Cycle 8 Complete: AutoFixTool and MCP Resource pilot verified.
-- Cycle 9 Complete: check Batch 5 tools.
-- Cycle 10 Complete: ready for QA PR.
-
-## Related Documentation
-- **[docs/development/issue402/research.md][related-1]**
-- **[docs/development/issue402/design.md][related-2]**
-
-<!-- Link definitions -->
-
-[related-1]: docs/development/issue402/research.md
-[related-2]: docs/development/issue402/design.md
-
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-06-12 | Agent | Initial draft |
-| 1.1 | 2026-06-12 | Agent | Refined cycles and deliverables to 9 sequential TDD cycles |
-| 1.2 | 2026-06-12 | Agent | Resolved QA blockers, warnings, and added YAML anchor parsing verification |
-| 1.3 | 2026-06-12 | Agent | Resolved QA NOGO feedback (flattened DTOs, server-level routing, presentation_category, test suite impact) |
-| 1.4 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (flattened lists, explicit handle_call_tool routing, presentation_category & validator deliverables) |
-| 1.5 | 2026-06-13 | Agent | Resolved QA NOGO feedback for Cycle 8 (quality_config schema mismatch, ResponseCacheManager integration, and uniform CachedResponseResource provider) |
-| 1.6 | 2026-06-14 | Agent | Updated Cycle 1 planning to include list-based next_instructions, remove json_reference entity, and specify blank line formatting requirements for instructions. |
-| 1.7 | 2026-06-14 | Agent | Restored D8.5 (CachedResponseResource registration) and corrected all presentation.yaml paths to .phase-gate/config/presentation.yaml. |
+Legacy classes completely removed. All tests pass, and quality gates pass with zero violations.

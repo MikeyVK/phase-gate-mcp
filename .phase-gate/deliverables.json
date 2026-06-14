@@ -37,225 +37,108 @@
         "cycles": [
           {
             "cycle_number": 1,
-            "name": "Cycle 1: Core Presenter & Infrastructure",
+            "name": "Core Architecture Pipeline",
             "deliverables": [
-              {
-                "id": "D1.1",
-                "description": "Base output schemas in tool_outputs.py and global .phase-gate/config/presentation.yaml config"
-              },
-              {
-                "id": "D1.2",
-                "description": "TextPresenter implementation (supporting list-based next_instructions formatted on individual lines preceded by a blank line \\n\\n) and validate_presentation_alignment drift validator, verifying that YAML anchors and aliases are resolved safely, templates and their next instructions are validated against tool DTO fields, and that the validator gracefully ignores tools without an output_model ClassVar during the migration phase, preventing validation crashes"
-              },
-              {
-                "id": "D1.3",
-                "description": "assert_structured_tool_result pytest helper",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "tests/mcp_server/test_support.py"
-                }
-              },
-              {
-                "id": "D1.4",
-                "description": "Update StructuredTool.execute() dispatcher and signature to support BaseModel | tuple return types",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/tools/base.py"
-                }
-              },
-              {
-                "id": "D1.5",
-                "description": "Add presentation_config: PresentationConfig to ConfigLayer in bootstrap.py and implement parsing in ConfigLoader (parsing list-based next_instructions per tool and global next_instruction_texts, completely eliminating json_reference as a config entity)"
-              },
-              {
-                "id": "D1.6",
-                "description": "Extend MCPServer.__init__ and ServerBootstrapper to inject TextPresenter, and update MCPServer.handle_call_tool() routing to support both BaseModel DTO (presenter-formatted) and legacy tuple outputs",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/server.py"
-                }
-              },
-              {
-                "id": "D1.7",
-                "description": "Infrastructure test suite refactor: update all test instantiations of MCPServer and mock configs to support PresentationConfig and TextPresenter constructor-injection"
-              },
-              {
-                "id": "D1.8",
-                "description": "Define presentation_category: ClassVar[str | None] = None on BaseTool (or StructuredTool) to resolve the emoji-mapping conflict with tool_category",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/tools/base.py"
-                }
-              }
+              { "id": "D1.1", "description": "Define ITool protocol and ToolExecutionEnvelope" },
+              { "id": "D1.2", "description": "Implement ResourcePublishingDecorator" },
+              { "id": "D1.3", "description": "Implement ToolFactory" },
+              { "id": "D1.4", "description": "Refactor MCPServer.handle_call_tool()" },
+              { "id": "D1.5", "description": "Remove structuredContent logic from converters" },
+              { "id": "D1.6", "description": "Ensure all pure domain DTOs enforce frozen=True for immutability" },
+              { "id": "D1.7", "description": "Update assert_structured_tool_result helper" }
             ],
-            "exit_criteria": "TextPresenter, server injection, config loader, and startup validator pass all unit tests."
+            "exit_criteria": "The server successfully routes a tool call through the factory-assembled decorated pipeline, caches the DTO, and returns pure text to the client."
           },
           {
             "cycle_number": 2,
-            "name": "Cycle 2: Batch 1 (Admin, Health & Cycle Tools)",
+            "name": "Batch 1 (Admin, Health & Cycle Tools)",
             "deliverables": [
-              {
-                "id": "D2.1",
-                "description": "Migration of HealthCheckTool, RestartServerTool, TransitionCycleTool, and ForceCycleTransitionTool"
-              }
+              { "id": "D2.1", "description": "Migrate HealthCheckTool and RestartServerTool" },
+              { "id": "D2.2", "description": "Migrate TransitionCycleTool and ForceCycleTransitionTool" },
+              { "id": "D2.3", "description": "Enforce frozen=True on all newly defined Batch 1 DTOs" }
             ],
-            "exit_criteria": "All Batch 1 tools return Pydantic DTOs and compact text fallbacks, verified by assert_structured_tool_result."
+            "exit_criteria": "All Batch 1 tools return frozen DTOs via ITool.execute(), with green tests."
           },
           {
             "cycle_number": 3,
-            "name": "Cycle 3: Batch 2 (Discovery & Project Tools)",
+            "name": "Batch 2 (Discovery & Project Tools)",
             "deliverables": [
-              {
-                "id": "D3.1",
-                "description": "Migration of Discovery, Search, and Project tools (Batch 2)"
-              }
+              { "id": "D3.1", "description": "Migrate Discovery & Search tools" },
+              { "id": "D3.2", "description": "Migrate Project tools" },
+              { "id": "D3.3", "description": "Enforce frozen=True on all Batch 2 DTOs" }
             ],
-            "exit_criteria": "All Discovery & Project tools return Pydantic DTOs and match templates in presentation.yaml."
+            "exit_criteria": "All Batch 2 tools return frozen DTOs via ITool.execute(), with green tests."
           },
           {
             "cycle_number": 4,
-            "name": "Cycle 4: Batch 3a (Git Analysis & Info Tools)",
+            "name": "Batch 3a (Git Analysis & Info Tools)",
             "deliverables": [
-              {
-                "id": "D4.1",
-                "description": "Migration of Git status, list, diff, parent, and merge check tools"
-              }
+              { "id": "D4.1", "description": "Migrate Git analysis tools" },
+              { "id": "D4.2", "description": "Enforce frozen=True on Batch 3a DTOs" }
             ],
-            "exit_criteria": "Git status, list, diff, parent, and merge check tools migrated and return DTOs."
+            "exit_criteria": "Git analysis tools successfully migrated and return frozen DTOs, verified by tests."
           },
           {
             "cycle_number": 5,
-            "name": "Cycle 5: Batch 3b (Git Mutation & Action Tools)",
+            "name": "Batch 3b (Git Mutation & Action Tools)",
             "deliverables": [
-              {
-                "id": "D5.1",
-                "description": "Migration of Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools"
-              }
+              { "id": "D5.1", "description": "Migrate Git mutation tools" },
+              { "id": "D5.2", "description": "Enforce frozen=True on Batch 3b DTOs" }
             ],
-            "exit_criteria": "Git branch creation, commit, restore, checkout, push, merge, delete, stash, fetch, and pull tools migrated."
+            "exit_criteria": "Git mutation tools successfully migrated and return frozen DTOs."
           },
           {
             "cycle_number": 6,
-            "name": "Cycle 6: Batch 4a (GitHub Issues & PRs)",
+            "name": "Batch 4a (GitHub Issues & PRs)",
             "deliverables": [
-              {
-                "id": "D6.1",
-                "description": "Move read models to github_models.py and migrate Issue and PR tools",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/schemas/github_models.py"
-                }
-              },
-              {
-                "id": "D6.2",
-                "description": "Check that nested read models validation in IssueOutput and PROutput does not trigger extra fields errors or serialization mismatch under frozen=True"
-              }
+              { "id": "D6.1", "description": "Move GitHub read models to github_models.py" },
+              { "id": "D6.2", "description": "Migrate Issue and PR tools" },
+              { "id": "D6.3", "description": "Enforce frozen=True on Issue/PR DTOs" }
             ],
-            "exit_criteria": "GitHub Issues and PR tools successfully migrated and return flattened DTO presentation fields."
+            "exit_criteria": "GitHub Issue & PR tools successfully migrated and return flattened frozen DTO presentation fields."
           },
           {
             "cycle_number": 7,
-            "name": "Cycle 7: Batch 4b (GitHub Labels & Milestones)",
+            "name": "Batch 4b (GitHub Labels & Milestones)",
             "deliverables": [
-              {
-                "id": "D7.1",
-                "description": "Migration of GitHub Label and Milestone tools"
-              }
+              { "id": "D7.1", "description": "Migrate Label tools" },
+              { "id": "D7.2", "description": "Migrate Milestone tools" },
+              { "id": "D7.3", "description": "Enforce frozen=True on Label/Milestone DTOs" }
             ],
-            "exit_criteria": "GitHub Labels and Milestones tools successfully migrated and return flattened DTO presentation fields."
+            "exit_criteria": "Label & Milestone tools successfully migrated and return frozen DTOs."
           },
           {
             "cycle_number": 8,
-            "name": "Cycle 8: Auto-Fix Tool & MCP Resource Pilot",
+            "name": "Auto-Fix Tool & MCP Resource Pilot",
             "deliverables": [
-              {
-                "id": "D8.1",
-                "description": "Implement AutoFixTool (with AutoFixInput and AutoFixOutput DTOs) and QAManager.run_auto_fix()",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/tools/quality_tools.py"
-                }
-              },
-              {
-                "id": "D8.2",
-                "description": "Extend ExecutionConfig schema in quality_config.py to support optional fix_command",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/config/schemas/quality_config.py"
-                }
-              },
-              {
-                "id": "D8.3",
-                "description": "Update the startup configuration loader/validator to fail-fast if any quality gate has supports_autofix: true but lacks fix_command",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/config/loader.py"
-                }
-              },
-              {
-                "id": "D8.4",
-                "description": "Implement IToolResponseCache interface and ResponseCacheManager with FIFO eviction (OrderedDict) and store Pydantic DTO instances directly in memory",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/state/response_cache.py"
-                }
-              },
-              {
-                "id": "D8.5",
-                "description": "Implement CachedResponseResource (inheriting from BaseResource) matching uniform pattern pgmcp://cache/runs/.*, register it in bootstrap.py's _build_resources(), and inject the cache manager into the server and resource constructor",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/resources/cache.py"
-                }
-              },
-              {
-                "id": "D8.6",
-                "description": "Add declarative presentation template and next_instructions (including uri_reference) for auto_fix in .phase-gate/config/presentation.yaml, returning the lightweight summary referencing the uniform resource URI",
-                "validates": {
-                  "type": "file_exists",
-                  "file": ".phase-gate/config/presentation.yaml"
-                }
-              }
+              { "id": "D8.1", "description": "Implement AutoFixTool and its DTOs with frozen=True" },
+              { "id": "D8.2", "description": "Implement ResponseCacheManager with FIFO eviction" },
+              { "id": "D8.3", "description": "Implement CachedResponseResource, register it in bootstrap.py" },
+              { "id": "D8.4", "description": "Add declarative presentation template for auto_fix" }
             ],
-            "exit_criteria": "AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; response cache evicts oldest runs correctly; and the model can successfully retrieve the run's JSON data using the read_resource tool from the uniform cache resource."
+            "exit_criteria": "AutoFixTool modifies files correctly; cache evicts oldest runs correctly; and the model successfully retrieves the run's JSON data using read_resource."
           },
           {
             "cycle_number": 9,
-            "name": "Cycle 9: Batch 5 (Phase, Scaffold, Quality & Testing Tools)",
+            "name": "Batch 5 (Phase, Scaffold, Quality & Testing Tools)",
             "deliverables": [
-              {
-                "id": "D9.1",
-                "description": "Migration of transition, scaffold, quality, pytest, and safe edit tools, ensuring strict separation of details"
-              },
-              {
-                "id": "D9.2",
-                "description": "Remove transition constants and discard logic from phase_tools.py and server.py, resolving the double-SSOT advisory issue",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/tools/phase_tools.py"
-                }
-              }
+              { "id": "D9.1", "description": "Migrate Phase transition tools" },
+              { "id": "D9.2", "description": "Migrate Scaffold artifact and schema tools" },
+              { "id": "D9.3", "description": "Migrate Quality gates, Pytest, Safe edit, and Template validation tools" },
+              { "id": "D9.4", "description": "Enforce frozen=True on all Batch 5 DTOs. Ensure verbose/diff outputs are isolated to JSON" }
             ],
-            "exit_criteria": "Batch 9 tools migrated; pytest tracebacks and safe edit diffs are only returned in the JSON payload, and JSON reference is appended conditionally."
+            "exit_criteria": "Batch 5 tools migrated; JSON separation implemented correctly."
           },
           {
             "cycle_number": 10,
-            "name": "Cycle 10: Validation, Quality Gates, and Cleanup",
+            "name": "Validation, Quality Gates & Cleanup",
             "deliverables": [
-              {
-                "id": "D10.1",
-                "description": "Green full test suite run and clean quality gates check"
-              },
-              {
-                "id": "D10.2",
-                "description": "Remove the compatibility bridge in StructuredTool so it only supports BaseModel DTOs, satisfying YAGNI \u00a79",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/tools/base.py"
-                }
-              }
+              { "id": "D10.1", "description": "Delete legacy StructuredTool and unused BaseTool execution paths" },
+              { "id": "D10.2", "description": "Clean up any unused legacy converter functions" },
+              { "id": "D10.3", "description": "Green full test suite run" },
+              { "id": "D10.4", "description": "Clean quality gates check" }
             ],
-            "exit_criteria": "All 2880+ tests pass, and quality gates pass with zero lint or typing violations. Compatibility bridge removed cleanly."
+            "exit_criteria": "Legacy classes completely removed. All tests pass, and quality gates pass with zero violations."
           }
         ]
       }
