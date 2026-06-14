@@ -610,3 +610,23 @@ def assert_structured_tool_result(
         assert json_data == expected_json
 
     return json_data
+
+def assert_itool_result(
+    result: ToolResult,
+    text_contains: str | None = None,
+) -> str:
+    """Verifies the ToolResult structure for ITool (pure text, no JSON)."""
+    assert not result.is_error, f"Expected successful tool result, got error: {result}"
+    
+    json_blocks = [c for c in result.content if c.get("type") == "json"]
+    text_blocks = [c for c in result.content if c.get("type") == "text"]
+    
+    assert len(json_blocks) == 0, f"Expected no json block, got {len(json_blocks)}"
+    assert len(text_blocks) == 1, f"Expected exactly one text block, got {len(text_blocks)}"
+
+    text_content = text_blocks[0]["text"]
+
+    if text_contains:
+        assert text_contains in text_content
+
+    return text_content
