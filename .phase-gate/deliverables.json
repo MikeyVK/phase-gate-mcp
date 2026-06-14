@@ -33,30 +33,240 @@
     "created_at": "2026-06-12T05:42:13.646251+00:00",
     "planning_deliverables": {
       "cycles": {
-        "total": 1,
+        "total": 11,
         "cycles": [
           {
             "cycle_number": 1,
-            "name": "Quality Gates Verbose Option",
+            "name": "Core Architecture Pipeline",
             "deliverables": [
               {
                 "id": "D1.1",
-                "description": "Add verbose: bool = Field(default=False, ...) to RunQualityGatesInput in mcp_server/tools/quality_tools.py."
+                "description": "Define ITool protocol and ToolExecutionEnvelope"
               },
               {
                 "id": "D1.2",
-                "description": "Add details: str = \"\" field to GateResultDTO in mcp_server/schemas/tool_outputs.py."
+                "description": "Implement ResourcePublishingDecorator"
               },
               {
                 "id": "D1.3",
-                "description": "Update QAManager.run_quality_gates and _execute_gate to accept verbose: bool and populate GateResultDTO.details with process stdout/stderr when verbose is enabled."
+                "description": "Implement ToolFactory"
               },
               {
                 "id": "D1.4",
-                "description": "Update RunQualityGatesTool.execute to propagate verbose to the manager, and to generate a RecoveryNote on failures when verbose=False."
+                "description": "Refactor MCPServer.handle_call_tool()"
               },
               {
                 "id": "D1.5",
+                "description": "Update MCPServer to support a temporary bridge: new ITool tools return pure TextContent, legacy StructuredTool tools still return structuredContent/QUICKFIX JSON"
+              },
+              {
+                "id": "D1.6",
+                "description": "Ensure all pure domain DTOs enforce frozen=True for immutability"
+              },
+              {
+                "id": "D1.7",
+                "description": "Introduce a new assert_itool_result helper for ITool tests, leaving assert_structured_tool_result intact for legacy tools"
+              }
+            ],
+            "exit_criteria": "The server successfully routes a tool call through the factory-assembled decorated pipeline, caches the DTO, and returns pure text to the client."
+          },
+          {
+            "cycle_number": 2,
+            "name": "Batch 1 (Admin, Health & Cycle Tools)",
+            "deliverables": [
+              {
+                "id": "D2.1",
+                "description": "Migrate HealthCheckTool and RestartServerTool"
+              },
+              {
+                "id": "D2.2",
+                "description": "Migrate TransitionCycleTool and ForceCycleTransitionTool"
+              },
+              {
+                "id": "D2.3",
+                "description": "Enforce frozen=True on all newly defined Batch 1 DTOs"
+              }
+            ],
+            "exit_criteria": "All Batch 1 tools return frozen DTOs via ITool.execute(), with green tests."
+          },
+          {
+            "cycle_number": 3,
+            "name": "Batch 2 (Discovery & Project Tools)",
+            "deliverables": [
+              {
+                "id": "D3.1",
+                "description": "Migrate Discovery & Search tools"
+              },
+              {
+                "id": "D3.2",
+                "description": "Migrate Project tools"
+              },
+              {
+                "id": "D3.3",
+                "description": "Enforce frozen=True on all Batch 2 DTOs"
+              }
+            ],
+            "exit_criteria": "All Batch 2 tools return frozen DTOs via ITool.execute(), with green tests."
+          },
+          {
+            "cycle_number": 4,
+            "name": "Batch 3a (Git Analysis & Info Tools)",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "Migrate Git analysis tools"
+              },
+              {
+                "id": "D4.2",
+                "description": "Enforce frozen=True on Batch 3a DTOs"
+              }
+            ],
+            "exit_criteria": "Git analysis tools successfully migrated and return frozen DTOs, verified by tests."
+          },
+          {
+            "cycle_number": 5,
+            "name": "Batch 3b (Git Mutation & Action Tools)",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "Migrate Git mutation tools"
+              },
+              {
+                "id": "D5.2",
+                "description": "Enforce frozen=True on Batch 3b DTOs"
+              }
+            ],
+            "exit_criteria": "Git mutation tools successfully migrated and return frozen DTOs."
+          },
+          {
+            "cycle_number": 6,
+            "name": "Batch 4a (GitHub Issues & PRs)",
+            "deliverables": [
+              {
+                "id": "D6.1",
+                "description": "Move GitHub read models to github_models.py"
+              },
+              {
+                "id": "D6.2",
+                "description": "Migrate Issue and PR tools"
+              },
+              {
+                "id": "D6.3",
+                "description": "Enforce frozen=True on Issue/PR DTOs"
+              }
+            ],
+            "exit_criteria": "GitHub Issue & PR tools successfully migrated and return flattened frozen DTO presentation fields."
+          },
+          {
+            "cycle_number": 7,
+            "name": "Batch 4b (GitHub Labels & Milestones)",
+            "deliverables": [
+              {
+                "id": "D7.1",
+                "description": "Migrate Label tools"
+              },
+              {
+                "id": "D7.2",
+                "description": "Migrate Milestone tools"
+              },
+              {
+                "id": "D7.3",
+                "description": "Enforce frozen=True on Label/Milestone DTOs"
+              }
+            ],
+            "exit_criteria": "Label & Milestone tools successfully migrated and return frozen DTOs."
+          },
+          {
+            "cycle_number": 8,
+            "name": "Auto-Fix Tool & MCP Resource Pilot",
+            "deliverables": [
+              {
+                "id": "D8.1",
+                "description": "Implement AutoFixTool and its DTOs with frozen=True"
+              },
+              {
+                "id": "D8.2",
+                "description": "Implement ResponseCacheManager with FIFO eviction"
+              },
+              {
+                "id": "D8.3",
+                "description": "Implement CachedResponseResource, register it in bootstrap.py"
+              },
+              {
+                "id": "D8.4",
+                "description": "Add declarative presentation template for auto_fix"
+              }
+            ],
+            "exit_criteria": "AutoFixTool modifies files correctly; cache evicts oldest runs correctly; and the model successfully retrieves the run's JSON data using read_resource."
+          },
+          {
+            "cycle_number": 9,
+            "name": "Batch 5 (Phase, Scaffold, Quality & Testing Tools)",
+            "deliverables": [
+              {
+                "id": "D9.1",
+                "description": "Migrate Phase transition tools"
+              },
+              {
+                "id": "D9.2",
+                "description": "Migrate Scaffold artifact and schema tools"
+              },
+              {
+                "id": "D9.3",
+                "description": "Migrate AutoFixTool, Quality gates, Pytest, Safe edit, and Template validation tools to ITool"
+              },
+              {
+                "id": "D9.4",
+                "description": "Enforce frozen=True on all Batch 5 DTOs. Ensure verbose/diff outputs are isolated to JSON"
+              }
+            ],
+            "exit_criteria": "Batch 5 tools migrated; JSON separation implemented correctly."
+          },
+          {
+            "cycle_number": 10,
+            "name": "Validation, Quality Gates & Cleanup",
+            "deliverables": [
+              {
+                "id": "D10.1",
+                "description": "Delete legacy StructuredTool and unused BaseTool execution paths"
+              },
+              {
+                "id": "D10.2",
+                "description": "Remove structuredContent, QUICKFIX, legacy converter functions, and the old assert_structured_tool_result helper"
+              },
+              {
+                "id": "D10.3",
+                "description": "Green full test suite run"
+              },
+              {
+                "id": "D10.4",
+                "description": "Clean quality gates check"
+              }
+            ],
+            "exit_criteria": "Legacy classes completely removed. All tests pass, and quality gates pass with zero violations."
+          },
+          {
+            "cycle_number": 11,
+            "name": "Quality Gates Verbose Option",
+            "deliverables": [
+              {
+                "id": "D11.1",
+                "description": "Add verbose: bool = Field(default=False, ...) to RunQualityGatesInput in mcp_server/tools/quality_tools.py."
+              },
+              {
+                "id": "D11.2",
+                "description": "Add details: str = \"\" field to GateResultDTO in mcp_server/schemas/tool_outputs.py."
+              },
+              {
+                "id": "D11.3",
+                "description": "Update QAManager.run_quality_gates and _execute_gate to accept verbose: bool and populate GateResultDTO.details with process stdout/stderr when verbose is enabled."
+              },
+              {
+                "id": "D11.4",
+                "description": "Update RunQualityGatesTool.execute to propagate verbose to the manager, and to generate a RecoveryNote on failures when verbose=False."
+              },
+              {
+                "id": "D11.5",
                 "description": "Update tests/mcp_server/unit/tools/test_quality_tools.py and tests/mcp_server/unit/managers/test_qa_manager.py to cover the new verbose options and RecoveryNotes."
               }
             ],
