@@ -12,6 +12,7 @@ global:
     server_restart: "⏳ WAIT 3 SECONDS before continuing - server needs time to reload. Service will be unavailable briefly during restart."
     branch_lockdown: "⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
     todo_discipline: "📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
+    recheck_quality: "📋 REQUIRED NEXT STEP: Run run_quality_gates(scope='files', files={modified_files}) to verify that the auto-fixed files now pass all quality checks."
 tools:
   auto_fix:
     template_success: |
@@ -26,3 +27,4 @@ tools:
       - Files modified: {modified_files_count}
     next_instructions:
       - "uri_reference"
+      - "recheck_quality"
