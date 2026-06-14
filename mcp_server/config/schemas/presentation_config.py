@@ -39,6 +39,7 @@ class ToolPresentationConfig(BaseModel):
     template_failure: str | None = None
     next_instructions: list[str] = Field(default_factory=list)
 
+
 class PresentationConfig(BaseModel):
     """Unified configuration for declarative text presentation."""
 

@@ -51,7 +51,7 @@ class TextPresenter:
             return cast(dict[str, str], self.global_config.get("emojis", {}))
         return self.global_config.emojis
 
-    def _get_next_instruction_texts(self) -> dict[str, str]:
+    def get_next_instruction_texts(self) -> dict[str, str]:
         """Get the next instruction texts lookup dictionary."""
         if isinstance(self.global_config, dict):
             return cast(dict[str, str], self.global_config.get("next_instruction_texts", {}))
@@ -159,7 +159,7 @@ class TextPresenter:
 
         # 4. Resolve and append next instructions
         if next_instructions:
-            instruction_texts = self._get_next_instruction_texts()
+            instruction_texts = self.get_next_instruction_texts()
             for key in next_instructions:
                 raw_text = instruction_texts.get(key, "")
                 if raw_text:
@@ -169,11 +169,11 @@ class TextPresenter:
                         for _, field_name, _, _ in string.Formatter().parse(raw_text):
                             if field_name is not None:
                                 placeholders.append(field_name.split(".")[0].split("[")[0])
-                        
+
                         format_dict = {}
                         for k in placeholders:
                             format_dict[k] = data_dict.get(k, "")
-                            
+
                         formatted_instruction = raw_text.format(**format_dict)
                         text = f"{text}\n\n{formatted_instruction}"
                     except Exception as exc:
@@ -220,7 +220,7 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
                 templates.append(val_failure)
             next_inst_keys = tool_cfg.get("next_instructions") or []
 
-        instruction_texts = presenter._get_next_instruction_texts()
+        instruction_texts = presenter.get_next_instruction_texts()
         for key in next_inst_keys:
             raw_text = instruction_texts.get(key)
             if isinstance(raw_text, str):
