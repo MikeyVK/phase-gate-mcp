@@ -300,31 +300,31 @@ class MCPServer:
                             )
 
                         # Execute tool
-                        if isinstance(tool, StructuredTool):
-                            raw_result = await tool.execute_structured(validated, note_context)
-                            if isinstance(raw_result, BaseModel):
-                                if self.presenter is not None:
-                                    text = self.presenter.present(
-                                        tool_name=tool.name,
-                                        success=raw_result.success,
-                                        presentation_category=getattr(
-                                            tool, "presentation_category", None
-                                        )
-                                        or "query",
-                                        data=raw_result,
+                        raw_result = await tool.execute(validated, note_context)
+
+                        # Apply text presentation for StructuredTools
+                        if isinstance(tool, StructuredTool) and self.presenter is not None:
+                            json_blocks = [c for c in raw_result.content if c.get("type") == "json"]
+                            if json_blocks:
+                                data_dict = json_blocks[0]["json"]
+                                success = data_dict.get("success", True)
+                                text = self.presenter.present(
+                                    tool_name=tool.name,
+                                    success=success,
+                                    presentation_category=getattr(
+                                        tool, "presentation_category", None
                                     )
-                                else:
-                                    text = str(raw_result)
-                                raw_result = ToolResult.json_data(
-                                    data=raw_result.model_dump(),
-                                    text=text,
-                                    is_error=False,
+                                    or "query",
+                                    data=data_dict,
                                 )
-                            else:
-                                data, text = raw_result
-                                raw_result = ToolResult.json_data(data, text=text)
-                        else:
-                            raw_result = await tool.execute(validated, note_context)
+                                # Find or create the text block and update its text
+                                text_blocks = [
+                                    c for c in raw_result.content if c.get("type") == "text"
+                                ]
+                                if text_blocks:
+                                    text_blocks[0]["text"] = text
+                                else:
+                                    raw_result.content.append({"type": "text", "text": text})
 
                         if not raw_result.is_error:
                             post_result = self._run_tool_enforcement(
