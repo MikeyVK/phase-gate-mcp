@@ -13,6 +13,12 @@ import pytest
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import LabelConfig
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import (
+    CreateLabelOutput,
+    DeleteLabelOutput,
+    LabelOperationOutput,
+    ListLabelsOutput,
+)
 from mcp_server.tools.label_tools import (
     AddLabelsInput,
     AddLabelsTool,
@@ -65,8 +71,11 @@ async def test_list_labels_tool(
     result = await tool.execute(ListLabelsInput(), NoteContext())
 
     mock_github_manager.list_labels.assert_called_once()
-    assert "bug" in result.content[0]["text"]
-    assert "feat" in result.content[0]["text"]
+    assert isinstance(result, ListLabelsOutput)
+    assert result.success is True
+    assert result.total_labels == 2
+    assert result.labels[0].name == "bug"
+    assert result.labels[1].name == "feat"
 
 
 @pytest.mark.asyncio
@@ -88,7 +97,10 @@ async def test_create_label_tool(
     mock_github_manager.create_label.assert_called_with(
         name="type:hotfix", color="ff0000", description="Hotfix"
     )
-    assert "Created label: **type:hotfix**" in result.content[0]["text"]
+    assert isinstance(result, CreateLabelOutput)
+    assert result.success is True
+    assert result.label_name == "type:hotfix"
+    assert result.color == "ff0000"
 
 
 @pytest.mark.asyncio
@@ -101,7 +113,9 @@ async def test_delete_label_tool(
     result = await tool.execute(params, NoteContext())
 
     mock_github_manager.delete_label.assert_called_with("old-label")
-    assert "Deleted label: **old-label**" in result.content[0]["text"]
+    assert isinstance(result, DeleteLabelOutput)
+    assert result.success is True
+    assert result.label_name == "old-label"
 
 
 @pytest.mark.asyncio
@@ -119,7 +133,10 @@ async def test_add_labels_tool(
     )
 
     mock_github_manager.add_labels.assert_called_with(10, ["bug", "p1"])
-    assert "Added labels to #10" in result.content[0]["text"]
+    assert isinstance(result, LabelOperationOutput)
+    assert result.success is True
+    assert result.issue_number == 10
+    assert result.labels == ["bug", "p1"]
 
 
 @pytest.mark.asyncio
@@ -131,4 +148,7 @@ async def test_remove_labels_tool(
     result = await tool.execute(RemoveLabelsInput(issue_number=10, labels=["bug"]), NoteContext())
 
     mock_github_manager.remove_labels.assert_called_with(10, ["bug"])
-    assert "Removed labels from #10" in result.content[0]["text"]
+    assert isinstance(result, LabelOperationOutput)
+    assert result.success is True
+    assert result.issue_number == 10
+    assert result.labels == ["bug"]
