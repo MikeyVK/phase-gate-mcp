@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.state.github_read_models import PRReadModel
+from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.tools.pr_tools import (
     GetPRInput,
     GetPRTool,

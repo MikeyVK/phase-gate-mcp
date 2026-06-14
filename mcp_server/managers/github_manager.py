@@ -13,7 +13,7 @@ from mcp_server.schemas import (
     MilestoneConfig,
     ScopeConfig,
 )
-from mcp_server.state.github_read_models import IssueReadModel, MilestoneReadModel, PRReadModel
+from mcp_server.schemas.github_models import IssueReadModel, MilestoneReadModel, PRReadModel
 
 if TYPE_CHECKING:
     from github.Issue import Issue

@@ -12,7 +12,7 @@ from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
 from mcp_server.schemas import GitConfig
-from mcp_server.state.github_read_models import PRReadModel
+from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.tools.base import BaseTool, BranchMutatingTool, StructuredTool
 from mcp_server.tools.tool_result import ToolResult
 

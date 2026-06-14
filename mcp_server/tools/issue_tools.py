@@ -16,7 +16,7 @@ from mcp_server.schemas import (
     IssueConfig,
     MilestoneConfig,
 )
-from mcp_server.state.github_read_models import IssueReadModel
+from mcp_server.schemas.github_models import IssueReadModel
 from mcp_server.tools.base import BaseTool, StructuredTool
 from mcp_server.tools.tool_result import ToolResult
 
