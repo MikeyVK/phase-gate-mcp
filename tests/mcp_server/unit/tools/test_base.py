@@ -65,3 +65,20 @@ async def test_resource_publishing_decorator() -> None:
     cached = cache_manager.get(f"pgmcp://cache/runs/{envelope.run_id}")
     assert cached is not None
     assert cached == envelope.data
+
+
+
+def test_legacy_classes_deleted() -> None:
+    """Verify legacy classes are deleted from base.py."""
+    import mcp_server.tools.base as base_mod
+    assert not hasattr(base_mod, "BaseTool")
+    assert not hasattr(base_mod, "StructuredTool")
+    assert not hasattr(base_mod, "BranchMutatingTool")
+
+def test_legacy_classes_deleted() -> None:
+    """Verify legacy classes are deleted from base.py."""
+    import mcp_server.tools.base as base_mod
+    assert not hasattr(base_mod, "BaseTool")
+    assert not hasattr(base_mod, "StructuredTool")
+    assert not hasattr(base_mod, "BranchMutatingTool")
+
