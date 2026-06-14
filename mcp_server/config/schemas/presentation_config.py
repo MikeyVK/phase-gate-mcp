@@ -26,9 +26,8 @@ class GlobalPresentationConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     emojis: EmojisConfig = Field(default_factory=EmojisConfig)
-    json_reference: str = "*(Full details available in the structured JSON payload)*"
     default_failure_template: str = "Failed: {error_message}"
-    advisories: dict[str, str] = Field(default_factory=dict)
+    next_instruction_texts: dict[str, str] = Field(default_factory=dict)
 
 
 class ToolPresentationConfig(BaseModel):
@@ -38,9 +37,7 @@ class ToolPresentationConfig(BaseModel):
 
     template_success: str | None = None
     template_failure: str | None = None
-    advisory: str | None = None
-    append_json_reference: bool = False
-
+    next_instructions: list[str] = Field(default_factory=list)
 
 class PresentationConfig(BaseModel):
     """Unified configuration for declarative text presentation."""

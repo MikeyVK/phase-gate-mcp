@@ -93,7 +93,7 @@ def test_switching_active_gates_changes_execution(tmp_path: Path) -> None:
                 "success": {"exit_codes_ok": [0]},
                 "capabilities": {
                     "file_types": [".py"],
-                    "supports_autofix": True,
+                    "supports_autofix": False,
                 },
                 "scope": None,
             },

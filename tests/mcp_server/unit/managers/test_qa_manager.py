@@ -348,7 +348,7 @@ class TestRuffGateExecution:
                 "success": {"exit_codes_ok": [0]},
                 "capabilities": {
                     "file_types": [".py"],
-                    "supports_autofix": True,
+                    "supports_autofix": False,
                 },
             }
         )
@@ -571,7 +571,7 @@ class TestConfigDrivenExecution:
                     "success": {"exit_codes_ok": [0]},
                     "capabilities": {
                         "file_types": [".py"],
-                        "supports_autofix": True,
+                        "supports_autofix": False,
                     },
                 },
                 "gate2_imports": {
@@ -904,7 +904,7 @@ class TestRuffJsonParsing:
             success=SuccessCriteria(exit_codes_ok=[0]),
             capabilities=CapabilitiesMetadata(
                 file_types=[".py"],
-                supports_autofix=True,
+                supports_autofix=False,
             ),
         )
 
@@ -934,7 +934,7 @@ class TestRuffJsonParsing:
             success=SuccessCriteria(exit_codes_ok=[0]),
             capabilities=CapabilitiesMetadata(
                 file_types=[".py"],
-                supports_autofix=True,
+                supports_autofix=False,
             ),
         )
 

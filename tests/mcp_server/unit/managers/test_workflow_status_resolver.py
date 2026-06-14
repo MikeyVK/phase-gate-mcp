@@ -100,6 +100,9 @@ class TestIGitContextReader:
             def get_recent_commits(self, limit: int = 5) -> list[str]:  # noqa: ARG002
                 return []
 
+            def get_status(self) -> dict[str, Any]:
+                return {}
+
         assert isinstance(_Stub(), IGitContextReader)
 
 
