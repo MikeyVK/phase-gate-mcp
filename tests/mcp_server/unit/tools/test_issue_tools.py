@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.github_models import IssueReadModel
 from mcp_server.schemas.tool_outputs import CloseIssueOutput, IssueOutput, ListIssuesOutput
 from mcp_server.tools.issue_tools import (
     CloseIssueInput,
@@ -27,7 +28,6 @@ from tests.mcp_server.test_support import make_create_issue_tool
 
 @pytest.fixture
 def mock_github_manager() -> MagicMock:
-    from mcp_server.schemas.github_models import IssueReadModel
     manager = MagicMock()
     mock_issue_read = IssueReadModel(
         number=123,
@@ -149,16 +149,17 @@ async def test_update_issue_tool(mock_github_manager: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_list_issues_tool(mock_github_manager: MagicMock) -> None:
     tool = ListIssuesTool(manager=mock_github_manager)
-    
+
     issue1 = MagicMock()
     issue1.number = 1
     issue1.title = "Issue 1"
     issue1.state = "open"
     issue1.html_url = "https://github.com/issues/1"
-    issue1.labels = [MagicMock(name="bug")]
+    lbl = MagicMock()
+    lbl.name = "bug"
+    issue1.labels = [lbl]
     issue1.assignees = []
     issue1.created_at = "2023-01-01T00:00:00Z"
-
     issue2 = MagicMock()
     issue2.number = 2
     issue2.title = "Issue 2"
@@ -185,22 +186,20 @@ async def test_list_issues_tool(mock_github_manager: MagicMock) -> None:
 async def test_get_issue_tool(mock_github_manager: MagicMock) -> None:
     tool = GetIssueTool(manager=mock_github_manager)
 
-    mock_model = MagicMock()
-    issue_data = {
-        "number": 1,
-        "url": "https://github.com/owner/repo/issues/1",
-        "title": "Bug",
-        "body": "Fix it",
-        "state": "open",
-        "labels": [],
-        "milestone": None,
-        "assignees": [],
-        "created_at": "2023-01-01T00:00:00+00:00",
-        "updated_at": "2023-01-01T00:00:00+00:00",
-        "closed_at": None,
-        "author": "alice",
-    }
-    mock_model.model_dump.return_value = issue_data
+    mock_model = IssueReadModel(
+        number=1,
+        url="https://github.com/owner/repo/issues/1",
+        title="Bug",
+        body="Fix it",
+        state="open",
+        labels=[],
+        milestone=None,
+        assignees=[],
+        created_at="2023-01-01T00:00:00+00:00",
+        updated_at="2023-01-01T00:00:00+00:00",
+        closed_at=None,
+        author="alice",
+    )
     mock_github_manager.get_issue.return_value = mock_model
 
     result = await tool.execute(GetIssueInput(issue_number=1), NoteContext())

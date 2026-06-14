@@ -213,6 +213,7 @@ class TestGitHubManager:
         mock_pr.merged_at = None
         mock_pr.merge_commit_sha = None
         mock_pr.body = "PR body"
+        mock_pr.html_url = "https://github.com/owner/repo/pull/42"
         mock_adapter.get_pr.return_value = mock_pr
 
         result = manager.get_pr(42)
@@ -226,6 +227,7 @@ class TestGitHubManager:
         assert result.merged_at is None
         assert result.merge_sha is None
         assert result.body == "PR body"
+        assert result.html_url == "https://github.com/owner/repo/pull/42"
 
 
 class TestGitHubManagerValidateIssueParams:

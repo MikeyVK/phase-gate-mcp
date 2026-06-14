@@ -275,6 +275,7 @@ class GitHubManager:
             merged_at=pr.merged_at.isoformat() if pr.merged_at is not None else None,
             merge_sha=pr.merge_commit_sha,
             body=pr.body if pr.body is not None else "",
+            html_url=pr.html_url,
         )
 
     def get_pr_status(self, branch: str) -> PRStatus:

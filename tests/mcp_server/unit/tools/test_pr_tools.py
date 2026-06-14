@@ -73,6 +73,7 @@ async def test_merge_pr_tool(mock_github_manager: MagicMock, mock_git_config: Ma
         merged_at=None,
         merge_sha=None,
         body="",
+        html_url="https://github.com/pulls/20",
     )
     mock_github_manager.get_pr.return_value = mock_pr_model
     mock_github_manager.merge_pr.return_value = {"sha": "commitsHA123"}
@@ -113,6 +114,7 @@ async def test_get_pr_tool(mock_github_manager: MagicMock) -> None:
         merged_at=None,
         merge_sha=None,
         body="Some body",
+        html_url="https://github.com/pulls/42",
     )
     mock_github_manager.get_pr.return_value = mock_pr_model
 

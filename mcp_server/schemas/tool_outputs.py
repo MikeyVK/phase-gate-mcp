@@ -301,3 +301,92 @@ class GitPullOutput(GitFetchPullOutput):
     """Output for GitPullTool."""
 
     rebase: bool
+
+
+class GitHubObjectOutput(BaseToolOutput):
+    """Base class for GitHub resources that have a number and title."""
+
+    number: int
+    title: str
+
+
+class IssueOutput(GitHubObjectOutput):
+    """Output for GitHub Issue creation, retrieval, and updates."""
+
+    state: str
+    milestone_title: str = "None"
+    assignees_summary: str = "Unassigned"
+    html_url: str
+    body: str = ""
+    labels: list[str] = Field(default_factory=list)
+    created_at: str
+    updated_at: str
+    closed_at: str | None = None
+    author: str
+
+
+class CloseIssueOutput(BaseToolOutput):
+    """Output for CloseIssueTool."""
+
+    issue_number: int
+
+
+class IssueSummaryDTO(BaseModel):
+    """Summary representation of an issue for listing."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    number: int
+    title: str
+    state: str
+    html_url: str
+    labels: list[str] = Field(default_factory=list)
+    assignees_summary: str = "Unassigned"
+    created_at: str
+
+
+class ListIssuesOutput(BaseToolOutput):
+    """Output for ListIssuesTool."""
+
+    issues_count: int
+    issues: list[IssueSummaryDTO] = Field(default_factory=list)
+
+
+class PROutput(GitHubObjectOutput):
+    """Output for PR creation and retrieval."""
+
+    html_url: str
+    state: str
+    base_ref: str
+    head_ref: str
+    merged_at: str | None = None
+    merge_sha: str | None = None
+    body: str = ""
+
+
+class MergePROutput(BaseToolOutput):
+    """Output for MergePRTool."""
+
+    pr_number: int
+    merge_sha: str
+    merge_method: str
+
+
+class PRSummaryDTO(BaseModel):
+    """Summary representation of a PR for listing."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    number: int
+    title: str
+    state: str
+    html_url: str
+    base_ref: str
+    head_ref: str
+
+
+class ListPRsOutput(BaseToolOutput):
+    """Output for ListPRsTool."""
+
+    prs_count: int
+    pull_requests: list[PRSummaryDTO] = Field(default_factory=list)

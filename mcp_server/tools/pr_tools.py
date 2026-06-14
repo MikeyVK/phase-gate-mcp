@@ -13,8 +13,8 @@ from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
 from mcp_server.schemas import GitConfig
 from mcp_server.schemas.github_models import PRReadModel
-from mcp_server.tools.base import BaseTool, BranchMutatingTool, StructuredTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import ListPRsOutput, MergePROutput, PROutput, PRSummaryDTO
+from mcp_server.tools.base import ITool
 
 if TYPE_CHECKING:
     from mcp_server.managers.git_manager import GitManager
@@ -32,12 +32,34 @@ class ListPRsInput(BaseModel):
     head: str | None = Field(default=None, description="Filter by head branch")
 
 
-class ListPRsTool(BaseTool):
+def _map_pr_to_output(pr: PRReadModel) -> PROutput:
+    return PROutput(
+        number=pr.pr_number,
+        title=pr.title,
+        html_url=pr.html_url,
+        state=pr.state,
+        base_ref=pr.base_branch,
+        head_ref=pr.head_branch,
+        merged_at=pr.merged_at,
+        merge_sha=pr.merge_sha,
+        body=pr.body,
+    )
+
+
+class ListPRsTool(ITool):
     """Tool to list pull requests."""
 
-    name = "list_prs"
-    description = "List pull requests with optional state/base/head filters"
-    args_model = ListPRsInput
+    @property
+    def name(self) -> str:
+        return "list_prs"
+
+    @property
+    def description(self) -> str:
+        return "List pull requests with optional state/base/head filters"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return ListPRsInput
 
     def __init__(self, manager: GitHubManager, git_config: GitConfig) -> None:
         self.manager = manager
@@ -45,26 +67,30 @@ class ListPRsTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: ListPRsInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: ListPRsInput, context: NoteContext) -> ListPRsOutput:
         del context  # Not used
         try:
             prs = self.manager.list_prs(state=params.state, base=params.base, head=params.head)
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-
-        if not prs:
-            return ToolResult.text("No pull requests found matching the criteria.")
-
-        lines = [f"Found {len(prs)} pull request(s):\n"]
-        for pr in prs:
-            lines.append(
-                f"- #{pr.number}: {pr.title}\n"
-                f"  State: {pr.state} | Base: {pr.base.ref} | Head: {pr.head.ref}\n"
+            pull_requests = [
+                PRSummaryDTO(
+                    number=pr.number,
+                    title=pr.title,
+                    state=pr.state,
+                    html_url=pr.html_url,
+                    base_ref=pr.base.ref,
+                    head_ref=pr.head.ref,
+                )
+                for pr in prs
+            ]
+            return ListPRsOutput(
+                prs_count=len(pull_requests),
+                pull_requests=pull_requests,
             )
-
-        return ToolResult.text("\n".join(lines))
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class MergePRInput(BaseModel):
@@ -81,12 +107,20 @@ class MergePRInput(BaseModel):
     )
 
 
-class MergePRTool(BaseTool):
+class MergePRTool(ITool):
     """Tool to merge a pull request."""
 
-    name = "merge_pr"
-    description = "Merge a pull request with optional commit message and method"
-    args_model = MergePRInput
+    @property
+    def name(self) -> str:
+        return "merge_pr"
+
+    @property
+    def description(self) -> str:
+        return "Merge a pull request with optional commit message and method"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return MergePRInput
 
     def __init__(
         self,
@@ -100,9 +134,10 @@ class MergePRTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: MergePRInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: MergePRInput, context: NoteContext) -> MergePROutput:
         del context  # Not used
         try:
             model = self.manager.get_pr(params.pr_number)
@@ -112,13 +147,14 @@ class MergePRTool(BaseTool):
                 commit_message=params.commit_message,
                 merge_method=params.merge_method,
             )
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-
-        self._pr_status_writer.set_pr_status(head_branch, PRStatus.ABSENT)
-        return ToolResult.text(
-            f"Merged PR #{params.pr_number} using {params.merge_method} (SHA {result['sha']})"
-        )
+            self._pr_status_writer.set_pr_status(head_branch, PRStatus.ABSENT)
+            return MergePROutput(
+                pr_number=params.pr_number,
+                merge_sha=result["sha"],
+                merge_method=params.merge_method,
+            )
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class GetPRInput(BaseModel):
@@ -129,30 +165,36 @@ class GetPRInput(BaseModel):
     pr_number: int = Field(..., description="Pull request number")
 
 
-class GetPRTool(StructuredTool):
+class GetPRTool(ITool):
     """Tool to get a single pull request."""
 
-    name = "get_pr"
-    description = "Get detailed information about a specific pull request"
-    args_model = GetPRInput
-    output_model = PRReadModel
+    @property
+    def name(self) -> str:
+        return "get_pr"
+
+    @property
+    def description(self) -> str:
+        return "Get detailed information about a specific pull request"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GetPRInput
 
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute_structured(
-        self,
-        params: GetPRInput,
-        context: NoteContext,  # noqa: ANN401, ARG002
-    ) -> tuple[dict[str, Any], str]:
-        model = self.manager.get_pr(params.pr_number)
-        data = model.model_dump()
-        summary = f"Retrieved pull request #{params.pr_number}: {data.get('title', '')}"
-        return data, summary
+    async def execute(self, params: GetPRInput, context: NoteContext) -> PROutput:
+        del context  # Not used
+        try:
+            pr = self.manager.get_pr(params.pr_number)
+            return _map_pr_to_output(pr)
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class SubmitPRInput(BaseModel):
@@ -173,7 +215,7 @@ class SubmitPRInput(BaseModel):
     draft: bool = Field(default=False, description="Create as draft PR")
 
 
-class SubmitPRTool(BranchMutatingTool):
+class SubmitPRTool(ITool):
     """Atomic branch-submission tool.
 
     Performs: neutralize branch-local artifacts → commit → push → create PR
@@ -183,10 +225,20 @@ class SubmitPRTool(BranchMutatingTool):
     Blocked when PRStatus.OPEN already exists on this branch (check_pr_status rule).
     """
 
-    name = "submit_pr"
-    description = "Atomically neutralize, commit, push, and create a PR for the current branch"
-    args_model = SubmitPRInput
+    tool_category = "branch_mutating"
     enforcement_event: str | None = "submit_pr"
+
+    @property
+    def name(self) -> str:
+        return "submit_pr"
+
+    @property
+    def description(self) -> str:
+        return "Atomically neutralize, commit, push, and create a PR for the current branch"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return SubmitPRInput
 
     def __init__(
         self,
@@ -204,9 +256,10 @@ class SubmitPRTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return super().input_schema
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: SubmitPRInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: SubmitPRInput, context: NoteContext) -> PROutput:
         branch = self._git_manager.get_current_branch()
         base = (
             params.base
@@ -220,7 +273,7 @@ class SubmitPRTool(BranchMutatingTool):
         try:
             commit_made = self._git_manager.prepare_submission(artifact_paths, base, context)
         except (PreflightError, ExecutionError) as exc:
-            return ToolResult.error(str(exc))
+            raise ExecutionError(str(exc)) from exc
         # [GITHUB] Create PR — rollback push on failure
         try:
             result = self._github_manager.create_pr(
@@ -243,7 +296,12 @@ class SubmitPRTool(BranchMutatingTool):
                     )
                 except ExecutionError:
                     pass  # RecoveryNote already produced by rollback_push
-            return ToolResult.error(str(exc))
+            raise ExecutionError(str(exc)) from exc
         # [STATUS] Record PR as open
         self._pr_status_writer.set_pr_status(branch, PRStatus.OPEN)
-        return ToolResult.text(f"Created PR #{result['number']}: {result['url']}")
+
+        try:
+            pr_read = self._github_manager.get_pr(result["number"])
+            return _map_pr_to_output(pr_read)
+        except Exception as e:
+            raise ExecutionError(f"PR created but retrieval/mapping failed: {e}") from e

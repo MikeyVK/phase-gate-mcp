@@ -113,3 +113,31 @@ tools:
     template_success: "Pulled updates from remote '{remote}'."
     next_instructions:
       - "context_reset"
+  create_issue:
+    template_success: &issue_success_template "Issue #{number}: {title}.\nURL: {html_url}"
+  update_issue:
+    template_success: *issue_success_template
+  get_issue:
+    template_success: |
+      **Issue #{number}: {title}**
+      - State: {state}
+      - Milestone: {milestone_title}
+      - Assignees: {assignees_summary}
+  close_issue:
+    template_success: "Closed issue #{issue_number} successfully."
+  list_issues:
+    template_success: "Found {issues_count} issues matching criteria."
+  get_pr:
+    template_success: &pr_detail_template |
+      PR #{number}: {title}
+      URL: {html_url}
+      - Target: {base_ref}
+      - Source: {head_ref}
+  submit_pr:
+    template_success: *pr_detail_template
+    next_instructions:
+      - "branch_lockdown"
+  merge_pr:
+    template_success: "Merged PR #{pr_number} using strategy '{merge_method}' (SHA: {merge_sha})."
+  list_prs:
+    template_success: "Found {prs_count} pull requests matching criteria."

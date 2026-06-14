@@ -14,6 +14,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import LabelConfig
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
+from mcp_server.schemas.tool_outputs import ListPRsOutput, MergePROutput
 from mcp_server.tools.label_tools import AddLabelsInput, AddLabelsTool
 from mcp_server.tools.pr_tools import (
     ListPRsInput,
@@ -70,7 +71,7 @@ def test_add_labels_tool(mock_adapter: Mock, test_label_config: LabelConfig) -> 
 
 
 def test_list_prs_tool(mock_adapter: Mock, mock_git_config: Mock) -> None:
-    """Test ListPRsTool lists pull requests with formatting."""
+    """Test ListPRsTool lists pull requests."""
     mock_base = Mock()
     mock_base.ref = "main"
     mock_head = Mock()
@@ -82,6 +83,7 @@ def test_list_prs_tool(mock_adapter: Mock, mock_git_config: Mock) -> None:
     mock_pr.state = "open"
     mock_pr.base = mock_base
     mock_pr.head = mock_head
+    mock_pr.html_url = "https://github.com/pulls/5"
 
     mock_adapter.list_prs.return_value = [mock_pr]
 
@@ -90,14 +92,16 @@ def test_list_prs_tool(mock_adapter: Mock, mock_git_config: Mock) -> None:
 
     result = asyncio.run(tool.execute(ListPRsInput(), NoteContext()))
 
-    assert not result.is_error
-    assert "#5" in result.content[0]["text"]
-    assert "feature/branch" in result.content[0]["text"]
+    assert isinstance(result, ListPRsOutput)
+    assert result.success is True
+    assert result.prs_count == 1
+    assert result.pull_requests[0].number == 5
+    assert result.pull_requests[0].title == "Add feature"
     mock_adapter.list_prs.assert_called_with(state="open", base=None, head=None)
 
 
 def test_merge_pr_tool(mock_adapter: Mock, mock_git_config: Mock) -> None:
-    """Test MergePRTool merges PRs and returns confirmation."""
+    """Test MergePRTool merges PRs."""
     mock_adapter.merge_pr.return_value = {"merged": True, "sha": "abc123", "message": "Merged"}
 
     mock_pr = Mock()
@@ -109,6 +113,7 @@ def test_merge_pr_tool(mock_adapter: Mock, mock_git_config: Mock) -> None:
     mock_pr.merged_at = None
     mock_pr.merge_commit_sha = None
     mock_pr.body = ""
+    mock_pr.html_url = "https://github.com/pulls/8"
     mock_adapter.get_pr.return_value = mock_pr
 
     manager = GitHubManager(adapter=mock_adapter)
@@ -121,8 +126,9 @@ def test_merge_pr_tool(mock_adapter: Mock, mock_git_config: Mock) -> None:
         tool.execute(MergePRInput(pr_number=8, merge_method="merge"), NoteContext())
     )
 
-    assert not result.is_error
-    assert "abc123" in result.content[0]["text"]
+    assert isinstance(result, MergePROutput)
+    assert result.success is True
+    assert result.merge_sha == "abc123"
     mock_adapter.merge_pr.assert_called_with(
         pr_number=8,
         commit_message=None,

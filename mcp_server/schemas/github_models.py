@@ -24,6 +24,7 @@ class PRReadModel(BaseModel):
     merged_at: str | None
     merge_sha: str | None
     body: str
+    html_url: str
 
 
 class MilestoneReadModel(BaseModel):

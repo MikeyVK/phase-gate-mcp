@@ -11,12 +11,14 @@ import asyncio
 import inspect
 from unittest.mock import MagicMock
 
+import pytest
+
 from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
-from mcp_server.tools.base import BranchMutatingTool
+from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.schemas.tool_outputs import PROutput
 from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
 
@@ -48,13 +50,15 @@ class TestSubmitPRTool:
         assert SubmitPRTool is not None
 
     def test_inherits_branch_mutating_tool(self) -> None:
-        assert issubclass(SubmitPRTool, BranchMutatingTool)
+        assert SubmitPRTool.tool_category == "branch_mutating"
 
     def test_name_is_submit_pr(self) -> None:
-        assert SubmitPRTool.name == "submit_pr"
+        tool = SubmitPRTool(MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        assert tool.name == "submit_pr"
 
     def test_args_model_is_submit_pr_input(self) -> None:
-        assert SubmitPRTool.args_model is SubmitPRInput
+        tool = SubmitPRTool(MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        assert tool.args_model is SubmitPRInput
 
 
 def _make_tool_for_lod(
@@ -62,6 +66,18 @@ def _make_tool_for_lod(
     github_manager: GitHubManager,
     pr_status_writer: IPRStatusWriter,
 ) -> SubmitPRTool:
+    mock_pr = PRReadModel(
+        pr_number=1,
+        title="Test PR",
+        state="open",
+        base_branch="main",
+        head_branch="feature/42-test",
+        merged_at=None,
+        merge_sha=None,
+        body="",
+        html_url="https://github.com/x/y/pull/1",
+    )
+    github_manager.get_pr.return_value = mock_pr
     merge_readiness_context = MergeReadinessContext(
         terminal_phase="ready",
         pr_allowed_phase="ready",
@@ -121,6 +137,18 @@ def _make_tool_with_reader(
     branch_parent_reader: IBranchParentReader,
 ) -> SubmitPRTool:
     """Build SubmitPRTool with branch_parent_reader for C4 base-resolution tests."""
+    mock_pr = PRReadModel(
+        pr_number=1,
+        title="Test PR",
+        state="open",
+        base_branch="main",
+        head_branch="feature/42-test",
+        merged_at=None,
+        merge_sha=None,
+        body="",
+        html_url="https://github.com/x/y/pull/1",
+    )
+    github_manager.get_pr.return_value = mock_pr
     merge_readiness_context = MergeReadinessContext(
         terminal_phase="ready",
         pr_allowed_phase="ready",
@@ -207,13 +235,11 @@ class TestSubmitPRToolExecute:
 
     @pytest.mark.asyncio
     async def test_submit_pr_returns_dto(self) -> None:
-        from mcp_server.schemas.github_models import PRReadModel
-        
         git_manager = MagicMock(spec=GitManager)
         git_manager.get_current_branch.return_value = "feature/42-test"
         git_manager.prepare_submission.return_value = False
         github_manager = MagicMock(spec=GitHubManager)
-        
+
         mock_pr = PRReadModel(
             pr_number=1,
             title="Test PR",
@@ -223,17 +249,18 @@ class TestSubmitPRToolExecute:
             merged_at=None,
             merge_sha=None,
             body="",
+            html_url="https://github.com/x/y/pull/1",
         )
         github_manager.create_pr.return_value = {
             "number": 1,
             "url": "https://github.com/x/y/pull/1",
         }
         github_manager.get_pr.return_value = mock_pr
-        
+
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_tool_for_lod(git_manager, github_manager, pr_status_writer)
         params = SubmitPRInput(head="feature/42-test", base="main", title="Test PR")
-        
+
         result = await tool.execute(params, NoteContext())
         assert isinstance(result, PROutput)
         assert result.success is True

@@ -65,7 +65,7 @@ class TestTextPresenter:
                 "default_failure_template": "Failed: {error_message}",
                 "next_instruction_texts": {
                     "test_advisory": "🚀 TEST ADVISORY WARNING",
-                    "uri_reference": "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*"
+                    "uri_reference": "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*",
                 },
             },
             "tools": {
@@ -117,7 +117,7 @@ class TestTextPresenter:
         config = dict(mock_yaml_config)
         config["tools"]["dummy_tool"]["next_instructions"] = ["test_advisory", "uri_reference"]
         presenter = TextPresenter(config_data=config)
-        
+
         class MockDTO(BaseModel):
             success: bool = True
             message: str = "Op"
@@ -162,7 +162,7 @@ class TestTextPresenter:
         corrupt_config["tools"]["dummy_tool"]["next_instructions"] = ["uri_reference"]
         # Note: DummyTool's output_model is DummyOutput, which has message and items, but lacks run_id!
         # So uri_reference (which uses {run_id}) should fail drift validation.
-        
+
         presenter = TextPresenter(config_data=corrupt_config)
         tools = [DummyTool]
 
@@ -170,6 +170,7 @@ class TestTextPresenter:
             validate_presentation_alignment(presenter, tools)
 
         assert "run_id" in str(exc_info.value)
+
     def test_assert_structured_tool_result_helper(self):
         """Test that the assert_structured_tool_result helper behaves correctly."""
         result = ToolResult(

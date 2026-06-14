@@ -17,8 +17,13 @@ from mcp_server.schemas import (
     MilestoneConfig,
 )
 from mcp_server.schemas.github_models import IssueReadModel
-from mcp_server.tools.base import BaseTool, StructuredTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import (
+    CloseIssueOutput,
+    IssueOutput,
+    IssueSummaryDTO,
+    ListIssuesOutput,
+)
+from mcp_server.tools.base import ITool
 
 IssueState = Literal["open", "closed", "all"]
 
@@ -102,7 +107,26 @@ class CreateIssueInput(BaseModel):
     )
 
 
-class CreateIssueTool(BaseTool):
+def _map_issue_to_output(issue: IssueReadModel) -> IssueOutput:
+    milestone_title = issue.milestone.title if issue.milestone else "None"
+    assignees_summary = ", ".join(issue.assignees) if issue.assignees else "Unassigned"
+    return IssueOutput(
+        number=issue.number,
+        title=issue.title,
+        state=issue.state,
+        milestone_title=milestone_title,
+        assignees_summary=assignees_summary,
+        html_url=issue.url,
+        body=issue.body,
+        labels=issue.labels,
+        created_at=issue.created_at,
+        updated_at=issue.updated_at,
+        closed_at=issue.closed_at,
+        author=issue.author,
+    )
+
+
+class CreateIssueTool(ITool):
     """Tool to create a new GitHub issue."""
 
     name = "create_issue"
@@ -129,7 +153,8 @@ class CreateIssueTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
+        assert self.args_model is not None
+        schema = self.args_model.model_json_schema()
         schema["properties"]["issue_type"]["enum"] = [
             e.name for e in self._issue_config.issue_types
         ]
@@ -166,7 +191,7 @@ class CreateIssueTool(BaseTool):
 
         return labels
 
-    async def execute(self, params: CreateIssueInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: CreateIssueInput, context: NoteContext) -> IssueOutput:
         del context  # Not used
         try:
             self.manager.validate_issue_params(
@@ -178,7 +203,7 @@ class CreateIssueTool(BaseTool):
                 assignees=params.assignees,
             )
         except ValueError as e:
-            return ToolResult.error(f"Issue validation failed: {e}.")
+            raise ExecutionError(f"Issue validation failed: {e}.") from e
 
         try:
             title_safe = normalize_unicode(params.title)
@@ -203,11 +228,12 @@ class CreateIssueTool(BaseTool):
                 milestone=milestone_number,
                 assignees=params.assignees,
             )
-            return ToolResult.text(f"Created issue #{issue['number']}: {issue['title']}")
+            issue_read = self.manager.get_issue(issue["number"])
+            return _map_issue_to_output(issue_read)
         except ValueError as e:
-            return ToolResult.error(f"Label assembly failed: {e}.")
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
+            raise ExecutionError(f"Label assembly failed: {e}.") from e
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class GetIssueInput(BaseModel):
@@ -218,28 +244,28 @@ class GetIssueInput(BaseModel):
     issue_number: int = Field(..., description="The issue number to retrieve")
 
 
-class GetIssueTool(StructuredTool):
+class GetIssueTool(ITool):
     """Tool to get issue details."""
 
     name = "get_issue"
     description = "Get detailed information about a specific GitHub issue"
     args_model = GetIssueInput
-    output_model = IssueReadModel
 
     def __init__(self, manager: GitHubManager) -> None:
-        super().__init__()
         self.manager = manager
 
-    async def execute_structured(
-        self,
-        params: GetIssueInput,
-        context: NoteContext,  # noqa: ANN401
-    ) -> tuple[dict[str, Any], str]:
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
+
+    async def execute(self, params: GetIssueInput, context: NoteContext) -> IssueOutput:
         del context  # Not used
-        issue = self.manager.get_issue(params.issue_number)
-        data = issue.model_dump()
-        summary = f"Retrieved issue #{params.issue_number}: {data.get('title', '')}"
-        return data, summary
+        try:
+            issue = self.manager.get_issue(params.issue_number)
+            return _map_issue_to_output(issue)
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class ListIssuesInput(BaseModel):
@@ -251,7 +277,7 @@ class ListIssuesInput(BaseModel):
     labels: list[str] | None = Field(default=None, description="Filter by labels")
 
 
-class ListIssuesTool(BaseTool):
+class ListIssuesTool(ITool):
     """Tool to list issues."""
 
     name = "list_issues"
@@ -261,20 +287,49 @@ class ListIssuesTool(BaseTool):
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
 
-    async def execute(self, params: ListIssuesInput, context: NoteContext) -> ToolResult:
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
+
+    async def execute(self, params: ListIssuesInput, context: NoteContext) -> ListIssuesOutput:
         del context  # Not used
         try:
             state_str = params.state
             issues = self.manager.list_issues(state=state_str or "open", labels=params.labels)
-            if not issues:
-                return ToolResult.text("No issues found.")
 
-            summary = "\n".join(
-                [f"#{issue.number} {issue.title} ({issue.state})" for issue in issues]
+            issues_list = []
+            for issue in issues:
+                assignees_summary = (
+                    ", ".join(u.login for u in issue.assignees)
+                    if getattr(issue, "assignees", None)
+                    else "Unassigned"
+                )
+                created_at_str = (
+                    issue.created_at.isoformat()
+                    if hasattr(issue.created_at, "isoformat")
+                    else str(issue.created_at)
+                )
+
+                issues_list.append(
+                    IssueSummaryDTO(
+                        number=issue.number,
+                        title=issue.title,
+                        state=issue.state,
+                        html_url=issue.html_url,
+                        labels=[lbl.name for lbl in issue.labels]
+                        if hasattr(issue, "labels")
+                        else [],
+                        assignees_summary=assignees_summary,
+                        created_at=created_at_str,
+                    )
+                )
+            return ListIssuesOutput(
+                issues_count=len(issues_list),
+                issues=issues_list,
             )
-            return ToolResult.text(f"Found {len(issues)} issues:\n{summary}")
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class UpdateIssueInput(BaseModel):
@@ -293,7 +348,7 @@ class UpdateIssueInput(BaseModel):
     )
 
 
-class UpdateIssueTool(BaseTool):
+class UpdateIssueTool(ITool):
     """Tool to update an issue."""
 
     name = "update_issue"
@@ -303,7 +358,12 @@ class UpdateIssueTool(BaseTool):
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
 
-    async def execute(self, params: UpdateIssueInput, context: NoteContext) -> ToolResult:
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
+
+    async def execute(self, params: UpdateIssueInput, context: NoteContext) -> IssueOutput:
         del context  # Not used
         try:
             updated = self.manager.update_issue(
@@ -315,9 +375,10 @@ class UpdateIssueTool(BaseTool):
                 assignees=params.assignees,
                 milestone=params.milestone,
             )
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-        return ToolResult.text(f"Updated issue #{updated.number}")
+            issue_read = self.manager.get_issue(updated.number)
+            return _map_issue_to_output(issue_read)
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class CloseIssueInput(BaseModel):
@@ -329,7 +390,7 @@ class CloseIssueInput(BaseModel):
     comment: str | None = Field(default=None, description="Optional closing comment")
 
 
-class CloseIssueTool(BaseTool):
+class CloseIssueTool(ITool):
     """Tool to close an issue."""
 
     name = "close_issue"
@@ -339,10 +400,15 @@ class CloseIssueTool(BaseTool):
     def __init__(self, manager: GitHubManager) -> None:
         self.manager = manager
 
-    async def execute(self, params: CloseIssueInput, context: NoteContext) -> ToolResult:
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
+
+    async def execute(self, params: CloseIssueInput, context: NoteContext) -> CloseIssueOutput:
         del context  # Not used
         try:
             self.manager.close_issue(params.issue_number, comment=params.comment)
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-        return ToolResult.text(f"Closed issue #{params.issue_number}")
+            return CloseIssueOutput(issue_number=params.issue_number)
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
