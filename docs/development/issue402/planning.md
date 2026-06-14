@@ -182,7 +182,7 @@ AutoFixTool modifies files correctly; cache evicts oldest runs correctly; and th
 **Deliverables:**
 - **[D9.1]** Migrate Phase transition tools.
 - **[D9.2]** Migrate Scaffold artifact and schema tools.
-- **[D9.3]** Migrate Quality gates, Pytest, Safe edit, and Template validation tools.
+- **[D9.3]** Migrate AutoFixTool, Quality gates, Pytest, Safe edit, and Template validation tools.
 - **[D9.4]** Enforce `frozen=True` on all Batch 5 DTOs. Ensure verbose/diff outputs are isolated to JSON.
 
 **Tests:**

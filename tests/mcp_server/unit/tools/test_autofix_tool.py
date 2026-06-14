@@ -115,11 +115,10 @@ class TestAutoFixTool:
         assert gate.execution.fix_command == ["ruff", "format"]
 
     @pytest.mark.asyncio
-    async def test_autofix_tool_execution_and_caching(self) -> None:
-        """Verify that AutoFixTool executes via QAManager and caches the result."""
+    async def test_autofix_tool_execution(self) -> None:
+        """Verify that AutoFixTool executes via QAManager and returns DTO."""
         qa_manager = MagicMock()
-        cache = ResponseCacheManager()
-        tool = AutoFixTool(qa_manager=qa_manager, cache=cache)
+        tool = AutoFixTool(qa_manager=qa_manager)
 
         # Mock QAManager to return a valid AutoFixOutput DTO
         expected_output = AutoFixOutput(
@@ -135,9 +134,7 @@ class TestAutoFixTool:
         params = AutoFixInput(scope="auto")
         note_ctx = NoteContext()
 
-        with patch("uuid.uuid4") as mock_uuid:
-            mock_uuid.return_value = MagicMock(hex="test-run-id")
-            result = await tool.execute_structured(params, note_ctx)
+        result = await tool.execute(params, note_ctx)
 
         # Check result
         assert isinstance(result, AutoFixOutput)
@@ -145,7 +142,3 @@ class TestAutoFixTool:
 
         # Check QAManager delegation
         qa_manager.run_auto_fix.assert_called_once_with(scope="auto", files=None)
-
-        # Check cache storage
-        cached_dto = cache.get("pgmcp://cache/runs/test-run-id")
-        assert cached_dto == expected_output
