@@ -26,5 +26,5 @@ tools:
       - Gates executed: {gates_executed_count} ({gates_executed})
       - Files modified: {modified_files_count}
     next_instructions:
-      - "uri_reference"
       - "recheck_quality"
+      - "uri_reference"
