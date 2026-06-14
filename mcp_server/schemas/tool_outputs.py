@@ -78,3 +78,80 @@ class CycleTransitionOutput(GateTransitionOutput):
 class ForceCycleTransitionOutput(CycleTransitionOutput):
     skip_reason: str
     human_approval: str
+
+
+class SearchResultDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    title: str
+    path: str
+    score: float
+    snippet: str
+    start_line: int
+    end_line: int
+
+
+class SearchDocumentationOutput(BaseToolOutput):
+    query: str
+    scope: str
+    results_count: int
+    results: list[SearchResultDTO] = Field(default_factory=list)
+
+
+class GetWorkContextOutput(BaseToolOutput):
+    current_branch: str
+    workflow_name: str
+    phase: str
+    issue_number: int | None = None
+    parent_branch: str | None = None
+    current_cycle: int | None = None
+    sub_phase: str | None = None
+    phase_source: str
+    phase_confidence: str
+    sub_role_hint: str
+    phase_instructions: str
+    handover_template: str | None = None
+    invalid_phase_warning: str | None = None
+
+
+class InitializeProjectOutput(BaseToolOutput):
+    issue_number: int
+    workflow_name: str
+    branch: str
+    initial_phase: str
+    parent_branch: str | None = None
+    required_phases: list[str] = Field(default_factory=list)
+    execution_mode: str
+    files_created: list[str] = Field(default_factory=list)
+
+
+class PhaseTaskDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    id: str
+    title: str
+    status: str
+
+
+class PhaseDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    name: str
+    status: str
+    tasks: list[PhaseTaskDTO] = Field(default_factory=list)
+
+
+class ProjectPlanOutput(BaseToolOutput):
+    issue_number: int
+    workflow_name: str
+    phases: list[PhaseDTO] = Field(default_factory=list)
+
+
+class PlannedCycleSummary(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    cycle_number: int
+    deliverables_count: int
+
+
+class PlanningDeliverablesOutput(BaseToolOutput):
+    issue_number: int
+    total_cycles: int
+    total_deliverables: int
+    cycles: list[PlannedCycleSummary] = Field(default_factory=list)

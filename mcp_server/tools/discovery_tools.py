@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,10 +16,14 @@ from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.schemas import WorkphasesConfig
+from mcp_server.schemas.tool_outputs import (
+    GetWorkContextOutput,
+    SearchDocumentationOutput,
+    SearchResultDTO,
+)
 from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
-from mcp_server.tools.base import BaseTool, StructuredTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.tools.base import ITool
 
 if TYPE_CHECKING:
     from mcp_server.config.schemas.contracts_config import ContractsConfig
@@ -42,21 +46,38 @@ class SearchDocumentationInput(BaseModel):
     )
 
 
-class SearchDocumentationTool(BaseTool):
+class SearchDocumentationTool(ITool):
     """Tool to search documentation files."""
 
-    name = "search_documentation"
-    description = (
-        "Semantic/fuzzy search across all docs/ files. "
-        "Returns ranked results with snippets for understanding project structure."
-    )
-    args_model = SearchDocumentationInput
+    output_model: ClassVar[type[BaseModel]] = SearchDocumentationOutput
+    presentation_category = "query"
+
+    @property
+    def name(self) -> str:
+        return "search_documentation"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Semantic/fuzzy search across all docs/ files. "
+            "Returns ranked results with snippets for understanding project structure."
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return SearchDocumentationInput
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
     def __init__(self, settings: Settings) -> None:
-        super().__init__()
         self._settings = settings
 
-    async def execute(self, params: SearchDocumentationInput, context: NoteContext) -> ToolResult:
+    async def execute(
+        self, params: SearchDocumentationInput, context: NoteContext
+    ) -> SearchDocumentationOutput:
         """Execute documentation search using DocumentIndexer + SearchService."""
         # Build index from docs directory
         docs_dir = Path(self._settings.server.workspace_root) / "docs"
@@ -77,23 +98,25 @@ class SearchDocumentationTool(BaseTool):
             index=index, query=params.query, max_results=10, scope=scope_filter
         )
 
-        if not results:
-            return ToolResult.text(
-                f"No results found for query: '{params.query}'\n"
-                "Try broader search terms or different scope."
+        mapped_results = [
+            SearchResultDTO(
+                title=r["title"],
+                path=r["path"],
+                score=r["_relevance"],
+                snippet=r["_snippet"],
+                start_line=r.get("start_line", 1),
+                end_line=r.get("end_line", 1),
             )
+            for r in results
+        ]
 
-        # Format results for output
-        output_lines = [f"Found {len(results)} results for '{params.query}':\n"]
-
-        for i, result in enumerate(results, 1):
-            output_lines.append(
-                f"{i}. **{result['title']}** ({result['path']})\n"
-                f"   Score: {result['_relevance']:.2f}\n"
-                f"   > {result['_snippet']}\n"
-            )
-
-        return ToolResult.text("\n".join(output_lines))
+        return SearchDocumentationOutput(
+            success=True,
+            query=params.query,
+            scope=params.scope,
+            results_count=len(mapped_results),
+            results=mapped_results,
+        )
 
 
 class GetWorkContextInput(BaseModel):
@@ -102,15 +125,31 @@ class GetWorkContextInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class GetWorkContextTool(StructuredTool):
+class GetWorkContextTool(ITool):
     """Tool to aggregate work context from Git and GitHub."""
 
-    name = "get_work_context"
-    description = (
-        "Aggregates context from GitHub Issues, current branch, and workflow phase "
-        "to understand what to work on next. Uses deterministic phase detection."
-    )
-    args_model = GetWorkContextInput
+    output_model: ClassVar[type[BaseModel]] = GetWorkContextOutput
+    presentation_category = "query"
+
+    @property
+    def name(self) -> str:
+        return "get_work_context"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Aggregates context from GitHub Issues, current branch, and workflow phase "
+            "to understand what to work on next. Uses deterministic phase detection."
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GetWorkContextInput
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
     def __init__(
         self,
@@ -125,7 +164,6 @@ class GetWorkContextTool(StructuredTool):
         contracts_config: ContractsConfig | None = None,
         context_loaded_writer: IContextLoadedWriter | None = None,
     ) -> None:
-        super().__init__()
         self._settings = settings
         self._git_manager = git_manager
         self._project_manager = project_manager
@@ -136,78 +174,105 @@ class GetWorkContextTool(StructuredTool):
         self._contracts_config = contracts_config
         self._context_loaded_writer = context_loaded_writer
 
-    async def execute_structured(
+    async def execute(
         self,
         params: GetWorkContextInput,
         context: NoteContext,  # noqa: ANN401, ARG002
-    ) -> tuple[dict[str, Any], str]:
+    ) -> GetWorkContextOutput:
         """Execute work context aggregation."""
         _ = params  # GetWorkContextInput has no fields after C1 (issue #268)
 
         branch = self._git_manager.get_current_branch()
 
-        ctx: dict[str, Any] = {"current_branch": branch}
-
-        # Primary state read: single source of truth (F_268.13, issue #268)
-        workflow = ""
+        workflow_name = ""
         phase = ""
+        issue_number = None
+        parent_branch = None
+        current_cycle = None
+        sub_phase = None
+        phase_source = "unknown"
+        phase_confidence = "unknown"
+        invalid_phase_warning = None
+
         try:
             state = self._state_engine.get_state(branch)
-            workflow = state.workflow_name or ""
-            phase = state.current_phase or ""
-            ctx["workflow_name"] = workflow
-            ctx["phase"] = phase
-            if state.issue_number is not None:
-                ctx["issue_number"] = state.issue_number
-            if state.parent_branch:
-                ctx["parent_branch"] = state.parent_branch
+            workflow_name = state.workflow_name if isinstance(state.workflow_name, str) else ""
+            phase = state.current_phase if isinstance(state.current_phase, str) else ""
+
+            if isinstance(state.issue_number, int) and not isinstance(state.issue_number, bool):
+                issue_number = state.issue_number
+            if isinstance(state.parent_branch, str):
+                parent_branch = state.parent_branch
+            if isinstance(state.current_sub_phase, str):
+                sub_phase = state.current_sub_phase
+
             if (
                 self._contracts_config is not None
-                and workflow
+                and workflow_name
                 and phase
-                and state.current_cycle is not None
+                and isinstance(state.current_cycle, int)
+                and not isinstance(state.current_cycle, bool)
             ):
-                workflow_entry = self._contracts_config.workflows.get(workflow)
+                workflow_entry = self._contracts_config.workflows.get(workflow_name)
                 if workflow_entry is not None:
                     try:
                         if workflow_entry.get_phase(phase).cycle_based:
-                            ctx["current_cycle"] = state.current_cycle
+                            current_cycle = state.current_cycle
                     except ValueError:
                         pass
-            if state.current_sub_phase:
-                ctx["sub_phase"] = state.current_sub_phase
-            ctx["phase_source"] = "state.json"
-            ctx["phase_confidence"] = "high"
+            phase_source = "state.json"
+            phase_confidence = "high"
         except Exception:  # noqa: BLE001 - bootstrap: branch not yet initialized
-            ctx["workflow_name"] = ""
-            ctx["phase"] = ""
-            ctx["phase_source"] = "unknown"
-            ctx["phase_confidence"] = "unknown"
+            pass
 
         instructions = None
-        if self._contracts_config is not None and workflow and phase:
-            workflow_entry = self._contracts_config.workflows.get(workflow)
+        if self._contracts_config is not None and workflow_name and phase:
+            workflow_entry = self._contracts_config.workflows.get(workflow_name)
             if workflow_entry is not None:
                 try:
                     instructions = workflow_entry.get_phase(phase).instructions
                 except ValueError:
-                    ctx["invalid_phase_warning"] = self._build_invalid_phase_warning(
-                        workflow=workflow,
+                    invalid_phase_warning = self._build_invalid_phase_warning(
+                        workflow=workflow_name,
                         phase=phase,
                         valid_phases=workflow_entry.get_phase_names(),
                     )
 
-        ctx["sub_role_hint"] = instructions.sub_role if instructions is not None else ""
-        ctx["phase_instructions"] = (
-            instructions.phase_instructions if instructions is not None else ""
-        )
+        sub_role_hint = instructions.sub_role if instructions is not None else ""
+        phase_instructions = ""
         if instructions is not None:
-            ctx["handover_template"] = instructions.handover_template
+            phase_instructions = instructions.phase_instructions
+        elif invalid_phase_warning:
+            phase_instructions = (
+                "(No phase instructions available until the branch is moved to a valid phase.)"
+            )
+        else:
+            phase_instructions = (
+                f"(No instructions defined for workflow: {workflow_name or 'unknown'}, "
+                f"phase: {phase or 'unknown'})"
+            )
 
-        formatted = self._format_context(ctx)
+        handover_template = instructions.handover_template if instructions is not None else None
+
         if self._context_loaded_writer is not None:
             self._context_loaded_writer.set_context_loaded(branch, value=True)
-        return ctx, formatted
+
+        return GetWorkContextOutput(
+            success=True,
+            current_branch=branch,
+            workflow_name=workflow_name,
+            phase=phase,
+            issue_number=issue_number,
+            parent_branch=parent_branch,
+            current_cycle=current_cycle,
+            sub_phase=sub_phase,
+            phase_source=phase_source,
+            phase_confidence=phase_confidence,
+            sub_role_hint=sub_role_hint,
+            phase_instructions=phase_instructions,
+            handover_template=handover_template,
+            invalid_phase_warning=invalid_phase_warning,
+        )
 
     def _build_invalid_phase_warning(
         self,
@@ -224,102 +289,3 @@ class GetWorkContextTool(StructuredTool):
             "Recovery: use force_phase_transition to move this branch to a valid phase, "
             "then call get_work_context again."
         )
-
-    def _format_context(self, context: dict[str, Any]) -> str:
-        """Format work context into compact orientation header + phase instructions block."""
-        branch = context.get("current_branch", "")
-        workflow = context.get("workflow_name", "")
-        phase = context.get("phase", "")
-        issue_number = context.get("issue_number")
-        parent_branch = context.get("parent_branch", "")
-        current_cycle = context.get("current_cycle")
-        sub_phase = context.get("sub_phase")
-        sub_role_hint = context.get("sub_role_hint", "")
-        phase_source = context.get("phase_source", "unknown")
-        phase_confidence = context.get("phase_confidence", "unknown")
-        invalid_phase_warning = context.get("invalid_phase_warning", "")
-        phase_instructions = context.get("phase_instructions", "")
-
-        # Phase emoji mapping (7 workflow phases + unknown)
-        phase_emoji = {
-            "research": "🔍",
-            "planning": "📋",
-            "design": "🎨",
-            "implementation": "🧪",
-            "validation": "✅",
-            "documentation": "📝",
-            "coordination": "🤝",
-        }.get(phase, "❓")
-
-        # Sub-phase emoji (TDD-specific)
-        subphase_emoji: dict[str, str] = {"red": "🔴", "green": "🟢", "refactor": "🔄"}
-
-        lines: list[str] = []
-
-        # Orientation line 1: branch | workflow | issue
-        line1_parts = [f"Branch: `{branch}`"]
-        if workflow:
-            line1_parts.append(f"Workflow: {workflow}")
-        if issue_number is not None:
-            line1_parts.append(f"Issue: #{issue_number}")
-        lines.append(" | ".join(line1_parts))
-
-        # Orientation line 2: phase | role
-        phase_display = f"{phase_emoji} {phase}" if phase else "❓ unknown"
-        if sub_phase:
-            emoji = subphase_emoji.get(str(sub_phase), "")
-            phase_display += f" → {emoji} {sub_phase}".rstrip()
-        if current_cycle is not None:
-            phase_display += f" (cycle {current_cycle})"
-        line2_parts = [f"Phase: {phase_display}"]
-        if sub_role_hint:
-            line2_parts.append(f"Role: {sub_role_hint}")
-        lines.append(" | ".join(line2_parts))
-
-        # Orientation line 3: parent branch (only if non-empty)
-        if parent_branch:
-            lines.append(f"Parent: {parent_branch}")
-
-        # Orientation line 4: phase detection source (only if confidence != high)
-        if phase_confidence != "high":
-            lines.append(f"⚠️ Phase detection: source={phase_source}, confidence={phase_confidence}")
-        lines.append("")
-        lines.append(
-            "TODO discipline: create or refresh your TODO list now; "
-            "keep exactly one item in progress and update it after each material step."
-        )
-
-        # Separator
-        lines.append("")
-        lines.append("---")
-        lines.append("")
-
-        if invalid_phase_warning:
-            lines.append(invalid_phase_warning)
-            lines.append("")
-
-        # Phase instructions block (dominant first block - F_268.13)
-        lines.append("### 🎯 Phase Instructions")
-        lines.append("")
-        if phase_instructions:
-            lines.append(phase_instructions)
-        elif invalid_phase_warning:
-            lines.append(
-                "(No phase instructions available until the branch is moved to a valid phase.)"
-            )
-        else:
-            lines.append(
-                f"(No instructions defined for workflow: {workflow or 'unknown'}, "
-                f"phase: {phase or 'unknown'})"
-            )
-
-        handover_template = context.get("handover_template")
-        if handover_template:
-            lines.append("")
-            lines.append("---")
-            lines.append("")
-            lines.append("### Hand-over Template")
-            lines.append("")
-            lines.append(handover_template)
-
-        return "\n".join(lines)

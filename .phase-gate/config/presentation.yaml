@@ -47,3 +47,23 @@ tools:
     template_success: "Transitioned to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     next_instructions:
       - "context_reset"
+  search_documentation:
+    template_success: "Found {results_count} documentation matches for query '{query}' in scope '{scope}'."
+  get_work_context:
+    template_success: |
+      Branch: `{current_branch}` | Workflow: {workflow_name} | Issue: #{issue_number}
+      Phase: {phase} (confidence={phase_confidence})
+      Role: {sub_role_hint}
+      Parent: {parent_branch}
+    next_instructions:
+      - "todo_discipline"
+  initialize_project:
+    template_success: "Initialized project for issue #{issue_number} on branch '{branch}' (Initial Phase: '{initial_phase}')."
+    next_instructions:
+      - "context_reset"
+  get_project_plan:
+    template_success: "**Project Plan for Issue #{issue_number}** (Workflow: {workflow_name})."
+  save_planning_deliverables:
+    template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
+  update_planning_deliverables:
+    template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."

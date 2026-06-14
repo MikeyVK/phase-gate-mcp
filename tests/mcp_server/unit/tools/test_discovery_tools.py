@@ -38,7 +38,6 @@ from mcp_server.tools.discovery_tools import (
     SearchDocumentationTool,
 )
 from tests.mcp_server.test_support import (
-    assert_structured_result,
     make_phase_state_engine,
     make_project_manager,
 )
@@ -118,7 +117,7 @@ class TestSearchDocumentationTool:
     @pytest.mark.asyncio
     async def test_search_returns_results(self, tool: SearchDocumentationTool) -> None:
         """Should return search results with snippets."""
-        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput
+        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput  # noqa: PLC0415
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create mock docs directory
@@ -139,7 +138,7 @@ class TestSearchDocumentationTool:
     @pytest.mark.asyncio
     async def test_search_with_scope(self, tool: SearchDocumentationTool) -> None:
         """Should filter by scope."""
-        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput
+        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput  # noqa: PLC0415
 
         with tempfile.TemporaryDirectory() as tmpdir:
             docs_dir = Path(tmpdir) / "docs"
@@ -161,7 +160,7 @@ class TestSearchDocumentationTool:
     @pytest.mark.asyncio
     async def test_search_empty_results(self, tool: SearchDocumentationTool) -> None:
         """Should handle no results gracefully."""
-        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput
+        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput  # noqa: PLC0415
 
         with tempfile.TemporaryDirectory() as tmpdir:
             docs_dir = Path(tmpdir) / "docs"
@@ -191,10 +190,11 @@ class TestGetWorkContextTool:
     def test_tool_name(self, tool: GetWorkContextTool) -> None:
         """Should have correct tool name."""
         assert tool.name == "get_work_context"
+
     @pytest.mark.asyncio
     async def test_get_context_returns_branch_info(self, tool: GetWorkContextTool) -> None:
         """Should return branch information."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         with patch("mcp_server.tools.discovery_tools.GitManager") as mock_git_class:
             mock_git = MagicMock()
@@ -213,7 +213,7 @@ class TestGetWorkContextTool:
     @pytest.mark.asyncio
     async def test_get_context_extracts_issue_number(self, tool: GetWorkContextTool) -> None:
         """Issue number comes from BranchState after C1 (issue #268)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool._state_engine.get_state.return_value.issue_number = 42
         mock_git = MagicMock()
@@ -232,7 +232,7 @@ class TestGetWorkContextTool:
         self, tool: GetWorkContextTool
     ) -> None:
         """Issue number from BranchState for fix/ branches after C1 (issue #268)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool._state_engine.get_state.return_value.issue_number = 99
         mock_git = MagicMock()
@@ -251,7 +251,7 @@ class TestGetWorkContextTool:
         self, tool: GetWorkContextTool
     ) -> None:
         """Phase and sub-phase come from BranchState after C1 (issue #268)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool._state_engine.get_state.return_value.current_phase = "implementation"
         tool._state_engine.get_state.return_value.current_sub_phase = "red"
@@ -267,6 +267,7 @@ class TestGetWorkContextTool:
         assert result.success
         assert result.phase == "implementation"
         assert result.sub_phase == "red"
+
     @pytest.mark.asyncio
     async def test_detect_workflow_phase_variations(self, tool: GetWorkContextTool) -> None:
         """All 7 workflow phases appear in output when set via BranchState after C1."""
@@ -280,7 +281,7 @@ class TestGetWorkContextTool:
             ("coordination", "🤝"),
         ]
 
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         mock_git = MagicMock()
         mock_git.get_current_branch.return_value = "main"
@@ -298,7 +299,7 @@ class TestGetWorkContextTool:
     @pytest.mark.asyncio
     async def test_get_context_with_github_integration(self, tool: GetWorkContextTool) -> None:
         """Should handle GitHub integration gracefully (error case)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         mock_git = MagicMock()
         mock_git.get_current_branch.return_value = "feature/42-implement-dto"
@@ -320,7 +321,7 @@ class TestGetWorkContextTool:
     @pytest.mark.asyncio
     async def test_get_context_github_success(self, tool: GetWorkContextTool) -> None:
         """GitHub block removed in C1 (issue #268); tool completes successfully."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         mock_git = MagicMock()
         mock_git.get_current_branch.return_value = "feature/42-test"
@@ -337,7 +338,7 @@ class TestGetWorkContextTool:
         self, tool: GetWorkContextTool
     ) -> None:
         """When state engine fails, output shows unknown confidence (no error raised)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool._state_engine.get_state.side_effect = OSError("state.json missing")  # pyright: ignore[reportPrivateUsage]
         mock_git = MagicMock()
@@ -444,11 +445,11 @@ class TestGetWorkContextTddCycleInfo:
 
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
-        # Assert - after C1 (issue #268) TDD cycle info removed from output
-        assert not result.is_error, f"Expected success, got error: {result.content}"
-        text = result.content[1]["text"]
-        # TDD cycle noise block removed in C1 (issue #268)
-        assert "TDD Cycle" not in text, f"Unexpected cycle info in output after C1: {text}"
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.current_cycle is None
 
     @pytest.mark.asyncio
     async def test_tdd_cycle_info_hidden_outside_tdd_phase(
@@ -510,11 +511,11 @@ class TestGetWorkContextTddCycleInfo:
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         # Assert - NO tdd_cycle_info in design phase
-        assert not result.is_error
-        text = result.content[1]["text"]
-        # Should NOT mention TDD cycle info or cycle names
-        assert "TDD Cycle" not in text, f"Expected NO cycle info in design phase: {text}"
-        assert "Validation Logic" not in text, f"Expected NO cycle name in design phase: {text}"
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.phase == "design"
 
     @pytest.mark.asyncio
     async def test_tdd_cycle_info_graceful_degradation(
@@ -563,10 +564,11 @@ class TestGetWorkContextTddCycleInfo:
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         # Assert - tool should NOT crash
-        assert not result.is_error, f"Tool crashed: {result.content}"
-        text = result.content[1]["text"]
-        # Should show implementation phase
-        assert "implementation" in text.lower() or "🔴" in text or "🟢" in text
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.phase == "implementation"
 
 
 class TestTddCycleInfoStatusField:
@@ -652,10 +654,11 @@ class TestTddCycleInfoStatusField:
 
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
-        assert not result.is_error, f"Tool failed: {result.content}"
-        # TDD cycle status removed from output in C1 (issue #268)
-        text = result.content[1]["text"]
-        assert "in_progress" not in text, f"Unexpected tdd_cycle_info in output after C1: {text}"
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.current_cycle is None
 
 
 class TestGetWorkContextResolverAdoption:
@@ -691,9 +694,11 @@ class TestGetWorkContextResolverAdoption:
         )
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
-        assert not result.is_error
-        # C1: resolver no longer called; execute() reads BranchState directly
-        assert "Branch:" in result.content[1]["text"]
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.current_branch == "feature/99-test"
 
     @pytest.mark.asyncio
     async def test_execute_gates_cycle_enrichment_on_current_cycle_not_none(self) -> None:
@@ -721,8 +726,11 @@ class TestGetWorkContextResolverAdoption:
         )
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
-        assert not result.is_error
-        assert "TDD Cycle" not in result.content[1]["text"]
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.current_cycle is None
 
     @pytest.mark.asyncio
     async def test_execute_hides_cycle_for_non_cycle_phase_even_when_preserved(self) -> None:
@@ -737,9 +745,12 @@ class TestGetWorkContextResolverAdoption:
 
         planning_result = await planning_tool.execute(GetWorkContextInput(), NoteContext())
 
-        assert not planning_result.is_error
-        assert "Phase: 📋 planning" in planning_result.content[1]["text"]
-        assert "(cycle 3)" not in planning_result.content[1]["text"]
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(planning_result, GetWorkContextOutput)
+        assert planning_result.success
+        assert planning_result.phase == "planning"
+        assert planning_result.current_cycle is None
 
         implementation_tool = make_work_context_tool(contracts_config=load_contracts_config())
         implementation_tool._git_manager.get_current_branch.return_value = "bug/230-test"  # pyright: ignore[reportPrivateUsage]
@@ -754,8 +765,10 @@ class TestGetWorkContextResolverAdoption:
             GetWorkContextInput(), NoteContext()
         )
 
-        assert not implementation_result.is_error
-        assert "Phase: 🧪 implementation (cycle 3)" in implementation_result.content[1]["text"]
+        assert isinstance(implementation_result, GetWorkContextOutput)
+        assert implementation_result.success
+        assert implementation_result.phase == "implementation"
+        assert implementation_result.current_cycle == 3
 
     @pytest.mark.asyncio
     async def test_execute_shows_phase_from_resolver(self) -> None:
@@ -778,8 +791,11 @@ class TestGetWorkContextResolverAdoption:
         )
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
-        assert not result.is_error
-        assert "research" in result.content[1]["text"].lower()
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
+        assert result.phase == "research"
 
 
 # ---------------------------------------------------------------------------
@@ -824,7 +840,10 @@ class TestGetWorkContextStateErrors:
         result = await tool.execute(GetWorkContextInput(), ctx)
 
         # C1 (issue #268): graceful degradation path; state errors no longer hard-fail
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_error_with_recovery_note_on_mismatch(
@@ -838,7 +857,10 @@ class TestGetWorkContextStateErrors:
         result = await tool.execute(GetWorkContextInput(), ctx)
 
         # C1 (issue #268): graceful degradation path; state errors no longer hard-fail
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success
 
     @pytest.mark.asyncio
     async def test_get_work_context_graceful_io_error_path_unchanged(self, tmp_path: Path) -> None:
@@ -847,7 +869,10 @@ class TestGetWorkContextStateErrors:
         ctx = NoteContext()
         result = await tool.execute(GetWorkContextInput(), ctx)
 
-        assert not result.is_error  # OSError → graceful degradation, not hard error
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
+
+        assert isinstance(result, GetWorkContextOutput)
+        assert result.success  # OSError → graceful degradation, not hard error
 
 
 # ---------------------------------------------------------------------------
@@ -890,7 +915,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
     @pytest.mark.asyncio
     async def test_get_work_context_returns_sub_role_hint_for_known_phase(self) -> None:
         """sub_role_hint must equal 'implementer' when phase is 'implementation'."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(phase="implementation")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -904,7 +929,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         self,
     ) -> None:
         """phase_instructions must be non-empty for (feature, implementation)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(phase="implementation")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -919,21 +944,21 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         self,
     ) -> None:
         """Unknown (workflow, phase) combo must return empty string, never KeyError."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(phase="nonexistent_phase_xyz")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
-        assert "No instructions defined" in result.phase_instructions
+        assert "No phase instructions available" in result.phase_instructions
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_empty_string_when_workflow_unavailable(
         self,
     ) -> None:
         """Graceful fallback when workflow resolution raises (OSError path)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         mock_git = MagicMock()
         mock_git.get_current_branch.return_value = "feature/268-test"
@@ -960,7 +985,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         self,
     ) -> None:
         """phase_instructions for (bug, research) must contain key research actions."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(phase="research", workflow_name="bug")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -975,7 +1000,7 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         self,
     ) -> None:
         """phase_instructions for (bug, implementation) must contain TDD hard rules."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(phase="implementation", workflow_name="bug")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -984,6 +1009,8 @@ class TestGetWorkContextSubRoleAndPhaseInstructions:
         assert result.success
         assert "RED" in result.phase_instructions
         assert "get_project_plan" in result.phase_instructions
+
+
 # ---------------------------------------------------------------------------
 # C1 RED — GetWorkContextTool response restructuring (issue #268 F_268.13)
 # ---------------------------------------------------------------------------
@@ -1059,7 +1086,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_returns_sub_role_hint_for_known_phase(self) -> None:
         """New format: orientation header shows 'Role: implementer' for implementation phase."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(current_phase="implementation")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1073,7 +1100,7 @@ class TestGetWorkContextC1Restructuring:
         self,
     ) -> None:
         """New format: phase_instructions rendered under '### 🎯 Phase Instructions'."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(workflow_name="feature", current_phase="implementation")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1087,7 +1114,7 @@ class TestGetWorkContextC1Restructuring:
         self,
     ) -> None:
         """Unknown (workflow, phase): no crash; fallback message shown under instruction header."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(workflow_name="unknownwf", current_phase="unknownphase")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1099,7 +1126,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_renders_invalid_phase_warning_for_known_workflow(self) -> None:
         """Known workflow + invalid phase must render explicit recovery guidance."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(workflow_name="feature", current_phase="invalid_phase")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1112,7 +1139,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_places_invalid_phase_warning_before_instructions(self) -> None:
         """Removed text check, verify both invalid_phase_warning and phase_instructions exist."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(workflow_name="feature", current_phase="invalid_phase")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1120,12 +1147,12 @@ class TestGetWorkContextC1Restructuring:
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
         assert result.invalid_phase_warning is not None
-        assert "No instructions defined" in result.phase_instructions
+        assert "No phase instructions available" in result.phase_instructions
 
     @pytest.mark.asyncio
     async def test_get_work_context_returns_workflow_name_from_branch_state(self) -> None:
         """Orientation header must contain 'Workflow: feature' sourced from BranchState."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(workflow_name="feature")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1137,7 +1164,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_returns_issue_number_from_branch_state(self) -> None:
         """Orientation header shows issue #268 from BranchState, not branch-name regex."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(branch="feature/no-number-in-name", issue_number=268)
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1149,7 +1176,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_returns_parent_branch_from_branch_state(self) -> None:
         """Orientation header must show 'Parent: main' from BranchState.parent_branch."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(parent_branch="main")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1161,7 +1188,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_omits_noise_fields(self) -> None:
         """Verify DTO attributes are present."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         mock_issue = MagicMock()
         mock_issue.number = 268
@@ -1174,7 +1201,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_phase_instructions_is_dominant_first_block(self) -> None:
         """Verify phase instructions are non-empty."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(workflow_name="feature", current_phase="implementation")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1186,7 +1213,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_renders_todo_discipline_reminder_in_header(self) -> None:
         """Verify success."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(workflow_name="feature", current_phase="implementation")
         result = await tool.execute(GetWorkContextInput(), NoteContext())
@@ -1197,7 +1224,7 @@ class TestGetWorkContextC1Restructuring:
     @pytest.mark.asyncio
     async def test_get_work_context_graceful_degradation_when_state_unavailable(self) -> None:
         """No error result when state is unavailable (bootstrap degradation)."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         tool = self._make_tool(state_raises=StateNotFoundError("feature/268-test"))
         tool._workflow_status_resolver.resolve_current.side_effect = StateNotFoundError(
@@ -1209,6 +1236,8 @@ class TestGetWorkContextC1Restructuring:
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
         assert result.current_branch == "feature/268-test"
+
+
 # ---------------------------------------------------------------------------
 # C7 GREEN - GetWorkContextTool ContractsConfig injection (issue #268)
 # ---------------------------------------------------------------------------
@@ -1299,7 +1328,7 @@ class TestGetWorkContextC7ContractsInjection:
     @pytest.mark.asyncio
     async def test_sub_role_comes_from_contracts(self) -> None:
         """sub_role_hint must come from ContractsConfig, not hardcoded maps."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         contracts = _make_c7_contracts(sub_role="implementer-c7")
         tool = self._make_c7_tool(contracts_config=contracts)
@@ -1312,7 +1341,7 @@ class TestGetWorkContextC7ContractsInjection:
     @pytest.mark.asyncio
     async def test_phase_instructions_come_from_contracts(self) -> None:
         """phase_instructions must come from ContractsConfig, not hardcoded maps."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         contracts = _make_c7_contracts(
             phase_instructions="Do TDD. Call get_project_plan.",
@@ -1327,7 +1356,7 @@ class TestGetWorkContextC7ContractsInjection:
     @pytest.mark.asyncio
     async def test_handover_template_in_response(self) -> None:
         """Hand-over template must appear in response when contracts provide one."""
-        from mcp_server.schemas.tool_outputs import GetWorkContextOutput
+        from mcp_server.schemas.tool_outputs import GetWorkContextOutput  # noqa: PLC0415
 
         contracts = _make_c7_contracts(handover_template="## Hand-over\nScope: ...")
         tool = self._make_c7_tool(contracts_config=contracts)
@@ -1336,6 +1365,7 @@ class TestGetWorkContextC7ContractsInjection:
         assert isinstance(result, GetWorkContextOutput)
         assert result.success
         assert result.handover_template == "## Hand-over\nScope: ..."
+
     @pytest.mark.asyncio
     async def test_context_loaded_writer_called_on_success(self) -> None:
         """IContextLoadedWriter.set_context_loaded must be called after successful execute."""
