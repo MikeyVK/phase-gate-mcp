@@ -744,7 +744,7 @@ class TestRunQualityGatesVerboseOption:
         """Verify RunQualityGatesInput accepts verbose field."""
         params = RunQualityGatesInput(scope="auto", verbose=True)
         assert params.verbose is True
-        
+
         # Test default is False
         params_default = RunQualityGatesInput(scope="auto")
         assert params_default.verbose is False
@@ -775,8 +775,7 @@ class TestRunQualityGatesVerboseOption:
         tool = RunQualityGatesTool(manager=mock_manager)
         context = NoteContext()
         await tool.execute(
-            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True),
-            context
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True), context
         )
         mock_manager.run_quality_gates.assert_called_once_with(
             ["foo.py"],
@@ -810,11 +809,11 @@ class TestRunQualityGatesVerboseOption:
         tool = RunQualityGatesTool(manager=mock_manager)
         context = NoteContext()
         await tool.execute(
-            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=False),
-            context
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=False), context
         )
-        
+
         from mcp_server.core.operation_notes import RecoveryNote
+
         notes = context.of_type(RecoveryNote)
         assert len(notes) == 1
         assert "verbose=True" in notes[0].message
@@ -846,10 +845,10 @@ class TestRunQualityGatesVerboseOption:
         tool = RunQualityGatesTool(manager=mock_manager)
         context = NoteContext()
         await tool.execute(
-            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True),
-            context
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True), context
         )
-        
+
         from mcp_server.core.operation_notes import RecoveryNote
+
         notes = context.of_type(RecoveryNote)
         assert len(notes) == 0

@@ -175,6 +175,7 @@ class TestMergePREscapeHatch:
             "it is the escape hatch that clears PRStatus.OPEN"
         )
 
+
 # ---------------------------------------------------------------------------
 # 3. Enforcement: blocked when PRStatus.OPEN
 # ---------------------------------------------------------------------------

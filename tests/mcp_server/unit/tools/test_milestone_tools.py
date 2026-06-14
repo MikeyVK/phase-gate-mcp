@@ -45,7 +45,9 @@ async def test_list_milestones_tool(mock_github_manager: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_create_milestone_tool(mock_github_manager: MagicMock) -> None:
     tool = CreateMilestoneTool(manager=mock_github_manager)
-    mock_github_manager.create_milestone.return_value = MagicMock(number=2, title="Sprint 1", state="open")
+    mock_github_manager.create_milestone.return_value = MagicMock(
+        number=2, title="Sprint 1", state="open"
+    )
 
     params = CreateMilestoneInput(title="Sprint 1")
     result = await tool.execute(params, NoteContext())
@@ -62,7 +64,9 @@ async def test_create_milestone_tool(mock_github_manager: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_close_milestone_tool(mock_github_manager: MagicMock) -> None:
     tool = CloseMilestoneTool(manager=mock_github_manager)
-    mock_github_manager.close_milestone.return_value = MagicMock(number=3, title="Sprint X", state="closed")
+    mock_github_manager.close_milestone.return_value = MagicMock(
+        number=3, title="Sprint X", state="closed"
+    )
 
     params = CloseMilestoneInput(milestone_number=3)
     result = await tool.execute(params, NoteContext())

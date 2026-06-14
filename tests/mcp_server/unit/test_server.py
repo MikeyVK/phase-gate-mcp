@@ -127,6 +127,7 @@ def _make_transition_advisory_execute(
     async def execute(_self: object, _params: object, context: NoteContext) -> Any:
         context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
         from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
+
         return PhaseTransitionOutput(
             success=True,
             branch=getattr(_params, "branch", "feature/257-reorder-workflow-phases"),
@@ -203,6 +204,7 @@ class TestServerToolRegistration:
             async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401
                 del params, context
                 return ToolResult.text("ok")
+
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
 

@@ -16,7 +16,6 @@ Unit tests for ToolResult to MCP result conversion.
 # Standard library
 
 # Third-party
-import pytest
 from mcp.types import CallToolResult, TextContent
 
 from mcp_server.tools.tool_result import ToolResult
@@ -39,4 +38,3 @@ class TestToolResultConversion:
         assert isinstance(mcp_result.content[0], TextContent)
         assert mcp_result.content[0].text == "Hello World"
         assert getattr(mcp_result, "structuredContent", None) is None
-

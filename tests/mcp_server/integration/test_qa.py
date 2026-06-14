@@ -59,6 +59,7 @@ async def test_quality_tool_output_format() -> None:
         assert isinstance(gate.passed, bool)
         assert isinstance(gate.status, str)
 
+
 def test_switching_active_gates_changes_execution(tmp_path: Path) -> None:
     """Switching active_gates in quality.yaml changes which gates run.
 

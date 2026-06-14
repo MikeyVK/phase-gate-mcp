@@ -1426,9 +1426,7 @@ class TestQAManagerVerboseOption:
             mock_proc.stderr = "verbose stderr trace"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(
-                mock_gate, ["test.py"], gate_number=1, verbose=True
-            )
+            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1, verbose=True)
 
             assert result["passed"] is False
             details = result.get("details", "")
@@ -1447,9 +1445,7 @@ class TestQAManagerVerboseOption:
             mock_proc.stderr = "verbose stderr trace"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(
-                mock_gate, ["test.py"], gate_number=1, verbose=False
-            )
+            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1, verbose=False)
 
             assert result["passed"] is False
             assert result.get("details", "") == ""

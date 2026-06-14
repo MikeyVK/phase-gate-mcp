@@ -61,6 +61,7 @@ def make_validating_tool(
 
 async def test_minimal_input_creates_issue_with_correct_labels() -> None:
     from mcp_server.schemas.github_models import IssueReadModel
+
     mock_manager = MagicMock()
     mock_manager.create_issue.return_value = {
         "number": 42,
@@ -97,8 +98,11 @@ async def test_minimal_input_creates_issue_with_correct_labels() -> None:
     assert "scope:tooling" in label_names
     assert "priority:low" in label_names
     assert "phase:research" in label_names
+
+
 async def test_all_options_creates_issue_with_full_label_set() -> None:
     from mcp_server.schemas.github_models import IssueReadModel
+
     mock_manager = MagicMock()
     mock_manager.create_issue.return_value = {
         "number": 99,
@@ -143,8 +147,11 @@ async def test_all_options_creates_issue_with_full_label_set() -> None:
     assert "scope:mcp-server" in label_names
     assert "priority:medium" in label_names
     assert "phase:research" in label_names
+
+
 async def test_invalid_issue_type_is_refused_before_api_call() -> None:
     from mcp_server.core.exceptions import ExecutionError
+
     tool, adapter = make_validating_tool()
 
     with pytest.raises(ExecutionError, match="Unknown issue type"):
@@ -155,6 +162,7 @@ async def test_invalid_issue_type_is_refused_before_api_call() -> None:
 
 async def test_invalid_scope_is_refused_before_api_call() -> None:
     from mcp_server.core.exceptions import ExecutionError
+
     tool, adapter = make_validating_tool()
 
     with pytest.raises(ExecutionError, match="Unknown scope"):
@@ -165,6 +173,7 @@ async def test_invalid_scope_is_refused_before_api_call() -> None:
 
 async def test_invalid_priority_is_refused_before_api_call() -> None:
     from mcp_server.core.exceptions import ExecutionError
+
     tool, adapter = make_validating_tool()
 
     with pytest.raises(ExecutionError, match="Unknown priority"):
@@ -175,14 +184,18 @@ async def test_invalid_priority_is_refused_before_api_call() -> None:
 
 async def test_title_too_long_is_refused_before_api_call() -> None:
     from mcp_server.core.exceptions import ExecutionError
+
     tool, adapter = make_validating_tool()
 
     with pytest.raises(ExecutionError, match="Title too long"):
         await tool.execute(make_input(title="X" * 200), NoteContext())
 
     adapter.create_issue.assert_not_called()
+
+
 async def test_milestone_accepted_when_milestones_yaml_is_empty() -> None:
     import datetime
+
     dependencies = load_issue_tool_dependencies()
     empty_milestones = MilestoneConfig(version="1.0", milestones=[])
     adapter = MagicMock()
@@ -213,8 +226,8 @@ async def test_milestone_accepted_when_milestones_yaml_is_empty() -> None:
     issue_mock.labels = []
     issue_mock.milestone = None
     issue_mock.assignees = []
-    issue_mock.created_at = datetime.datetime.now(datetime.timezone.utc)
-    issue_mock.updated_at = datetime.datetime.now(datetime.timezone.utc)
+    issue_mock.created_at = datetime.datetime.now(datetime.UTC)
+    issue_mock.updated_at = datetime.datetime.now(datetime.UTC)
     issue_mock.closed_at = None
     issue_mock.user.login = "user"
 

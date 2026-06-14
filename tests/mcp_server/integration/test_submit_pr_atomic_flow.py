@@ -69,6 +69,7 @@ def _make_submit_pr_tool(
 ) -> SubmitPRTool:
     if isinstance(github_manager, MagicMock):
         from mcp_server.schemas.github_models import PRReadModel
+
         github_manager.get_pr.return_value = PRReadModel(
             pr_number=101,
             title="Test PR",

@@ -23,7 +23,6 @@ from mcp_server.core.exceptions import ConfigError
 # Project modules
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.schemas.tool_outputs import BaseToolOutput
-from mcp_server.tools.tool_result import ToolResult
 
 
 class DummyOutput(BaseToolOutput):
@@ -169,4 +168,3 @@ class TestTextPresenter:
             validate_presentation_alignment(presenter, tools)
 
         assert "run_id" in str(exc_info.value)
-

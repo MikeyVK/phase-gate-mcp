@@ -46,7 +46,6 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.tools.issue_tools import CreateIssueTool
-from mcp_server.tools.tool_result import ToolResult
 
 if TYPE_CHECKING:
     from mcp_server.config.settings import Settings
@@ -566,7 +565,6 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
     resolved_settings = settings or ServerSettings.from_env()
     bootstrapper = ServerBootstrapper(resolved_settings)
     return bootstrapper.bootstrap()
-
 
 
 def assert_itool_result(

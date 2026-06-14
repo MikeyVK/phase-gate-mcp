@@ -32,7 +32,9 @@ def test_legacy_scaffold_tools_not_registered() -> None:
 def test_scaffold_artifact_tool_has_correct_name() -> None:
     """Verify tool name matches expected MCP tool name."""
     server = make_test_server()
-    scaffold_tools = [t for t in server.tools if type(getattr(t, "_tool", t)).__name__ == "ScaffoldArtifactTool"]
+    scaffold_tools = [
+        t for t in server.tools if type(getattr(t, "_tool", t)).__name__ == "ScaffoldArtifactTool"
+    ]
     assert len(scaffold_tools) == 1, "Expected exactly one ScaffoldArtifactTool"
     tool = scaffold_tools[0]
     assert tool.name == "scaffold_artifact", f"Expected name 'scaffold_artifact', got '{tool.name}'"
@@ -59,7 +61,9 @@ def test_force_cycle_transition_tool_registered() -> None:
 def test_transition_cycle_tool_has_correct_name() -> None:
     """Verify TransitionCycleTool MCP name matches expected value (Issue #146)."""
     server = make_test_server()
-    tools = [t for t in server.tools if type(getattr(t, "_tool", t)).__name__ == "TransitionCycleTool"]
+    tools = [
+        t for t in server.tools if type(getattr(t, "_tool", t)).__name__ == "TransitionCycleTool"
+    ]
     assert len(tools) == 1, "Expected exactly one TransitionCycleTool"
     assert tools[0].name == "transition_cycle", (
         f"Expected name 'transition_cycle', got '{tools[0].name}'"
@@ -69,7 +73,11 @@ def test_transition_cycle_tool_has_correct_name() -> None:
 def test_force_cycle_transition_tool_has_correct_name() -> None:
     """Verify ForceCycleTransitionTool MCP name matches expected value (Issue #146)."""
     server = make_test_server()
-    tools = [t for t in server.tools if type(getattr(t, "_tool", t)).__name__ == "ForceCycleTransitionTool"]
+    tools = [
+        t
+        for t in server.tools
+        if type(getattr(t, "_tool", t)).__name__ == "ForceCycleTransitionTool"
+    ]
     assert len(tools) == 1, "Expected exactly one ForceCycleTransitionTool"
     assert tools[0].name == "force_cycle_transition", (
         f"Expected name 'force_cycle_transition', got '{tools[0].name}'"

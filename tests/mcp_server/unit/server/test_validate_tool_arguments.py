@@ -202,6 +202,7 @@ class TestValidateToolArgumentsFailurePath:
         assert getattr(result, "isError", False) is False
         assert len(result.content) == 1
         assert "OK" in result.content[0].text
+
     @pytest.mark.asyncio
     async def test_schema_is_normalized_no_defs_no_ref(self, server: MCPServer) -> None:
         """

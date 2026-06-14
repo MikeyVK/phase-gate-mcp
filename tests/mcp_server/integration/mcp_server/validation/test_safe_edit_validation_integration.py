@@ -149,6 +149,7 @@ class TestDTO:  # Missing BaseModel - STRICT violation
         else:
             assert result.written is False
             assert result.passed is False
+
     @pytest.mark.asyncio
     async def test_safe_edit_includes_agent_hints(self, tool: SafeEditTool, temp_dir: Path) -> None:
         """Test that validation responses include actionable hints.

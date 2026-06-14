@@ -11,7 +11,6 @@ import pytest
 from mcp_server.config.settings import Settings
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.discovery_tools import SearchDocumentationInput, SearchDocumentationTool
-from mcp_server.tools.tool_result import ToolResult
 
 
 class TestSearchDocumentationE2E:
@@ -54,11 +53,13 @@ class TestSearchDocumentationE2E:
         result = await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())
 
         from mcp_server.schemas.tool_outputs import SearchDocumentationOutput
+
         assert isinstance(result, SearchDocumentationOutput)
         assert result.success is True
         assert result.query == "Python"
         assert result.results_count == 2
         assert any("python" in r.title.lower() for r in result.results)
+
     @pytest.mark.asyncio
     async def test_tool_execute_with_scope_filter(self, sample_docs_dir: Path) -> None:
         """Test tool.execute() with scope filter."""
@@ -72,6 +73,7 @@ class TestSearchDocumentationE2E:
         assert result.success is True
         assert result.results_count == 1
         assert result.results[0].path.endswith("style.md")
+
     @pytest.mark.asyncio
     async def test_tool_execute_no_results(self, sample_docs_dir: Path) -> None:
         """Test tool.execute() when no results found."""
@@ -83,6 +85,7 @@ class TestSearchDocumentationE2E:
         assert result.success is True
         assert result.results_count == 0
         assert len(result.results) == 0
+
     @pytest.mark.asyncio
     async def test_tool_execute_relevance_ranking(self, sample_docs_dir: Path) -> None:
         """Test that results are ranked by relevance."""
@@ -94,9 +97,11 @@ class TestSearchDocumentationE2E:
         assert result.success is True
         assert result.results_count > 0
         assert "Python Development Guide" in result.results[0].title
+
     @pytest.mark.asyncio
     async def test_tool_handles_missing_docs_dir(self, tmp_path: Path) -> None:
         from mcp_server.core.exceptions import ExecutionError
+
         tool = SearchDocumentationTool(settings=Settings(server={"workspace_root": str(tmp_path)}))
         with pytest.raises(ExecutionError, match="Documentation directory not found"):
             await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())

@@ -10,7 +10,6 @@
 """
 
 # Standard library
-import json
 from pathlib import Path
 
 # Third-party
@@ -61,6 +60,7 @@ async def test_validation_error_returns_schema(
     assert "required" in schema_json, "Schema should have JSON Schema required list"
     assert "properties" in schema_json, "Schema should have JSON Schema properties"
     assert isinstance(schema_json["required"], list), "required should be a list"
+
 
 @pytest.mark.asyncio
 async def test_success_response_includes_schema(

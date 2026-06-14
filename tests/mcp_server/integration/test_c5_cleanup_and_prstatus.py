@@ -15,9 +15,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 from pathlib import Path
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 import yaml
 
 import mcp_server.tools.pr_tools as pr_tools_module
@@ -133,6 +133,7 @@ class TestMergePRToolPRStatusWriter:
         pr_status_writer.set_pr_status.assert_called_once()
         _branch, status = pr_status_writer.set_pr_status.call_args[0]
         assert status == PRStatus.ABSENT
+
     def test_merge_pr_does_not_set_pr_status_on_failure(self) -> None:
         """PRStatus must NOT be written when merge fails."""
         manager = MagicMock(spec=GitHubManager)
