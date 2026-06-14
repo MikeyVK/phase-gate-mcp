@@ -34,8 +34,9 @@ from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.base import BaseResource
 
 # Resources
+# Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.base import BaseTool, StructuredTool
+from mcp_server.tools.base import BaseTool, ITool, StructuredTool
 
 # Tools
 from mcp_server.tools.phase_tools import (
@@ -281,12 +282,18 @@ class MCPServer:
             for tool in self.tools:
                 if tool.name == name:
                     try:
+                        skip_json = (
+                            True
+                            if isinstance(tool, ITool)  # type: ignore[reportGeneralTypeIssues]
+                            and not isinstance(tool, BaseTool)
+                            else (name == "auto_fix")
+                        )
                         # Validate arguments
                         validated = self._validate_tool_arguments(tool, arguments, call_id, name)
                         # Early return if validation failed
                         if isinstance(validated, ToolResult):
                             return self._convert_tool_result_to_mcp_result(
-                                validated, skip_json=(name == "auto_fix")
+                                validated, skip_json=skip_json
                             )
 
                         note_context = NoteContext()
@@ -296,14 +303,36 @@ class MCPServer:
                         )
                         if pre_result is not None:
                             return self._convert_tool_result_to_mcp_result(
-                                pre_result, skip_json=(name == "auto_fix")
+                                pre_result, skip_json=skip_json
                             )
 
                         # Execute tool
                         raw_result = await tool.execute(validated, note_context)
 
-                        # Apply text presentation for StructuredTools
-                        if isinstance(tool, StructuredTool) and self.presenter is not None:
+                        if (
+                            isinstance(tool, ITool)  # type: ignore[reportGeneralTypeIssues]
+                            and not isinstance(tool, BaseTool)
+                        ):
+                            if self.presenter is not None:
+                                success = getattr(raw_result.data, "success", True)
+                                presentation_category = (
+                                    getattr(tool, "presentation_category", None) or "query"
+                                )
+                                text = self.presenter.present(
+                                    tool_name=tool.name,
+                                    success=success,
+                                    presentation_category=presentation_category,
+                                    data=raw_result.data,
+                                )
+                            else:
+                                text = str(raw_result.data)
+                            uri = f"pgmcp://cache/runs/{raw_result.run_id}"
+                            full_text = (
+                                f"{text}\n\n"
+                                f"JSON data for this run is available as an MCP Resource: {uri}"
+                            )
+                            raw_result = ToolResult.text(full_text)
+                        elif isinstance(tool, StructuredTool) and self.presenter is not None:
                             json_blocks = [c for c in raw_result.content if c.get("type") == "json"]
                             if json_blocks:
                                 data_dict = json_blocks[0]["json"]
@@ -336,13 +365,13 @@ class MCPServer:
                             )
                             if post_result is not None:
                                 return self._convert_tool_result_to_mcp_result(
-                                    post_result, skip_json=(name == "auto_fix")
+                                    post_result, skip_json=skip_json
                                 )
 
                         # Render notes and convert result to MCP content
                         result = note_context.render_to_response(raw_result)
                         response_content = self._convert_tool_result_to_mcp_result(
-                            result, skip_json=(name == "auto_fix")
+                            result, skip_json=skip_json
                         )
 
                         duration_ms = (time.perf_counter() - start_time) * 1000.0

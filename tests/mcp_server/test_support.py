@@ -611,20 +611,33 @@ def assert_structured_tool_result(
 
     return json_data
 
+
 def assert_itool_result(
-    result: ToolResult,
+    result: Any,  # noqa: ANN401
     text_contains: str | None = None,
 ) -> str:
     """Verifies the ToolResult structure for ITool (pure text, no JSON)."""
-    assert not result.is_error, f"Expected successful tool result, got error: {result}"
-    
-    json_blocks = [c for c in result.content if c.get("type") == "json"]
-    text_blocks = [c for c in result.content if c.get("type") == "text"]
-    
+    is_err = getattr(result, "is_error", None)
+    if is_err is None:
+        is_err = getattr(result, "isError", False)
+    assert not is_err, f"Expected successful tool result, got error: {result}"
+
+    json_blocks = []
+    text_blocks = []
+    for c in result.content:
+        c_type = c.get("type") if isinstance(c, dict) else getattr(c, "type", None)
+        if c_type == "json":
+            json_blocks.append(c)
+        elif c_type == "text":
+            text_blocks.append(c)
+
     assert len(json_blocks) == 0, f"Expected no json block, got {len(json_blocks)}"
     assert len(text_blocks) == 1, f"Expected exactly one text block, got {len(text_blocks)}"
 
-    text_content = text_blocks[0]["text"]
+    first_text = text_blocks[0]
+    text_content = (
+        first_text["text"] if isinstance(first_text, dict) else getattr(first_text, "text", "")
+    )
 
     if text_contains:
         assert text_contains in text_content

@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
@@ -187,6 +187,25 @@ class ManagerGraph:
     pr_status_cache: PRStatusCache
     enforcement_runner: EnforcementRunner
     response_cache: IToolResponseCache
+
+
+class ToolFactory:
+    """Factory to assemble tools with their decorators."""
+
+    def __init__(self, response_cache: IToolResponseCache) -> None:
+        self._response_cache = response_cache
+
+    def build_tool(self, tool: Any) -> Any:  # noqa: ANN401
+        from mcp_server.tools.base import BaseTool, ITool  # noqa: PLC0415
+        from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
+
+        if (
+            isinstance(tool, ITool)
+            and not isinstance(tool, BaseTool)
+            and not isinstance(tool, ResourcePublishingDecorator)
+        ):
+            return ResourcePublishingDecorator(tool=tool, cache=self._response_cache)
+        return tool
 
 
 class ServerBootstrapper:
@@ -630,7 +649,9 @@ class ServerBootstrapper:
             )
 
         tools.append(AutoFixTool(qa_manager=managers.qa_manager, cache=managers.response_cache))
-        return tools
+
+        factory = ToolFactory(response_cache=managers.response_cache)
+        return [factory.build_tool(t) for t in tools]
 
     def _build_resources(
         self,

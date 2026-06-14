@@ -1,7 +1,8 @@
 """Base class for MCP tools."""
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -95,3 +96,30 @@ class StructuredTool(BaseTool, ABC):
             return ToolResult.json_data(result.model_dump(), text=None, is_error=False)
         data, text = result
         return ToolResult.json_data(data, text=text)
+
+
+@dataclass(frozen=True)
+class ToolExecutionEnvelope:
+    """Envelope containing the pure domain DTO and orchestration metadata."""
+
+    run_id: str
+    data: BaseModel
+    presentation_context: dict[str, Any] = field(default_factory=dict)
+
+
+@runtime_checkable
+class ITool(Protocol):
+    """Protocol for the new MVP tool architecture."""
+
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def description(self) -> str: ...
+
+    @property
+    def args_model(self) -> type[BaseModel] | None: ...
+
+    async def execute(self, params: Any, context: NoteContext) -> ToolExecutionEnvelope:  # noqa: ANN401
+        """Execute the tool and return a ToolExecutionEnvelope."""
+        ...

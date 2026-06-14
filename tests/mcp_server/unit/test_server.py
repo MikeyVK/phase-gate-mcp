@@ -584,51 +584,64 @@ class TestServerToolRegistration:
         mock_settings_cls.from_env.assert_not_called()
         mock_run.assert_awaited_once()
 
-    @pytest.mark.asyncio
-    async def test_call_tool_handles_itool_bridge(self) -> None:
-        """MCPServer should format ITool responses as pure TextContent and cache the DTO."""
-        from pydantic import BaseModel, ConfigDict
-        from mcp_server.tools.base import ITool, ToolExecutionEnvelope
-        from tests.mcp_server.test_support import assert_itool_result
-        
-        # We expect this to fail in RED phase because these don't exist yet
-        from mcp_server.managers.response_cache_manager import ResponseCacheManager
-        from mcp_server.tools.decorators import ResourcePublishingDecorator
 
-        class DummyDTO(BaseModel):
-            model_config = ConfigDict(frozen=True)
-            val: int
+@pytest.mark.asyncio
+async def test_call_tool_handles_itool_bridge() -> None:
+    """MCPServer should format ITool responses as pure TextContent and cache the DTO."""
+    from pydantic import BaseModel, ConfigDict  # noqa: PLC0415
 
-        class DummyITool(ITool):
-            name = "dummy_itool"
-            description = "Dummy"
-            args_model = None
+    # We expect this to fail in RED phase because these don't exist yet
+    from mcp_server.managers.response_cache_manager import ResponseCacheManager  # noqa: PLC0415
+    from mcp_server.tools.base import ITool, ToolExecutionEnvelope  # noqa: PLC0415
+    from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
+    from tests.mcp_server.test_support import assert_itool_result  # noqa: PLC0415
 
-            async def execute(self, params: Any, context: NoteContext) -> ToolExecutionEnvelope:
-                return ToolExecutionEnvelope(run_id="run-1", data=DummyDTO(val=42))
+    class DummyDTO(BaseModel):
+        model_config = ConfigDict(frozen=True)
+        val: int
 
-        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
-            _patch_server_settings(mock_settings_cls)
+    class DummyITool(ITool):
+        @property
+        def name(self) -> str:
+            return "dummy_itool"
 
-            server = make_test_server()
-            tool = DummyITool()
-            cache_manager = ResponseCacheManager()
-            server.response_cache_manager = cache_manager
-            server.tools = [ResourcePublishingDecorator(tool, cache_manager)]
-            
-            handler = server.server.request_handlers[CallToolRequest]
-            
-            req = CallToolRequest(
-                params=CallToolRequestParams(
-                    name="dummy_itool",
-                    arguments={},
-                )
+        @property
+        def description(self) -> str:
+            return "Dummy"
+
+        @property
+        def args_model(self) -> type[BaseModel] | None:
+            return None
+
+        async def execute(
+            self,
+            params: Any,  # noqa: ARG002, ANN401
+            context: NoteContext,  # noqa: ARG002
+        ) -> ToolExecutionEnvelope:
+            return ToolExecutionEnvelope(run_id="run-1", data=DummyDTO(val=42))
+
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+
+        server = make_test_server()
+        tool = DummyITool()
+        cache_manager = ResponseCacheManager()
+        server.response_cache_manager = cache_manager
+        server.tools = [ResourcePublishingDecorator(tool, cache_manager)]
+
+        handler = server.server.request_handlers[CallToolRequest]
+
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="dummy_itool",
+                arguments={},
             )
-            response = await handler(req)
-            
-            text_content = assert_itool_result(response.root)
-            assert text_content != ""
-            
-            cached = cache_manager.get_run("run-1")
-            assert cached is not None
-            assert cached.data.val == 42
+        )
+        response = await handler(req)
+
+        text_content = assert_itool_result(response.root)
+        assert text_content != ""
+
+        cached = cache_manager.get_run("run-1")
+        assert cached is not None
+        assert cached.data.val == 42
