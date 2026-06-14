@@ -175,9 +175,11 @@ class MCPServer:
         """Convert ToolResult to MCP content list."""
         return convert_tool_result_to_content(result.content)
 
-    def _convert_tool_result_to_mcp_result(self, result: ToolResult) -> CallToolResult:
+    def _convert_tool_result_to_mcp_result(
+        self, result: ToolResult, skip_json: bool = False
+    ) -> CallToolResult:
         """Convert ToolResult to CallToolResult while preserving error semantics."""
-        return convert_tool_result_to_mcp_result(result)
+        return convert_tool_result_to_mcp_result(result, skip_json=skip_json)
 
     def _run_tool_enforcement(
         self,
@@ -283,7 +285,9 @@ class MCPServer:
                         validated = self._validate_tool_arguments(tool, arguments, call_id, name)
                         # Early return if validation failed
                         if isinstance(validated, ToolResult):
-                            return self._convert_tool_result_to_mcp_result(validated)
+                            return self._convert_tool_result_to_mcp_result(
+                                validated, skip_json=(name == "auto_fix")
+                            )
 
                         note_context = NoteContext()
 
@@ -291,7 +295,9 @@ class MCPServer:
                             tool, "pre", validated, note_context=note_context
                         )
                         if pre_result is not None:
-                            return self._convert_tool_result_to_mcp_result(pre_result)
+                            return self._convert_tool_result_to_mcp_result(
+                                pre_result, skip_json=(name == "auto_fix")
+                            )
 
                         # Execute tool
                         if isinstance(tool, StructuredTool):
@@ -329,11 +335,15 @@ class MCPServer:
                                 result=raw_result,
                             )
                             if post_result is not None:
-                                return self._convert_tool_result_to_mcp_result(post_result)
+                                return self._convert_tool_result_to_mcp_result(
+                                    post_result, skip_json=(name == "auto_fix")
+                                )
 
                         # Render notes and convert result to MCP content
                         result = note_context.render_to_response(raw_result)
-                        response_content = self._convert_tool_result_to_mcp_result(result)
+                        response_content = self._convert_tool_result_to_mcp_result(
+                            result, skip_json=(name == "auto_fix")
+                        )
 
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
 
