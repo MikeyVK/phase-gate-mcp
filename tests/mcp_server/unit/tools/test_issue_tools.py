@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import CloseIssueOutput, IssueOutput, ListIssuesOutput
 from mcp_server.tools.issue_tools import (
     CloseIssueInput,
     CloseIssueTool,
@@ -21,12 +22,29 @@ from mcp_server.tools.issue_tools import (
     UpdateIssueInput,
     UpdateIssueTool,
 )
-from tests.mcp_server.test_support import assert_structured_result, make_create_issue_tool
+from tests.mcp_server.test_support import make_create_issue_tool
 
 
 @pytest.fixture
 def mock_github_manager() -> MagicMock:
-    return MagicMock()
+    from mcp_server.schemas.github_models import IssueReadModel
+    manager = MagicMock()
+    mock_issue_read = IssueReadModel(
+        number=123,
+        url="http://github.com/issues/123",
+        title="Mock Issue",
+        body="## Problem\n\nSome description.",
+        state="open",
+        labels=["type:feature", "scope:mcp-server", "priority:medium", "phase:planning"],
+        milestone=None,
+        assignees=[],
+        created_at="2023-01-01T00:00:00Z",
+        updated_at="2023-01-01T00:00:00Z",
+        closed_at=None,
+        author="alice",
+    )
+    manager.get_issue.return_value = mock_issue_read
+    return manager
 
 
 @pytest.mark.asyncio
@@ -53,7 +71,9 @@ async def test_create_issue_tool(mock_github_manager: MagicMock) -> None:
         assignees=None,
     )
     mock_github_manager.create_issue.assert_called_once()
-    assert "Created issue #123" in result.content[0]["text"]
+    assert isinstance(result, IssueOutput)
+    assert result.success is True
+    assert result.number == 123
 
 
 @pytest.mark.asyncio
@@ -121,22 +141,44 @@ async def test_update_issue_tool(mock_github_manager: MagicMock) -> None:
         assignees=None,
         milestone=None,
     )
-    assert "Updated issue #123" in result.content[0]["text"]
+    assert isinstance(result, IssueOutput)
+    assert result.success is True
+    assert result.number == 123
 
 
 @pytest.mark.asyncio
 async def test_list_issues_tool(mock_github_manager: MagicMock) -> None:
     tool = ListIssuesTool(manager=mock_github_manager)
-    mock_github_manager.list_issues.return_value = [
-        MagicMock(number=1, title="Issue 1", state="open", labels=[MagicMock(name="bug")]),
-        MagicMock(number=2, title="Issue 2", state="closed", labels=[]),
-    ]
+    
+    issue1 = MagicMock()
+    issue1.number = 1
+    issue1.title = "Issue 1"
+    issue1.state = "open"
+    issue1.html_url = "https://github.com/issues/1"
+    issue1.labels = [MagicMock(name="bug")]
+    issue1.assignees = []
+    issue1.created_at = "2023-01-01T00:00:00Z"
+
+    issue2 = MagicMock()
+    issue2.number = 2
+    issue2.title = "Issue 2"
+    issue2.state = "closed"
+    issue2.html_url = "https://github.com/issues/2"
+    issue2.labels = []
+    issue2.assignees = []
+    issue2.created_at = "2023-01-01T00:00:00Z"
+
+    mock_github_manager.list_issues.return_value = [issue1, issue2]
 
     params = ListIssuesInput(state="open", labels=["bug"])
     result = await tool.execute(params, NoteContext())
 
     mock_github_manager.list_issues.assert_called_with(state="open", labels=["bug"])
-    assert "#1 Issue 1" in result.content[0]["text"]
+    assert isinstance(result, ListIssuesOutput)
+    assert result.success is True
+    assert result.issues_count == 2
+    assert result.issues[0].number == 1
+    assert result.issues[0].title == "Issue 1"
 
 
 @pytest.mark.asyncio
@@ -164,7 +206,10 @@ async def test_get_issue_tool(mock_github_manager: MagicMock) -> None:
     result = await tool.execute(GetIssueInput(issue_number=1), NoteContext())
 
     mock_github_manager.get_issue.assert_called_with(1)
-    assert_structured_result(result, expected_data=issue_data)
+    assert isinstance(result, IssueOutput)
+    assert result.success is True
+    assert result.number == 1
+    assert result.title == "Bug"
 
 
 @pytest.mark.asyncio
@@ -172,9 +217,12 @@ async def test_close_issue_tool(mock_github_manager: MagicMock) -> None:
     tool = CloseIssueTool(manager=mock_github_manager)
     mock_github_manager.close_issue.return_value = MagicMock(number=5)
 
-    await tool.execute(CloseIssueInput(issue_number=5, comment="Done"), NoteContext())
+    result = await tool.execute(CloseIssueInput(issue_number=5, comment="Done"), NoteContext())
 
     mock_github_manager.close_issue.assert_called_with(5, comment="Done")
+    assert isinstance(result, CloseIssueOutput)
+    assert result.success is True
+    assert result.issue_number == 5
 
 
 def test_create_issue_input_body_is_str() -> None:

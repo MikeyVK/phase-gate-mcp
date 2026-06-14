@@ -17,6 +17,7 @@ from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
 from mcp_server.tools.base import BranchMutatingTool
+from mcp_server.schemas.tool_outputs import PROutput
 from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
 
 
@@ -199,3 +200,43 @@ class TestSubmitPRToolBaseResolution:
         reader.get_parent_branch.assert_called_once_with("feature/42-test")
         _, kwargs = github_manager.create_pr.call_args
         assert kwargs["base"] == "main"
+
+
+class TestSubmitPRToolExecute:
+    """Tests verify that SubmitPRTool execution returns the new DTO."""
+
+    @pytest.mark.asyncio
+    async def test_submit_pr_returns_dto(self) -> None:
+        from mcp_server.schemas.github_models import PRReadModel
+        
+        git_manager = MagicMock(spec=GitManager)
+        git_manager.get_current_branch.return_value = "feature/42-test"
+        git_manager.prepare_submission.return_value = False
+        github_manager = MagicMock(spec=GitHubManager)
+        
+        mock_pr = PRReadModel(
+            pr_number=1,
+            title="Test PR",
+            state="open",
+            base_branch="main",
+            head_branch="feature/42-test",
+            merged_at=None,
+            merge_sha=None,
+            body="",
+        )
+        github_manager.create_pr.return_value = {
+            "number": 1,
+            "url": "https://github.com/x/y/pull/1",
+        }
+        github_manager.get_pr.return_value = mock_pr
+        
+        pr_status_writer = MagicMock(spec=IPRStatusWriter)
+        tool = _make_tool_for_lod(git_manager, github_manager, pr_status_writer)
+        params = SubmitPRInput(head="feature/42-test", base="main", title="Test PR")
+        
+        result = await tool.execute(params, NoteContext())
+        assert isinstance(result, PROutput)
+        assert result.success is True
+        assert result.number == 1
+        assert result.title == "Test PR"
+        assert result.html_url == "https://github.com/x/y/pull/1"
