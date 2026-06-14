@@ -2,7 +2,7 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": 8,
   "last_cycle": 8,
   "cycle_history": [
@@ -228,6 +228,14 @@
       "human_approval": "User explicitly requested return to research phase for re-evaluation",
       "forced": true,
       "skip_reason": "User requested return to research phase after Cycle 1 and Cycle 8 completion"
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-14T15:21:40.430996+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

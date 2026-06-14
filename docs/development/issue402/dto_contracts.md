@@ -895,3 +895,21 @@ class BranchPairOutput(BaseToolOutput):
     template_success: "Template validation passed successfully."
     template_failure: "Template validation failed with {errors_count} issues."
   ```
+
+### 8. AutoFixTool
+
+* **DTO (`AutoFixOutput`):**
+  ```python
+  class AutoFixOutput(BaseToolOutput):
+      file_path: str
+      fixes_applied: int
+      fixes_failed: int
+      has_diff: bool = False
+      diff: str | None = None
+  ```
+* **YAML Config:**
+  ```yaml
+  auto_fix:
+    template_success: "Applied {fixes_applied} automatic fixes to '{file_path}' ({fixes_failed} failed)."
+    template_failure: "Failed to apply automatic fixes to '{file_path}': {error_message}."
+  ```
