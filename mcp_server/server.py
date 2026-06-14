@@ -36,7 +36,7 @@ from mcp_server.resources.base import BaseResource
 # Resources
 # Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.base import BaseTool, ITool, StructuredTool
+from mcp_server.tools.base import ITool
 
 # Tools
 from mcp_server.tools.phase_tools import (
@@ -67,7 +67,7 @@ class MCPServer:
         settings: Settings,
         configs: ConfigLayer,
         managers: ManagerGraph,
-        tools: list[BaseTool | ITool],
+        tools: list[ITool],
         resources: list[BaseResource],
         presenter: TextPresenter | None = None,
     ) -> None:
@@ -106,7 +106,7 @@ class MCPServer:
         self.setup_handlers()
 
     def _validate_tool_arguments(
-        self, tool: BaseTool | ITool, arguments: dict[str, Any] | None, call_id: str, name: str
+        self, tool: ITool, arguments: dict[str, Any] | None, call_id: str, name: str
     ) -> BaseModel | dict[str, Any] | ToolResult:
         """Validate tool arguments against args_model.
 
@@ -176,15 +176,13 @@ class MCPServer:
         """Convert ToolResult to MCP content list."""
         return convert_tool_result_to_content(result.content)
 
-    def _convert_tool_result_to_mcp_result(
-        self, result: ToolResult, skip_json: bool = False
-    ) -> CallToolResult:
+    def _convert_tool_result_to_mcp_result(self, result: ToolResult) -> CallToolResult:
         """Convert ToolResult to CallToolResult while preserving error semantics."""
-        return convert_tool_result_to_mcp_result(result, skip_json=skip_json)
+        return convert_tool_result_to_mcp_result(result)
 
     def _run_tool_enforcement(
         self,
-        tool: BaseTool | ITool,
+        tool: ITool,
         timing: str,
         params: BaseModel | dict[str, Any],
         note_context: NoteContext,
@@ -245,11 +243,8 @@ class MCPServer:
             tools_list = []
             for t in self.tools:
                 output_schema = None
-                if isinstance(t, StructuredTool):
-                    if t.output_model is not None:
-                        output_schema = t.output_model.model_json_schema()
-                    else:
-                        output_schema = {"type": "object"}
+                if hasattr(t, "output_model") and getattr(t, "output_model", None) is not None:
+                    output_schema = t.output_model.model_json_schema()
                 tools_list.append(
                     Tool(
                         name=t.name,
@@ -282,19 +277,11 @@ class MCPServer:
             for tool in self.tools:
                 if tool.name == name:
                     try:
-                        skip_json = (
-                            True
-                            if isinstance(tool, ITool)  # type: ignore[reportGeneralTypeIssues]
-                            and not isinstance(tool, BaseTool)
-                            else (name == "auto_fix")
-                        )
                         # Validate arguments
                         validated = self._validate_tool_arguments(tool, arguments, call_id, name)
                         # Early return if validation failed
                         if isinstance(validated, ToolResult):
-                            return self._convert_tool_result_to_mcp_result(
-                                validated, skip_json=skip_json
-                            )
+                            return self._convert_tool_result_to_mcp_result(validated)
 
                         note_context = NoteContext()
 
@@ -302,68 +289,39 @@ class MCPServer:
                             tool, "pre", validated, note_context=note_context
                         )
                         if pre_result is not None:
-                            return self._convert_tool_result_to_mcp_result(
-                                pre_result, skip_json=skip_json
-                            )
+                            return self._convert_tool_result_to_mcp_result(pre_result)
 
                         # Execute tool
                         raw_result = await tool.execute(validated, note_context)
 
-                        if (
-                            isinstance(tool, ITool)  # type: ignore[reportGeneralTypeIssues]
-                            and not isinstance(tool, BaseTool)
-                        ):
-                            from mcp_server.tools.base import ToolExecutionEnvelope  # noqa: PLC0415
+                        from mcp_server.tools.base import ToolExecutionEnvelope  # noqa: PLC0415
 
-                            if isinstance(raw_result, ToolExecutionEnvelope):
-                                data_dto = raw_result.data
-                                run_id = raw_result.run_id
-                            else:
-                                data_dto = raw_result
-                                run_id = "test-run"
+                        if isinstance(raw_result, ToolExecutionEnvelope):
+                            data_dto = raw_result.data
+                            run_id = raw_result.run_id
+                        else:
+                            data_dto = raw_result
+                            run_id = "test-run"
 
-                            if self.presenter is not None:
-                                success = getattr(data_dto, "success", True)
-                                presentation_category = (
-                                    getattr(tool, "presentation_category", None) or "query"
-                                )
-                                text = self.presenter.present(
-                                    tool_name=tool.name,
-                                    success=success,
-                                    presentation_category=presentation_category,
-                                    data=data_dto,
-                                )
-                            else:
-                                text = str(data_dto)
-                            uri = f"pgmcp://cache/runs/{run_id}"
-                            full_text = (
-                                f"{text}\n\n"
-                                f"JSON data for this run is available as an MCP Resource: {uri}"
+                        if self.presenter is not None:
+                            success = getattr(data_dto, "success", True)
+                            presentation_category = (
+                                getattr(tool, "presentation_category", None) or "query"
                             )
-                            raw_result = ToolResult.text(full_text)
-                        elif isinstance(tool, StructuredTool) and self.presenter is not None:
-                            json_blocks = [c for c in raw_result.content if c.get("type") == "json"]
-                            if json_blocks:
-                                data_dict = json_blocks[0]["json"]
-                                success = data_dict.get("success", True)
-                                text = self.presenter.present(
-                                    tool_name=tool.name,
-                                    success=success,
-                                    presentation_category=getattr(
-                                        tool, "presentation_category", None
-                                    )
-                                    or "query",
-                                    data=data_dict,
-                                )
-                                # Find or create the text block and update its text
-                                text_blocks = [
-                                    c for c in raw_result.content if c.get("type") == "text"
-                                ]
-                                if text_blocks:
-                                    text_blocks[0]["text"] = text
-                                else:
-                                    raw_result.content.append({"type": "text", "text": text})
-
+                            text = self.presenter.present(
+                                tool_name=tool.name,
+                                success=success,
+                                presentation_category=presentation_category,
+                                data=data_dto,
+                            )
+                        else:
+                            text = str(data_dto)
+                        uri = f"pgmcp://cache/runs/{run_id}"
+                        full_text = (
+                            f"{text}\n\n"
+                            f"JSON data for this run is available as an MCP Resource: {uri}"
+                        )
+                        raw_result = ToolResult.text(full_text)
                         if not raw_result.is_error:
                             post_result = self._run_tool_enforcement(
                                 tool,
@@ -373,15 +331,11 @@ class MCPServer:
                                 result=raw_result,
                             )
                             if post_result is not None:
-                                return self._convert_tool_result_to_mcp_result(
-                                    post_result, skip_json=skip_json
-                                )
+                                return self._convert_tool_result_to_mcp_result(post_result)
 
                         # Render notes and convert result to MCP content
                         result = note_context.render_to_response(raw_result)
-                        response_content = self._convert_tool_result_to_mcp_result(
-                            result, skip_json=skip_json
-                        )
+                        response_content = self._convert_tool_result_to_mcp_result(result)
 
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
 

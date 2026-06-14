@@ -54,45 +54,12 @@ def convert_tool_result_to_content(
 
 
 def convert_tool_result_to_mcp_result(
-    result: ToolResult, skip_json: bool = False
+    result: ToolResult,
 ) -> CallToolResult:
-    """Convert ToolResult to CallToolResult while extracting JSON data to structuredContent."""
-    if skip_json:
-        filtered_content = [c for c in result.content if c.get("type") != "json"]
-        mcp_content = convert_tool_result_to_content(filtered_content)
-        return CallToolResult(
-            content=cast(list[Any], mcp_content),
-            isError=result.is_error,
-            structuredContent=None,
-        )
-
-    json_blocks = [c for c in result.content if c.get("type") == "json"]
-    if len(json_blocks) > 1:
-        raise ValueError("Multiple JSON content blocks found in ToolResult")
-
-    structured_content = None
-    if json_blocks:
-        structured_content = json_blocks[0]["json"]
-
-    # Keep JSON blocks in content list for clients that do not support structuredContent
-    filtered_content = [c for c in result.content if c.get("type") != "json"]
-    mcp_content = convert_tool_result_to_content(filtered_content)
-
-    # QUICKFIX: If structured JSON is present, embed it as a markdown JSON code block
-    # in the text content block so the model can read it!
-    if structured_content is not None:
-        json_dump_str = json.dumps(structured_content, indent=2, default=str)
-        markdown_json = f"\n\n```json\n{json_dump_str}\n```"
-
-        # Find the first TextContent block and append to it
-        text_content_blocks = [c for c in mcp_content if isinstance(c, TextContent)]
-        if text_content_blocks:
-            text_content_blocks[0].text += markdown_json
-        else:
-            mcp_content.append(TextContent(type="text", text=markdown_json))
-
+    """Convert ToolResult to CallToolResult."""
+    mcp_content = convert_tool_result_to_content(result.content)
     return CallToolResult(
         content=cast(list[Any], mcp_content),
         isError=result.is_error,
-        structuredContent=structured_content,
+        structuredContent=None,
     )

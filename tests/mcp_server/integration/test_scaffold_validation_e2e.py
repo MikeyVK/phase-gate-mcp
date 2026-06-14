@@ -52,23 +52,15 @@ async def test_validation_error_returns_schema(
     # WHEN: Attempting to scaffold DTO artifact without required 'description' field
     result = await tool.execute(scaffold_input, NoteContext())
 
-    # THEN: Returns ToolResult with ValidationError content containing schema JSON
-    assert result.is_error, "Scaffold should fail with missing required field"
-    assert len(result.content) >= 2, "Should have error text and schema text"
-
-    # First item is error text
-    assert result.content[0]["type"] == "text", "First content should be error message"
-
-    # Second item is schema as inline text (type:text — readable by agents without extra tool call)
-    schema_content = result.content[1]
-    assert schema_content["type"] == "text", "Schema should be returned as inline text"
+    # THEN: Returns ScaffoldArtifactOutput with success=False
+    assert not result.success, "Scaffold should fail with missing required field"
 
     # Verify schema contains expected structure
-    schema_json = json.loads(schema_content["text"])
+    schema_json = result.validation_schema
+    assert schema_json is not None
     assert "required" in schema_json, "Schema should have JSON Schema required list"
     assert "properties" in schema_json, "Schema should have JSON Schema properties"
     assert isinstance(schema_json["required"], list), "required should be a list"
-
 
 @pytest.mark.asyncio
 async def test_success_response_includes_schema(
@@ -88,9 +80,8 @@ async def test_success_response_includes_schema(
     # WHEN: Successfully scaffolding DTO artifact with all required fields
     result = await tool.execute(scaffold_input, NoteContext())
 
-    # THEN: Returns ToolResult with success resource containing file path
-    assert not result.is_error, f"Scaffold should succeed: {result.content}"
-    assert len(result.content) > 0, "Should have success content"
+    # THEN: Returns ScaffoldArtifactOutput with success=True
+    assert result.success, f"Scaffold should succeed: {result.error_message}"
 
     # Verify file was created
     assert output_path.exists(), "Generated file should exist"
@@ -118,14 +109,9 @@ async def test_system_fields_filtered_from_schema(
     result = await tool.execute(scaffold_input, NoteContext())
 
     # THEN: Schema only contains agent-input fields, system fields excluded
-    assert result.is_error, "Should fail validation"
-    assert len(result.content) >= 2, "Should have error text and schema text"
-
-    schema_content = result.content[1]
-    assert schema_content["type"] == "text", "Schema should be returned as inline text"
-
-    # Verify system fields NOT in schema
-    schema_json = json.loads(schema_content["text"])
+    assert not result.success, "Should fail validation"
+    schema_json = result.validation_schema
+    assert schema_json is not None
     system_fields = ["template_id", "template_version", "scaffold_created", "output_path"]
 
     for field in system_fields:

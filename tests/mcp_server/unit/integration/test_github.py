@@ -49,8 +49,18 @@ def test_create_issue_tool(mock_adapter: Mock) -> None:
     mock_issue.number = 42
     mock_issue.html_url = "http://github.com/owner/repo/issues/42"
     mock_issue.title = "New Issue"
-    mock_adapter.create_issue.return_value = mock_issue
+    mock_issue.body = "## Problem\n\nSome problem description."
+    mock_issue.state = "open"
+    mock_issue.labels = []
+    mock_issue.milestone = None
+    mock_issue.assignees = []
+    mock_issue.created_at.isoformat.return_value = "2023-01-01T00:00:00"
+    mock_issue.updated_at.isoformat.return_value = "2023-01-01T00:00:00"
+    mock_issue.closed_at = None
+    mock_issue.user.login = "test-user"
 
+    mock_adapter.create_issue.return_value = mock_issue
+    mock_adapter.get_issue.return_value = mock_issue
     dependencies = load_issue_tool_dependencies()
     manager = GitHubManager(
         adapter=mock_adapter,
@@ -72,4 +82,5 @@ def test_create_issue_tool(mock_adapter: Mock) -> None:
     )
     result = asyncio.run(tool.execute(params, NoteContext()))
 
-    assert "Created issue #42" in result.content[0]["text"]
+    assert result.number == 42
+    assert result.title == "New Issue"

@@ -568,49 +568,6 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
     return bootstrapper.bootstrap()
 
 
-def assert_structured_result(
-    result: ToolResult,
-    expected_data: dict[str, Any] | None = None,
-) -> None:
-    """Assert that a ToolResult is a valid structured result and optional checks on data."""
-    assert not result.is_error, f"Expected successful tool result, got error: {result}"
-
-    # Check that it contains a json block and a text block
-    json_blocks = [c for c in result.content if c.get("type") == "json"]
-    text_blocks = [c for c in result.content if c.get("type") == "text"]
-
-    assert len(json_blocks) == 1, f"Expected exactly one json block, got {len(json_blocks)}"
-    assert len(text_blocks) == 1, f"Expected exactly one text block, got {len(text_blocks)}"
-
-    if expected_data is not None:
-        actual = json_blocks[0]["json"]
-        assert actual == expected_data, f"Data mismatch: {actual} != {expected_data}"
-
-
-def assert_structured_tool_result(
-    result: ToolResult,
-    text_contains: str | None = None,
-    json_keys: list[str] | None = None,
-    expected_json: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Verifies the ToolResult dual-payload structure and content."""
-    assert len(result.content) == 2, f"Expected 2 content items, got {len(result.content)}"
-    assert result.content[0]["type"] == "json"
-    assert result.content[1]["type"] == "text"
-
-    json_data = result.content[0]["json"]
-    text_content = result.content[1]["text"]
-
-    if text_contains:
-        assert text_contains in text_content
-    if json_keys:
-        for key in json_keys:
-            assert key in json_data
-    if expected_json:
-        assert json_data == expected_json
-
-    return json_data
-
 
 def assert_itool_result(
     result: Any,  # noqa: ANN401

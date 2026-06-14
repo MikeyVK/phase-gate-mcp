@@ -22,7 +22,7 @@ from mcp.types import CallToolRequest, CallToolRequestParams
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import ITool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
     TRANSITION_ADVISORY_NOTE,
@@ -123,10 +123,20 @@ def _make_submit_pr_request() -> CallToolRequest:
 
 def _make_transition_advisory_execute(
     text: str,
-) -> Callable[[object, object, NoteContext], Awaitable[ToolResult]]:
-    async def execute(_self: object, _params: object, context: NoteContext) -> ToolResult:
+) -> Callable[[object, object, NoteContext], Awaitable[Any]]:
+    async def execute(_self: object, _params: object, context: NoteContext) -> Any:
         context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
-        return ToolResult.text(text)
+        from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
+        return PhaseTransitionOutput(
+            success=True,
+            branch=getattr(_params, "branch", "feature/257-reorder-workflow-phases"),
+            from_phase="research",
+            to_phase=getattr(_params, "to_phase", "planning"),
+            passing_gates=[],
+            skipped_gates=[],
+            passing_gates_count=0,
+            skipped_gates_count=0,
+        )
 
     return execute
 
@@ -179,17 +189,20 @@ class TestServerToolRegistration:
     ) -> None:
         """call_tool handler should log correlation id and duration."""
 
-        class DummyTool(BaseTool):
+        class DummyTool(ITool):
             """Dummy tool for testing server call_tool logging."""
 
             name = "dummy_tool"
             description = "Dummy tool"
             args_model = None
 
+            @property
+            def input_schema(self) -> dict[str, Any]:
+                return {"type": "object", "properties": {}}
+
             async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401
                 del params, context
                 return ToolResult.text("ok")
-
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
 
@@ -373,7 +386,7 @@ class TestServerToolRegistration:
                 )
                 response = await handler(req)
 
-        assert "Successfully transitioned" in response.root.content[0].text
+        assert "Transitioned phase to" in response.root.content[0].text
         assert len(response.root.content) == 2
         assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
         assert any(
@@ -425,7 +438,7 @@ class TestServerToolRegistration:
                 )
                 response = await handler(req)
 
-        assert response.root.content[0].text == "✅ Forced phase transition"
+        assert "Transitioned phase to" in response.root.content[0].text
         assert len(response.root.content) == 2
         assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
         assert any(

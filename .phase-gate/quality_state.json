@@ -283,6 +283,7 @@
     "tests/mcp_server/scaffolding/test_tier3_pattern_python_typed_id.py",
     "tests/mcp_server/scaffolding/test_tracking_templates.py",
     "tests/mcp_server/test_artifacts_yaml_type_field.py",
+    "tests/mcp_server/test_debug_server.py",
     "tests/mcp_server/test_design_e2e.py",
     "tests/mcp_server/test_design_template.py",
     "tests/mcp_server/test_scaffolder_output_path_validation.py",

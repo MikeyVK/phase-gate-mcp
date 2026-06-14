@@ -53,15 +53,12 @@ class TestSearchDocumentationE2E:
         )
         result = await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())
 
-        assert isinstance(result, ToolResult)
-        assert not result.is_error
-
-        output = result.content[0]["text"]
-        assert "Found" in output
-        assert "Python" in output
-        assert "results" in output
-        assert "architecture" in output.lower() or "development" in output.lower()
-
+        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput
+        assert isinstance(result, SearchDocumentationOutput)
+        assert result.success is True
+        assert result.query == "Python"
+        assert result.results_count == 2
+        assert any("python" in r.title.lower() for r in result.results)
     @pytest.mark.asyncio
     async def test_tool_execute_with_scope_filter(self, sample_docs_dir: Path) -> None:
         """Test tool.execute() with scope filter."""
@@ -72,12 +69,9 @@ class TestSearchDocumentationE2E:
             SearchDocumentationInput(query="style", scope="coding_standards"), NoteContext()
         )
 
-        assert not result.is_error
-        output = result.content[0]["text"]
-        assert "style.md" in output
-        assert "python_guide.md" not in output
-        assert "api.md" not in output
-
+        assert result.success is True
+        assert result.results_count == 1
+        assert result.results[0].path.endswith("style.md")
     @pytest.mark.asyncio
     async def test_tool_execute_no_results(self, sample_docs_dir: Path) -> None:
         """Test tool.execute() when no results found."""
@@ -86,10 +80,9 @@ class TestSearchDocumentationE2E:
         )
         result = await tool.execute(SearchDocumentationInput(query="xyznonexistent"), NoteContext())
 
-        assert not result.is_error
-        output = result.content[0]["text"]
-        assert "No results found" in output
-
+        assert result.success is True
+        assert result.results_count == 0
+        assert len(result.results) == 0
     @pytest.mark.asyncio
     async def test_tool_execute_relevance_ranking(self, sample_docs_dir: Path) -> None:
         """Test that results are ranked by relevance."""
@@ -98,17 +91,12 @@ class TestSearchDocumentationE2E:
         )
         result = await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())
 
-        assert not result.is_error
-        output = result.content[0]["text"]
-
-        lines = output.split("\n")
-        first_result = next(line for line in lines if line.strip().startswith("1."))
-        assert "Python Development Guide" in first_result or "python_guide.md" in first_result
-
+        assert result.success is True
+        assert result.results_count > 0
+        assert "Python Development Guide" in result.results[0].title
     @pytest.mark.asyncio
     async def test_tool_handles_missing_docs_dir(self, tmp_path: Path) -> None:
-        """Test tool gracefully handles missing docs directory."""
+        from mcp_server.core.exceptions import ExecutionError
         tool = SearchDocumentationTool(settings=Settings(server={"workspace_root": str(tmp_path)}))
-        result = await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())
-
-        assert result.is_error or "No results found" in result.content[0]["text"]
+        with pytest.raises(ExecutionError, match="Documentation directory not found"):
+            await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())

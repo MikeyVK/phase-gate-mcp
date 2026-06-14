@@ -735,3 +735,121 @@ class TestRunQualityGatesConflictErrorC3:
 def test_c5_render_text_output_is_removed() -> None:
     """Verify that _render_text_output has been removed from RunQualityGatesTool."""
     assert not hasattr(RunQualityGatesTool, "_render_text_output")
+
+
+class TestRunQualityGatesVerboseOption:
+    """Cycle 11: run_quality_gates tool verbose option tests."""
+
+    def test_input_schema_accepts_verbose(self) -> None:
+        """Verify RunQualityGatesInput accepts verbose field."""
+        params = RunQualityGatesInput(scope="auto", verbose=True)
+        assert params.verbose is True
+        
+        # Test default is False
+        params_default = RunQualityGatesInput(scope="auto")
+        assert params_default.verbose is False
+
+    @pytest.mark.asyncio
+    async def test_verbose_propagated_to_manager(self) -> None:
+        """Verify RunQualityGatesTool propagates verbose to QAManager."""
+        mock_manager = MagicMock()
+        mock_manager._resolve_scope.return_value = ["foo.py"]
+        mock_manager.run_quality_gates.return_value = {
+            "summary": {
+                "passed": 1,
+                "failed": 0,
+                "skipped": 0,
+                "total_violations": 0,
+                "auto_fixable": 0,
+            },
+            "overall_pass": True,
+            "gates": [
+                {
+                    "name": "ruff",
+                    "passed": True,
+                    "status": "passed",
+                    "details": "All clean",
+                }
+            ],
+        }
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        await tool.execute(
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True),
+            context
+        )
+        mock_manager.run_quality_gates.assert_called_once_with(
+            ["foo.py"],
+            effective_scope="files",
+            verbose=True,
+        )
+
+    @pytest.mark.asyncio
+    async def test_recovery_note_when_verbose_false_on_failure(self) -> None:
+        """Verify RecoveryNote is emitted when verbose=False and gates fail."""
+        mock_manager = MagicMock()
+        mock_manager._resolve_scope.return_value = ["foo.py"]
+        mock_manager.run_quality_gates.return_value = {
+            "summary": {
+                "passed": 0,
+                "failed": 1,
+                "skipped": 0,
+                "total_violations": 1,
+                "auto_fixable": 0,
+            },
+            "overall_pass": False,
+            "gates": [
+                {
+                    "name": "ruff",
+                    "passed": False,
+                    "status": "failed",
+                    "details": "",
+                }
+            ],
+        }
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        await tool.execute(
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=False),
+            context
+        )
+        
+        from mcp_server.core.operation_notes import RecoveryNote
+        notes = context.of_type(RecoveryNote)
+        assert len(notes) == 1
+        assert "verbose=True" in notes[0].message
+        assert "run_quality_gates" in notes[0].message
+
+    @pytest.mark.asyncio
+    async def test_no_recovery_note_when_verbose_true_on_failure(self) -> None:
+        """Verify no RecoveryNote is emitted when verbose=True and gates fail."""
+        mock_manager = MagicMock()
+        mock_manager._resolve_scope.return_value = ["foo.py"]
+        mock_manager.run_quality_gates.return_value = {
+            "summary": {
+                "passed": 0,
+                "failed": 1,
+                "skipped": 0,
+                "total_violations": 1,
+                "auto_fixable": 0,
+            },
+            "overall_pass": False,
+            "gates": [
+                {
+                    "name": "ruff",
+                    "passed": False,
+                    "status": "failed",
+                    "details": "Linter failed!",
+                }
+            ],
+        }
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        await tool.execute(
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True),
+            context
+        )
+        
+        from mcp_server.core.operation_notes import RecoveryNote
+        notes = context.of_type(RecoveryNote)
+        assert len(notes) == 0

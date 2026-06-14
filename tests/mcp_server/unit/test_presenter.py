@@ -24,7 +24,6 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
 from mcp_server.schemas.tool_outputs import BaseToolOutput
 from mcp_server.tools.tool_result import ToolResult
-from tests.mcp_server.test_support import assert_structured_tool_result
 
 
 class DummyOutput(BaseToolOutput):
@@ -171,24 +170,3 @@ class TestTextPresenter:
 
         assert "run_id" in str(exc_info.value)
 
-    def test_assert_structured_tool_result_helper(self):
-        """Test that the assert_structured_tool_result helper behaves correctly."""
-        result = ToolResult(
-            content=[
-                {"type": "json", "json": {"success": True, "value": 42}},
-                {"type": "text", "text": "✅ Value is 42"},
-            ]
-        )
-
-        # Valid checks
-        json_data = assert_structured_tool_result(
-            result,
-            text_contains="Value is 42",
-            json_keys=["success", "value"],
-            expected_json={"success": True, "value": 42},
-        )
-        assert json_data["value"] == 42
-
-        # Invalid checks should raise AssertionError
-        with pytest.raises(AssertionError):
-            assert_structured_tool_result(result, text_contains="Invalid text")

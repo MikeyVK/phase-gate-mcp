@@ -3,8 +3,8 @@
   "issue_number": 402,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 10,
-  "last_cycle": 9,
+  "current_cycle": 11,
+  "last_cycle": 10,
   "cycle_history": [
     {
       "cycle_number": 8,
@@ -138,6 +138,12 @@
       "name": "Validation, Quality Gates & Cleanup",
       "forced": false,
       "entered": "2026-06-14T20:38:58.862931+00:00"
+    },
+    {
+      "cycle_number": 11,
+      "name": "Quality Gates Verbose Option",
+      "forced": false,
+      "entered": "2026-06-14T22:26:32.308074+00:00"
     }
   ],
   "required_phases": [
@@ -150,7 +156,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested return to research phase after Cycle 1 and Cycle 8 completion",
+  "skip_reason": "Transition back to design phase to document quality gates verbose mode design",
   "issue_title": "tooling: Expose JSON data in MCP tools",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-12T05:42:13.722630+00:00",
@@ -319,6 +325,30 @@
       "from_phase": "planning",
       "to_phase": "implementation",
       "timestamp": "2026-06-14T15:36:51.015855+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "design",
+      "timestamp": "2026-06-14T21:38:59.785915+00:00",
+      "human_approval": "Approved by user in chat",
+      "forced": true,
+      "skip_reason": "Transition back to design phase to document quality gates verbose mode design"
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-06-14T22:20:02.120523+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-14T22:26:22.579438+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null

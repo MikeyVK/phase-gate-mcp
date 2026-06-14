@@ -18,7 +18,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from mcp_server.core.exceptions import ConfigError, ValidationError
+from mcp_server.core.exceptions import ConfigError, MCPError, ValidationError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.schemas.tool_outputs import ScaffoldArtifactOutput
@@ -121,8 +121,11 @@ class ScaffoldArtifactTool(ITool):
         except ValidationError as e:
             schema_info = getattr(e, "schema_info", "")
             validation_schema = getattr(e, "schema", None)
-            if isinstance(validation_schema, BaseModel):
-                validation_schema = validation_schema.model_dump()
+            if validation_schema is not None:
+                if hasattr(validation_schema, "to_dict"):
+                    validation_schema = validation_schema.to_dict()
+                elif isinstance(validation_schema, BaseModel):
+                    validation_schema = validation_schema.model_dump()
             missing_fields = getattr(e, "missing_fields", [])
             provided_fields = getattr(e, "provided_fields", [])
 
@@ -136,7 +139,7 @@ class ScaffoldArtifactTool(ITool):
                 missing_fields=missing_fields,
                 provided_fields=provided_fields,
             )
-        except (ConfigError, OSError, ValueError, RuntimeError) as e:
+        except (ConfigError, OSError, ValueError, RuntimeError, MCPError) as e:
             return ScaffoldArtifactOutput(
                 success=False,
                 error_message=str(e),

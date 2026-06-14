@@ -36,6 +36,7 @@ import inspect
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
 import yaml
 
 import mcp_server.server as server_module
@@ -66,6 +67,19 @@ def _make_submit_pr_tool(
     artifacts: tuple[BranchLocalArtifact, ...] = (_STATE_ARTIFACT,),
     branch_parent_reader: IBranchParentReader | None = None,
 ) -> SubmitPRTool:
+    if isinstance(github_manager, MagicMock):
+        from mcp_server.schemas.github_models import PRReadModel
+        github_manager.get_pr.return_value = PRReadModel(
+            pr_number=101,
+            title="Test PR",
+            state="open",
+            base_branch="main",
+            head_branch="feature/42-test",
+            merged_at=None,
+            merge_sha=None,
+            body="Description",
+            html_url="http://github.com/pulls/101",
+        )
     merge_readiness_context = MergeReadinessContext(
         terminal_phase="ready",
         pr_allowed_phase="ready",
@@ -111,7 +125,7 @@ class TestSubmitPRHappyPath:
 
         result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
-        assert not result.is_error
+        assert result.success is True
         git_manager.prepare_submission.assert_called_once()
         github_manager.create_pr.assert_called_once()
         pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
@@ -135,7 +149,7 @@ class TestSubmitPRHappyPath:
 
         result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
-        assert not result.is_error
+        assert result.success is True
         git_manager.prepare_submission.assert_called_once()
         pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
 
@@ -175,9 +189,8 @@ class TestSubmitPRPartialFailure:
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
         context = NoteContext()
-        result = asyncio.run(tool.execute(_make_params(), context))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), context))
         # PRStatus must NOT be written when push failed
         pr_status_writer.set_pr_status.assert_not_called()
 
@@ -194,9 +207,8 @@ class TestSubmitPRPartialFailure:
 
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), NoteContext()))
         pr_status_writer.set_pr_status.assert_not_called()
 
 
@@ -324,9 +336,8 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), NoteContext()))
         github_manager.create_pr.assert_not_called()
         pr_status_writer.set_pr_status.assert_not_called()
 
@@ -339,9 +350,8 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), NoteContext()))
         github_manager.create_pr.assert_not_called()
         pr_status_writer.set_pr_status.assert_not_called()
 
@@ -356,9 +366,8 @@ class TestSubmitPRAtomicRefactored:
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
         context = NoteContext()
 
-        result = asyncio.run(tool.execute(_make_params(), context))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), context))
         git_manager.rollback_push.assert_called_once()
         assert len(context.of_type(RecoveryNote)) == 1
         assert "rolled back" in context.of_type(RecoveryNote)[0].message
@@ -374,9 +383,8 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), NoteContext()))
         git_manager.rollback_push.assert_not_called()
         pr_status_writer.set_pr_status.assert_not_called()
 
@@ -392,9 +400,8 @@ class TestSubmitPRAtomicRefactored:
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
         context = NoteContext()
 
-        result = asyncio.run(tool.execute(_make_params(), context))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), context))
         pr_status_writer.set_pr_status.assert_not_called()
 
     def test_failure_d_push_fails_prepare_submission_raises_execution_error(self) -> None:
@@ -406,9 +413,8 @@ class TestSubmitPRAtomicRefactored:
         pr_status_writer = MagicMock(spec=IPRStatusWriter)
         tool = _make_submit_pr_tool(git_manager, github_manager, pr_status_writer)
 
-        result = asyncio.run(tool.execute(_make_params(), NoteContext()))
-
-        assert result.is_error
+        with pytest.raises(ExecutionError):
+            asyncio.run(tool.execute(_make_params(), NoteContext()))
         git_manager.rollback_push.assert_not_called()
         pr_status_writer.set_pr_status.assert_not_called()
 
@@ -427,7 +433,7 @@ class TestSubmitPRAtomicRefactored:
 
         result = asyncio.run(tool.execute(_make_params(), NoteContext()))
 
-        assert not result.is_error
+        assert result.success is True
         git_manager.prepare_submission.assert_called_once()
         pr_status_writer.set_pr_status.assert_called_once_with("feature/42-test", PRStatus.OPEN)
 

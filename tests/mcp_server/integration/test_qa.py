@@ -50,22 +50,14 @@ async def test_quality_tool_output_format() -> None:
         RunQualityGatesInput(scope="files", files=["mcp_server/server.py"]), NoteContext()
     )
 
-    # JSON payload first (content[0]), Text summary second (content[1])
-    assert result.content[0]["type"] == "json"
-    data = result.content[0]["json"]
-    assert isinstance(data, dict)
-
-    # Text summary is second (content[1])
-    assert result.content[1]["type"] == "text"
-    assert isinstance(result.content[1]["text"], str)
-    assert "gates" in data
-    assert len(data["gates"]) >= 6, f"Expected at least 6 gates, got {len(data['gates'])}"
-    for gate in data["gates"]:
-        assert "id" in gate, f"Gate missing 'id': {gate}"
-        assert "passed" in gate, f"Gate missing 'passed': {gate}"
-        assert "skipped" in gate, f"Gate missing 'skipped': {gate}"
-        assert "violations" in gate, f"Gate missing 'violations': {gate}"
-
+    assert isinstance(result.overall_pass, bool)
+    assert result.scope == "files"
+    assert result.file_count == 1
+    assert len(result.gates) >= 6
+    for gate in result.gates:
+        assert isinstance(gate.name, str)
+        assert isinstance(gate.passed, bool)
+        assert isinstance(gate.status, str)
 
 def test_switching_active_gates_changes_execution(tmp_path: Path) -> None:
     """Switching active_gates in quality.yaml changes which gates run.

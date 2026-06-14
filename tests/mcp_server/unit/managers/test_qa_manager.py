@@ -1387,3 +1387,69 @@ class TestTruncationFullLogPath:
             output = result.get("output", {})
             assert output.get("truncated") is False
             assert "full_log_path" not in output
+
+
+class TestQAManagerVerboseOption:
+    """Cycle 11: tests for QAManager verbose option."""
+
+    @pytest.fixture
+    def manager(self) -> QAManager:
+        return make_qa_manager()
+
+    @pytest.fixture
+    def mock_gate(self) -> QualityGate:
+        return QualityGate.model_validate(
+            {
+                "name": "TestGate",
+                "description": "Test gate",
+                "execution": {
+                    "command": ["test_tool"],
+                    "timeout_seconds": 10,
+                    "working_dir": None,
+                },
+                "success": {"exit_codes_ok": [0]},
+                "capabilities": {
+                    "file_types": [".py"],
+                    "supports_autofix": False,
+                },
+            }
+        )
+
+    def test_execute_gate_verbose_true_captures_details_on_failure(
+        self, manager: QAManager, mock_gate: QualityGate
+    ) -> None:
+        """Test that _execute_gate populates details with process output when verbose=True."""
+        with patch("subprocess.run") as mock_run:
+            mock_proc = MagicMock()
+            mock_proc.returncode = 1
+            mock_proc.stdout = "verbose stdout trace"
+            mock_proc.stderr = "verbose stderr trace"
+            mock_run.return_value = mock_proc
+
+            result = manager._execute_gate(
+                mock_gate, ["test.py"], gate_number=1, verbose=True
+            )
+
+            assert result["passed"] is False
+            details = result.get("details", "")
+            assert "exit code" in details.lower() or "exit=" in details.lower()
+            assert "verbose stdout trace" in details
+            assert "verbose stderr trace" in details
+
+    def test_execute_gate_verbose_false_details_empty(
+        self, manager: QAManager, mock_gate: QualityGate
+    ) -> None:
+        """Test that _execute_gate keeps details empty when verbose=False."""
+        with patch("subprocess.run") as mock_run:
+            mock_proc = MagicMock()
+            mock_proc.returncode = 1
+            mock_proc.stdout = "verbose stdout trace"
+            mock_proc.stderr = "verbose stderr trace"
+            mock_run.return_value = mock_proc
+
+            result = manager._execute_gate(
+                mock_gate, ["test.py"], gate_number=1, verbose=False
+            )
+
+            assert result["passed"] is False
+            assert result.get("details", "") == ""

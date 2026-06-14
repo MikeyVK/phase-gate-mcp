@@ -12,7 +12,7 @@ from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.server import MCPServer
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import ITool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import make_test_server
 
@@ -23,7 +23,7 @@ class IntegrationInput(BaseModel):
     action: str
 
 
-class MockIntegrationTool(BaseTool):
+class MockIntegrationTool(ITool):
     """Mock tool for integration testing."""
 
     name = "MockIntegrationTool"
