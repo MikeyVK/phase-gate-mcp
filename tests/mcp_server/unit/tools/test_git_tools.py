@@ -111,6 +111,8 @@ async def test_create_branch_tool_name_changed(mock_git_manager: MagicMock) -> N
 @pytest.mark.asyncio
 async def test_git_status_tool(mock_git_manager: MagicMock) -> None:
     """Test git status tool."""
+    from mcp_server.schemas.tool_outputs import GitStatusOutput  # noqa: PLC0415
+
     tool = GitStatusTool(manager=mock_git_manager)
     mock_git_manager.get_status.return_value = {
         "branch": "main",
@@ -121,10 +123,14 @@ async def test_git_status_tool(mock_git_manager: MagicMock) -> None:
 
     result = await tool.execute(GitStatusInput(), NoteContext())
 
-    assert isinstance(result, ToolResult)
-    assert "Branch: main" in result.content[0]["text"]
-    assert "Untracked: foo.py" in result.content[0]["text"]
-    assert "Modified: bar.py" in result.content[0]["text"]
+    assert isinstance(result, GitStatusOutput)
+    assert result.success
+    assert result.branch == "main"
+    assert result.is_clean is False
+    assert result.untracked_files == ["foo.py"]
+    assert result.modified_files == ["bar.py"]
+    assert result.untracked_count == 1
+    assert result.modified_count == 1
 
 
 @pytest.mark.asyncio
@@ -722,6 +728,8 @@ async def test_get_parent_branch_current_branch() -> None:
 
     Issue #79: Query parent_branch from PhaseStateEngine state.
     """
+    from mcp_server.schemas.tool_outputs import GetParentBranchOutput  # noqa: PLC0415
+
     mock_git_manager = MagicMock()
     mock_git_manager.get_current_branch.return_value = "feature/79-parent-branch-tracking"
 
@@ -736,7 +744,10 @@ async def test_get_parent_branch_current_branch() -> None:
     result = await tool.execute(params, NoteContext())
 
     mock_engine.get_state.assert_called_once_with("feature/79-parent-branch-tracking")
-    assert "Parent branch: epic/76-quality-gates" in result.content[0]["text"]
+    assert isinstance(result, GetParentBranchOutput)
+    assert result.success
+    assert result.branch == "feature/79-parent-branch-tracking"
+    assert result.parent_branch == "epic/76-quality-gates"
 
 
 @pytest.mark.asyncio
@@ -745,6 +756,8 @@ async def test_get_parent_branch_specified_branch() -> None:
 
     Issue #79: Query parent_branch for any branch, not just current.
     """
+    from mcp_server.schemas.tool_outputs import GetParentBranchOutput  # noqa: PLC0415
+
     mock_engine = MagicMock()
     mock_state = MagicMock()
     mock_state.current_phase = "design"
@@ -756,8 +769,10 @@ async def test_get_parent_branch_specified_branch() -> None:
     result = await tool.execute(params, NoteContext())
 
     mock_engine.get_state.assert_called_once_with("feature/77-error-handling")
-    assert "Parent branch: epic/76-quality-gates" in result.content[0]["text"]
-    assert "feature/77-error-handling" in result.content[0]["text"]
+    assert isinstance(result, GetParentBranchOutput)
+    assert result.success
+    assert result.branch == "feature/77-error-handling"
+    assert result.parent_branch == "epic/76-quality-gates"
 
 
 @pytest.mark.asyncio
@@ -766,6 +781,8 @@ async def test_get_parent_branch_not_set() -> None:
 
     Issue #79: Graceful handling when parent_branch is None.
     """
+    from mcp_server.schemas.tool_outputs import GetParentBranchOutput  # noqa: PLC0415
+
     mock_engine = MagicMock()
     mock_state = MagicMock()
     mock_state.current_phase = "implementation"
@@ -777,9 +794,10 @@ async def test_get_parent_branch_not_set() -> None:
     result = await tool.execute(params, NoteContext())
 
     mock_engine.get_state.assert_called_once_with("main")
-    output = result.content[0]["text"]
-    assert "Parent branch: (not set)" in output
-    assert "main" in output
+    assert isinstance(result, GetParentBranchOutput)
+    assert result.success
+    assert result.branch == "main"
+    assert result.parent_branch is None
 
 
 # ===== Cycle Number Enforcement Tests (Issue #146 Cycle 5) =====
@@ -1025,6 +1043,8 @@ class TestGitCommitBranchMismatch:
         self, mock_git_manager: MagicMock
     ) -> None:
         """GetParentBranchTool.execute() returns error on StateBranchMismatchError."""
+        from mcp_server.schemas.tool_outputs import GetParentBranchOutput  # noqa: PLC0415
+
         mock_state_engine = MagicMock()
         mock_state_engine.get_state.side_effect = StateBranchMismatchError(
             "Loaded state branch 'main' does not match requested branch 'feature/231-test'"
@@ -1036,7 +1056,10 @@ class TestGitCommitBranchMismatch:
 
         result = await tool.execute(params, NoteContext())
 
-        assert result.is_error
+        assert isinstance(result, GetParentBranchOutput)
+        assert not result.success
+        assert result.error_message is not None
+        assert "does not match requested branch" in result.error_message
 
 
 # ---------------------------------------------------------------------------
@@ -1234,40 +1257,53 @@ async def test_git_checkout_no_reset_when_writer_none(
 
 @pytest.mark.asyncio
 async def test_check_merge_sha_is_ancestor(mock_git_manager: MagicMock) -> None:
-    """SHA is an ancestor of HEAD -> ToolResult.text returned."""
+    """SHA is an ancestor of HEAD -> CheckMergeOutput returned."""
+    from mcp_server.schemas.tool_outputs import CheckMergeOutput  # noqa: PLC0415
+
     mock_git_manager.is_ancestor.return_value = True
     tool = CheckMergeTool(manager=mock_git_manager)
 
     params = CheckMergeInput(merge_sha="abc1234")
     result = await tool.execute(params, NoteContext())
 
-    assert not result.is_error
+    assert isinstance(result, CheckMergeOutput)
+    assert result.success
+    assert result.is_ancestor is True
     mock_git_manager.is_ancestor.assert_called_once_with("abc1234")
 
 
 @pytest.mark.asyncio
 async def test_check_merge_sha_not_ancestor(mock_git_manager: MagicMock) -> None:
-    """SHA is not an ancestor (status 1) -> ToolResult.error returned."""
+    """SHA is not an ancestor -> CheckMergeOutput with success=False returned."""
+    from mcp_server.schemas.tool_outputs import CheckMergeOutput  # noqa: PLC0415
+
     mock_git_manager.is_ancestor.return_value = False
     tool = CheckMergeTool(manager=mock_git_manager)
 
     params = CheckMergeInput(merge_sha="abc1234")
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
+    assert isinstance(result, CheckMergeOutput)
+    assert not result.success
+    assert result.is_ancestor is False
     mock_git_manager.is_ancestor.assert_called_once_with("abc1234")
 
 
 @pytest.mark.asyncio
 async def test_check_merge_git_error_raises(mock_git_manager: MagicMock) -> None:
-    """Git command fails (status >=2) -> execute returns ToolResult.error via error_handling."""
+    """Git command fails -> execute returns CheckMergeOutput with success=False."""
+    from mcp_server.schemas.tool_outputs import CheckMergeOutput  # noqa: PLC0415
+
     mock_git_manager.is_ancestor.side_effect = ExecutionError("git error status 2")
     tool = CheckMergeTool(manager=mock_git_manager)
 
     params = CheckMergeInput(merge_sha="abc1234")
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
+    assert isinstance(result, CheckMergeOutput)
+    assert not result.success
+    assert result.error_message is not None
+    assert "git error status 2" in result.error_message
 
 
 @pytest.mark.asyncio
@@ -1285,3 +1321,58 @@ async def test_check_merge_manager_delegates_to_adapter() -> None:
 
     assert result is True
     mock_adapter.is_ancestor.assert_called_once_with("abc1234")
+
+
+# ---------------------------------------------------------------------------
+# GitListBranchesTool and GitDiffTool tests (Cycle 4 RED)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_git_list_branches_tool(mock_git_manager: MagicMock) -> None:
+    """Test GitListBranchesTool returns GitListBranchesOutput DTO."""
+    from mcp_server.schemas.tool_outputs import GitListBranchesOutput  # noqa: PLC0415
+    from mcp_server.tools.git_analysis_tools import GitListBranchesInput, GitListBranchesTool  # noqa: PLC0415
+
+    tool = GitListBranchesTool(manager=mock_git_manager)
+    mock_git_manager.get_current_branch.return_value = "feature/402"
+    mock_git_manager.list_branches.return_value = [
+        "  main",
+        "* feature/402",
+        "  remotes/origin/main",
+    ]
+
+    result = await tool.execute(GitListBranchesInput(), NoteContext())
+
+    assert isinstance(result, GitListBranchesOutput)
+    assert result.success
+    assert result.current_branch == "feature/402"
+    assert result.branches_count == 3
+    assert len(result.branches) == 3
+    assert result.branches[0].name == "main"
+    assert result.branches[0].is_current is False
+    assert result.branches[1].name == "feature/402"
+    assert result.branches[1].is_current is True
+
+
+@pytest.mark.asyncio
+async def test_git_diff_tool(mock_git_manager: MagicMock) -> None:
+    """Test GitDiffTool returns GitDiffOutput DTO."""
+    from mcp_server.schemas.tool_outputs import GitDiffOutput  # noqa: PLC0415
+    from mcp_server.tools.git_analysis_tools import GitDiffInput, GitDiffTool  # noqa: PLC0415
+
+    tool = GitDiffTool(manager=mock_git_manager)
+    mock_git_manager.compare_branches.return_value = (
+        " 3 files changed, 45 insertions(+), 12 deletions(-)\n"
+    )
+
+    params = GitDiffInput(source_branch="main", target_branch="feature/402")
+    result = await tool.execute(params, NoteContext())
+
+    assert isinstance(result, GitDiffOutput)
+    assert result.success
+    assert result.source_branch == "main"
+    assert result.target_branch == "feature/402"
+    assert result.files_changed == 3
+    assert result.insertions == 45
+    assert result.deletions == 12
