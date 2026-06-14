@@ -313,8 +313,17 @@ class MCPServer:
                             isinstance(tool, ITool)  # type: ignore[reportGeneralTypeIssues]
                             and not isinstance(tool, BaseTool)
                         ):
+                            from mcp_server.tools.base import ToolExecutionEnvelope  # noqa: PLC0415
+
+                            if isinstance(raw_result, ToolExecutionEnvelope):
+                                data_dto = raw_result.data
+                                run_id = raw_result.run_id
+                            else:
+                                data_dto = raw_result
+                                run_id = "test-run"
+
                             if self.presenter is not None:
-                                success = getattr(raw_result.data, "success", True)
+                                success = getattr(data_dto, "success", True)
                                 presentation_category = (
                                     getattr(tool, "presentation_category", None) or "query"
                                 )
@@ -322,11 +331,11 @@ class MCPServer:
                                     tool_name=tool.name,
                                     success=success,
                                     presentation_category=presentation_category,
-                                    data=raw_result.data,
+                                    data=data_dto,
                                 )
                             else:
-                                text = str(raw_result.data)
-                            uri = f"pgmcp://cache/runs/{raw_result.run_id}"
+                                text = str(data_dto)
+                            uri = f"pgmcp://cache/runs/{run_id}"
                             full_text = (
                                 f"{text}\n\n"
                                 f"JSON data for this run is available as an MCP Resource: {uri}"

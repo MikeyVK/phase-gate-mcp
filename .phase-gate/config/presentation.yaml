@@ -26,5 +26,24 @@ tools:
       - Gates executed: {gates_executed_count} ({gates_executed})
       - Files modified: {modified_files_count}
     next_instructions:
-      - "recheck_quality"
       - "uri_reference"
+  health_check:
+    template_success: |
+      **Server Health Status**
+      - Status: {status}
+      - Version: {version}
+      - Process ID: {pid}
+      - Platform: {platform}
+      - Uptime: {uptime_seconds} seconds
+  restart_server:
+    template_success: "Server restart initiated successfully (Reason: {reason})."
+    next_instructions:
+      - "server_restart"
+  transition_cycle:
+    template_success: "Transitioned to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    next_instructions:
+      - "context_reset"
+  force_cycle_transition:
+    template_success: "Transitioned to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    next_instructions:
+      - "context_reset"
