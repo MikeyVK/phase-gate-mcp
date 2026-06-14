@@ -1,10 +1,10 @@
 <!-- c:\temp\pgmcp\docs\development\issue402\planning.md -->
-<!-- template=planning version=130ac5ea created=2026-06-12T19:45Z updated=2026-06-14T17:30Z -->
+<!-- template=planning version=130ac5ea created=2026-06-12T19:45Z updated=2026-06-15T00:20Z -->
 # Planning — Issue #402: Expose JSON data in MCP tools
 
 **Status:** APPROVED  
-**Version:** 2.0  
-**Last Updated:** 2026-06-14
+**Version:** 2.1  
+**Last Updated:** 2026-06-15
 
 ---
 
@@ -210,3 +210,21 @@ Batch 5 tools migrated; JSON separation implemented correctly.
 
 **Success/Exit Criteria:**
 Legacy classes completely removed. All tests pass, and quality gates pass with zero violations.
+
+### Cycle 11: Quality Gates Verbose Option
+
+**Goal:** Extend the `run_quality_gates` tool with a `verbose` option to expose stdout/stderr details for failing checks without cluttering the presenter output.
+
+**Deliverables:**
+- **[D11.1]** Add `verbose: bool = Field(default=False, ...)` to `RunQualityGatesInput` in `mcp_server/tools/quality_tools.py`.
+- **[D11.2]** Add `details: str = ""` field to `GateResultDTO` in `mcp_server/schemas/tool_outputs.py`.
+- **[D11.3]** Update `QAManager.run_quality_gates` and `_execute_gate` to accept `verbose: bool` and populate `GateResultDTO.details` with process stdout/stderr when verbose is enabled.
+- **[D11.4]** Update `RunQualityGatesTool.execute` to propagate `verbose` to the manager, and to generate a `RecoveryNote` on failures when `verbose=False`.
+- **[D11.5]** Update `tests/mcp_server/unit/tools/test_quality_tools.py` and `tests/mcp_server/unit/managers/test_qa_manager.py` to cover the new verbose options and RecoveryNotes.
+
+**Tests:**
+- `tests/mcp_server/unit/tools/test_quality_tools.py`
+- `tests/mcp_server/unit/managers/test_qa_manager.py`
+
+**Success/Exit Criteria:**
+`run_quality_gates` with `verbose=True` populates the `details` field with stdout/stderr upon failure, and caching of this DTO is verified. Running with `verbose=False` leaves `details` empty but generates a `RecoveryNote` on failure.

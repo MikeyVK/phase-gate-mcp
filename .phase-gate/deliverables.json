@@ -33,7 +33,7 @@
     "created_at": "2026-06-12T05:42:13.646251+00:00",
     "planning_deliverables": {
       "cycles": {
-        "total": 10,
+        "total": 11,
         "cycles": [
           {
             "cycle_number": 1,
@@ -244,6 +244,33 @@
               }
             ],
             "exit_criteria": "Legacy classes completely removed. All tests pass, and quality gates pass with zero violations."
+          },
+          {
+            "cycle_number": 11,
+            "name": "Quality Gates Verbose Option",
+            "deliverables": [
+              {
+                "id": "D11.1",
+                "description": "Add verbose: bool = Field(default=False, ...) to RunQualityGatesInput in mcp_server/tools/quality_tools.py."
+              },
+              {
+                "id": "D11.2",
+                "description": "Add details: str = \"\" field to GateResultDTO in mcp_server/schemas/tool_outputs.py."
+              },
+              {
+                "id": "D11.3",
+                "description": "Update QAManager.run_quality_gates and _execute_gate to accept verbose: bool and populate GateResultDTO.details with process stdout/stderr when verbose is enabled."
+              },
+              {
+                "id": "D11.4",
+                "description": "Update RunQualityGatesTool.execute to propagate verbose to the manager, and to generate a RecoveryNote on failures when verbose=False."
+              },
+              {
+                "id": "D11.5",
+                "description": "Update tests/mcp_server/unit/tools/test_quality_tools.py and tests/mcp_server/unit/managers/test_qa_manager.py to cover the new verbose options and RecoveryNotes."
+              }
+            ],
+            "exit_criteria": "run_quality_gates with verbose=True populates the details field with stdout/stderr upon failure, and caching of this DTO is verified. Running with verbose=False leaves details empty but generates a RecoveryNote on failure."
           }
         ]
       }
