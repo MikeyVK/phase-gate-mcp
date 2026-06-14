@@ -2,6 +2,9 @@
 
 This document serves as the Single Source of Truth (SSOT) for the Pydantic DTO contracts and their corresponding presentation templates defined in `presentation.yaml`.
 
+**Changelog:**
+- **v1.1 (2026-06-14):** Refined `RunTestsOutput` and `TestFailureDTO` to support flat count fields, move traceback into individual failures, and add `is_collection_error` and `location` for better collection error diagnostics (Issue 99 alignment).
+
 ---
 
 ## Centralized Presentation Configuration (`presentation.yaml`)
@@ -835,7 +838,10 @@ class BranchPairOutput(BaseToolOutput):
   ```python
   class TestFailureDTO(BaseModel):
       test_id: str
+      location: str
       short_reason: str
+      traceback: str = ""
+      is_collection_error: bool = False
 
   class RunTestsOutput(BaseToolOutput):
       exit_code: int
@@ -844,9 +850,10 @@ class BranchPairOutput(BaseToolOutput):
       skipped_count: int
       errors_count: int
       summary_line: str
-      coverage_pct: float | None = None
       failures: list[TestFailureDTO] = []
-      verbose_output: str = ""
+      coverage_pct: float | None = None
+      lf_cache_was_empty: bool = False
+      stderr: str = ""
   ```
 * **YAML Config:**
   ```yaml

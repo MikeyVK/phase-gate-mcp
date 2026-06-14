@@ -87,3 +87,29 @@ tools:
       - Clean: {is_clean}
       - Modified: {modified_count} files
       - Untracked: {untracked_count} files
+  create_branch:
+    template_success: "Created branch '{branch_name}' of type '{branch_type}' from '{base_branch}'."
+    next_instructions:
+      - "context_reset"
+  git_add_or_commit:
+    template_success: "Committed changes to '{branch}' with hash {commit_hash} (Phase: {workflow_phase}, Type: {commit_type})."
+  git_restore:
+    template_success: "Restored {files_count} file(s) from {source}."
+  git_checkout:
+    template_success: "Switched branch '{previous_branch}' -> '{branch}' (Current Phase: '{current_phase}')."
+    next_instructions:
+      - "context_reset"
+  git_push:
+    template_success: "Pushed branch '{branch}' to origin (Upstream branch created: {new_upstream_created})."
+  git_merge:
+    template_success: "Merged branch '{source_branch}' into '{target_branch}' successfully."
+  git_delete_branch:
+    template_success: "Deleted branch '{branch}' (Local: {local_status}, Remote: {remote_status})."
+  git_stash:
+    template_success: "Stash action '{action}' executed successfully."
+  git_fetch:
+    template_success: "Fetched updates from remote '{remote}'."
+  git_pull:
+    template_success: "Pulled updates from remote '{remote}'."
+    next_instructions:
+      - "context_reset"

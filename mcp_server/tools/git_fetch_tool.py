@@ -4,7 +4,7 @@ Fetch updates from a remote.
 
 Responsibilities:
 - Execute potentially blocking GitPython network operations via `anyio.to_thread.run_sync`.
-- Return a structured ToolResult error instead of raising uncaught exceptions.
+- Return GitFetchOutput instead of raising uncaught exceptions.
 
 Usage example:
 - Call `git_fetch` with {"remote": "origin", "prune": false}
@@ -24,16 +24,10 @@ from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import GitFetchOutput
+from mcp_server.tools.base import ITool
 
 logger = get_logger("tools.git_fetch")
-
-
-def _input_schema(args_model: type[BaseModel] | None) -> dict[str, Any]:
-    if args_model is None:
-        return {}
-    return args_model.model_json_schema()
 
 
 class GitFetchInput(BaseModel):
@@ -51,20 +45,28 @@ class GitFetchInput(BaseModel):
     )
 
 
-class GitFetchTool(BaseTool):
+class GitFetchTool(ITool):
     """Fetch updates from a remote.
 
     Responsibilities:
     - Offload git fetch to a worker thread (Issue #85 stdio hang prevention).
-    - Convert known MCPErrors into ToolResult.error.
+    - Convert known MCPErrors into GitFetchOutput.
 
     Usage example:
     - Call with {"remote": "origin", "prune": false}
     """
 
-    name = "git_fetch"
-    description = "Fetch updates from a remote"
-    args_model = GitFetchInput
+    @property
+    def name(self) -> str:
+        return "git_fetch"
+
+    @property
+    def description(self) -> str:
+        return "Fetch updates from a remote"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitFetchInput
 
     def __init__(self, manager: GitManager) -> None:
         self.manager = manager
@@ -73,22 +75,45 @@ class GitFetchTool(BaseTool):
     def input_schema(self) -> dict[str, Any]:
         return _input_schema(self.args_model)
 
-    async def execute(self, params: GitFetchInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GitFetchInput, context: NoteContext) -> GitFetchOutput:
         del context  # Read-only fetch — context unused
         try:
             result = await anyio.to_thread.run_sync(
                 lambda: self.manager.fetch(remote=params.remote, prune=params.prune)
             )
-            return ToolResult.text(result)
+            return GitFetchOutput(
+                success=True,
+                remote=params.remote,
+                raw_output=result,
+                prune=params.prune,
+            )
         except MCPError as exc:
             logger.error(
                 "git_fetch failed",
                 extra={"props": {"remote": params.remote, "error": str(exc)}},
             )
-            return ToolResult.error(str(exc))
+            return GitFetchOutput(
+                success=False,
+                error_message=str(exc),
+                remote=params.remote,
+                raw_output="",
+                prune=params.prune,
+            )
         except (OSError, ValueError, RuntimeError) as exc:
             logger.error(
                 "git_fetch failed (runtime)",
                 extra={"props": {"remote": params.remote, "error": str(exc)}},
             )
-            return ToolResult.error(f"Fetch failed: {exc}")
+            return GitFetchOutput(
+                success=False,
+                error_message=f"Fetch failed: {exc}",
+                remote=params.remote,
+                raw_output="",
+                prune=params.prune,
+            )
+
+
+def _input_schema(model: type[BaseModel] | None) -> dict[str, Any]:
+    if model is None:
+        return {}
+    return model.model_json_schema()

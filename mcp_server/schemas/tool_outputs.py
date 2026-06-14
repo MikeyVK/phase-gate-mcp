@@ -215,3 +215,89 @@ class GitStatusOutput(BaseToolOutput):
     untracked_files: list[str] = Field(default_factory=list)
     modified_count: int
     untracked_count: int
+
+
+class CreateBranchOutput(BaseToolOutput):
+    """Output for CreateBranchTool."""
+
+    branch_name: str
+    branch_type: str
+    base_branch: str
+
+
+class GitCommitOutput(BaseToolOutput):
+    """Output for GitCommitTool."""
+
+    commit_hash: str
+    branch: str
+    workflow_phase: str
+    sub_phase: str | None = None
+    cycle_number: int | None = None
+    commit_type: str
+    files: list[str] = Field(default_factory=list)
+
+
+class GitRestoreOutput(BaseToolOutput):
+    """Output for GitRestoreTool."""
+
+    files: list[str] = Field(default_factory=list)
+    source: str
+    files_count: int = 0
+
+
+class GitCheckoutOutput(BaseToolOutput):
+    """Output for GitCheckoutTool."""
+
+    branch: str
+    previous_branch: str | None = None
+    current_phase: str
+    parent_branch: str | None = None
+
+
+class GitPushOutput(BaseToolOutput):
+    """Output for GitPushTool."""
+
+    branch: str
+    set_upstream: bool
+    new_upstream_created: bool = False
+
+
+class GitMergeOutput(BranchPairOutput):
+    """Output for GitMergeTool."""
+
+    pass
+
+
+class GitDeleteBranchOutput(BaseToolOutput):
+    """Output for GitDeleteBranchTool."""
+
+    branch: str
+    local_status: str
+    remote_status: str
+
+
+class GitStashOutput(BaseToolOutput):
+    """Output for GitStashTool."""
+
+    action: str
+    message: str | None = None
+    stashes: list[str] = Field(default_factory=list)
+
+
+class GitFetchPullOutput(BaseToolOutput):
+    """Base class for Git remote operations returning output."""
+
+    remote: str
+    raw_output: str
+
+
+class GitFetchOutput(GitFetchPullOutput):
+    """Output for GitFetchTool."""
+
+    prune: bool
+
+
+class GitPullOutput(GitFetchPullOutput):
+    """Output for GitPullTool."""
+
+    rebase: bool

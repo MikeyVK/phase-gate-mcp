@@ -129,16 +129,24 @@ def _to_tool_result(result: PytestResult) -> ToolResult:
         "lf_cache_was_empty": result.lf_cache_was_empty,
         "stderr": stderr_tail,
     }
+
+    failure_lines_list = []
+    for f in result.failures:
+        if getattr(f, "is_collection_error", False):
+            failure_lines_list.append(f"ERROR collecting {f.test_id} \u2014 {f.short_reason}")
+        else:
+            failure_lines_list.append(f"FAILED {f.test_id} \u2014 {f.short_reason}")
+    failure_lines = "\n".join(failure_lines_list)
+
     if result.is_error:  # exit 2 / 3 / 4
         first_stderr = next((ln for ln in result.stderr.splitlines() if ln.strip()), "")[:120]
         text = result.summary_line
-        if first_stderr:
+        if failure_lines:
+            text += "\n" + failure_lines
+        elif first_stderr:
             text += f"\nstderr: {first_stderr}"
         return ToolResult.json_data(payload, text=text, is_error=True)
     # exit 0 / 1 / 5
-    failure_lines = "\n".join(
-        f"FAILED {f.test_id} \u2014 {f.short_reason}" for f in result.failures
-    )
     text = result.summary_line
     if failure_lines:
         text += "\n" + failure_lines

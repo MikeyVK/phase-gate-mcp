@@ -28,16 +28,10 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from mcp_server.tools.base import BranchMutatingTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import GitPullOutput
+from mcp_server.tools.base import ITool
 
 logger = get_logger("tools.git_pull")
-
-
-def _input_schema(args_model: type[BaseModel] | None) -> dict[str, Any]:
-    if args_model is None:
-        return {}
-    return args_model.model_json_schema()
 
 
 class GitPullInput(BaseModel):
@@ -55,7 +49,7 @@ class GitPullInput(BaseModel):
     )
 
 
-class GitPullTool(BranchMutatingTool):
+class GitPullTool(ITool):
     """Pull updates from a remote into the current branch.
 
     Responsibilities:
@@ -66,9 +60,19 @@ class GitPullTool(BranchMutatingTool):
     - Call with {"remote": "origin", "rebase": false}
     """
 
-    name = "git_pull"
-    description = "Pull updates from a remote"
-    args_model = GitPullInput
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "git_pull"
+
+    @property
+    def description(self) -> str:
+        return "Pull updates from a remote"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitPullInput
 
     def __init__(
         self,
@@ -89,7 +93,8 @@ class GitPullTool(BranchMutatingTool):
     def input_schema(self) -> dict[str, Any]:
         return _input_schema(self.args_model)
 
-    async def execute(self, params: GitPullInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GitPullInput, context: NoteContext) -> GitPullOutput:
+        pull_result = ""
         try:
             pull_result = await anyio.to_thread.run_sync(
                 lambda: self.manager.pull(
@@ -101,13 +106,25 @@ class GitPullTool(BranchMutatingTool):
                 "git_pull failed",
                 extra={"props": {"remote": params.remote, "error": str(exc)}},
             )
-            return ToolResult.error(str(exc))
+            return GitPullOutput(
+                success=False,
+                error_message=str(exc),
+                remote=params.remote,
+                raw_output="",
+                rebase=params.rebase,
+            )
         except (OSError, ValueError, RuntimeError) as exc:
             logger.error(
                 "git_pull failed (runtime)",
                 extra={"props": {"remote": params.remote, "error": str(exc)}},
             )
-            return ToolResult.error(f"Pull failed: {exc}")
+            return GitPullOutput(
+                success=False,
+                error_message=f"Pull failed: {exc}",
+                remote=params.remote,
+                raw_output="",
+                rebase=params.rebase,
+            )
 
         # Sync phase state after pull (commits may have changed).
         try:
@@ -123,4 +140,15 @@ class GitPullTool(BranchMutatingTool):
                 extra={"props": {"error": str(exc)}},
             )
 
-        return ToolResult.text(pull_result)
+        return GitPullOutput(
+            success=True,
+            remote=params.remote,
+            raw_output=pull_result,
+            rebase=params.rebase,
+        )
+
+
+def _input_schema(model: type[BaseModel] | None) -> dict[str, Any]:
+    if model is None:
+        return {}
+    return model.model_json_schema()

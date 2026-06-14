@@ -35,6 +35,7 @@ class FailureDetail:
     location: str
     short_reason: str
     traceback: str
+    is_collection_error: bool = False
 
 
 @dataclass(frozen=True)
@@ -203,7 +204,7 @@ class PytestRunner:
         return _count("passed"), _count("failed"), _count("skipped"), _count("error")
 
     def _parse_failures(self, stdout: str, *, verbose: bool = False) -> tuple[FailureDetail, ...]:
-        """Extract FailureDetail entries from FAILED lines in short summary."""
+        """Extract FailureDetail entries from FAILED lines and ERROR collecting lines."""
         details: list[FailureDetail] = []
         for i, match in enumerate(_FAILED_LINE_RE.finditer(stdout)):
             test_id = match.group(1).strip()
@@ -225,8 +226,36 @@ class PytestRunner:
                     location=location,
                     short_reason=short_reason,
                     traceback=traceback,
+                    is_collection_error=False,
                 )
             )
+
+        collect_matches = list(
+            re.finditer(
+                r"_+\s*ERROR collecting\s+(.+?)(?:\s+_+)?$",
+                stdout,
+                re.MULTILINE,
+            )
+        )
+        for j, match in enumerate(collect_matches):
+            target_name = match.group(1).strip()
+            raw_traceback = self._extract_traceback(stdout, target_name)
+            short_reason = self._extract_short_reason(raw_traceback)
+
+            traceback = ""
+            if verbose and (len(details) + j) < MAX_FAILURES_DETAILED:
+                traceback = raw_traceback
+
+            details.append(
+                FailureDetail(
+                    test_id=target_name,
+                    location=target_name,
+                    short_reason=short_reason,
+                    traceback=traceback,
+                    is_collection_error=True,
+                )
+            )
+
         return tuple(details)
 
     def _extract_short_reason(self, traceback: str) -> str:
@@ -237,20 +266,34 @@ class PytestRunner:
         """
         lines = _TRACEBACK_ERROR_RE.findall(traceback)
         if not lines:
-            return ""
+            tb_lines = [ln.strip() for ln in traceback.splitlines() if ln.strip()]
+            if tb_lines:
+                return tb_lines[-1][:300]
+            return "Collection Error"
         reason = "\n".join(line.strip() for line in lines)
         return reason[:300]
 
     def _extract_traceback(self, stdout: str, test_id: str) -> str:
-        """Extract the traceback block for a given test_id from the FAILURES section."""
-        _, _, test_name = test_id.rpartition("::")
+        """Extract the traceback block for a given test_id from the FAILURES or ERRORS section."""
+        parts = test_id.split("::")
+        target_name = ".".join(parts[1:]) if len(parts) > 1 else parts[0]
         pattern = re.compile(
-            r"(?:\[gw\d+\]\s+)?_{3,}\s+"
-            + re.escape(test_name)
-            + r"\s+_{3,}\n(.*?)(?=\n_{3,}|\n={3,}|\Z)",
+            r"(?:\[gw\d+\]\s+)?_{3,}\s*"
+            + re.escape(target_name)
+            + r"\s*_{3,}\n(.*?)(?=\n(?:\[gw\d+\]\s+)?_{3,}|\n={3,}|\Z)",
             re.DOTALL,
         )
         match = pattern.search(stdout)
+        if match:
+            return match.group(1).strip()
+
+        collect_pattern = re.compile(
+            r"_+\s*ERROR collecting\s+"
+            + re.escape(target_name)
+            + r"(?:\s+_+)?\n(.*?)(?=\n(?:\[gw\d+\]\s+)?_+|\n={3,}|\Z)",
+            re.DOTALL,
+        )
+        match = collect_pattern.search(stdout)
         return match.group(1).strip() if match else ""
 
     def _parse_coverage(self, stdout: str) -> float | None:

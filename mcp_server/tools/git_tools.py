@@ -1,5 +1,6 @@
 """Git tools."""
 
+import contextlib
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -16,11 +17,18 @@ from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas.tool_outputs import (
     CheckMergeOutput,
+    CreateBranchOutput,
     GetParentBranchOutput,
+    GitCheckoutOutput,
+    GitCommitOutput,
+    GitDeleteBranchOutput,
+    GitMergeOutput,
+    GitPushOutput,
+    GitRestoreOutput,
+    GitStashOutput,
     GitStatusOutput,
 )
-from mcp_server.tools.base import BaseTool, BranchMutatingTool, ITool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.tools.base import ITool
 
 logger = get_logger("tools.git")
 
@@ -86,12 +94,6 @@ def build_phase_guard(
     return phase_mismatch
 
 
-def _input_schema(args_model: type[BaseModel] | None) -> dict[str, Any]:
-    if args_model is None:
-        return {}
-    return args_model.model_json_schema()
-
-
 class CreateBranchInput(BaseModel):
     """Input for CreateBranchTool."""
 
@@ -106,12 +108,23 @@ class CreateBranchInput(BaseModel):
     )
 
 
-class CreateBranchTool(BranchMutatingTool):
+class CreateBranchTool(ITool):
     """Tool to create a git branch from specified base."""
 
-    name = "create_branch"
-    description = "Create a new branch from specified base branch"
-    args_model = CreateBranchInput
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "create_branch"
+
+    @property
+    def description(self) -> str:
+        return "Create a new branch from specified base branch"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return CreateBranchInput
+
     enforcement_event = "create_branch"
 
     def __init__(
@@ -131,12 +144,13 @@ class CreateBranchTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
+        assert self.args_model is not None
+        schema = self.args_model.model_json_schema()
         schema["properties"]["branch_type"]["enum"] = list(self.manager.git_config.branch_types)
         schema["properties"]["name"]["pattern"] = self.manager.git_config.branch_name_pattern
         return schema
 
-    async def execute(self, params: CreateBranchInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: CreateBranchInput, context: NoteContext) -> CreateBranchOutput:
         logger.info(
             "Branch creation requested",
             extra={
@@ -152,12 +166,23 @@ class CreateBranchTool(BranchMutatingTool):
             branch_name = self.manager.create_branch(
                 params.name, params.branch_type, params.base_branch, context
             )
-            return ToolResult.text(f"✅ Created branch: {branch_name}")
+            return CreateBranchOutput(
+                success=True,
+                branch_name=branch_name,
+                branch_type=params.branch_type,
+                base_branch=params.base_branch,
+            )
         except Exception as e:
             logger.error(
                 "Branch creation failed", extra={"props": {"name": params.name, "error": str(e)}}
             )
-            raise
+            return CreateBranchOutput(
+                success=False,
+                error_message=str(e),
+                branch_name="",
+                branch_type=params.branch_type,
+                base_branch=params.base_branch,
+            )
 
 
 class GitStatusInput(BaseModel):
@@ -281,12 +306,23 @@ class GitCommitInput(BaseModel):
     )
 
 
-class GitCommitTool(BranchMutatingTool):
+class GitCommitTool(ITool):
     """Tool to commit changes with workflow-scoped commit messages."""
 
-    name = "git_add_or_commit"
-    description = "Commit changes with workflow phase scope (e.g., test(P_TDD_SP_RED): message)"
-    args_model = GitCommitInput
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "git_add_or_commit"
+
+    @property
+    def description(self) -> str:
+        return "Commit changes with workflow phase scope (e.g., test(P_TDD_SP_RED): message)"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitCommitInput
+
     enforcement_event: str | None = "git_add_or_commit"
 
     def __init__(
@@ -307,11 +343,12 @@ class GitCommitTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
+        assert self.args_model is not None
+        schema = self.args_model.model_json_schema()
         schema["properties"]["commit_type"]["enum"] = list(self.manager.git_config.commit_types)
         return schema
 
-    async def execute(self, params: GitCommitInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GitCommitInput, context: NoteContext) -> GitCommitOutput:
         workflow_phase = params.workflow_phase
         current_branch = self.manager.adapter.get_current_branch()
         issue_number: int | None = None
@@ -325,10 +362,17 @@ class GitCommitTool(BranchMutatingTool):
                 workflow_phase = auto_state.current_phase
                 issue_number = auto_state.issue_number
             except (FileNotFoundError, StateBranchMismatchError):
-                return ToolResult.error(
-                    f"No state.json found for branch '{current_branch}'. "
-                    "Provide workflow_phase explicitly: "
-                    "git_add_or_commit(workflow_phase='<phase>', message='...')"
+                return GitCommitOutput(
+                    success=False,
+                    error_message=(
+                        f"No state.json found for branch '{current_branch}'. "
+                        "Provide workflow_phase explicitly: "
+                        "git_add_or_commit(workflow_phase='<phase>', message='...')"
+                    ),
+                    commit_hash="",
+                    branch=current_branch,
+                    workflow_phase="",
+                    commit_type="",
                 )
 
             logger.info(
@@ -337,29 +381,47 @@ class GitCommitTool(BranchMutatingTool):
             )
         else:
             issue_number = self.manager.git_config.extract_issue_number(current_branch)
-        if self._phase_guard is not None:
-            self._phase_guard(current_branch, workflow_phase, params.cycle_number)
 
-        if self._phase_contract_resolver is not None and self._state_engine is not None:
-            if params.workflow_phase is None:
-                # auto-detect path: state already loaded above
-                assert auto_state is not None  # exception path returns early above
-                guard_workflow_name = auto_state.workflow_name
-            else:
-                # explicit path: load state for workflow_name only
-                guard_state = self._state_engine.get_state(current_branch)
-                guard_workflow_name = guard_state.workflow_name
-            if (
-                self._phase_contract_resolver.is_cycle_based_phase(
-                    guard_workflow_name, workflow_phase
-                )
-                and params.cycle_number is None
-            ):
-                return ToolResult.error(
-                    f"cycle_number is required when committing in a cycle-based phase "
-                    f"('{workflow_phase}'). "
-                    "Use: git_add_or_commit(..., cycle_number=N)"
-                )
+        try:
+            if self._phase_guard is not None:
+                self._phase_guard(current_branch, workflow_phase, params.cycle_number)
+
+            if self._phase_contract_resolver is not None and self._state_engine is not None:
+                if params.workflow_phase is None:
+                    # auto-detect path: state already loaded above
+                    assert auto_state is not None  # exception path returns early above
+                    guard_workflow_name = auto_state.workflow_name
+                else:
+                    # explicit path: load state for workflow_name only
+                    guard_state = self._state_engine.get_state(current_branch)
+                    guard_workflow_name = guard_state.workflow_name
+                if (
+                    self._phase_contract_resolver.is_cycle_based_phase(
+                        guard_workflow_name, workflow_phase
+                    )
+                    and params.cycle_number is None
+                ):
+                    return GitCommitOutput(
+                        success=False,
+                        error_message=(
+                            f"cycle_number is required when committing in a cycle-based phase "
+                            f"('{workflow_phase}'). "
+                            "Use: git_add_or_commit(..., cycle_number=N)"
+                        ),
+                        commit_hash="",
+                        branch=current_branch,
+                        workflow_phase=workflow_phase or "",
+                        commit_type="",
+                    )
+        except Exception as e:
+            return GitCommitOutput(
+                success=False,
+                error_message=str(e),
+                commit_hash="",
+                branch=current_branch,
+                workflow_phase=workflow_phase or "",
+                commit_type="",
+            )
 
         commit_type = params.commit_type
         if commit_type is None and self._commit_type_resolver is not None:
@@ -369,22 +431,45 @@ class GitCommitTool(BranchMutatingTool):
                 params.sub_phase,
             )
 
-        ctx = context
-        commit_hash = self.manager.commit_with_scope(
-            workflow_phase=workflow_phase,
-            message=params.message,
-            note_context=ctx,
-            sub_phase=params.sub_phase,
-            cycle_number=params.cycle_number,
-            commit_type=commit_type,
-            files=params.files,
-            skip_paths=frozenset(),
-            issue_number=issue_number,
-        )
-        ctx.produce(CommitNote(commit_hash=commit_hash))
-        if self._state_engine is not None:
-            self._state_engine.record_sub_phase(current_branch, params.sub_phase)
-        return ToolResult.text(f"Committed: {commit_hash}")
+        try:
+            ctx = context
+            commit_hash = self.manager.commit_with_scope(
+                workflow_phase=workflow_phase,
+                message=params.message,
+                note_context=ctx,
+                sub_phase=params.sub_phase,
+                cycle_number=params.cycle_number,
+                commit_type=commit_type,
+                files=params.files,
+                skip_paths=frozenset(),
+                issue_number=issue_number,
+            )
+            ctx.produce(CommitNote(commit_hash=commit_hash))
+            if self._state_engine is not None:
+                self._state_engine.record_sub_phase(current_branch, params.sub_phase)
+
+            return GitCommitOutput(
+                success=True,
+                commit_hash=commit_hash,
+                branch=current_branch,
+                workflow_phase=workflow_phase or "",
+                sub_phase=params.sub_phase,
+                cycle_number=params.cycle_number,
+                commit_type=commit_type or "",
+                files=params.files or [],
+            )
+        except Exception as e:
+            return GitCommitOutput(
+                success=False,
+                error_message=str(e),
+                commit_hash="",
+                branch=current_branch,
+                workflow_phase=workflow_phase or "",
+                sub_phase=params.sub_phase,
+                cycle_number=params.cycle_number,
+                commit_type=commit_type or "",
+                files=params.files or [],
+            )
 
 
 class GitRestoreInput(BaseModel):
@@ -398,12 +483,22 @@ class GitRestoreInput(BaseModel):
     source: str = Field(default="HEAD", description="Git ref to restore from (default: HEAD)")
 
 
-class GitRestoreTool(BranchMutatingTool):
+class GitRestoreTool(ITool):
     """Tool to restore files to a ref (discard local changes)."""
 
-    name = "git_restore"
-    description = "Restore files to a git ref (discard local changes)"
-    args_model = GitRestoreInput
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "git_restore"
+
+    @property
+    def description(self) -> str:
+        return "Restore files to a git ref (discard local changes)"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitRestoreInput
 
     def __init__(
         self,
@@ -422,11 +517,26 @@ class GitRestoreTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: GitRestoreInput, context: NoteContext) -> ToolResult:
-        self.manager.restore(files=params.files, note_context=context, source=params.source)
-        return ToolResult.text(f"Restored {len(params.files)} file(s) from {params.source}")
+    async def execute(self, params: GitRestoreInput, context: NoteContext) -> GitRestoreOutput:
+        try:
+            self.manager.restore(files=params.files, note_context=context, source=params.source)
+            return GitRestoreOutput(
+                success=True,
+                files=params.files,
+                source=params.source,
+                files_count=len(params.files),
+            )
+        except Exception as e:
+            return GitRestoreOutput(
+                success=False,
+                error_message=str(e),
+                files=params.files,
+                source=params.source,
+                files_count=len(params.files),
+            )
 
 
 class GitCheckoutInput(BaseModel):
@@ -437,16 +547,24 @@ class GitCheckoutInput(BaseModel):
     branch: str = Field(..., description="Branch name to checkout")
 
 
-class GitCheckoutTool(BaseTool):
+class GitCheckoutTool(ITool):
     """Tool to checkout to a branch.
 
     Automatically synchronizes PhaseStateEngine state after branch switch
     to ensure correct TDD phase tracking.
     """
 
-    name = "git_checkout"
-    description = "Switch to an existing branch"
-    args_model = GitCheckoutInput
+    @property
+    def name(self) -> str:
+        return "git_checkout"
+
+    @property
+    def description(self) -> str:
+        return "Switch to an existing branch"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitCheckoutInput
 
     def __init__(
         self,
@@ -467,20 +585,31 @@ class GitCheckoutTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: GitCheckoutInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GitCheckoutInput, context: NoteContext) -> GitCheckoutOutput:
         del context
+
+        previous_branch: str | None = None
+        with contextlib.suppress(Exception):
+            previous_branch = self.manager.get_current_branch()
 
         try:
             # GitPython operations can block; run them in a worker thread.
             await anyio.to_thread.run_sync(self.manager.checkout, params.branch)
-        except MCPError as exc:
+        except Exception as exc:
             logger.error(
                 "Branch checkout failed",
                 extra={"props": {"branch": params.branch, "error": str(exc)}},
             )
-            return ToolResult.error(str(exc))
+            return GitCheckoutOutput(
+                success=False,
+                error_message=str(exc),
+                branch=params.branch,
+                previous_branch=previous_branch,
+                current_phase="unknown",
+            )
 
         current_phase = "unknown"
         parent_branch: str | None = None
@@ -495,13 +624,16 @@ class GitCheckoutTool(BaseTool):
                 extra={"props": {"branch": params.branch, "error": str(exc)}},
             )
 
-        output = f"Switched to branch: {params.branch}\nCurrent phase: {current_phase}"
-        if parent_branch:
-            output += f"\nParent branch: {parent_branch}"
-
         if self._context_loaded_writer is not None:
             self._context_loaded_writer.set_context_loaded(params.branch, value=False)
-        return ToolResult.text(output)
+
+        return GitCheckoutOutput(
+            success=True,
+            branch=params.branch,
+            previous_branch=previous_branch,
+            current_phase=current_phase,
+            parent_branch=parent_branch,
+        )
 
 
 class GitPushInput(BaseModel):
@@ -514,12 +646,22 @@ class GitPushInput(BaseModel):
     )
 
 
-class GitPushTool(BranchMutatingTool):
+class GitPushTool(ITool):
     """Tool to push current branch to origin."""
 
-    name = "git_push"
-    description = "Push current branch to origin remote"
-    args_model = GitPushInput
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "git_push"
+
+    @property
+    def description(self) -> str:
+        return "Push current branch to origin remote"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitPushInput
 
     def __init__(
         self,
@@ -538,14 +680,32 @@ class GitPushTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: GitPushInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GitPushInput, context: NoteContext) -> GitPushOutput:
         del context
 
-        status = self.manager.get_status()
-        self.manager.push(set_upstream=params.set_upstream)
-        return ToolResult.text(f"Pushed branch: {status['branch']}")
+        try:
+            status = self.manager.get_status()
+            self.manager.push(set_upstream=params.set_upstream)
+            return GitPushOutput(
+                success=True,
+                branch=status["branch"],
+                set_upstream=params.set_upstream,
+                new_upstream_created=False,
+            )
+        except Exception as e:
+            try:
+                branch = self.manager.get_current_branch()
+            except Exception:
+                branch = ""
+            return GitPushOutput(
+                success=False,
+                error_message=str(e),
+                branch=branch,
+                set_upstream=params.set_upstream,
+            )
 
 
 class GitMergeInput(BaseModel):
@@ -556,12 +716,22 @@ class GitMergeInput(BaseModel):
     branch: str = Field(..., description="Branch name to merge")
 
 
-class GitMergeTool(BranchMutatingTool):
+class GitMergeTool(ITool):
     """Tool to merge a branch into current branch."""
 
-    name = "git_merge"
-    description = "Merge a branch into the current branch"
-    args_model = GitMergeInput
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "git_merge"
+
+    @property
+    def description(self) -> str:
+        return "Merge a branch into the current branch"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitMergeInput
 
     def __init__(
         self,
@@ -580,12 +750,29 @@ class GitMergeTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: GitMergeInput, context: NoteContext) -> ToolResult:
-        status = self.manager.get_status()
-        self.manager.merge(params.branch, context)
-        return ToolResult.text(f"Merged {params.branch} into {status['branch']}")
+    async def execute(self, params: GitMergeInput, context: NoteContext) -> GitMergeOutput:
+        try:
+            status = self.manager.get_status()
+            self.manager.merge(params.branch, context)
+            return GitMergeOutput(
+                success=True,
+                source_branch=params.branch,
+                target_branch=status["branch"],
+            )
+        except Exception as e:
+            try:
+                target = self.manager.get_current_branch()
+            except Exception:
+                target = ""
+            return GitMergeOutput(
+                success=False,
+                error_message=str(e),
+                source_branch=params.branch,
+                target_branch=target,
+            )
 
 
 class GitDeleteBranchInput(BaseModel):
@@ -601,12 +788,22 @@ class GitDeleteBranchInput(BaseModel):
     )
 
 
-class GitDeleteBranchTool(BranchMutatingTool):
+class GitDeleteBranchTool(ITool):
     """Tool to delete a branch."""
 
-    name = "git_delete_branch"
-    description = "Delete a git branch (cannot delete protected branches)"
-    args_model = GitDeleteBranchInput
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "git_delete_branch"
+
+    @property
+    def description(self) -> str:
+        return "Delete a git branch (cannot delete protected branches)"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitDeleteBranchInput
 
     def __init__(
         self,
@@ -625,19 +822,30 @@ class GitDeleteBranchTool(BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: GitDeleteBranchInput, context: NoteContext) -> ToolResult:
-        result: BranchDeleteResult = self.manager.delete_branch(
-            params.branch, context, force=params.force, mode=params.mode
-        )
-        parts: list[str] = []
-        if result.local_status != "skipped":
-            parts.append(f"local: {result.local_status}")
-        if result.remote_status != "skipped":
-            parts.append(f"remote: {result.remote_status}")
-        suffix = f" ({', '.join(parts)})" if parts else ""
-        return ToolResult.text(f"Deleted branch: {params.branch}{suffix}")
+    async def execute(
+        self, params: GitDeleteBranchInput, context: NoteContext
+    ) -> GitDeleteBranchOutput:
+        try:
+            result: BranchDeleteResult = self.manager.delete_branch(
+                params.branch, context, force=params.force, mode=params.mode
+            )
+            return GitDeleteBranchOutput(
+                success=True,
+                branch=params.branch,
+                local_status=result.local_status,
+                remote_status=result.remote_status,
+            )
+        except Exception as e:
+            return GitDeleteBranchOutput(
+                success=False,
+                error_message=str(e),
+                branch=params.branch,
+                local_status="error",
+                remote_status="error",
+            )
 
 
 class GitStashInput(BaseModel):
@@ -658,12 +866,20 @@ class GitStashInput(BaseModel):
     )
 
 
-class GitStashTool(BaseTool):
+class GitStashTool(ITool):
     """Tool to stash changes in a dirty working directory."""
 
-    name = "git_stash"
-    description = "Stash the changes in a dirty working directory (git stash)"
-    args_model = GitStashInput
+    @property
+    def name(self) -> str:
+        return "git_stash"
+
+    @property
+    def description(self) -> str:
+        return "Stash the changes in a dirty working directory (git stash)"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GitStashInput
 
     def __init__(
         self,
@@ -682,25 +898,37 @@ class GitStashTool(BaseTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return _input_schema(self.args_model)
+        assert self.args_model is not None
+        return self.args_model.model_json_schema()
 
-    async def execute(self, params: GitStashInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: GitStashInput, context: NoteContext) -> GitStashOutput:
         del context
 
-        if params.action == "push":
-            self.manager.stash(message=params.message, include_untracked=params.include_untracked)
-            if params.message:
-                return ToolResult.text(f"Stashed changes: {params.message}")
-            return ToolResult.text("Stashed current changes")
-        if params.action == "pop":
-            self.manager.stash_pop()
-            return ToolResult.text("Applied and removed latest stash")
-        if params.action == "list":
-            stashes = self.manager.stash_list()
-            if not stashes:
-                return ToolResult.text("No stashes found")
-            return ToolResult.text("\n".join(stashes))
-        return ToolResult.text(f"Unknown action: {params.action}")
+        try:
+            stashes = []
+            if params.action == "push":
+                self.manager.stash(
+                    message=params.message, include_untracked=params.include_untracked
+                )
+            elif params.action == "pop":
+                self.manager.stash_pop()
+            elif params.action == "list":
+                stashes = self.manager.stash_list()
+
+            return GitStashOutput(
+                success=True,
+                action=params.action,
+                message=params.message,
+                stashes=stashes,
+            )
+        except Exception as e:
+            return GitStashOutput(
+                success=False,
+                error_message=str(e),
+                action=params.action,
+                message=params.message,
+                stashes=[],
+            )
 
 
 class GetParentBranchInput(BaseModel):

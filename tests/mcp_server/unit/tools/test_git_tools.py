@@ -17,6 +17,19 @@ from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
+from mcp_server.schemas.tool_outputs import (
+    CheckMergeOutput,
+    CreateBranchOutput,
+    GetParentBranchOutput,
+    GitCheckoutOutput,
+    GitCommitOutput,
+    GitDeleteBranchOutput,
+    GitMergeOutput,
+    GitPushOutput,
+    GitRestoreOutput,
+    GitStashOutput,
+    GitStatusOutput,
+)
 from mcp_server.tools.git_tools import (
     CheckMergeInput,
     CheckMergeTool,
@@ -42,7 +55,6 @@ from mcp_server.tools.git_tools import (
     GitStatusInput,
     GitStatusTool,
 )
-from mcp_server.tools.tool_result import ToolResult
 
 
 @pytest.fixture
@@ -57,6 +69,7 @@ def mock_git_manager() -> MagicMock:
     git_config.extract_issue_number.side_effect = lambda branch: 79 if "79" in branch else 999
     manager.git_config = git_config
     manager.adapter.get_current_branch.return_value = "feature/257-reorder-workflow-phases"
+    manager.get_current_branch.return_value = "feature/257-reorder-workflow-phases"
     return manager
 
 
@@ -79,7 +92,8 @@ async def test_create_branch_tool_calls_manager_with_explicit_base(
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.create_branch.assert_called_once_with("test-branch", "feature", "HEAD", ANY)
-    from mcp_server.schemas.tool_outputs import CreateBranchOutput
+    from mcp_server.schemas.tool_outputs import CreateBranchOutput  # noqa: PLC0415
+
     assert isinstance(result, CreateBranchOutput)
     assert result.success is True
     assert result.branch_name == "feature/test-branch"
@@ -101,7 +115,8 @@ async def test_create_branch_tool_with_branch_name_as_base(mock_git_manager: Mag
     mock_git_manager.create_branch.assert_called_once_with(
         "new-fix", "fix", "refactor/51-labels-yaml", ANY
     )
-    from mcp_server.schemas.tool_outputs import CreateBranchOutput
+    from mcp_server.schemas.tool_outputs import CreateBranchOutput  # noqa: PLC0415
+
     assert isinstance(result, CreateBranchOutput)
     assert result.success is True
     assert result.branch_name == "fix/new-fix"
@@ -168,7 +183,8 @@ async def test_git_commit_tool_docs(mock_git_manager: MagicMock) -> None:
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "doc1234"
@@ -208,7 +224,8 @@ async def test_git_commit_tool_resolves_commit_type_from_phase_contracts(
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "abc1234"
@@ -238,7 +255,8 @@ async def test_git_commit_tool_with_workflow_phase(mock_git_manager: MagicMock) 
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "wf1234"
@@ -271,7 +289,8 @@ async def test_git_commit_tool_with_workflow_phase_and_subphase(
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "wf5678"
@@ -302,7 +321,8 @@ async def test_git_commit_tool_with_cycle_number(mock_git_manager: MagicMock) ->
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "wf9012"
@@ -334,7 +354,8 @@ async def test_git_commit_tool_with_workflow_phase_and_files(mock_git_manager: M
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "wf3456"
@@ -375,7 +396,8 @@ async def test_git_commit_tool_with_commit_type_override(mock_git_manager: Magic
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "override123"
@@ -420,7 +442,8 @@ async def test_git_commit_tool_execute_with_valid_commit_type(mock_git_manager: 
         skip_paths=frozenset(),
         issue_number=999,
     )
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCommitOutput)
     assert result.success is True
     assert result.commit_hash == "case123"
@@ -468,8 +491,9 @@ async def test_git_commit_cycle_number_required_auto_detect_path(
     params = GitCommitInput(message="commit without cycle")
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
-    assert "cycle_number" in result.content[0]["text"].lower()
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is False
+    assert "cycle_number" in result.error_message.lower()
     mock_git_manager.commit_with_scope.assert_not_called()
 
 
@@ -501,8 +525,9 @@ async def test_git_commit_cycle_number_required_explicit_path(
     params = GitCommitInput(workflow_phase="implementation", message="explicit no cycle")
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
-    assert "cycle_number" in result.content[0]["text"].lower()
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is False
+    assert "cycle_number" in result.error_message.lower()
     mock_git_manager.commit_with_scope.assert_not_called()
 
 
@@ -535,7 +560,8 @@ async def test_git_commit_integration_workflow_phases() -> None:
     params1 = GitCommitInput(message="investigate alternatives", workflow_phase="research")
     result1 = await tool.execute(params1, NoteContext())
 
-    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    from mcp_server.schemas.tool_outputs import GitCommitOutput  # noqa: PLC0415
+
     assert isinstance(result1, GitCommitOutput)
     assert result1.success is True
     assert result1.commit_hash == "integration123"
@@ -595,7 +621,8 @@ async def test_git_checkout_tool(mock_git_manager: MagicMock) -> None:
 
     mock_git_manager.checkout.assert_called_once_with("main")
     mock_engine.get_state.assert_called_once_with("main")
-    from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+    from mcp_server.schemas.tool_outputs import GitCheckoutOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCheckoutOutput)
     assert result.success is True
     assert result.branch == "main"
@@ -622,7 +649,8 @@ async def test_git_checkout_tool_displays_parent_branch(mock_git_manager: MagicM
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.checkout.assert_called_once_with("feature/79-test")
-    from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+    from mcp_server.schemas.tool_outputs import GitCheckoutOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCheckoutOutput)
     assert result.success is True
     assert result.branch == "feature/79-test"
@@ -650,7 +678,8 @@ async def test_git_checkout_tool_no_parent_branch(mock_git_manager: MagicMock) -
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.checkout.assert_called_once_with("main")
-    from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+    from mcp_server.schemas.tool_outputs import GitCheckoutOutput  # noqa: PLC0415
+
     assert isinstance(result, GitCheckoutOutput)
     assert result.success is True
     assert result.branch == "main"
@@ -668,7 +697,8 @@ async def test_git_push_tool(mock_git_manager: MagicMock) -> None:
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.push.assert_called_once_with(set_upstream=True)
-    from mcp_server.schemas.tool_outputs import GitPushOutput
+    from mcp_server.schemas.tool_outputs import GitPushOutput  # noqa: PLC0415
+
     assert isinstance(result, GitPushOutput)
     assert result.success is True
     assert result.branch == "feature/foo"
@@ -685,7 +715,8 @@ async def test_git_merge_tool(mock_git_manager: MagicMock) -> None:
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.merge.assert_called_once_with("feature/foo", ANY)
-    from mcp_server.schemas.tool_outputs import GitMergeOutput
+    from mcp_server.schemas.tool_outputs import GitMergeOutput  # noqa: PLC0415
+
     assert isinstance(result, GitMergeOutput)
     assert result.success is True
     assert result.source_branch == "feature/foo"
@@ -705,7 +736,8 @@ async def test_git_delete_branch_tool(mock_git_manager: MagicMock) -> None:
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=True, mode="both"
     )
-    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput
+    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput  # noqa: PLC0415
+
     assert isinstance(result, GitDeleteBranchOutput)
     assert result.success is True
     assert result.branch == "feature/old"
@@ -727,7 +759,8 @@ async def test_git_delete_branch_mode_local(mock_git_manager: MagicMock) -> None
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=False, mode="local"
     )
-    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput
+    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput  # noqa: PLC0415
+
     assert isinstance(result, GitDeleteBranchOutput)
     assert result.success is True
     assert result.branch == "feature/old"
@@ -749,7 +782,8 @@ async def test_git_delete_branch_mode_remote(mock_git_manager: MagicMock) -> Non
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=False, mode="remote"
     )
-    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput
+    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput  # noqa: PLC0415
+
     assert isinstance(result, GitDeleteBranchOutput)
     assert result.success is True
     assert result.branch == "feature/old"
@@ -763,7 +797,8 @@ async def test_git_stash_tool(mock_git_manager: MagicMock) -> None:
     tool = GitStashTool(manager=mock_git_manager)
 
     # Push
-    from mcp_server.schemas.tool_outputs import GitStashOutput
+    from mcp_server.schemas.tool_outputs import GitStashOutput  # noqa: PLC0415
+
     # Push
     result = await tool.execute(GitStashInput(action="push", message="wip"), NoteContext())
     mock_git_manager.stash.assert_called_with(message="wip", include_untracked=False)
@@ -799,7 +834,8 @@ async def test_git_restore_tool(mock_git_manager: MagicMock) -> None:
     mock_git_manager.restore.assert_called_once_with(
         files=["foo.py", "bar.py"], note_context=ANY, source="HEAD"
     )
-    from mcp_server.schemas.tool_outputs import GitRestoreOutput
+    from mcp_server.schemas.tool_outputs import GitRestoreOutput  # noqa: PLC0415
+
     assert isinstance(result, GitRestoreOutput)
     assert result.success is True
     assert result.files == ["foo.py", "bar.py"]
@@ -931,7 +967,9 @@ async def test_git_commit_non_tdd_allows_no_cycle_number(mock_git_manager: Magic
     result = await tool.execute(params, NoteContext())
 
     # Should succeed
-    assert "Committed: abc1234" in result.content[0]["text"]
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "abc1234"
     mock_git_manager.commit_with_scope.assert_called_once_with(
         workflow_phase="research",
         message="research alternatives",
@@ -964,7 +1002,9 @@ async def test_git_commit_implementation_with_cycle_number_succeeds(
     result = await tool.execute(params, NoteContext())
 
     # Should succeed
-    assert "Committed: def5678" in result.content[0]["text"]
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "def5678"
     mock_git_manager.commit_with_scope.assert_called_once_with(
         workflow_phase="implementation",
         message="add schema validation",
@@ -1002,8 +1042,9 @@ async def test_git_add_or_commit_raises_on_phase_mismatch(mock_git_manager: Magi
     )
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
-    assert "phase_mismatch" in result.content[0]["text"]
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is False
+    assert "phase_mismatch" in result.error_message
 
 
 @pytest.mark.asyncio
@@ -1027,8 +1068,9 @@ async def test_git_add_or_commit_raises_on_cycle_mismatch(mock_git_manager: Magi
     )
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
-    assert "phase_mismatch" in result.content[0]["text"]
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is False
+    assert "phase_mismatch" in result.error_message
 
 
 @pytest.mark.asyncio
@@ -1053,7 +1095,9 @@ async def test_git_add_or_commit_passes_when_phase_and_cycle_match(
     )
     result = await tool.execute(params, NoteContext())
 
-    assert "Committed: abc1234" in result.content[0]["text"]
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "abc1234"
 
 
 @pytest.mark.asyncio
@@ -1070,8 +1114,10 @@ async def test_git_commit_no_state_json_returns_error(mock_git_manager: MagicMoc
 
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
-    error_text = result.content[0]["text"]
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is False
+    error_text = result.error_message
+    assert error_text is not None
     assert "workflow_phase" in error_text
     assert "main" in error_text
 
@@ -1095,7 +1141,8 @@ class TestGitCommitBranchMismatch:
 
         result = await tool.execute(params, NoteContext())
 
-        assert result.is_error
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is False
 
     @pytest.mark.asyncio
     async def test_commit_type_resolver_returns_none_on_branch_mismatch(
@@ -1120,8 +1167,9 @@ class TestGitCommitBranchMismatch:
 
         result = await tool.execute(params, NoteContext())
 
-        assert not result.is_error
-        assert "Committed: abc1234" in result.content[0]["text"]
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is True
+        assert result.commit_hash == "abc1234"
 
     @pytest.mark.asyncio
     async def test_get_parent_branch_handles_branch_mismatch(
@@ -1173,7 +1221,8 @@ class TestGitCommitToolRecordSubPhase:
         )
         result = await tool.execute(params, NoteContext())
 
-        assert not result.is_error
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is True
         mock_state_engine.record_sub_phase.assert_called_once_with("feature/298-test", "red")
 
     @pytest.mark.asyncio
@@ -1192,7 +1241,8 @@ class TestGitCommitToolRecordSubPhase:
         )
         result = await tool.execute(params, NoteContext())
 
-        assert not result.is_error
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is True
         mock_state_engine.record_sub_phase.assert_called_once_with("feature/298-test", None)
 
     @pytest.mark.asyncio
@@ -1210,7 +1260,8 @@ class TestGitCommitToolRecordSubPhase:
         )
         result = await tool.execute(params, NoteContext())
 
-        assert not result.is_error  # must succeed without engine
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is True
 
 
 # C_228.2 RED — issue_number wiring in GitCommitTool (issue #228)
@@ -1250,7 +1301,8 @@ async def test_commit_tool_auto_detect_includes_suffix(mock_git_manager: MagicMo
         skip_paths=frozenset(),
         issue_number=42,
     )
-    assert not result.is_error
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
 
 
 @pytest.mark.asyncio
@@ -1283,7 +1335,8 @@ async def test_commit_tool_explicit_phase_uses_git_config(mock_git_manager: Magi
         skip_paths=frozenset(),
         issue_number=42,
     )
-    assert not result.is_error
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
 
 
 @pytest.mark.asyncio
@@ -1303,7 +1356,8 @@ async def test_commit_tool_auto_detect_mismatch_returns_error(mock_git_manager: 
 
     result = await tool.execute(params, NoteContext())
 
-    assert result.is_error
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is False
     mock_git_manager.commit_with_scope.assert_not_called()
 
 
@@ -1318,7 +1372,8 @@ async def test_git_checkout_resets_context_loaded_on_success(
     params = GitCheckoutInput(branch="feature/268-test")
     result = await tool.execute(params, NoteContext())
 
-    assert not result.is_error
+    assert isinstance(result, GitCheckoutOutput)
+    assert result.success is True
     writer.set_context_loaded.assert_called_once_with("feature/268-test", value=False)
 
 
@@ -1332,7 +1387,8 @@ async def test_git_checkout_no_reset_when_writer_none(
     params = GitCheckoutInput(branch="feature/268-test")
     result = await tool.execute(params, NoteContext())
 
-    assert not result.is_error
+    assert isinstance(result, GitCheckoutOutput)
+    assert result.success is True
 
 
 # ---------------------------------------------------------------------------
