@@ -93,8 +93,9 @@ class TestTransitionPhaseToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Lock timeout on branch 'feature/42'" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Lock timeout on branch 'feature/42'" in result.error_message
 
     @pytest.mark.asyncio
     async def test_transition_phase_emits_recovery_note_on_conflict(
@@ -151,8 +152,9 @@ class TestForcePhaseTransitionToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Mutation conflict on 'feature/42'" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Mutation conflict on 'feature/42'" in result.error_message
 
     @pytest.mark.asyncio
     async def test_force_transition_emits_recovery_note_on_conflict(

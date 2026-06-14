@@ -82,7 +82,7 @@ from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.admin_tools import RestartServerTool
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import BaseTool, ITool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.discovery_tools import GetWorkContextTool, SearchDocumentationTool
 from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
@@ -447,13 +447,13 @@ class ServerBootstrapper:
             response_cache=response_cache,
         )
 
-    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[BaseTool]:
+    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[BaseTool | ITool]:
         """Compose the list of available tools."""
         settings = self._settings
 
         _branch_validated_reader = BranchValidatedStateReader(inner=managers.state_repository)
 
-        tools: list[BaseTool] = [
+        tools: list[BaseTool | ITool] = [
             # Git tools
             CreateBranchTool(manager=managers.git_manager),
             GitStatusTool(manager=managers.git_manager),
@@ -648,7 +648,7 @@ class ServerBootstrapper:
                 ]
             )
 
-        tools.append(AutoFixTool(qa_manager=managers.qa_manager, cache=managers.response_cache))
+        tools.append(AutoFixTool(qa_manager=managers.qa_manager))
 
         factory = ToolFactory(response_cache=managers.response_cache)
         return [factory.build_tool(t) for t in tools]

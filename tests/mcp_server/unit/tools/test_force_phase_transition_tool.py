@@ -20,6 +20,7 @@ from mcp_server.core.interfaces import GateReport
 from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionInput,
     ForcePhaseTransitionTool,
@@ -155,10 +156,10 @@ class TestForcePhaseTransitionTool:
         result = await tool.execute(params, NoteContext())
 
         # Check result
-        assert "✅" in result.content[0]["text"]
-        assert feature_phases[0] in result.content[0]["text"]  # discovery
-        assert feature_phases[2] in result.content[0]["text"]  # design
-        assert "forced" in result.content[0]["text"].lower()
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is True
+        assert result.branch == initialized_branch
+        assert result.to_phase == feature_phases[2]
 
         # Verify state updated
         state = phase_engine.get_state(initialized_branch)
@@ -234,8 +235,8 @@ class TestForcePhaseTransitionTool:
         result = await tool.execute(params, NoteContext())
 
         # Check error message
-        assert "❌" in result.content[0]["text"]
-        assert result.is_error is True
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is False
 
     @pytest.mark.asyncio
     async def test_force_phase_transition_tool_allows_any_transition(
@@ -264,7 +265,8 @@ class TestForcePhaseTransitionTool:
         result = await tool.execute(params, NoteContext())
 
         # Check success
-        assert "✅" in result.content[0]["text"]
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is True
         assert phase_engine.get_current_phase(initialized_branch) == feature_phases[0]  # discovery
 
     def test_force_phase_transition_tool_input_model_validation(
@@ -369,11 +371,9 @@ phases:
 
         result = await tool.execute(params, NoteContext())
 
-        text = result.content[0]["text"]
-        assert "✅" in text
-        assert "⚠️" in text
-        assert "skipped" in text.lower()
-        assert "planning_deliverables" in text
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is True
+        assert "planning_deliverables" in result.skipped_gates
 
     @pytest.mark.asyncio
     async def test_force_transition_tool_response_no_warning_when_no_gates(
@@ -403,9 +403,9 @@ phases:
 
         result = await tool.execute(params, NoteContext())
 
-        text = result.content[0]["text"]
-        assert "✅" in text
-        assert "⚠️" not in text
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is True
+        assert len(result.skipped_gates) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -482,14 +482,10 @@ phases:
         )
 
         result = await tool.execute(params, NoteContext())
-        text = result.content[0]["text"]
 
-        assert "ACTION REQUIRED" in text, f"Expected ACTION REQUIRED in response: {text}"
-        assert "✅" in text
-        # Blocking warning must appear BEFORE ✅
-        assert text.index("ACTION REQUIRED") < text.index("✅"), (
-            f"ACTION REQUIRED must precede ✅, got:\n{text}"
-        )
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is True
+        assert "planning_deliverables" in result.skipped_gates
 
     @pytest.mark.asyncio
     async def test_force_phase_transition_response_passing_gate_appears_after_success(
@@ -518,16 +514,10 @@ phases:
         )
 
         result = await tool.execute(params, NoteContext())
-        text = result.content[0]["text"]
 
-        assert "✅" in text
-        # planning_deliverables key should appear as informational AFTER ✅
-        assert "planning_deliverables" in text, (
-            f"Expected gate key in informational section: {text}"
-        )
-        assert text.index("✅") < text.index("planning_deliverables"), (
-            f"Informational gate must follow ✅, got:\n{text}"
-        )
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is True
+        assert "planning_deliverables" in result.passing_gates
 
     @pytest.mark.asyncio
     async def test_force_phase_transition_response_no_gates_no_warning(
@@ -573,8 +563,8 @@ phases:
         )
 
         result = await tool.execute(params, NoteContext())
-        text = result.content[0]["text"]
 
-        assert "✅" in text
-        assert "ACTION REQUIRED" not in text, f"Unexpected ACTION REQUIRED: {text}"
-        assert "⚠️" not in text, f"Unexpected ⚠️: {text}"
+        assert isinstance(result, ForcePhaseTransitionOutput)
+        assert result.success is True
+        assert len(result.skipped_gates) == 0
+        assert len(result.passing_gates) == 0

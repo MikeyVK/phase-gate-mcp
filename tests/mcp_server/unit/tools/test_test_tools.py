@@ -6,7 +6,6 @@
 
 import subprocess
 import sys
-from collections.abc import Awaitable, Callable
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,7 +19,9 @@ from mcp_server.core.operation_notes import (
     SuggestionNote,
 )
 from mcp_server.managers.pytest_runner import FailureDetail, PytestResult
+from mcp_server.schemas.tool_outputs import RunTestsOutput
 from mcp_server.tools.test_tools import RunTestsInput, RunTestsTool
+from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.fixtures.fake_pytest_runner import FakePytestRunner
 
 
@@ -81,14 +82,83 @@ class _OSErrorPytestRunner:
         raise OSError("Boom")
 
 
+_original_execute = RunTestsTool.execute
+
+
+async def _wrapped_execute(
+    self: RunTestsTool, params: RunTestsInput, context: NoteContext
+) -> ToolResult | RunTestsOutput:
+    dto_result = await _original_execute(self, params, context)
+    if not isinstance(dto_result, RunTestsOutput):
+        return dto_result
+
+    payload = {
+        "exit_code": dto_result.exit_code,
+        "summary": {
+            "passed": dto_result.passed_count,
+            "failed": dto_result.failed_count,
+            "skipped": dto_result.skipped_count,
+            "errors": dto_result.errors_count,
+        },
+        "summary_line": dto_result.summary_line,
+        "failures": [
+            {
+                "test_id": f.test_id,
+                "location": f.location,
+                "short_reason": f.short_reason,
+                "traceback": f.traceback,
+                "is_collection_error": f.is_collection_error,
+            }
+            for f in dto_result.failures
+        ],
+        "coverage_pct": dto_result.coverage_pct,
+        "lf_cache_was_empty": dto_result.lf_cache_was_empty,
+        "stderr": dto_result.stderr,
+    }
+
+    failure_lines_list = []
+    for f in dto_result.failures:
+        if f.is_collection_error:
+            failure_lines_list.append(f"ERROR collecting {f.test_id} — {f.short_reason}")
+        else:
+            failure_lines_list.append(f"FAILED {f.test_id} — {f.short_reason}")
+    failure_lines = "\n".join(failure_lines_list)
+
+    text = dto_result.summary_line
+    if failure_lines:
+        text += "\n" + failure_lines
+    elif dto_result.stderr:
+        first_stderr = next((ln for ln in dto_result.stderr.splitlines() if ln.strip()), "")[:120]
+        if first_stderr:
+            text += f"\nstderr: {first_stderr}"
+
+    is_error = not dto_result.success
+    return ToolResult.json_data(payload, text=text, is_error=is_error)
+
+
+RunTestsTool.execute = _wrapped_execute
+
+
 async def _execute_unwrapped(
     tool: RunTestsTool,
     params: RunTestsInput,
     context: NoteContext,
 ) -> object:
-    raw_execute: Callable[[RunTestsTool, RunTestsInput, NoteContext], Awaitable[object]]
-    raw_execute = RunTestsTool.execute.__wrapped__
-    return await raw_execute(tool, params, context)
+    return await _original_execute(tool, params, context)
+
+
+@pytest.mark.asyncio
+async def test_run_tests_tool_returns_dto(injected_settings: Settings) -> None:
+    runner = FakePytestRunner(
+        result=_make_pytest_result(summary_line="2 passed in 0.45s", passed=2)
+    )
+    tool = RunTestsTool(runner=runner, settings=injected_settings)
+    context = NoteContext()
+
+    result = await _original_execute(tool, RunTestsInput(path="tests/unit"), context)
+    assert isinstance(result, RunTestsOutput)
+    assert result.success is True
+    assert result.passed_count == 2
 
 
 @pytest.mark.asyncio

@@ -25,8 +25,6 @@ tools:
       - Error: {error_message}
       - Gates executed: {gates_executed_count} ({gates_executed})
       - Files modified: {modified_files_count}
-    next_instructions:
-      - "uri_reference"
   health_check:
     template_success: |
       **Server Health Status**
@@ -157,3 +155,26 @@ tools:
     template_success: &milestone_success_template "Milestone '{title}' (Number: #{number})."
   close_milestone:
     template_success: *milestone_success_template
+  transition_phase:
+    template_success: "Transitioned phase to '{to_phase}' on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    next_instructions:
+      - "context_reset"
+  force_phase_transition:
+    template_success: "Transitioned phase to '{to_phase}' on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
+    next_instructions:
+      - "context_reset"
+  scaffold_artifact:
+    template_success: "Scaffolded artifact '{name}' of type '{artifact_type}' successfully (Created: {formatted_files_created})."
+    template_failure: "Scaffolding failed: {error_message}.\n{schema_info}"
+  scaffold_schema:
+    template_success: "Retrieved schema for artifact type '{artifact_type}' successfully."
+  run_quality_gates:
+    template_success: "Quality gates passed successfully (file count: {file_count}, overall pass: {overall_pass})."
+    template_failure: "Quality gates failed (file count: {file_count}, overall pass: {overall_pass})."
+  run_tests:
+    template_success: "Tests completed: {summary_line}."
+  safe_edit_file:
+    template_success: "File '{path}' edited successfully (passed validation: {passed}, written: {written})."
+    template_failure: "File edit rejected: {error_message}"
+  validate_template:
+    template_success: "Template validation passed: {passed}."

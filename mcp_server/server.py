@@ -67,7 +67,7 @@ class MCPServer:
         settings: Settings,
         configs: ConfigLayer,
         managers: ManagerGraph,
-        tools: list[BaseTool],
+        tools: list[BaseTool | ITool],
         resources: list[BaseResource],
         presenter: TextPresenter | None = None,
     ) -> None:
@@ -106,7 +106,7 @@ class MCPServer:
         self.setup_handlers()
 
     def _validate_tool_arguments(
-        self, tool: BaseTool, arguments: dict[str, Any] | None, call_id: str, name: str
+        self, tool: BaseTool | ITool, arguments: dict[str, Any] | None, call_id: str, name: str
     ) -> BaseModel | dict[str, Any] | ToolResult:
         """Validate tool arguments against args_model.
 
@@ -184,7 +184,7 @@ class MCPServer:
 
     def _run_tool_enforcement(
         self,
-        tool: BaseTool,
+        tool: BaseTool | ITool,
         timing: str,
         params: BaseModel | dict[str, Any],
         note_context: NoteContext,

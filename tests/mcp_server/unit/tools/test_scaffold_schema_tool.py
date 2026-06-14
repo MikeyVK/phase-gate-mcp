@@ -10,11 +10,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import ScaffoldSchemaOutput
 from mcp_server.tools.scaffold_schema_tool import (
     ScaffoldSchemaInput,
     ScaffoldSchemaTool,
 )
-from tests.mcp_server.test_support import assert_structured_result
 
 
 class TestScaffoldSchemaTool:
@@ -85,14 +85,14 @@ class TestScaffoldSchemaTool:
 
         mock_manager.get_context_schema.assert_called_once_with("research")
 
-        assert_structured_result(
-            result,
-            {
-                "type": "object",
-                "properties": {"title": {"type": "string"}, "problem": {"type": "string"}},
-                "required": ["title"],
-            },
-        )
+        assert isinstance(result, ScaffoldSchemaOutput)
+        assert result.success is True
+        assert result.artifact_type == "research"
+        assert result.schema_data == {
+            "type": "object",
+            "properties": {"title": {"type": "string"}, "problem": {"type": "string"}},
+            "required": ["title"],
+        }
 
     @pytest.mark.asyncio
     async def test_returns_schema_for_generic_doc(
@@ -112,4 +112,7 @@ class TestScaffoldSchemaTool:
         params = ScaffoldSchemaInput(artifact_type="generic_doc")
         result = await tool.execute(params, NoteContext())
 
-        assert_structured_result(result, expected_schema)
+        assert isinstance(result, ScaffoldSchemaOutput)
+        assert result.success is True
+        assert result.artifact_type == "generic_doc"
+        assert result.schema_data == expected_schema

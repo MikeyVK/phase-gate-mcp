@@ -133,6 +133,7 @@ class TestTransitionPhaseTool:
         # Assert
         assert isinstance(result, PhaseTransitionOutput)
         assert result.success is False
+        assert result.error_message is not None
         assert "Invalid transition" in result.error_message
 
     @pytest.mark.asyncio
@@ -197,9 +198,8 @@ class TestTransitionPhaseTool:
         state = phase_engine.get_state(initialized_branch)
         transition = state.transitions[0]
         assert transition["human_approval"] == approval_message
-    async def test_transition_phase_tool_input_model_validation(
-        self, feature_phases: list[str]
-    ) -> None:
+
+    def test_transition_phase_tool_input_model_validation(self, feature_phases: list[str]) -> None:
         """Test that TransitionPhaseInput model validates correctly."""
         # Test valid input
         valid_input = TransitionPhaseInput(branch="feature/42-test", to_phase=feature_phases[1])

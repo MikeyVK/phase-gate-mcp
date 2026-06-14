@@ -6,9 +6,8 @@ import asyncio
 import os
 import subprocess
 import sys
-from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -16,8 +15,9 @@ from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IPytestRunner
 from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import RunTestsOutput, TestFailureDTO
+from mcp_server.tools.base import ITool
+from mcp_server.utils.schema_utils import resolve_schema_refs
 
 if TYPE_CHECKING:
     from mcp_server.managers.pytest_runner import PytestResult
@@ -112,53 +112,20 @@ def _find_timeout_expired(exc: BaseException) -> subprocess.TimeoutExpired | Non
     return None
 
 
-def _to_tool_result(result: PytestResult) -> ToolResult:
-    """Convert the typed runner result into the MCP ToolResult payload."""
-    stderr_tail = "\n".join(result.stderr.splitlines()[-50:]) if result.stderr else ""
-    payload = {
-        "exit_code": result.exit_code,
-        "summary": {
-            "passed": result.passed,
-            "failed": result.failed,
-            "skipped": result.skipped,
-            "errors": result.errors,
-        },
-        "summary_line": result.summary_line,
-        "failures": [asdict(failure) for failure in result.failures],
-        "coverage_pct": result.coverage_pct,
-        "lf_cache_was_empty": result.lf_cache_was_empty,
-        "stderr": stderr_tail,
-    }
-
-    failure_lines_list = []
-    for f in result.failures:
-        if getattr(f, "is_collection_error", False):
-            failure_lines_list.append(f"ERROR collecting {f.test_id} \u2014 {f.short_reason}")
-        else:
-            failure_lines_list.append(f"FAILED {f.test_id} \u2014 {f.short_reason}")
-    failure_lines = "\n".join(failure_lines_list)
-
-    if result.is_error:  # exit 2 / 3 / 4
-        first_stderr = next((ln for ln in result.stderr.splitlines() if ln.strip()), "")[:120]
-        text = result.summary_line
-        if failure_lines:
-            text += "\n" + failure_lines
-        elif first_stderr:
-            text += f"\nstderr: {first_stderr}"
-        return ToolResult.json_data(payload, text=text, is_error=True)
-    # exit 0 / 1 / 5
-    text = result.summary_line
-    if failure_lines:
-        text += "\n" + failure_lines
-    return ToolResult.json_data(payload, text=text, is_error=False)
-
-
-class RunTestsTool(BaseTool):
+class RunTestsTool(ITool):
     """Thin MCP adapter for pytest execution via an injected runner."""
 
-    name = "run_tests"
-    description = "Run tests using pytest"
-    args_model = RunTestsInput
+    @property
+    def name(self) -> str:
+        return "run_tests"
+
+    @property
+    def description(self) -> str:
+        return "Run tests using pytest"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return RunTestsInput
 
     DEFAULT_TIMEOUT = 300
 
@@ -168,12 +135,21 @@ class RunTestsTool(BaseTool):
         workspace_root: str | os.PathLike[str] | None = None,
         settings: Settings | None = None,
     ) -> None:
-        super().__init__()
         self._runner = runner
         base_workspace = workspace_root or (
             settings.server.workspace_root if settings else Path.cwd()
         )
         self._workspace_root = str(base_workspace)
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        """Get the input schema for the tool."""
+        if self.args_model:
+            return resolve_schema_refs(self.args_model.model_json_schema())
+        return {
+            "type": "object",
+            "properties": {},
+        }
 
     def _build_cmd(self, params: RunTestsInput) -> list[str]:
         """Build the pytest command from input parameters."""
@@ -196,7 +172,7 @@ class RunTestsTool(BaseTool):
             )
         return cmd
 
-    async def execute(self, params: RunTestsInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: RunTestsInput, context: NoteContext) -> RunTestsOutput:
         """Execute the tool."""
         cmd = self._build_cmd(params)
         effective_timeout = params.timeout or self.DEFAULT_TIMEOUT
@@ -243,4 +219,30 @@ class RunTestsTool(BaseTool):
         if result.should_raise:
             raise ExecutionError(f"pytest exited with returncode {result.exit_code}")
 
-        return _to_tool_result(result)
+        failures_list = []
+        for f in result.failures:
+            failures_list.append(
+                TestFailureDTO(
+                    test_id=f.test_id,
+                    location=f.location,
+                    short_reason=f.short_reason,
+                    traceback=f.traceback,
+                    is_collection_error=f.is_collection_error,
+                )
+            )
+
+        stderr_tail = "\n".join(result.stderr.splitlines()[-50:]) if result.stderr else ""
+
+        return RunTestsOutput(
+            success=not result.is_error,
+            exit_code=result.exit_code,
+            passed_count=result.passed,
+            failed_count=result.failed,
+            skipped_count=result.skipped,
+            errors_count=result.errors,
+            summary_line=result.summary_line,
+            failures=failures_list,
+            coverage_pct=result.coverage_pct,
+            lf_cache_was_empty=result.lf_cache_was_empty,
+            stderr=stderr_tail,
+        )

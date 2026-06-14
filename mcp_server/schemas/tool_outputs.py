@@ -6,6 +6,7 @@
 """
 
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,7 +36,6 @@ class AutoFixOutput(BaseToolOutput):
         default_factory=list, description="List of quality gates executed"
     )
     gates_executed_count: int = Field(default=0, description="Count of executed gates")
-    run_id: str | None = Field(default=None, description="Cache run ID for the tool execution")
 
 
 class HealthStatus(StrEnum):
@@ -451,3 +451,112 @@ class MilestoneOutput(GitHubObjectOutput):
     """Output for CreateMilestoneTool and CloseMilestoneTool."""
 
     state: str
+
+
+class PhaseTransitionOutput(GateTransitionOutput):
+    """Output for TransitionPhaseTool."""
+
+    from_phase: str
+    to_phase: str
+    skipped_gates_warning: str = ""
+    passing_gates_info: str = ""
+
+
+class ForcePhaseTransitionOutput(PhaseTransitionOutput):
+    """Output for ForcePhaseTransitionTool."""
+
+    skip_reason: str
+    human_approval: str
+
+
+class ScaffoldArtifactOutput(BaseToolOutput):
+    """Output for ScaffoldArtifactTool."""
+
+    artifact_type: str
+    name: str
+    files_created: list[str] = Field(default_factory=list)
+    formatted_files_created: str = ""
+    schema_info: str = ""
+    validation_schema: dict[str, Any] | None = None
+    missing_fields: list[str] = Field(default_factory=list)
+    provided_fields: list[str] = Field(default_factory=list)
+
+
+class ScaffoldSchemaOutput(BaseToolOutput):
+    """Output for ScaffoldSchemaTool."""
+
+    artifact_type: str
+    schema_data: dict[str, Any]
+
+
+class GateResultDTO(BaseModel):
+    """Single gate run result."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    name: str
+    passed: bool
+    status: str
+    score: str | None = None
+
+
+class RunQualityGatesOutput(BaseToolOutput):
+    """Output for RunQualityGatesTool."""
+
+    overall_pass: bool
+    scope: str
+    file_count: int
+    gates: list[GateResultDTO] = Field(default_factory=list)
+
+
+class TestFailureDTO(BaseModel):
+    """DTO for a single test failure."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    test_id: str
+    location: str
+    short_reason: str
+    traceback: str = ""
+    is_collection_error: bool = False
+
+
+class RunTestsOutput(BaseToolOutput):
+    """Output for RunTestsTool."""
+
+    exit_code: int
+    passed_count: int
+    failed_count: int
+    skipped_count: int
+    errors_count: int
+    summary_line: str
+    failures: list[TestFailureDTO] = Field(default_factory=list)
+    coverage_pct: float | None = None
+    lf_cache_was_empty: bool = False
+    stderr: str = ""
+
+
+class SafeEditOutput(BaseToolOutput):
+    """Output for SafeEditTool."""
+
+    path: str
+    passed: bool
+    issues: str | None = None
+    mode: str
+    written: bool
+    diff: str | None = None
+    has_diff: bool = False
+
+
+class TemplateValidationErrorDTO(BaseModel):
+    """Single template validation error."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    severity: str
+    message: str
+
+
+class TemplateValidationOutput(BaseToolOutput):
+    """Output for TemplateValidationTool."""
+
+    passed: bool
+    errors_count: int
+    errors: list[TemplateValidationErrorDTO] = Field(default_factory=list)

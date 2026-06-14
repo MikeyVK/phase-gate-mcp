@@ -11,11 +11,11 @@ import pytest
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import ScaffoldArtifactOutput
 from mcp_server.tools.scaffold_artifact import (
     ScaffoldArtifactInput,
     ScaffoldArtifactTool,
 )
-from tests.mcp_server.test_support import assert_structured_result
 
 
 class TestScaffoldArtifactTool:
@@ -53,6 +53,7 @@ class TestScaffoldArtifactTool:
         assert input_data.name == "User"
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_scaffolds_code_artifact(
         self, tool: ScaffoldArtifactTool, mock_manager: MagicMock
     ) -> None:
@@ -69,14 +70,10 @@ class TestScaffoldArtifactTool:
         )
 
         # Verify result
-
-        assert_structured_result(
-            result,
-            {
-                "artifact_type": "dto",
-                "artifact_path": "mcp_server/dtos/UserDTO.py",
-            },
-        )
+        assert isinstance(result, ScaffoldArtifactOutput)
+        assert result.success is True
+        assert result.artifact_type == "dto"
+        assert result.files_created == ["mcp_server/dtos/UserDTO.py"]
 
     @pytest.mark.asyncio
     async def test_scaffolds_document_artifact(
@@ -105,14 +102,10 @@ class TestScaffoldArtifactTool:
         )
 
         # Verify result
-
-        assert_structured_result(
-            result,
-            {
-                "artifact_type": "design",
-                "artifact_path": "docs/development/design.md",
-            },
-        )
+        assert isinstance(result, ScaffoldArtifactOutput)
+        assert result.success is True
+        assert result.artifact_type == "design"
+        assert result.files_created == ["docs/development/design.md"]
 
     def test_manager_requires_explicit_di(self) -> None:
         """Should require explicit manager dependency injection."""
@@ -136,12 +129,10 @@ class TestScaffoldArtifactTool:
 
         result = await tool.execute(input_data, NoteContext())
 
-        assert result.is_error
-        assert result.error_code == "ERR_VALIDATION"
-
-        # Check message in content
-        text = result.content[0]["text"]
-        assert "Invalid artifact type" in text
+        assert isinstance(result, ScaffoldArtifactOutput)
+        assert result.success is False
+        assert result.error_message is not None
+        assert "Invalid artifact type" in result.error_message
 
     @pytest.mark.asyncio
     async def test_config_error_returns_error_result(
@@ -157,10 +148,10 @@ class TestScaffoldArtifactTool:
 
         result = await tool.execute(input_data, NoteContext())
 
-        assert result.is_error
-        text = result.content[0]["text"]
-        assert "No valid directory" in text
-        assert "project_structure.yaml" in text
+        assert isinstance(result, ScaffoldArtifactOutput)
+        assert result.success is False
+        assert result.error_message is not None
+        assert "No valid directory" in result.error_message
 
     @pytest.mark.asyncio
     async def test_context_dict_unpacked_to_kwargs(
@@ -198,11 +189,6 @@ class TestScaffoldArtifactTool:
 
         result = await tool.execute(input_data, NoteContext())
 
-        assert_structured_result(
-            result,
-            {
-                "artifact_type": "dto",
-                "artifact_path": "mcp_server/dtos/UserDTO.py",
-            },
-        )
+        assert isinstance(result, ScaffoldArtifactOutput)
+        assert result.success is True
         mock_manager.scaffold_artifact.assert_called_once()
