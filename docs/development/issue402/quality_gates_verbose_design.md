@@ -1,10 +1,10 @@
 <!-- docs\development\issue402\quality_gates_verbose_design.md -->
-<!-- template=design version=5827e841 created=2026-06-14T21:43Z updated=2026-06-14T21:45Z -->
+<!-- template=design version=5827e841 created=2026-06-14T21:43Z updated=2026-06-15T00:05Z -->
 # Quality Gates Verbose Output Design
 
 **Status:** PRELIMINARY  
 **Version:** 1.0.0  
-**Last Updated:** 2026-06-14
+**Last Updated:** 2026-06-15
 
 ---
 
@@ -14,6 +14,8 @@
 
 The `run_quality_gates` tool runs quality gate checks (such as Ruff, Pyright, etc.) but does not expose the full verbose outputs (stdout/stderr) of failing checks. This makes debugging failed gates difficult and forces manual execution of these tools in a local terminal.
 
+Additionally, while attempting to scaffold this design document, a template/schema mismatch in the `design` artifact scaffolding system was discovered: `DesignContext` marked `options` and `key_decisions` as optional with a default of `None`, but the Jinja2 template iterated over them without checking, throwing a `TypeError` if they were omitted.
+
 ### 1.2. Requirements
 
 **Functional:**
@@ -22,6 +24,7 @@ The `run_quality_gates` tool runs quality gate checks (such as Ruff, Pyright, et
 - Ensure that the `QAManager` maps stdout and stderr of the underlying gate processes into the `details` field of the gate results only when `verbose` is True.
 - Ensure that the presentation template for `run_quality_gates` remains extremely minimal (similar to `run_tests`) and does not print the verbose gate details directly in the markdown response to the LLM to prevent context pollution; instead, all detailed output must be saved exclusively in the Resource Cache under the `run_id`.
 - When a gate fails and `verbose` is False, include a `RecoveryNote` instructing the caller to rerun the tool with `verbose=True` for specific failing files/scopes.
+- Fix the `design` document scaffolding mismatch by converting `options` and `key_decisions` to required strings in both the `DesignContext` schema and `design.md.jinja2` template. This aligns the schema constraints with the template rendering assumptions.
 
 **Non-Functional:**
 - Maintain full backward compatibility of existing tool inputs and output contracts.
@@ -47,7 +50,9 @@ The `run_quality_gates` tool runs quality gate checks (such as Ruff, Pyright, et
 
 **Decision:** Option B: Add `verbose: bool = False` to `RunQualityGatesInput`. Add a `details: str = ""` field to `GateResultDTO`. Store gate execution stdout and stderr in `details` when `verbose=True` and cache the resulting DTO as an MCP resource under `pgmcp://cache/runs/{run_id}`. Keep the markdown presenter output minimal and return a `RecoveryNote` on failures when `verbose=False`.
 
-**Rationale:** This mirrors the pattern successfully used for the `run_tests` tool. It adheres to the MVP separation of concerns by keeping presentation, data structure (DTO), and execution logic isolated, and uses the Resource Cache to handle verbose payloads safely without token bloat.
+In addition, update `DesignContext` to require `options` and `key_decisions` as `str` fields, and update `design.md.jinja2` to render them directly as strings.
+
+**Rationale:** This mirrors the pattern successfully used for the `run_tests` tool. It adheres to the MVP separation of concerns by keeping presentation, data structure (DTO), and execution logic isolated, and uses the Resource Cache to handle verbose payloads safely without token bloat. Changing the design template options to required strings matches the user's intent: it is more logical to describe options and decisions in free-form text or custom layouts rather than enforcing rigid list schemas that fail-fast or render empty headers.
 
 ### 3.1. Key Design Decisions
 
@@ -56,6 +61,7 @@ The `run_quality_gates` tool runs quality gate checks (such as Ruff, Pyright, et
 | Store verbose output in `details` field of `GateResultDTO` | Restricts the detail payload to the structured DTO, keeping the presenter output lightweight. |
 | Restrict details inclusion to `verbose=True` | Avoids wasting memory and cache storage when verbose details are not needed. |
 | Emit a `RecoveryNote` when gates fail and `verbose=False` | Directs the caller on how to rerun the tool to retrieve the full linter/checker output. |
+| Change `options` and `key_decisions` to required strings in `DesignContext` | Forces the caller to provide these sections, avoiding empty placeholder templates and allowing free-form markdown descriptions. |
 
 ### 3.2. Execution Flow
 
@@ -119,6 +125,9 @@ sequenceDiagram
 | [`mcp_server/tools/quality_tools.py`](file:///c:/temp/pgmcp/mcp_server/tools/quality_tools.py) | `RunQualityGatesTool.execute` | Pass `verbose=params.verbose` to `manager.run_quality_gates()`. If `verbose=False` and overall pass is False, produce a `RecoveryNote` suggesting to rerun with `verbose=True`. |
 | [`mcp_server/managers/qa_manager.py`](file:///c:/temp/pgmcp/mcp_server/managers/qa_manager.py) | `QAManager.run_quality_gates` | Update signature to accept `verbose: bool = False` and pass it to `_execute_gate`. |
 | [`mcp_server/managers/qa_manager.py`](file:///c:/temp/pgmcp/mcp_server/managers/qa_manager.py) | `QAManager._execute_gate` | Accept `verbose: bool = False` parameter. If `verbose` is True and the gate fails (or has output), populate the gate's `details` string with exit code, stdout, and stderr. Otherwise, keep `details` as `""`. |
+| [`mcp_server/schemas/contexts/design.py`](file:///c:/temp/pgmcp/mcp_server/schemas/contexts/design.py) | `DesignContext` | Change types of `options` and `key_decisions` from `list[dict[str, object]] | None` to required `str`. Add clear descriptions. |
+| [`mcp_server/scaffolding/templates/concrete/design.md.jinja2`](file:///c:/temp/pgmcp/mcp_server/scaffolding/templates/concrete/design.md.jinja2) | Template Content | Replace loops for `options` and `key_decisions` with direct string rendering `{{ options }}` and `{{ key_decisions }}`. |
+| [`tests/mcp_server/unit/schemas/test_doc_artifact_schema.py`](file:///c:/temp/pgmcp/tests/mcp_server/unit/schemas/test_doc_artifact_schema.py) | `TestDesignSchema._MINIMAL` | Add `options` and `key_decisions` string values to `_MINIMAL` so validation continues to pass. |
 
 ---
 
@@ -128,6 +137,7 @@ sequenceDiagram
 |-----------|-------------|------------------------|
 | [`tests/mcp_server/unit/tools/test_quality_tools.py`](file:///c:/temp/pgmcp/tests/mcp_server/unit/tools/test_quality_tools.py) | `RunQualityGatesInput` & `RunQualityGatesTool` | - Verify input validation accepts `verbose` parameter.<br/>- Verify `verbose` is propagated to `QAManager`.<br/>- Verify that `verbose=False` on failure produces a `RecoveryNote` suggesting to rerun with `verbose=True`. |
 | [`tests/mcp_server/unit/managers/test_qa_manager.py`](file:///c:/temp/pgmcp/tests/mcp_server/unit/managers/test_qa_manager.py) | `QAManager` | - Verify that `verbose=True` populates the `details` field with stdout/stderr upon failure.<br/>- Verify that `verbose=False` leaves the `details` field as `""`. |
+| [`tests/mcp_server/unit/schemas/test_doc_artifact_schema.py`](file:///c:/temp/pgmcp/tests/mcp_server/unit/schemas/test_doc_artifact_schema.py) | `DesignContext` | Verify that the minimal required fields for design scaffolding (now including `options` and `key_decisions` as strings) validate successfully. |
 
 ---
 
@@ -137,6 +147,7 @@ sequenceDiagram
 - Running quality gates with `verbose=True` must populate the `details` field in the cached DTO inside `pgmcp://cache/runs/{run_id}`.
 - Running quality gates with `verbose=False` must result in empty `details` fields in the DTO, but produce a `RecoveryNote` listing the suggested rerun command.
 - Presentation templates in `presentation.yaml` must not print the details to the LLM.
+- Scaffolding a design doc must successfully validate that `options` and `key_decisions` are strings, render them in the document, and pass e2e tests.
 
 ---
 
