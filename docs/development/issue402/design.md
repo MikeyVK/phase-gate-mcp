@@ -3,7 +3,7 @@
 # Design — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.6  
+**Version:** 1.7  
 **Last Updated:** 2026-06-14
 
 ---
@@ -73,7 +73,7 @@ MCP tools currently return plain text responses. We need to expose structured JS
 | **CQS Compliant Schemas** | Use `frozen=True` or `ConfigDict(frozen=True)` on all output DTOs to enforce immutability at the boundary. |
 | **Flattened Output DTOs** | To comply with historical precedents (`392140ce`, `5a708277`) and prevent LLM (Claude/Copilot) parsing/serialization errors, nested read models are completely flattened. Only flat primitive types, lists, and validated sub-DTOs (e.g. `PhaseDTO` and `LabelOutputModel`) are returned. |
 | **Unified Structured Path** | Migrate all tools (including `RestartServerTool` and `HealthCheckTool`) to `StructuredTool` returning simple DTOs (e.g. `RestartServerOutput` or `HealthCheckOutput`), eliminating exceptions and ensuring 100% architectural consistency. |
-| **Config-First Presentation** | Manage all text summaries and layouts in a centralized YAML file (`mcp_server/config/presentation.yaml`), including global `next_instruction_texts` and tool-specific list-based `next_instructions` (with the dynamic `uri_reference`), eliminating the `json_reference` entity. No hardcoded emojis or string literals in Python. |
+| **Config-First Presentation** | Manage all text summaries and layouts in a centralized YAML file (`.phase-gate/config/presentation.yaml`), including global `next_instruction_texts` and tool-specific list-based `next_instructions` (with the dynamic `uri_reference`), eliminating the `json_reference` entity. No hardcoded emojis or string literals in Python. |
 | **Config Loader Integration** | Load `presentation.yaml` via the existing `ConfigLoader` class at the composition root (`server.py` bootstrap), validating it into a `PresentationConfig` model and storing it in `ConfigLayer` (complying with ARCHITECTURE_PRINCIPLES.md §12). |
 | **Server-Level Presenter Routing** | Inject `TextPresenter` directly into `MCPServer`. The server intercepts `StructuredTool` execution in `handle_call_tool()`, formats it using the presenter, and creates the dual-payload `ToolResult`, keeping tool classes focused on logic (SRP) and avoiding modifying 28+ tool constructors. |
 | **Compatibility Bridge** | Allow `StructuredTool.execute_structured` to return *either* a `BaseModel` DTO *or* the legacy `tuple[dict[str, Any], str]` during the migration, ensuring the server and tests never break. This bridge will be completely removed in Cycle 9. |
@@ -141,7 +141,7 @@ class StructuredTool(BaseTool, ABC):
 ```
 ### 3.5. Config-Driven Text Presenter
 
-The presentation configuration is managed in `mcp_server/config/presentation.yaml`:
+The presentation configuration is managed in `.phase-gate/config/presentation.yaml`:
 
 ```yaml
 global:
@@ -299,3 +299,4 @@ The following table provides the mapping for candidate Pydantic model fields des
 | 1.4 | 2026-06-12 | Agent | Resolved QA NOGO verification feedback (flattened DTOs, presenter routing, separate presentation_category, test suite impact) |
 | 1.5 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (presentation_category fix, server routing clarifications) |
 | 1.6 | 2026-06-14 | Agent | Removed json_reference config entity, renamed advisories to next_instruction_texts, added support for multiple next_instructions per tool, and formatted each next instruction on a new line preceded by a blank line. |
+| 1.7 | 2026-06-14 | Agent | Corrected presentation.yaml path to .phase-gate/config/presentation.yaml as the python source-tree path is forbidden. |

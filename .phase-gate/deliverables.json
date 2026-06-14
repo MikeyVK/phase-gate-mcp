@@ -41,11 +41,7 @@
             "deliverables": [
               {
                 "id": "D1.1",
-                "description": "Base output schemas in tool_outputs.py and global presentation.yaml config",
-                "validates": {
-                  "type": "file_exists",
-                  "file": "mcp_server/schemas/tool_outputs.py"
-                }
+                "description": "Base output schemas in tool_outputs.py and global .phase-gate/config/presentation.yaml config"
               },
               {
                 "id": "D1.2",
@@ -214,7 +210,11 @@
               },
               {
                 "id": "D8.6",
-                "description": "Add declarative presentation template and next_instructions (including uri_reference) for auto_fix in presentation.yaml, returning the lightweight summary referencing the uniform resource URI"
+                "description": "Add declarative presentation template and next_instructions (including uri_reference) for auto_fix in .phase-gate/config/presentation.yaml, returning the lightweight summary referencing the uniform resource URI",
+                "validates": {
+                  "type": "file_exists",
+                  "file": ".phase-gate/config/presentation.yaml"
+                }
               }
             ],
             "exit_criteria": "AutoFixTool runs and modifies files correctly; startup validator correctly raises ConfigError for misconfigured auto-fixes; response cache evicts oldest runs correctly; and the model can successfully retrieve the run's JSON data using the read_resource tool from the uniform cache resource."

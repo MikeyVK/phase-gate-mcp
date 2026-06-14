@@ -3,7 +3,7 @@
 # Planning — Issue #402: Expose JSON data in MCP tools
 
 **Status:** DRAFT  
-**Version:** 1.6  
+**Version:** 1.7  
 **Last Updated:** 2026-06-14
 
 ---
@@ -15,7 +15,7 @@ Slice the implementation of Issue #402 into 9 manageable cycles for TDD executio
 ## Scope
 
 **In Scope:**
-All active registered tools in mcp_server/tools/, schemas/tool_outputs.py, presenters/text_presenter.py, and presentation.yaml.
+All active registered tools in mcp_server/tools/, schemas/tool_outputs.py, presenters/text_presenter.py, and `.phase-gate/config/presentation.yaml`.
 
 **Out of Scope:**
 Unregistered or legacy tools (specifically DetectLabelDriftTool).
@@ -43,10 +43,10 @@ Plan for migrating all active MCP tools to return Pydantic DTOs alongside declar
 
 ### Cycle 1: Core Presenter & Infrastructure
 
-**Goal:** Build the base DTO schemas, global presentation.yaml config, TextPresenter logic, fail-fast template validation, and pytest helper.
+**Goal:** Build the base DTO schemas, global `.phase-gate/config/presentation.yaml` config, TextPresenter logic, fail-fast template validation, and pytest helper.
 
 **Deliverables:**
-- **[D1.1]** Base output schemas in `tool_outputs.py` and global `presentation.yaml` config (File: `mcp_server/schemas/tool_outputs.py`)
+- **[D1.1]** Base output schemas in `tool_outputs.py` and global `.phase-gate/config/presentation.yaml` config (Files: `mcp_server/schemas/tool_outputs.py`, `.phase-gate/config/presentation.yaml`)
 - **[D1.2]** `TextPresenter` implementation (supporting list-based `next_instructions` formatted on individual lines preceded by a blank line `\n\n`) and `validate_presentation_alignment` drift validator, verifying that YAML anchors and aliases are resolved safely, templates and their next instructions are validated against tool DTO fields, and that the validator gracefully ignores tools without an `output_model` ClassVar during the migration phase, preventing validation crashes (File: `mcp_server/presenters/text_presenter.py`)
 - **[D1.3]** `assert_structured_tool_result` pytest helper (File: `tests/mcp_server/test_support.py`)
 - **[D1.4]** Update `StructuredTool.execute()` dispatcher and signature to support `BaseModel | tuple` return types, and update `MCPServer.handle_call_tool()` routing to explicitly check and distinguish between a `BaseModel` response and a legacy `tuple[dict, str]` response to prevent tool call crashes (Files: `mcp_server/tools/base.py`, `mcp_server/server.py`)
@@ -86,7 +86,7 @@ All Batch 1 tools return Pydantic DTOs and compact text fallbacks, verified by a
 - `tests/mcp_server/unit/tools/test_discovery_tools.py`
 
 **Success/Exit Criteria:**
-All Discovery & Project tools return Pydantic DTOs and match templates in presentation.yaml.
+All Discovery & Project tools return Pydantic DTOs and match templates in `.phase-gate/config/presentation.yaml`.
 
 
 ### Cycle 4: Batch 3a (Git Analysis & Info Tools)
@@ -155,8 +155,8 @@ GitHub Labels and Milestones tools successfully migrated and return flattened DT
 - **[D8.2]** Extend `ExecutionConfig` schema in `quality_config.py` to support optional `fix_command: list[str] | None = Field(default=None)` (File: `mcp_server/config/schemas/quality_config.py`).
 - **[D8.3]** Update the startup configuration loader/validator to fail-fast if any quality gate has `supports_autofix: true` but lacks `fix_command` (File: `mcp_server/config/loader.py`).
 - **[D8.4]** Implement `IToolResponseCache` interface and `ResponseCacheManager` with FIFO eviction (OrderedDict) and store Pydantic DTO instances directly in memory (File: `mcp_server/state/response_cache.py` [NEW]).
-- **[D8.6]** Add declarative presentation template and `next_instructions` (including `uri_reference`) for `auto_fix` in `presentation.yaml`, returning the lightweight summary referencing the uniform resource URI (File: `mcp_server/config/presentation.yaml`).
-- **[D8.6]** Add declarative presentation template and advisory mapping for `auto_fix` in `presentation.yaml`, returning the lightweight summary referencing the uniform resource URI (File: `mcp_server/config/presentation.yaml`).
+- **[D8.5]** Implement `CachedResponseResource` (inheriting from `BaseResource`) matching uniform pattern `pgmcp://cache/runs/.*`, register it in `bootstrap.py`'s `_build_resources()`, and inject the cache manager into the server and resource constructor (Files: `mcp_server/resources/cache.py` [NEW], `mcp_server/bootstrap.py`, `mcp_server/server.py`).
+- **[D8.6]** Add declarative presentation template and `next_instructions` (including `uri_reference`) for `auto_fix` in `.phase-gate/config/presentation.yaml`, returning the lightweight summary referencing the uniform resource URI (File: `.phase-gate/config/presentation.yaml`).
 
 **Tests:**
 - `tests/mcp_server/unit/tools/test_quality_tools.py` (verifies auto-fix tool functionality, config validation, cache eviction, and uniform resource reading)
@@ -261,3 +261,4 @@ The compatibility bridge in `StructuredTool` allows us to migrate tests incremen
 | 1.4 | 2026-06-12 | Agent | Resolved QA Ronde 2 feedback (flattened lists, explicit handle_call_tool routing, presentation_category & validator deliverables) |
 | 1.5 | 2026-06-13 | Agent | Resolved QA NOGO feedback for Cycle 8 (quality_config schema mismatch, ResponseCacheManager integration, and uniform CachedResponseResource provider) |
 | 1.6 | 2026-06-14 | Agent | Updated Cycle 1 planning to include list-based next_instructions, remove json_reference entity, and specify blank line formatting requirements for instructions. |
+| 1.7 | 2026-06-14 | Agent | Restored D8.5 (CachedResponseResource registration) and corrected all presentation.yaml paths to .phase-gate/config/presentation.yaml. |
