@@ -44,10 +44,11 @@ class TestGitCheckoutStateSync:
         mock_manager.checkout.assert_called_once_with("feature/123-test")
         mock_engine.get_state.assert_called_once_with("feature/123-test")
 
-        assert isinstance(result, ToolResult)
-        assert result.is_error is False
-        assert "feature/123-test" in str(result)
-        assert "implementation" in str(result)
+        from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+        assert isinstance(result, GitCheckoutOutput)
+        assert result.success is True
+        assert result.branch == "feature/123-test"
+        assert result.current_phase == "implementation"
 
     @pytest.mark.asyncio
     async def test_checkout_handles_state_sync_failure_gracefully(self) -> None:
@@ -65,9 +66,10 @@ class TestGitCheckoutStateSync:
         result = await tool.execute(params, NoteContext())
 
         mock_manager.checkout.assert_called_once_with("feature/456-test")
-        assert isinstance(result, ToolResult)
-        assert result.is_error is False
-        assert "feature/456-test" in str(result)
+        from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+        assert isinstance(result, GitCheckoutOutput)
+        assert result.success is True
+        assert result.branch == "feature/456-test"
 
     @pytest.mark.asyncio
     async def test_checkout_handles_unknown_phase(self) -> None:
@@ -93,10 +95,11 @@ class TestGitCheckoutStateSync:
         mock_manager.checkout.assert_called_once_with("main")
         mock_engine.get_state.assert_called_once_with("main")
 
-        assert isinstance(result, ToolResult)
-        assert result.is_error is False
-        assert "main" in str(result)
-        assert "unknown" in str(result)
+        from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+        assert isinstance(result, GitCheckoutOutput)
+        assert result.success is True
+        assert result.branch == "main"
+        assert result.current_phase == "unknown"
 
     @pytest.mark.asyncio
     async def test_checkout_handles_state_branch_mismatch_gracefully(self) -> None:
@@ -117,6 +120,7 @@ class TestGitCheckoutStateSync:
         result = await tool.execute(params, NoteContext())
 
         mock_manager.checkout.assert_called_once_with("feature/231-state-snapshot-cqrs")
-        assert isinstance(result, ToolResult)
-        assert result.is_error is False
-        assert "feature/231-state-snapshot-cqrs" in str(result)
+        from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+        assert isinstance(result, GitCheckoutOutput)
+        assert result.success is True
+        assert result.branch == "feature/231-state-snapshot-cqrs"

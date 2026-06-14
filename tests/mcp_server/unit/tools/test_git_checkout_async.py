@@ -30,9 +30,10 @@ class TestGitCheckoutAsync:
             result = await tool.execute(params, NoteContext())
 
         assert mock_run_sync.await_count >= 1
-        assert isinstance(result, ToolResult)
-        assert result.is_error is True
-
+        from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+        assert isinstance(result, GitCheckoutOutput)
+        assert result.success is False
+        assert "stop" in result.error_message
     def test_placeholder_for_pylint(self) -> None:
         """Placeholder test to satisfy pylint too-few-public-methods."""
         assert True

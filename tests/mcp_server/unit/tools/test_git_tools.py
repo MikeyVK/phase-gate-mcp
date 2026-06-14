@@ -79,9 +79,12 @@ async def test_create_branch_tool_calls_manager_with_explicit_base(
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.create_branch.assert_called_once_with("test-branch", "feature", "HEAD", ANY)
-    assert isinstance(result, ToolResult)
-    assert result.content[0]["text"].startswith("✅ ")
-    assert "Created branch: feature/test-branch" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import CreateBranchOutput
+    assert isinstance(result, CreateBranchOutput)
+    assert result.success is True
+    assert result.branch_name == "feature/test-branch"
+    assert result.branch_type == "feature"
+    assert result.base_branch == "HEAD"
 
 
 @pytest.mark.asyncio
@@ -98,7 +101,12 @@ async def test_create_branch_tool_with_branch_name_as_base(mock_git_manager: Mag
     mock_git_manager.create_branch.assert_called_once_with(
         "new-fix", "fix", "refactor/51-labels-yaml", ANY
     )
-    assert "fix/new-fix" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import CreateBranchOutput
+    assert isinstance(result, CreateBranchOutput)
+    assert result.success is True
+    assert result.branch_name == "fix/new-fix"
+    assert result.branch_type == "fix"
+    assert result.base_branch == "refactor/51-labels-yaml"
 
 
 @pytest.mark.asyncio
@@ -160,7 +168,10 @@ async def test_git_commit_tool_docs(mock_git_manager: MagicMock) -> None:
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: doc1234" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "doc1234"
 
 
 @pytest.mark.asyncio
@@ -197,7 +208,11 @@ async def test_git_commit_tool_resolves_commit_type_from_phase_contracts(
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: abc1234" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "abc1234"
+    assert result.commit_type == "refactor"
 
 
 @pytest.mark.asyncio
@@ -223,7 +238,10 @@ async def test_git_commit_tool_with_workflow_phase(mock_git_manager: MagicMock) 
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: wf1234" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "wf1234"
 
 
 @pytest.mark.asyncio
@@ -253,7 +271,10 @@ async def test_git_commit_tool_with_workflow_phase_and_subphase(
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: wf5678" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "wf5678"
 
 
 @pytest.mark.asyncio
@@ -281,7 +302,10 @@ async def test_git_commit_tool_with_cycle_number(mock_git_manager: MagicMock) ->
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: wf9012" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "wf9012"
 
 
 @pytest.mark.asyncio
@@ -310,7 +334,10 @@ async def test_git_commit_tool_with_workflow_phase_and_files(mock_git_manager: M
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: wf3456" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "wf3456"
 
 
 @pytest.mark.asyncio
@@ -348,7 +375,10 @@ async def test_git_commit_tool_with_commit_type_override(mock_git_manager: Magic
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: override123" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "override123"
 
 
 @pytest.mark.asyncio
@@ -390,7 +420,10 @@ async def test_git_commit_tool_execute_with_valid_commit_type(mock_git_manager: 
         skip_paths=frozenset(),
         issue_number=999,
     )
-    assert "Committed: case123" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result, GitCommitOutput)
+    assert result.success is True
+    assert result.commit_hash == "case123"
 
 
 def test_git_commit_input_allows_implementation_without_cycle_number() -> None:
@@ -502,7 +535,10 @@ async def test_git_commit_integration_workflow_phases() -> None:
     params1 = GitCommitInput(message="investigate alternatives", workflow_phase="research")
     result1 = await tool.execute(params1, NoteContext())
 
-    assert "Committed: integration123" in result1.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCommitOutput
+    assert isinstance(result1, GitCommitOutput)
+    assert result1.success is True
+    assert result1.commit_hash == "integration123"
     mock_adapter.commit.assert_called_with(
         "docs(P_RESEARCH): investigate alternatives (#999)", files=None, skip_paths=frozenset()
     )
@@ -516,7 +552,9 @@ async def test_git_commit_integration_workflow_phases() -> None:
     )
     result2 = await tool.execute(params2, NoteContext())
 
-    assert "Committed: integration123" in result2.content[0]["text"]
+    assert isinstance(result2, GitCommitOutput)
+    assert result2.success is True
+    assert result2.commit_hash == "integration123"
     mock_adapter.commit.assert_called_with(
         "test(P_IMPLEMENTATION_SP_C1_RED): add failing test (#999)",
         files=None,
@@ -531,7 +569,9 @@ async def test_git_commit_integration_workflow_phases() -> None:
     )
     result3 = await tool.execute(params3, NoteContext())
 
-    assert "Committed: integration123" in result3.content[0]["text"]
+    assert isinstance(result3, GitCommitOutput)
+    assert result3.success is True
+    assert result3.commit_hash == "integration123"
     mock_adapter.commit.assert_called_with(
         "chore(P_COORDINATION_SP_DELEGATION): delegate to child issues (#999)",
         files=None,
@@ -555,8 +595,11 @@ async def test_git_checkout_tool(mock_git_manager: MagicMock) -> None:
 
     mock_git_manager.checkout.assert_called_once_with("main")
     mock_engine.get_state.assert_called_once_with("main")
-    assert "Switched to branch: main" in result.content[0]["text"]
-    assert "implementation" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+    assert isinstance(result, GitCheckoutOutput)
+    assert result.success is True
+    assert result.branch == "main"
+    assert result.current_phase == "implementation"
 
 
 @pytest.mark.asyncio
@@ -579,9 +622,12 @@ async def test_git_checkout_tool_displays_parent_branch(mock_git_manager: MagicM
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.checkout.assert_called_once_with("feature/79-test")
-    assert "Switched to branch: feature/79-test" in result.content[0]["text"]
-    assert "Current phase: design" in result.content[0]["text"]
-    assert "Parent branch: epic/76-quality-gates" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+    assert isinstance(result, GitCheckoutOutput)
+    assert result.success is True
+    assert result.branch == "feature/79-test"
+    assert result.current_phase == "design"
+    assert result.parent_branch == "epic/76-quality-gates"
 
 
 @pytest.mark.asyncio
@@ -604,10 +650,12 @@ async def test_git_checkout_tool_no_parent_branch(mock_git_manager: MagicMock) -
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.checkout.assert_called_once_with("main")
-    output = result.content[0]["text"]
-    assert "Switched to branch: main" in output
-    assert "Current phase: implementation" in output
-    assert "Parent branch:" not in output  # Should NOT appear
+    from mcp_server.schemas.tool_outputs import GitCheckoutOutput
+    assert isinstance(result, GitCheckoutOutput)
+    assert result.success is True
+    assert result.branch == "main"
+    assert result.current_phase == "implementation"
+    assert result.parent_branch is None
 
 
 @pytest.mark.asyncio
@@ -620,7 +668,11 @@ async def test_git_push_tool(mock_git_manager: MagicMock) -> None:
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.push.assert_called_once_with(set_upstream=True)
-    assert "Pushed branch: feature/foo" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitPushOutput
+    assert isinstance(result, GitPushOutput)
+    assert result.success is True
+    assert result.branch == "feature/foo"
+    assert result.set_upstream is True
 
 
 @pytest.mark.asyncio
@@ -633,7 +685,11 @@ async def test_git_merge_tool(mock_git_manager: MagicMock) -> None:
     result = await tool.execute(params, NoteContext())
 
     mock_git_manager.merge.assert_called_once_with("feature/foo", ANY)
-    assert "Merged feature/foo into main" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitMergeOutput
+    assert isinstance(result, GitMergeOutput)
+    assert result.success is True
+    assert result.source_branch == "feature/foo"
+    assert result.target_branch == "main"
 
 
 @pytest.mark.asyncio
@@ -649,8 +705,12 @@ async def test_git_delete_branch_tool(mock_git_manager: MagicMock) -> None:
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=True, mode="both"
     )
-    expected = "Deleted branch: feature/old (local: deleted, remote: deleted)"
-    assert result.content[0]["text"] == expected
+    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput
+    assert isinstance(result, GitDeleteBranchOutput)
+    assert result.success is True
+    assert result.branch == "feature/old"
+    assert result.local_status == "deleted"
+    assert result.remote_status == "deleted"
 
 
 @pytest.mark.asyncio
@@ -667,7 +727,12 @@ async def test_git_delete_branch_mode_local(mock_git_manager: MagicMock) -> None
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=False, mode="local"
     )
-    assert result.content[0]["text"] == "Deleted branch: feature/old (local: deleted)"
+    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput
+    assert isinstance(result, GitDeleteBranchOutput)
+    assert result.success is True
+    assert result.branch == "feature/old"
+    assert result.local_status == "deleted"
+    assert result.remote_status == "skipped"
 
 
 @pytest.mark.asyncio
@@ -684,7 +749,12 @@ async def test_git_delete_branch_mode_remote(mock_git_manager: MagicMock) -> Non
     mock_git_manager.delete_branch.assert_called_once_with(
         "feature/old", ANY, force=False, mode="remote"
     )
-    assert result.content[0]["text"] == "Deleted branch: feature/old (remote: deleted)"
+    from mcp_server.schemas.tool_outputs import GitDeleteBranchOutput
+    assert isinstance(result, GitDeleteBranchOutput)
+    assert result.success is True
+    assert result.branch == "feature/old"
+    assert result.local_status == "skipped"
+    assert result.remote_status == "deleted"
 
 
 @pytest.mark.asyncio
@@ -693,19 +763,29 @@ async def test_git_stash_tool(mock_git_manager: MagicMock) -> None:
     tool = GitStashTool(manager=mock_git_manager)
 
     # Push
+    from mcp_server.schemas.tool_outputs import GitStashOutput
+    # Push
     result = await tool.execute(GitStashInput(action="push", message="wip"), NoteContext())
     mock_git_manager.stash.assert_called_with(message="wip", include_untracked=False)
-    assert "Stashed changes: wip" in result.content[0]["text"]
+    assert isinstance(result, GitStashOutput)
+    assert result.success is True
+    assert result.action == "push"
+    assert result.message == "wip"
 
     # Pop
     result = await tool.execute(GitStashInput(action="pop"), NoteContext())
     mock_git_manager.stash_pop.assert_called_once()
-    assert "Applied and removed latest stash" in result.content[0]["text"]
+    assert isinstance(result, GitStashOutput)
+    assert result.success is True
+    assert result.action == "pop"
 
     # List
     mock_git_manager.stash_list.return_value = ["stash@{0}: wip"]
     result = await tool.execute(GitStashInput(action="list"), NoteContext())
-    assert "stash@{0}: wip" in result.content[0]["text"]
+    assert isinstance(result, GitStashOutput)
+    assert result.success is True
+    assert result.action == "list"
+    assert result.stashes == ["stash@{0}: wip"]
 
 
 @pytest.mark.asyncio
@@ -719,7 +799,12 @@ async def test_git_restore_tool(mock_git_manager: MagicMock) -> None:
     mock_git_manager.restore.assert_called_once_with(
         files=["foo.py", "bar.py"], note_context=ANY, source="HEAD"
     )
-    assert "Restored 2 file(s)" in result.content[0]["text"]
+    from mcp_server.schemas.tool_outputs import GitRestoreOutput
+    assert isinstance(result, GitRestoreOutput)
+    assert result.success is True
+    assert result.files == ["foo.py", "bar.py"]
+    assert result.source == "HEAD"
+    assert result.files_count == 2
 
 
 @pytest.mark.asyncio
