@@ -10,6 +10,7 @@ import pytest
 
 from mcp_server.config.schemas.quality_config import TextViolationsParsing
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.utils.violation_parser import ViolationParser
 from tests.mcp_server.test_support import make_qa_manager
 
 # Pattern without a 'rule' group, but with a 'code' group we can use for interpolation
@@ -38,7 +39,7 @@ class TestParseTextViolationsDefaults:
     def test_static_default_fills_absent_field(self, manager: QAManager) -> None:
         """A static default value is used when the field has no named group."""
         parsing = TextViolationsParsing(pattern=_FULL_PATTERN, defaults={"rule": "generic-rule"})
-        result = manager._parse_text_violations("a.py:1: some message", parsing)
+        result = ViolationParser.parse_text_violations("a.py:1: some message", parsing)
         assert result[0].rule == "generic-rule"
 
     def test_static_default_not_used_when_group_matches(self, manager: QAManager) -> None:
@@ -47,7 +48,7 @@ class TestParseTextViolationsDefaults:
         # Map 'rule' default only → group 'rule' absent → should use default.
         # But 'message' IS captured → should not use any default.
         parsing = TextViolationsParsing(pattern=_FULL_PATTERN, defaults={"message": "fallback-msg"})
-        result = manager._parse_text_violations("a.py:5: real message", parsing)
+        result = ViolationParser.parse_text_violations("a.py:5: real message", parsing)
         assert result[0].message == "real message"
 
     # ------------------------------------------------------------------
@@ -57,7 +58,7 @@ class TestParseTextViolationsDefaults:
     def test_interpolated_default_uses_captured_group(self, manager: QAManager) -> None:
         """A {placeholder} default is interpolated using the captured group value."""
         parsing = TextViolationsParsing(pattern=_PATTERN_NO_RULE, defaults={"rule": "{code}"})
-        result = manager._parse_text_violations("a.py:3: E501 line too long", parsing)
+        result = ViolationParser.parse_text_violations("a.py:3: E501 line too long", parsing)
         # 'rule' not in pattern → use defaults["rule"] = "{code}" → "E501"
         assert result[0].rule == "E501"
 
@@ -67,6 +68,6 @@ class TestParseTextViolationsDefaults:
             pattern=_FULL_PATTERN,
             defaults={"rule": "fallback", "severity": "warning"},
         )
-        result = manager._parse_text_violations("a.py:1: msg", parsing)
+        result = ViolationParser.parse_text_violations("a.py:1: msg", parsing)
         assert result[0].rule == "fallback"
         assert result[0].severity == "warning"

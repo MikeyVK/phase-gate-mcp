@@ -7,7 +7,7 @@ Tests according to TDD principles with comprehensive coverage.
 @layer: Tests (Unit)
 @dependencies: [pytest]
 """
-# pyright: reportCallIssue=false, reportAttributeAccessIssue=false, reportPrivateUsage=false
+# pyright: reportCallIssue=false, reportAttributeAccessIssue=false
 # Suppress Pydantic FieldInfo false positives
 
 # Standard library
@@ -31,6 +31,7 @@ from mcp_server.config.schemas.quality_config import (
 # Module under test
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.tools.tool_result import ToolResult
+from mcp_server.utils.violation_parser import ViolationParser
 from tests.mcp_server.test_support import make_qa_manager
 
 
@@ -74,8 +75,8 @@ class TestQAManager:
         existing_file = tmp_path / "existing.py"
         existing_file.write_text("print('ok')\n", encoding="utf-8")
 
-        with patch.object(manager, "_execute_gate") as mock_execute_gate:
-            mock_execute_gate.side_effect = lambda gate, _files, gate_number, gate_id: {
+        with patch.object(manager, "execute_gate") as mockexecute_gate:
+            mockexecute_gate.side_effect = lambda gate, _files, gate_number, gate_id: {
                 "gate_number": gate_number,
                 "id": gate_id,
                 "name": gate.name,
@@ -89,7 +90,7 @@ class TestQAManager:
 
         assert result["overall_pass"] is True
         assert all(gate["name"] != "File Validation" for gate in result["gates"])
-        assert mock_execute_gate.called is True
+        assert mockexecute_gate.called is True
 
     def _satisfy_typing_import(self) -> None:
         """Helper to legitimately use typing import."""
@@ -97,7 +98,7 @@ class TestQAManager:
 
 
 class TestExecuteGate:
-    """Test suite for generic _execute_gate method (Cycle 2)."""
+    """Test suite for generic execute_gate method (Cycle 2)."""
 
     @pytest.fixture
     def manager(self) -> QAManager:
@@ -124,8 +125,8 @@ class TestExecuteGate:
             }
         )
 
-    def test_execute_gate_success(self, manager: QAManager, mock_gate: QualityGate) -> None:
-        """Test _execute_gate with successful tool execution."""
+    def testexecute_gate_success(self, manager: QAManager, mock_gate: QualityGate) -> None:
+        """Test execute_gate with successful tool execution."""
         with patch("subprocess.run") as mock_run:
             mock_proc = MagicMock()
             mock_proc.returncode = 0
@@ -133,17 +134,17 @@ class TestExecuteGate:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
 
             assert result["gate_number"] == 1
             assert result["name"] == "TestGate"
             assert result["passed"] is True
             assert result["issues"] == []
 
-    def test_execute_gate_failure_exit_code(
+    def testexecute_gate_failure_exit_code(
         self, manager: QAManager, mock_gate: QualityGate
     ) -> None:
-        """Test _execute_gate with non-zero exit code."""
+        """Test execute_gate with non-zero exit code."""
         with patch("subprocess.run") as mock_run:
             mock_proc = MagicMock()
             mock_proc.returncode = 1
@@ -151,12 +152,12 @@ class TestExecuteGate:
             mock_proc.stderr = "Stderr output"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
 
             assert result["passed"] is False
             assert len(result["issues"]) > 0
 
-    def test_execute_gate_failure_captures_and_truncates_output(
+    def testexecute_gate_failure_captures_and_truncates_output(
         self, manager: QAManager, mock_gate: QualityGate
     ) -> None:
         """Test failure output captures stdout/stderr with truncation metadata."""
@@ -170,7 +171,7 @@ class TestExecuteGate:
             mock_proc.stderr = long_stderr
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
 
             assert result["passed"] is False
             assert "output" in result, "Expected structured output capture"
@@ -187,26 +188,26 @@ class TestExecuteGate:
             assert "stderr:" in issue_details
             assert "truncated" in issue_details.lower()
 
-    def test_execute_gate_timeout(self, manager: QAManager, mock_gate: QualityGate) -> None:
-        """Test _execute_gate handles subprocess timeout."""
+    def testexecute_gate_timeout(self, manager: QAManager, mock_gate: QualityGate) -> None:
+        """Test execute_gate handles subprocess timeout."""
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(["test_tool"], 60)):
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
 
             assert result["passed"] is False
             assert "timed out" in result["issues"][0]["message"].lower()
 
-    def test_execute_gate_file_not_found(self, manager: QAManager, mock_gate: QualityGate) -> None:
-        """Test _execute_gate handles FileNotFoundError."""
+    def testexecute_gate_file_not_found(self, manager: QAManager, mock_gate: QualityGate) -> None:
+        """Test execute_gate handles FileNotFoundError."""
         with patch("subprocess.run", side_effect=FileNotFoundError("Tool not found")):
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
 
             assert result["passed"] is False
             assert "not found" in result["issues"][0]["message"].lower()
 
-    def test_execute_gate_appends_files_to_command(
+    def testexecute_gate_appends_files_to_command(
         self, manager: QAManager, mock_gate: QualityGate
     ) -> None:
-        """Test _execute_gate correctly appends files to command."""
+        """Test execute_gate correctly appends files to command."""
         with patch("subprocess.run") as mock_run:
             mock_proc = MagicMock()
             mock_proc.returncode = 0
@@ -214,7 +215,7 @@ class TestExecuteGate:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            manager._execute_gate(mock_gate, ["file1.py", "file2.py"], gate_number=1)
+            manager.execute_gate(mock_gate, ["file1.py", "file2.py"], gate_number=1)
 
             # Verify first subprocess call (gate execution) includes files
             # (subsequent calls may be --version probes from environment metadata)
@@ -249,7 +250,7 @@ class TestArtifactLogging:
             }
         )
 
-    def test_execute_gate_failure_writes_artifact_log(
+    def testexecute_gate_failure_writes_artifact_log(
         self, manager: QAManager, mock_gate: QualityGate, tmp_path: Path
     ) -> None:
         """Test failed gate writes JSON artifact log to qa_logs."""
@@ -263,7 +264,7 @@ class TestArtifactLogging:
             mock_proc.stderr = "details"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
 
             assert result["passed"] is False
             assert "artifact_path" in result
@@ -277,7 +278,7 @@ class TestArtifactLogging:
             assert "issues" in payload
             assert "output" in payload
 
-    def test_execute_gate_success_does_not_write_artifact_log(
+    def testexecute_gate_success_does_not_write_artifact_log(
         self, manager: QAManager, mock_gate: QualityGate, tmp_path: Path
     ) -> None:
         """Test passing gate does not create artifact log."""
@@ -291,12 +292,12 @@ class TestArtifactLogging:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
             assert result["passed"] is True
             assert "artifact_path" not in result
             assert not (tmp_path / "qa_logs").exists()
 
-    def test_execute_gate_failure_respects_disabled_artifact_logging(
+    def testexecute_gate_failure_respects_disabled_artifact_logging(
         self, manager: QAManager, mock_gate: QualityGate, tmp_path: Path
     ) -> None:
         """Test disabled artifact logging prevents file creation."""
@@ -311,7 +312,7 @@ class TestArtifactLogging:
             mock_proc.stderr = "details"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1)
 
             assert result["passed"] is False
             assert "artifact_path" not in result
@@ -319,7 +320,7 @@ class TestArtifactLogging:
 
 
 class TestRuffGateExecution:
-    """Test suite for Ruff gate execution via _execute_gate (Cycle 3)."""
+    """Test suite for Ruff gate execution via execute_gate (Cycle 3)."""
 
     @pytest.fixture
     def manager(self) -> QAManager:
@@ -436,7 +437,7 @@ class TestRuffGateExecution:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            manager._execute_gate(gate1_formatting, ["test.py"], gate_number=1)
+            manager.execute_gate(gate1_formatting, ["test.py"], gate_number=1)
 
             cmd = mock_run.call_args_list[0][0][0]
             # Note: QAManager replaces 'python' with full venv path
@@ -459,7 +460,7 @@ class TestRuffGateExecution:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            manager._execute_gate(gate2_imports, ["test.py"], gate_number=2)
+            manager.execute_gate(gate2_imports, ["test.py"], gate_number=2)
 
             cmd = mock_run.call_args_list[0][0][0]
             assert "--select=PLC0415" in cmd
@@ -475,7 +476,7 @@ class TestRuffGateExecution:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            manager._execute_gate(gate3_line_length, ["test.py"], gate_number=3)
+            manager.execute_gate(gate3_line_length, ["test.py"], gate_number=3)
 
             cmd = mock_run.call_args_list[0][0][0]
             assert "--select=E501" in cmd
@@ -492,7 +493,7 @@ class TestRuffGateExecution:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate1_formatting, ["test.py"], gate_number=1)
+            result = manager.execute_gate(gate1_formatting, ["test.py"], gate_number=1)
 
             assert result["passed"] is True
             assert result["issues"] == []
@@ -508,12 +509,12 @@ class TestRuffGateExecution:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate1_formatting, ["test.py"], gate_number=1)
+            result = manager.execute_gate(gate1_formatting, ["test.py"], gate_number=1)
 
             assert result["passed"] is False
             assert len(result["issues"]) > 0
 
-    def test_execute_gate_adds_hints_when_gate_id_provided(
+    def testexecute_gate_adds_hints_when_gate_id_provided(
         self, manager: QAManager, gate3_line_length: QualityGate
     ) -> None:
         """Test hints are attached for known gate IDs (agent guidance)."""
@@ -532,7 +533,7 @@ class TestRuffGateExecution:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(
+            result = manager.execute_gate(
                 gate3_line_length,
                 ["test.py"],
                 gate_number=3,
@@ -618,7 +619,7 @@ class TestConfigDrivenExecution:
 
     def test_run_quality_gates_uses_config_driven_execution(self, manager: QAManager) -> None:
         """Test run_quality_gates uses active_gates for config-driven execution."""
-        with patch.object(manager, "_execute_gate") as mock_execute:
+        with patch.object(manager, "execute_gate") as mock_execute:
             mock_execute.return_value = {
                 "gate_number": 1,
                 "name": "Test Gate",
@@ -716,7 +717,7 @@ class TestStrategyBasedParsing:
         """Fixture for QAManager."""
         return make_qa_manager()
 
-    def test_execute_gate_respects_parsing_strategy_not_tool_name(self, manager: QAManager) -> None:
+    def testexecute_gate_respects_parsing_strategy_not_tool_name(self, manager: QAManager) -> None:
         """Test parsing uses capabilities.parsing_strategy, not tool name detection (WP2)."""
         # Gate with 'pylint' in name but exit_code strategy
         gate = QualityGate.model_validate(
@@ -739,7 +740,7 @@ class TestStrategyBasedParsing:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(gate, ["test.py"], gate_number=1)
 
             # exit_code strategy: returncode=0 means pass, ignore output
             assert result["passed"] is True
@@ -758,7 +759,7 @@ class TestResponseSchemaV2:
         """Test response includes v2.0 schema fields (version, mode, summary, gates[])."""
         with (
             patch("pathlib.Path.exists", return_value=True),
-            patch.object(manager, "_execute_gate") as mock_execute,
+            patch.object(manager, "execute_gate") as mock_execute,
         ):
             mock_execute.return_value = {
                 "gate_number": 1,
@@ -810,7 +811,7 @@ class TestResponseSchemaV2:
         """Test mode='file-specific' when files provided."""
         with (
             patch("pathlib.Path.exists", return_value=True),
-            patch.object(manager, "_execute_gate") as mock_execute,
+            patch.object(manager, "execute_gate") as mock_execute,
         ):
             mock_execute.return_value = {
                 "gate_number": 1,
@@ -836,7 +837,7 @@ class TestResponseSchemaV2:
 
     def test_response_schema_v2_project_level_mode(self, manager: QAManager) -> None:
         """Test mode='project-level' when files=[] (empty list)."""
-        with patch.object(manager, "_execute_gate") as mock_execute:
+        with patch.object(manager, "execute_gate") as mock_execute:
             mock_execute.return_value = {
                 "gate_number": 5,
                 "name": "Tests",
@@ -915,8 +916,8 @@ class TestRuffJsonParsing:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            # Test _execute_gate directly
-            result = manager._execute_gate(mock_gate, ["test_file.py"], gate_number=1)
+            # Test execute_gate directly
+            result = manager.execute_gate(mock_gate, ["test_file.py"], gate_number=1)
 
             assert not result["passed"], "Gate should fail with violations"
 
@@ -945,8 +946,8 @@ class TestRuffJsonParsing:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            # Test _execute_gate directly
-            result = manager._execute_gate(mock_gate, ["test_file.py"], gate_number=1)
+            # Test execute_gate directly
+            result = manager.execute_gate(mock_gate, ["test_file.py"], gate_number=1)
 
             assert result["passed"], "Gate should pass with clean code"
             assert result["issues"] == [], "Expected no issues"
@@ -961,7 +962,7 @@ class TestGateSchemaEnrichment:
         return make_qa_manager()
 
     def test_executed_gate_has_id_status_skip_reason(self, manager: QAManager) -> None:
-        """Test _execute_gate includes enriched schema fields."""
+        """Test execute_gate includes enriched schema fields."""
         gate = QualityGate.model_validate(
             {
                 "name": "Test Gate",
@@ -981,7 +982,7 @@ class TestGateSchemaEnrichment:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate, ["test.py"], gate_number=3)
+            result = manager.execute_gate(gate, ["test.py"], gate_number=3)
 
             assert result["id"] == 3, "Gate must have 'id' field"
             assert result["status"] == "passed", "Passed gate must have status='passed'"
@@ -1008,14 +1009,14 @@ class TestGateSchemaEnrichment:
             mock_proc.stderr = "error"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate, ["test.py"], gate_number=2)
+            result = manager.execute_gate(gate, ["test.py"], gate_number=2)
 
             assert result["status"] == "failed", "Failed gate must have status='failed'"
             assert result["passed"] is False
 
     def test_skipped_gate_in_full_flow_has_enriched_fields(self, manager: QAManager) -> None:
         """Test skipped gates from run_quality_gates include id/status/skip_reason."""
-        with patch.object(manager, "_execute_gate") as mock_execute:
+        with patch.object(manager, "execute_gate") as mock_execute:
             mock_execute.return_value = {
                 "gate_number": 5,
                 "name": "Tests",
@@ -1046,7 +1047,7 @@ class TestSummaryTotals:
         """Test summary includes violation counts."""
         with (
             patch("pathlib.Path.exists", return_value=True),
-            patch.object(manager, "_execute_gate") as mock_execute,
+            patch.object(manager, "execute_gate") as mock_execute,
         ):
             mock_execute.return_value = {
                 "gate_number": 1,
@@ -1080,7 +1081,7 @@ class TestSummaryTotals:
 
     def test_skipped_gates_dont_count_in_violation_totals(self, manager: QAManager) -> None:
         """Skipped gates should not contribute to violation counts."""
-        with patch.object(manager, "_execute_gate") as mock_execute:
+        with patch.object(manager, "execute_gate") as mock_execute:
             mock_execute.return_value = {
                 "gate_number": 5,
                 "name": "Tests",
@@ -1104,16 +1105,16 @@ class TestJsonPointerResolution:
     def manager(self) -> QAManager:
         return make_qa_manager()
 
-    def test_resolve_json_pointer_nested(self, manager: QAManager) -> None:
+    def test_resolve_json_pointer_nested(self) -> None:
         """Test _resolve_json_pointer handles nested paths."""
         data = {"a": {"b": {"c": [1, 2, 3]}}}
-        result = manager._resolve_json_pointer(data, "/a/b/c")
+        result = ViolationParser.resolve_json_pointer(data, "/a/b/c")
         assert result == [1, 2, 3]
 
-    def test_resolve_json_pointer_missing_key(self, manager: QAManager) -> None:
+    def test_resolve_json_pointer_missing_key(self) -> None:
         """Test _resolve_json_pointer returns None for missing paths."""
         data = {"a": {"b": 1}}
-        result = manager._resolve_json_pointer(data, "/a/x/y")
+        result = ViolationParser.resolve_json_pointer(data, "/a/x/y")
         assert result is None
 
 
@@ -1124,8 +1125,8 @@ class TestDurationAndCommandMetadata:
     def manager(self) -> QAManager:
         return make_qa_manager()
 
-    def test_execute_gate_has_duration_ms(self, manager: QAManager) -> None:
-        """Test _execute_gate result includes duration_ms (int >= 0)."""
+    def testexecute_gate_has_duration_ms(self, manager: QAManager) -> None:
+        """Test execute_gate result includes duration_ms (int >= 0)."""
         gate = QualityGate.model_validate(
             {
                 "name": "DurationTest",
@@ -1148,14 +1149,14 @@ class TestDurationAndCommandMetadata:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(gate, ["test.py"], gate_number=1)
 
             assert "duration_ms" in result
             assert isinstance(result["duration_ms"], int)
             assert result["duration_ms"] >= 0
 
-    def test_execute_gate_has_command_metadata(self, manager: QAManager) -> None:
-        """Test _execute_gate result includes command dict with environment."""
+    def testexecute_gate_has_command_metadata(self, manager: QAManager) -> None:
+        """Test execute_gate result includes command dict with environment."""
         gate = QualityGate.model_validate(
             {
                 "name": "CommandTest",
@@ -1178,7 +1179,7 @@ class TestDurationAndCommandMetadata:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate, ["file.py"], gate_number=1)
+            result = manager.execute_gate(gate, ["file.py"], gate_number=1)
 
             assert "command" in result
             cmd = result["command"]
@@ -1213,7 +1214,7 @@ class TestDurationAndCommandMetadata:
             "subprocess.run",
             side_effect=subprocess.TimeoutExpired(["slow_cmd"], 1),
         ):
-            result = manager._execute_gate(gate, ["test.py"], gate_number=1)
+            result = manager.execute_gate(gate, ["test.py"], gate_number=1)
             assert result["passed"] is False
             # Command metadata is set only after successful subprocess run
             # Timeout happens inside subprocess.run, so no command dict
@@ -1245,7 +1246,7 @@ class TestToolResultJsonData:
 
 
 class TestEnvironmentMetadata:
-    """Test _collect_environment_metadata for reproducibility (Improvement B)."""
+    """Test collect_environment_metadata for reproducibility (Improvement B)."""
 
     @pytest.fixture
     def manager(self) -> QAManager:
@@ -1253,7 +1254,7 @@ class TestEnvironmentMetadata:
 
     def test_returns_python_version_and_platform(self, manager: QAManager) -> None:
         """Test environment always includes python_version and platform."""
-        env = manager._collect_environment_metadata(["python", "-m", "ruff"])
+        env = manager.collect_environment_metadata(["python", "-m", "ruff"])
 
         assert "python_version" in env
         assert env["python_version"]  # non-empty
@@ -1263,13 +1264,13 @@ class TestEnvironmentMetadata:
     def test_resolves_tool_path_via_which(self, manager: QAManager) -> None:
         """Test tool_path is resolved via shutil.which."""
         with patch("shutil.which", return_value="/usr/bin/python"):
-            env = manager._collect_environment_metadata(["python"])
+            env = manager.collect_environment_metadata(["python"])
             assert env["tool_path"] == "/usr/bin/python"
 
     def test_tool_path_empty_when_not_found(self, manager: QAManager) -> None:
         """Test tool_path is empty string when executable not on PATH."""
         with patch("shutil.which", return_value=None):
-            env = manager._collect_environment_metadata(["nonexistent_tool"])
+            env = manager.collect_environment_metadata(["nonexistent_tool"])
             assert env["tool_path"] == ""
 
     def test_tool_version_collected_on_success(self, manager: QAManager) -> None:
@@ -1279,7 +1280,7 @@ class TestEnvironmentMetadata:
         mock_proc.stderr = ""
 
         with patch("subprocess.run", return_value=mock_proc):
-            env = manager._collect_environment_metadata(["ruff"])
+            env = manager.collect_environment_metadata(["ruff"])
             assert env.get("tool_version") == "ruff 0.9.7"
 
     def test_python_m_tool_resolves_tool_version_not_python(self, manager: QAManager) -> None:
@@ -1289,7 +1290,7 @@ class TestEnvironmentMetadata:
         mock_proc.stderr = ""
 
         with patch("subprocess.run", return_value=mock_proc) as mock_run:
-            env = manager._collect_environment_metadata(["python", "-m", "ruff", "check"])
+            env = manager.collect_environment_metadata(["python", "-m", "ruff", "check"])
             # Version command should be [python, -m, ruff, --version]
             version_cmd = mock_run.call_args[0][0]
             assert version_cmd == ["python", "-m", "ruff", "--version"]
@@ -1301,7 +1302,7 @@ class TestEnvironmentMetadata:
             patch("shutil.which", return_value="/venv/bin/ruff") as mock_which,
             patch("subprocess.run", side_effect=FileNotFoundError),
         ):
-            env = manager._collect_environment_metadata(["python", "-m", "ruff", "check"])
+            env = manager.collect_environment_metadata(["python", "-m", "ruff", "check"])
             # Should resolve 'ruff', not 'python'
             mock_which.assert_called_with("ruff")
             assert env["tool_path"] == "/venv/bin/ruff"
@@ -1309,13 +1310,13 @@ class TestEnvironmentMetadata:
     def test_tool_version_absent_on_failure(self, manager: QAManager) -> None:
         """Test tool_version is not set when --version fails."""
         with patch("subprocess.run", side_effect=FileNotFoundError):
-            env = manager._collect_environment_metadata(["nonexistent"])
+            env = manager.collect_environment_metadata(["nonexistent"])
             assert "tool_version" not in env
 
     def test_empty_command_is_safe(self, manager: QAManager) -> None:
-        """Test _collect_environment_metadata handles empty command list."""
+        """Test collect_environment_metadata handles empty command list."""
         with patch("subprocess.run", side_effect=FileNotFoundError):
-            env = manager._collect_environment_metadata([])
+            env = manager.collect_environment_metadata([])
             assert "python_version" in env
             assert env["tool_path"] == ""
 
@@ -1351,7 +1352,7 @@ class TestTruncationFullLogPath:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate, ["f.py"], gate_number=99)
+            result = manager.execute_gate(gate, ["f.py"], gate_number=99)
 
             assert result["passed"] is False
             output = result.get("output", {})
@@ -1382,7 +1383,7 @@ class TestTruncationFullLogPath:
             mock_proc.stderr = ""
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(gate, ["f.py"], gate_number=1)
+            result = manager.execute_gate(gate, ["f.py"], gate_number=1)
 
             output = result.get("output", {})
             assert output.get("truncated") is False
@@ -1415,10 +1416,10 @@ class TestQAManagerVerboseOption:
             }
         )
 
-    def test_execute_gate_verbose_true_captures_details_on_failure(
+    def testexecute_gate_verbose_true_captures_details_on_failure(
         self, manager: QAManager, mock_gate: QualityGate
     ) -> None:
-        """Test that _execute_gate populates details with process output when verbose=True."""
+        """Test that execute_gate populates details with process output when verbose=True."""
         with patch("subprocess.run") as mock_run:
             mock_proc = MagicMock()
             mock_proc.returncode = 1
@@ -1426,7 +1427,7 @@ class TestQAManagerVerboseOption:
             mock_proc.stderr = "verbose stderr trace"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1, verbose=True)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1, verbose=True)
 
             assert result["passed"] is False
             details = result.get("details", "")
@@ -1434,10 +1435,10 @@ class TestQAManagerVerboseOption:
             assert "verbose stdout trace" in details
             assert "verbose stderr trace" in details
 
-    def test_execute_gate_verbose_false_details_empty(
+    def testexecute_gate_verbose_false_details_empty(
         self, manager: QAManager, mock_gate: QualityGate
     ) -> None:
-        """Test that _execute_gate keeps details empty when verbose=False."""
+        """Test that execute_gate keeps details empty when verbose=False."""
         with patch("subprocess.run") as mock_run:
             mock_proc = MagicMock()
             mock_proc.returncode = 1
@@ -1445,7 +1446,7 @@ class TestQAManagerVerboseOption:
             mock_proc.stderr = "verbose stderr trace"
             mock_run.return_value = mock_proc
 
-            result = manager._execute_gate(mock_gate, ["test.py"], gate_number=1, verbose=False)
+            result = manager.execute_gate(mock_gate, ["test.py"], gate_number=1, verbose=False)
 
             assert result["passed"] is False
             assert result.get("details", "") == ""

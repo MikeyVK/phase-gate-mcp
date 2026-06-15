@@ -2,7 +2,7 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "validation",
+  "current_phase": "implementation",
   "current_cycle": 11,
   "last_cycle": 11,
   "cycle_history": [
@@ -156,7 +156,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User approved transitioning back to implementation to fix test quality gate violations",
+  "skip_reason": "User requested to set phase back to implementation as imp agent is still refactoring code",
   "issue_title": "tooling: Expose JSON data in MCP tools",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-12T05:42:13.722630+00:00",
@@ -392,6 +392,22 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-06-15T06:43:25.548613+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "implementation",
+      "timestamp": "2026-06-15T06:44:25.464907+00:00",
+      "human_approval": "Approved by user",
+      "forced": true,
+      "skip_reason": "User requested to set phase back to implementation as imp agent is still refactoring code"
     }
   ],
   "reconstructed": false,

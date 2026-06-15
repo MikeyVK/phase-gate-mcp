@@ -1,6 +1,6 @@
 # tests/mcp_server/unit/mcp_server/managers/test_summary_line_formatter.py
 """
-C25: _format_summary_line produces a concise status line for pass/fail/skip outcomes.
+C25: format_summary_line produces a concise status line for pass/fail/skip outcomes.
 
 Design contract (design.md §4.8):
   Pass:       "✅ Quality gates: N/N passed (0 violations)"
@@ -10,8 +10,6 @@ Design contract (design.md §4.8):
 @layer: Tests (Unit)
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.qa_manager
 """
-# pyright: reportPrivateUsage=false
-
 from __future__ import annotations
 
 from tests.mcp_server.test_support import make_qa_manager
@@ -48,7 +46,7 @@ class TestFormatSummaryLinePass:
         manager = make_qa_manager()
         results = _make_results(passed=5, failed=0, skipped=0, total_violations=0)
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert line.startswith("✅"), f"Expected ✅ prefix, got: {line!r}"
         assert "5/5" in line, f"Expected '5/5' in: {line!r}"
@@ -59,7 +57,7 @@ class TestFormatSummaryLinePass:
         manager = make_qa_manager()
         results = _make_results(passed=1, failed=0, skipped=0, total_violations=0)
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert "1/1" in line, f"Expected '1/1' in: {line!r}"
         assert "✅" in line
@@ -79,7 +77,7 @@ class TestFormatSummaryLineFail:
             failed_gate_names=["Gate 0: Ruff Format"],
         )
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert line.startswith("❌"), f"Expected ❌ prefix, got: {line!r}"
         assert "4/5" in line, f"Expected '4/5' passed ratio in: {line!r}"
@@ -97,7 +95,7 @@ class TestFormatSummaryLineFail:
             failed_gate_names=["Gate 0: Ruff Format", "Gate 3: Line Length"],
         )
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert "Gate 0: Ruff Format" in line
         assert "Gate 3: Line Length" in line
@@ -114,7 +112,7 @@ class TestFormatSummaryLineFail:
             failed_gate_names=["Gate 1: Ruff Strict Lint"],
         )
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert "✅" not in line, f"Green emoji must not appear in failure line: {line!r}"
         assert "❌" in line
@@ -128,7 +126,7 @@ class TestFormatSummaryLineSkip:
         manager = make_qa_manager()
         results = _make_results(passed=4, failed=0, skipped=1, total_violations=0)
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert "⚠️" in line, f"Expected ⚠️ in skip+pass line, got: {line!r}"
         assert "1" in line, f"Expected skipped count '1' in: {line!r}"
@@ -138,7 +136,7 @@ class TestFormatSummaryLineSkip:
         manager = make_qa_manager()
         results = _make_results(passed=3, failed=0, skipped=2, total_violations=0)
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert "❌" not in line, f"Red emoji must not appear in skip-only line: {line!r}"
 
@@ -153,7 +151,7 @@ class TestFormatSummaryLineSkip:
             failed_gate_names=["Gate 4b: Pyright"],
         )
 
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
 
         assert "❌" in line, f"Expected ❌ when there are failures: {line!r}"
         assert "⚠️" not in line, f"⚠️ must not appear when failures exist: {line!r}"

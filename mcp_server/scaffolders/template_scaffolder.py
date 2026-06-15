@@ -57,6 +57,11 @@ class TemplateScaffolder(BaseScaffolder):
             renderer = JinjaRenderer(template_dir=template_dir)
         self._renderer = renderer
 
+    @property
+    def renderer(self) -> JinjaRenderer:
+        """Get the template renderer."""
+        return self._renderer
+
     def validate(
         self,
         artifact_type: str,

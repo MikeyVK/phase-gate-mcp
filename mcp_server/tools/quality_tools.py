@@ -100,7 +100,7 @@ class RunQualityGatesTool(ITool):
     ) -> RunQualityGatesOutput:
         """Execute quality gates and return contract-compliant response DTO."""
         effective_scope = self._effective_scope(params)
-        resolved_files = self.manager._resolve_scope(effective_scope, files=params.files)  # pyright: ignore[reportPrivateUsage]
+        resolved_files = self.manager.resolve_scope(effective_scope, files=params.files)
 
         kwargs = {}
         if params.verbose:

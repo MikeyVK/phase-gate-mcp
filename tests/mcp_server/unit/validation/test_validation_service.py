@@ -53,7 +53,7 @@ class TestValidationService:
     def test_setup_validators_registers_extensions(self, service: ValidationService) -> None:
         """Test that _setup_validators registers extension-based validators."""
         with patch("mcp_server.validation.validation_service.ValidatorRegistry") as mock_registry:
-            service._setup_validators()  # pylint: disable=protected-access
+            service.setup_validators()
 
             # Verify Python and Markdown validators registered
             calls = mock_registry.register.call_args_list
@@ -63,7 +63,7 @@ class TestValidationService:
     def test_setup_validators_registers_patterns(self, service: ValidationService) -> None:
         """Test that _setup_validators registers pattern-based validators."""
         with patch("mcp_server.validation.validation_service.ValidatorRegistry") as mock_registry:
-            service._setup_validators()  # pylint: disable=protected-access
+            service.setup_validators()
 
             # Verify pattern registrations (worker, tool, dto, adapter)
             calls = mock_registry.register_pattern.call_args_list
@@ -78,7 +78,7 @@ class TestValidationService:
         """Test validation with all validators passing."""
         mock_validator = MockValidator(passed=True)
 
-        with patch.object(service, "_get_applicable_validators", return_value=[mock_validator]):
+        with patch.object(service, "get_applicable_validators", return_value=[mock_validator]):
             passed, issues_text = await service.validate("test.py", "valid code")
 
             assert passed is True
@@ -90,7 +90,7 @@ class TestValidationService:
         issue = ValidationIssue(message="Test error", severity="error", line=10)
         mock_validator = MockValidator(passed=False, issues=[issue])
 
-        with patch.object(service, "_get_applicable_validators", return_value=[mock_validator]):
+        with patch.object(service, "get_applicable_validators", return_value=[mock_validator]):
             passed, issues_text = await service.validate("test.py", "invalid code")
 
             assert passed is False
@@ -109,7 +109,7 @@ class TestValidationService:
         validator2 = MockValidator(passed=True, issues=[issue2])
 
         with patch.object(
-            service, "_get_applicable_validators", return_value=[validator1, validator2]
+            service, "get_applicable_validators", return_value=[validator1, validator2]
         ):
             passed, issues_text = await service.validate("test.py", "code")
 
@@ -124,8 +124,7 @@ class TestValidationService:
         with patch("mcp_server.validation.validation_service.ValidatorRegistry") as mock_registry:
             mock_registry.get_validators.return_value = [mock_validator]
 
-            # pylint: disable=protected-access
-            validators = service._get_applicable_validators("src/module.py")
+            validators = service.get_applicable_validators("src/module.py")
 
             assert mock_validator in validators
 
@@ -147,8 +146,7 @@ class TestValidationService:
             ]
 
             # Test file in tests/ directory
-            # pylint: disable=protected-access
-            validators = service._get_applicable_validators("tests/unit/test_worker.py")
+            validators = service.get_applicable_validators("tests/unit/test_worker.py")
 
             # Should filter out non-base LayeredTemplateValidators
             assert python_validator in validators
@@ -166,8 +164,7 @@ class TestValidationService:
             mock_registry.get_validators.return_value = [template_validator]
 
             # File with test_ prefix
-            # pylint: disable=protected-access
-            validators = service._get_applicable_validators("src/test_something.py")
+            validators = service.get_applicable_validators("src/test_something.py")
 
             # Should filter out non-base template validators
             assert template_validator not in validators
@@ -182,8 +179,7 @@ class TestValidationService:
         with patch("mcp_server.validation.validation_service.ValidatorRegistry") as mock_registry:
             mock_registry.get_validators.return_value = [python_validator]
 
-            # pylint: disable=protected-access
-            validators = service._get_applicable_validators("src/random_file.py")
+            validators = service.get_applicable_validators("src/random_file.py")
 
             # Should add base LayeredTemplateValidator as fallback
             assert len(validators) == 2  # python_validator + base template
@@ -202,8 +198,7 @@ class TestValidationService:
         with patch("mcp_server.validation.validation_service.ValidatorRegistry") as mock_registry:
             mock_registry.get_validators.return_value = [template_validator]
 
-            # pylint: disable=protected-access
-            validators = service._get_applicable_validators("src/my_worker.py")
+            validators = service.get_applicable_validators("src/my_worker.py")
 
             # Should NOT add base fallback (worker template already present)
             assert len(validators) == 1
@@ -217,8 +212,7 @@ class TestValidationService:
         issue = ValidationIssue(message="Test issue", severity="error", line=42)
         validator = MockValidator(passed=False, issues=[issue])
 
-        # pylint: disable=protected-access
-        passed, issues_text = await service._run_validators([validator], "test.py", "code")
+        passed, issues_text = await service.run_validators([validator], "test.py", "code")
 
         assert passed is False
         assert "❌" in issues_text  # Error icon
@@ -231,8 +225,7 @@ class TestValidationService:
         issue = ValidationIssue(message="Test warning", severity="warning")
         validator = MockValidator(passed=True, issues=[issue])
 
-        # pylint: disable=protected-access
-        passed, issues_text = await service._run_validators([validator], "test.py", "code")
+        passed, issues_text = await service.run_validators([validator], "test.py", "code")
 
         assert passed is True  # Still passed with warnings
         assert "⚠️" in issues_text  # Warning icon

@@ -115,7 +115,7 @@ class TestExecuteGateJsonViolationsDispatch:
             ]
         )
         with patch("subprocess.run", return_value=_mock_proc(payload)):
-            result = manager._execute_gate(self._gate(), ["a.py"], gate_number=1)
+            result = manager.execute_gate(self._gate(), ["a.py"], gate_number=1)
         assert result["passed"] is False
         assert len(result["issues"]) == 1
         assert result["issues"][0]["message"] == "some error"
@@ -123,7 +123,7 @@ class TestExecuteGateJsonViolationsDispatch:
     def test_empty_json_array_gives_zero_issues(self, manager: QAManager) -> None:
         """An empty JSON array produces no violations and gate passes."""
         with patch("subprocess.run", return_value=_mock_proc("[]")):
-            result = manager._execute_gate(self._gate(), ["a.py"], gate_number=1)
+            result = manager.execute_gate(self._gate(), ["a.py"], gate_number=1)
         assert result["passed"] is True
         assert result["issues"] == []
 
@@ -152,7 +152,7 @@ class TestExecuteGateTextViolationsDispatch:
         """Text output is parsed into issues via the text_violations pipeline."""
         text = "a.py:10: some lint warning"
         with patch("subprocess.run", return_value=_mock_proc(text, returncode=1)):
-            result = manager._execute_gate(self._gate(), ["a.py"], gate_number=1)
+            result = manager.execute_gate(self._gate(), ["a.py"], gate_number=1)
         assert result["passed"] is False
         assert len(result["issues"]) == 1
         assert result["issues"][0]["message"] == "some lint warning"
@@ -160,6 +160,6 @@ class TestExecuteGateTextViolationsDispatch:
     def test_no_matching_lines_gives_zero_issues(self, manager: QAManager) -> None:
         """Output with no matching lines produces no violations."""
         with patch("subprocess.run", return_value=_mock_proc("")):
-            result = manager._execute_gate(self._gate(), ["a.py"], gate_number=1)
+            result = manager.execute_gate(self._gate(), ["a.py"], gate_number=1)
         assert result["passed"] is True
         assert result["issues"] == []

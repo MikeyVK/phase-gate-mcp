@@ -186,6 +186,7 @@
     "mcp_server/utils/path_resolver.py",
     "mcp_server/utils/schema_utils.py",
     "mcp_server/utils/template_config.py",
+    "mcp_server/utils/violation_parser.py",
     "mcp_server/validation/__init__.py",
     "mcp_server/validation/base.py",
     "mcp_server/validation/layered_template_validator.py",

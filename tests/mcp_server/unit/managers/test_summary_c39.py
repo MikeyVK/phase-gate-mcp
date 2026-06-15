@@ -18,6 +18,7 @@ import pytest
 
 from mcp_server.config.schemas.quality_config import JsonViolationsParsing
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.utils.violation_parser import ViolationParser
 from tests.mcp_server.test_support import make_qa_manager
 
 # ---------------------------------------------------------------------------
@@ -33,7 +34,7 @@ def _make_summary_results(
     failed_gate_names: list[str] | None = None,
     duration_total_ms: int = 0,
 ) -> dict:
-    """Minimal results dict compatible with _format_summary_line."""
+    """Minimal results dict compatible with format_summary_line."""
     gates: list[dict] = []
     for name in failed_gate_names or []:
         gates.append({"name": name, "status": "failed", "issues": []})
@@ -51,7 +52,7 @@ def _make_summary_results(
 
 
 def _make_compact_results(duration_total_ms: int = 145) -> dict:
-    """Minimal full results dict for _build_compact_result."""
+    """Minimal full results dict for build_compact_result."""
     return {
         "summary": {"passed": 1, "failed": 0, "skipped": 0, "total_violations": 0},
         "gates": [
@@ -83,19 +84,19 @@ class TestAllSkippedSummarySignal:
     def test_all_skipped_emits_green_checkmark(self, manager: QAManager) -> None:
         """When every gate is skipped, summary must start with ✅."""
         results = _make_summary_results(passed=0, failed=0, skipped=5)
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
         assert line.startswith("✅"), f"All-skipped state must emit ✅ (clean state), got: {line!r}"
 
     def test_all_skipped_does_not_emit_warning(self, manager: QAManager) -> None:
         """When every gate is skipped, ⚠️ must NOT appear."""
         results = _make_summary_results(passed=0, failed=0, skipped=5)
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
         assert "⚠️" not in line, f"⚠️ must not appear for all-skipped clean state, got: {line!r}"
 
     def test_partial_skip_still_emits_warning(self, manager: QAManager) -> None:
         """Some active gates passed + some skipped → still ⚠️ (not all-skipped)."""
         results = _make_summary_results(passed=3, failed=0, skipped=2)
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
         assert "⚠️" in line, f"Partial-skip state (some passed) must still emit ⚠️, got: {line!r}"
 
 
@@ -114,19 +115,19 @@ class TestScopeSummaryContext:
     def test_summary_with_auto_scope_contains_scope_name(self, manager: QAManager) -> None:
         """scope='auto' → 'auto' appears in summary line."""
         results = _make_summary_results(passed=5, failed=0, skipped=0)
-        line = manager._format_summary_line(results, scope="auto", file_count=3)
+        line = manager.format_summary_line(results, scope="auto", file_count=3)
         assert "auto" in line, f"Expected 'auto' in summary when scope='auto', got: {line!r}"
 
     def test_summary_contains_file_count(self, manager: QAManager) -> None:
         """file_count=3 → '3 files' (or similar) appears in summary."""
         results = _make_summary_results(passed=5, failed=0, skipped=0)
-        line = manager._format_summary_line(results, scope="branch", file_count=7)
+        line = manager.format_summary_line(results, scope="branch", file_count=7)
         assert "7" in line, f"Expected file count '7' in summary, got: {line!r}"
 
     def test_summary_without_scope_omits_scope_context(self, manager: QAManager) -> None:
         """When scope is None (not passed), no scope annotation in summary."""
         results = _make_summary_results(passed=5, failed=0, skipped=0)
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
         # Should not crash AND should not include 'None' in the output
         assert "None" not in line, f"'None' must not appear in summary, got: {line!r}"
 
@@ -146,13 +147,13 @@ class TestDurationMs:
     def test_summary_line_contains_duration_ms(self, manager: QAManager) -> None:
         """Summary line must include duration_ms (e.g. '— 1234ms')."""
         results = _make_summary_results(passed=5, failed=0, skipped=0, duration_total_ms=1234)
-        line = manager._format_summary_line(results)
+        line = manager.format_summary_line(results)
         assert "1234ms" in line, f"Expected '1234ms' in summary line, got: {line!r}"
 
     def test_compact_root_has_no_duration_ms(self, manager: QAManager) -> None:
         """Compact JSON payload root must NOT contain 'duration_ms' key."""
         results = _make_compact_results(duration_total_ms=145)
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
         assert "duration_ms" not in compact, (
             f"'duration_ms' must be removed from compact JSON root, keys: {set(compact.keys())}"
         )
@@ -160,7 +161,7 @@ class TestDurationMs:
     def test_compact_root_has_only_overall_pass_and_gates(self, manager: QAManager) -> None:
         """Compact root must have exactly: 'overall_pass' and 'gates'."""
         results = _make_compact_results()
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
         assert set(compact.keys()) == {"overall_pass", "gates"}, (
             f"Unexpected compact root keys: {set(compact.keys())}"
         )
@@ -208,7 +209,7 @@ class TestPyrightMessageSanitation:
                 "rule": "reportAssignmentType",
             }
         ]
-        result = manager._parse_json_violations(payload, _PYRIGHT_PARSING_STRICT)
+        result = ViolationParser.parse_json_violations(payload, _PYRIGHT_PARSING_STRICT)
         assert "\n" not in result[0].message, (
             f"\\n must be sanitized from message, got: {result[0].message!r}"
         )
@@ -224,7 +225,7 @@ class TestPyrightMessageSanitation:
                 "rule": "reportAssignmentType",
             }
         ]
-        result = manager._parse_json_violations(payload, _PYRIGHT_PARSING_STRICT)
+        result = ViolationParser.parse_json_violations(payload, _PYRIGHT_PARSING_STRICT)
         assert "\u00a0" not in result[0].message, (
             f"\\u00a0 must be sanitized from message, got: {result[0].message!r}"
         )
@@ -240,7 +241,7 @@ class TestPyrightMessageSanitation:
                 "rule": "reportAssignmentType",
             }
         ]
-        result = manager._parse_json_violations(payload, _PYRIGHT_PARSING_STRICT)
+        result = ViolationParser.parse_json_violations(payload, _PYRIGHT_PARSING_STRICT)
         msg = result[0].message
         # Must be a single line (no newlines) and secondary part preserved via ' — '
         assert "\n" not in msg

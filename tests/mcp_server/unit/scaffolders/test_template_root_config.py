@@ -27,7 +27,7 @@ class TestTemplateRootConfiguration:
 
         # Expected: mcp_server/scaffolding/templates (tier-root) - resolved
         expected_tier_root = Path("mcp_server/scaffolding/templates").resolve()
-        actual_root = scaffolder._renderer.template_dir  # pylint: disable=protected-access
+        actual_root = scaffolder.renderer.template_dir
 
         assert actual_root == expected_tier_root, (
             f"Expected tier-root {expected_tier_root}, got {actual_root}"
@@ -43,8 +43,7 @@ class TestTemplateRootConfiguration:
         ):
             scaffolder = make_template_scaffolder()
 
-            # pylint: disable=protected-access
-            assert scaffolder._renderer.template_dir == custom_path
+            assert scaffolder.renderer.template_dir == custom_path
 
     def test_fail_fast_on_nonexistent_path(self) -> None:
         """When configured path doesn't exist, raise FileNotFoundError."""
@@ -62,7 +61,7 @@ class TestTemplateRootConfiguration:
 
         # Legacy location should NOT be used
         legacy_path = Path("mcp_server/templates")
-        actual_root = scaffolder._renderer.template_dir  # pylint: disable=protected-access
+        actual_root = scaffolder.renderer.template_dir
 
         assert actual_root != legacy_path, (
             f"Should not use legacy templates/ dir, but got {actual_root}"
@@ -73,7 +72,6 @@ class TestTemplateRootConfiguration:
         scaffolder = make_template_scaffolder()
         validation_service = ValidationService()
 
-        # pylint: disable=protected-access
         assert (
-            scaffolder._renderer.template_dir == validation_service.template_analyzer.template_root
+            scaffolder.renderer.template_dir == validation_service.template_analyzer.template_root
         ), "Scaffolder and ValidationService must use same template root"

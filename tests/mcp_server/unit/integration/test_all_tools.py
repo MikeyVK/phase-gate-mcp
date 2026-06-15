@@ -88,7 +88,7 @@ def make_mock_label_config() -> MagicMock:
 
 def make_mock_qa_manager() -> MagicMock:
     manager = MagicMock()
-    manager._resolve_scope.return_value = ["test.py"]
+    manager.resolve_scope.return_value = ["test.py"]
     manager.run_quality_gates.return_value = {
         "overall_pass": True,
         "summary": {
@@ -108,7 +108,7 @@ def make_mock_qa_manager() -> MagicMock:
             }
         ],
     }
-    manager._build_compact_result.return_value = {
+    manager.build_compact_result.return_value = {
         "overall_pass": True,
         "duration_ms": 0,
         "gates": [

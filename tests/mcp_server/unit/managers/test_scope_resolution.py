@@ -6,8 +6,6 @@ C22: Resolve scope=branch using git diff parent...HEAD (merge-base semantics).
 @layer: Tests (Unit)
 @dependencies: pytest, subprocess, tests.mcp_server.test_support, mcp_server.managers.qa_manager
 """
-# pyright: reportPrivateUsage=false
-
 from __future__ import annotations
 
 import subprocess
@@ -40,7 +38,7 @@ def _project_scope_config(include_globs: list[str]) -> MagicMock:
 
 
 class TestScopeResolutionBranch:
-    """C22: _resolve_scope('branch') returns Python files from git diff <parent>...HEAD."""
+    """C22: resolve_scope('branch') returns Python files from git diff <parent>...HEAD."""
 
     def test_branch_scope_returns_changed_py_files(self, tmp_path: Path) -> None:
         """Changed .py files from git diff <parent>...HEAD are returned as sorted list."""
@@ -55,7 +53,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git_diff):
-            result = manager._resolve_scope("branch")
+            result = manager.resolve_scope("branch")
 
         assert "mcp_server/bar.py" in result
         assert "mcp_server/foo.py" in result
@@ -73,7 +71,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git_diff):
-            result = manager._resolve_scope("branch")
+            result = manager.resolve_scope("branch")
 
         assert result == sorted(result)
 
@@ -90,7 +88,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git_diff):
-            result = manager._resolve_scope("branch")
+            result = manager.resolve_scope("branch")
 
         assert "docs/README.md" not in result
         assert ".phase-gate/state.json" not in result
@@ -107,7 +105,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git_fail):
-            result = manager._resolve_scope("branch")
+            result = manager.resolve_scope("branch")
 
         assert result == []
 
@@ -122,7 +120,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git_empty):
-            result = manager._resolve_scope("branch")
+            result = manager.resolve_scope("branch")
 
         assert result == []
 
@@ -148,7 +146,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git):
-            manager._resolve_scope("branch")
+            manager.resolve_scope("branch")
 
         assert captured_cmd, "subprocess.run was not called"
         assert "feature/parent-branch...HEAD" in captured_cmd[0]
@@ -175,7 +173,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git):
-            manager._resolve_scope("branch")
+            manager.resolve_scope("branch")
 
         assert captured_cmd, "subprocess.run was not called"
         assert "epic/76-quality-gates...HEAD" in captured_cmd[0], (
@@ -200,7 +198,7 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git):
-            manager._resolve_scope("branch")
+            manager.resolve_scope("branch")
 
         assert captured_cmd, "subprocess.run was not called"
         git_cmd = captured_cmd[0]
@@ -221,14 +219,14 @@ class TestScopeResolutionBranch:
             return result
 
         with patch("subprocess.run", side_effect=fake_git):
-            manager._resolve_scope("branch")
+            manager.resolve_scope("branch")
 
         assert captured_cmd, "subprocess.run was not called"
         assert "main...HEAD" in captured_cmd[0]
 
 
 class TestScopeResolutionProject:
-    """C21: _resolve_scope('project') expands include_globs from config against workspace_root."""
+    """C21: resolve_scope('project') expands include_globs from config against workspace_root."""
 
     def test_project_scope_returns_matching_files(self, tmp_path: Path) -> None:
         """Files matching include_globs are returned as sorted relative paths."""
@@ -244,7 +242,7 @@ class TestScopeResolutionProject:
         cfg = _project_scope_config(include_globs=["mcp_server/*.py"])
         manager = make_qa_manager(tmp_path, quality_config=cfg)
 
-        result = manager._resolve_scope("project")
+        result = manager.resolve_scope("project")
 
         assert "mcp_server/alpha.py" in result or "mcp_server\\alpha.py" in result
 
@@ -258,7 +256,7 @@ class TestScopeResolutionProject:
         cfg = _project_scope_config(include_globs=["pkg/*.py"])
         manager = make_qa_manager(tmp_path, quality_config=cfg)
 
-        result = manager._resolve_scope("project")
+        result = manager.resolve_scope("project")
 
         assert result == sorted(result)
 
@@ -270,7 +268,7 @@ class TestScopeResolutionProject:
         cfg = _project_scope_config(include_globs=["src/*.py", "src/util.py"])
         manager = make_qa_manager(tmp_path, quality_config=cfg)
 
-        result = manager._resolve_scope("project")
+        result = manager.resolve_scope("project")
 
         assert result.count(result[0]) == 1 if result else True
 
@@ -281,13 +279,13 @@ class TestScopeResolutionProject:
         cfg = _project_scope_config(include_globs=[])
         manager = make_qa_manager(tmp_path, quality_config=cfg)
 
-        result = manager._resolve_scope("project")
+        result = manager.resolve_scope("project")
 
         assert result == []
 
     def test_project_scope_no_workspace_root_returns_empty(self) -> None:
         """When workspace_root is None, scope=project returns [] (graceful no-op)."""
         manager = make_qa_manager()
-        result = manager._resolve_scope("project")
+        result = manager.resolve_scope("project")
 
         assert result == []

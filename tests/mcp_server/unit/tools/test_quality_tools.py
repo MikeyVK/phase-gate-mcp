@@ -50,7 +50,7 @@ class TestRunQualityGatesTool:
     async def test_no_files_triggers_project_level(self) -> None:
         """Test scope='project' resolves to empty list and is forwarded to manager."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = []
+        mock_manager.resolve_scope.return_value = []
         mock_manager.run_quality_gates.return_value = {
             "version": "2.0",
             "mode": "project-level",
@@ -78,7 +78,7 @@ class TestRunQualityGatesTool:
 
         text = _summary_text(result)
         assert "Quality gates" in text
-        mock_manager._resolve_scope.assert_called_once_with("project", files=None)
+        mock_manager.resolve_scope.assert_called_once_with("project", files=None)
         mock_manager.run_quality_gates.assert_called_once_with(
             [],
             effective_scope="project",
@@ -251,7 +251,7 @@ class TestRunQualityGatesTool:
             ],
             "overall_pass": True,
         }
-        mock_manager._build_compact_result.return_value = {
+        mock_manager.build_compact_result.return_value = {
             "overall_pass": True,
             "duration_ms": 0,
             "gates": [
@@ -369,7 +369,7 @@ class TestRunQualityGatesInputC28:
     async def test_execute_scope_files_passes_list_to_manager(self) -> None:
         """execute(scope='files', files=[...]) passes the list verbatim to run_quality_gates."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["src/foo.py"]
+        mock_manager.resolve_scope.return_value = ["src/foo.py"]
         mock_manager.run_quality_gates.return_value = {
             "summary": {
                 "passed": 1,
@@ -421,10 +421,10 @@ class TestRunQualityGatesScopeGuardC41:
         tool = RunQualityGatesTool(manager=manager)
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=["backend/__init__.py"]),
+            patch.object(manager, "resolve_scope", return_value=["backend/__init__.py"]),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -453,10 +453,10 @@ class TestRunQualityGatesScopeGuardC41:
         tool = RunQualityGatesTool(manager=manager)
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=["backend/__init__.py"]),
+            patch.object(manager, "resolve_scope", return_value=["backend/__init__.py"]),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -504,11 +504,11 @@ class TestRunQualityGatesFailedSubsetC42:
         resolved_files = ["a.py", "b.py"]
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=resolved_files),
+            patch.object(manager, "resolve_scope", return_value=resolved_files),
             patch("pathlib.Path.exists", return_value=True),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -543,11 +543,11 @@ class TestRunQualityGatesFailedSubsetC42:
         resolved_files = ["a.py", "b.py"]
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=resolved_files),
+            patch.object(manager, "resolve_scope", return_value=resolved_files),
             patch("pathlib.Path.exists", return_value=True),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -587,7 +587,7 @@ class TestEffectiveScopePropagationC43:
         resolved: list[str],
     ) -> None:
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = resolved
+        mock_manager.resolve_scope.return_value = resolved
         manager_result = {
             "summary": {
                 "passed": 1,
@@ -605,7 +605,7 @@ class TestEffectiveScopePropagationC43:
         params = RunQualityGatesInput(scope=scope, files=files_arg)
         await tool.execute(params, NoteContext())
 
-        mock_manager._resolve_scope.assert_called_once_with(scope, files=files_arg)
+        mock_manager.resolve_scope.assert_called_once_with(scope, files=files_arg)
         mock_manager.run_quality_gates.assert_called_once_with(
             resolved,
             effective_scope=scope,
@@ -618,7 +618,7 @@ class TestScopeSwitchInvariantsC43:
     @pytest.mark.asyncio
     async def test_auto_files_auto_sequence_preserves_scope_intent(self) -> None:
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.side_effect = [
+        mock_manager.resolve_scope.side_effect = [
             ["changed_auto.py"],
             ["target_file.py"],
             ["changed_auto_2.py"],
@@ -659,7 +659,7 @@ class TestRunQualityGatesToolConflictC8:
     async def test_run_quality_gates_returns_error_on_os_error(self) -> None:
         """RunQualityGatesTool returns error DTO when manager raises OSError."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.resolve_scope.return_value = ["some_file.py"]
         mock_manager.run_quality_gates.side_effect = OSError("Quality state write failed")
 
         tool = RunQualityGatesTool(manager=mock_manager)
@@ -676,7 +676,7 @@ class TestRunQualityGatesToolConflictC8:
         from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
 
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.resolve_scope.return_value = ["some_file.py"]
         mock_manager.run_quality_gates.side_effect = OSError("Quality state write failed")
 
         tool = RunQualityGatesTool(manager=mock_manager)
@@ -707,7 +707,7 @@ class TestRunQualityGatesConflictErrorC3:
         )
 
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.resolve_scope.return_value = ["some_file.py"]
         mock_manager.run_quality_gates.side_effect = QualityStateMutationConflictError(
             diagnostic="Quality state write failed — lock timeout (5s)",
             recovery="Retry the quality-gates run once the current run completes.",
@@ -753,7 +753,7 @@ class TestRunQualityGatesVerboseOption:
     async def test_verbose_propagated_to_manager(self) -> None:
         """Verify RunQualityGatesTool propagates verbose to QAManager."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["foo.py"]
+        mock_manager.resolve_scope.return_value = ["foo.py"]
         mock_manager.run_quality_gates.return_value = {
             "summary": {
                 "passed": 1,
@@ -787,7 +787,7 @@ class TestRunQualityGatesVerboseOption:
     async def test_recovery_note_when_verbose_false_on_failure(self) -> None:
         """Verify RecoveryNote is emitted when verbose=False and gates fail."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["foo.py"]
+        mock_manager.resolve_scope.return_value = ["foo.py"]
         mock_manager.run_quality_gates.return_value = {
             "summary": {
                 "passed": 0,
@@ -821,7 +821,7 @@ class TestRunQualityGatesVerboseOption:
     async def test_no_recovery_note_when_verbose_true_on_failure(self) -> None:
         """Verify no RecoveryNote is emitted when verbose=True and gates fail."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["foo.py"]
+        mock_manager.resolve_scope.return_value = ["foo.py"]
         mock_manager.run_quality_gates.return_value = {
             "summary": {
                 "passed": 0,

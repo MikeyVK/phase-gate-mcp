@@ -166,7 +166,7 @@ class TestToolResultContentContract:
         # C36: _build_compact_result is now an instance method; configure mock
         # return value so this test verifies the tool-response contract, not
         # the internals of _build_compact_result.
-        mock_manager._build_compact_result.return_value = {
+        mock_manager.build_compact_result.return_value = {
             "overall_pass": True,
             "duration_ms": 0,
             "gates": [

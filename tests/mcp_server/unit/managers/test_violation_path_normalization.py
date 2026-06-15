@@ -4,7 +4,7 @@ C36 REFACTOR: Violation file path normalization (F-15).
 
 Planning C36 / state cycle 37:
   Normalize all violation `file` fields to workspace-relative POSIX in
-  _normalize_file_path so that all gates expose the same canonical format.
+  normalize_file_path so that all gates expose the same canonical format.
 
 Exit criteria:
   - All violation file fields in a compact payload use the same POSIX-relative format.
@@ -15,8 +15,6 @@ Exit criteria:
 @layer: Tests (Unit)
 @dependencies: pytest, pathlib, mcp_server.managers.qa_manager
 """
-# pyright: reportPrivateUsage=false
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -64,18 +62,18 @@ def _make_results(gates: list[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Unit tests for _normalize_file_path
+# Unit tests for normalize_file_path
 # ---------------------------------------------------------------------------
 
 
 class TestNormalizeFilePath:
-    """_normalize_file_path converts any path form to workspace-relative POSIX."""
+    """normalize_file_path converts any path form to workspace-relative POSIX."""
 
     def test_absolute_windows_path_becomes_relative_posix(self) -> None:
         """Absolute Windows path is made relative to workspace_root and POSIX formatted."""
         manager = _make_manager()
 
-        result = manager._normalize_file_path(_ABS_WIN)
+        result = manager.normalize_file_path(_ABS_WIN)
 
         assert result == _REL_FILE, f"Expected '{_REL_FILE}', got '{result}'"
 
@@ -83,7 +81,7 @@ class TestNormalizeFilePath:
         """Absolute POSIX-form path is made relative to workspace_root."""
         manager = _make_manager()
 
-        result = manager._normalize_file_path(_ABS_POSIX)
+        result = manager.normalize_file_path(_ABS_POSIX)
 
         assert result == _REL_FILE
 
@@ -91,7 +89,7 @@ class TestNormalizeFilePath:
         """Relative Windows backslash path is converted to forward-slash POSIX form."""
         manager = _make_manager()
 
-        result = manager._normalize_file_path(_REL_BACKSLASH)
+        result = manager.normalize_file_path(_REL_BACKSLASH)
 
         assert result == _REL_FILE
 
@@ -99,7 +97,7 @@ class TestNormalizeFilePath:
         """A path that is already workspace-relative POSIX is returned as-is."""
         manager = _make_manager()
 
-        result = manager._normalize_file_path(_REL_FILE)
+        result = manager.normalize_file_path(_REL_FILE)
 
         assert result == _REL_FILE
 
@@ -107,7 +105,7 @@ class TestNormalizeFilePath:
         """None file path is passed through as None."""
         manager = _make_manager()
 
-        result = manager._normalize_file_path(None)
+        result = manager.normalize_file_path(None)
 
         assert result is None
 
@@ -119,7 +117,7 @@ class TestNormalizeFilePath:
         """
         manager = make_qa_manager()
 
-        result = manager._normalize_file_path(_REL_BACKSLASH)
+        result = manager.normalize_file_path(_REL_BACKSLASH)
 
         assert result is not None
         assert "\\" not in result, f"Backslashes remain in result: {result!r}"
@@ -154,7 +152,7 @@ class TestCompactPayloadPathNormalization:
         ]
         results = _make_results(gates)
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         file_val = compact["gates"][0]["violations"][0]["file"]
         assert file_val == _REL_FILE, (
@@ -200,7 +198,7 @@ class TestCompactPayloadPathNormalization:
         )
         results = _make_results([gate0, gate1])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         file_gate0 = compact["gates"][0]["violations"][0]["file"]
         file_gate1 = compact["gates"][1]["violations"][0]["file"]
@@ -240,7 +238,7 @@ class TestCompactPayloadPathNormalization:
         ]
         results = _make_results(gates)
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         for gate in compact["gates"]:
             for violation in gate["violations"]:
@@ -270,7 +268,7 @@ class TestCompactPayloadPathNormalization:
         ]
         results = _make_results(gates)
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         file_val = compact["gates"][0]["violations"][0]["file"]
         assert "\\" not in (file_val or ""), (

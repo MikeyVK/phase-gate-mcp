@@ -9,8 +9,6 @@ C24: Resolve scope=auto edge cases — no baseline fallback and empty union.
 @layer: Tests (Unit)
 @dependencies: pytest, subprocess, tests.mcp_server.test_support, mcp_server.managers.qa_manager
 """
-# pyright: reportPrivateUsage=false
-
 from __future__ import annotations
 
 import json
@@ -72,7 +70,7 @@ class TestAutoScopeHappyPath:
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff([])):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert result == ["old_fail.py"], (
             f"Expected ['old_fail.py'] but got {result!r}. "
@@ -85,7 +83,7 @@ class TestAutoScopeHappyPath:
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["changed.py"])):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert result == ["changed.py"], (
             f"Expected ['changed.py'] but got {result!r}. "
@@ -102,7 +100,7 @@ class TestAutoScopeHappyPath:
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["changed.py", "old_fail.py"])):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert set(result) == {"old_fail.py", "another_fail.py", "changed.py"}, (
             f"Expected union of diff + failed_files but got {result!r}."
@@ -114,7 +112,7 @@ class TestAutoScopeHappyPath:
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["a_changed.py", "m_changed.py"])):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert result == sorted(result), f"Result is not sorted: {result!r}"
 
@@ -124,7 +122,7 @@ class TestAutoScopeHappyPath:
         manager = make_qa_manager(tmp_path, quality_state_repository=repo)
 
         with patch("subprocess.run", return_value=_fake_diff(["shared.py"])):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert result.count("shared.py") == 1, f"Duplicate entry in result: {result!r}"
 
@@ -145,7 +143,7 @@ class TestAutoScopeHappyPath:
             return _fake_diff(["mcp_server/foo.py"])
 
         with patch("subprocess.run", side_effect=fake_git):
-            manager._resolve_scope("auto")
+            manager.resolve_scope("auto")
 
         assert captured, "subprocess.run was not called"
         assert "deadbeef..HEAD" in captured[0], (
@@ -166,7 +164,7 @@ class TestAutoScopeHappyPath:
         raw_result.stdout = "mcp_server/logic.py\ndocs/README.md\n.phase-gate/state.json\n"
 
         with patch("subprocess.run", return_value=raw_result):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert "docs/README.md" not in result
         assert ".phase-gate/state.json" not in result
@@ -199,7 +197,7 @@ class TestAutoScopeEdgeCases:
         mock_cfg.project_scope = project_scope
         manager = make_qa_manager(tmp_path, quality_config=mock_cfg)
 
-        result = manager._resolve_scope("auto")
+        result = manager.resolve_scope("auto")
 
         assert result != [], (
             "scope=auto with no baseline must fallback to project scope, not return []."
@@ -234,7 +232,7 @@ class TestAutoScopeEdgeCases:
         mock_cfg.project_scope = project_scope
         manager = make_qa_manager(tmp_path, quality_config=mock_cfg)
 
-        result = manager._resolve_scope("auto")
+        result = manager.resolve_scope("auto")
 
         assert result != [], (
             "scope=auto with empty baseline_sha must fallback to project scope, not return []."
@@ -249,7 +247,7 @@ class TestAutoScopeEdgeCases:
         manager = make_qa_manager(tmp_path)
 
         with patch("subprocess.run", return_value=_fake_diff([])):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert result == [], (
             f"scope=auto with empty diff and empty failed_files must return [], got: {result!r}"
@@ -258,7 +256,7 @@ class TestAutoScopeEdgeCases:
     def test_auto_scope_no_workspace_root_returns_empty(self) -> None:
         """When workspace_root is None, scope=auto returns [] gracefully."""
         manager = make_qa_manager()
-        result = manager._resolve_scope("auto")
+        result = manager.resolve_scope("auto")
         assert result == [], f"Expected [] when workspace_root is None, got: {result!r}"
 
 
@@ -281,7 +279,7 @@ class TestAutoScopeSplitState:
         manager = make_qa_manager(tmp_path, quality_state_repository=mock_repo)
 
         with patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         mock_repo.load.assert_called()
         assert "repo_fail.py" in result
@@ -309,7 +307,7 @@ class TestAutoScopeSplitState:
         manager = make_qa_manager(tmp_path, quality_state_repository=mock_repo)
 
         with patch("subprocess.run", return_value=MagicMock(returncode=0, stdout="")):
-            result = manager._resolve_scope("auto")
+            result = manager.resolve_scope("auto")
 
         assert "repo_fail.py" in result
         assert "stale.py" not in result
