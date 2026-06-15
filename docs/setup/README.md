@@ -53,43 +53,44 @@ pip install -e .
 
 ---
 
-## 3. IDE Configuration
+## 3. IDE Configuration: VS Code vs. Google Antigravity
 
-Follow the steps below depending on whether you are using **VS Code** or **Google Antigravity**.
+There are critical structural differences in how **VS Code** and **Google Antigravity** handle MCP server registration and agent rules. Choose the section below corresponding to your IDE:
 
 ### Option A: VS Code Setup
 
-VS Code reads the MCP server configuration locally from the workspace.
+VS Code registers MCP servers at the workspace level, resolving variables dynamically based on the active project directory.
 
 1. **Copy the MCP configuration:**
    Copy the `mcp.json` template from `docs/setup/mcp.json` into `.vscode/mcp.json` (which is gitignored):
    ```powershell
    Copy-Item docs/setup/mcp.json .vscode/mcp.json
    ```
-   *The template uses `${workspaceFolder}` and `${env:GITHUB_TOKEN}`, so no hardcoded paths are needed.*
+   *Note: VS Code supports dynamic variables like `${workspaceFolder}` and `${env:GITHUB_TOKEN}`, allowing you to share the configuration across users without hardcoding absolute paths.*
 
-2. **Configure Agent Rules:**
-   Ensure the always-on instructions file (`AGENTS.md`) is loaded by adding the following setting to your VS Code `settings.json` (user or workspace):
+2. **Configure Always-On Agent Rules:**
+   To enable VS Code to read the global instructions file (`AGENTS.md`), add the following setting to your VS Code user or workspace `settings.json`:
    ```json
    "chat.useAgentsMdFile": true
    ```
+   This configuration forces the VS Code chat/agent runner to prepend the instructions from the repository's root `AGENTS.md` file to every session.
 
 3. **Reload Window:**
-   Run `Developer: Reload Window` in VS Code. The MCP server will start automatically.
+   Run the `Developer: Reload Window` command in VS Code. The MCP server proxy will start automatically in the background.
 
 ---
 
 ### Option B: Google Antigravity Setup
 
-Google Antigravity manages MCP servers through a system-wide configuration file located in the user's home directory.
+Google Antigravity manages MCP servers globally using a system-wide configuration file. Dynamic environment variables and workspace variables (like `${workspaceFolder}`) are not supported; therefore, you must configure absolute paths.
 
 1. **Locate the configuration file:**
-   Open the `mcp_config.json` file:
+   Open the global `mcp_config.json` file on your machine:
    * **Windows:** `C:\Users\<username>\.gemini\config\mcp_config.json` (or `...\.gemini\antigravity\mcp_config.json`)
    * **Linux / macOS:** `~/.gemini/config/mcp_config.json`
 
 2. **Add the MCP server definition:**
-   Add the `phase-gate-mcp` entry under the `mcpServers` object. Replace path placeholders with the absolute path to your cloned repository, and ensure `command` points to the virtual environment's python executable:
+   Add the `phase-gate-mcp` entry under the `mcpServers` object. Replace path placeholders with the absolute path to your cloned repository, and ensure `command` points to the virtual environment's Python executable:
    ```json
    {
      "mcpServers": {
@@ -112,25 +113,42 @@ Google Antigravity manages MCP servers through a system-wide configuration file 
      }
    }
    ```
+   *Note: Use forward slashes (`/`) even on Windows to prevent JSON escaping issues.*
 
-3. **Restart Antigravity:**
-   Restart the Antigravity application or reload your agent session to apply the configuration.
+3. **Agent Configuration & Rule Loading:**
+   Unlike VS Code, Google Antigravity natively detects and registers agent rules, workflows, and prompts from the workspace root directory without requiring any manual configurations in a settings file. When you open the cloned repository as a workspace, Antigravity automatically detects:
+   * `AGENTS.md` (Global project rules and priority matrix)
+   * `.agents/workflows/` (Custom slash commands like `/start-issue`, `/end-issue`, and `/go`)
+   * `.github/agents/` or `.agents/rules/` (Specialized agent role prompts: `co.agent.md`, `imp.agent.md`, `qa.agent.md`)
+
+4. **Restart Antigravity:**
+   Fully restart the Google Antigravity application or reload your workspace session to apply the changes and start the MCP server.
 
 ---
 
-## 4. Agent Rules, Workflows, and Prompts
+## 4. Agent Files & Git Availability
 
-When you open the cloned repository as a workspace in your IDE (VS Code or Google Antigravity), the rules, workflows, and prompts are loaded automatically from the repository:
+All core files defining the agent behaviors, constraints, workflows, and role prompts are fully tracked in Git and immediately available when cloning the repository. 
 
-* **Global Rules (`AGENTS.md`):** Loaded automatically to define coding, testing (TDD), and phase-gate standards.
-* **Slash Commands / Workflows (`.agents/workflows/`):** Custom workflows (like `/start-issue`, `/end-issue`, and `/go`) are registered automatically as skills/shortcuts.
-* **Role prompts (`.github/agents/`):** To start a session in a specific agent role, open a clean chat and mention/load the corresponding agent prompt (e.g. `@file:co.agent.md`, `imp.agent.md`, or `qa.agent.md`).
+Verify that the following files are present in your workspace:
+* **Project Rules (Always-on instructions):** [AGENTS.md](file:///c:/temp/pgmcp/AGENTS.md)
+* **Custom Slash Commands / Workflows:**
+  * [create-issue.md](file:///c:/temp/pgmcp/.agents/workflows/create-issue.md)
+  * [end-issue.md](file:///c:/temp/pgmcp/.agents/workflows/end-issue.md)
+  * [go.md](file:///c:/temp/pgmcp/.agents/workflows/go.md)
+  * [start-issue.md](file:///c:/temp/pgmcp/.agents/workflows/start-issue.md)
+* **Specialized Agent Roles:**
+  * **Coordination Authority (@co):** [.github/agents/co.agent.md](file:///c:/temp/pgmcp/.github/agents/co.agent.md) & [.agents/rules/co.agent.md](file:///c:/temp/pgmcp/.agents/rules/co.agent.md)
+  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](file:///c:/temp/pgmcp/.github/agents/imp.agent.md) & [.agents/rules/imp.agent.md](file:///c:/temp/pgmcp/.agents/rules/imp.agent.md)
+  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](file:///c:/temp/pgmcp/.github/agents/qa.agent.md) & [.agents/rules/qa.agent.md](file:///c:/temp/pgmcp/.agents/rules/qa.agent.md)
+
+*To activate an agent role in a chat session, type `@file:.github/agents/<role>.agent.md` (e.g. `@file:.github/agents/co.agent.md`) to load its specific system instructions.*
 
 ---
 
 ## 5. Verification
 
-Controleer of de MCP server actief is door het volgende commando in de chat te typen:
+Verify that the MCP server is active by running the following command in the chat:
 * **`health_check`** (or `/go` to trigger the active phase check). The server should return a healthy status.
 
 ---
