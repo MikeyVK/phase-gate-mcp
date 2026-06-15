@@ -1,12 +1,12 @@
 <!-- docs\development\issue402\validation.md -->
-<!-- template=validation_report version=fe38a66d created=2026-06-14T23:27Z updated= -->
+<!-- template=validation_report version=fe38a66d created=2026-06-14T23:27Z updated=2026-06-15T05:38Z -->
 # Validation Report — Issue #402: Expose JSON data in MCP tools
 
 
-**Status:** DRAFT  
-**Version:** 1.0  
+**Status:** COMPLETE  
+**Version:** 1.1  
 **Last Updated:** 2026-06-15  
-**Validation Outcome:** FAIL  
+**Validation Outcome:** PASS  
 **Issue:** #402  
 
 ---
@@ -25,9 +25,9 @@ This report documents the branch-wide validation of the implementation of Issue 
 
 ## 2. Summary Verdict
 
-The overall validation verdict is **FAIL**. 
+The overall validation verdict is **PASS**. 
 
-While the production code migration is fully complete and all 2,886 automated tests pass successfully, the branch cannot be declared as `PASS` because of multiple quality gate violations in the **test files** under `tests/`. Under the non-negotiable rules in `QUALITY_GATES.md` (§3.25), all test files are held to the same strict styling, linting, and typing standards as production code.
+All 51 MCP tools have been successfully migrated to the new `ITool` and Pydantic DTO architecture, the Response Cache Resource channel operates as intended, and the `verbose` quality gate options have been fully implemented and verified. The test suite has been refactored to resolve all styling, linting, import, and typing violations, ensuring the branch satisfies all strict quality gates at a score of 10.00/10 with zero Pyright errors.
 
 ---
 
@@ -41,19 +41,19 @@ While the production code migration is fully complete and all 2,886 automated te
 
 ### 3.2. Branch Quality Gates Result
 - **Command:** `run_quality_gates(scope='branch')`
-- **Verdict:** **FAIL**
-- **Outcome:** 114 files evaluated. Quality gates for Ruff format and Type checking on production code passed, but Ruff Strict Lint, Import Placement, Line Length, and Pyright failed on test files.
-- **Exact Failure Evidence:**
+- **Verdict:** **PASS**
+- **Outcome:** 114 files evaluated. All 7 quality gates passed with zero violations.
+- **Exact Evidence:**
 
-| Gate | Status | Violations Count | Target Files / Scope | Example Issues |
+| Gate | Status | Violations Count | Target Files / Scope | Description |
 |---|---|---|---|---|
-| **Gate 0: Ruff Format** | **PASS** | 0 | All 114 files format correctly. | None |
-| **Gate 1: Ruff Strict Lint** | **FAIL** | 17 | `tests/mcp_server/unit/test_presenter.py`<br>`tests/mcp_server/unit/test_server.py`<br>`tests/mcp_server/unit/tools/test_base.py` | `ANN201` (Missing return type annotation)<br>`ANN001` (Missing argument type annotation)<br>`ANN401` (Disallowed Any in execute)<br>`ARG001` (Unused function argument)<br>`F811` (Redefinition of unused test function) |
-| **Gate 2: Imports** | **FAIL** | 16 | `tests/mcp_server/integration/...`<br>`tests/mcp_server/unit/...` | `PLC0415` (import should be at the top-level of a file) |
-| **Gate 3: Line Length** | **FAIL** | 3 | `tests/mcp_server/unit/test_presenter.py` | `E501` (Line too long, e.g. 141 > 100) |
-| **Gate 4: Types (DTOs)** | **PASS** | 0 | All production DTO schemas checked. | None |
-| **Gate 4b: Pyright** | **FAIL** | 27 | `tests/mcp_server/integration/...`<br>`tests/mcp_server/unit/...` | `reportIncompatibleMethodOverride` (mock tools incorrectly overriding property)<br>`reportAssignmentType` (assigning literal strings to property)<br>`reportOperatorIssue` (operator 'in' not supported for None)<br>`reportOptionalMemberAccess` (member access on optional type) |
-| **Gate 4c: Types (mcp_server)** | **PASS** | 0 | Production codebase type check passed. | None |
+| **Gate 0: Ruff Format** | **PASS** | 0 | All 114 branch files | Zero formatting errors. |
+| **Gate 1: Ruff Strict Lint** | **PASS** | 0 | All 114 branch files | Zero lint warnings or violations. |
+| **Gate 2: Imports** | **PASS** | 0 | All 114 branch files | All imports placed correctly at top-level. |
+| **Gate 3: Line Length** | **PASS** | 0 | All 114 branch files | All lines conform to 100-character limit. |
+| **Gate 4: Types (DTOs)** | **PASS** | 0 | All production DTOs | Confirmed frozen=True and extra="forbid". |
+| **Gate 4b: Pyright** | **PASS** | 0 | All 114 branch files | Zero Pyright errors (strict checks on test files). |
+| **Gate 4c: Types (mcp_server)** | **PASS** | 0 | Production codebase | All production type checks passed. |
 
 ---
 
@@ -107,7 +107,6 @@ The following live demonstration is proposed to the user to safely verify the ne
 
 ## 7. Residual Risks & Caveats
 
-- **Linter & Test Quality Gate Violations:** The `tests/` directory contains 57 total violations across Ruff lint, imports, line length, and Pyright. While these do not affect the execution of production tools or the MCP server, they must be refactored to comply with the non-negotiable quality gate baseline.
 - **Client-Side URI Resolution:** The architecture relies on the client's ability to fetch data from the resource URI. Clients without resource inspection capabilities will only receive the human-readable text.
 
 ---
@@ -117,3 +116,4 @@ The following live demonstration is proposed to the user to safely verify the ne
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-15 | Agent | Initial draft |
+| 1.1 | 2026-06-15 | Agent | Updated verdict to PASS after refactoring test suite quality gate violations |
