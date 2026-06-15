@@ -108,6 +108,7 @@ The following live demonstration is proposed to the user to safely verify the ne
 ## 7. Residual Risks & Caveats
 
 - **Client-Side URI Resolution:** The architecture relies on the client's ability to fetch data from the resource URI. Clients without resource inspection capabilities will only receive the human-readable text.
+- **Presenter Gaps (Deferred to Future Issue):** During validation, an architectural review of the `TextPresenter` identified several formatting and rendering gaps where python code and notes bypass the presenter config (such as hardcoded emojis in note classes/DTOs, duplicate instructions, and hardcoded URI reference formatting). These have been documented in the presenter gap analysis report: [presenter_gap_analysis.md](file:///C:/temp/pgmcp/docs/development/issue402/presenter_gap_analysis.md) and are deferred to a separate issue for refactoring.
 
 ---
 
