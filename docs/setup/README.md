@@ -90,7 +90,7 @@ Google Antigravity manages MCP servers globally using a system-wide configuratio
    * **Linux / macOS:** `~/.gemini/config/mcp_config.json`
 
 2. **Add the MCP server definition:**
-   Add the `phase-gate-mcp` entry under the `mcpServers` object. Replace path placeholders with the absolute path to your cloned repository, and ensure `command` points to the virtual environment's Python executable:
+   Add the `phase-gate-mcp` entry under the `mcpServers` object. Replace path placeholders with the absolute path to your cloned repository, ensure `command` points to the virtual environment's Python executable, and completely omit the `GITHUB_TOKEN` environment variable (Antigravity on Windows will automatically retrieve this from your user environment variables):
    ```json
    {
      "mcpServers": {
@@ -106,8 +106,7 @@ Google Antigravity manages MCP servers globally using a system-wide configuratio
            "MCP_SERVER_PROJECT_DIR": ".phase-gate",
            "GITHUB_OWNER": "MikeyVK",
            "GITHUB_REPO": "phase-gate-mcp",
-           "GITHUB_PROJECT_NUMBER": "1",
-           "GITHUB_TOKEN": "<YOUR_GITHUB_TOKEN>"
+           "GITHUB_PROJECT_NUMBER": "1"
          }
        }
      }
