@@ -37,14 +37,14 @@ class TestExtractViolationsArray:
     # violations_path=None  → root is the list
     # ------------------------------------------------------------------
 
-    def test_none_path_returns_root_list(self, manager: QAManager) -> None:
+    def test_none_path_returns_root_list(self) -> None:
         """When violations_path is None the root array is returned unchanged."""
         raw: list[dict] = [{"filename": "a.py", "message": "msg"}]
         parsing = JsonViolationsParsing(field_map=_FLAT_MAP)
         result = ViolationParser.extract_violations_array(raw, parsing)
         assert result is raw
 
-    def test_none_path_empty_list(self, manager: QAManager) -> None:
+    def test_none_path_empty_list(self) -> None:
         """Empty root list yields empty result."""
         parsing = JsonViolationsParsing(field_map=_FLAT_MAP)
         assert ViolationParser.extract_violations_array([], parsing) == []
@@ -53,7 +53,7 @@ class TestExtractViolationsArray:
     # violations_path single-level
     # ------------------------------------------------------------------
 
-    def test_single_key_extracts_nested_array(self, manager: QAManager) -> None:
+    def test_single_key_extracts_nested_array(self) -> None:
         """Single-segment path extracts data['generalDiagnostics']."""
         raw = {
             "generalDiagnostics": [
@@ -65,7 +65,7 @@ class TestExtractViolationsArray:
         result = ViolationParser.extract_violations_array(raw, parsing)
         assert result == raw["generalDiagnostics"]
 
-    def test_single_key_missing_returns_empty_list(self, manager: QAManager) -> None:
+    def test_single_key_missing_returns_empty_list(self) -> None:
         """Missing path key returns empty list (graceful degradation)."""
         raw = {"summary": {}}
         parsing = JsonViolationsParsing(field_map=_FLAT_MAP, violations_path="generalDiagnostics")
@@ -76,14 +76,14 @@ class TestExtractViolationsArray:
     # violations_path multi-level
     # ------------------------------------------------------------------
 
-    def test_dotted_path_extracts_deep_array(self, manager: QAManager) -> None:
+    def test_dotted_path_extracts_deep_array(self) -> None:
         """Multi-segment dot path descends into nested dicts."""
         raw = {"result": {"diagnostics": [{"filename": "b.py", "message": "deep"}]}}
         parsing = JsonViolationsParsing(field_map=_FLAT_MAP, violations_path="result.diagnostics")
         result = ViolationParser.extract_violations_array(raw, parsing)
         assert result == [{"filename": "b.py", "message": "deep"}]
 
-    def test_dotted_path_partial_missing_returns_empty_list(self, manager: QAManager) -> None:
+    def test_dotted_path_partial_missing_returns_empty_list(self) -> None:
         """Partial path miss returns empty list."""
         raw = {"result": {}}  # 'diagnostics' key missing
         parsing = JsonViolationsParsing(field_map=_FLAT_MAP, violations_path="result.diagnostics")
@@ -94,7 +94,7 @@ class TestExtractViolationsArray:
     # integration: _extract_violations_array feeds _parse_json_violations
     # ------------------------------------------------------------------
 
-    def test_full_pipeline_pyright_style(self, manager: QAManager) -> None:
+    def test_full_pipeline_pyright_style(self) -> None:
         """Extracted array flows correctly into _parse_json_violations."""
         raw = {
             "generalDiagnostics": [

@@ -9,6 +9,7 @@ C24: Resolve scope=auto edge cases — no baseline fallback and empty union.
 @layer: Tests (Unit)
 @dependencies: pytest, subprocess, tests.mcp_server.test_support, mcp_server.managers.qa_manager
 """
+
 from __future__ import annotations
 
 import json

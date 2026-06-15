@@ -15,6 +15,7 @@ and artifact logging configuration loaded by the config layer.
 
 from __future__ import annotations
 
+import contextlib
 import fnmatch
 import re
 from dataclasses import dataclass
@@ -113,7 +114,11 @@ class GateScope(BaseModel):
         exclude_patterns = list(self.exclude_globs)
         filtered: list[str] = []
         for file_path in files:
-            posix_path = Path(file_path).as_posix()
+            p = Path(file_path)
+            if p.is_absolute():
+                with contextlib.suppress(ValueError):
+                    p = p.resolve().relative_to(Path.cwd().resolve())
+            posix_path = p.as_posix()
             if include_patterns and not any(
                 fnmatch.fnmatch(posix_path, pattern) for pattern in include_patterns
             ):

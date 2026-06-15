@@ -658,7 +658,22 @@ class QAManager:
         if cmd and cmd[0] in {"pyright", "pyright.exe"}:
             cmd[0] = _venv_script_path(_pyright_script_name())
 
-        return [*cmd, *files]
+        # Convert file paths to workspace-relative POSIX format so that glob matching
+        # (like ruff's --per-file-ignores) works correctly on all platforms (including Windows).
+        rel_files = []
+        for f in files:
+            p = Path(f)
+            if self.workspace_root is not None and p.is_absolute():
+                try:
+                    rel_files.append(p.relative_to(self.workspace_root).as_posix())
+                except ValueError:
+                    rel_files.append(p.as_posix())
+            elif p.is_absolute():
+                rel_files.append(p.as_posix())
+            else:
+                rel_files.append(str(f).replace("\\", "/"))
+
+        return [*cmd, *rel_files]
 
     def files_for_gate(self, gate: QualityGate, python_files: list[str]) -> list[str]:
         """Determine which files should be passed to a gate based on file_types capability."""

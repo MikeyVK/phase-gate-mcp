@@ -10,6 +10,7 @@ Design contract (design.md §4.8):
 @layer: Tests (Unit)
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.qa_manager
 """
+
 from __future__ import annotations
 
 from tests.mcp_server.test_support import make_qa_manager

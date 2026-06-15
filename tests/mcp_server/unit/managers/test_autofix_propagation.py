@@ -21,6 +21,7 @@ RED contract:
 @layer: Tests (Unit)
 @dependencies: pytest, mcp_server.config.schemas.quality_config, mcp_server.managers.qa_manager
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -85,7 +86,6 @@ class TestParseTextViolationsFixable:
 
     def test_fixable_true_when_gate_supports_autofix(self) -> None:
         """When fixable_when='gate' and supports_autofix=True, violations are fixable."""
-        manager = _make_manager()
         parsing = TextViolationsParsing(
             pattern=_GATE0_PATTERN,
             severity_default="error",
@@ -105,7 +105,6 @@ class TestParseTextViolationsFixable:
 
     def test_fixable_false_when_gate_does_not_support_autofix(self) -> None:
         """When fixable_when='gate' but supports_autofix=False, violations are not fixable."""
-        manager = _make_manager()
         parsing = TextViolationsParsing(
             pattern=_GATE0_PATTERN,
             severity_default="error",
@@ -123,7 +122,6 @@ class TestParseTextViolationsFixable:
 
     def test_fixable_false_without_fixable_when(self) -> None:
         """Without fixable_when, violations are always fixable=False (backward compat)."""
-        manager = _make_manager()
         parsing = TextViolationsParsing(
             pattern=_GATE0_PATTERN,
             severity_default="error",

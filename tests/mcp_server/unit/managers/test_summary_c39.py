@@ -198,7 +198,7 @@ class TestPyrightMessageSanitation:
     def manager(self) -> QAManager:
         return make_qa_manager()
 
-    def test_newline_not_in_sanitized_message(self, manager: QAManager) -> None:
+    def test_newline_not_in_sanitized_message(self) -> None:
         """After parsing, ViolationDTO.message must not contain \\n."""
         payload = [
             {
@@ -214,7 +214,7 @@ class TestPyrightMessageSanitation:
             f"\\n must be sanitized from message, got: {result[0].message!r}"
         )
 
-    def test_nbsp_not_in_sanitized_message(self, manager: QAManager) -> None:
+    def test_nbsp_not_in_sanitized_message(self) -> None:
         """After parsing, ViolationDTO.message must not contain \\u00a0 (non-breaking space)."""
         payload = [
             {
@@ -230,7 +230,7 @@ class TestPyrightMessageSanitation:
             f"\\u00a0 must be sanitized from message, got: {result[0].message!r}"
         )
 
-    def test_message_is_single_line_with_em_dash_separator(self, manager: QAManager) -> None:
+    def test_message_is_single_line_with_em_dash_separator(self) -> None:
         """The secondary type annotation line is preserved as ' — secondary' suffix."""
         payload = [
             {

@@ -35,7 +35,7 @@ class TestParseTextViolations:
     # Basic matching
     # ------------------------------------------------------------------
 
-    def test_single_matching_line_produces_one_dto(self, manager: QAManager) -> None:
+    def test_single_matching_line_produces_one_dto(self) -> None:
         """A line matching the pattern produces one ViolationDTO."""
         parsing = TextViolationsParsing(pattern=_SIMPLE_PATTERN)
         output = "backend/core/enums.py:42: some error message"
@@ -47,7 +47,7 @@ class TestParseTextViolations:
         assert dto.line == 42
         assert dto.message == "some error message"
 
-    def test_non_matching_lines_are_skipped(self, manager: QAManager) -> None:
+    def test_non_matching_lines_are_skipped(self) -> None:
         """Lines that don't match the pattern are silently ignored."""
         parsing = TextViolationsParsing(pattern=_SIMPLE_PATTERN)
         output = "Found 1 error in 1 file\nbackend/a.py:1: msg\nSummary: 1 error"
@@ -55,12 +55,12 @@ class TestParseTextViolations:
         assert len(result) == 1
         assert result[0].file == "backend/a.py"
 
-    def test_empty_output_returns_empty_list(self, manager: QAManager) -> None:
+    def test_empty_output_returns_empty_list(self) -> None:
         """Empty string produces empty list."""
         parsing = TextViolationsParsing(pattern=_SIMPLE_PATTERN)
         assert ViolationParser.parse_text_violations("", parsing) == []
 
-    def test_multiple_matching_lines(self, manager: QAManager) -> None:
+    def test_multiple_matching_lines(self) -> None:
         """Multiple matching lines each produce a ViolationDTO in order."""
         parsing = TextViolationsParsing(pattern=_SIMPLE_PATTERN)
         output = "a.py:1: first\nb.py:2: second"
@@ -75,7 +75,7 @@ class TestParseTextViolations:
     # Named groups → ViolationDTO field mapping
     # ------------------------------------------------------------------
 
-    def test_full_pattern_maps_all_fields(self, manager: QAManager) -> None:
+    def test_full_pattern_maps_all_fields(self) -> None:
         """All named groups in _MYPY_PATTERN populate the corresponding DTO fields."""
         parsing = TextViolationsParsing(pattern=_MYPY_PATTERN)
         line = "backend/core/enums.py:12:3: error: Cannot find module  [import]"
@@ -89,7 +89,7 @@ class TestParseTextViolations:
         assert dto.message == "Cannot find module"
         assert dto.rule == "import"
 
-    def test_line_and_col_are_integers(self, manager: QAManager) -> None:
+    def test_line_and_col_are_integers(self) -> None:
         """Named groups 'line' and 'col' are converted to int."""
         parsing = TextViolationsParsing(pattern=_MYPY_PATTERN)
         line = "a.py:99:5: warning: msg  [rule]"
@@ -101,7 +101,7 @@ class TestParseTextViolations:
     # severity_default fallback
     # ------------------------------------------------------------------
 
-    def test_severity_default_used_when_group_absent(self, manager: QAManager) -> None:
+    def test_severity_default_used_when_group_absent(self) -> None:
         """severity_default is used when pattern has no 'severity' group."""
         parsing = TextViolationsParsing(pattern=_SIMPLE_PATTERN, severity_default="warning")
         output = "a.py:1: msg"

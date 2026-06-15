@@ -15,6 +15,7 @@ Exit criteria:
 @layer: Tests (Unit)
 @dependencies: pytest, pathlib, mcp_server.managers.qa_manager
 """
+
 from __future__ import annotations
 
 from pathlib import Path

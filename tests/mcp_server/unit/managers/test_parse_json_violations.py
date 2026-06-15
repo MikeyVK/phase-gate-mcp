@@ -37,9 +37,7 @@ class TestParseJsonViolationsRootArray:
     def flat_parsing(self) -> JsonViolationsParsing:
         return JsonViolationsParsing(field_map=self._FLAT_FIELD_MAP)
 
-    def test_single_violation_maps_to_dto(
-        self, manager: QAManager, flat_parsing: JsonViolationsParsing
-    ) -> None:
+    def test_single_violation_maps_to_dto(self, flat_parsing: JsonViolationsParsing) -> None:
         """Root-array with one entry maps to one ViolationDTO."""
         payload = [
             {
@@ -61,16 +59,12 @@ class TestParseJsonViolationsRootArray:
         assert dto.col == 101
         assert dto.rule == "E501"
 
-    def test_empty_array_returns_empty_list(
-        self, manager: QAManager, flat_parsing: JsonViolationsParsing
-    ) -> None:
+    def test_empty_array_returns_empty_list(self, flat_parsing: JsonViolationsParsing) -> None:
         """Empty root array produces empty result list."""
         result = ViolationParser.parse_json_violations([], flat_parsing)
         assert result == []
 
-    def test_multiple_violations(
-        self, manager: QAManager, flat_parsing: JsonViolationsParsing
-    ) -> None:
+    def test_multiple_violations(self, flat_parsing: JsonViolationsParsing) -> None:
         """Multiple entries in root array each map to a ViolationDTO."""
         payload = [
             {
@@ -97,9 +91,7 @@ class TestParseJsonViolationsRootArray:
         assert result[1].file == "b.py"
         assert result[1].rule == "F401"
 
-    def test_missing_optional_field_uses_none(
-        self, manager: QAManager, flat_parsing: JsonViolationsParsing
-    ) -> None:
+    def test_missing_optional_field_uses_none(self, flat_parsing: JsonViolationsParsing) -> None:
         """ViolationDTO optional fields default when absent from payload."""
         payload = [{"message": "some message", "filename": "a.py"}]
         result = ViolationParser.parse_json_violations(payload, flat_parsing)
@@ -107,17 +99,13 @@ class TestParseJsonViolationsRootArray:
         assert result[0].col is None
         assert result[0].rule is None
 
-    def test_fixable_false_when_fix_is_none(
-        self, manager: QAManager, flat_parsing: JsonViolationsParsing
-    ) -> None:
+    def test_fixable_false_when_fix_is_none(self, flat_parsing: JsonViolationsParsing) -> None:
         """fixable=False when the mapped fix field is null/None."""
         payload = [{"filename": "a.py", "message": "msg", "fix": None}]
         result = ViolationParser.parse_json_violations(payload, flat_parsing)
         assert result[0].fixable is False
 
-    def test_fixable_true_when_fix_is_truthy(
-        self, manager: QAManager, flat_parsing: JsonViolationsParsing
-    ) -> None:
+    def test_fixable_true_when_fix_is_truthy(self, flat_parsing: JsonViolationsParsing) -> None:
         """fixable=True when the mapped fix field is a truthy dict."""
         payload = [
             {
