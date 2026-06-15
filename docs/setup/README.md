@@ -119,8 +119,7 @@ Google Antigravity manages MCP servers globally using a system-wide configuratio
    Unlike VS Code, Google Antigravity natively detects and registers agent rules, workflows, and prompts from the workspace root directory without requiring any manual configurations in a settings file. When you open the cloned repository as a workspace, Antigravity automatically detects:
    * `AGENTS.md` (Global project rules and priority matrix)
    * `.agents/workflows/` (Custom slash commands like `/start-issue`, `/end-issue`, and `/go`)
-   * `.github/agents/` or `.agents/rules/` (Specialized agent role prompts: `co.agent.md`, `imp.agent.md`, `qa.agent.md`)
-
+   * `.agents/rules/` (Specialized agent role prompts for Antigravity: `co.agent.md`, `imp.agent.md`, `qa.agent.md`)
 4. **Restart Antigravity:**
    Fully restart the Google Antigravity application or reload your workspace session to apply the changes and start the MCP server.
 
@@ -138,11 +137,11 @@ Verify that the following files are present in your workspace:
   * [go.md](file:///c:/temp/pgmcp/.agents/workflows/go.md)
   * [start-issue.md](file:///c:/temp/pgmcp/.agents/workflows/start-issue.md)
 * **Specialized Agent Roles:**
-  * **Coordination Authority (@co):** [.github/agents/co.agent.md](file:///c:/temp/pgmcp/.github/agents/co.agent.md) & [.agents/rules/co.agent.md](file:///c:/temp/pgmcp/.agents/rules/co.agent.md)
-  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](file:///c:/temp/pgmcp/.github/agents/imp.agent.md) & [.agents/rules/imp.agent.md](file:///c:/temp/pgmcp/.agents/rules/imp.agent.md)
-  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](file:///c:/temp/pgmcp/.github/agents/qa.agent.md) & [.agents/rules/qa.agent.md](file:///c:/temp/pgmcp/.agents/rules/qa.agent.md)
+  * **Coordination Authority (@co):** [.github/agents/co.agent.md](file:///c:/temp/pgmcp/.github/agents/co.agent.md) (VS Code) & [.agents/rules/co.agent.md](file:///c:/temp/pgmcp/.agents/rules/co.agent.md) (Antigravity)
+  * **Implementation Executor (@imp):** [.github/agents/imp.agent.md](file:///c:/temp/pgmcp/.github/agents/imp.agent.md) (VS Code) & [.agents/rules/imp.agent.md](file:///c:/temp/pgmcp/.agents/rules/imp.agent.md) (Antigravity)
+  * **QA Reviewer (@qa):** [.github/agents/qa.agent.md](file:///c:/temp/pgmcp/.github/agents/qa.agent.md) (VS Code) & [.agents/rules/qa.agent.md](file:///c:/temp/pgmcp/.agents/rules/qa.agent.md) (Antigravity)
 
-*To activate an agent role in a chat session, type `@file:.github/agents/<role>.agent.md` (e.g. `@file:.github/agents/co.agent.md`) to load its specific system instructions.*
+*To activate an agent role in VS Code, load `@file:.github/agents/<role>.agent.md` (e.g., `@file:.github/agents/co.agent.md`). In Google Antigravity, load `@file:.agents/rules/<role>.agent.md` (e.g., `@file:.agents/rules/co.agent.md`).*
 
 ---
 
