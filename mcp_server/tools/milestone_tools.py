@@ -1,5 +1,7 @@
 """GitHub milestone tools."""
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -7,8 +9,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import (
+    ListMilestonesOutput,
+    MilestoneOutput,
+    MilestoneSummaryDTO,
+)
+from mcp_server.tools.base import ITool
 
 
 class ListMilestonesInput(BaseModel):
@@ -21,12 +27,20 @@ class ListMilestonesInput(BaseModel):
     )
 
 
-class ListMilestonesTool(BaseTool):
+class ListMilestonesTool(ITool):
     """Tool to list milestones in the repository."""
 
-    name = "list_milestones"
-    description = "List milestones with optional state filter"
-    args_model = ListMilestonesInput
+    @property
+    def name(self) -> str:
+        return "list_milestones"
+
+    @property
+    def description(self) -> str:
+        return "List milestones with optional state filter"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return ListMilestonesInput
 
     def __init__(self, manager: GitHubManager | None = None) -> None:
         self.manager = manager or GitHubManager()
@@ -36,24 +50,26 @@ class ListMilestonesTool(BaseTool):
         assert self.args_model is not None
         return self.args_model.model_json_schema()
 
-    async def execute(self, params: ListMilestonesInput, context: NoteContext) -> ToolResult:
+    async def execute(
+        self, params: ListMilestonesInput, context: NoteContext
+    ) -> ListMilestonesOutput:
         del context  # Not used
         try:
             milestones = self.manager.list_milestones(state=params.state)
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-
-        if not milestones:
-            return ToolResult.text("No milestones found matching the criteria.")
-
-        lines = [f"Found {len(milestones)} milestone(s):\n"]
-        for milestone in milestones:
-            due = f" | Due: {milestone.due_on.isoformat()}" if milestone.due_on else ""
-            lines.append(
-                f"- #{milestone.number}: {milestone.title} | State: {milestone.state}{due}"
+            milestone_dtos = [
+                MilestoneSummaryDTO(
+                    number=milestone.number,
+                    title=milestone.title,
+                    state=milestone.state,
+                )
+                for milestone in milestones
+            ]
+            return ListMilestonesOutput(
+                total_milestones=len(milestone_dtos),
+                milestones=milestone_dtos,
             )
-
-        return ToolResult.text("\n".join(lines))
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class CreateMilestoneInput(BaseModel):
@@ -69,12 +85,20 @@ class CreateMilestoneInput(BaseModel):
     )
 
 
-class CreateMilestoneTool(BaseTool):
+class CreateMilestoneTool(ITool):
     """Tool to create a new milestone."""
 
-    name = "create_milestone"
-    description = "Create a new milestone in the repository"
-    args_model = CreateMilestoneInput
+    @property
+    def name(self) -> str:
+        return "create_milestone"
+
+    @property
+    def description(self) -> str:
+        return "Create a new milestone in the repository"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return CreateMilestoneInput
 
     def __init__(self, manager: GitHubManager | None = None) -> None:
         self.manager = manager or GitHubManager()
@@ -84,7 +108,7 @@ class CreateMilestoneTool(BaseTool):
         assert self.args_model is not None
         return self.args_model.model_json_schema()
 
-    async def execute(self, params: CreateMilestoneInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: CreateMilestoneInput, context: NoteContext) -> MilestoneOutput:
         del context  # Not used
         try:
             milestone = self.manager.create_milestone(
@@ -92,10 +116,13 @@ class CreateMilestoneTool(BaseTool):
                 description=params.description,
                 due_on=params.due_on,
             )
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-
-        return ToolResult.text(f"Created milestone #{milestone.number}: {milestone.title}")
+            return MilestoneOutput(
+                number=milestone.number,
+                title=milestone.title,
+                state=milestone.state,
+            )
+        except Exception as e:
+            raise ExecutionError(str(e)) from e
 
 
 class CloseMilestoneInput(BaseModel):
@@ -106,12 +133,20 @@ class CloseMilestoneInput(BaseModel):
     milestone_number: int = Field(..., description="Milestone number to close")
 
 
-class CloseMilestoneTool(BaseTool):
+class CloseMilestoneTool(ITool):
     """Tool to close a milestone."""
 
-    name = "close_milestone"
-    description = "Close a milestone by number"
-    args_model = CloseMilestoneInput
+    @property
+    def name(self) -> str:
+        return "close_milestone"
+
+    @property
+    def description(self) -> str:
+        return "Close a milestone by number"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return CloseMilestoneInput
 
     def __init__(self, manager: GitHubManager | None = None) -> None:
         self.manager = manager or GitHubManager()
@@ -121,11 +156,14 @@ class CloseMilestoneTool(BaseTool):
         assert self.args_model is not None
         return self.args_model.model_json_schema()
 
-    async def execute(self, params: CloseMilestoneInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: CloseMilestoneInput, context: NoteContext) -> MilestoneOutput:
         del context  # Not used
         try:
             milestone = self.manager.close_milestone(params.milestone_number)
-        except ExecutionError as e:
-            return ToolResult.error(str(e))
-
-        return ToolResult.text(f"Closed milestone #{milestone.number}: {milestone.title}")
+            return MilestoneOutput(
+                number=milestone.number,
+                title=milestone.title,
+                state=milestone.state,
+            )
+        except Exception as e:
+            raise ExecutionError(str(e)) from e

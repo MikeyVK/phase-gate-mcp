@@ -14,7 +14,7 @@ phase transitions via PhaseStateEngine.
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -24,8 +24,8 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas import WorkphasesConfig
-from mcp_server.tools.base import BranchMutatingTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput, PhaseTransitionOutput
+from mcp_server.tools.base import ITool
 
 TRANSITION_ADVISORY_NOTE = (
     "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
@@ -76,8 +76,12 @@ class ForcePhaseTransitionInput(BaseModel):
         return v.strip()
 
 
-class _BaseTransitionTool(BranchMutatingTool):
-    """Base class for phase and cycle transition tools."""
+class _BaseTransitionTool(ITool):
+    """Base class for phase transition tools implementing ITool."""
+
+    presentation_category = "mutation"
+    tool_category = "branch_mutating"
+    enforcement_event = "transition_phase"
 
     def __init__(
         self,
@@ -88,7 +92,6 @@ class _BaseTransitionTool(BranchMutatingTool):
         workphases_config: WorkphasesConfig | None = None,
     ) -> None:
         """Initialize tool with injected or legacy-created transition dependencies."""
-        super().__init__()
         self.workspace_root = Path(workspace_root)
         if server_root is None:
             raise ValueError(
@@ -99,6 +102,22 @@ class _BaseTransitionTool(BranchMutatingTool):
         self._project_manager = project_manager
         self._state_engine = state_engine
         self._workphases_config = workphases_config
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        if self.args_model:
+            from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
+
+            schema = resolve_schema_refs(self.args_model.model_json_schema())
+            if self._workphases_config is not None:
+                schema["properties"]["to_phase"]["enum"] = list(
+                    self._workphases_config.phases.keys()
+                )
+            return schema
+        return {
+            "type": "object",
+            "properties": {},
+        }
 
     def _create_project_manager(self) -> ProjectManager:
         """Return the injected ProjectManager."""
@@ -119,30 +138,30 @@ class TransitionPhaseTool(_BaseTransitionTool):
     Validates transitions via PhaseStateEngine against workflow definitions.
     """
 
-    name = "transition_phase"
-    description = "Transition branch to next phase (strict sequential)"
-    args_model = TransitionPhaseInput
-    enforcement_event = "transition_phase"
+    output_model: ClassVar[type[BaseModel]] = PhaseTransitionOutput
 
     @property
-    def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
-        if self._workphases_config is not None:
-            schema["properties"]["to_phase"]["enum"] = list(self._workphases_config.phases.keys())
-        return schema
+    def name(self) -> str:
+        return "transition_phase"
 
-    async def execute(self, params: TransitionPhaseInput, context: NoteContext) -> ToolResult:
+    @property
+    def description(self) -> str:
+        return "Transition branch to next phase (strict sequential)"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return TransitionPhaseInput
+
+    async def execute(
+        self, params: TransitionPhaseInput, context: NoteContext
+    ) -> PhaseTransitionOutput:
         """Execute standard phase transition.
-
-        Uses anyio.to_thread.run_sync() for compatibility with MCP's anyio-based
-        server - asyncio.to_thread doesn't work correctly within anyio context
-        (Issue #85 fix).
 
         Args:
             params: TransitionPhaseInput with branch and target phase
 
         Returns:
-            ToolResult with success or error message
+            PhaseTransitionOutput DTO
         """
         engine = self._create_engine()
 
@@ -155,16 +174,34 @@ class TransitionPhaseTool(_BaseTransitionTool):
             result = await anyio.to_thread.run_sync(do_transition)
             context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
 
-            return ToolResult.text(
-                f"✅ Successfully transitioned '{params.branch}' "
-                f"from {result['from_phase']} → {result['to_phase']}"
+            return PhaseTransitionOutput(
+                success=True,
+                branch=params.branch,
+                from_phase=result["from_phase"],
+                to_phase=result["to_phase"],
+                passing_gates=result.get("passing_gates", []),
+                skipped_gates=result.get("skipped_gates", []),
+                passing_gates_count=len(result.get("passing_gates", [])),
+                skipped_gates_count=len(result.get("skipped_gates", [])),
             )
 
         except StateMutationConflictError as e:
             context.produce(RecoveryNote(message=e.recovery))
-            return ToolResult.error(e.diagnostic)
-        except ValueError as e:
-            return ToolResult.error(f"❌ Transition failed: {e}")
+            return PhaseTransitionOutput(
+                success=False,
+                error_message=e.diagnostic,
+                branch=params.branch,
+                from_phase="",
+                to_phase=params.to_phase,
+            )
+        except (ValueError, OSError, RuntimeError, KeyError) as e:
+            return PhaseTransitionOutput(
+                success=False,
+                error_message=f"Transition failed: {e}",
+                branch=params.branch,
+                from_phase="",
+                to_phase=params.to_phase,
+            )
 
 
 class ForcePhaseTransitionTool(_BaseTransitionTool):
@@ -174,30 +211,30 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
     Marks transitions with forced=True flag in state.json audit trail.
     """
 
-    name = "force_phase_transition"
-    description = "Force non-sequential phase transition (skip/jump with reason)"
-    args_model = ForcePhaseTransitionInput
-    enforcement_event = "transition_phase"
+    output_model: ClassVar[type[BaseModel]] = ForcePhaseTransitionOutput
 
     @property
-    def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
-        if self._workphases_config is not None:
-            schema["properties"]["to_phase"]["enum"] = list(self._workphases_config.phases.keys())
-        return schema
+    def name(self) -> str:
+        return "force_phase_transition"
 
-    async def execute(self, params: ForcePhaseTransitionInput, context: NoteContext) -> ToolResult:
+    @property
+    def description(self) -> str:
+        return "Force non-sequential phase transition (skip/jump with reason)"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return ForcePhaseTransitionInput
+
+    async def execute(
+        self, params: ForcePhaseTransitionInput, context: NoteContext
+    ) -> ForcePhaseTransitionOutput:
         """Execute forced phase transition.
-
-        Uses anyio.to_thread.run_sync() for compatibility with MCP's anyio-based
-        server - asyncio.to_thread doesn't work correctly within anyio context
-        (Issue #85 fix).
 
         Args:
             params: ForcePhaseTransitionInput with branch, phase, reason, approval
 
         Returns:
-            ToolResult with success or error message
+            ForcePhaseTransitionOutput DTO
         """
         engine = self._create_engine()
 
@@ -215,31 +252,54 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
             blocking = result.get("skipped_gates", [])
             passing = result.get("passing_gates", [])
 
-            lines: list[str] = []
-
+            skipped_gates_warning = ""
             if blocking:
-                lines.append(
+                lines = [
                     f"⚠️ ACTION REQUIRED: {len(blocking)} skipped gate(s) would have"
                     " BLOCKED a normal transition:"
-                )
+                ]
                 for gate in blocking:
                     lines.append(f"  - {gate}")
                 lines.append("  Verify or resolve before proceeding.")
+                skipped_gates_warning = "\n".join(lines) + "\n"
 
-            lines.append(
-                f"✅ Forced transition '{params.branch}' "
-                f"from {result['from_phase']} → {result['to_phase']} "
-                f"(forced=True, reason: {params.skip_reason})"
-            )
-
+            passing_gates_info = ""
             if passing:
-                lines.append(f"ℹ️ Gates that would have passed: {', '.join(passing)}")
+                passing_gates_info = f"\nℹ️ Gates that would have passed: {', '.join(passing)}"
 
             context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
-            return ToolResult.text("\n".join(lines))
-
+            return ForcePhaseTransitionOutput(
+                success=True,
+                branch=params.branch,
+                from_phase=result["from_phase"],
+                to_phase=result["to_phase"],
+                passing_gates=passing,
+                skipped_gates=blocking,
+                passing_gates_count=len(passing),
+                skipped_gates_count=len(blocking),
+                skip_reason=params.skip_reason,
+                human_approval=params.human_approval,
+                skipped_gates_warning=skipped_gates_warning,
+                passing_gates_info=passing_gates_info,
+            )
         except StateMutationConflictError as e:
             context.produce(RecoveryNote(message=e.recovery))
-            return ToolResult.error(e.diagnostic)
-        except ValueError as e:
-            return ToolResult.error(f"❌ Force transition failed: {e}")
+            return ForcePhaseTransitionOutput(
+                success=False,
+                error_message=e.diagnostic,
+                branch=params.branch,
+                from_phase="",
+                to_phase=params.to_phase,
+                skip_reason=params.skip_reason,
+                human_approval=params.human_approval,
+            )
+        except (ValueError, OSError, RuntimeError, KeyError) as e:
+            return ForcePhaseTransitionOutput(
+                success=False,
+                error_message=f"Force transition failed: {e}",
+                branch=params.branch,
+                from_phase="",
+                to_phase=params.to_phase,
+                skip_reason=params.skip_reason,
+                human_approval=params.human_approval,
+            )

@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.server import MCPServer
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import ITool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import make_test_server
 
@@ -48,12 +48,20 @@ class SimpleInput(BaseModel):
     optional_field: int = 42
 
 
-class MockSimpleTool(BaseTool):
+class MockSimpleTool(ITool):
     """Minimal mock tool for argument validation tests."""
 
-    name = "mock_simple"
-    description = "Mock simple tool"
-    args_model = SimpleInput
+    @property
+    def name(self) -> str:
+        return "mock_simple"
+
+    @property
+    def description(self) -> str:
+        return "Mock simple tool"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return SimpleInput
 
     async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401, ARG002
         return ToolResult(content=[{"type": "text", "text": "OK"}])
@@ -201,7 +209,7 @@ class TestValidateToolArgumentsFailurePath:
 
         assert getattr(result, "isError", False) is False
         assert len(result.content) == 1
-        assert result.content[0].text == "OK"
+        assert "OK" in result.content[0].text
 
     @pytest.mark.asyncio
     async def test_schema_is_normalized_no_defs_no_ref(self, server: MCPServer) -> None:

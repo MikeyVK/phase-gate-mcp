@@ -208,7 +208,7 @@ def config_root(tmp_path: Path) -> Path:
                     "success": {"exit_codes_ok": [0]},
                     "capabilities": {
                         "file_types": [".py"],
-                        "supports_autofix": True,
+                        "supports_autofix": False,
                     },
                 }
             },

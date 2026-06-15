@@ -163,7 +163,7 @@ class TestTransitionCycleTool:
             result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
         # Assert successful transition
-        assert not result.is_error, f"Expected success: {result.content}"
+        assert result.success, f"Expected success: {result.error_message}"
 
         # Check state updated
         project_manager = make_project_manager(workspace_root)
@@ -200,8 +200,8 @@ class TestTransitionCycleTool:
             result = await tool.execute(TransitionCycleInput(to_cycle=1), NoteContext())
 
         # Assert blocked
-        assert result.is_error, "Expected backward transition to be blocked"
-        text = result.content[0]["text"]
+        assert not result.success, "Expected backward transition to be blocked"
+        text = result.error_message or ""
         assert "backwards" in text.lower() or "forward-only" in text.lower()
         assert "force_cycle_transition" in text
 
@@ -227,8 +227,8 @@ class TestTransitionCycleTool:
             result = await tool.execute(TransitionCycleInput(to_cycle=3), NoteContext())
 
         # Assert blocked
-        assert result.is_error, "Expected non-sequential jump to be blocked"
-        text = result.content[0]["text"]
+        assert not result.success, "Expected non-sequential jump to be blocked"
+        text = result.error_message or ""
         assert "sequential" in text.lower() or "skip" in text.lower()
         assert "force_cycle_transition" in text
 
@@ -260,8 +260,8 @@ class TestTransitionCycleTool:
             result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
         # Assert blocked
-        assert result.is_error, "Expected transition to be blocked outside cycle-based phase"
-        text = result.content[0]["text"]
+        assert not result.success, "Expected transition to be blocked outside cycle-based phase"
+        text = result.error_message or ""
         assert "cycle-based phase" in text.lower()
 
 
@@ -380,10 +380,8 @@ class TestForceCycleTransitionTool:
             )
 
         # Assert success
-        assert not result.is_error, f"Expected success, got error: {result.content}"
-        text = result.content[0]["text"]
-        assert "✅" in text or "Forced" in text
-        assert "1" in text
+        assert result.success, f"Expected success, got error: {result.error_message}"
+        assert result.to_cycle == 1
 
         # Verify state updated
         project_manager = make_project_manager(workspace_root)
@@ -425,10 +423,8 @@ class TestForceCycleTransitionTool:
             )
 
         # Assert success
-        assert not result.is_error, f"Expected success, got error: {result.content}"
-        text = result.content[0]["text"]
-        assert "✅" in text or "Forced" in text
-        assert "4" in text
+        assert result.success, f"Expected success, got error: {result.error_message}"
+        assert result.to_cycle == 4
 
         # Verify state
         project_manager = make_project_manager(workspace_root)
@@ -460,8 +456,8 @@ class TestForceCycleTransitionTool:
             )
 
         # Assert blocked
-        assert result.is_error, "Expected error when skip_reason is empty"
-        text = result.content[0]["text"]
+        assert not result.success, "Expected error when skip_reason is empty"
+        text = result.error_message or ""
         assert "skip_reason" in text.lower() or "reason" in text.lower()
 
     @pytest.mark.asyncio()
@@ -488,8 +484,8 @@ class TestForceCycleTransitionTool:
             )
 
         # Assert blocked
-        assert result.is_error, "Expected error when human_approval is empty"
-        text = result.content[0]["text"]
+        assert not result.success, "Expected error when human_approval is empty"
+        text = result.error_message or ""
         assert "approval" in text.lower() or "human" in text.lower()
 
 
@@ -604,7 +600,7 @@ class TestForceCycleAuditSchema:
                 NoteContext(),
             )
 
-        assert not result.is_error, f"Expected success: {result.content}"
+        assert result.success, f"Expected success: {result.error_message}"
 
         project_manager = make_project_manager(workspace_root)
         state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
@@ -683,7 +679,7 @@ class TestForceCycleAuditSchema:
                 NoteContext(),
             )
 
-        assert not result.is_error
+        assert result.success
 
         project_manager = make_project_manager(workspace_root)
         state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
@@ -793,7 +789,7 @@ class TestTransitionCycleHistory:
 
             result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert not result.is_error, f"Expected success: {result.content}"
+        assert result.success, f"Expected success: {result.error_message}"
 
         project_manager = make_project_manager(workspace_root)
         state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
@@ -825,10 +821,10 @@ class TestTransitionCycleHistory:
             mock_git_class.return_value = mock_git
 
             result1 = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
-            assert not result1.is_error
+            assert result1.success
 
             result2 = await tool.execute(TransitionCycleInput(to_cycle=3), NoteContext())
-            assert not result2.is_error
+            assert result2.success
 
         project_manager = make_project_manager(workspace_root)
         state_engine = make_phase_state_engine(workspace_root, project_manager=project_manager)
@@ -965,8 +961,8 @@ class TestTransitionCycleExitCriteria:
 
             result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert result.is_error, "Must block when exit_criteria is empty"
-        text = result.content[0]["text"]
+        assert not result.success, "Must block when exit_criteria is empty"
+        text = result.error_message or ""
         assert "exit" in text.lower() or "criteria" in text.lower()
 
     @pytest.mark.asyncio()
@@ -1005,8 +1001,8 @@ class TestTransitionCycleExitCriteria:
 
             result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert result.is_error, "Must block when exit_criteria key is missing"
-        text = result.content[0]["text"]
+        assert not result.success, "Must block when exit_criteria key is missing"
+        text = result.error_message or ""
         assert "exit" in text.lower() or "criteria" in text.lower()
 
     @pytest.mark.asyncio()
@@ -1044,4 +1040,4 @@ class TestTransitionCycleExitCriteria:
 
             result = await tool.execute(TransitionCycleInput(to_cycle=2), NoteContext())
 
-        assert not result.is_error, f"Must succeed when exit_criteria present: {result.content}"
+        assert result.success, f"Must succeed when exit_criteria present: {result.error_message}"

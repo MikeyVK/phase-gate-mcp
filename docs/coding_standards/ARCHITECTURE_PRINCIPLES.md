@@ -106,10 +106,9 @@ async def execute(self, params):
     engine = WorkEngine(workspace_root=Path.cwd(), manager=manager)
 
 # ✅ CORRECT — dependency injected via constructor
-class WorkTool(BaseTool):
+class WorkTool(ITool):
     def __init__(self, engine: IWorkEngine | None = None) -> None:
         self._engine = engine or WorkEngine.create_default()
-```
 
 ---
 
@@ -234,7 +233,7 @@ Do not write code for hypothetical future needs.
 - Constructor injection is the default. `execute()` never instantiates a dependency itself.
 - All production dependencies are injectable. Tests inject a fake/in-memory variant.
 - Composition root: only server startup and the tool layer may instantiate concrete implementations.
-- `BaseTool.__init__` accepts optional dependencies with `None` default, resolved via factory method:
+- Tool constructors accept optional dependencies with `None` default, resolved via factory method:
   ```python
   def __init__(self, engine: IWorkEngine | None = None) -> None:
       self._engine = engine or WorkEngine.create_default()

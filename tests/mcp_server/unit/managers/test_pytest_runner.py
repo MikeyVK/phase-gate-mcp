@@ -195,9 +195,28 @@ class TestPytestRunnerRun:
 
     def test_errors_during_collection(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Scenario 4: errors-during-collection stdout ÔåÆ errors=N."""
-        result = _run(monkeypatch, _ERRORS_STDOUT, returncode=2)
+        result = _run(monkeypatch, _ERRORS_STDOUT, returncode=2, verbose=True)
 
         assert result.errors >= 1
+        assert len(result.failures) == 1
+        failure = result.failures[0]
+        assert failure.test_id == "tests/test_bad_import.py"
+        assert failure.location == "tests/test_bad_import.py"
+        assert failure.short_reason == "ImportError: cannot import name 'missing'"
+        assert "cannot import name 'missing'" in failure.traceback
+        assert failure.is_collection_error is True
+
+    def test_errors_during_collection_non_verbose(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        result = _run(monkeypatch, _ERRORS_STDOUT, returncode=2, verbose=False)
+
+        assert result.errors >= 1
+        assert len(result.failures) == 1
+        failure = result.failures[0]
+        assert failure.test_id == "tests/test_bad_import.py"
+        assert failure.location == "tests/test_bad_import.py"
+        assert failure.short_reason == "ImportError: cannot import name 'missing'"
+        assert failure.traceback == ""
+        assert failure.is_collection_error is True
 
     def test_coverage_pct_parsed(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Scenario 5: coverage report line present ÔåÆ coverage_pct parsed as float."""

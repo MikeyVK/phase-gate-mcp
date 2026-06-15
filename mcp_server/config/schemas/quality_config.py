@@ -15,6 +15,7 @@ and artifact logging configuration loaded by the config layer.
 
 from __future__ import annotations
 
+import contextlib
 import fnmatch
 import re
 from dataclasses import dataclass
@@ -81,6 +82,7 @@ class ExecutionConfig(BaseModel):
     command: list[str] = Field(..., min_length=1)
     timeout_seconds: int = Field(..., gt=0)
     working_dir: str | None = Field(default=None)
+    fix_command: list[str] | None = Field(default=None)
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -112,7 +114,11 @@ class GateScope(BaseModel):
         exclude_patterns = list(self.exclude_globs)
         filtered: list[str] = []
         for file_path in files:
-            posix_path = Path(file_path).as_posix()
+            p = Path(file_path)
+            if p.is_absolute():
+                with contextlib.suppress(ValueError):
+                    p = p.resolve().relative_to(Path.cwd().resolve())
+            posix_path = p.as_posix()
             if include_patterns and not any(
                 fnmatch.fnmatch(posix_path, pattern) for pattern in include_patterns
             ):
@@ -146,6 +152,14 @@ class QualityGate(BaseModel):
     success: SuccessCriteria
     capabilities: CapabilitiesMetadata
     scope: GateScope | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _validate_autofix_command(self) -> QualityGate:
+        if self.capabilities.supports_autofix and not self.execution.fix_command:
+            raise ValueError(
+                f"Gate '{self.name}' supports autofix but is missing execution.fix_command"
+            )
+        return self
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

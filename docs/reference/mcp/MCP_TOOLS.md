@@ -169,8 +169,8 @@ Run quality gates, tests, and template validation.
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
-| **RunQualityGatesTool** | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required + non-empty only when `scope="files"`) | `content[0]=text` summary line, `content[1]=json` compact payload `{overall_pass,gates}` |
-| **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` | `content[0]=text` (summary line + per-failure `FAILED test_id — reason` for exit 1; summary + stderr hint for exit 2/3/4), `content[1]=json` `{exit_code, summary, summary_line, failures[], coverage_pct, lf_cache_was_empty, stderr}` |
+| **RunQualityGatesTool** | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required + non-empty only when `scope="files"`), `verbose` (optional: bool) | Single text block with summary + resource cache link to `RunQualityGatesOutput` DTO |
+| **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage`, `verbose` | Single text block with summary + resource cache link to `RunTestsOutput` DTO |
 | **TemplateValidationTool** | Validate file structure against template | `path`, `template_type` | Pass/fail with violation details |
 
 **Quality Gates Standard (`.phase-gate/quality.yaml`):**

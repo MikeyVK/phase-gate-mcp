@@ -42,7 +42,7 @@ class TestGitCommitToolC3:
         tool = GitCommitTool(manager=mock_manager)
         params = GitCommitInput(message="test", workflow_phase="documentation")
         result = await tool.execute(params, NoteContext())
-        assert not result.is_error
+        assert result.success is True
 
     @pytest.mark.asyncio
     @pytest.mark.xfail(

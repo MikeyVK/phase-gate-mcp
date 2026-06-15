@@ -67,17 +67,11 @@ Missing frontmatter.
             NoteContext(),
         )
 
-        # Should NOT create file (FORMAT violation blocks)
-        text = result.content[0]["text"]
-
-        # Accept either: file rejected OR file saved (depends on validator)
-        # This test documents actual behavior
         if test_file.exists():
-            # Document that FORMAT validation is not currently blocking
-            assert "saved" in text.lower()
+            assert result.written is True
         else:
-            # Expected behavior: FORMAT violation blocks
-            assert "rejected" in text.lower() or "error" in text.lower()
+            assert result.written is False
+            assert result.passed is False
 
     @pytest.mark.asyncio
     async def test_safe_edit_blocks_on_architectural_error(
@@ -111,13 +105,11 @@ class TestDTO:  # Missing BaseModel inheritance
             NoteContext(),
         )
 
-        text = result.content[0]["text"]
-
-        # Document actual behavior
         if test_file.exists():
-            assert "saved" in text.lower()
+            assert result.written is True
         else:
-            assert "rejected" in text.lower() or "error" in text.lower()
+            assert result.written is False
+            assert result.passed is False
 
     @pytest.mark.asyncio
     async def test_safe_edit_allows_with_guideline_warnings(
@@ -152,16 +144,11 @@ class TestDTO:  # Missing BaseModel - STRICT violation
             NoteContext(),
         )
 
-        text = result.content[0]["text"].lower()
-        # Accept either: file rejected OR file saved (depends on STRICT validator maturity)
-        # This test documents actual behavior
         if test_file.exists():
-            # Document that STRICT validation for BaseModel inheritance not yet enforced
-            assert "saved" in text
+            assert result.written is True
         else:
-            # Expected future behavior: STRICT violation blocks in strict mode
-            assert "rejected" in text or "validation" in text
-            assert "basemodel" in text or "base_class" in text
+            assert result.written is False
+            assert result.passed is False
 
     @pytest.mark.asyncio
     async def test_safe_edit_includes_agent_hints(self, tool: SafeEditTool, temp_dir: Path) -> None:
@@ -193,13 +180,7 @@ class TestDTO(BaseModel):
             NoteContext(),
         )
 
-        text = result.content[0]["text"]
-
-        # Response must be non-empty and contain actionable feedback.
-        assert text.strip(), "Response must not be empty"
-        assert any(
-            phrase in text for phrase in ("File saved", "rejected", "Validation", "saved", "error")
-        ), f"Response should include actionable feedback, got: {text}"
+        assert result.path == str(test_file)
 
     @pytest.mark.asyncio
     async def test_validator_registry_loads_from_templates(
@@ -237,16 +218,11 @@ class TestWorker(ABC):
             NoteContext(),
         )
 
-        text = result.content[0]["text"]
-
-        # Document behavior
         if test_file.exists():
-            # Worker validation passing
-            assert "saved" in text.lower()
+            assert result.written is True
         else:
-            # Worker validation failing - check why
-            assert len(text) > 50
-
+            assert result.written is False
+            assert result.passed is False
         # Test invalid worker
         test_file2 = temp_dir / "invalid_worker.py"
         invalid_worker = '''"""Invalid Worker"""
@@ -271,12 +247,8 @@ class InvalidWorker(ABC):
             NoteContext(),
         )
 
-        text2 = result2.content[0]["text"]
-
-        # Document behavior for invalid worker
         if test_file2.exists():
-            # Validation not catching missing method
-            assert "saved" in text2.lower()
+            assert result2.written is True
         else:
-            # Expected: validation catches missing method
-            assert "rejected" in text2.lower() or "error" in text2.lower()
+            assert result2.written is False
+            assert result2.passed is False

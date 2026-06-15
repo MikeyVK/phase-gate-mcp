@@ -30,6 +30,7 @@ from mcp_server.config.schemas.operation_policies_config import (
     OperationPoliciesConfig,
     OperationPolicy,
 )
+from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.config.schemas.project_structure_config import (
     DirectoryPolicy,
     ProjectStructureConfig,
@@ -89,6 +90,7 @@ __all__ = [
     "PhaseContractPhase",
     "PhaseDefinition",
     "ProjectStructureConfig",
+    "PresentationConfig",
     "QualityConfig",
     "QualityGate",
     "ScaffoldMetadataConfig",

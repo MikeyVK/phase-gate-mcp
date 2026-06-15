@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
+from pydantic import BaseModel
 
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import InfoNote, NoteContext
@@ -24,7 +25,6 @@ from mcp_server.tools.cycle_tools import (
     TransitionCycleTool,
 )
 from mcp_server.tools.phase_tools import TRANSITION_ADVISORY_NOTE
-from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (
     make_git_manager,
     make_phase_state_engine,
@@ -60,11 +60,39 @@ class FakeForceCycleStateEngine:
 
 
 def _make_transition_advisory_execute(
-    text: str,
-) -> Callable[[object, object, NoteContext], Awaitable[ToolResult]]:
-    async def execute(_self: object, _params: object, context: NoteContext) -> ToolResult:
+    success: bool = True,
+    to_cycle: int = 1,
+    total_cycles: int = 2,
+    cycle_name: str = "One",
+    is_force: bool = False,
+) -> Callable[[object, object, NoteContext], Awaitable[BaseModel]]:
+    async def execute(_self: object, _params: object, context: NoteContext) -> BaseModel:
+        from mcp_server.core.operation_notes import InfoNote  # noqa: PLC0415
+        from mcp_server.schemas.tool_outputs import (  # noqa: PLC0415
+            CycleTransitionOutput,
+            ForceCycleTransitionOutput,
+        )
+
         context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
-        return ToolResult.text(text)
+        if is_force:
+            return ForceCycleTransitionOutput(
+                success=success,
+                branch="feature/257-reorder-workflow-phases",
+                from_cycle=None,
+                to_cycle=to_cycle,
+                total_cycles=total_cycles,
+                cycle_name=cycle_name,
+                skip_reason="testing",
+                human_approval="test",
+            )
+        return CycleTransitionOutput(
+            success=success,
+            branch="feature/257-reorder-workflow-phases",
+            from_cycle=None,
+            to_cycle=to_cycle,
+            total_cycles=total_cycles,
+            cycle_name=cycle_name,
+        )
 
     return execute
 
@@ -152,7 +180,9 @@ class TestCycleTools:
             patch("mcp_server.config.settings.Settings") as mock_settings_cls,
             patch(
                 "mcp_server.tools.cycle_tools.TransitionCycleTool.execute",
-                new=_make_transition_advisory_execute("✅ Transitioned to TDD Cycle 1/2: One"),
+                new=_make_transition_advisory_execute(
+                    to_cycle=1, total_cycles=2, cycle_name="One", is_force=False
+                ),
             ),
         ):
             mock_settings_cls.from_env.return_value.server.name = "test-server"
@@ -241,7 +271,9 @@ class TestCycleTools:
                 patch.object(
                     ForceCycleTransitionTool,
                     "execute",
-                    new=_make_transition_advisory_execute("✅ Forced cycle transition"),
+                    new=_make_transition_advisory_execute(
+                        to_cycle=2, total_cycles=2, cycle_name="One", is_force=True
+                    ),
                 ),
             ):
                 req = CallToolRequest(
@@ -257,7 +289,7 @@ class TestCycleTools:
                 )
                 response = await handler(req)
 
-        assert response.root.content[0].text == "✅ Forced cycle transition"
+        assert "Transitioned to Cycle 2/2 (One)" in response.root.content[0].text
         assert len(response.root.content) == 2
         assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
         assert any(
@@ -403,7 +435,9 @@ class TestCycleTools:
                 patch.object(
                     ForceCycleTransitionTool,
                     "execute",
-                    new=_make_transition_advisory_execute("✅ Forced cycle transition"),
+                    new=_make_transition_advisory_execute(
+                        to_cycle=2, total_cycles=2, cycle_name="One", is_force=True
+                    ),
                 ),
             ):
 
@@ -486,12 +520,15 @@ class TestTransitionCycleToolAdvisoryNote:
         )
         context = NoteContext()
 
+        from mcp_server.schemas.tool_outputs import CycleTransitionOutput  # noqa: PLC0415
+
         result = await tool.execute(
             TransitionCycleInput(to_cycle=3, issue_number=257),
             context,
         )
 
-        assert not result.is_error
+        assert isinstance(result, CycleTransitionOutput)
+        assert result.success
         assert state_engine.last_call is not None
         assert state_engine.last_call["gate_runner"] is gate_runner
         notes = context.of_type(InfoNote)
@@ -500,11 +537,6 @@ class TestTransitionCycleToolAdvisoryNote:
             "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
             "to load the current phase context for this branch."
         )
-
-        rendered = context.render_to_response(result)
-        assert len(rendered.content) == 2
-        assert rendered.content[0]["text"] == result.content[0]["text"]
-        assert rendered.content[1]["text"] == notes[0].message
 
 
 class TestForceCycleToolAdvisoryNote:
@@ -549,7 +581,10 @@ class TestForceCycleToolAdvisoryNote:
             context,
         )
 
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
+
+        assert isinstance(result, ForceCycleTransitionOutput)
+        assert result.success
         notes = context.of_type(InfoNote)
         assert len(notes) == 1
         assert notes[0].message == (
@@ -600,13 +635,16 @@ class TestForceCycleToolFormatting:
             NoteContext(),
         )
 
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
+
+        assert isinstance(result, ForceCycleTransitionOutput)
+        assert result.success
         assert state_engine.last_call is not None
         assert state_engine.last_call["gate_runner"] is gate_runner
-        text = result.content[0]["text"]
-        assert "ACTION REQUIRED" in text
-        assert "cycle-checklist" in text
-        assert text.index("ACTION REQUIRED") < text.index("✅")
+        assert result.skipped_gates == ["cycle-checklist"]
+        assert result.passing_gates == ["cycle-docs"]
+        assert result.skipped_gates_count == 1
+        assert result.passing_gates_count == 1
 
     @pytest.mark.asyncio
     async def test_force_cycle_tool_formats_passing_gates_after_success(
@@ -646,8 +684,11 @@ class TestForceCycleToolFormatting:
             NoteContext(),
         )
 
-        assert not result.is_error
-        text = result.content[0]["text"]
-        assert "✅" in text
-        assert "cycle-docs" in text
-        assert text.index("✅") < text.index("cycle-docs")
+        from mcp_server.schemas.tool_outputs import ForceCycleTransitionOutput  # noqa: PLC0415
+
+        assert isinstance(result, ForceCycleTransitionOutput)
+        assert result.success
+        assert result.skipped_gates == []
+        assert result.passing_gates == ["cycle-docs"]
+        assert result.skipped_gates_count == 0
+        assert result.passing_gates_count == 1

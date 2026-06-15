@@ -3,8 +3,8 @@
 # Discovery & Admin Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.2  
-**Last Updated:** 2026-05-24  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/tools/discovery_tools.py](../../../../mcp_server/tools/discovery_tools.py), [health_tools.py](../../../../mcp_server/tools/health_tools.py), [admin_tools.py](../../../../mcp_server/tools/admin_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_discovery_tools.py](../../../../tests/mcp_server/unit/tools/test_discovery_tools.py)  
@@ -133,25 +133,23 @@ Aggregates the active branch and workflow state into an operator-facing orientat
 
 None. `GetWorkContextInput` is fieldless.
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "current_branch": "feature/123-oauth",
-  "workflow_name": "feature",
-  "phase": "implementation",
-  "issue_number": 123,
-  "parent_branch": "main",
-  "sub_phase": "red",
-  "current_cycle": 1,
-  "phase_source": "state.json",
-  "phase_confidence": "high",
-  "sub_role_hint": "implementer",
-  "phase_instructions": "[ ] Call get_project_plan(issue_number=N)\n[ ] Execute the current TDD cycle",
-  "handover_template": "### Imp → QA hand-over\n#### Scope\n- Cycles executed: <list>"
-}
-```
+`get_work_context` returns a single `TextContent` block containing the formatted presentation text (including active branch details, phase instructions, and handover template) and the resource cache link pointing to the cached `GetWorkContextOutput` DTO.
 
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `current_branch`: `string`
+- `workflow_name`: `string`
+- `phase`: `string`
+- `issue_number`: `int`
+- `parent_branch`: `string`
+- `sub_phase`: `string`
+- `current_cycle`: `int`
+- `phase_source`: `string`
+- `phase_confidence`: `string`
+- `sub_role_hint`: `string`
+- `phase_instructions`: `string`
+- `handover_template`: `string`
 #### Text Fallback
 
 ```text

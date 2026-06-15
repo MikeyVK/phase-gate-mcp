@@ -160,8 +160,8 @@ class TestComputeVersionHashNoPlaceholders:
         # If implementation uses real versions, hashes will differ
 
         # Simulate two different concrete template versions
-        tier_chain + [("dto.py", "1.0.0")]
-        tier_chain + [("dto.py", "2.0.0")]
+        _ = tier_chain + [("dto.py", "1.0.0")]
+        _ = tier_chain + [("dto.py", "2.0.0")]
 
         hash_v1 = compute_version_hash("dto", "dto.py.jinja2", tier_chain)
         hash_v2 = compute_version_hash("dto", "dto.py.jinja2", tier_chain)
@@ -187,8 +187,8 @@ class TestComputeVersionHashNoPlaceholders:
         ]
 
         # After Task 1.1b fix, tier_chain should include concrete template version
-        tier_chain_base + [("dto.py", "1.0.0")]
-        tier_chain_base + [("dto.py", "2.0.0")]
+        _ = tier_chain_base + [("dto.py", "1.0.0")]
+        _ = tier_chain_base + [("dto.py", "2.0.0")]
 
         # For now, we pass base chain without concrete version
         # Task 1.1b will make compute_version_hash extract this from template

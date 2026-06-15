@@ -30,7 +30,6 @@ from mcp_server.tools.label_tools import (
     AddLabelsInput,
     CreateLabelInput,
     DeleteLabelInput,
-    DetectLabelDriftInput,
     ListLabelsInput,
     RemoveLabelsInput,
 )
@@ -99,7 +98,6 @@ class TestExtraForbidOnAllInputModels:
             (DeleteLabelInput, {"name": "bug"}),
             (RemoveLabelsInput, {"issue_number": 1, "labels": ["bug"]}),
             (AddLabelsInput, {"issue_number": 1, "labels": ["bug"]}),
-            (DetectLabelDriftInput, {}),
             # milestone
             (ListMilestonesInput, {}),
             (CreateMilestoneInput, {"title": "v1.0"}),

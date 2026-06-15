@@ -48,3 +48,6 @@ class DesignContext(DocArtifactContext):
     constraints: list[str] = Field(
         default_factory=list, description="Technical or business constraints"
     )
+    options: list[dict[str, object]] = Field(description="Design options to compare")
+    key_decisions: list[dict[str, object]] = Field(description="Key design decisions table")
+    open_questions: list[str] | None = Field(default=None, description="Open questions list")

@@ -76,7 +76,7 @@ def fixture_quality_yaml_path(tmp_path: Path) -> Path:
                 "success": {"exit_codes_ok": [0]},
                 "capabilities": {
                     "file_types": [".py"],
-                    "supports_autofix": True,
+                    "supports_autofix": False,
                 },
             },
         },
@@ -171,7 +171,7 @@ class TestQualityConfigValidation:
                                 "success": {"mode": "text_regex", "exit_codes_ok": [0]},
                                 "capabilities": {
                                     "file_types": [".py"],
-                                    "supports_autofix": True,
+                                    "supports_autofix": False,
                                 },
                             }
                         },
@@ -201,7 +201,7 @@ class TestActiveGatesField:
                             "success": {"exit_codes_ok": [0]},
                             "capabilities": {
                                 "file_types": [".py"],
-                                "supports_autofix": True,
+                                "supports_autofix": False,
                             },
                         }
                     },
@@ -271,7 +271,7 @@ class TestActiveGatesField:
                             "success": {"exit_codes_ok": [0]},
                             "capabilities": {
                                 "file_types": [".py"],
-                                "supports_autofix": True,
+                                "supports_autofix": False,
                             },
                         }
                     },
@@ -341,7 +341,7 @@ class TestActiveGatesField:
                     "success": {"exit_codes_ok": [0]},
                     "capabilities": {
                         "file_types": [".py"],
-                        "supports_autofix": True,
+                        "supports_autofix": False,
                     },
                 }
             },
@@ -380,7 +380,7 @@ class TestArtifactLoggingConfig:
                             "success": {"exit_codes_ok": [0]},
                             "capabilities": {
                                 "file_types": [".py"],
-                                "supports_autofix": True,
+                                "supports_autofix": False,
                             },
                         }
                     },
@@ -413,7 +413,7 @@ class TestArtifactLoggingConfig:
                         "success": {"exit_codes_ok": [0]},
                         "capabilities": {
                             "file_types": [".py"],
-                            "supports_autofix": True,
+                            "supports_autofix": False,
                         },
                     }
                 },
@@ -446,7 +446,7 @@ class TestArtifactLoggingConfig:
                             "success": {"exit_codes_ok": [0]},
                             "capabilities": {
                                 "file_types": [".py"],
-                                "supports_autofix": True,
+                                "supports_autofix": False,
                             },
                         }
                     },
@@ -626,7 +626,7 @@ class TestProjectScopeField:
         "success": {"exit_codes_ok": [0]},
         "capabilities": {
             "file_types": [".py"],
-            "supports_autofix": True,
+            "supports_autofix": False,
         },
     }
 

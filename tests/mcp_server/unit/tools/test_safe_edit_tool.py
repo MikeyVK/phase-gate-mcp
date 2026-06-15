@@ -28,6 +28,7 @@ from pydantic import ValidationError
 
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import SafeEditOutput
 from mcp_server.tools.safe_edit_tool import SafeEditInput, SafeEditTool
 
 
@@ -70,7 +71,9 @@ class TestSafeEditTool:
                 SafeEditInput(path=path, content=content, mode="strict"), NoteContext()
             )
 
-            assert "File saved successfully" in result.content[0]["text"]
+            assert isinstance(result, SafeEditOutput)
+            assert result.success is True
+            assert result.written is True
             mock_write.assert_called_once_with(content, encoding="utf-8")
 
     @pytest.mark.asyncio
@@ -90,9 +93,9 @@ class TestSafeEditTool:
                 SafeEditInput(path=path, content=content, mode="strict"), NoteContext()
             )
 
-            text = result.content[0]["text"]
-            assert "Edit rejected" in text
-            assert "Error" in text
+            assert isinstance(result, SafeEditOutput)
+            assert result.error_message is not None
+            assert "rejected" in result.error_message.lower()
             mock_write.assert_not_called()
 
     @pytest.mark.asyncio
@@ -112,9 +115,10 @@ class TestSafeEditTool:
                 SafeEditInput(path=path, content=content, mode="interactive"), NoteContext()
             )
 
-            text = result.content[0]["text"]
-            assert "File saved successfully" in text
-            assert "Saved with validation warnings" in text
+            assert isinstance(result, SafeEditOutput)
+            assert result.success is True
+            assert result.written is True
+            assert result.passed is False
             mock_write.assert_called_once()
 
     @pytest.mark.asyncio
@@ -134,8 +138,10 @@ class TestSafeEditTool:
                 SafeEditInput(path=path, content=content, mode="verify_only"), NoteContext()
             )
 
-            text = result.content[0]["text"]
-            assert "Validation Passed" in text
+            assert isinstance(result, SafeEditOutput)
+            assert result.success is True
+            assert result.written is False
+            assert result.passed is True
             mock_write.assert_not_called()
 
     @pytest.mark.asyncio
@@ -187,10 +193,10 @@ class TestSafeEditTool:
                 NoteContext(),
             )
 
-            text = result.content[0]["text"]
-            issues_count = text.count("**Validation Issues:**")
-            assert issues_count == 1, f"Expected 1 issues block, found {issues_count}\n{text}"
-            assert "invalid syntax" in text.lower() or "syntax" in text.lower()
+            assert isinstance(result, SafeEditOutput)
+            assert result.success is False
+            assert result.error_message is not None
+            assert "syntax" in result.error_message.lower()
 
         finally:
             Path(temp_path).unlink(missing_ok=True)
@@ -215,12 +221,11 @@ class TestSafeEditTool:
                 NoteContext(),
             )
 
-            assert result.is_error, "Expected error result"
-            text = result.content[0]["text"]
-            assert "not found" in text.lower(), f"Expected 'not found' in error\n{text}"
-            assert "# Header" in text or "line 1" in text, (
-                f"Expected file context in error message\n{text}"
-            )
+            assert isinstance(result, SafeEditOutput)
+            assert result.success is False
+            assert result.error_message is not None
+            assert "not found" in result.error_message.lower()
+            assert "# Header" in result.error_message or "line 1" in result.error_message
 
         finally:
             Path(temp_path).unlink(missing_ok=True)

@@ -26,12 +26,14 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
+    PresentationConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
+from mcp_server.core.interfaces import IToolResponseCache
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -72,6 +74,7 @@ class TestBootstrap:
             "operation_policies_config": MagicMock(spec=OperationPoliciesConfig),
             "enforcement_config": MagicMock(spec=EnforcementConfig),
             "contracts_config": MagicMock(spec=ContractsConfig),
+            "presentation_config": MagicMock(spec=PresentationConfig),
         }
         layer = ConfigLayer(**mock_configs)
 
@@ -103,6 +106,7 @@ class TestBootstrap:
             "artifact_manager": MagicMock(spec=ArtifactManager),
             "pr_status_cache": MagicMock(spec=PRStatusCache),
             "enforcement_runner": MagicMock(spec=EnforcementRunner),
+            "response_cache": MagicMock(spec=IToolResponseCache),
         }
         graph = ManagerGraph(**mock_managers)
 
@@ -146,7 +150,10 @@ def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
     mock_contracts.merge_policy = MagicMock()
     mock_contracts.merge_policy.branch_local_artifacts = []
     mock_loader.load_contracts_config.return_value = mock_contracts
-
+    mock_pres = MagicMock(spec=PresentationConfig)
+    mock_pres.global_settings = MagicMock()
+    mock_pres.tools = {}
+    mock_loader.load_presentation_config.return_value = mock_pres
     return mock_loader
 
 

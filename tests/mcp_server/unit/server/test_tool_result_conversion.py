@@ -16,7 +16,6 @@ Unit tests for ToolResult to MCP result conversion.
 # Standard library
 
 # Third-party
-import pytest
 from mcp.types import CallToolResult, TextContent
 
 from mcp_server.tools.tool_result import ToolResult
@@ -39,31 +38,3 @@ class TestToolResultConversion:
         assert isinstance(mcp_result.content[0], TextContent)
         assert mcp_result.content[0].text == "Hello World"
         assert getattr(mcp_result, "structuredContent", None) is None
-
-    def test_convert_tool_result_json_populates_structured_content(self) -> None:
-        """Should extract type='json' block and populate structuredContent."""
-        test_data = {"key": "value", "list": [1, 2, 3]}
-        result = ToolResult.json_data(test_data, text="Summary text")
-        mcp_result = convert_tool_result_to_mcp_result(result)
-
-        assert isinstance(mcp_result, CallToolResult)
-        assert not mcp_result.isError
-        # The JSON content block must be popped, leaving only the TextContent block
-        assert len(mcp_result.content) == 1
-        assert isinstance(mcp_result.content[0], TextContent)
-        assert mcp_result.content[0].text == "Summary text"
-
-        # The structuredContent field must contain the original dict data
-        assert getattr(mcp_result, "structuredContent", None) == test_data
-
-    def test_convert_tool_result_multiple_json_blocks_fails(self) -> None:
-        """Should raise ValueError if multiple JSON blocks are present."""
-        result = ToolResult(
-            content=[
-                {"type": "json", "json": {"a": 1}},
-                {"type": "json", "json": {"b": 2}},
-            ],
-            is_error=False,
-        )
-        with pytest.raises(ValueError, match="Multiple JSON content blocks"):
-            convert_tool_result_to_mcp_result(result)

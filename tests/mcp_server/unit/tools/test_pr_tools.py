@@ -10,7 +10,8 @@ import pytest
 from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.state.github_read_models import PRReadModel
+from mcp_server.schemas.github_models import PRReadModel
+from mcp_server.schemas.tool_outputs import ListPRsOutput, MergePROutput, PROutput
 from mcp_server.tools.pr_tools import (
     GetPRInput,
     GetPRTool,
@@ -19,7 +20,6 @@ from mcp_server.tools.pr_tools import (
     MergePRInput,
     MergePRTool,
 )
-from tests.mcp_server.test_support import assert_structured_result
 
 
 @pytest.fixture
@@ -41,6 +41,7 @@ async def test_list_prs_tool(mock_github_manager: MagicMock, mock_git_config: Ma
     pr1 = MagicMock(number=10, title="PR 10", state="open")
     pr1.base.ref = "main"
     pr1.head.ref = "feature/10"
+    pr1.html_url = "https://github.com/pulls/10"
 
     mock_github_manager.list_prs.return_value = [pr1]
 
@@ -48,8 +49,11 @@ async def test_list_prs_tool(mock_github_manager: MagicMock, mock_git_config: Ma
     result = await tool.execute(params, NoteContext())
 
     mock_github_manager.list_prs.assert_called_with(state="open", base=None, head=None)
-    assert "#10: PR 10" in result.content[0]["text"]
-    assert "Base: main" in result.content[0]["text"]
+    assert isinstance(result, ListPRsOutput)
+    assert result.success is True
+    assert result.prs_count == 1
+    assert result.pull_requests[0].number == 10
+    assert result.pull_requests[0].title == "PR 10"
 
 
 @pytest.mark.asyncio
@@ -69,6 +73,7 @@ async def test_merge_pr_tool(mock_github_manager: MagicMock, mock_git_config: Ma
         merged_at=None,
         merge_sha=None,
         body="",
+        html_url="https://github.com/pulls/20",
     )
     mock_github_manager.get_pr.return_value = mock_pr_model
     mock_github_manager.merge_pr.return_value = {"sha": "commitsHA123"}
@@ -79,7 +84,11 @@ async def test_merge_pr_tool(mock_github_manager: MagicMock, mock_git_config: Ma
     mock_github_manager.merge_pr.assert_called_with(
         pr_number=20, commit_message=None, merge_method="merge"
     )
-    assert "Merged PR #20 using merge" in result.content[0]["text"]
+    assert isinstance(result, MergePROutput)
+    assert result.success is True
+    assert result.pr_number == 20
+    assert result.merge_sha == "commitsHA123"
+    assert result.merge_method == "merge"
 
 
 def test_merge_pr_input_rejects_squash() -> None:
@@ -105,6 +114,7 @@ async def test_get_pr_tool(mock_github_manager: MagicMock) -> None:
         merged_at=None,
         merge_sha=None,
         body="Some body",
+        html_url="https://github.com/pulls/42",
     )
     mock_github_manager.get_pr.return_value = mock_pr_model
 
@@ -112,9 +122,9 @@ async def test_get_pr_tool(mock_github_manager: MagicMock) -> None:
     params = GetPRInput(pr_number=42)
     result = await tool.execute(params, NoteContext())
 
-    assert_structured_result(result)
-    data = result.content[0]["json"]
-    assert data["pr_number"] == 42
-    assert data["title"] == "Test PR"
-    assert data["head_branch"] == "feature/42-test"
-    assert data["base_branch"] == "main"
+    assert isinstance(result, PROutput)
+    assert result.success is True
+    assert result.number == 42
+    assert result.title == "Test PR"
+    assert result.head_ref == "feature/42-test"
+    assert result.base_ref == "main"

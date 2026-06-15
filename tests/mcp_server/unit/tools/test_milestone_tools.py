@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import ListMilestonesOutput, MilestoneOutput
 from mcp_server.tools.milestone_tools import (
     CloseMilestoneInput,
     CloseMilestoneTool,
@@ -35,13 +36,18 @@ async def test_list_milestones_tool(mock_github_manager: MagicMock) -> None:
     result = await tool.execute(ListMilestonesInput(), NoteContext())
 
     mock_github_manager.list_milestones.assert_called_with(state="open")
-    assert "#1: M1" in result.content[0]["text"]
+    assert isinstance(result, ListMilestonesOutput)
+    assert result.success is True
+    assert result.total_milestones == 1
+    assert result.milestones[0].title == "M1"
 
 
 @pytest.mark.asyncio
 async def test_create_milestone_tool(mock_github_manager: MagicMock) -> None:
     tool = CreateMilestoneTool(manager=mock_github_manager)
-    mock_github_manager.create_milestone.return_value = MagicMock(number=2)
+    mock_github_manager.create_milestone.return_value = MagicMock(
+        number=2, title="Sprint 1", state="open"
+    )
 
     params = CreateMilestoneInput(title="Sprint 1")
     result = await tool.execute(params, NoteContext())
@@ -49,16 +55,24 @@ async def test_create_milestone_tool(mock_github_manager: MagicMock) -> None:
     mock_github_manager.create_milestone.assert_called_with(
         title="Sprint 1", description=None, due_on=None
     )
-    assert "Created milestone #2" in result.content[0]["text"]
+    assert isinstance(result, MilestoneOutput)
+    assert result.success is True
+    assert result.number == 2
+    assert result.title == "Sprint 1"
 
 
 @pytest.mark.asyncio
 async def test_close_milestone_tool(mock_github_manager: MagicMock) -> None:
     tool = CloseMilestoneTool(manager=mock_github_manager)
-    mock_github_manager.close_milestone.return_value = MagicMock(number=3, title="Sprint X")
+    mock_github_manager.close_milestone.return_value = MagicMock(
+        number=3, title="Sprint X", state="closed"
+    )
 
     params = CloseMilestoneInput(milestone_number=3)
     result = await tool.execute(params, NoteContext())
 
     mock_github_manager.close_milestone.assert_called_with(3)
-    assert "Closed milestone #3" in result.content[0]["text"]
+    assert isinstance(result, MilestoneOutput)
+    assert result.success is True
+    assert result.number == 3
+    assert result.title == "Sprint X"

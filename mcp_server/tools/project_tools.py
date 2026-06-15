@@ -11,22 +11,27 @@ import logging
 import os
 import re
 import subprocess
-import time
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext, SuggestionNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
-from mcp_server.managers.state_repository import StateAlreadyExistsError
 from mcp_server.schemas import ContractsConfig
 from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
-from mcp_server.tools.base import BranchMutatingTool, StructuredTool
+from mcp_server.schemas.tool_outputs import (
+    InitializeProjectOutput,
+    PhaseDTO,
+    PlannedCycleSummary,
+    PlanningDeliverablesOutput,
+    ProjectPlanOutput,
+)
+from mcp_server.tools.base import ITool
+from mcp_server.utils.schema_utils import resolve_schema_refs
 
 logger = logging.getLogger(__name__)
 
@@ -69,20 +74,32 @@ class InitializeProjectInput(BaseModel):
         return self
 
 
-class InitializeProjectTool(StructuredTool, BranchMutatingTool):
+class InitializeProjectTool(ITool):
     """Tool for initializing projects with atomic state management.
 
     Phase 0.5: Human selects workflow_name → generates project phase plan.
     Issue #39 Mode 1: Atomic initialization of deliverables.json + state.json.
     """
 
-    name = "initialize_project"
-    description = (
-        "Initialize project with phase plan selection. "
-        "Human selects workflow_name (feature/bug/docs/refactor/hotfix/custom) "
-        "to generate project-specific phase plan."
-    )
-    args_model = InitializeProjectInput
+    output_model: ClassVar[type[BaseModel]] = InitializeProjectOutput
+    presentation_category = "bootstrap"
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "initialize_project"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Initialize project with phase plan selection. "
+            "Human selects workflow_name (feature/bug/docs/refactor/hotfix/custom) "
+            "to generate project-specific phase plan."
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return InitializeProjectInput
 
     def __init__(
         self,
@@ -93,7 +110,6 @@ class InitializeProjectTool(StructuredTool, BranchMutatingTool):
         contracts_config: ContractsConfig | None = None,
     ) -> None:
         """Initialize tool with injected project dependencies."""
-        super().__init__()
         self.workspace_root = Path(workspace_root)
         self.manager = manager
         self.git_manager = git_manager
@@ -102,7 +118,9 @@ class InitializeProjectTool(StructuredTool, BranchMutatingTool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
+        if self.args_model is None:
+            return {}
+        schema = resolve_schema_refs(self.args_model.model_json_schema())
         if self._contracts_config is not None:
             schema["properties"]["workflow_name"]["enum"] = list(
                 self._contracts_config.workflows.keys()
@@ -198,11 +216,11 @@ class InitializeProjectTool(StructuredTool, BranchMutatingTool):
             cancellable=True,
         )
 
-    async def execute_structured(
+    async def execute(
         self,
         params: InitializeProjectInput,
         context: NoteContext,  # noqa: ANN401, ARG002
-    ) -> tuple[dict[str, Any], str]:
+    ) -> InitializeProjectOutput:
         """Execute project initialization with atomic state creation.
 
         Issue #39: Creates both deliverables.json AND state.json atomically.
@@ -212,35 +230,19 @@ class InitializeProjectTool(StructuredTool, BranchMutatingTool):
             params: InitializeProjectInput with issue details
 
         Returns:
-            Tuple of (success_message, summary)
-
-        Raises:
-            ValueError: If workflow_name invalid or custom_phases missing
+            InitializeProjectOutput
         """
         try:
-            start = time.perf_counter()
-
             # Step 0: Get current branch once and reuse
-            branch_start = time.perf_counter()
             with anyio.fail_after(5):
                 branch = await anyio.to_thread.run_sync(self.git_manager.get_current_branch)
-            logger.debug(
-                "initialize_project: got branch in %.1fms",
-                (time.perf_counter() - branch_start) * 1000.0,
-            )
 
             # Step 1: Determine parent_branch
             parent_branch = params.parent_branch
 
             if parent_branch is None:
                 # Auto-detect from git reflog
-                parent_start = time.perf_counter()
                 parent_branch = await self._detect_parent_branch_from_reflog(branch)
-                logger.debug(
-                    "initialize_project: reflog parent detection in %.1fms",
-                    (time.perf_counter() - parent_start) * 1000.0,
-                )
-
                 if parent_branch:
                     logger.info("Auto-detected parent_branch: %s for %s", parent_branch, branch)
 
@@ -253,7 +255,6 @@ class InitializeProjectTool(StructuredTool, BranchMutatingTool):
                     parent_branch=parent_branch,
                 )
 
-            init_start = time.perf_counter()
             with anyio.fail_after(20):
                 result = await anyio.to_thread.run_sync(
                     lambda: self.manager.initialize_project(
@@ -263,16 +264,11 @@ class InitializeProjectTool(StructuredTool, BranchMutatingTool):
                         options=options,
                     )
                 )
-            logger.debug(
-                "initialize_project: initialize_project() in %.1fms",
-                (time.perf_counter() - init_start) * 1000.0,
-            )
 
             # Step 3: Determine first phase from workflow
             first_phase = result["required_phases"][0]
 
             # Step 5: Initialize branch state atomically
-            state_start = time.perf_counter()
             with anyio.fail_after(10):
                 await anyio.to_thread.run_sync(
                     lambda: self.state_engine.initialize_branch(
@@ -281,36 +277,32 @@ class InitializeProjectTool(StructuredTool, BranchMutatingTool):
                         initial_phase=first_phase,
                     )
                 )
-            logger.debug(
-                "initialize_project: initialize_branch() in %.1fms (total %.1fms)",
-                (time.perf_counter() - state_start) * 1000.0,
-                (time.perf_counter() - start) * 1000.0,
-            )
 
-            # Step 6: Build success message
-            success_message = {
-                "success": True,
-                "issue_number": params.issue_number,
-                "workflow_name": params.workflow_name,
-                "branch": branch,
-                "initial_phase": first_phase,
-                "parent_branch": parent_branch,
-                "required_phases": result["required_phases"],
-                "execution_mode": result["execution_mode"],
-                "files_created": [
+            return InitializeProjectOutput(
+                success=True,
+                issue_number=params.issue_number,
+                workflow_name=params.workflow_name,
+                branch=branch,
+                initial_phase=first_phase,
+                parent_branch=parent_branch,
+                required_phases=result["required_phases"],
+                execution_mode=result["execution_mode"],
+                files_created=[
                     "deliverables.json (workflow definition)",
                     "state.json (branch state)",
                 ],
-            }
-
-            summary = (
-                f"Initialized project for issue #{params.issue_number} "
-                f"on branch {branch} (phase: {first_phase})"
             )
-            return success_message, summary
 
-        except (ValueError, OSError, RuntimeError, StateAlreadyExistsError) as e:
-            raise ExecutionError(str(e)) from e
+        except Exception as e:
+            return InitializeProjectOutput(
+                success=False,
+                error_message=str(e),
+                issue_number=params.issue_number,
+                workflow_name=params.workflow_name,
+                branch="",
+                initial_phase="",
+                execution_mode="",
+            )
 
 
 class GetProjectPlanInput(BaseModel):
@@ -321,49 +313,92 @@ class GetProjectPlanInput(BaseModel):
     issue_number: int = Field(..., description="GitHub issue number")
 
 
-class GetProjectPlanTool(StructuredTool):
+class GetProjectPlanTool(ITool):
     """Tool for retrieving project plan."""
 
-    name = "get_project_plan"
-    description = "Get project phase plan for issue number"
-    args_model = GetProjectPlanInput
+    output_model: ClassVar[type[BaseModel]] = ProjectPlanOutput
+    presentation_category = "query"
 
-    def __init__(self, manager: ProjectManager) -> None:
-        """Initialize tool with injected ProjectManager."""
-        super().__init__()
-        self.manager = manager
+    @property
+    def name(self) -> str:
+        return "get_project_plan"
+
+    @property
+    def description(self) -> str:
+        return "Get project phase plan for issue number"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return GetProjectPlanInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
-        return GetProjectPlanInput.model_json_schema()
+        if self.args_model is None:
+            return {}
+        return resolve_schema_refs(self.args_model.model_json_schema())
 
-    async def execute_structured(
+    def __init__(self, manager: ProjectManager) -> None:
+        """Initialize tool with injected ProjectManager."""
+        self.manager = manager
+
+    async def execute(
         self,
         params: GetProjectPlanInput,
         context: NoteContext,  # noqa: ANN401
-    ) -> tuple[dict[str, Any], str]:
+    ) -> ProjectPlanOutput:
         """Execute project plan retrieval.
 
         Args:
             params: GetProjectPlanInput with issue_number
-
-        Returns:
-            Tuple of (plan_data, summary)
+            context: Call context
         """
         try:
             plan = self.manager.get_project_plan(issue_number=params.issue_number)
             if plan:
-                summary = f"Retrieved project plan for issue #{params.issue_number}"
-                return plan, summary
+                required_phases = plan.get("required_phases", [])
+                current_phase = plan.get("current_phase", "")
+                curr_phase_name = current_phase.split(":")[0] if current_phase else ""
+
+                phases_list = []
+                current_found = False
+                for p_name in required_phases:
+                    if p_name == curr_phase_name:
+                        status = "active"
+                        current_found = True
+                    elif current_found:
+                        status = "pending"
+                    else:
+                        status = "completed" if curr_phase_name else "pending"
+                    phases_list.append(PhaseDTO(name=p_name, status=status, tasks=[]))
+
+                return ProjectPlanOutput(
+                    success=True,
+                    issue_number=params.issue_number,
+                    workflow_name=plan.get("workflow_name", ""),
+                    phases=phases_list,
+                )
+
             context.produce(
                 SuggestionNote(
                     "Run initialize_project first to create a project plan.",
                     subject=f"issue #{params.issue_number}",
                 )
             )
-            raise ExecutionError(f"No project plan found for issue #{params.issue_number}")
+            return ProjectPlanOutput(
+                success=False,
+                error_message=f"No project plan found for issue #{params.issue_number}",
+                issue_number=params.issue_number,
+                workflow_name="",
+                phases=[],
+            )
         except (ValueError, OSError) as e:
-            raise ExecutionError(str(e)) from e
+            return ProjectPlanOutput(
+                success=False,
+                error_message=str(e),
+                issue_number=params.issue_number,
+                workflow_name="",
+                phases=[],
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -386,7 +421,7 @@ class SavePlanningDeliverablesInput(BaseModel):
     )
 
 
-class SavePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
+class SavePlanningDeliverablesTool(ITool):
     """Tool to persist planning deliverables for an issue to deliverables.json.
 
     Issue #229 Cycle 4 / Issue #390:
@@ -394,12 +429,30 @@ class SavePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
     - Defer schema validation entirely to CyclePlanningModel.
     """
 
-    name = "save_planning_deliverables"
-    description = (
-        "Save cycle planning deliverables for an issue to deliverables.json. "
-        "Validates the schema before persisting."
-    )
-    args_model = SavePlanningDeliverablesInput
+    output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
+    presentation_category = "planning"
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "save_planning_deliverables"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Save cycle planning deliverables for an issue to deliverables.json. "
+            "Validates the schema before persisting."
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return SavePlanningDeliverablesInput
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        if self.args_model is None:
+            return {}
+        return resolve_schema_refs(self.args_model.model_json_schema())
 
     def __init__(
         self,
@@ -407,20 +460,17 @@ class SavePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
         workspace_root: Path | str | None = None,
     ) -> None:
         """Initialize tool with injected ProjectManager."""
-        super().__init__()
         del workspace_root
         self._manager = manager
 
-    async def execute_structured(
+    async def execute(
         self, params: SavePlanningDeliverablesInput, context: NoteContext
-    ) -> tuple[dict[str, Any], str]:
+    ) -> PlanningDeliverablesOutput:
         """Persist planning deliverables.
 
         Args:
             params: issue_number + planning_deliverables payload.
-
-        Returns:
-            Tuple of (data_dict, summary_text).
+            context: Call context
         """
         del context
         try:
@@ -429,12 +479,67 @@ class SavePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
                 issue_number=params.issue_number,
                 planning_deliverables=pd_dict,
             )
-            return (
-                {"success": True, "issue_number": params.issue_number},
-                f"Planning deliverables saved for issue #{params.issue_number}",
+
+            # Load project plan to extract the complete planning_deliverables
+            plan = self._manager.get_project_plan(issue_number=params.issue_number)
+            if not plan or "planning_deliverables" not in plan:
+                return PlanningDeliverablesOutput(
+                    success=False,
+                    error_message="Planning deliverables not found after saving",
+                    issue_number=params.issue_number,
+                    total_cycles=0,
+                    total_deliverables=0,
+                    cycles=[],
+                )
+
+            pd = plan["planning_deliverables"]
+            cycles_data = pd.get("cycles", {}).get("cycles", [])
+            cycles_summaries = []
+            cycle_deliverables_count = 0
+            for c in cycles_data:
+                cycle_num = c.get("cycle_number", 0)
+                delivs_count = len(c.get("deliverables", []))
+                cycle_deliverables_count += delivs_count
+                cycles_summaries.append(
+                    PlannedCycleSummary(
+                        cycle_number=cycle_num,
+                        deliverables_count=delivs_count,
+                    )
+                )
+
+            phase_deliverables_count = 0
+            phase_keys = [
+                "research",
+                "planning",
+                "design",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+                "coordination",
+            ]
+            for pk in phase_keys:
+                if pk in pd:
+                    phase_deliverables_count += len(pd[pk].get("deliverables", []))
+
+            total_deliverables = cycle_deliverables_count + phase_deliverables_count
+
+            return PlanningDeliverablesOutput(
+                success=True,
+                issue_number=params.issue_number,
+                total_cycles=len(cycles_summaries),
+                total_deliverables=total_deliverables,
+                cycles=cycles_summaries,
             )
-        except ValueError as e:
-            raise ExecutionError(str(e)) from e
+        except Exception as e:
+            return PlanningDeliverablesOutput(
+                success=False,
+                error_message=str(e),
+                issue_number=params.issue_number,
+                total_cycles=0,
+                total_deliverables=0,
+                cycles=[],
+            )
 
 
 class UpdatePlanningDeliverablesInput(BaseModel):
@@ -453,7 +558,7 @@ class UpdatePlanningDeliverablesInput(BaseModel):
     )
 
 
-class UpdatePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
+class UpdatePlanningDeliverablesTool(ITool):
     """Tool to merge-update planning deliverables for an issue in deliverables.json.
 
     Issue #229 Cycle 5 / Issue #390:
@@ -463,13 +568,31 @@ class UpdatePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
     - Defer schema validation entirely to UpdatePlanningModel.
     """
 
-    name = "update_planning_deliverables"
-    description = (
-        "Merge-update cycle planning deliverables for an issue in deliverables.json. "
-        "Must be preceded by save_planning_deliverables. "
-        "New cycles are appended; deliverables within existing cycles are merged by id."
-    )
-    args_model = UpdatePlanningDeliverablesInput
+    output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
+    presentation_category = "planning"
+    tool_category = "branch_mutating"
+
+    @property
+    def name(self) -> str:
+        return "update_planning_deliverables"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Merge-update cycle planning deliverables for an issue in deliverables.json. "
+            "Must be preceded by save_planning_deliverables. "
+            "New cycles are appended; deliverables within existing cycles are merged by id."
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return UpdatePlanningDeliverablesInput
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        if self.args_model is None:
+            return {}
+        return resolve_schema_refs(self.args_model.model_json_schema())
 
     def __init__(
         self,
@@ -477,20 +600,17 @@ class UpdatePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
         workspace_root: Path | str | None = None,
     ) -> None:
         """Initialize tool with injected ProjectManager."""
-        super().__init__()
         del workspace_root
         self._manager = manager
 
-    async def execute_structured(
+    async def execute(
         self, params: UpdatePlanningDeliverablesInput, context: NoteContext
-    ) -> tuple[dict[str, Any], str]:
+    ) -> PlanningDeliverablesOutput:
         """Merge planning deliverables.
 
         Args:
             params: issue_number + planning_deliverables payload.
-
-        Returns:
-            Tuple of (data_dict, summary_text).
+            context: Call context
         """
         del context
         try:
@@ -499,9 +619,64 @@ class UpdatePlanningDeliverablesTool(StructuredTool, BranchMutatingTool):
                 issue_number=params.issue_number,
                 planning_deliverables=pd_dict,
             )
-            return (
-                {"success": True, "issue_number": params.issue_number},
-                f"Planning deliverables updated for issue #{params.issue_number}",
+
+            # Load project plan to extract the complete planning_deliverables
+            plan = self._manager.get_project_plan(issue_number=params.issue_number)
+            if not plan or "planning_deliverables" not in plan:
+                return PlanningDeliverablesOutput(
+                    success=False,
+                    error_message="Planning deliverables not found after updating",
+                    issue_number=params.issue_number,
+                    total_cycles=0,
+                    total_deliverables=0,
+                    cycles=[],
+                )
+
+            pd = plan["planning_deliverables"]
+            cycles_data = pd.get("cycles", {}).get("cycles", [])
+            cycles_summaries = []
+            cycle_deliverables_count = 0
+            for c in cycles_data:
+                cycle_num = c.get("cycle_number", 0)
+                delivs_count = len(c.get("deliverables", []))
+                cycle_deliverables_count += delivs_count
+                cycles_summaries.append(
+                    PlannedCycleSummary(
+                        cycle_number=cycle_num,
+                        deliverables_count=delivs_count,
+                    )
+                )
+
+            phase_deliverables_count = 0
+            phase_keys = [
+                "research",
+                "planning",
+                "design",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+                "coordination",
+            ]
+            for pk in phase_keys:
+                if pk in pd:
+                    phase_deliverables_count += len(pd[pk].get("deliverables", []))
+
+            total_deliverables = cycle_deliverables_count + phase_deliverables_count
+
+            return PlanningDeliverablesOutput(
+                success=True,
+                issue_number=params.issue_number,
+                total_cycles=len(cycles_summaries),
+                total_deliverables=total_deliverables,
+                cycles=cycles_summaries,
             )
-        except ValueError as e:
-            raise ExecutionError(str(e)) from e
+        except Exception as e:
+            return PlanningDeliverablesOutput(
+                success=False,
+                error_message=str(e),
+                issue_number=params.issue_number,
+                total_cycles=0,
+                total_deliverables=0,
+                cycles=[],
+            )

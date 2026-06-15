@@ -195,6 +195,8 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
             "requirements_nonfunctional": ["Must complete within 5 seconds"],
             "decision": "Use Pydantic pipeline",
             "rationale": "Type-safe context validation",
+            "options": [],
+            "key_decisions": [],
         },
         False,
         ".md",

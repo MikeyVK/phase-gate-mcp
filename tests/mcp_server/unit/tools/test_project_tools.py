@@ -34,7 +34,6 @@ from mcp_server.tools.project_tools import (
     UpdatePlanningDeliverablesTool,
 )
 from tests.mcp_server.test_support import (
-    assert_structured_result,
     make_git_manager,
     make_phase_state_engine,
     make_project_manager,
@@ -79,10 +78,9 @@ class TestInitializeProjectToolParentBranch:
     async def test_initialize_with_explicit_parent_branch(
         self, tool: InitializeProjectTool
     ) -> None:
-        """Test initializing project with explicit parent_branch.
+        """Test initializing project with explicit parent_branch."""
+        from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
 
-        Issue #79: User can provide parent_branch explicitly.
-        """
         # Mock git to return current branch
         with patch.object(tool.git_manager, "get_current_branch") as mock_branch:
             mock_branch.return_value = "feature/79-test"
@@ -99,16 +97,15 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify
-        assert_structured_result(result)
-        data = result.content[0]["json"]
-        assert data["parent_branch"] == "epic/76-quality-gates"
+        assert isinstance(result, InitializeProjectOutput)
+        assert result.success
+        assert result.parent_branch == "epic/76-quality-gates"
 
     @pytest.mark.asyncio
     async def test_initialize_auto_detects_parent_branch(self, tool: InitializeProjectTool) -> None:
-        """Test auto-detection of parent_branch via git reflog.
+        """Test auto-detection of parent_branch via git reflog."""
+        from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
 
-        Issue #79: If parent_branch not provided, auto-detect from git reflog.
-        """
         # Mock git operations
         with (
             patch.object(tool.git_manager, "get_current_branch") as mock_branch,
@@ -126,19 +123,18 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify
-        assert_structured_result(result)
-        data = result.content[0]["json"]
-        assert data["parent_branch"] == "main"
+        assert isinstance(result, InitializeProjectOutput)
+        assert result.success
+        assert result.parent_branch == "main"
         mock_detect.assert_called_once_with("feature/80-test")
 
     @pytest.mark.asyncio
     async def test_initialize_auto_detect_fails_gracefully(
         self, tool: InitializeProjectTool
     ) -> None:
-        """Test auto-detection failure results in None.
+        """Test auto-detection failure results in None."""
+        from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
 
-        Issue #79: If git reflog fails, parent_branch should be None.
-        """
         # Mock git operations
         with (
             patch.object(tool.git_manager, "get_current_branch") as mock_branch,
@@ -156,19 +152,18 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify - no error, parent_branch is null
-        assert_structured_result(result)
-        data = result.content[0]["json"]
-        assert data["parent_branch"] is None
+        assert isinstance(result, InitializeProjectOutput)
+        assert result.success
+        assert result.parent_branch is None
         mock_detect.assert_called_once_with("feature/81-test")
 
     @pytest.mark.asyncio
     async def test_explicit_parent_branch_overrides_auto_detect(
         self, tool: InitializeProjectTool
     ) -> None:
-        """Test explicit parent_branch skips auto-detection.
+        """Test explicit parent_branch skips auto-detection."""
+        from mcp_server.schemas.tool_outputs import InitializeProjectOutput  # noqa: PLC0415
 
-        Issue #79: If parent_branch provided, don't call git reflog.
-        """
         # Mock git operations
         with (
             patch.object(tool.git_manager, "get_current_branch") as mock_branch,
@@ -188,9 +183,9 @@ class TestInitializeProjectToolParentBranch:
             )
 
         # Verify - auto-detect NOT called
-        assert_structured_result(result)
-        data = result.content[0]["json"]
-        assert data["parent_branch"] == "epic/special"
+        assert isinstance(result, InitializeProjectOutput)
+        assert result.success
+        assert result.parent_branch == "epic/special"
         mock_detect.assert_not_called()
 
 
@@ -218,26 +213,35 @@ class TestGetProjectPlanTool:
 
     @pytest.mark.asyncio
     async def test_get_plan_exists_returns_text_json(self) -> None:
+        from mcp_server.schemas.tool_outputs import ProjectPlanOutput  # noqa: PLC0415
+
         plan = {"issue_number": 253, "workflow_name": "bug", "current_phase": "implementation"}
+        # Stub the manager to return plan (the tool will parse and map this dict)
+        # We will mock the mapper or stub dict output
+        # Let's ensure the tool maps it properly
         tool = GetProjectPlanTool(manager=_GetProjectPlanManagerStub(plan=plan))
         context = NoteContext()
 
         result = await tool.execute(GetProjectPlanInput(issue_number=253), context)
 
-        assert_structured_result(result)
-        data = result.content[0]["json"]
-        assert data == plan
+        assert isinstance(result, ProjectPlanOutput)
+        assert result.success
+        assert result.issue_number == 253
+        assert result.workflow_name == "bug"
         assert len(context.of_type(SuggestionNote)) == 0
 
     @pytest.mark.asyncio
     async def test_get_plan_not_found_returns_error(self) -> None:
+        from mcp_server.schemas.tool_outputs import ProjectPlanOutput  # noqa: PLC0415
+
         tool = GetProjectPlanTool(manager=_GetProjectPlanManagerStub(plan=None))
         context = NoteContext()
 
         result = await tool.execute(GetProjectPlanInput(issue_number=253), context)
 
-        assert result.is_error is True
-        assert result.content[0]["text"] == "No project plan found for issue #253"
+        assert isinstance(result, ProjectPlanOutput)
+        assert not result.success
+        assert result.error_message == "No project plan found for issue #253"
 
     @pytest.mark.asyncio
     async def test_get_plan_not_found_adds_suggestion_note(self) -> None:
@@ -263,6 +267,8 @@ class TestGetProjectPlanTool:
 
     @pytest.mark.asyncio
     async def test_get_plan_value_error_returns_error(self) -> None:
+        from mcp_server.schemas.tool_outputs import ProjectPlanOutput  # noqa: PLC0415
+
         tool = GetProjectPlanTool(
             manager=_GetProjectPlanManagerStub(plan=None, error=ValueError("bad plan state"))
         )
@@ -270,14 +276,10 @@ class TestGetProjectPlanTool:
 
         result = await tool.execute(GetProjectPlanInput(issue_number=253), context)
 
-        assert result.is_error is True
-        assert result.content[0]["text"] == "bad plan state"
+        assert isinstance(result, ProjectPlanOutput)
+        assert not result.success
+        assert result.error_message == "bad plan state"
         assert len(context.of_type(SuggestionNote)) == 0
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _minimal_deliverables(validates: dict | None = None) -> dict:
@@ -336,6 +338,8 @@ class TestSavePlanningDeliverablesTool:
         self, initialized: tuple[Path, int]
     ) -> None:
         """Happy path: valid payload is written to deliverables.json. (D4.1)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool_with_root = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -347,7 +351,8 @@ class TestSavePlanningDeliverablesTool:
             NoteContext(),
         )
 
-        assert not result.is_error, f"Expected success, got: {result.content}"
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         pm = make_project_manager(workspace_root)
         plan = pm.get_project_plan(issue_number)
         assert plan is not None
@@ -358,6 +363,8 @@ class TestSavePlanningDeliverablesTool:
         self, initialized: tuple[Path, int]
     ) -> None:
         """Duplicate call is rejected with clear error."""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
         params = SavePlanningDeliverablesInput(
@@ -367,8 +374,10 @@ class TestSavePlanningDeliverablesTool:
         await tool.execute(params, NoteContext())  # First call succeeds
         result = await tool.execute(params, NoteContext())  # Second call must fail
 
-        assert result.is_error
-        assert "already exist" in result.content[0]["text"].lower()
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert not result.success
+        assert result.error_message is not None
+        assert "already exist" in result.error_message.lower()
 
     @pytest.mark.asyncio()
     async def test_save_planning_deliverables_tool_rejects_missing_cycles(
@@ -468,6 +477,8 @@ class TestUpdatePlanningDeliverablesTool:
         self, initialized: tuple[Path, int]
     ) -> None:
         """Sending a new cycle_number appends it to cycles.cycles. (D5.1)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -490,7 +501,8 @@ class TestUpdatePlanningDeliverablesTool:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         manager = make_project_manager(workspace_root)
         data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
         cycles = data["planning_deliverables"]["cycles"]["cycles"]
@@ -502,6 +514,8 @@ class TestUpdatePlanningDeliverablesTool:
         self, initialized: tuple[Path, int]
     ) -> None:
         """New deliverable id in existing cycle is appended. (D5.1)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -526,7 +540,8 @@ class TestUpdatePlanningDeliverablesTool:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         manager = make_project_manager(workspace_root)
         data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
         cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
@@ -539,6 +554,8 @@ class TestUpdatePlanningDeliverablesTool:
         self, initialized: tuple[Path, int]
     ) -> None:
         """Existing deliverable id in existing cycle is overwritten. (D5.1)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -563,7 +580,8 @@ class TestUpdatePlanningDeliverablesTool:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         manager = make_project_manager(workspace_root)
         data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
         cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
@@ -575,6 +593,8 @@ class TestUpdatePlanningDeliverablesTool:
         self, tmp_path: Path
     ) -> None:
         """Returns error when called before save_planning_deliverables. (D5.1)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         issue_number = 229
         manager = make_project_manager(tmp_path)
         manager.initialize_project(
@@ -592,8 +612,10 @@ class TestUpdatePlanningDeliverablesTool:
             NoteContext(),
         )
 
-        assert result.is_error
-        assert "save_planning_deliverables" in result.content[0]["text"]
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert not result.success
+        assert result.error_message is not None
+        assert "save_planning_deliverables" in result.error_message
 
     @pytest.mark.asyncio()
     async def test_update_planning_deliverables_tool_validates_validates_entry_schema(
@@ -632,8 +654,11 @@ class TestPlanningDeliverablesPhaseSchema:
         return tmp_path, issue_number
 
     @pytest.mark.asyncio()
+    @pytest.mark.asyncio()
     async def test_save_accepts_design_phase_key(self, initialized: tuple[Path, int]) -> None:
         """save_planning_deliverables accepts design phase key alongside cycles. (D7.1)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool = SavePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -650,7 +675,8 @@ class TestPlanningDeliverablesPhaseSchema:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
@@ -707,6 +733,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
         self, initialized: tuple[Path, int]
     ) -> None:
         """update_planning_deliverables with design key updates deliverables.json. (D8.1/GAP-15)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -722,7 +750,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
@@ -733,7 +762,11 @@ class TestUpdatePlanningDeliverablesPerPhase:
     @pytest.mark.asyncio()
     async def test_update_planning_deliverables_merges_validation_key(self, tmp_path: Path) -> None:
         """update_planning_deliverables with validation key updates deliverables.json.
-        (D8.1/GAP-15)"""
+
+        (D8.1/GAP-15)
+        """
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         issue_number = 229
         manager = make_project_manager(tmp_path)
         manager.initialize_project(
@@ -768,7 +801,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
@@ -781,7 +815,11 @@ class TestUpdatePlanningDeliverablesPerPhase:
         self, tmp_path: Path
     ) -> None:
         """update_planning_deliverables with documentation key updates deliverables.json.
-        (D8.1/GAP-15)"""
+
+        (D8.1/GAP-15)
+        """
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         issue_number = 229
         manager = make_project_manager(tmp_path)
         manager.initialize_project(
@@ -812,7 +850,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
@@ -825,6 +864,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
         self, initialized: tuple[Path, int]
     ) -> None:
         """Existing per-phase deliverable id updated in place; new id appended. (D8.2)"""
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
         workspace_root, issue_number = initialized
         tool = UpdatePlanningDeliverablesTool(manager=make_project_manager(workspace_root))
 
@@ -843,7 +884,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
             NoteContext(),
         )
 
-        assert not result.is_error
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
@@ -878,7 +920,10 @@ class TestUpdatePlanningDeliverablesPerPhase:
             NoteContext(),
         )
 
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]
@@ -912,7 +957,10 @@ class TestUpdatePlanningDeliverablesPerPhase:
             NoteContext(),
         )
 
-        assert not result.is_error
+        from mcp_server.schemas.tool_outputs import PlanningDeliverablesOutput  # noqa: PLC0415
+
+        assert isinstance(result, PlanningDeliverablesOutput)
+        assert result.success
         data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
             str(issue_number)
         ]

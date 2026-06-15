@@ -227,6 +227,7 @@ class TestContextLoadedResets:
 
         mock_manager = MagicMock()
         mock_manager.checkout.return_value = None
+        mock_manager.get_current_branch.return_value = "main"
         mock_state_engine = MagicMock()
         mock_state_engine.get_state.return_value = SimpleNamespace(
             current_phase="implementation", parent_branch=None

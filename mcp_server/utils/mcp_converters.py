@@ -53,22 +53,13 @@ def convert_tool_result_to_content(
     return response_content
 
 
-def convert_tool_result_to_mcp_result(result: ToolResult) -> CallToolResult:
-    """Convert ToolResult to CallToolResult while extracting JSON data to structuredContent."""
-    json_blocks = [c for c in result.content if c.get("type") == "json"]
-    if len(json_blocks) > 1:
-        raise ValueError("Multiple JSON content blocks found in ToolResult")
-
-    structured_content = None
-    if json_blocks:
-        structured_content = json_blocks[0]["json"]
-
-    # Filter out json blocks to prevent double serialization
-    filtered_content = [c for c in result.content if c.get("type") != "json"]
-    mcp_content = convert_tool_result_to_content(filtered_content)
-
+def convert_tool_result_to_mcp_result(
+    result: ToolResult,
+) -> CallToolResult:
+    """Convert ToolResult to CallToolResult."""
+    mcp_content = convert_tool_result_to_content(result.content)
     return CallToolResult(
         content=cast(list[Any], mcp_content),
         isError=result.is_error,
-        structuredContent=structured_content,
+        structuredContent=None,
     )

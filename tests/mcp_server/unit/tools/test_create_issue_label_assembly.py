@@ -14,6 +14,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.github_models import IssueReadModel
 from mcp_server.tools.issue_tools import CreateIssueInput, CreateIssueTool
 from tests.mcp_server.test_support import make_create_issue_tool
 
@@ -33,7 +34,24 @@ def make_params(**overrides: object) -> CreateIssueInput:
 
 
 def make_tool(manager: MagicMock | None = None) -> CreateIssueTool:
-    return make_create_issue_tool(manager or MagicMock())
+    mgr = manager or MagicMock()
+    mgr.create_issue.return_value = {"number": 1, "title": "T", "url": ""}
+    mock_issue_read = IssueReadModel(
+        number=1,
+        url="http://github.com/issues/1",
+        title="Mock Issue",
+        body="## Problem\n\nSome description.",
+        state="open",
+        labels=["type:feature", "scope:mcp-server", "priority:medium", "phase:planning"],
+        milestone=None,
+        assignees=[],
+        created_at="2023-01-01T00:00:00Z",
+        updated_at="2023-01-01T00:00:00Z",
+        closed_at=None,
+        author="alice",
+    )
+    mgr.get_issue.return_value = mock_issue_read
+    return make_create_issue_tool(mgr)
 
 
 class TestTypeLabelAssembly:

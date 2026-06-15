@@ -17,6 +17,7 @@ import inspect
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
 import yaml
 
 import mcp_server.tools.pr_tools as pr_tools_module
@@ -128,7 +129,7 @@ class TestMergePRToolPRStatusWriter:
 
         result = asyncio.get_event_loop().run_until_complete(tool.execute(params, NoteContext()))
 
-        assert not result.is_error
+        assert result.success is True
         pr_status_writer.set_pr_status.assert_called_once()
         _branch, status = pr_status_writer.set_pr_status.call_args[0]
         assert status == PRStatus.ABSENT
@@ -142,7 +143,7 @@ class TestMergePRToolPRStatusWriter:
         tool = self._make_merge_tool(manager, pr_status_writer)
         params = MergePRInput(pr_number=42)
 
-        result = asyncio.get_event_loop().run_until_complete(tool.execute(params, NoteContext()))
+        with pytest.raises(ExecutionError):
+            asyncio.get_event_loop().run_until_complete(tool.execute(params, NoteContext()))
 
-        assert result.is_error
         pr_status_writer.set_pr_status.assert_not_called()

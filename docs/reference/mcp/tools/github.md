@@ -3,8 +3,8 @@
 # GitHub Integration Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-05-27  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py), [pr_tools.py](../../../../mcp_server/tools/pr_tools.py), [label_tools.py](../../../../mcp_server/tools/label_tools.py), [milestone_tools.py](../../../../mcp_server/tools/milestone_tools.py)  
 **Tests:** [tests/unit/test_github_tools.py](../../../../tests/unit/test_github_tools.py)  
@@ -150,28 +150,25 @@ Retrieve detailed information about a specific issue.
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | Issue number to retrieve |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "number": 123,
-  "url": "https://github.com/owner/repo/issues/123",
-  "title": "Feature request: Add user authentication",
-  "body": "## Description\n\nDetailed issue body...",
-  "state": "open",
-  "labels": ["type:feature", "priority:high"],
-  "milestone": {
-    "number": 5,
-    "title": "v2.0",
-    "state": "open"
-  },
-  "assignees": ["username1"],
-  "created_at": "2026-02-01T10:00:00+00:00",
-  "updated_at": "2026-02-08T12:00:00+00:00",
-  "closed_at": null,
-  "author": "username2"
-}
-```
+`get_issue` returns a single `TextContent` block containing formatted markdown of the issue details and the resource cache link pointing to the cached `GetIssueOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `number`: `int`
+- `url`: `string`
+- `title`: `string`
+- `body`: `string`
+- `state`: `string`
+- `labels`: `list[string]`
+- `milestone`: `MilestoneDTO | null` (having `number`, `title`, `state`)
+- `assignees`: `list[string]`
+- `created_at`: `string`
+- `updated_at`: `string`
+- `closed_at`: `string | null`
+- `author`: `string`
 
 #### Example Usage
 
@@ -664,21 +661,21 @@ Retrieve detailed information about a specific pull request.
 |-----------|------|----------|-------------|
 | `pr_number` | `int` | **Yes** | Pull request number to retrieve |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "pr_number": 45,
-  "title": "Feature: Add OAuth2 authentication",
-  "state": "closed",
-  "base_branch": "main",
-  "head_branch": "feature/123-oauth",
-  "merged_at": "2026-05-27T12:00:00+00:00",
-  "merge_sha": "abc123def456",
-  "body": "## Description\n\nThis PR adds OAuth2 authentication support."
-}
-```
+`get_pr` returns a single `TextContent` block containing formatted markdown of the PR details and the resource cache link pointing to the cached `GetPROutput` DTO.
 
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `pr_number`: `int`
+- `title`: `string`
+- `state`: `string`
+- `base_branch`: `string`
+- `head_branch`: `string`
+- `merged_at`: `string | null`
+- `merge_sha`: `string | null`
+- `body`: `string`
 #### Example Usage
 
 ```json

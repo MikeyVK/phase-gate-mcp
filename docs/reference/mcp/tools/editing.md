@@ -3,8 +3,8 @@
 # File Editing Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.0  
-**Last Updated:** 2026-02-08  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/tools/safe_edit_tool.py](../../../../mcp_server/tools/safe_edit_tool.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_safe_edit_tool.py](../../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py)  
@@ -32,6 +32,7 @@ The MCP server provides one file editing tool:
 - **Quality gate integration** via `ValidationService` (Ruff, Pyright, markdown validation)
 - **Concurrent edit protection** with file-level `asyncio.Lock` (10ms timeout)
 - **Diff preview** via `difflib.unified_diff`
+- **Unified DTO & MCP Resource Caching:** Returns a single `TextContent` block containing presented diffs and warnings, and the resource cache link (`pgmcp://cache/runs/{run_id}`). The raw JSON objects documented in the `#### Returns` section below are stored as DTOs in the MCP Resource Cache and can be retrieved using the cached resource URI.
 
 ---
 

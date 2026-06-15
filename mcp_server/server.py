@@ -30,11 +30,13 @@ from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.base import BaseResource
 
 # Resources
+# Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.base import BaseTool
+from mcp_server.tools.base import ITool
 
 # Tools
 from mcp_server.tools.phase_tools import (
@@ -65,9 +67,14 @@ class MCPServer:
         settings: Settings,
         configs: ConfigLayer,
         managers: ManagerGraph,
-        tools: list[BaseTool],
+        tools: list[ITool],
         resources: list[BaseResource],
+        presenter: TextPresenter | None = None,
     ) -> None:
+        """Initialize the MCP server with resources and tools."""
+        self._settings = settings
+        self._configs = configs
+        self.presenter = presenter
         """Initialize the MCP server with resources and tools."""
         self._settings = settings
         self._configs = configs
@@ -99,7 +106,7 @@ class MCPServer:
         self.setup_handlers()
 
     def _validate_tool_arguments(
-        self, tool: BaseTool, arguments: dict[str, Any] | None, call_id: str, name: str
+        self, tool: ITool, arguments: dict[str, Any] | None, call_id: str, name: str
     ) -> BaseModel | dict[str, Any] | ToolResult:
         """Validate tool arguments against args_model.
 
@@ -175,7 +182,7 @@ class MCPServer:
 
     def _run_tool_enforcement(
         self,
-        tool: BaseTool,
+        tool: ITool,
         timing: str,
         params: BaseModel | dict[str, Any],
         note_context: NoteContext,
@@ -225,17 +232,28 @@ class MCPServer:
 
         @self.server.read_resource()  # type: ignore[no-untyped-call, untyped-decorator]
         async def handle_read_resource(uri: str) -> str:
+            uri_str = str(uri)
             for resource in self.resources:
-                if resource.matches(uri):
-                    return await resource.read(uri)
-            raise ValueError(f"Resource not found: {uri}")
+                if resource.matches(uri_str):
+                    return await resource.read(uri_str)
+            raise ValueError(f"Resource not found: {uri_str}")
 
         @self.server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
         async def handle_list_tools() -> list[Tool]:
-            return [
-                Tool(name=t.name, description=t.description, inputSchema=t.input_schema)
-                for t in self.tools
-            ]
+            tools_list = []
+            for t in self.tools:
+                output_schema = None
+                if hasattr(t, "output_model") and getattr(t, "output_model", None) is not None:
+                    output_schema = t.output_model.model_json_schema()
+                tools_list.append(
+                    Tool(
+                        name=t.name,
+                        description=t.description,
+                        inputSchema=t.input_schema,
+                        outputSchema=output_schema,
+                    )
+                )
+            return tools_list
 
         @self.server.call_tool()  # type: ignore[untyped-decorator]
         async def handle_call_tool(
@@ -276,6 +294,34 @@ class MCPServer:
                         # Execute tool
                         raw_result = await tool.execute(validated, note_context)
 
+                        from mcp_server.tools.base import ToolExecutionEnvelope  # noqa: PLC0415
+
+                        if isinstance(raw_result, ToolExecutionEnvelope):
+                            data_dto = raw_result.data
+                            run_id = raw_result.run_id
+                        else:
+                            data_dto = raw_result
+                            run_id = "test-run"
+
+                        if self.presenter is not None:
+                            success = getattr(data_dto, "success", True)
+                            presentation_category = (
+                                getattr(tool, "presentation_category", None) or "query"
+                            )
+                            text = self.presenter.present(
+                                tool_name=tool.name,
+                                success=success,
+                                presentation_category=presentation_category,
+                                data=data_dto,
+                            )
+                        else:
+                            text = str(data_dto)
+                        uri = f"pgmcp://cache/runs/{run_id}"
+                        full_text = (
+                            f"{text}\n\n"
+                            f"JSON data for this run is available as an MCP Resource: {uri}"
+                        )
+                        raw_result = ToolResult.text(full_text)
                         if not raw_result.is_error:
                             post_result = self._run_tool_enforcement(
                                 tool,
