@@ -2,7 +2,7 @@
   "branch": "feature/402-expose-json-data-in-mcp-tools",
   "issue_number": 402,
   "workflow_name": "feature",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 11,
   "last_cycle": 11,
   "cycle_history": [
@@ -408,6 +408,14 @@
       "human_approval": "Approved by user",
       "forced": true,
       "skip_reason": "User requested to set phase back to implementation as imp agent is still refactoring code"
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-15T16:29:52.073783+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
