@@ -3,8 +3,8 @@
 # Project & Phase Management Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-05-24  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/tools/project_tools.py](../../../../mcp_server/tools/project_tools.py), [phase_tools.py](../../../../mcp_server/tools/phase_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_project_tools.py](../../../../tests/mcp_server/unit/tools/test_project_tools.py), [tests/mcp_server/unit/tools/test_transition_phase_tool.py](../../../../tests/mcp_server/unit/tools/test_transition_phase_tool.py), [tests/mcp_server/unit/tools/test_force_phase_transition_tool.py](../../../../tests/mcp_server/unit/tools/test_force_phase_transition_tool.py)  
@@ -71,30 +71,21 @@ Initialize project with phase plan selection. Human selects workflow_name (featu
 | `epic` | 2 phases | Epic coordination (planning → tracking) |
 | `custom` | User-defined | Custom workflows (requires `custom_phases` and `skip_reason`) |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "success": true,
-  "message": "Project initialized with feature workflow",
-  "project": {
-    "issue_number": 123,
-    "issue_title": "Add OAuth2 authentication",
-    "workflow_name": "feature",
-    "phases": [
-      "planning",
-      "research",
-      "red",
-      "green",
-      "refactor",
-      "documentation",
-      "merge-prep"
-    ],
-    "current_phase": "planning",
-    "parent_branch": "main"
-  }
-}
-```
+`initialize_project` returns a single `TextContent` block containing a human-readable confirmation and the resource cache link pointing to the cached `InitializeProjectOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `message`: `string`
+- `project`: `ProjectDetails` containing:
+  - `issue_number`: `int`
+  - `issue_title`: `string`
+  - `workflow_name`: `string`
+  - `phases`: `list[string]`
+  - `current_phase`: `string`
+  - `parent_branch`: `string`
 
 #### Example Usage
 
@@ -149,30 +140,23 @@ Get project phase plan for issue number.
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "issue_title": "Add OAuth2 authentication",
-  "workflow_name": "feature",
-  "execution_mode": "interactive",
-  "required_phases": [
-    "research",
-    "design",
-    "planning",
-    "implementation",
-    "validation",
-    "documentation",
-    "ready"
-  ],
-  "skip_reason": null,
-  "parent_branch": "main",
-  "created_at": "2026-02-08T10:00:00Z",
-  "current_phase": "implementation",
-  "phase_source": "state.json",
-  "phase_detection_error": null
-}
-```
+`get_project_plan` returns a single `TextContent` block containing a human-readable summary of the project plan and the resource cache link pointing to the cached `ProjectPlanOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `issue_title`: `string`
+- `workflow_name`: `string`
+- `execution_mode`: `string`
+- `required_phases`: `list[string]`
+- `skip_reason`: `string | null`
+- `parent_branch`: `string`
+- `created_at`: `string`
+- `current_phase`: `string | null`
+- `phase_source`: `string | null`
+- `phase_detection_error`: `string | null`
 
 #### Example Usage
 
@@ -341,14 +325,14 @@ Save cycle planning deliverables for an issue to deliverables.json. Validates ea
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 | `planning_deliverables` | `dict` | **Yes** | Planning deliverables dict with `cycles.total` + `cycles[]`. Each deliverable entry may include a `validates` spec with `type` + required fields (Layer 2 runtime validation). |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "success": true,
-  "issue_number": 123
-}
-```
+`save_planning_deliverables` returns a single `TextContent` block containing confirmation and the resource cache link pointing to the cached `PlanningDeliverablesOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `issue_number`: `int`
 
 #### Behavior Notes
 
@@ -372,14 +356,14 @@ Merge-update cycle planning deliverables for an issue in deliverables.json. Must
 | `issue_number` | `int` | **Yes** | GitHub issue number |
 | `planning_deliverables` | `dict` | **Yes** | Partial or full planning deliverables to merge. New cycles are appended; existing cycles have deliverables merged by id. Deliverable entries may include a `validates` spec with `type` + required fields (Layer 2 validation). |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "success": true,
-  "issue_number": 123
-}
-```
+`update_planning_deliverables` returns a single `TextContent` block containing confirmation and the resource cache link pointing to the cached `PlanningDeliverablesOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `issue_number`: `int`
 
 #### Behavior Notes
 
