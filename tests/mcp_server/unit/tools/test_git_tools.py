@@ -490,6 +490,7 @@ async def test_git_commit_cycle_number_required_auto_detect_path(
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is False
+    assert result.error_message is not None
     assert "cycle_number" in result.error_message.lower()
     mock_git_manager.commit_with_scope.assert_not_called()
 
@@ -524,6 +525,7 @@ async def test_git_commit_cycle_number_required_explicit_path(
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is False
+    assert result.error_message is not None
     assert "cycle_number" in result.error_message.lower()
     mock_git_manager.commit_with_scope.assert_not_called()
 
@@ -1031,6 +1033,7 @@ async def test_git_add_or_commit_raises_on_phase_mismatch(mock_git_manager: Magi
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is False
+    assert result.error_message is not None
     assert "phase_mismatch" in result.error_message
 
 
@@ -1057,6 +1060,7 @@ async def test_git_add_or_commit_raises_on_cycle_mismatch(mock_git_manager: Magi
 
     assert isinstance(result, GitCommitOutput)
     assert result.success is False
+    assert result.error_message is not None
     assert "phase_mismatch" in result.error_message
 
 

@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, ConfigDict
 
+import mcp_server.tools.base as base_mod
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.base import ITool, ToolExecutionEnvelope
@@ -69,17 +70,6 @@ async def test_resource_publishing_decorator() -> None:
 
 def test_legacy_classes_deleted() -> None:
     """Verify legacy classes are deleted from base.py."""
-    import mcp_server.tools.base as base_mod
-
-    assert not hasattr(base_mod, "BaseTool")
-    assert not hasattr(base_mod, "StructuredTool")
-    assert not hasattr(base_mod, "BranchMutatingTool")
-
-
-def test_legacy_classes_deleted() -> None:
-    """Verify legacy classes are deleted from base.py."""
-    import mcp_server.tools.base as base_mod
-
     assert not hasattr(base_mod, "BaseTool")
     assert not hasattr(base_mod, "StructuredTool")
     assert not hasattr(base_mod, "BranchMutatingTool")

@@ -17,7 +17,7 @@ import pytest
 from pydantic import ValidationError
 
 # Module under test
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.schemas.tool_outputs import RunQualityGatesOutput
 from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
 from mcp_server.tools.tool_result import ToolResult
@@ -812,8 +812,6 @@ class TestRunQualityGatesVerboseOption:
             RunQualityGatesInput(scope="files", files=["foo.py"], verbose=False), context
         )
 
-        from mcp_server.core.operation_notes import RecoveryNote
-
         notes = context.of_type(RecoveryNote)
         assert len(notes) == 1
         assert "verbose=True" in notes[0].message
@@ -847,8 +845,6 @@ class TestRunQualityGatesVerboseOption:
         await tool.execute(
             RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True), context
         )
-
-        from mcp_server.core.operation_notes import RecoveryNote
 
         notes = context.of_type(RecoveryNote)
         assert len(notes) == 0

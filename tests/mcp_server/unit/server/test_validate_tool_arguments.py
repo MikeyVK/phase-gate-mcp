@@ -51,9 +51,17 @@ class SimpleInput(BaseModel):
 class MockSimpleTool(ITool):
     """Minimal mock tool for argument validation tests."""
 
-    name = "mock_simple"
-    description = "Mock simple tool"
-    args_model = SimpleInput
+    @property
+    def name(self) -> str:
+        return "mock_simple"
+
+    @property
+    def description(self) -> str:
+        return "Mock simple tool"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return SimpleInput
 
     async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401, ARG002
         return ToolResult(content=[{"type": "text", "text": "OK"}])

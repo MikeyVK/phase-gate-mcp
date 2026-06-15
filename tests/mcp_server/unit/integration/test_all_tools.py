@@ -13,6 +13,7 @@ import pytest
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.pytest_runner import PytestRunner
+from mcp_server.schemas.github_models import IssueReadModel
 
 # Git Tools
 from mcp_server.tools.git_tools import (
@@ -434,8 +435,6 @@ class TestGitHubToolsIntegration:
             "url": "https://github.com/test/repo/issues/42",
             "title": "Test Issue",
         }
-        from mcp_server.schemas.github_models import IssueReadModel
-
         mock_manager.get_issue.return_value = IssueReadModel(
             number=42,
             url="https://github.com/test/repo/issues/42",

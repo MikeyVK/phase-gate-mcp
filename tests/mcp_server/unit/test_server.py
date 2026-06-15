@@ -22,6 +22,7 @@ from mcp.types import CallToolRequest, CallToolRequestParams
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import InfoNote, NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
+from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.tools.base import ITool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
@@ -122,12 +123,12 @@ def _make_submit_pr_request() -> CallToolRequest:
 
 
 def _make_transition_advisory_execute(
-    text: str,
-) -> Callable[[object, object, NoteContext], Awaitable[Any]]:
-    async def execute(_self: object, _params: object, context: NoteContext) -> Any:
+    _text: str,
+) -> Callable[[object, object, NoteContext], Awaitable[PhaseTransitionOutput]]:
+    async def execute(
+        _self: object, _params: object, context: NoteContext
+    ) -> PhaseTransitionOutput:
         context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
-        from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
-
         return PhaseTransitionOutput(
             success=True,
             branch=getattr(_params, "branch", "feature/257-reorder-workflow-phases"),
@@ -193,9 +194,17 @@ class TestServerToolRegistration:
         class DummyTool(ITool):
             """Dummy tool for testing server call_tool logging."""
 
-            name = "dummy_tool"
-            description = "Dummy tool"
-            args_model = None
+            @property
+            def name(self) -> str:
+                return "dummy_tool"
+
+            @property
+            def description(self) -> str:
+                return "Dummy tool"
+
+            @property
+            def args_model(self) -> None:
+                return None
 
             @property
             def input_schema(self) -> dict[str, Any]:

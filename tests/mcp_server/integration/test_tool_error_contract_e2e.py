@@ -39,6 +39,7 @@ async def test_config_error_preserves_contract(artifact_manager: ArtifactManager
 
     # Verify error structure
     assert not result.success, "Expected error result"
+    assert result.error_message is not None
     assert "nonexistent_type" in result.error_message
 
 
@@ -63,6 +64,7 @@ async def test_validation_error_preserves_contract(artifact_manager: ArtifactMan
 
     # Verify ValidationError contract preserved
     assert not result.success, "Expected error result"
+    assert result.error_message is not None
     assert "Missing required field" in result.error_message
 
 
@@ -87,4 +89,5 @@ async def test_execution_error_preserves_contract(artifact_manager: ArtifactMana
 
     # Verify ExecutionError contract preserved
     assert not result.success, "Expected error result"
+    assert result.error_message is not None
     assert "Template rendering failed" in result.error_message

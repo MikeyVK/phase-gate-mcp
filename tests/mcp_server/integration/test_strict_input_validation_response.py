@@ -26,9 +26,17 @@ class IntegrationInput(BaseModel):
 class MockIntegrationTool(ITool):
     """Mock tool for integration testing."""
 
-    name = "MockIntegrationTool"
-    description = "Mock integration tool"
-    args_model = IntegrationInput
+    @property
+    def name(self) -> str:
+        return "MockIntegrationTool"
+
+    @property
+    def description(self) -> str:
+        return "Mock integration tool"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return IntegrationInput
 
     async def execute(  # noqa: ANN201
         self,

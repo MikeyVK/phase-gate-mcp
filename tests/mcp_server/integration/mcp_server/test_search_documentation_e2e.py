@@ -9,7 +9,9 @@ from pathlib import Path
 import pytest
 
 from mcp_server.config.settings import Settings
+from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import SearchDocumentationOutput
 from mcp_server.tools.discovery_tools import SearchDocumentationInput, SearchDocumentationTool
 
 
@@ -51,8 +53,6 @@ class TestSearchDocumentationE2E:
             settings=Settings(server={"workspace_root": str(sample_docs_dir.parent)})
         )
         result = await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())
-
-        from mcp_server.schemas.tool_outputs import SearchDocumentationOutput
 
         assert isinstance(result, SearchDocumentationOutput)
         assert result.success is True
@@ -100,8 +100,6 @@ class TestSearchDocumentationE2E:
 
     @pytest.mark.asyncio
     async def test_tool_handles_missing_docs_dir(self, tmp_path: Path) -> None:
-        from mcp_server.core.exceptions import ExecutionError
-
         tool = SearchDocumentationTool(settings=Settings(server={"workspace_root": str(tmp_path)}))
         with pytest.raises(ExecutionError, match="Documentation directory not found"):
             await tool.execute(SearchDocumentationInput(query="Python"), NoteContext())

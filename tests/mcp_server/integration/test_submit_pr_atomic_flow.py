@@ -47,6 +47,7 @@ from mcp_server.core.operation_notes import NoteContext, RecoveryNote
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
+from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.tools import git_tools
 from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
 
@@ -68,8 +69,6 @@ def _make_submit_pr_tool(
     branch_parent_reader: IBranchParentReader | None = None,
 ) -> SubmitPRTool:
     if isinstance(github_manager, MagicMock):
-        from mcp_server.schemas.github_models import PRReadModel
-
         github_manager.get_pr.return_value = PRReadModel(
             pr_number=101,
             title="Test PR",

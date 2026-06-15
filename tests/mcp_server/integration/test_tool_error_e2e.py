@@ -32,4 +32,5 @@ def test_scaffold_artifact_tool_preserves_error_contract(
     result = asyncio.run(tool.execute(params, NoteContext()))
 
     assert result.success is False
+    assert result.error_message is not None
     assert "nonexistent_type" in result.error_message

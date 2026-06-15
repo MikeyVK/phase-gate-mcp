@@ -63,7 +63,10 @@ class TestTextPresenter:
                 "default_failure_template": "Failed: {error_message}",
                 "next_instruction_texts": {
                     "test_advisory": "🚀 TEST ADVISORY WARNING",
-                    "uri_reference": "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*",
+                    "uri_reference": (
+                        "*(Full details available in the structured JSON payload. "
+                        "View resource: pgmcp://cache/runs/{run_id})*"
+                    ),
                 },
             },
             "tools": {
@@ -76,7 +79,7 @@ class TestTextPresenter:
             },
         }
 
-    def test_present_success(self, mock_yaml_config):
+    def test_present_success(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting success output with custom template and emoji prefix."""
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=True, message="Operation completed")
@@ -88,7 +91,7 @@ class TestTextPresenter:
         # 'query' category maps to '📋' Success maps to '📋' + template + \n\n + next_instructions
         assert text == "📋 Success: Operation completed\n\n🚀 TEST ADVISORY WARNING"
 
-    def test_present_failure_custom(self, mock_yaml_config):
+    def test_present_failure_custom(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting failure output with custom template."""
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=False, error_message="Something failed")
@@ -99,7 +102,7 @@ class TestTextPresenter:
 
         assert text == "❌ Error: Something failed\n\n🚀 TEST ADVISORY WARNING"
 
-    def test_present_failure_fallback(self, mock_yaml_config):
+    def test_present_failure_fallback(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting failure output falling back to default template."""
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummySimpleOutput(success=False, error_message="Fallback failure")
@@ -110,7 +113,7 @@ class TestTextPresenter:
 
         assert text == "❌ Failed: Fallback failure"
 
-    def test_multiple_next_instructions(self, mock_yaml_config):
+    def test_multiple_next_instructions(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test that multiple next instructions are formatted on new lines with blank lines."""
         config = dict(mock_yaml_config)
         config["tools"]["dummy_tool"]["next_instructions"] = ["test_advisory", "uri_reference"]
@@ -133,7 +136,7 @@ class TestTextPresenter:
         )
         assert text == expected_text
 
-    def test_drift_validator_success(self, mock_yaml_config):
+    def test_drift_validator_success(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test that drift validator passes when DTO and template fields align."""
         presenter = TextPresenter(config_data=mock_yaml_config)
         tools = [DummyTool, DummyNoOutputModelTool]
@@ -141,7 +144,7 @@ class TestTextPresenter:
         # Should not raise any exception
         validate_presentation_alignment(presenter, tools)
 
-    def test_drift_validator_drift_detected(self, mock_yaml_config):
+    def test_drift_validator_drift_detected(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test that drift validator raises ConfigError when template references missing field."""
         corrupt_config = dict(mock_yaml_config)
         corrupt_config["tools"]["dummy_tool"]["template_success"] = "Success: {non_existent_field}"
@@ -154,12 +157,16 @@ class TestTextPresenter:
 
         assert "non_existent_field" in str(exc_info.value)
 
-    def test_drift_validator_next_instruction_drift_detected(self, mock_yaml_config):
-        """Test that drift validator raises ConfigError when next instruction references missing field."""
+    def test_drift_validator_next_instruction_drift_detected(
+        self, mock_yaml_config: dict[str, Any]
+    ) -> None:
+        """Test that drift validator raises ConfigError when next instruction references
+        missing field.
+        """
         corrupt_config = dict(mock_yaml_config)
         corrupt_config["tools"]["dummy_tool"]["next_instructions"] = ["uri_reference"]
-        # Note: DummyTool's output_model is DummyOutput, which has message and items, but lacks run_id!
-        # So uri_reference (which uses {run_id}) should fail drift validation.
+        # Note: DummyTool's output_model is DummyOutput, which has message and
+        # items, but lacks run_id! So uri_reference (which uses {run_id}) should fail validation.
 
         presenter = TextPresenter(config_data=corrupt_config)
         tools = [DummyTool]
