@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-06-15T07:15Z updated= -->
 # Session Handover — Issue #402
 
-**Status:** PENDING  
-**Version:** 1.0.0  
+**Status:** READY FOR REVIEW  
+**Version:** 1.1.0  
 **Last Updated:** 2026-06-15
 
 ---
@@ -26,7 +26,9 @@ This document summarizes the current state, completed work, and next steps for v
 - Extracted `ViolationParser` helper class to parse JSON/Text violations and handle JSON pointer resolution.
 - Refactored all manager unit tests and tools tests to target public methods, eliminating `reportPrivateUsage` suppressions.
 - Fixed all unused manager argument lint issues (`ARG002`).
-- Verified 100% passing tests (2880 tests passed) and 100% clean quality gates.
+- Fixed the Windows Path Globbing / matching defect in `GateScope.filter_files` (normalizing absolute paths to relative POSIX paths matching CWD) and fixed the missing return statement in `filter_files`.
+- Normalized tool file arguments in `QAManager._resolve_command` to workspace-relative POSIX format on all platforms to allow ruff's `--per-file-ignores` glob matching to succeed on Windows.
+- Verified 100% passing tests (2871 tests passed) and 100% clean quality gates project-wide (`run_quality_gates(scope='project')` passes).
 
 ---
 
@@ -38,7 +40,8 @@ This document summarizes the current state, completed work, and next steps for v
 - **Utility:**
   - `mcp_server/utils/violation_parser.py` (New class for parsing logic)
 - **Managers / Services:**
-  - `mcp_server/managers/qa_manager.py` (Exposed public APIs, removed private usages)
+  - `mcp_server/managers/qa_manager.py` (Exposed public APIs, removed private usages, relative file path normalization for command execution)
+  - `mcp_server/config/schemas/quality_config.py` (Fixed missing return in `filter_files`)
   - `mcp_server/validation/validation_service.py`
   - `mcp_server/tools/quality_tools.py`
 - **Tests:**
@@ -53,8 +56,8 @@ This document summarizes the current state, completed work, and next steps for v
 - [D10.2] Clean up legacy code and suppressions.
 
 ### Stop-Go Proof
-- **Tests:** `run_tests(path='tests/')` -> 2880 passed, 5 skipped, 2 xfailed, 1 xpassed.
-- **Quality Gates:** `run_quality_gates(scope='branch')` -> Passed successfully (overall_pass: True).
+- **Tests:** `run_tests(scope='full')` -> 2871 passed, 5 skipped, 2 xfailed, 1 xpassed.
+- **Quality Gates:** `run_quality_gates(scope='project')` -> Passed successfully (overall_pass: True).
 
 ---
 
@@ -62,4 +65,5 @@ This document summarizes the current state, completed work, and next steps for v
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1.0 | 2026-06-15 | Agent | Updated with Windows path matching fixes and project-wide pass |
 | 1.0.0 | 2026-06-15 | Agent | Initial handover draft |
