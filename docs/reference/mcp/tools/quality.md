@@ -21,10 +21,10 @@ This page is optimized for agents: exact input contracts, copy/paste call patter
 ## Tool Set
 
 | Tool | Purpose | Contract Anchor |
-|------|---------|-----------------|
 | `run_quality_gates` | Config-driven quality gates over explicit scope | `RunQualityGatesInput` in `quality_tools.py` |
 | `run_tests` | Pytest execution and failure reporting | `RunTestsInput` in `test_tools.py` |
 | `validate_template` | Template conformance checks | `TemplateValidationInput` in `template_validation_tool.py` |
+| `auto_fix` | Execute configured fixer commands on matching files | `AutoFixInput` in `quality_tools.py` |
 
 ---
 
@@ -133,10 +133,45 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 {"scope": "auto"}
 ```
 
-### Project-wide sweep
+- `stderr`: full pytest stderr (last 50 lines)
+
+---
+
+## auto_fix (authoritative contract)
+
+### Input
+
+| Field | Type | Required | Allowed values | Rule |
+|------|------|----------|----------------|------|
+| `scope` | `string` | No | `auto`, `branch`, `project`, `files` | Default is `auto` |
+| `files` | `list[string] \| null` | Conditional | Any workspace-relative paths | Required and non-empty **only** when `scope="files"`; must be omitted otherwise |
+
+### Validation rules
+
+- `scope="files"` and `files` is missing or `[]` → validation error.
+- `scope!="files"` and `files` is provided → validation error.
+
+### Output contract
+
+`auto_fix` returns a single `TextContent` block containing a human-readable summary of the auto-fix operations and the resource cache link pointing to the cached `AutoFixOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and conforms to the following schema:
+- `success`: `bool`
+- `error_message`: `string | None`
+- `post_tool_instruction`: `string | None`
+- `modified_files`: `list[string]`
+- `modified_files_count`: `int`
+- `formatted_modified_files`: `string`
+- `gates_executed`: `list[string]`
+- `gates_executed_count`: `int`
+
+### Example Usage
 
 ```json
-{"scope": "project"}
+{"scope": "auto"}
+```
+
+---
 ```
 
 ### run_tests — targeted file/folder
