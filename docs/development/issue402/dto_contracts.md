@@ -818,6 +818,7 @@ class BranchPairOutput(BaseToolOutput):
       passed: bool
       status: str
       score: str | None = None
+      details: str = ""
 
   class RunQualityGatesOutput(BaseToolOutput):
       overall_pass: bool
