@@ -325,3 +325,46 @@ class TestTextPresenter:
             "  - Suggestion: Do X"
         )
         assert text == expected
+
+    def test_drift_validator_blacklist_detected(self) -> None:
+        """Test that validator raises ConfigError when a blacklisted param is used in custom templates."""
+        config_data = {
+            "global": {
+                "failures": {"dirty_workdir": "Dirty: {msg}"},
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+        with pytest.raises(ConfigError) as exc_info:
+            validate_presentation_alignment(presenter, [])
+        assert "blacklisted" in str(exc_info.value).lower()
+
+    def test_drift_validator_global_failures_invalid_placeholder(self) -> None:
+        """Test that validator raises ConfigError when placeholders in global failures do not exist in DTO/exception."""
+        config_data = {
+            "global": {
+                "failures": {"ERR_CONFIG": "Config error on: {invalid_field}"},
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+        with pytest.raises(ConfigError) as exc_info:
+            validate_presentation_alignment(presenter, [])
+        assert "placeholder" in str(exc_info.value).lower()
+
+    def test_drift_validator_legacy_notes_invalid_placeholder(self) -> None:
+        """Test that validator raises ConfigError when placeholders in legacy note templates do not align with note class."""
+        config_data = {
+            "global": {
+                "notes": {
+                    "templates": {
+                        "exclusions": {"file_excluded": "Excluded: {invalid_field}"}
+                    }
+                }
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+        with pytest.raises(ConfigError) as exc_info:
+            validate_presentation_alignment(presenter, [])
+        assert "placeholder" in str(exc_info.value).lower()
