@@ -425,67 +425,212 @@ class TextPresenter:
 
 
 def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) -> None:
-    """Verifies that templates align with DTO models to prevent drift."""
+    """Verifies that templates align with DTO models, note classes, and errors to prevent drift."""
+    import string  # noqa: PLC0415
+
+    # ConfigError imported on module level
+    pass
+    blacklist = {"message", "msg", "text", "txt", "error_message", "error", "err"}
+    blacklist = {"message", "msg", "text", "txt", "error_message", "error", "err"}
+
+    # Mapping for system-level errors
+    error_class_fields = {
+        "ERR_CONFIG": {"message", "file_path", "code"},
+        "config": {"message", "file_path", "code"},
+        "ERR_VALIDATION": {
+            "message",
+            "validation_errors",
+            "input_schema",
+            "params",
+            "success",
+            "error_type",
+            "traceback",
+        },
+        "validation": {
+            "message",
+            "validation_errors",
+            "input_schema",
+            "params",
+            "success",
+            "error_type",
+            "traceback",
+        },
+        "ERR_EXECUTION": {"message", "params", "success", "error_type", "traceback"},
+        "execution": {"message", "params", "success", "error_type", "traceback"},
+        "ERR_SYSTEM": {"message", "fallback", "code"},
+        "system": {"message", "fallback", "code"},
+        "ERR_CACHE": {"message", "params", "success", "error_type", "traceback"},
+        "cache": {"message", "params", "success", "error_type", "traceback"},
+    }
+
+    # Mapping for legacy notes
+    legacy_note_fields = {
+        "file_excluded": {"file_path"},
+        "suggestion_message": {"message", "subject"},
+        "blocker_message": {"message"},
+        "recovery_message": {"message"},
+        "info_message": {"message"},
+    }
+
+    def get_placeholders(tmpl: str) -> list[str]:
+        p_list = []
+        try:
+            for _, field_name, _, _ in string.Formatter().parse(tmpl):
+                if field_name is not None:
+                    base_field = field_name.split(".")[0].split("[")[0]
+                    p_list.append(base_field)
+        except Exception as exc:
+            raise ConfigError(f"Invalid template format: {exc}") from exc
+        return p_list
+
+    def check_blacklist(tmpl: str, template_key: str, is_default_fail: bool = False) -> None:
+        placeholders = get_placeholders(tmpl)
+        for p in placeholders:
+            if p in blacklist:
+                # Exceptions
+                if is_default_fail and p == "error_message":
+                    continue
+                if template_key in legacy_note_fields and p == "message":
+                    continue
+                raise ConfigError(
+                    f"Template for '{template_key}' uses blacklisted generic parameter '{p}'"
+                )
+
+    # 1. Global settings validation
+    global_note_templates: dict[str, Any] = {}
+    global_cfg = presenter.global_config
+    if isinstance(global_cfg, dict):
+        default_fail = global_cfg.get("default_failure_template")
+        failures = global_cfg.get("failures") or {}
+        global_notes = global_cfg.get("notes") or {}
+        global_note_templates = {}
+        if isinstance(global_notes, dict):
+            global_note_templates = global_notes.get("templates") or {}
+    else:
+        default_fail = getattr(global_cfg, "default_failure_template", None)
+        failures = getattr(global_cfg, "failures", {}) or {}
+        global_notes = getattr(global_cfg, "notes", None)
+        global_note_templates = {}
+        if global_notes is not None:
+            global_note_templates = getattr(global_notes, "templates", {}) or {}
+
+    # Validate default failure template
+    if default_fail:
+        check_blacklist(default_fail, "default_failure_template", is_default_fail=True)
+
+    # Validate global failures
+    for err_code, template in failures.items():
+        check_blacklist(template, err_code)
+        placeholders = get_placeholders(template)
+        # Verify placeholders against system error fields if it is a known code
+        if err_code in error_class_fields:
+            allowed = error_class_fields[err_code]
+            for p in placeholders:
+                if p not in allowed:
+                    raise ConfigError(
+                        f"Failure placeholder '{p}' not found in DTO fields for '{err_code}'"
+                    )
+
+    # Validate global note templates
+    for _, group_templates in global_note_templates.items():
+        if not isinstance(group_templates, dict):
+            continue
+        for key, template in group_templates.items():
+            check_blacklist(template, key)
+            placeholders = get_placeholders(template)
+            if key in legacy_note_fields:
+                allowed = legacy_note_fields[key]
+                for p in placeholders:
+                    if p not in allowed:
+                        raise ConfigError(
+                            f"Note template placeholder '{p}' not found in fields for note '{key}'"
+                        )
+
+    # 2. Tool-specific validation
     for tool in tools:
         tool_name = getattr(tool, "name", None)
         if not tool_name:
             continue
 
         output_model = getattr(tool, "output_model", None)
-        if (
-            output_model is None
-            or not isinstance(output_model, type)
-            or not issubclass(output_model, BaseModel)
-        ):
-            # Graceful fallback: ignore tools without an output_model ClassVar
-            # during migration phase
-            continue
-
-        # Get templates for this tool
         tool_cfg = presenter.tools_config.get(tool_name)
         if not tool_cfg:
             continue
 
-        templates = []
+        # Get templates for this tool
+        templates_to_check = []
+        next_inst_keys = []
+
         if isinstance(tool_cfg, ToolPresentationConfig):
             if tool_cfg.template_success is not None:
-                templates.append(tool_cfg.template_success)
+                templates_to_check.append(("template_success", tool_cfg.template_success))
             if tool_cfg.template_failure is not None:
-                templates.append(tool_cfg.template_failure)
+                templates_to_check.append(("template_failure", tool_cfg.template_failure))
             next_inst_keys = tool_cfg.next_instructions
+
+            # Local notes
+            local_notes = {
+                "exclusions": tool_cfg.exclusions,
+                "suggestions": tool_cfg.suggestions,
+                "recoveries": tool_cfg.recoveries,
+                "info": tool_cfg.info,
+            }
         else:
             val_success = tool_cfg.get("template_success")
             if isinstance(val_success, str):
-                templates.append(val_success)
+                templates_to_check.append(("template_success", val_success))
             val_failure = tool_cfg.get("template_failure")
             if isinstance(val_failure, str):
-                templates.append(val_failure)
+                templates_to_check.append(("template_failure", val_failure))
             next_inst_keys = tool_cfg.get("next_instructions") or []
+
+            # Local notes
+            local_notes = {
+                "exclusions": tool_cfg.get("exclusions") or {},
+                "suggestions": tool_cfg.get("suggestions") or {},
+                "recoveries": tool_cfg.get("recoveries") or {},
+                "info": tool_cfg.get("info") or {},
+            }
 
         instruction_texts = presenter.get_next_instruction_texts()
         for key in next_inst_keys:
             raw_text = instruction_texts.get(key)
             if isinstance(raw_text, str):
-                templates.append(raw_text)
+                templates_to_check.append((f"instruction_{key}", raw_text))
 
-        # Check fields in output_model (Pydantic model)
+        # Check local notes
+        for _, notes_dict in local_notes.items():
+            if not isinstance(notes_dict, dict):
+                continue
+            for key, template in notes_dict.items():
+                check_blacklist(template, key)
+                placeholders = get_placeholders(template)
+                if key in legacy_note_fields:
+                    allowed = legacy_note_fields[key]
+                    for p in placeholders:
+                        if p not in allowed:
+                            raise ConfigError(
+                                f"Note placeholder '{p}' not found in fields for '{key}'"
+                            )
+
+        # Skip output model validation if model is not defined (or None during migration)
+        if (
+            output_model is None
+            or not isinstance(output_model, type)
+            or not issubclass(output_model, BaseModel)
+        ):
+            continue
+
         allowed_fields = set(output_model.model_fields.keys())
-        # Also allow standard BaseToolOutput fields
         allowed_fields.update({"success", "error_message", "post_tool_instruction"})
 
-        for template in templates:
-            try:
-                for _, field_name, _, _ in string.Formatter().parse(template):
-                    if field_name is not None:
-                        base_field = field_name.split(".")[0].split("[")[0]
-                        if base_field.startswith("emoji_"):
-                            continue
-                        if base_field not in allowed_fields:
-                            raise ConfigError(
-                                f"Template placeholder '{base_field}' not found in DTO "
-                                f"'{output_model.__name__}' for tool '{tool_name}'"
-                            )
-            except ConfigError:
-                raise
-            except Exception as exc:
-                raise ConfigError(f"Invalid template format for tool '{tool_name}': {exc}") from exc
+        for _, template in templates_to_check:
+            placeholders = get_placeholders(template)
+            for base_field in placeholders:
+                if base_field.startswith("emoji_"):
+                    continue
+                if base_field not in allowed_fields:
+                    raise ConfigError(
+                        f"Template placeholder '{base_field}' not found in DTO "
+                        f"'{output_model.__name__}' for tool '{tool_name}'"
+                    )

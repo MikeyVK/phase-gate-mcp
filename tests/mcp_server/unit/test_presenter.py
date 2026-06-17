@@ -327,7 +327,9 @@ class TestTextPresenter:
         assert text == expected
 
     def test_drift_validator_blacklist_detected(self) -> None:
-        """Test that validator raises ConfigError when a blacklisted param is used in custom templates."""
+        """Test that validator raises ConfigError when a blacklisted param
+        is used in custom templates.
+        """
         config_data = {
             "global": {
                 "failures": {"dirty_workdir": "Dirty: {msg}"},
@@ -340,7 +342,9 @@ class TestTextPresenter:
         assert "blacklisted" in str(exc_info.value).lower()
 
     def test_drift_validator_global_failures_invalid_placeholder(self) -> None:
-        """Test that validator raises ConfigError when placeholders in global failures do not exist in DTO/exception."""
+        """Test that validator raises ConfigError when placeholders in
+        global failures do not exist in DTO/exception.
+        """
         config_data = {
             "global": {
                 "failures": {"ERR_CONFIG": "Config error on: {invalid_field}"},
@@ -353,13 +357,13 @@ class TestTextPresenter:
         assert "placeholder" in str(exc_info.value).lower()
 
     def test_drift_validator_legacy_notes_invalid_placeholder(self) -> None:
-        """Test that validator raises ConfigError when placeholders in legacy note templates do not align with note class."""
+        """Test that validator raises ConfigError when placeholders in
+        legacy note templates do not align with note class.
+        """
         config_data = {
             "global": {
                 "notes": {
-                    "templates": {
-                        "exclusions": {"file_excluded": "Excluded: {invalid_field}"}
-                    }
+                    "templates": {"exclusions": {"file_excluded": "Excluded: {invalid_field}"}}
                 }
             },
             "tools": {},
