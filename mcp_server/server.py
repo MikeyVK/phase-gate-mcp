@@ -5,6 +5,7 @@ import asyncio
 import json
 import sys
 import time
+import traceback
 import uuid
 from io import TextIOWrapper
 from pathlib import Path
@@ -148,6 +149,7 @@ class MCPServer:
             },
         )
         return model_validated
+
     async def _handle_error_dto(
         self,
         tool: ITool,
@@ -173,7 +175,11 @@ class MCPServer:
             # Wrap as CacheErrorOutput
             cache_dto = CacheErrorOutput(
                 message=cache_err_message,
-                params={"original_error": err_dto.message if hasattr(err_dto, "message") else str(err_dto)},
+                params={
+                    "original_error": err_dto.message
+                    if hasattr(err_dto, "message")
+                    else str(err_dto)
+                },
             )
             # Format using plain text directly (double fault prevention)
             text = f"CacheError: {cache_dto.message}"
@@ -192,21 +198,20 @@ class MCPServer:
             text = str(err_dto)
 
         uri = f"pgmcp://cache/runs/{run_id}"
-        full_text = (
-            f"{text}\n\n"
-            f"JSON data for this run is available as an MCP Resource: {uri}"
-        )
+        full_text = f"{text}\n\nJSON data for this run is available as an MCP Resource: {uri}"
 
         content: list[Any] = [{"type": "text", "text": full_text}]
         if isinstance(err_dto, ValidationErrorOutput):
-            content.append({
-                "type": "resource",
-                "resource": {
-                    "uri": "schema://validation",
-                    "mimeType": "application/json",
-                    "text": json.dumps(tool.input_schema),
-                },
-            })
+            content.append(
+                {
+                    "type": "resource",
+                    "resource": {
+                        "uri": "schema://validation",
+                        "mimeType": "application/json",
+                        "text": json.dumps(tool.input_schema),
+                    },
+                }
+            )
 
         # Append notes if any
         if note_context is not None and self.presenter is not None:
@@ -231,6 +236,7 @@ class MCPServer:
             },
         )
         return self._convert_tool_result_to_mcp_result(raw_result)
+
     def _convert_tool_result_to_content(
         self, result: ToolResult
     ) -> list[TextContent | ImageContent | EmbeddedResource]:
@@ -335,7 +341,9 @@ class MCPServer:
 
                         try:
                             # Validate arguments
-                            validated = self._validate_tool_arguments(tool, arguments, call_id, name)
+                            validated = self._validate_tool_arguments(
+                                tool, arguments, call_id, name
+                            )
                         except ValidationError as val_exc:
                             err_dto = ValidationErrorOutput(
                                 message="Validation failed",
@@ -361,7 +369,9 @@ class MCPServer:
                                 error_code=exc.code,
                                 params=exc.params or {},
                             )
-                            return await self._handle_error_dto(tool, err_dto, start_time, call_id, note_context)
+                            return await self._handle_error_dto(
+                                tool, err_dto, start_time, call_id, note_context
+                            )
 
                         # Execute tool
                         try:
@@ -369,13 +379,14 @@ class MCPServer:
                         except Exception as exec_exc:
                             if isinstance(exec_exc, asyncio.CancelledError):
                                 raise
-                            import traceback
                             err_dto = ExecutionErrorOutput(
                                 message=str(exec_exc),
                                 traceback=traceback.format_exc(),
                                 params=arguments or {},
                             )
-                            return await self._handle_error_dto(tool, err_dto, start_time, call_id, note_context)
+                            return await self._handle_error_dto(
+                                tool, err_dto, start_time, call_id, note_context
+                            )
 
                         from mcp_server.tools.base import ToolExecutionEnvelope  # noqa: PLC0415
 
@@ -423,14 +434,18 @@ class MCPServer:
                                     error_code=exc.code,
                                     params=exc.params or {},
                                 )
-                                return await self._handle_error_dto(tool, err_dto, start_time, call_id, note_context)
+                                return await self._handle_error_dto(
+                                    tool, err_dto, start_time, call_id, note_context
+                                )
 
                         # Retrieve and format operation notes (decoupled)
                         notes = note_context.entries
                         if self.presenter is not None and notes:
                             notes_text = self.presenter.present_notes(tool.name, notes)
                             if notes_text:
-                                augmented = list(raw_result.content) + [{"type": "text", "text": notes_text}]
+                                augmented = list(raw_result.content) + [
+                                    {"type": "text", "text": notes_text}
+                                ]
                                 raw_result = raw_result.model_copy(update={"content": augmented})
 
                         response_content = self._convert_tool_result_to_mcp_result(raw_result)
