@@ -21,7 +21,14 @@ from pydantic import BaseModel
 from mcp_server.core.exceptions import ConfigError
 
 # Project modules
+from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
+from mcp_server.schemas.error_outputs import (
+    ValidationErrorOutput,
+    ExecutionErrorOutput,
+    CacheErrorOutput,
+    EnforcementErrorOutput,
+)
 from mcp_server.schemas.tool_outputs import BaseToolOutput
 
 
@@ -178,8 +185,6 @@ class TestTextPresenter:
 
     def test_presentation_config_schema_extended(self) -> None:
         """Test that PresentationConfig schema correctly parses extended configuration fields."""
-        from mcp_server.config.schemas.presentation_config import PresentationConfig
-        
         extended_data = {
             "global": {
                 "emojis": {
@@ -190,32 +195,22 @@ class TestTextPresenter:
                     "bootstrap": "🚀",
                 },
                 "default_failure_template": "Failed: {error_message}",
-                "formatting": {
-                    "none_value": "-"
-                },
+                "formatting": {"none_value": "-"},
                 "notes": {
                     "groups": {
                         "exclusions": {"emoji": "🩹", "header": "Exclusions"},
-                        "suggestions": {"emoji": "💡", "header": "Suggestions"}
+                        "suggestions": {"emoji": "💡", "header": "Suggestions"},
                     },
-                    "templates": {
-                        "exclusions": {
-                            "default": "Excluded: {file}"
-                        }
-                    }
+                    "templates": {"exclusions": {"default": "Excluded: {file}"}},
                 },
-                "failures": {
-                    "dirty_workdir": "Dirty: {branch}"
-                }
+                "failures": {"dirty_workdir": "Dirty: {branch}"},
             },
             "tools": {
                 "dummy_tool": {
                     "template_success": "Success",
-                    "exclusions": {
-                        "dirty": "Excluded {file}"
-                    }
+                    "exclusions": {"dirty": "Excluded {file}"},
                 }
-            }
+            },
         }
         config = PresentationConfig.model_validate(extended_data)
         assert config.global_settings.formatting.none_value == "-"
@@ -225,28 +220,21 @@ class TestTextPresenter:
 
     def test_error_dto_compilation_and_enforcement(self) -> None:
         """Test that error DTO subclasses compile and enforce frozen and forbid-extra rules."""
-        from mcp_server.schemas.error_outputs import (
-            ValidationErrorOutput,
-            ExecutionErrorOutput,
-            CacheErrorOutput,
-            EnforcementErrorOutput,
-        )
-        
         # Test ValidationErrorOutput
         val_err = ValidationErrorOutput(
             message="Validation failed",
             params={"param1": "val1"},
             validation_errors=[{"loc": ["field"], "msg": "invalid"}],
-            input_schema={"type": "object"}
+            input_schema={"type": "object"},
         )
         assert val_err.success is False
         assert val_err.error_type == "ValidationError"
         assert val_err.params == {"param1": "val1"}
-        
+
         # Verify frozen
         with pytest.raises(Exception):
             val_err.message = "new message"  # type: ignore
-            
+
         # Verify extra forbid
         with pytest.raises(Exception):
             ValidationErrorOutput(
@@ -254,16 +242,21 @@ class TestTextPresenter:
                 params={},
                 validation_errors=[],
                 input_schema={},
-                invalid_extra_field="fail"  # type: ignore
+                invalid_extra_field="fail",  # type: ignore
             )
-            
+
         # Test EnforcementErrorOutput
         enf_err = EnforcementErrorOutput(
-            message="Enforcement blocked",
-            params={"rule": "no-push"},
-            error_code="RULE_VIOLATION"
+            message="Enforcement blocked", params={"rule": "no-push"}, error_code="RULE_VIOLATION"
         )
         assert enf_err.success is False
         assert enf_err.error_type == "EnforcementError"
         assert enf_err.error_code == "RULE_VIOLATION"
 
+        # Verify ExecutionErrorOutput compile
+        exec_err = ExecutionErrorOutput(message="Fail", params={})
+        assert exec_err.error_type == "ExecutionError"
+
+        # Verify CacheErrorOutput compile
+        cache_err = CacheErrorOutput(message="Disk full", params={})
+        assert cache_err.error_type == "CacheError"
