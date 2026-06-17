@@ -67,6 +67,8 @@ TEMPLATE_METADATA:
         - questions_list
         - references
         - related_docs
+        - approved_strategy
+        - expected_results
   agent_hints:
     phase: "research"
     purpose: "Investigate and understand the problem domain before planning or design"
@@ -156,6 +158,24 @@ TEMPLATE_METADATA:
 {% if q_list -%}
 
 {{ oq.pattern_open_questions_section(q_list) }}
+
+{% endif -%}
+{% if approved_strategy -%}
+
+---
+
+## Approved Strategy
+
+{{ approved_strategy }}
+
+{% endif -%}
+{% if expected_results -%}
+
+---
+
+## Expected Results
+
+{{ expected_results }}
 
 {% endif -%}
 {%- endblock %}

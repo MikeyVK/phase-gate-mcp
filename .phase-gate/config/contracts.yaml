@@ -89,7 +89,7 @@ workflows:
             [ ] Do not scaffold the research document until the research nucleus is stable enough
                 for first-time-right drafting.
 
-            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research').
+            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research', context={..., 'approved_strategy': '...', 'expected_results': '...'}).
             [ ] Fill the scaffolded document with evidence-backed content.
                 Use the template's optional sections where they materially improve the research.
                 Follow DOCUMENTATION_STANDARD.md while drafting the document.
@@ -847,7 +847,7 @@ workflows:
             [ ] Do not scaffold the research document until the research nucleus is stable enough
                 for first-time-right drafting.
 
-            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research').
+            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research', context={..., 'approved_strategy': '...', 'expected_results': '...'}).
             [ ] Fill the scaffolded document with evidence-backed content.
                 Use the template's optional sections where they materially improve the research.
                 Follow DOCUMENTATION_STANDARD.md while drafting the document.
@@ -2027,7 +2027,7 @@ workflows:
             [ ] Do not scaffold the research document until the research nucleus is stable enough
                 for first-time-right drafting.
 
-            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research').
+            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research', context={..., 'approved_strategy': '...', 'expected_results': '...'}).
             [ ] Fill the scaffolded document with evidence-backed content.
                 Use the template's optional sections where they materially improve the research.
                 Follow DOCUMENTATION_STANDARD.md while drafting the document.
@@ -2970,7 +2970,7 @@ workflows:
             [ ] Do not scaffold the research document until the research nucleus is stable enough
                 for first-time-right drafting.
 
-            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research').
+            [ ] Create the research artifact: scaffold_artifact(artifact_type='research', name='research', context={..., 'approved_strategy': '...', 'expected_results': '...'}).
             [ ] Fill the scaffolded document with evidence-backed content.
                 Use the template's optional sections where they materially improve the research.
                 Follow DOCUMENTATION_STANDARD.md while drafting the document.

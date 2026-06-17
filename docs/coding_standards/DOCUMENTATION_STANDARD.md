@@ -59,7 +59,7 @@ This document defines the shared documentation rules for pre-implementation and 
 
 ## Phase Ownership
 
-- Research documents investigate the problem space, constraints, prior art, and unknowns; they do not choose design or implementation.
+- Research documents investigate the problem space, constraints, prior art, and unknowns; they do not choose design or implementation. They must define the Approved Strategy (compatibility and migration policy per boundary, with rationale) and the Expected Results (behavioral success criteria) before the phase transitions to Design.
 - Design documents compare options, justify a chosen direction, and define interfaces and trade-offs; they do not become implementation plans.
 - Planning documents define slices, cycles, dependencies, and stop-go criteria; they do not repeat research or redesign the solution.
 - Implementation details, patch plans, and execution sequencing belong in implementation work, not in pre-implementation documentation unless explicitly required by the current phase.
