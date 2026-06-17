@@ -1,9 +1,9 @@
 <!-- docs\development\issue404\design.md -->
-<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T18:35Z -->
+<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T21:35Z -->
 # Design: Resolving TextPresenter Formatting Gaps & Error Propagation
 
 **Status:** DRAFT  
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Last Updated:** 2026-06-17
 
 ---
@@ -157,46 +157,160 @@ class EnforcementErrorOutput(ToolErrorOutput):
     error_code: str
 ```
 
-#### 3.4.2. Notes Redesign (Topic 1)
+#### 3.4.2. Pydantic Configuration Extensions (`presentation_config.py`)
+
+To support notes rendering and failure templates without triggering Pydantic validation failures due to `extra="forbid"`, the following schema configurations are defined:
+
+```python
+class FormattingConfig(BaseModel):
+    """Configuration for global text formatting."""
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    none_value: str = "-"
+
+class NoteGroupConfig(BaseModel):
+    """Configuration for a note group's header and emoji."""
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    emoji: str
+    header: str
+
+class GlobalNotesConfig(BaseModel):
+    """Global configuration for note groups and fallback templates."""
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    groups: dict[str, NoteGroupConfig] = Field(default_factory=dict)
+    templates: dict[str, dict[str, str]] = Field(default_factory=dict)
+
+# GlobalPresentationConfig is extended with formatting, notes, and failures
+class GlobalPresentationConfig(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    emojis: EmojisConfig = Field(default_factory=EmojisConfig)
+    default_failure_template: str = "Failed: {error_message}"
+    next_instruction_texts: dict[str, str] = Field(default_factory=dict)
+    formatting: FormattingConfig = Field(default_factory=FormattingConfig)
+    notes: GlobalNotesConfig = Field(default_factory=GlobalNotesConfig)
+    failures: dict[str, str] = Field(default_factory=dict)
+
+# ToolPresentationConfig is extended with allowed note groups
+class ToolPresentationConfig(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    template_success: str | None = None
+    template_failure: str | None = None
+    next_instructions: list[str] = Field(default_factory=list)
+    exclusions: dict[str, str] = Field(default_factory=dict)
+    suggestions: dict[str, str] = Field(default_factory=dict)
+    recoveries: dict[str, str] = Field(default_factory=dict)
+    info: dict[str, str] = Field(default_factory=dict)
+```
+
+#### 3.4.3. Notes Redesign (Topic 1)
+
 Operation notes in `operation_notes.py` are simplified to pure metadata dataclasses:
 
 ```python
 @dataclass(frozen=True)
 class OperationNote:
+    """Base class for all presenter-driven metadata notes."""
     pass
 
 @dataclass(frozen=True)
 class ExclusionNote(OperationNote):
-    file: str
+    file_path: str
+
+@dataclass(frozen=True)
+class SuggestionNote(OperationNote):
+    subject: str
+    message: str  # Kept temporarily for backward compatibility
 
 @dataclass(frozen=True)
 class BlockerNote(OperationNote):
-    message: str
+    message: str  # Kept temporarily for backward compatibility
 
 @dataclass(frozen=True)
 class RecoveryNote(OperationNote):
-    message: str
+    message: str  # Kept temporarily for backward compatibility
 
 @dataclass(frozen=True)
 class InfoNote(OperationNote):
-    message: str
+    message: str  # Kept temporarily for backward compatibility
 ```
 
-All `to_message()` methods are deprecated and will be removed at the end of the issue. The notes templates are configured in `presentation.yaml`:
+#### 3.4.4. Note Rendering Loop & Multiplicity
 
-```yaml
-global:
-  formatting:
-    none_value: "-"
-  notes:
-    exclusion: "Excluded from commit index: {file}"
-    blocker: "Blocker: {message}"
-    recovery: "Recovery: {message}"
-    info: "{message}"
+`TextPresenter` exposes a public interface to format, group, and render note entries:
+
+```python
+class TextPresenter:
+    # Existing methods omitted for brevity
+
+    def present_notes(self, tool_name: str, notes: list[NoteEntry]) -> str | None:
+        """Formats and groups note entries into a single markdown block.
+        
+        Args:
+            tool_name: The name of the active tool.
+            notes: A list of note entries to render.
+            
+        Returns:
+            The presented Markdown string or None if no notes exist.
+        """
 ```
 
-#### 3.4.3. None-Value filter in TextPresenter
-`TextPresenter` will substitute `None` values with `global.formatting.none_value` (default: `"-"`) for all placeholders in templates.
+**Algorithmic Rendering Loop Steps:**
+1. **Configuration Lookup:** Retrieve the active tool's local configuration (`tool_cfg`) and global note groups config (`groups_cfg` from `global.notes.groups`).
+2. **Grouping Initialization:** Initialize a dictionary mapping each group name (e.g., `exclusions`, `suggestions`, `recoveries`, `info`) to an empty list.
+3. **Note Resolution:** For each note entry in `notes`:
+   - Map legacy typed notes to their key-parameter dictionary representation via the compatibility mapper.
+   - Resolve the template template string:
+     - Check the tool-local template: `tool_cfg.<group_name>.<key>`.
+     - Fallback to the global template: `global.notes.templates.<group_name>.<key>`.
+   - Substitute template placeholders using parameters (applying the None-Value replacement filter).
+   - Append the rendered note to the corresponding group list.
+4. **Markdown Generation:**
+   - Iterate through groups in priority order: `exclusions`, `suggestions`, `recoveries`, `info`.
+   - If a group has rendered notes, append the group's emoji and header (e.g., `🚫 Excluded files:`).
+   - Append each note in the group as an indented bullet point (`  - {note_text}`).
+5. **Output:** Return the joined markdown string block, or `None` if no notes were generated.
+
+#### 3.4.5. None-Value filter in TextPresenter
+
+`TextPresenter` will substitute `None` values with `global.formatting.none_value` (configured in `presentation.yaml`, default: `"-"`) for all placeholders in success, failure, and note templates.
+
+#### 3.4.6. Backward Compatibility Mapper (Phase 1 Bridge)
+
+During Phase 1, `NoteContext.render_to_response` routes note formatting requests through `TextPresenter.present_notes`. A translation mapper maps legacy typed notes to generic key-parameter tuples:
+
+```python
+def map_legacy_note_to_event(note: NoteEntry) -> tuple[str, dict[str, Any]]:
+    """Maps legacy typed notes to generic key-parameter tuples for the presenter.
+    
+    Args:
+        note: The note entry to map.
+        
+    Returns:
+        A tuple of (template_key, parameter_dict).
+    """
+```
+
+Legacy `to_message()` Python methods are kept temporarily for backward compatibility with existing unit tests but will be deleted at the end of Issue #404 (Clean Break).
+
+#### 3.4.7. Architectural Rules & Design Refinements
+
+##### 1. Global Note Templates Fallback (DRY & SSOT)
+To prevent template duplication across tools, the presenter falls back to `global.notes.templates.<group_name>.<key>` in `presentation.yaml` if a tool-local template is missing.
+
+##### 2. Error Code Mapping for Custom Exceptions
+To comply with the Config-First principle, custom exceptions raised by our code (e.g., `PreflightError`, `ValidationError`, `DeliverableCheckError`) carry an `error_code` and semantic parameters instead of hardcoded strings:
+- **Exception Signature:** `raise PreflightError(error_code="dirty_workdir", params={"branch": branch})`
+- **Config Representation:** `global.failures.dirty_workdir: "Branch '{branch}' is not in a clean state -- commit or stash changes."`
+- **Presenter Resolution:** The presenter catches the custom exception, looks up `global.failures.<error_code>`, resolves placeholders, and presents the text. Raw/unexpected external exceptions (e.g., subprocess crashes) fallback to `default_failure_template` using the raw exception message.
+
+##### 3. Strict "No-Message-Backdoor" Rule
+To prevent developers from bypassing configuration-driven presentation by passing pre-formatted strings:
+- **Constraint:** The `params` dictionary of any note or custom exception must contain ONLY raw semantic data (file paths, counts, branch names), **never** user-facing sentences, phrases, or pre-formatted strings. No `{message}` or `{error_message}` parameters are allowed in notes or custom exceptions.
+- **Enforcement:** The drift validator (`validate_presentation_alignment`) scans all templates in `presentation.yaml`. If it detects `{message}` or `{error_message}` within any custom note or failure template, it raises a startup `ConfigError`, failing boot. (Note: `{error_message}` is permitted only in `global.default_failure_template` for raw external exceptions).
+
+##### 4. Drift Validator Extension (`validate_presentation_alignment`)
+We extend the drift validator to verify that:
+- All placeholders inside `global.failures.<error_type>` exist as fields in the corresponding `ToolErrorOutput` DTO class.
+- Placeholders in tool-local and global note templates correspond to the constructor parameters of the mapped note classes.
 
 ---
 
@@ -233,3 +347,4 @@ run_quality_gates(scope="branch")
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.3.0 | 2026-06-17 | Agent | Cleaned design focusing strictly on Phase 1, added error mapping and Mermaid flowcharts |
+| 1.4.0 | 2026-06-17 | Agent | Incorporated configuration schemas, Note Rendering Loop details, Backward Compatibility mapper, strict No-Message-Backdoor rules, and Drift Validator extensions |
