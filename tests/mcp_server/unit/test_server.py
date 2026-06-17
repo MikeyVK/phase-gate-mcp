@@ -675,3 +675,298 @@ async def test_call_tool_handles_itool_bridge() -> None:
         cached = cache_manager.get(f"pgmcp://cache/runs/{run_id}")
         assert cached is not None
         assert cached.val == 42
+
+
+@pytest.mark.asyncio
+async def test_handle_call_tool_validation_error_intercept() -> None:
+    """ValidationError in handle_call_tool should map to ValidationErrorOutput DTO, cache it, and format it."""
+    from pydantic import BaseModel, Field  # noqa: PLC0415
+    from mcp_server.schemas.error_outputs import ValidationErrorOutput  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+
+    class DummyArgs(BaseModel):
+        val: int = Field(..., description="Integer field")
+
+    class DummyTool(ITool):
+        @property
+        def name(self) -> str:
+            return "dummy_tool"
+
+        @property
+        def description(self) -> str:
+            return "Dummy Tool"
+
+        @property
+        def args_model(self) -> type[BaseModel] | None:
+            return DummyArgs
+
+        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+            return ToolResult.text("success")
+
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+
+        config_data = {
+            "global": {
+                "default_failure_template": "Failure: {error_message}",
+                "emojis": {"failure": "❌"},
+            },
+            "tools": {}
+        }
+        presenter = TextPresenter(config_data=config_data)
+
+        server = make_test_server()
+        server.presenter = presenter
+        tool = DummyTool()
+        cache_manager = ResponseCacheManager()
+        server.response_cache = cache_manager
+        server.response_cache_manager = cache_manager
+        server.tools = [tool]
+
+        handler = server.server.request_handlers[CallToolRequest]
+
+        # Call with invalid arguments (missing 'val')
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="dummy_tool",
+                arguments={},
+            )
+        )
+        response = await handler(req)
+
+        # Check response content contains the cache message
+        content = response.root.content
+        assert len(content) == 2  # The formatted text + the schema resource
+        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        assert "❌ Failure: Validation failed" in text
+        assert "pgmcp://cache/runs/" in text
+
+        import re  # noqa: PLC0415
+        match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text)
+        assert match is not None
+        run_id = match.group(1)
+
+        cached = cache_manager.get(f"pgmcp://cache/runs/{run_id}")
+        assert isinstance(cached, ValidationErrorOutput)
+        assert cached.success is False
+        assert cached.error_type == "ValidationError"
+        assert len(cached.validation_errors) > 0
+
+
+@pytest.mark.asyncio
+async def test_handle_call_tool_enforcement_error_intercept() -> None:
+    """MCPError in enforcement runner should map to EnforcementErrorOutput DTO, cache it, and format it."""
+    from pydantic import BaseModel  # noqa: PLC0415
+    from mcp_server.schemas.error_outputs import EnforcementErrorOutput  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+    from mcp_server.core.exceptions import MCPError  # noqa: PLC0415
+
+    class DummyTool(ITool):
+        @property
+        def name(self) -> str:
+            return "dummy_tool"
+
+        @property
+        def description(self) -> str:
+            return "Dummy Tool"
+
+        @property
+        def args_model(self) -> type[BaseModel] | None:
+            return None
+
+        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+            return ToolResult.text("success")
+
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+
+        config_data = {
+            "global": {
+                "default_failure_template": "Failure: {error_message}",
+                "emojis": {"failure": "❌"},
+                "failures": {
+                    "dirty_workdir": "Dirty: {branch}"
+                }
+            },
+            "tools": {}
+        }
+        presenter = TextPresenter(config_data=config_data)
+
+        server = make_test_server()
+        server.presenter = presenter
+        tool = DummyTool()
+        cache_manager = ResponseCacheManager()
+        server.response_cache = cache_manager
+        server.response_cache_manager = cache_manager
+        server.tools = [tool]
+
+        # Force enforcement runner to raise MCPError
+        with patch.object(server.enforcement_runner, "run") as mock_run:
+            mock_run.side_effect = MCPError(code="dirty_workdir", message="Workdir is dirty", params={"branch": "main"})
+
+            handler = server.server.request_handlers[CallToolRequest]
+
+            req = CallToolRequest(
+                params=CallToolRequestParams(
+                    name="dummy_tool",
+                    arguments={},
+                )
+            )
+            response = await handler(req)
+
+        content = response.root.content
+        assert len(content) == 1
+        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        assert "❌ Dirty: main" in text
+        assert "pgmcp://cache/runs/" in text
+
+        import re  # noqa: PLC0415
+        match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text)
+        assert match is not None
+        run_id = match.group(1)
+
+        cached = cache_manager.get(f"pgmcp://cache/runs/{run_id}")
+        assert isinstance(cached, EnforcementErrorOutput)
+        assert cached.success is False
+        assert cached.error_type == "EnforcementError"
+        assert cached.error_code == "dirty_workdir"
+        assert cached.params == {"branch": "main"}
+
+
+@pytest.mark.asyncio
+async def test_handle_call_tool_execution_error_intercept() -> None:
+    """Execution exceptions in tool should map to ExecutionErrorOutput DTO, cache it, and format it."""
+    from pydantic import BaseModel  # noqa: PLC0415
+    from mcp_server.schemas.error_outputs import ExecutionErrorOutput  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+
+    class DummyTool(ITool):
+        @property
+        def name(self) -> str:
+            return "dummy_tool"
+
+        @property
+        def description(self) -> str:
+            return "Dummy Tool"
+
+        @property
+        def args_model(self) -> type[BaseModel] | None:
+            return None
+
+        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+            raise ValueError("Execution failed completely")
+
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+
+        config_data = {
+            "global": {
+                "default_failure_template": "Failure: {error_message}",
+                "emojis": {"failure": "❌"},
+            },
+            "tools": {}
+        }
+        presenter = TextPresenter(config_data=config_data)
+
+        server = make_test_server()
+        server.presenter = presenter
+        tool = DummyTool()
+        cache_manager = ResponseCacheManager()
+        server.response_cache = cache_manager
+        server.response_cache_manager = cache_manager
+        server.tools = [tool]
+
+        handler = server.server.request_handlers[CallToolRequest]
+
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="dummy_tool",
+                arguments={},
+            )
+        )
+        response = await handler(req)
+
+        content = response.root.content
+        assert len(content) == 1
+        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        assert "❌ Failure: Execution failed completely" in text
+        assert "pgmcp://cache/runs/" in text
+
+        import re  # noqa: PLC0415
+        match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text)
+        assert match is not None
+        run_id = match.group(1)
+
+        cached = cache_manager.get(f"pgmcp://cache/runs/{run_id}")
+        assert isinstance(cached, ExecutionErrorOutput)
+        assert cached.success is False
+        assert cached.error_type == "ExecutionError"
+        assert "Execution failed completely" in cached.message
+        assert cached.traceback is not None
+
+
+@pytest.mark.asyncio
+async def test_handle_call_tool_cache_error_intercept() -> None:
+    """Caching exceptions should map to CacheErrorOutput DTO, and be returned as plain text without crashing."""
+    from pydantic import BaseModel  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+
+    class DummyTool(ITool):
+        @property
+        def name(self) -> str:
+            return "dummy_tool"
+
+        @property
+        def description(self) -> str:
+            return "Dummy Tool"
+
+        @property
+        def args_model(self) -> type[BaseModel] | None:
+            return None
+
+        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+            raise ValueError("Execution failed completely")
+
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+
+        config_data = {
+            "global": {
+                "default_failure_template": "Failure: {error_message}",
+                "emojis": {"failure": "❌"},
+            },
+            "tools": {}
+        }
+        presenter = TextPresenter(config_data=config_data)
+
+        server = make_test_server()
+        server.presenter = presenter
+        tool = DummyTool()
+        cache_manager = ResponseCacheManager()
+        server.response_cache = cache_manager
+        server.response_cache_manager = cache_manager
+        server.tools = [tool]
+
+        # Force cache_manager.put to raise an exception
+        with patch.object(cache_manager, "put", side_effect=RuntimeError("Cache disk failure")):
+            handler = server.server.request_handlers[CallToolRequest]
+
+            req = CallToolRequest(
+                params=CallToolRequestParams(
+                    name="dummy_tool",
+                    arguments={},
+                )
+            )
+            response = await handler(req)
+
+        content = response.root.content
+        assert len(content) == 1
+        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        # Should return direct text block with cache error details, no resource cached
+        assert "CacheError" in text
+        assert "Cache disk failure" in text
+        assert "pgmcp://cache/runs/" not in text
