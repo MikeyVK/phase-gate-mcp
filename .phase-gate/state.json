@@ -16,11 +16,28 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Back to research phase to update research document per user request.",
   "issue_title": "tooling: Resolve TextPresenter formatting gaps",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-15T18:05:54.913802+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-17T13:24:21.887812+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-06-17T14:07:12.651585+00:00",
+      "human_approval": "approved",
+      "forced": true,
+      "skip_reason": "Back to research phase to update research document per user request."
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
