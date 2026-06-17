@@ -1,5 +1,5 @@
 <!-- docs/development/issue404/research.md -->
-<!-- template=research version=8b7bb3ab created=2026-06-15T19:45:50Z updated=2026-06-17T14:52:00Z -->
+<!-- template=research version=8b7bb3ab created=2026-06-15T19:45:50Z updated=2026-06-17T15:10:00Z -->
 # Research: Resolving TextPresenter Formatting Gaps & Error Propagation
 
 **Status:** APPROVED  
@@ -16,15 +16,16 @@ This document investigates the problem space of TextPresenter formatting gaps an
 
 ## 2. Scope
 
-### 2.1. In Scope
-* **Analysis of `MCPServer.handle_call_tool()`:** Investigating how validation, enforcement, tool execution, presentation, note rendering, and exception handling are currently coupled.
-* **Catalog of Presentation Gaps:** Documenting visual anomalies (double rendering, double emojis, literal `"None"` formatting) and hardcoded text leakages.
-* **Blast Radius Assessment:** Quantifying the potential impact on production files, test files, and shared test support helpers.
-* **Migration & Compatibility Policy:** Establishing the strategy (e.g., temporary bridge vs. clean break) for rolling out error presenter integration and the eventual decorator refactoring.
+### 2.1. In Scope (Phase 1: Issue #404)
+* **Notes Redesign (Topic 1):** Complete migration of all operation notes to the presenter-driven model. This includes simplifying note classes to pure metadata dataclasses, centralizing note formatting templates in `presentation.yaml`, and the complete removal of all legacy `to_message()` Python methods before Issue #404 is closed.
+* **Error DTOs & Bridge (Topic 2):** Introduction of structured error DTO schemas in a new file `mcp_server/schemas/error_outputs.py`. Implementing a temporary integration bridge inside `server.py` (`handle_call_tool`) to catch validation, enforcement, and execution exceptions, write them to the cache, and present them via `TextPresenter` using global failure templates.
+* **Drift Validation:** Extending `validate_presentation_alignment` to verify failure templates.
+* **Unit and Integration Testing:** Verifying both notes and error presentation paths via the TextPresenter and the MCP/JSON-RPC API boundary.
 
-### 2.2. Out of Scope
-* **Technical Design of Decorators or DTOs:** Defining specific decorator class interfaces, pipeline assembly logic, or wiring contracts in `bootstrap.py` (deferred to the Design Phase).
-* **Implementation Code:** Modifying or writing production Python code, templates, or test suites.
+### 2.2. Out of Scope (Phase 2: Subsequent Issue)
+* **Decorator Refactoring (Topic 2 Bridge Removal):** Developing the `InputValidationDecorator`, `EnforcementDecorator`, `ToolErrorHandlerDecorator`, and `CacheErrorHandlerDecorator` classes in `decorators.py` to replace the temporary error bridge inside `server.py`.
+* **Tool Factory Composition:** Modifying `ToolFactory` in `bootstrap.py` to compose the decorator chain.
+* **Server Cleanup:** Deleting validation/enforcement methods and error catching blocks from `server.py`.
 
 ---
 
@@ -117,24 +118,31 @@ Refactoring the error propagation and presentation layer affects several layers 
 
 ## 7. Strategy Approval Gate: Migration & Compatibility Policy
 
-We evaluate three migration strategy options for rolling out the presenter-driven error integration:
+We establish specific rollout strategies for the two primary scopes of this issue to manage regressions safely:
 
-### 7.1. Options Matrix
-* **Option A: Clean Break**
-  * *Description:* Perform the full refactoring immediately: implement decorator classes, wire `ToolFactory` in `bootstrap.py`, and remove validation/enforcement methods from `server.py` in one step.
-  * *Pros:* Shorter overall timeline; no temporary code written.
-  * *Cons:* **High Risk.** The blast radius covers the entire 2800+ test suite, making debugging and verification extremely difficult.
-* **Option B: Temporary Bridge (Selected Strategy)**
-  * *Description:* Split the implementation into two phases. Phase 1 (Issue #404) introduces the error DTO contracts, global failure templates in YAML, and a temporary bridge inside `server.py` to route exceptions to the presenter. Phase 2 refactors these paths into decorators.
-  * *Pros:* **Low Risk.** Enables safe, incremental rollout. Crucially, allows writing persistent integration tests via the MCP protocol that remain 100% valid in Phase 2.
-  * *Cons:* Short-term code duplication in `server.py` before decorators are built.
-* **Option C: Preserve Compatibility (Long-Term)**
-  * *Description:* Retain the validation, enforcement, and exception handling permanently inside `server.py`.
-  * *Pros:* No refactoring needed in the core server pipeline.
-  * *Cons:* Violates the Single Responsibility Principle permanently; `server.py` remains a complex God class.
+### 7.1. Topic 1: Notes Redesign (Original Scope)
+* **Strategy:** **Temporary Bridge with Clean Break**. 
+* **Rollout:** During implementation, a temporary `to_message()` fallback can be retained on Note classes to keep legacy unit tests green while migrating tools and managers. However, by the end of Issue #404, all tools, note classes, and tests must be fully refactored to use the presenter. The temporary `to_message()` fallback methods must be completely deleted before the issue is closed (Clean Break). Transition advisory info notes in Python are deleted immediately.
 
-### 7.2. Approved Strategy
-We select **Option B: Temporary Bridge**. This policy shields the test suite from massive regressions by dividing the refactoring into manageable boundaries. In Phase 1, we will route all errors through `TextPresenter` in `server.py` using structured error DTOs defined in `mcp_server/schemas/error_outputs.py`. The integration tests created in Phase 1 will target the public MCP protocol boundaries and remain fully active in Phase 2.
+### 7.2. Topic 2: Error Presentation & DTOs (Scope Expansion)
+* **Strategy:** **Temporary Bridge**.
+* **Rollout:** In Issue #404 (Phase 1), we will catch validation, enforcement, and execution exceptions directly inside `server.py` (`handle_call_tool`), instantiate the new DTO contracts from `error_outputs.py`, write them to the cache, and present them via `TextPresenter` using global failure templates. This temporary bridge in `server.py` allows us to verify the presenter formatting flow safely. The integration tests created in Phase 1 will target the public MCP protocol boundaries, meaning they will remain 100% active and unmodified when the temporary bridge is removed and replaced by decorators in a subsequent issue (Phase 2).
+
+---
+
+## 8. Expected Results
+
+The implementation of both phases must satisfy the following validation baseline:
+
+### 8.1. Operation Notes
+* No Python note class in `operation_notes.py` contains formatting logic, emojis, or raw text templates.
+* All note-rendering logic is processed via `TextPresenter` using definitions in `presentation.yaml`. Notes are grouped into bullets under their respective global emoji/header.
+* Transition advisory messages are rendered once using `next_instructions` and never duplicated in note blocks.
+
+### 8.2. Error Presentation
+* Validation errors (Pydantic), enforcement errors (phase-guards), and unhandled tool exceptions are fully intercepted and do not crash the MCP server connection.
+* Large data structures (such as validation schemas or traceback strings) are cached and excluded from the main LLM response text, which instead appends a clickable `pgmcp://cache/runs/{run_id}` notice.
+* The LLM response text for errors is composed using global failure templates under `global.failures` in `presentation.yaml`.
 
 ---
 
@@ -151,3 +159,4 @@ We select **Option B: Temporary Bridge**. This policy shields the test suite fro
 |---------|------|--------|---------|
 | 1.0.0 | 2026-06-15 | Agent | Initial research draft approved |
 | 1.1.0 | 2026-06-17 | Agent | Revised to comply with documentation standards: removed design solutions, added Mermaid current-flow diagram, added Blast Radius table, and formulated the migration policy under the Approved Strategy. |
+| 1.2.0 | 2026-06-17 | Agent | Added "Expected Results" section and detailed the separate rollout strategies for Topic 1 (Clean Break by end of issue) and Topic 2 (Temporary Bridge removed in Phase 2). |
