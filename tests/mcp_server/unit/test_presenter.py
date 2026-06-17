@@ -260,3 +260,71 @@ class TestTextPresenter:
         # Verify CacheErrorOutput compile
         cache_err = CacheErrorOutput(message="Disk full", params={})
         assert cache_err.error_type == "CacheError"
+
+    def test_safe_none_formatter(self) -> None:
+        """Test SafeNoneFormatter formatting of None values and format specifiers."""
+        from mcp_server.presenters.text_presenter import SafeNoneFormatter
+
+        formatter = SafeNoneFormatter(none_value="-")
+        
+        # None formatting bypasses specifiers
+        assert formatter.format("None value: {val}", val=None) == "None value: -"
+        assert formatter.format("None with spec: {val:.2f}", val=None) == "None with spec: -"
+        
+        # Normal formatting works
+        assert formatter.format("Float: {val:.2f}", val=3.14159) == "Float: 3.14"
+        assert formatter.format("String: {val}", val="hello") == "String: hello"
+
+    def test_present_notes_lookup_and_grouping(self) -> None:
+        """Test TextPresenter.present_notes lookup, formatting, and markdown grouping."""
+        from mcp_server.core.operation_notes import Note
+        
+        config_data = {
+            "global": {
+                "emojis": {
+                    "success": "✅",
+                    "failure": "❌",
+                    "warning": "⚠️",
+                    "query": "📋",
+                    "bootstrap": "🚀",
+                },
+                "default_failure_template": "Failed: {error_message}",
+                "formatting": {
+                    "none_value": "-"
+                },
+                "notes": {
+                    "groups": {
+                        "exclusions": {"emoji": "🩹", "header": "Exclusions"},
+                        "suggestions": {"emoji": "💡", "header": "Suggestions"}
+                    },
+                    "templates": {
+                        "exclusions": {
+                            "dirty": "Excluded file: {file}",
+                            "none_test": "None test: {val:.2f}"
+                        },
+                        "suggestions": {
+                            "suggestion_msg": "Suggestion: {message}"
+                        }
+                    }
+                }
+            },
+            "tools": {}
+        }
+        presenter = TextPresenter(config_data=config_data)
+        
+        notes = [
+            Note(key="dirty", params={"file": "a.py"}),
+            Note(key="none_test", params={"val": None}),
+            Note(key="suggestion_msg", params={"message": "Do X"})
+        ]
+        
+        text = presenter.present_notes("dummy_tool", notes)
+        
+        expected = (
+            "🩹 Exclusions\n"
+            "  - Excluded file: a.py\n"
+            "  - None test: -\n\n"
+            "💡 Suggestions\n"
+            "  - Suggestion: Do X"
+        )
+        assert text == expected

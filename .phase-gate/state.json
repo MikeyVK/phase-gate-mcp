@@ -3,9 +3,16 @@
   "issue_number": 404,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 1,
+  "current_cycle": 2,
   "last_cycle": 1,
-  "cycle_history": [],
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Note Presentation Engine & Loop",
+      "forced": false,
+      "entered": "2026-06-17T20:21:12.357548+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -95,5 +102,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
