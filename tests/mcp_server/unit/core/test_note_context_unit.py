@@ -16,6 +16,7 @@ Verifies the Cycle 1 note-context contract before later wiring cycles.
 import importlib
 from types import ModuleType
 from typing import Any
+from unittest.mock import Mock
 
 # Project modules
 from mcp_server.tools.tool_result import ToolResult
@@ -118,26 +119,26 @@ def test_commit_note_not_renderable() -> None:
     assert not hasattr(commit_note, "to_message")
     assert result is base
 
+
 def test_note_context_delegation() -> None:
     """NoteContext must delegate to presenter.present_notes if presenter is passed."""
-    from unittest.mock import Mock
     module = _load_operation_notes_module()
     note_context_type = _get_attr(module, "NoteContext")
     note_type = _get_attr(module, "Note")
-    
+
     mock_presenter = Mock()
     mock_presenter.present_notes.return_value = "Formatted markdown"
-    
+
     context = note_context_type(presenter=mock_presenter, tool_name="dummy_tool")
-    
+
     note = note_type(key="test_key", params={"val": 1})
     context.produce(note)
-    
+
     base = ToolResult.text("base content")
     result = context.render_to_response(base)
-    
+
     mock_presenter.present_notes.assert_called_once_with("dummy_tool", [note])
-    
+
     assert len(result.content) == 2
     assert result.content[0] == {"type": "text", "text": "base content"}
     assert result.content[1] == {"type": "text", "text": "Formatted markdown"}

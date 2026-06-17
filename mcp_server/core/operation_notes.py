@@ -21,7 +21,7 @@ from __future__ import annotations
 # Standard library
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Literal, Protocol, TypeVar, runtime_checkable
+from typing import Any, Literal, Protocol, TypeVar, runtime_checkable
 
 # Project modules
 from mcp_server.tools.tool_result import ToolResult
@@ -149,7 +149,21 @@ class InfoNote:
         return self.message
 
 
-NoteEntry = ExclusionNote | CommitNote | SuggestionNote | BlockerNote | RecoveryNote | InfoNote
+@dataclass(frozen=True)
+class Note:
+    """Generic presentation-driven metadata note.
+
+    All layout, text formatting, and emojis are configured declaratively
+    in presentation.yaml under the corresponding key.
+    """
+
+    key: str
+    params: dict[str, Any] = field(default_factory=dict)
+
+
+NoteEntry = (
+    ExclusionNote | CommitNote | SuggestionNote | BlockerNote | RecoveryNote | InfoNote | Note
+)
 
 
 @dataclass
@@ -163,7 +177,9 @@ class NoteContext:
     render_to_response() once, unconditionally, after execution completes.
     """
 
-    _entries: list[NoteEntry] = field(default_factory=list)
+    presenter: Any | None = None
+    tool_name: str | None = None
+    _entries: list[NoteEntry] = field(default_factory=list, init=False)
 
     def produce(self, note: NoteEntry) -> None:
         """Write a note. Preserves insertion order."""
@@ -192,6 +208,13 @@ class NoteContext:
         error paths. Returns base unchanged when no Renderable entries exist.
         Insertion order is preserved.
         """
+        if self.presenter is not None and self.tool_name is not None:
+            notes_text = self.presenter.present_notes(self.tool_name, self._entries)
+            if not notes_text:
+                return base
+            augmented = list(base.content) + [{"type": "text", "text": notes_text}]
+            return base.model_copy(update={"content": augmented})
+
         renderable = [n for n in self._entries if isinstance(n, Renderable)]
         if not renderable:
             return base
