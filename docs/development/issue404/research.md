@@ -3,7 +3,7 @@
 # Research: Resolving TextPresenter Formatting Gaps & Error Propagation
 
 **Status:** APPROVED  
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Last Updated:** 2026-06-17  
 
 ---

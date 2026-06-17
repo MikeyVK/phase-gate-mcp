@@ -2,9 +2,9 @@
   "branch": "feature/404-resolve-textpresenter-formatting-gaps",
   "issue_number": 404,
   "workflow_name": "feature",
-  "current_phase": "implementation",
+  "current_phase": "research",
   "current_cycle": 1,
-  "last_cycle": 0,
+  "last_cycle": 1,
   "cycle_history": [],
   "required_phases": [
     "research",
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Safeguarding template parameters",
+  "skip_reason": "Return to active research after safeguarding",
   "issue_title": "tooling: Resolve TextPresenter formatting gaps",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-15T18:05:54.913802+00:00",
@@ -44,6 +44,14 @@
       "human_approval": "approved",
       "forced": true,
       "skip_reason": "Safeguarding template parameters"
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "research",
+      "timestamp": "2026-06-17T15:40:36.585823+00:00",
+      "human_approval": "approved",
+      "forced": true,
+      "skip_reason": "Return to active research after safeguarding"
     }
   ],
   "reconstructed": false,
