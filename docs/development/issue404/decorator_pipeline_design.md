@@ -1,9 +1,9 @@
 <!-- docs\development\issue404\decorator_pipeline_design.md -->
-<!-- template=design version=5827e841 created=2026-06-16T15:17Z updated=2026-06-17T13:15Z -->
+<!-- template=design version=5827e841 created=2026-06-16T15:17Z updated=2026-06-17T13:20Z -->
 # Error Handling & Decorator Pipeline (Issue #404)
 
 **Status:** APPROVED  
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** 2026-06-17  
 
 ---
@@ -211,6 +211,23 @@ The `handle_call_tool` method inside the Server will:
 3. Check if the DTO inherits from `ToolErrorOutput` (setting `isError=True` in the MCP protocol response if so).
 4. Return the formatted text to the LLM.
 
+### 4.6. Logging, stdio, and stderr Handling
+
+Because the MCP server uses `sys.stdout` as its communication channel (transport layer) to exchange JSON-RPC packets with the client/IDE, standard output and error redirection must be handled with extreme care:
+
+1. **Logger Access:**
+   - All decorators, the `ITool` implementations, and managers have access to the structured logging system via `mcp_server.core.logging.get_logger(__name__)`.
+   - Logging is configured to output JSON-formatted logs to `sys.stderr` and the audit log file (`mcp_server/logs/mcp_audit.log`).
+   - Non-recoverable errors (like unhandled tool exceptions and cache failures) are logged as `ERROR` with their full tracebacks. Recoverable errors (like validation or enforcement failures) do not trigger error-level logs to keep log outputs clean.
+
+2. **Handling `sys.stdout`:**
+   - **No Polluting stdout:** No decorator or tool may write directly to `sys.stdout` (e.g., via `print()`). Doing so corrupts JSON-RPC framing and disconnects the server.
+   - **Subprocess Capture:** All subprocess invocations (e.g., running `git` or `pytest`) must capture stdout/stderr programmatically (e.g., `capture_output=True`) instead of inheriting parent streams. The captured text is packaged into the DTO and returned.
+
+3. **Handling `sys.stderr`:**
+   - Diagnostic logs and system warnings are written to `sys.stderr` because the IDE/client safely routes `sys.stderr` to a separate debug console.
+   - Unhandled exceptions are intercepted by `ToolErrorHandlerDecorator` or `CacheErrorHandlerDecorator` before they bubble to the Python interpreter. The decorators log the traceback to `sys.stderr` via the logger and package it into the error DTO's `traceback` field, keeping the main process execution clean.
+
 ---
 
 ## 5. Phased Implementation & Migration Strategy
@@ -244,3 +261,4 @@ The focus of this phase is backend server refactoring.
 | 1.0 | 2026-06-16 | Agent | Initial draft |
 | 1.1 | 2026-06-17 | Agent | Restored Execution/CacheErrorOutput split, added Double Fault Prevention details, and defined the Phased Migration Strategy. |
 | 1.2 | 2026-06-17 | Agent | Decoupled outer CacheErrorHandler and inner ToolErrorHandler to resolve decorator ordering and eliminate duplicated cache logic. |
+| 1.3 | 2026-06-17 | Agent | Added Section 4.6 specifying structured logging access, sys.stdout pollution prevention, and sys.stderr traceback interception. |
