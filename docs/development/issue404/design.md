@@ -1,8 +1,8 @@
 <!-- docs\development\issue404\design.md -->
-<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T16:05Z -->
+<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T18:35Z -->
 # Design: Resolving TextPresenter Formatting Gaps & Error Propagation
 
-**Status:** APPROVED  
+**Status:** DRAFT  
 **Version:** 1.3.0  
 **Last Updated:** 2026-06-17
 
@@ -68,18 +68,60 @@ Uncaught exceptions, validation errors, and enforcement checks are currently eva
 
 **Rationale:** Allows us to isolate visual presentation formatting fixes and error propagation contract establishment in Issue #404 without a massive backend rewrite, keeping the test suite protected. Placing error DTOs in their own file avoids contaminating `tool_outputs.py` and keeps error types isolated.
 
-### 3.1. Key Design Decisions
+### 3.1. Error DTOs mapping per Category
 
-| Decision | Rationale |
-|----------|-----------|
-| **Fout-DTOs in error_outputs.py** | Keeps error schemas separated from successful tool outputs, avoiding circular dependencies and schema pollution. |
-| **None formatting to '-'** | Approved in chat to present a cleaner, professional representation in structured tables. Configured via `global.formatting.none_value: "-"`. |
-| **Phased Decorator Rollout** | Phase 1 implements error DTO contracts and a temporary bridge in `server.py`; Phase 2 migrates to decorators. Protects API boundaries. |
-| **Dataclass-only Notes** | Decouples notes formatting from Python logic. Note templates are moved to `presentation.yaml` under `global.notes` templates, and Python classes in `operation_notes.py` become pure metadata containers. |
+The 6 system error categories are mapped to their producers and output formats:
 
-### 3.2. Detailed Implementation Architecture
+| Error Category | Description | Producer (Phase 1) | Producer (Phase 2) | Error DTO / Format |
+|:---|:---|:---|:---|:---|
+| **1. Server Startup** | Configuration or bootstrap failures | `bootstrap.py` | `bootstrap.py` | None (Logged only) |
+| **2. Tool Input Schema Validation** | Pydantic validation failures of LLM arguments | `_validate_tool_arguments` in `server.py` | `InputValidationDecorator` | `ValidationErrorOutput` |
+| **3. Tool Platform Errors** | Unexpected infrastructural errors bubbling from tools | `tool.execute()` in `server.py` | `ToolErrorHandlerDecorator` | `ExecutionErrorOutput` |
+| **4. Tool Domain Errors** | Expected business logic failures | `ITool` (Domain logic) | `ITool` (Domain logic) | Domain DTO (success=False) |
+| **5. MCP Server / Cache Errors** | Failures within the caching pipeline itself | `server.py` bridge | `CacheErrorHandlerDecorator` | `CacheErrorOutput` |
+| **6. Enforcement Errors** | Phase-guard or lifecycle rule blocks | `_run_tool_enforcement` in `server.py` | `EnforcementDecorator` | `EnforcementErrorOutput` |
 
-#### 3.2.1. The Error Contract DTOs
+### 3.2. Phase 1 Integration Bridge (Flow Diagram)
+
+The temporary bridge inside `server.py` intercepts errors, writes them to the cache, and formats them:
+
+```mermaid
+graph TD
+    A[Start: handle_call_tool] --> B{Args Validation}
+    B -->|Failed: ValidationError| C[ValidationErrorOutput DTO]
+    B -->|Success| D{Pre-Enforcement}
+    D -->|Failed: MCPError| E[EnforcementErrorOutput DTO]
+    D -->|Success| F[Execute tool.execute]
+    F -->|Raw Exception| G[ExecutionErrorOutput DTO]
+    F -->|Success: DTO / Envelope| H[Extract DTO & run_id]
+    C & E & G --> I{Write to Cache}
+    I -->|Success| J[Wrap in ToolExecutionEnvelope & present]
+    I -->|Failed: CacheError| K[CacheErrorOutput DTO]
+    H --> J
+    J --> L[Run Post-Enforcement]
+    L --> M[Render Notes via note_context]
+    M --> N[Return CallToolResult]
+    K --> O[Present directly as plain text]
+    O --> N
+```
+
+### 3.3. Phase 2 Decorator Pipeline (Flow Diagram)
+
+The long-term decorator architecture for backend execution:
+
+```mermaid
+graph TD
+    Server[MCPServer] --> CacheHandler[CacheErrorHandlerDecorator]
+    CacheHandler --> Publisher[ResourcePublisherDecorator]
+    Publisher --> ToolHandler[ToolErrorHandlerDecorator]
+    ToolHandler --> Validator[InputValidationDecorator]
+    Validator --> Enforcer[EnforcementDecorator]
+    Enforcer --> CoreTool[ITool core]
+```
+
+### 3.4. Detailed Implementation Contracts
+
+#### 3.4.1. The Error Contract DTOs
 We establish a strict taxonomy of errors modeled as DTOs in `mcp_server/schemas/error_outputs.py`:
 
 ```python
@@ -115,7 +157,7 @@ class EnforcementErrorOutput(ToolErrorOutput):
     error_code: str
 ```
 
-#### 3.2.2. Notes Redesign (Topic 1)
+#### 3.4.2. Notes Redesign (Topic 1)
 Operation notes in `operation_notes.py` are simplified to pure metadata dataclasses:
 
 ```python
@@ -153,17 +195,8 @@ global:
     info: "{message}"
 ```
 
-#### 3.2.3. None-Value filter in TextPresenter
-Modify `TextPresenter.present` and next instructions rendering to substitute `None` values with `global.formatting.none_value` (default: `"-"`):
-
-```python
-none_val = self.global_config.get("formatting", {}).get("none_value", "-") if isinstance(self.global_config, dict) else getattr(getattr(self.global_config, "formatting", {}), "none_value", "-")
-
-format_dict = {}
-for key in placeholders:
-    val = data_dict.get(key, "")
-    format_dict[key] = none_val if val is None else val
-```
+#### 3.4.3. None-Value filter in TextPresenter
+`TextPresenter` will substitute `None` values with `global.formatting.none_value` (default: `"-"`) for all placeholders in templates.
 
 ---
 
@@ -199,4 +232,4 @@ run_quality_gates(scope="branch")
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.3.0 | 2026-06-17 | Agent | Consolidated design incorporating error_outputs.py and '-' None formatting decisions |
+| 1.3.0 | 2026-06-17 | Agent | Cleaned design focusing strictly on Phase 1, added error mapping and Mermaid flowcharts |
