@@ -2,7 +2,7 @@
   "branch": "feature/404-resolve-textpresenter-formatting-gaps",
   "issue_number": 404,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": 1,
   "last_cycle": 1,
   "cycle_history": [],
@@ -52,6 +52,14 @@
       "human_approval": "approved",
       "forced": true,
       "skip_reason": "Return to active research after safeguarding"
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-17T15:47:03.991201+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
