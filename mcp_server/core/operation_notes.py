@@ -185,6 +185,11 @@ class NoteContext:
         """Write a note. Preserves insertion order."""
         self._entries.append(note)
 
+    @property
+    def entries(self) -> list[NoteEntry]:
+        """Return all collected note entries."""
+        return self._entries
+
     def of_type(self, t: type[T]) -> Sequence[T]:
         """Return all notes of the given type, in insertion order.
 

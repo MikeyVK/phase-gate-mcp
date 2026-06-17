@@ -18,10 +18,16 @@ from typing import Any
 class MCPError(Exception):
     """Base class for all MCP server exceptions."""
 
-    def __init__(self, message: str, code: str = "ERR_INTERNAL") -> None:
+    def __init__(
+        self,
+        message: str,
+        code: str = "ERR_INTERNAL",
+        params: dict[str, Any] | None = None,
+    ) -> None:
         """Initialize the MCP error."""
         self.message = message
         self.code = code
+        self.params = params or {}
         super().__init__(message)
 
 
@@ -112,9 +118,18 @@ class MetadataParseError(ValidationError):
 class PreflightError(MCPError):
     """Raised when pre-flight checks fail."""
 
-    def __init__(self, message: str) -> None:
+    def __init__(
+        self,
+        message: str,
+        error_code: str | None = None,
+        params: dict[str, Any] | None = None,
+    ) -> None:
         """Initialize the preflight error."""
-        super().__init__(message, code="ERR_PREFLIGHT")
+        super().__init__(
+            message,
+            code=error_code or "ERR_PREFLIGHT",
+            params=params,
+        )
 
 
 class ExecutionError(MCPError):

@@ -43,6 +43,12 @@ from mcp_server.tools.phase_tools import (
     TRANSITION_ADVISORY_NOTE,
 )
 from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.error_outputs import (
+    ValidationErrorOutput,
+    EnforcementErrorOutput,
+    ExecutionErrorOutput,
+    CacheErrorOutput,
+)
 from mcp_server.utils.mcp_converters import (
     convert_tool_result_to_content,
     convert_tool_result_to_mcp_result,
@@ -98,6 +104,8 @@ class MCPServer:
         self.artifact_manager = managers.artifact_manager
         self.pr_status_cache = managers.pr_status_cache
         self.enforcement_runner = managers.enforcement_runner
+        self.response_cache = getattr(managers, "response_cache", None)
+        self.response_cache_manager = self.response_cache
 
         self.server = Server(server_name)
         self.resources = resources
@@ -129,47 +137,100 @@ class MCPServer:
                 }
             },
         )
-        try:
-            model_validated = model_cls(**(arguments or {}))
-            logger.debug(
-                "Arguments validated successfully",
-                extra={
-                    "props": {
-                        "call_id": call_id,
-                        "tool_name": name,
-                    }
-                },
-            )
-            return model_validated
-        except ValidationError as validation_error:
-            logger.warning(
-                "Argument validation failed: %s",
-                validation_error,
-                extra={
-                    "props": {
-                        "call_id": call_id,
-                        "tool_name": name,
-                        "model": model_cls.__name__,
-                        "arguments": arguments,
-                    }
-                },
-            )
-            error_details = str(validation_error)
-            return ToolResult(
-                content=[
-                    {"type": "text", "text": f"Invalid input for {name}: {error_details}"},
-                    {
-                        "type": "resource",
-                        "resource": {
-                            "uri": "schema://validation",
-                            "mimeType": "application/json",
-                            "text": json.dumps(tool.input_schema),
-                        },
-                    },
-                ],
-                is_error=True,
-            )
+        model_validated = model_cls(**(arguments or {}))
+        logger.debug(
+            "Arguments validated successfully",
+            extra={
+                "props": {
+                    "call_id": call_id,
+                    "tool_name": name,
+                }
+            },
+        )
+        return model_validated
+    async def _handle_error_dto(
+        self,
+        tool: ITool,
+        err_dto: BaseModel,
+        start_time: float,
+        call_id: str,
+        note_context: NoteContext | None = None,
+    ) -> CallToolResult:
+        run_id = uuid.uuid4().hex
+        cache_error_occurred = False
+        cache_err_message = ""
 
+        # 1. Try to cache the error DTO
+        if self.response_cache is not None:
+            try:
+                self.response_cache.put(f"pgmcp://cache/runs/{run_id}", err_dto)
+            except Exception as cache_exc:
+                cache_error_occurred = True
+                cache_err_message = str(cache_exc)
+
+        # 2. Present the DTO
+        if cache_error_occurred:
+            # Wrap as CacheErrorOutput
+            cache_dto = CacheErrorOutput(
+                message=cache_err_message,
+                params={"original_error": err_dto.message if hasattr(err_dto, "message") else str(err_dto)},
+            )
+            # Format using plain text directly (double fault prevention)
+            text = f"CacheError: {cache_dto.message}"
+            raw_result = ToolResult(content=[{"type": "text", "text": text}], is_error=True)
+            return self._convert_tool_result_to_mcp_result(raw_result)
+
+        # Present the original error DTO
+        if self.presenter is not None:
+            text = self.presenter.present(
+                tool_name=tool.name,
+                success=False,
+                presentation_category="query",
+                data=err_dto,
+            )
+        else:
+            text = str(err_dto)
+
+        uri = f"pgmcp://cache/runs/{run_id}"
+        full_text = (
+            f"{text}\n\n"
+            f"JSON data for this run is available as an MCP Resource: {uri}"
+        )
+
+        content: list[Any] = [{"type": "text", "text": full_text}]
+        if isinstance(err_dto, ValidationErrorOutput):
+            content.append({
+                "type": "resource",
+                "resource": {
+                    "uri": "schema://validation",
+                    "mimeType": "application/json",
+                    "text": json.dumps(tool.input_schema),
+                },
+            })
+
+        # Append notes if any
+        if note_context is not None and self.presenter is not None:
+            notes = note_context.entries
+            if notes:
+                notes_text = self.presenter.present_notes(tool.name, notes)
+                if notes_text:
+                    content.append({"type": "text", "text": notes_text})
+
+        raw_result = ToolResult(content=content, is_error=True)
+
+        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        logger.debug(
+            "Tool call completed with error",
+            extra={
+                "props": {
+                    "call_id": call_id,
+                    "tool_name": tool.name,
+                    "duration_ms": duration_ms,
+                    "error_type": type(err_dto).__name__,
+                }
+            },
+        )
+        return self._convert_tool_result_to_mcp_result(raw_result)
     def _convert_tool_result_to_content(
         self, result: ToolResult
     ) -> list[TextContent | ImageContent | EmbeddedResource]:
@@ -200,20 +261,13 @@ class MCPServer:
             params=params,
             tool_result=result,
         )
-        try:
-            self.enforcement_runner.run(
-                event=event or "",
-                timing=timing,
-                tool_category=tool_category,
-                enforcement_ctx=enforcement_ctx,
-                note_context=note_context,
-            )
-        except MCPError as exc:
-            if timing == "post" and tool.name in TRANSITION_ADVISORY_TOOL_NAMES:
-                note_context.discard_info_message(TRANSITION_ADVISORY_NOTE)
-            base = ToolResult.error(message=exc.message, error_code=exc.code)
-            return note_context.render_to_response(base)
-        return None
+        self.enforcement_runner.run(
+            event=event or "",
+            timing=timing,
+            tool_category=tool_category,
+            enforcement_ctx=enforcement_ctx,
+            note_context=note_context,
+        )
 
     def setup_handlers(self) -> None:
         """Set up the MCP protocol handlers."""
@@ -277,22 +331,51 @@ class MCPServer:
             for tool in self.tools:
                 if tool.name == name:
                     try:
-                        # Validate arguments
-                        validated = self._validate_tool_arguments(tool, arguments, call_id, name)
-                        # Early return if validation failed
-                        if isinstance(validated, ToolResult):
-                            return self._convert_tool_result_to_mcp_result(validated)
-
                         note_context = NoteContext()
 
-                        pre_result = self._run_tool_enforcement(
-                            tool, "pre", validated, note_context=note_context
-                        )
-                        if pre_result is not None:
-                            return self._convert_tool_result_to_mcp_result(pre_result)
+                        try:
+                            # Validate arguments
+                            validated = self._validate_tool_arguments(tool, arguments, call_id, name)
+                        except ValidationError as val_exc:
+                            err_dto = ValidationErrorOutput(
+                                message="Validation failed",
+                                validation_errors=val_exc.errors(),
+                                input_schema=tool.input_schema,
+                                params=arguments or {},
+                            )
+                            return await self._handle_error_dto(tool, err_dto, start_time, call_id)
+
+                        try:
+                            self._run_tool_enforcement(
+                                tool, "pre", validated, note_context=note_context
+                            )
+                        except MCPError as exc:
+                            logger.error(
+                                "Enforcement check failed: exc=%r, code=%r, params=%r",
+                                exc,
+                                getattr(exc, "code", None),
+                                getattr(exc, "params", None),
+                            )
+                            err_dto = EnforcementErrorOutput(
+                                message=exc.message,
+                                error_code=exc.code,
+                                params=exc.params or {},
+                            )
+                            return await self._handle_error_dto(tool, err_dto, start_time, call_id, note_context)
 
                         # Execute tool
-                        raw_result = await tool.execute(validated, note_context)
+                        try:
+                            raw_result = await tool.execute(validated, note_context)
+                        except Exception as exec_exc:
+                            if isinstance(exec_exc, asyncio.CancelledError):
+                                raise
+                            import traceback
+                            err_dto = ExecutionErrorOutput(
+                                message=str(exec_exc),
+                                traceback=traceback.format_exc(),
+                                params=arguments or {},
+                            )
+                            return await self._handle_error_dto(tool, err_dto, start_time, call_id, note_context)
 
                         from mcp_server.tools.base import ToolExecutionEnvelope  # noqa: PLC0415
 
@@ -322,23 +405,37 @@ class MCPServer:
                             f"JSON data for this run is available as an MCP Resource: {uri}"
                         )
                         raw_result = ToolResult.text(full_text)
-                        if not raw_result.is_error:
-                            post_result = self._run_tool_enforcement(
-                                tool,
-                                "post",
-                                validated,
-                                note_context=note_context,
-                                result=raw_result,
-                            )
-                            if post_result is not None:
-                                return self._convert_tool_result_to_mcp_result(post_result)
 
-                        # Render notes and convert result to MCP content
-                        result = note_context.render_to_response(raw_result)
-                        response_content = self._convert_tool_result_to_mcp_result(result)
+                        if not raw_result.is_error:
+                            try:
+                                self._run_tool_enforcement(
+                                    tool,
+                                    "post",
+                                    validated,
+                                    note_context=note_context,
+                                    result=raw_result,
+                                )
+                            except MCPError as exc:
+                                if tool.name in TRANSITION_ADVISORY_TOOL_NAMES:
+                                    note_context.discard_info_message(TRANSITION_ADVISORY_NOTE)
+                                err_dto = EnforcementErrorOutput(
+                                    message=exc.message,
+                                    error_code=exc.code,
+                                    params=exc.params or {},
+                                )
+                                return await self._handle_error_dto(tool, err_dto, start_time, call_id, note_context)
+
+                        # Retrieve and format operation notes (decoupled)
+                        notes = note_context.entries
+                        if self.presenter is not None and notes:
+                            notes_text = self.presenter.present_notes(tool.name, notes)
+                            if notes_text:
+                                augmented = list(raw_result.content) + [{"type": "text", "text": notes_text}]
+                                raw_result = raw_result.model_copy(update={"content": augmented})
+
+                        response_content = self._convert_tool_result_to_mcp_result(raw_result)
 
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
-
                         logger.debug(
                             "Tool call completed",
                             extra={
@@ -364,7 +461,6 @@ class MCPServer:
                         )
                         raise
                     except (KeyError, AttributeError, TypeError) as e:
-                        # Response processing error (dict access, attribute access, type issues)
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.error(
                             "Response processing failed: %s",

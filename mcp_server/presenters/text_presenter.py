@@ -165,7 +165,27 @@ class TextPresenter:
 
         # Fallback for failure template
         if not success and not template:
-            template = self._get_default_failure_template()
+            # Try to resolve template via error_code if present
+            error_code = None
+            if isinstance(data, BaseModel):
+                error_code = getattr(data, "error_code", None)
+                if not error_code and hasattr(data, "params") and isinstance(data.params, dict):
+                    error_code = data.params.get("error_code")
+            elif isinstance(data, dict):
+                error_code = data.get("error_code")
+                if not error_code and isinstance(data.get("params"), dict):
+                    error_code = data.get("params", {}).get("error_code")
+
+            failures = {}
+            if isinstance(self.global_config, dict):
+                failures = self.global_config.get("failures", {})
+            else:
+                failures = getattr(self.global_config, "failures", {})
+
+            if error_code and error_code in failures:
+                template = failures[error_code]
+            else:
+                template = self._get_default_failure_template()
 
         # Format template if we have one, otherwise dump/default representation
         if template:
@@ -180,8 +200,18 @@ class TextPresenter:
                         placeholders.append(field_name.split(".")[0].split("[")[0])
 
                 format_dict = {}
+                params_dict = data_dict.get("params", {}) or {}
                 for key in placeholders:
-                    format_dict[key] = data_dict.get(key, None)
+                    val = None
+                    if key in data_dict:
+                        val = data_dict[key]
+                    elif isinstance(params_dict, dict) and key in params_dict:
+                        val = params_dict[key]
+                    elif key == "error_message" and "message" in data_dict:
+                        val = data_dict["message"]
+                    elif key == "message" and "error_message" in data_dict:
+                        val = data_dict["error_message"]
+                    format_dict[key] = val
 
                 text = formatter.format(template, **format_dict)
             except Exception as exc:
@@ -189,7 +219,6 @@ class TextPresenter:
         else:
             # If no template is found, use a fallback text or DTO string
             text = data_dict.get("message") or data_dict.get("error_message") or str(data_dict)
-
         # 3. Prepend emoji prefix
         emojis = self._get_emoji_config()
         emoji = ""
@@ -219,7 +248,7 @@ class TextPresenter:
             text = f"{emoji} {text}"
 
         # 4. Resolve and append next instructions
-        if next_instructions:
+        if success and next_instructions:
             instruction_texts = self.get_next_instruction_texts()
             for key in next_instructions:
                 raw_text = instruction_texts.get(key, "")

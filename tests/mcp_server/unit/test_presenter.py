@@ -112,7 +112,7 @@ class TestTextPresenter:
             tool_name="dummy_tool", success=False, presentation_category="query", data=dto
         )
 
-        assert text == "❌ Error: Something failed\n\n🚀 TEST ADVISORY WARNING"
+        assert text == "❌ Error: Something failed"
 
     def test_present_failure_fallback(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting failure output falling back to default template."""

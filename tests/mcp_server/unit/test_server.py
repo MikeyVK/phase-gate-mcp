@@ -399,7 +399,7 @@ class TestServerToolRegistration:
 
         assert "Transitioned phase to" in response.root.content[0].text
         assert len(response.root.content) == 2
-        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -451,7 +451,7 @@ class TestServerToolRegistration:
 
         assert "Transitioned phase to" in response.root.content[0].text
         assert len(response.root.content) == 2
-        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -679,7 +679,9 @@ async def test_call_tool_handles_itool_bridge() -> None:
 
 @pytest.mark.asyncio
 async def test_handle_call_tool_validation_error_intercept() -> None:
-    """ValidationError in handle_call_tool should map to ValidationErrorOutput DTO, cache it, and format it."""
+    """ValidationError in handle_call_tool should map to ValidationErrorOutput DTO,
+    cache it, and format it.
+    """
     from pydantic import BaseModel, Field  # noqa: PLC0415
     from mcp_server.schemas.error_outputs import ValidationErrorOutput  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
@@ -701,6 +703,10 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return DummyArgs
 
+        @property
+        def input_schema(self) -> dict[str, Any]:
+            return {"type": "object", "properties": {"val": {"type": "integer"}}}
+
         async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
             return ToolResult.text("success")
 
@@ -712,7 +718,7 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
                 "default_failure_template": "Failure: {error_message}",
                 "emojis": {"failure": "❌"},
             },
-            "tools": {}
+            "tools": {},
         }
         presenter = TextPresenter(config_data=config_data)
 
@@ -738,11 +744,12 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
         # Check response content contains the cache message
         content = response.root.content
         assert len(content) == 2  # The formatted text + the schema resource
-        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        text = getattr(content[0], "text", "")
         assert "❌ Failure: Validation failed" in text
         assert "pgmcp://cache/runs/" in text
 
         import re  # noqa: PLC0415
+
         match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text)
         assert match is not None
         run_id = match.group(1)
@@ -756,7 +763,9 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
 
 @pytest.mark.asyncio
 async def test_handle_call_tool_enforcement_error_intercept() -> None:
-    """MCPError in enforcement runner should map to EnforcementErrorOutput DTO, cache it, and format it."""
+    """MCPError in enforcement runner should map to EnforcementErrorOutput DTO,
+    cache it, and format it.
+    """
     from pydantic import BaseModel  # noqa: PLC0415
     from mcp_server.schemas.error_outputs import EnforcementErrorOutput  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
@@ -776,6 +785,14 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return None
 
+        @property
+        def input_schema(self) -> dict[str, Any]:
+            return {"type": "object", "properties": {}}
+
+        @property
+        def enforcement_event(self) -> str:
+            return "test_event"
+
         async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
             return ToolResult.text("success")
 
@@ -786,11 +803,9 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
             "global": {
                 "default_failure_template": "Failure: {error_message}",
                 "emojis": {"failure": "❌"},
-                "failures": {
-                    "dirty_workdir": "Dirty: {branch}"
-                }
+                "failures": {"dirty_workdir": "Dirty: {branch}"},
             },
-            "tools": {}
+            "tools": {},
         }
         presenter = TextPresenter(config_data=config_data)
 
@@ -804,7 +819,9 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
 
         # Force enforcement runner to raise MCPError
         with patch.object(server.enforcement_runner, "run") as mock_run:
-            mock_run.side_effect = MCPError(code="dirty_workdir", message="Workdir is dirty", params={"branch": "main"})
+            mock_run.side_effect = MCPError(
+                code="dirty_workdir", message="Workdir is dirty", params={"branch": "main"}
+            )
 
             handler = server.server.request_handlers[CallToolRequest]
 
@@ -818,11 +835,12 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
 
         content = response.root.content
         assert len(content) == 1
-        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        text = getattr(content[0], "text", "")
         assert "❌ Dirty: main" in text
         assert "pgmcp://cache/runs/" in text
 
         import re  # noqa: PLC0415
+
         match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text)
         assert match is not None
         run_id = match.group(1)
@@ -837,7 +855,9 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
 
 @pytest.mark.asyncio
 async def test_handle_call_tool_execution_error_intercept() -> None:
-    """Execution exceptions in tool should map to ExecutionErrorOutput DTO, cache it, and format it."""
+    """Execution exceptions in tool should map to ExecutionErrorOutput DTO,
+    cache it, and format it.
+    """
     from pydantic import BaseModel  # noqa: PLC0415
     from mcp_server.schemas.error_outputs import ExecutionErrorOutput  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
@@ -856,6 +876,10 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return None
 
+        @property
+        def input_schema(self) -> dict[str, Any]:
+            return {"type": "object", "properties": {}}
+
         async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
             raise ValueError("Execution failed completely")
 
@@ -867,7 +891,7 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
                 "default_failure_template": "Failure: {error_message}",
                 "emojis": {"failure": "❌"},
             },
-            "tools": {}
+            "tools": {},
         }
         presenter = TextPresenter(config_data=config_data)
 
@@ -891,11 +915,12 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
 
         content = response.root.content
         assert len(content) == 1
-        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        text = getattr(content[0], "text", "")
         assert "❌ Failure: Execution failed completely" in text
         assert "pgmcp://cache/runs/" in text
 
         import re  # noqa: PLC0415
+
         match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text)
         assert match is not None
         run_id = match.group(1)
@@ -910,7 +935,9 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
 
 @pytest.mark.asyncio
 async def test_handle_call_tool_cache_error_intercept() -> None:
-    """Caching exceptions should map to CacheErrorOutput DTO, and be returned as plain text without crashing."""
+    """Caching exceptions should map to CacheErrorOutput DTO,
+    and be returned as plain text without crashing.
+    """
     from pydantic import BaseModel  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
     from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
@@ -928,6 +955,10 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return None
 
+        @property
+        def input_schema(self) -> dict[str, Any]:
+            return {"type": "object", "properties": {}}
+
         async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
             raise ValueError("Execution failed completely")
 
@@ -939,7 +970,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
                 "default_failure_template": "Failure: {error_message}",
                 "emojis": {"failure": "❌"},
             },
-            "tools": {}
+            "tools": {},
         }
         presenter = TextPresenter(config_data=config_data)
 
@@ -965,7 +996,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
 
         content = response.root.content
         assert len(content) == 1
-        text = content[0]["text"] if isinstance(content[0], dict) else getattr(content[0], "text", "")
+        text = getattr(content[0], "text", "")
         # Should return direct text block with cache error details, no resource cached
         assert "CacheError" in text
         assert "Cache disk failure" in text
