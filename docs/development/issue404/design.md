@@ -1,9 +1,9 @@
 <!-- docs\development\issue404\design.md -->
-<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T21:45Z -->
+<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T21:52Z -->
 # Design: Resolving TextPresenter Formatting Gaps & Error Propagation
 
 **Status:** DRAFT  
-**Version:** 1.5.0  
+**Version:** 1.6.0  
 **Last Updated:** 2026-06-17
 
 ---
@@ -59,6 +59,14 @@ The blast radius for note production and exception refactoring spans the followi
 | **Managers** | [git_manager.py](file:///c:/temp/pgmcp/mcp_server/managers/git_manager.py) | Produces blockers, suggestions, and exceptions for git tools. |
 | **Managers** | [enforcement_runner.py](file:///c:/temp/pgmcp/mcp_server/managers/enforcement_runner.py) | Validates phase/cycle transitions, raises enforcement/validation errors, and produces notes. |
 | **Managers** | [qa_manager.py](file:///c:/temp/pgmcp/mcp_server/managers/qa_manager.py) | Raises custom quality check exceptions and formats E2E warnings/notes. |
+| **Managers** | [artifact_manager.py](file:///c:/temp/pgmcp/mcp_server/managers/artifact_manager.py) | Coordinates templates and artifact generation metadata. |
+| **Managers** | [deliverable_checker.py](file:///c:/temp/pgmcp/mcp_server/managers/deliverable_checker.py) | Validates and verifies planning and phase deliverables. |
+| **Managers** | [phase_state_engine.py](file:///c:/temp/pgmcp/mcp_server/managers/phase_state_engine.py) | Coordinates lifecycle states and branch phase history. |
+| **Adapters** | [git_adapter.py](file:///c:/temp/pgmcp/mcp_server/adapters/git_adapter.py) | Wraps raw Git commands and processes output streams. |
+| **Adapters** | [github_adapter.py](file:///c:/temp/pgmcp/mcp_server/adapters/github_adapter.py) | Wraps GitHub API calls for issue and PR coordination. |
+| **Adapters** | [filesystem.py](file:///c:/temp/pgmcp/mcp_server/adapters/filesystem.py) | Wraps local disk read/write and file editing safety. |
+| **Configuration** | [loader.py](file:///c:/temp/pgmcp/mcp_server/config/loader.py) | Loads server boot configurations and parses YAML presentation keys. |
+| **Configuration** | [validator.py](file:///c:/temp/pgmcp/mcp_server/config/validator.py) | Performs configuration validator checks and runs drift alignment validation. |
 | **Adapters / Tools** | [admin_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/admin_tools.py) | Executes server health/restart logic and handles platform/execution errors. |
 | **Adapters / Tools** | [cycle_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/cycle_tools.py) | Formats cycle/phase transitions and removes python advisory notes in favor of configuration templates. |
 | **Adapters / Tools** | [discovery_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/discovery_tools.py) | Performs repository scans and documentation queries, raising custom/external failures. |
@@ -67,7 +75,6 @@ The blast radius for note production and exception refactoring spans the followi
 | **Adapters / Tools** | [pr_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/pr_tools.py) | Coordinates E2E PR creation and merges. |
 | **Adapters / Tools** | [label_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/label_tools.py) | Coordinates GitHub label creation and updates. |
 | **Adapters / Tools** | [milestone_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/milestone_tools.py) | Coordinates GitHub milestone creation and updates. |
-
 ---
 
 ## 2. Design Options
@@ -154,7 +161,7 @@ class ToolErrorOutput(BaseModel):
     error_type: str
     message: str
     traceback: str | None = None
-
+    params: dict[str, Any] = Field(default_factory=dict)
 class ExecutionErrorOutput(ToolErrorOutput):
     """Fails during actual tool execution."""
     error_type: str = "ExecutionError"
@@ -277,10 +284,11 @@ class TextPresenter:
      - Append each note in the group as an indented bullet point (`  - {note_text}`).
 5. **Output:** Return the joined markdown string block, or `None` if no notes were generated.
 
-#### 3.4.5. None-Value filter in TextPresenter
+#### 3.4.5. Safe None-Value Formatter in TextPresenter
 
-`TextPresenter` will substitute `None` values with `global.formatting.none_value` (configured in `presentation.yaml`, default: `"-"`) for all placeholders in success, failure, and note templates.
-
+`TextPresenter` will implement a custom subclass of `string.Formatter` to format placeholders safely. 
+- **Bypass Rule:** If a resolved formatting parameter value is `None`, the custom formatter will bypass any format specifiers (such as `:2f` in `{duration:.2f}` or `:d` in `{count:d}`) and return the configured `global.formatting.none_value` (default: `"-"`).
+- **Rationale:** This prevents standard library `ValueError` or `TypeError` crashes when trying to apply numeric/string format specifiers to `None` values.
 #### 3.4.6. NoteContext Refactoring & Decoupling
 
 `NoteContext` is completely decoupled from visual rendering. It no longer formats messages in Python or calls `to_message()`. Instead, it functions as a pure metadata accumulator:
@@ -336,16 +344,18 @@ To comply with the Config-First principle, custom exceptions raised by our code 
 - **Config Representation:** `global.failures.dirty_workdir: "Branch '{branch}' is not in a clean state -- commit or stash changes."`
 - **Presenter Resolution:** The presenter catches the custom exception, looks up `global.failures.<error_code>`, resolves placeholders, and presents the text. Raw/unexpected external exceptions (e.g., subprocess crashes) fallback to `default_failure_template` using the raw exception message.
 
-##### 3. Strict "No-Message-Backdoor" Rule
+##### 3. Strict "No-Message-Backdoor" Rule & Parameter Blacklist
 To prevent developers from bypassing configuration-driven presentation by passing pre-formatted strings:
-- **Constraint:** The `params` dictionary of any note or custom exception must contain ONLY raw semantic data (file paths, counts, branch names), **never** user-facing sentences, phrases, or pre-formatted strings. No `{message}` or `{error_message}` parameters are allowed in notes or custom exceptions.
-- **Enforcement:** The drift validator (`validate_presentation_alignment`) scans all templates in `presentation.yaml`. If it detects `{message}` or `{error_message}` within any custom note or failure template, it raises a startup `ConfigError`, failing boot. (Note: `{error_message}` is permitted only in `global.default_failure_template` for raw external exceptions).
+- **Constraint:** The `params` dictionary of any note or custom exception must contain ONLY raw semantic data (file paths, counts, branch names, elapsed durations), **never** user-facing sentences, phrases, or pre-formatted strings.
+- **Generic Parameter Blacklist:** The drift validator (`validate_presentation_alignment`) enforces a strict blacklist of generic parameter names within custom note and failure templates:
+  - Blacklisted names: `message`, `msg`, `text`, `txt`, `error_message`, `error`, `err`.
+- **Enforcement:** The drift validator scans all templates in `presentation.yaml`. If it detects any of these blacklisted parameter names within any custom note or failure template, it raises a startup `ConfigError`, failing boot immediately. (Note: `{error_message}` is permitted only in `global.default_failure_template` for raw external exceptions).
 
 ##### 4. Drift Validator Extension (`validate_presentation_alignment`)
 We extend the drift validator to verify that:
 - All placeholders inside `global.failures.<error_type>` exist as fields in the corresponding `ToolErrorOutput` DTO class or custom exception class.
-- Placeholders in tool-local and global note templates correspond to the constructor parameters of the mapped note classes (e.g. `Note` event parameters).
-- The strict "No-Message-Backdoor" rule is validated for all templates during startup.
+- Placeholders in tool-local and global note templates correspond to the constructor parameters of the mapped note classes (e.g., `Note` event parameters).
+- The strict "No-Message-Backdoor" parameter blacklist is validated for all templates during startup.
 
 ## 4. Test & Verification Plan
 
@@ -382,3 +392,4 @@ run_quality_gates(scope="branch")
 | 1.3.0 | 2026-06-17 | Agent | Cleaned design focusing strictly on Phase 1, added error mapping and Mermaid flowcharts |
 | 1.4.0 | 2026-06-17 | Agent | Incorporated configuration schemas, Note Rendering Loop details, Backward Compatibility mapper, strict No-Message-Backdoor rules, and Drift Validator extensions |
 | 1.5.0 | 2026-06-17 | Agent | Integrated QA NOGO review: generic Note class, shared fallback notes, Exception Code mapping, NoteContext decoupling, and comprehensive drift validation |
+| 1.6.0 | 2026-06-17 | Agent | Resolved QA verdict gaps: expanded blast radius scope, added params to ToolErrorOutput, designed string.Formatter subclass for safe None-value parsing, and blacklisted generic parameter names in drift validation |
