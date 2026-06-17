@@ -1,9 +1,9 @@
 <!-- docs\development\issue404\design.md -->
-<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T21:35Z -->
+<!-- template=design version=5827e841 created=2026-06-17T15:59Z updated=2026-06-17T21:45Z -->
 # Design: Resolving TextPresenter Formatting Gaps & Error Propagation
 
 **Status:** DRAFT  
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Last Updated:** 2026-06-17
 
 ---
@@ -49,6 +49,24 @@ Uncaught exceptions, validation errors, and enforcement checks are currently eva
 - The MCP server uses `sys.stdout` for JSON-RPC transport; no direct print to stdout is allowed.
 - All DTOs must be frozen (`frozen=True`, `extra='forbid'`).
 - The Approved Strategy must be explicitly defined per boundary (Topic 1: Notes Redesign, Topic 2: Error Presentation).
+
+### 1.4. Blast Radius & Traceability
+
+The blast radius for note production and exception refactoring spans the following components, managers, and adapters:
+
+| Component Type | File / Path | Role in Issue #404 |
+|:---|:---|:---|
+| **Managers** | [git_manager.py](file:///c:/temp/pgmcp/mcp_server/managers/git_manager.py) | Produces blockers, suggestions, and exceptions for git tools. |
+| **Managers** | [enforcement_runner.py](file:///c:/temp/pgmcp/mcp_server/managers/enforcement_runner.py) | Validates phase/cycle transitions, raises enforcement/validation errors, and produces notes. |
+| **Managers** | [qa_manager.py](file:///c:/temp/pgmcp/mcp_server/managers/qa_manager.py) | Raises custom quality check exceptions and formats E2E warnings/notes. |
+| **Adapters / Tools** | [admin_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/admin_tools.py) | Executes server health/restart logic and handles platform/execution errors. |
+| **Adapters / Tools** | [cycle_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/cycle_tools.py) | Formats cycle/phase transitions and removes python advisory notes in favor of configuration templates. |
+| **Adapters / Tools** | [discovery_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/discovery_tools.py) | Performs repository scans and documentation queries, raising custom/external failures. |
+| **Adapters / Tools** | [git_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/git_tools.py) | Interacts with git commands, stashing, and commits, producing notes/exceptions. |
+| **Adapters / Tools** | [issue_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/issue_tools.py) | Coordinates issue CRUD and label/milestone assembly. |
+| **Adapters / Tools** | [pr_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/pr_tools.py) | Coordinates E2E PR creation and merges. |
+| **Adapters / Tools** | [label_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/label_tools.py) | Coordinates GitHub label creation and updates. |
+| **Adapters / Tools** | [milestone_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/milestone_tools.py) | Coordinates GitHub milestone creation and updates. |
 
 ---
 
@@ -201,37 +219,26 @@ class ToolPresentationConfig(BaseModel):
     info: dict[str, str] = Field(default_factory=dict)
 ```
 
-#### 3.4.3. Notes Redesign (Topic 1)
+#### 3.4.3. Notes Redesign & Generic Note Dataclass (Topic 1)
 
-Operation notes in `operation_notes.py` are simplified to pure metadata dataclasses:
+To make `presentation.yaml` the single source of truth for all note rendering, we deprecate and remove all subclassed note types (`ExclusionNote`, `BlockerNote`, `RecoveryNote`, `InfoNote`, `SuggestionNote`). We introduce a single, generic metadata dataclass in `operation_notes.py`:
 
 ```python
 @dataclass(frozen=True)
-class OperationNote:
-    """Base class for all presenter-driven metadata notes."""
-    pass
-
-@dataclass(frozen=True)
-class ExclusionNote(OperationNote):
-    file_path: str
-
-@dataclass(frozen=True)
-class SuggestionNote(OperationNote):
-    subject: str
-    message: str  # Kept temporarily for backward compatibility
-
-@dataclass(frozen=True)
-class BlockerNote(OperationNote):
-    message: str  # Kept temporarily for backward compatibility
-
-@dataclass(frozen=True)
-class RecoveryNote(OperationNote):
-    message: str  # Kept temporarily for backward compatibility
-
-@dataclass(frozen=True)
-class InfoNote(OperationNote):
-    message: str  # Kept temporarily for backward compatibility
+class Note:
+    """Generic presentation-driven metadata note.
+    
+    All layout, text formatting, and emojis are configured declaratively
+    in presentation.yaml under the corresponding key.
+    """
+    key: str
+    params: dict[str, Any] = field(default_factory=dict)
 ```
+
+During Phase 1 migration:
+- Legacy subclasses are kept in Python temporarily as deprecated stubs to protect existing unit test assertions.
+- A compatibility mapper (see below) translates legacy notes to generic `Note` entries.
+- At the end of the issue, all legacy subclasses, the mapper, and legacy `to_message()` methods are deleted (Clean Break).
 
 #### 3.4.4. Note Rendering Loop & Multiplicity
 
@@ -241,7 +248,7 @@ class InfoNote(OperationNote):
 class TextPresenter:
     # Existing methods omitted for brevity
 
-    def present_notes(self, tool_name: str, notes: list[NoteEntry]) -> str | None:
+    def present_notes(self, tool_name: str, notes: list[Note]) -> str | None:
         """Formats and groups note entries into a single markdown block.
         
         Args:
@@ -254,28 +261,55 @@ class TextPresenter:
 ```
 
 **Algorithmic Rendering Loop Steps:**
-1. **Configuration Lookup:** Retrieve the active tool's local configuration (`tool_cfg`) and global note groups config (`groups_cfg` from `global.notes.groups`).
+1. **Configuration Lookup:** Retrieve the active tool's local configuration (`tool_cfg`) and the global note groups configuration (`groups_cfg` under `global.notes.groups`).
 2. **Grouping Initialization:** Initialize a dictionary mapping each group name (e.g., `exclusions`, `suggestions`, `recoveries`, `info`) to an empty list.
 3. **Note Resolution:** For each note entry in `notes`:
-   - Map legacy typed notes to their key-parameter dictionary representation via the compatibility mapper.
-   - Resolve the template template string:
-     - Check the tool-local template: `tool_cfg.<group_name>.<key>`.
-     - Fallback to the global template: `global.notes.templates.<group_name>.<key>`.
-   - Substitute template placeholders using parameters (applying the None-Value replacement filter).
+   - Map legacy typed notes to their key-parameter representation using the compatibility mapper.
+   - Resolve the template string using the following lookup path precedence:
+     - **Path 1 (Tool-local):** Look up `tool_cfg.<group_name>.<key>`.
+     - **Path 2 (Global Fallback):** Look up `global.notes.templates.<group_name>.<key>`.
+   - Substitute template placeholders using `params` (applying the None-Value replacement filter).
    - Append the rendered note to the corresponding group list.
 4. **Markdown Generation:**
-   - Iterate through groups in priority order: `exclusions`, `suggestions`, `recoveries`, `info`.
-   - If a group has rendered notes, append the group's emoji and header (e.g., `🚫 Excluded files:`).
-   - Append each note in the group as an indented bullet point (`  - {note_text}`).
+   - Iterate through the group names in priority order: `exclusions`, `suggestions`, `recoveries`, `info`.
+   - If a group has rendered notes:
+     - Append the group's emoji and header (e.g., `🚫 Excluded files:`).
+     - Append each note in the group as an indented bullet point (`  - {note_text}`).
 5. **Output:** Return the joined markdown string block, or `None` if no notes were generated.
 
 #### 3.4.5. None-Value filter in TextPresenter
 
 `TextPresenter` will substitute `None` values with `global.formatting.none_value` (configured in `presentation.yaml`, default: `"-"`) for all placeholders in success, failure, and note templates.
 
-#### 3.4.6. Backward Compatibility Mapper (Phase 1 Bridge)
+#### 3.4.6. NoteContext Refactoring & Decoupling
 
-During Phase 1, `NoteContext.render_to_response` routes note formatting requests through `TextPresenter.present_notes`. A translation mapper maps legacy typed notes to generic key-parameter tuples:
+`NoteContext` is completely decoupled from visual rendering. It no longer formats messages in Python or calls `to_message()`. Instead, it functions as a pure metadata accumulator:
+
+```python
+@dataclass
+class NoteContext:
+    _entries: list[Note | LegacyNote] = field(default_factory=list)
+
+    def produce(self, note: Note | LegacyNote) -> None:
+        """Collects a note event."""
+
+    def of_type(self, t: type[T]) -> Sequence[T]:
+        """Filters collected notes by type (retained for backward compatibility)."""
+
+    @property
+    def entries(self) -> list[Note | LegacyNote]:
+        """Returns the list of all collected note events."""
+```
+
+**Integration Bridge Flow (server.py):**
+1. `server.py` receives the return DTO from tool execution or error mapping.
+2. `server.py` retrieves the accumulated note list: `notes = context.entries`.
+3. `server.py` calls `TextPresenter.present_notes(tool_name, notes)`.
+4. If a markdown block is returned, the server appends it as a new text content block to the final `ToolResult`'s content list.
+
+#### 3.4.7. Backward Compatibility Mapper (Phase 1 Bridge)
+
+To allow incremental migration of note producers across managers and adapters, a translation mapper maps legacy typed notes to generic key-parameter tuples:
 
 ```python
 def map_legacy_note_to_event(note: NoteEntry) -> tuple[str, dict[str, Any]]:
@@ -291,13 +325,13 @@ def map_legacy_note_to_event(note: NoteEntry) -> tuple[str, dict[str, Any]]:
 
 Legacy `to_message()` Python methods are kept temporarily for backward compatibility with existing unit tests but will be deleted at the end of Issue #404 (Clean Break).
 
-#### 3.4.7. Architectural Rules & Design Refinements
+#### 3.4.8. Architectural Rules & Design Refinements
 
 ##### 1. Global Note Templates Fallback (DRY & SSOT)
-To prevent template duplication across tools, the presenter falls back to `global.notes.templates.<group_name>.<key>` in `presentation.yaml` if a tool-local template is missing.
+To prevent duplicating shared note templates (such as warnings like `"Working directory is not clean"`) across every tool namespace, the presenter will fall back to `global.notes.templates.<group_name>.<key>` in `presentation.yaml` when a tool-local template is missing.
 
 ##### 2. Error Code Mapping for Custom Exceptions
-To comply with the Config-First principle, custom exceptions raised by our code (e.g., `PreflightError`, `ValidationError`, `DeliverableCheckError`) carry an `error_code` and semantic parameters instead of hardcoded strings:
+To comply with the Config-First principle, custom exceptions raised by our code (e.g., `PreflightError`, `ValidationError`, `DeliverableCheckError` in managers) must carry an `error_code` and semantic parameters instead of hardcoded strings:
 - **Exception Signature:** `raise PreflightError(error_code="dirty_workdir", params={"branch": branch})`
 - **Config Representation:** `global.failures.dirty_workdir: "Branch '{branch}' is not in a clean state -- commit or stash changes."`
 - **Presenter Resolution:** The presenter catches the custom exception, looks up `global.failures.<error_code>`, resolves placeholders, and presents the text. Raw/unexpected external exceptions (e.g., subprocess crashes) fallback to `default_failure_template` using the raw exception message.
@@ -309,10 +343,9 @@ To prevent developers from bypassing configuration-driven presentation by passin
 
 ##### 4. Drift Validator Extension (`validate_presentation_alignment`)
 We extend the drift validator to verify that:
-- All placeholders inside `global.failures.<error_type>` exist as fields in the corresponding `ToolErrorOutput` DTO class.
-- Placeholders in tool-local and global note templates correspond to the constructor parameters of the mapped note classes.
-
----
+- All placeholders inside `global.failures.<error_type>` exist as fields in the corresponding `ToolErrorOutput` DTO class or custom exception class.
+- Placeholders in tool-local and global note templates correspond to the constructor parameters of the mapped note classes (e.g. `Note` event parameters).
+- The strict "No-Message-Backdoor" rule is validated for all templates during startup.
 
 ## 4. Test & Verification Plan
 
@@ -348,3 +381,4 @@ run_quality_gates(scope="branch")
 |---------|------|--------|---------|
 | 1.3.0 | 2026-06-17 | Agent | Cleaned design focusing strictly on Phase 1, added error mapping and Mermaid flowcharts |
 | 1.4.0 | 2026-06-17 | Agent | Incorporated configuration schemas, Note Rendering Loop details, Backward Compatibility mapper, strict No-Message-Backdoor rules, and Drift Validator extensions |
+| 1.5.0 | 2026-06-17 | Agent | Integrated QA NOGO review: generic Note class, shared fallback notes, Exception Code mapping, NoteContext decoupling, and comprehensive drift validation |
