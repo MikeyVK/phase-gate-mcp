@@ -1,9 +1,9 @@
 <!-- docs\development\issue404\decorator_pipeline_design.md -->
-<!-- template=design version=5827e841 created=2026-06-16T15:17Z updated=2026-06-17T13:00Z -->
+<!-- template=design version=5827e841 created=2026-06-16T15:17Z updated=2026-06-17T13:15Z -->
 # Error Handling & Decorator Pipeline (Issue #404)
 
 **Status:** APPROVED  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-06-17  
 
 ---
@@ -87,16 +87,16 @@ Extract all pre/post processing into a Russian Doll decorator pipeline. Tools re
 
 **Decision:** Implement the "Full Decorator Pipeline" architecture where Validation, Enforcement, Caching, and Error Catching are isolated into dedicated decorators. The MCPServer becomes a pure JSON-RPC orchestrator.
 
-**Rationale:** The decorator pipeline achieves perfect Single Responsibility. By placing the Validator inside the Publisher, validation errors are cached automatically. By placing the ErrorHandler at the outermost edge, the server is shielded from both tool crashes and cache failures.
+**Rationale:** The decorator pipeline achieves perfect Single Responsibility. By placing the Validator inside the Publisher, validation errors are cached automatically. By splitting error handling into two distinct decorators—an inner `ToolErrorHandler` and an outer `CacheErrorHandler`—we ensure that unhandled tool exceptions are cleanly mapped to DTOs and cached by the publisher, while cache failures themselves are caught and handled gracefully at the outermost boundary.
 
 ### 3.1. Key Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
 | **ToolErrorOutput Hierarchy** | Defines a strict error contract with distinct DTOs for execution (`ExecutionErrorOutput`), validation (`ValidationErrorOutput`), enforcement (`EnforcementErrorOutput`), and cache failures (`CacheErrorOutput`). |
-| **ErrorHandlerDecorator wraps ResourcePublishingDecorator** | Ensures that if the cache publisher crashes (e.g. disk failure), the ErrorHandler catches it and protects the server. |
-| **ResourcePublishingDecorator wraps InputValidationDecorator** | Ensures that Pydantic validation errors (and their massive `input_schema`s) are automatically cached, preventing LLM context pollution. |
-| **Double Fault Prevention** | If the cache itself fails while the ErrorHandler tries to cache a traceback, the ErrorHandler returns the error DTO directly without a run ID to prevent cascading failures. |
+| **Two-Tier Error Handling** | Splitting error handling into `CacheErrorHandler` (outermost) and `ToolErrorHandler` (inner) solves the ordering problem. Tool errors are mapped to DTOs and cached by the publisher. Cache/publishing errors are caught by the outer handler. |
+| **ResourcePublishingDecorator wraps ToolErrorHandlerDecorator** | Ensures that unexpected tool crashes caught by the inner error handler are returned as `ExecutionErrorOutput` DTOs, allowing the publisher to cache them exactly like successful results. |
+| **Double Fault Prevention** | If the publisher/cache throws a `CacheError` (e.g. disk full) when attempting to cache an execution error or a normal result, the outer `CacheErrorHandler` catches it and returns a `CacheErrorOutput` directly to the server without attempting to write to the broken cache. |
 
 ---
 
@@ -144,62 +144,62 @@ To ensure clarity, each error type is produced by exactly one layer in the pipel
 | **`ValidationErrorOutput`** | `InputValidationDecorator` | Pydantic validation of LLM arguments fails. |
 | **`EnforcementErrorOutput`**| `EnforcementDecorator` | Phase guard or lifecycle rule blocks execution. |
 | **Domain DTO (success=False)**| `ITool` (Domain Logic) | Expected domain failures (e.g., tests fail, no search hits). |
-| **`ExecutionErrorOutput`** | `ErrorHandlerDecorator` | Caught unhandled exception bubbling from `ITool`, `EnforcementDecorator`, or `InputValidationDecorator`. |
-| **`CacheErrorOutput`** | `ErrorHandlerDecorator` | Caught unhandled exception bubbling from `ResourcePublishingDecorator` (e.g., disk full). |
+| **`ExecutionErrorOutput`** | `ToolErrorHandlerDecorator` | Caught unhandled exception bubbling from `ITool`, `EnforcementDecorator`, or `InputValidationDecorator`. |
+| **`CacheErrorOutput`** | `CacheErrorHandlerDecorator` | Caught unhandled exception bubbling from `ResourcePublishingDecorator` (e.g., disk full, write permissions). |
 
 ### 4.3. Pipeline Assembly (`mcp_server/bootstrap.py`)
 The `ToolFactory` builds the execution chain like a Russian doll, from the outside in:
-`Server -> ErrorHandler -> ResourcePublisher -> Validator -> Enforcer -> ITool`
+`Server -> CacheErrorHandler -> ResourcePublisher -> ToolErrorHandler -> Validator -> Enforcer -> ITool`
 
 **Execution Flow (Outside-in):**
 1. **Server:** Receives the argument `dict` from the LLM and blindly passes it to the outermost decorator.
-2. **ErrorHandler:** Begins a sweeping `try/except Exception` block to catch any unhandled crashes from deeper layers.
-3. **ResourcePublisher:** Prepares to cache whatever the inner layers return (whether success or error DTO).
-4. **Validator:** Attempts to parse the `dict` into the Pydantic `args_model`. If it fails, execution halts and it returns a `ValidationErrorOutput` (including the `input_schema`) back to the Publisher for caching.
-5. **Enforcer:** Checks business rules (e.g., "Wrong Phase"). If blocked, it returns an `EnforcementErrorOutput`.
-6. **ITool:** Executes pure domain logic.
+2. **CacheErrorHandler:** Begins a `try/except Exception` block to catch cache/filesystem write failures bubbling from the `ResourcePublisher`.
+3. **ResourcePublisher:** Attempts to cache all returning DTOs (success DTOs, `ValidationErrorOutput`, `EnforcementErrorOutput`, `ExecutionErrorOutput`) and wraps them in a `ToolExecutionEnvelope` containing a generated `run_id`.
+4. **ToolErrorHandler:** Begins a `try/except Exception` block to catch unhandled crashes from the tool execution and wraps them in an `ExecutionErrorOutput` DTO.
+5. **Validator:** Attempts to parse the `dict` into the Pydantic `args_model`. If it fails, execution halts and it returns a `ValidationErrorOutput` (including the `input_schema`) back to the publisher.
+6. **Enforcer:** Checks business rules (e.g., "Wrong Phase"). If blocked, it returns an `EnforcementErrorOutput`.
+7. **ITool:** Executes pure domain logic.
 
-### 4.4. Platform Errors & Double Fault Prevention
-If the `ITool` encounters an unexpected infrastructure failure (e.g., a Git subprocess crashes hard, or the GitHub API is down), the tool should simply crash. We explicitly avoid writing hundreds of defensive `try...except OSError` blocks across 50 tools (DRY principle). 
-Because the tool crashes, the exception forcefully bubbles through the Enforcer, Validator, and Publisher. It is finally **safely caught by the ErrorHandler** at the outermost edge. 
+### 4.4. Two-Tier Error Handling & Double Fault Prevention
+By splitting the error handling logic, we avoid duplicating cache operations in the error handlers and enforce a strict hierarchy:
 
-The `ErrorHandlerDecorator` intercepts all exceptions and handles them as follows:
-1. It maps the exception to the correct error DTO (`ExecutionErrorOutput` for execution failures; `CacheErrorOutput` for cache-related exceptions).
-2. It attempts to generate a `run_id` and publish the error DTO to the cache so tracebacks do not pollute the LLM chat window.
-3. If caching succeeds, it wraps the DTO in a `ToolExecutionEnvelope` containing the `run_id` and returns it.
-4. **Double Fault Prevention:** If publishing to the cache fails (e.g., disk is full or read-only), the `ErrorHandlerDecorator` catches this nested exception, appends a warning to the error DTO message, logs the traceback, and returns the error DTO directly to the server *without* wrapping it in a `ToolExecutionEnvelope`.
+1. **Tool Crashes:** When the `ITool` throws an exception, it bubbles past the Enforcer and Validator into the `ToolErrorHandlerDecorator`. The handler maps it to an `ExecutionErrorOutput` DTO and returns it.
+2. **Normal Caching Flow:** The `ResourcePublisherDecorator` receives this DTO, generates a `run_id`, caches the `ExecutionErrorOutput` DTO, and returns a `ToolExecutionEnvelope` containing the `run_id` and DTO.
+3. **Cache Failure (Double Fault / Disk Full):** If the `ResourcePublisherDecorator` fails to write to the cache (either for a successful tool result or an execution error), it raises a cache write exception. This exception is caught by the outermost `CacheErrorHandlerDecorator`. The handler logs the issue and returns a `CacheErrorOutput` DTO directly to the server (unwrapped, without a `run_id`).
+4. **Server Presentation:** Because the server receives the `CacheErrorOutput` directly (unwrapped), it formats and returns the traceback/warning to the LLM directly as plain text, preventing a server crash.
 
-#### Conceptual Implementation of `ErrorHandlerDecorator`
+#### Conceptual Implementation of the Decoupled Handlers
+
 ```python
-class ErrorHandlerDecorator(ITool):
-    def __init__(self, tool: ITool, cache_provider: ICacheProvider):
+class CacheErrorHandlerDecorator(ITool):
+    def __init__(self, tool: ITool):
         self._tool = tool
-        self._cache = cache_provider
 
     async def execute(self, params: Any, context: NoteContext) -> Any:
-        import uuid
         try:
             return await self._tool.execute(params, context)
         except Exception as e:
-            # Map exception to appropriate DTO
-            if "cache" in str(e).lower() or isinstance(e, OSError):
-                error_dto = CacheErrorOutput(message=f"Cache failed: {str(e)}", traceback=get_traceback(e))
-            else:
-                error_dto = ExecutionErrorOutput(message=str(e), traceback=get_traceback(e))
-            
-            # If the error is already a CacheError, don't try to cache it
-            if isinstance(error_dto, CacheErrorOutput):
-                return error_dto
+            # Catch failures in ResourcePublisher (e.g. disk full, read-only cache)
+            log_error(f"Cache/Publisher failed: {str(e)}", traceback=get_traceback(e))
+            return CacheErrorOutput(
+                message=f"Cache failed: {str(e)}", 
+                traceback=get_traceback(e)
+            )
 
-            # Try to cache the ExecutionError
-            run_id = str(uuid.uuid4())
-            try:
-                self._cache.put(f"pgmcp://cache/runs/{run_id}", error_dto)
-                return ToolExecutionEnvelope(run_id=run_id, data=error_dto)
-            except Exception as double_fault:
-                # Double Fault: cache is down/full. Return DTO directly (unwrapped)
-                error_dto.message += f"\n(Warning: Failed to cache error log: {str(double_fault)})"
-                return error_dto
+class ToolErrorHandlerDecorator(ITool):
+    def __init__(self, tool: ITool):
+        self._tool = tool
+
+    async def execute(self, params: Any, context: NoteContext) -> Any:
+        try:
+            return await self._tool.execute(params, context)
+        except Exception as e:
+            # Catch failures in ITool, Enforcement, or Validator
+            log_error(f"Tool execution failed: {str(e)}", traceback=get_traceback(e))
+            return ExecutionErrorOutput(
+                message=str(e), 
+                traceback=get_traceback(e)
+            )
 ```
 
 ### 4.5. Cleaning the Server (`mcp_server/server.py`)
@@ -225,7 +225,7 @@ The focus of this phase is to align the presentation layer and close visual form
 
 ### Phase 2: Pipeline Refactoring (Subsequent Issue)
 The focus of this phase is backend server refactoring.
-1. **Build Decorator Classes:** Implement `ErrorHandlerDecorator`, `InputValidationDecorator`, `EnforcementDecorator`, and `ResourcePublishingDecorator` in `mcp_server/tools/decorators.py`.
+1. **Build Decorator Classes:** Implement `CacheErrorHandlerDecorator`, `ResourcePublisherDecorator`, `ToolErrorHandlerDecorator`, `InputValidationDecorator`, and `EnforcementDecorator` in `mcp_server/tools/decorators.py`.
 2. **Update Tool Composition:** Modify `ToolFactory` in `bootstrap.py` to wire the decorators.
 3. **Clean Server:** Delete `_validate_tool_arguments` and `_run_tool_enforcement` from `server.py`.
 
@@ -243,3 +243,4 @@ The focus of this phase is backend server refactoring.
 |---------|------|--------|---------|
 | 1.0 | 2026-06-16 | Agent | Initial draft |
 | 1.1 | 2026-06-17 | Agent | Restored Execution/CacheErrorOutput split, added Double Fault Prevention details, and defined the Phased Migration Strategy. |
+| 1.2 | 2026-06-17 | Agent | Decoupled outer CacheErrorHandler and inner ToolErrorHandler to resolve decorator ordering and eliminate duplicated cache logic. |
