@@ -148,6 +148,7 @@ class MCPServer:
         call_id: str,
         note_context: NoteContext | None = None,
     ) -> CallToolResult:
+        # TODO: [Phase 2] Error DTO presentation logic will be refactored into a decorator pipeline
         run_id = uuid.uuid4().hex
         cache_error_occurred = False
         cache_err_message = ""
@@ -190,9 +191,9 @@ class MCPServer:
         uri_ref_tmpl = None
         if self.presenter is not None:
             uri_ref_tmpl = self.presenter.get_next_instruction_texts().get("uri_reference")
-        if uri_ref_tmpl:
+        if uri_ref_tmpl and self.presenter is not None:
             try:
-                none_val = getattr(self.presenter, "_get_none_value", lambda: "-")()
+                none_val = self.presenter.get_none_value()
                 formatter = SafeNoneFormatter(none_val)
                 uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
             except Exception:
@@ -340,6 +341,8 @@ class MCPServer:
 
             for tool in self.tools:
                 if tool.name == name:
+                    # TODO: [Phase 2] Exception interception and enforcement will be
+                    # refactored into a decorator pipeline
                     try:
                         note_context = NoteContext()
 
@@ -419,9 +422,9 @@ class MCPServer:
                             uri_ref_tmpl = self.presenter.get_next_instruction_texts().get(
                                 "uri_reference"
                             )
-                        if uri_ref_tmpl:
+                        if uri_ref_tmpl and self.presenter is not None:
                             try:
-                                none_val = getattr(self.presenter, "_get_none_value", lambda: "-")()
+                                none_val = self.presenter.get_none_value()
                                 formatter = SafeNoneFormatter(none_val)
                                 uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
                             except Exception:

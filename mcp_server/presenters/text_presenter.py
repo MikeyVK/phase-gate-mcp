@@ -6,7 +6,7 @@
 """
 
 import string
-from typing import Any, cast
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -42,8 +42,8 @@ class SafeNoneFormatter(string.Formatter):
 class TextPresenter:
     """Formats structured tool outputs into markdown text fallbacks using templates."""
 
-    global_config: GlobalPresentationConfig | dict[str, Any]
-    tools_config: dict[str, ToolPresentationConfig | dict[str, Any]]
+    global_config: GlobalPresentationConfig
+    tools_config: dict[str, ToolPresentationConfig]
 
     def __init__(
         self,
@@ -52,37 +52,25 @@ class TextPresenter:
     ) -> None:
         """Initialize presenter with config data or PresentationConfig object."""
         if config is not None:
-            # Extract from PresentationConfig object
-            self.global_config = config.global_settings
-            self.tools_config = cast(
-                dict[str, ToolPresentationConfig | dict[str, Any]], config.tools
-            )
+            resolved = config
         elif config_data is not None:
-            # Extract from raw dictionary (tests)
-            self.global_config = config_data.get("global", {})
-            self.tools_config = config_data.get("tools", {})
+            resolved = PresentationConfig.model_validate(config_data)
         else:
-            self.global_config = {}
-            self.tools_config = {}
+            resolved = PresentationConfig.model_validate({"global": {}, "tools": {}})
 
-    def _get_emoji_config(self) -> EmojisConfig | dict[str, str]:
-        """Get the emoji configuration dictionary or model."""
-        if isinstance(self.global_config, dict):
-            return cast(dict[str, str], self.global_config.get("emojis", {}))
+        self.global_config = resolved.global_settings
+        self.tools_config = resolved.tools
+
+    def _get_emoji_config(self) -> EmojisConfig:
+        """Get the emoji configuration model."""
         return self.global_config.emojis
 
     def get_next_instruction_texts(self) -> dict[str, str]:
         """Get the next instruction texts lookup dictionary."""
-        if isinstance(self.global_config, dict):
-            return cast(dict[str, str], self.global_config.get("next_instruction_texts", {}))
         return self.global_config.next_instruction_texts
 
     def _get_default_failure_template(self) -> str:
         """Get the default failure template."""
-        if isinstance(self.global_config, dict):
-            return str(
-                self.global_config.get("default_failure_template", "Failed: {error_message}")
-            )
         return self.global_config.default_failure_template
 
     def _is_complex(self, val: object) -> bool:
@@ -95,17 +83,9 @@ class TextPresenter:
             and (val.startswith("diff ") or "@@ " in val or "\n+" in val or "\n-" in val)
         )
 
-    def _get_none_value(self) -> str:
+    def get_none_value(self) -> str:
         """Get the placeholder string for None values."""
-        if isinstance(self.global_config, dict):
-            formatting = self.global_config.get("formatting", {})
-            if isinstance(formatting, dict):
-                return str(formatting.get("none_value", "-"))
-            return getattr(formatting, "none_value", "-")
-        formatting = getattr(self.global_config, "formatting", None)
-        if formatting is not None:
-            return getattr(formatting, "none_value", "-")
-        return "-"
+        return self.global_config.formatting.none_value
 
     def present(
         self,
@@ -149,7 +129,7 @@ class TextPresenter:
                 if not error_code and isinstance(data.get("params"), dict):
                     error_code = data.get("params", {}).get("error_code")
 
-            failures = {}
+            failures: dict[str, str] = {}
             if isinstance(self.global_config, dict):
                 failures = self.global_config.get("failures", {})
             else:
@@ -166,7 +146,7 @@ class TextPresenter:
                 # Fill missing keys in data_dict with None to trigger SafeNoneFormatter
                 # Parse all placeholders in the template
                 placeholders = []
-                none_val = self._get_none_value()
+                none_val = self.get_none_value()
                 formatter = SafeNoneFormatter(none_val)
                 for _, field_name, _, _ in formatter.parse(template):
                     if field_name is not None:
@@ -194,12 +174,8 @@ class TextPresenter:
             text = data_dict.get("message") or data_dict.get("error_message") or str(data_dict)
         # 3. Prepend emoji prefix
         emojis = self._get_emoji_config()
-        emoji = ""
         if not success:
-            if isinstance(emojis, dict):
-                emoji = emojis.get("failure", "❌")
-            else:
-                emoji = getattr(emojis, "failure", "❌")
+            emoji = emojis.failure
         else:
             # Map presentation_category to emoji
             cat = presentation_category.lower()
@@ -212,11 +188,7 @@ class TextPresenter:
             else:
                 key = "success"
 
-            if isinstance(emojis, dict):
-                emoji = emojis.get(key, "✅")
-            else:
-                emoji = getattr(emojis, key, "✅")
-
+            emoji = getattr(emojis, key)
         if emoji:
             text = f"{emoji} {text}"
 
@@ -229,7 +201,7 @@ class TextPresenter:
                     # Parse placeholders in the next instruction template
                     try:
                         placeholders = []
-                        none_val = self._get_none_value()
+                        none_val = self.get_none_value()
                         formatter = SafeNoneFormatter(none_val)
                         for _, field_name, _, _ in formatter.parse(raw_text):
                             if field_name is not None:
@@ -251,23 +223,13 @@ class TextPresenter:
         group_names = ["exclusions", "suggestions", "recoveries", "info"]
         grouped_texts: dict[str, list[str]] = {g: [] for g in group_names}
 
-        none_val = self._get_none_value()
+        none_val = self.get_none_value()
         formatter = SafeNoneFormatter(none_val)
 
         # Retrieve group configuration
         # global.notes.groups
-        global_notes = None
-        if isinstance(self.global_config, dict):
-            global_notes = self.global_config.get("notes")
-        else:
-            global_notes = getattr(self.global_config, "notes", None)
-
-        group_configs: dict[str, Any] = {}
-        if global_notes is not None:
-            if isinstance(global_notes, dict):
-                group_configs = global_notes.get("groups") or {}
-            else:
-                group_configs = getattr(global_notes, "groups", {})
+        global_notes = self.global_config.notes
+        group_configs = global_notes.groups
 
         for note in notes:
             key = note.key
@@ -282,14 +244,9 @@ class TextPresenter:
                 tool_cfg = self.tools_config.get(tool_name)
                 local_tmpl = None
                 if tool_cfg is not None:
-                    if isinstance(tool_cfg, dict):
-                        group_dict = tool_cfg.get(group)
-                        if isinstance(group_dict, dict):
-                            local_tmpl = group_dict.get(key)
-                    else:
-                        group_dict = getattr(tool_cfg, group, None)
-                        if isinstance(group_dict, dict):
-                            local_tmpl = group_dict.get(key)
+                    group_dict = getattr(tool_cfg, group, {})
+                    if isinstance(group_dict, dict):
+                        local_tmpl = group_dict.get(key)
 
                 if isinstance(local_tmpl, str):
                     found_template = local_tmpl
@@ -298,17 +255,9 @@ class TextPresenter:
 
                 # 2. Global notes config fallback lookup
                 global_tmpl = None
-                if global_notes is not None:
-                    templates = None
-                    if isinstance(global_notes, dict):
-                        templates = global_notes.get("templates")
-                    else:
-                        templates = getattr(global_notes, "templates", None)
-
-                    if templates is not None and isinstance(templates, dict):
-                        group_templates = templates.get(group)
-                        if isinstance(group_templates, dict):
-                            global_tmpl = group_templates.get(key)
+                group_templates = global_notes.templates.get(group)
+                if group_templates is not None:
+                    global_tmpl = group_templates.get(key)
 
                 if isinstance(global_tmpl, str):
                     found_template = global_tmpl
@@ -341,29 +290,13 @@ class TextPresenter:
                 continue
 
             # Get emoji and header
-            emoji = ""
-            header = ""
-            cfg = None
-            if isinstance(group_configs, dict):
-                cfg = group_configs.get(group)
-            else:
-                cfg = getattr(group_configs, "get", lambda k: None)(group)
-
-            if cfg is not None:
-                if isinstance(cfg, dict):
-                    emoji = cfg.get("emoji", "")
-                    header = cfg.get("header", "")
-                else:
-                    emoji = getattr(cfg, "emoji", "")
-                    header = getattr(cfg, "header", "")
-            else:
-                fallbacks = {
-                    "exclusions": ("🩹", "Exclusions"),
-                    "suggestions": ("💡", "Suggestions"),
-                    "recoveries": ("🩹", "Recoveries"),
-                    "info": ("📋", "Information"),
-                }
-                emoji, header = fallbacks[group]
+            cfg = group_configs.get(group)
+            if cfg is None:
+                raise ConfigError(
+                    f"Note group config for '{group}' is missing in presentation.yaml"
+                )
+            emoji = cfg.emoji
+            header = cfg.header
 
             group_header = f"{emoji} {header}".strip()
             lines.append(group_header)
@@ -482,23 +415,10 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
                 )
 
     # 1. Global settings validation
-    global_note_templates: dict[str, Any] = {}
     global_cfg = presenter.global_config
-    if isinstance(global_cfg, dict):
-        default_fail = global_cfg.get("default_failure_template")
-        failures = global_cfg.get("failures") or {}
-        global_notes = global_cfg.get("notes") or {}
-        global_note_templates = {}
-        if isinstance(global_notes, dict):
-            global_note_templates = global_notes.get("templates") or {}
-    else:
-        default_fail = getattr(global_cfg, "default_failure_template", None)
-        failures = getattr(global_cfg, "failures", {}) or {}
-        global_notes = getattr(global_cfg, "notes", None)
-        global_note_templates = {}
-        if global_notes is not None:
-            global_note_templates = getattr(global_notes, "templates", {}) or {}
-
+    default_fail = global_cfg.default_failure_template
+    failures = global_cfg.failures
+    global_note_templates = global_cfg.notes.templates
     # Validate default failure template
     if default_fail:
         check_blacklist(default_fail, "default_failure_template", is_default_fail=True)
@@ -546,37 +466,19 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
         templates_to_check = []
         next_inst_keys = []
 
-        if isinstance(tool_cfg, ToolPresentationConfig):
-            if tool_cfg.template_success is not None:
-                templates_to_check.append(("template_success", tool_cfg.template_success))
-            if tool_cfg.template_failure is not None:
-                templates_to_check.append(("template_failure", tool_cfg.template_failure))
-            next_inst_keys = tool_cfg.next_instructions
+        if tool_cfg.template_success is not None:
+            templates_to_check.append(("template_success", tool_cfg.template_success))
+        if tool_cfg.template_failure is not None:
+            templates_to_check.append(("template_failure", tool_cfg.template_failure))
+        next_inst_keys = tool_cfg.next_instructions
 
-            # Local notes
-            local_notes = {
-                "exclusions": tool_cfg.exclusions,
-                "suggestions": tool_cfg.suggestions,
-                "recoveries": tool_cfg.recoveries,
-                "info": tool_cfg.info,
-            }
-        else:
-            val_success = tool_cfg.get("template_success")
-            if isinstance(val_success, str):
-                templates_to_check.append(("template_success", val_success))
-            val_failure = tool_cfg.get("template_failure")
-            if isinstance(val_failure, str):
-                templates_to_check.append(("template_failure", val_failure))
-            next_inst_keys = tool_cfg.get("next_instructions") or []
-
-            # Local notes
-            local_notes = {
-                "exclusions": tool_cfg.get("exclusions") or {},
-                "suggestions": tool_cfg.get("suggestions") or {},
-                "recoveries": tool_cfg.get("recoveries") or {},
-                "info": tool_cfg.get("info") or {},
-            }
-
+        # Local notes
+        local_notes = {
+            "exclusions": tool_cfg.exclusions,
+            "suggestions": tool_cfg.suggestions,
+            "recoveries": tool_cfg.recoveries,
+            "info": tool_cfg.info,
+        }
         instruction_texts = presenter.get_next_instruction_texts()
         for key in next_inst_keys:
             raw_text = instruction_texts.get(key)

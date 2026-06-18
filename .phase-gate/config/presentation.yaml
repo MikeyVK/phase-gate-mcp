@@ -6,6 +6,8 @@ global:
     query: "📋"
     bootstrap: "🚀"
   default_failure_template: "Failed: {error_message}"
+  formatting:
+    none_value: "-"
   next_instruction_texts:
     uri_reference: "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*"
     context_reset: "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
