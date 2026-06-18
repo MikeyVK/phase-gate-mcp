@@ -4,9 +4,9 @@ description: Execute lifecycle exit under the approved ownership model.
 
 @co
 
+# End Issue
+
 Complete explicit lifecycle exit. Human invocation of this prompt is the required
-merge-approval signal. Do not invoke this prompt autonomously or as part of an
-automated pipeline.
 
 ## Required Input
 
@@ -80,20 +80,26 @@ Execute in this exact order. Do not skip steps. Stop at the first blocker and re
 9. **Process PR body closeout facts**
    Use `PR_BODY` captured in step 3. No additional tool call needed.
    Identify and note: delivered scope, `Closes #N` claims, deferred items, and
-   any explicit non-closure rationale. This is the authoritative `@imp` → `@co` transfer artifact.
+   any explicit non-closure rationale.
+   → Output these facts clearly in the final chat response under a dedicated "Closeout Facts" header.
 
 10. **Epic-parent update (conditional)**
     Execute only when `PARENT_WORKFLOW` is a tracked epic workflow.
     Skip silently when `PARENT_WORKFLOW` is `""` (e.g. `main` is the parent branch).
     `update_issue(issue_number=PARENT_ISSUE, body=<updated coordination state>)`
-    → update with: merged PR reference, delivered scope summary, deferred items, and next issue.
+    → Update the epic description by:
+      1. Marking the child issue as completed in the checklist.
+      2. Appending/updating the `## Deferred Work (from Child Issues)` section with the deferred items from step 9.
     → if `PARENT_ISSUE` is `""` but `PARENT_WORKFLOW` is non-empty, stop and report the blocker.
 
 11. **Next-issue recommendation (advisory)**
-    Based on `PR_BODY` facts and current epic or backlog state, recommend the next
-    logically following issue to the human.
-    Do not trigger tool calls or priority mutations without explicit human confirmation.
-
+    Propose the next logical step to the human:
+    - **If deferred work was identified in step 9:**
+      1. Present a drafted issue body (following the standard issue template: title, problem, expected, priority, scope, parent) specifically to track the deferred work.
+      2. Recommend running the `/create-issue` workflow to submit it.
+    - **If no deferred work was identified:**
+      1. Recommend the next existing backlog issue based on epic sequencing and dependencies.
+    → Do not trigger tool calls or priority mutations without explicit human confirmation.
 ## Recovery: Issue Still Open After Merge
 
 Apply this block only when all three conditions hold:

@@ -25,7 +25,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
@@ -107,9 +107,9 @@ class TestTransitionPhaseToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "Retry after the current operation" in notes[0].message
+        assert "Retry after the current operation" in notes[0].params.get("recovery_steps", "")
 
 
 # ---------------------------------------------------------------------------
@@ -171,9 +171,9 @@ class TestForcePhaseTransitionToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "mutation callback" in notes[0].message
+        assert "mutation callback" in notes[0].params.get("recovery_steps", "")
 
 
 # ---------------------------------------------------------------------------
@@ -240,9 +240,9 @@ class TestTransitionCycleToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "lock" in notes[0].message.lower()
+        assert "lock" in notes[0].params.get("recovery_steps", "").lower()
 
 
 # ---------------------------------------------------------------------------
@@ -316,6 +316,6 @@ class TestForceCycleTransitionToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "Retry" in notes[0].message
+        assert "Retry" in notes[0].params.get("recovery_steps", "")

@@ -59,8 +59,8 @@ This document defines the shared documentation rules for pre-implementation and 
 
 ## Phase Ownership
 
-- Research documents investigate the problem space, constraints, prior art, and unknowns; they do not choose design or implementation.
-- Design documents compare options, justify a chosen direction, and define interfaces and trade-offs; they do not become implementation plans.
+- Research documents investigate the problem space, constraints, prior art, and unknowns; they do not choose design or implementation. They must define the Approved Strategy (compatibility and migration policy per boundary, with rationale) and the Expected Results (behavioral success criteria) before the phase transitions to Design.
+- Design documents compare options, justify a chosen direction, and define interfaces and trade-offs; they do not become implementation plans. To prevent divergent or creative implementations, design documents should define concrete interface contracts (such as Pydantic models, configuration schemas, and method signatures without bodies). They must avoid "implementation bleed", meaning they do not contain concrete method bodies (the logic under the def statement), helper-level variable mappings, or patch sequences.
 - Planning documents define slices, cycles, dependencies, and stop-go criteria; they do not repeat research or redesign the solution.
 - Implementation details, patch plans, and execution sequencing belong in implementation work, not in pre-implementation documentation unless explicitly required by the current phase.
 
@@ -91,3 +91,4 @@ This document defines the shared documentation rules for pre-implementation and 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 |  | Agent | Initial draft |
+| 1.1 | 2026-06-17 | Agent | Clarify distinction between interface contracts and implementation bleed |

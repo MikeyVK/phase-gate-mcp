@@ -21,17 +21,29 @@ from pydantic import BaseModel
 from mcp_server.core.exceptions import ConfigError
 
 # Project modules
-from mcp_server.presenters.text_presenter import TextPresenter, validate_presentation_alignment
+from mcp_server.config.schemas.presentation_config import PresentationConfig
+from mcp_server.core.operation_notes import Note
+from mcp_server.presenters.text_presenter import (
+    SafeNoneFormatter,
+    TextPresenter,
+    validate_presentation_alignment,
+)
+from mcp_server.schemas.error_outputs import (
+    ValidationErrorOutput,
+    ExecutionErrorOutput,
+    CacheErrorOutput,
+    EnforcementErrorOutput,
+)
 from mcp_server.schemas.tool_outputs import BaseToolOutput
 
 
 class DummyOutput(BaseToolOutput):
-    message: str = ""
+    result: str = ""
     items: list[str] = []
 
 
 class DummySimpleOutput(BaseToolOutput):
-    message: str = ""
+    result: str = ""
 
 
 class DummyTool:
@@ -71,7 +83,7 @@ class TestTextPresenter:
             },
             "tools": {
                 "dummy_tool": {
-                    "template_success": "Success: {message}",
+                    "template_success": "Success: {result}",
                     "template_failure": "Error: {error_message}",
                     "next_instructions": ["test_advisory"],
                 },
@@ -82,7 +94,7 @@ class TestTextPresenter:
     def test_present_success(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting success output with custom template and emoji prefix."""
         presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = DummyOutput(success=True, message="Operation completed")
+        dto = DummyOutput(success=True, result="Operation completed")
 
         text = presenter.present(
             tool_name="dummy_tool", success=True, presentation_category="query", data=dto
@@ -100,7 +112,7 @@ class TestTextPresenter:
             tool_name="dummy_tool", success=False, presentation_category="query", data=dto
         )
 
-        assert text == "❌ Error: Something failed\n\n🚀 TEST ADVISORY WARNING"
+        assert text == "❌ Error: Something failed"
 
     def test_present_failure_fallback(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting failure output falling back to default template."""
@@ -121,7 +133,7 @@ class TestTextPresenter:
 
         class MockDTO(BaseModel):
             success: bool = True
-            message: str = "Op"
+            result: str = "Op"
             run_id: str = "abc-123"
 
         dto = MockDTO()
@@ -175,3 +187,190 @@ class TestTextPresenter:
             validate_presentation_alignment(presenter, tools)
 
         assert "run_id" in str(exc_info.value)
+
+    def test_presentation_config_schema_extended(self) -> None:
+        """Test that PresentationConfig schema correctly parses extended configuration fields."""
+        extended_data = {
+            "global": {
+                "emojis": {
+                    "success": "✅",
+                    "failure": "❌",
+                    "warning": "⚠️",
+                    "query": "📋",
+                    "bootstrap": "🚀",
+                },
+                "default_failure_template": "Failed: {error_message}",
+                "formatting": {"none_value": "-"},
+                "notes": {
+                    "groups": {
+                        "exclusions": {"emoji": "🩹", "header": "Exclusions"},
+                        "suggestions": {"emoji": "💡", "header": "Suggestions"},
+                    },
+                    "templates": {"exclusions": {"default": "Excluded: {file}"}},
+                },
+                "failures": {"dirty_workdir": "Dirty: {branch}"},
+            },
+            "tools": {
+                "dummy_tool": {
+                    "template_success": "Success",
+                    "exclusions": {"dirty": "Excluded {file}"},
+                }
+            },
+        }
+        config = PresentationConfig.model_validate(extended_data)
+        assert config.global_settings.formatting.none_value == "-"
+        assert config.global_settings.notes.groups["exclusions"].emoji == "🩹"
+        assert config.global_settings.failures["dirty_workdir"] == "Dirty: {branch}"
+        assert config.tools["dummy_tool"].exclusions["dirty"] == "Excluded {file}"
+
+    def test_error_dto_compilation_and_enforcement(self) -> None:
+        """Test that error DTO subclasses compile and enforce frozen and forbid-extra rules."""
+        # Test ValidationErrorOutput
+        val_err = ValidationErrorOutput(
+            message="Validation failed",
+            params={"param1": "val1"},
+            validation_errors=[{"loc": ["field"], "msg": "invalid"}],
+            input_schema={"type": "object"},
+        )
+        assert val_err.success is False
+        assert val_err.error_type == "ValidationError"
+        assert val_err.params == {"param1": "val1"}
+
+        # Verify frozen
+        with pytest.raises(Exception):
+            val_err.message = "new message"  # type: ignore
+
+        # Verify extra forbid
+        with pytest.raises(Exception):
+            ValidationErrorOutput(
+                message="Err",
+                params={},
+                validation_errors=[],
+                input_schema={},
+                invalid_extra_field="fail",  # type: ignore
+            )
+
+        # Test EnforcementErrorOutput
+        enf_err = EnforcementErrorOutput(
+            message="Enforcement blocked", params={"rule": "no-push"}, error_code="RULE_VIOLATION"
+        )
+        assert enf_err.success is False
+        assert enf_err.error_type == "EnforcementError"
+        assert enf_err.error_code == "RULE_VIOLATION"
+
+        # Verify ExecutionErrorOutput compile
+        exec_err = ExecutionErrorOutput(message="Fail", params={})
+        assert exec_err.error_type == "ExecutionError"
+
+        # Verify CacheErrorOutput compile
+        cache_err = CacheErrorOutput(message="Disk full", params={})
+        assert cache_err.error_type == "CacheError"
+
+    def test_safe_none_formatter(self) -> None:
+        """Test SafeNoneFormatter formatting of None values and format specifiers."""
+        formatter = SafeNoneFormatter(none_value="-")
+
+        # None formatting bypasses specifiers
+        assert formatter.format("None value: {val}", val=None) == "None value: -"
+        assert formatter.format("None with spec: {val:.2f}", val=None) == "None with spec: -"
+
+        # Normal formatting works
+        assert formatter.format("Float: {val:.2f}", val=3.14159) == "Float: 3.14"
+        assert formatter.format("String: {val}", val="hello") == "String: hello"
+
+    def test_present_notes_lookup_and_grouping(self) -> None:
+        """Test TextPresenter.present_notes lookup, formatting, and markdown grouping."""
+        config_data = {
+            "global": {
+                "emojis": {
+                    "success": "✅",
+                    "failure": "❌",
+                    "warning": "⚠️",
+                    "query": "📋",
+                    "bootstrap": "🚀",
+                },
+                "default_failure_template": "Failed: {error_message}",
+                "formatting": {"none_value": "-"},
+                "notes": {
+                    "groups": {
+                        "exclusions": {"emoji": "🩹", "header": "Exclusions"},
+                        "suggestions": {"emoji": "💡", "header": "Suggestions"},
+                    },
+                    "templates": {
+                        "exclusions": {
+                            "dirty": "Excluded file: {file}",
+                            "none_test": "None test: {val:.2f}",
+                        },
+                        "suggestions": {"suggestion_msg": "Suggestion: {message}"},
+                    },
+                },
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+
+        notes = [
+            Note(key="dirty", params={"file": "a.py"}),
+            Note(key="none_test", params={"val": None}),
+            Note(key="suggestion_msg", params={"message": "Do X"}),
+        ]
+
+        text = presenter.present_notes("dummy_tool", notes)
+
+        expected = (
+            "🩹 Exclusions\n"
+            "  - Excluded file: a.py\n"
+            "  - None test: -\n\n"
+            "💡 Suggestions\n"
+            "  - Suggestion: Do X"
+        )
+        assert text == expected
+
+    def test_drift_validator_blacklist_detected(self) -> None:
+        """Test that validator raises ConfigError when a blacklisted param
+        is used in custom templates.
+        """
+        config_data = {
+            "global": {
+                "failures": {"dirty_workdir": "Dirty: {msg}"},
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+        with pytest.raises(ConfigError) as exc_info:
+            validate_presentation_alignment(presenter, [])
+        assert "blacklisted" in str(exc_info.value).lower()
+
+    def test_drift_validator_global_failures_invalid_placeholder(self) -> None:
+        """Test that validator raises ConfigError when placeholders in
+        global failures do not exist in DTO/exception.
+        """
+        config_data = {
+            "global": {
+                "failures": {"ERR_CONFIG": "Config error on: {invalid_field}"},
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+        with pytest.raises(ConfigError) as exc_info:
+            validate_presentation_alignment(presenter, [])
+        assert "placeholder" in str(exc_info.value).lower()
+
+    def test_drift_validator_generic_notes_invalid_placeholder(self) -> None:
+        """Test that validator raises ConfigError when placeholders in
+        generic note templates do not align with expected fields.
+        """
+        config_data = {
+            "global": {
+                "notes": {
+                    "templates": {
+                        "suggestions": {"allowed_branch_types": "Allowed: {invalid_field}"}
+                    }
+                }
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+        with pytest.raises(ConfigError) as exc_info:
+            validate_presentation_alignment(presenter, [])
+        assert "placeholder" in str(exc_info.value).lower()

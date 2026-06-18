@@ -473,6 +473,7 @@ class QAManager:
     # Output formatting
     # ------------------------------------------------------------------
 
+    # TODO: [Phase 2] Summary formatting logic will be refactored to align with text presenter
     @staticmethod
     def format_summary_line(
         results: dict[str, Any],

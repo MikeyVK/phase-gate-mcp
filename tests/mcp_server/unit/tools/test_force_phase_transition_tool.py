@@ -17,7 +17,7 @@ import pytest
 from pydantic import ValidationError
 
 from mcp_server.core.interfaces import GateReport
-from mcp_server.core.operation_notes import InfoNote, NoteContext
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput
@@ -188,12 +188,7 @@ class TestForcePhaseTransitionTool:
 
         await tool.execute(params, context)
 
-        notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert notes[0].message == (
-            "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
-            "to load the current phase context for this branch."
-        )
+        assert len(context.entries) == 0
 
     def test_force_phase_transition_tool_requires_skip_reason(
         self, initialized_branch: str, feature_phases: list[str]

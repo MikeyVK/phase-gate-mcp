@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.core.operation_notes import InfoNote, NoteContext
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
@@ -113,9 +113,7 @@ class TestTransitionPhaseTool:
         assert isinstance(result, PhaseTransitionOutput)
         assert result.success is True
 
-        notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert "Call get_work_context now" in notes[0].message
+        assert len(context.entries) == 0
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_validates_sequence(

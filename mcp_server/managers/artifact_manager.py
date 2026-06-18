@@ -28,7 +28,7 @@ from typing import Any, cast
 from mcp_server.adapters.filesystem import FilesystemAdapter
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
@@ -303,6 +303,8 @@ class ArtifactManager:
         if not context_class_name.endswith("Context"):
             raise ValidationError(
                 f"Invalid Context class name: {context_class_name} (must end with 'Context')",
+                error_code="invalid_context_class",
+                params={"class_name": context_class_name},
             )
 
         render_context_class_name = context_class_name.replace("Context", "RenderContext")
@@ -319,6 +321,8 @@ class ArtifactManager:
         if render_context_class is None:
             raise ValidationError(
                 f"RenderContext class not found: {render_context_class_name}",
+                error_code="render_context_not_found",
+                params={"class_name": render_context_class_name},
             )
 
         # Generate ISO 8601 UTC timestamp with Z suffix
@@ -536,6 +540,8 @@ class ArtifactManager:
             if "output_path" not in enriched_context:
                 raise ValidationError(
                     "Generic artifacts require explicit output_path in context",
+                    error_code="generic_output_path_required",
+                    params={},
                 )
             return str(enriched_context["output_path"])
 
@@ -563,6 +569,8 @@ class ArtifactManager:
             if artifact.type == "code":
                 raise ValidationError(
                     f"Generated {artifact_type} artifact failed validation:\n{issues}",
+                    error_code="artifact_validation_failed",
+                    params={"artifact_type": artifact_type, "issues": issues},
                 )
 
             logger.warning(
@@ -629,6 +637,8 @@ class ArtifactManager:
         if getattr(artifact, "output_type", None) == "file" and not output_path:
             raise ValidationError(
                 f"Missing output_path for file artifact '{artifact_type}'",
+                error_code="missing_output_path",
+                params={"artifact_type": artifact_type},
             )
 
         # QA-2: Fail-fast if template_path is null (not yet implemented)
@@ -694,6 +704,8 @@ class ArtifactManager:
                     f"V2 pipeline: Failed to validate {artifact_type} context "
                     f"via {context_class.__name__}",
                     schema=self.get_context_schema(artifact_type),
+                    error_code="context_validation_failed",
+                    params={"artifact_type": artifact_type, "error_details": str(e)},
                 ) from e
 
             # 2. Enrich to RenderContext (adds lifecycle fields)
@@ -763,10 +775,13 @@ class ArtifactManager:
             )
         except ValidationError as exc:
             if note_context is not None:
-                note_context.produce(BlockerNote(message=str(exc)))
                 note_context.produce(
-                    RecoveryNote(
-                        message=f"Provide all required fields for artifact type '{artifact_type}'"
+                    Note(key="scaffold_validation_failed", params={"error_details": str(exc)})
+                )
+                note_context.produce(
+                    Note(
+                        key="scaffold_fields_recovery",
+                        params={"artifact_type": artifact_type},
                     )
                 )
             raise

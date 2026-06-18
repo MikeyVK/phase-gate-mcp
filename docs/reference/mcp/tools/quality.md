@@ -39,7 +39,7 @@ This page is optimized for agents: exact input contracts, copy/paste call patter
 
 - `scope="files"` and `files` is missing or `[]` → validation error.
 - `scope!="files"` and `files` is provided → validation error.
-- If a quality gate fails and `verbose=false` is set, a `RecoveryNote` is produced suggesting to rerun with `verbose=true`.
+- If a quality gate fails and `verbose=false` is set, a `recovery` note is produced suggesting to rerun with `verbose=true`.
 ### Scope semantics
 
 | Scope | Target resolution |

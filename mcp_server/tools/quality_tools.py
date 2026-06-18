@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import QualityStateMutationConflictError
 from mcp_server.schemas.tool_outputs import AutoFixOutput, GateResultDTO, RunQualityGatesOutput
@@ -113,7 +113,9 @@ class RunQualityGatesTool(ITool):
                 **kwargs,
             )
         except QualityStateMutationConflictError as e:
-            context.produce(RecoveryNote(message=e.recovery))
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
             return RunQualityGatesOutput(
                 success=False,
                 error_message=e.diagnostic,
@@ -124,8 +126,9 @@ class RunQualityGatesTool(ITool):
             )
         except OSError as e:
             context.produce(
-                RecoveryNote(
-                    message=f"Quality state write failed — retry the quality gates run: {e}"
+                Note(
+                    key="quality_state_write_failed_recovery",
+                    params={"error_details": str(e)},
                 )
             )
             return RunQualityGatesOutput(
@@ -142,12 +145,9 @@ class RunQualityGatesTool(ITool):
             if params.files:
                 scope_part += f", files={params.files!r}"
             context.produce(
-                RecoveryNote(
-                    message=(
-                        "Some quality gates failed. Rerun the tool with verbose=True "
-                        "to retrieve complete linter/checker tracebacks. "
-                        f"Suggested command: run_quality_gates({scope_part}, verbose=True)"
-                    )
+                Note(
+                    key="quality_gates_failed_verbose_suggestion",
+                    params={"scope_part": scope_part},
                 )
             )
 

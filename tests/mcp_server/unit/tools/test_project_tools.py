@@ -22,7 +22,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from mcp_server.core.operation_notes import NoteContext, SuggestionNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.tools.project_tools import (
     GetProjectPlanInput,
     GetProjectPlanTool,
@@ -228,7 +228,7 @@ class TestGetProjectPlanTool:
         assert result.success
         assert result.issue_number == 253
         assert result.workflow_name == "bug"
-        assert len(context.of_type(SuggestionNote)) == 0
+        assert len(context.entries) == 0
 
     @pytest.mark.asyncio
     async def test_get_plan_not_found_returns_error(self) -> None:
@@ -250,21 +250,13 @@ class TestGetProjectPlanTool:
 
         await tool.execute(GetProjectPlanInput(issue_number=253), context)
 
-        suggestions = context.of_type(SuggestionNote)
-        assert len(suggestions) == 1
-        assert suggestions[0].message == "Run initialize_project first to create a project plan."
+        notes = context.entries
+        assert len(notes) == 1
+        assert isinstance(notes[0], Note)
+        assert notes[0].key == "initialize_project_suggestion"
+        assert notes[0].params == {"issue_number": 253}
 
-    @pytest.mark.asyncio
-    async def test_get_plan_not_found_suggestion_subject_contains_issue_number(self) -> None:
-        tool = GetProjectPlanTool(manager=_GetProjectPlanManagerStub(plan=None))
-        context = NoteContext()
-
-        await tool.execute(GetProjectPlanInput(issue_number=253), context)
-
-        suggestions = context.of_type(SuggestionNote)
-        assert len(suggestions) == 1
-        assert suggestions[0].subject == "issue #253"
-
+    # Obsolete test removed
     @pytest.mark.asyncio
     async def test_get_plan_value_error_returns_error(self) -> None:
         from mcp_server.schemas.tool_outputs import ProjectPlanOutput  # noqa: PLC0415
@@ -279,7 +271,7 @@ class TestGetProjectPlanTool:
         assert isinstance(result, ProjectPlanOutput)
         assert not result.success
         assert result.error_message == "bad plan state"
-        assert len(context.of_type(SuggestionNote)) == 0
+        assert len(context.entries) == 0
 
 
 def _minimal_deliverables(validates: dict | None = None) -> dict:

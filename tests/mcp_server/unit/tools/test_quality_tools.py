@@ -17,7 +17,7 @@ import pytest
 from pydantic import ValidationError
 
 # Module under test
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.schemas.tool_outputs import RunQualityGatesOutput
 from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
 from mcp_server.tools.tool_result import ToolResult
@@ -673,7 +673,7 @@ class TestRunQualityGatesToolConflictC8:
     @pytest.mark.asyncio
     async def test_run_quality_gates_emits_recovery_note_on_os_error(self) -> None:
         """RunQualityGatesTool emits RecoveryNote through NoteContext on quality-state failure."""
-        from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
+        from mcp_server.core.operation_notes import Note  # noqa: PLC0415
 
         mock_manager = MagicMock()
         mock_manager.resolve_scope.return_value = ["some_file.py"]
@@ -683,9 +683,10 @@ class TestRunQualityGatesToolConflictC8:
         context = NoteContext()
         await tool.execute(RunQualityGatesInput(scope="auto"), context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "quality_state_write_failed_recovery"]
         assert len(notes) == 1
-        assert "quality" in notes[0].message.lower() or "retry" in notes[0].message.lower()
+        err_details = notes[0].params.get("error_details", "").lower()
+        assert "quality" in err_details or "retry" in err_details
 
 
 # C3 RED — RunQualityGatesTool catches QualityStateMutationConflictError (issue #292)
@@ -701,7 +702,7 @@ class TestRunQualityGatesConflictErrorC3:
     @pytest.mark.asyncio
     async def test_conflict_error_returns_recovery_note_and_error(self) -> None:
         """QualityStateMutationConflictError raised by manager -> RecoveryNote + error (C3-D5/6)."""
-        from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
+        from mcp_server.core.operation_notes import Note  # noqa: PLC0415
         from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
             QualityStateMutationConflictError,
         )
@@ -725,10 +726,10 @@ class TestRunQualityGatesConflictErrorC3:
             "lock timeout" in result.error_message.lower()
             or "write failed" in result.error_message.lower()
         ), f"diagnostic must appear in error_message, got: {result.error_message!r}"
-        notes = context.of_type(RecoveryNote)
-        assert len(notes) == 1, f"must emit exactly one RecoveryNote, got {len(notes)}"
-        assert "retry" in notes[0].message.lower(), (
-            f"recovery hint must mention retry, got: {notes[0].message!r}"
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
+        assert len(notes) == 1, f"must emit exactly one Note, got {len(notes)}"
+        assert "retry" in notes[0].params.get("recovery_steps", "").lower(), (
+            f"recovery hint must mention retry, got: {notes[0].params.get('recovery_steps')!r}"
         )
 
 
@@ -812,10 +813,12 @@ class TestRunQualityGatesVerboseOption:
             RunQualityGatesInput(scope="files", files=["foo.py"], verbose=False), context
         )
 
-        notes = context.of_type(RecoveryNote)
+        notes = [
+            n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"
+        ]
         assert len(notes) == 1
-        assert "verbose=True" in notes[0].message
-        assert "run_quality_gates" in notes[0].message
+        assert "scope='files'" in notes[0].params.get("scope_part", "")
+        assert "foo.py" in notes[0].params.get("scope_part", "")
 
     @pytest.mark.asyncio
     async def test_no_recovery_note_when_verbose_true_on_failure(self) -> None:
@@ -846,5 +849,7 @@ class TestRunQualityGatesVerboseOption:
             RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True), context
         )
 
-        notes = context.of_type(RecoveryNote)
+        notes = [
+            n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"
+        ]
         assert len(notes) == 0

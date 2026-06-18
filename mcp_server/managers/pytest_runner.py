@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, Literal
 
-from mcp_server.core.operation_notes import RecoveryNote, SuggestionNote
+from mcp_server.core.operation_notes import Note
 
 if TYPE_CHECKING:
     from mcp_server.core.operation_notes import NoteEntry
@@ -80,33 +80,44 @@ _EXIT_CODE_POLICY: dict[int, ExitCodePolicy] = {
     PytestExitCode.TESTS_FAILED: ExitCodePolicy("ok", None, ""),
     PytestExitCode.INTERRUPTED: ExitCodePolicy(
         "error",
-        lambda _: RecoveryNote("Pytest was interrupted; check for hung tests or external SIGINT."),
+        lambda _: Note(
+            key="pytest_interrupted_recovery",
+            params={},
+        ),
         "pytest interrupted (exit 2)",
     ),
     PytestExitCode.INTERNAL_ERROR: ExitCodePolicy(
         "error",
-        lambda _: RecoveryNote(
-            "Pytest reported an internal error; inspect stderr and pytest plugins."
+        lambda _: Note(
+            key="pytest_internal_error_recovery",
+            params={},
         ),
         "pytest internal error (exit 3)",
     ),
     PytestExitCode.USAGE_ERROR: ExitCodePolicy(
         "error",
-        lambda _: RecoveryNote(
-            "Pytest could not start. Verify the path exists and the CLI options are valid."
+        lambda _: Note(
+            key="pytest_usage_error_recovery",
+            params={},
         ),
         "pytest usage error (exit 4)",
     ),
     PytestExitCode.NO_TESTS_COLLECTED: ExitCodePolicy(
         "ok",
-        lambda _: SuggestionNote("No tests matched the filter. Check markers and path."),
+        lambda _: Note(
+            key="pytest_no_tests_collected_suggestion",
+            params={},
+        ),
         "no tests collected",
     ),
 }
 
 _UNKNOWN_CODE_POLICY = ExitCodePolicy(
     "raise",
-    lambda c: RecoveryNote(f"Pytest exited with unexpected code {c}; inspect stderr."),
+    lambda c: Note(
+        key="pytest_unexpected_code_recovery",
+        params={"exit_code": c},
+    ),
     "pytest exited with unexpected code",
 )
 

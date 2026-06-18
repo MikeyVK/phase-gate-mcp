@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 import pytest
 
 # Project modules
-from mcp_server.core.operation_notes import ExclusionNote, NoteContext
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
 from mcp_server.tools.tool_result import ToolResult
 
@@ -56,7 +56,11 @@ class TestGitCommitToolC3:
     async def test_server_renders_exclusion_note_in_response(self) -> None:
         """NoteContext.render_to_response must include ExclusionNote text in the result."""
         note_context = NoteContext()
-        note_context.produce(ExclusionNote(file_path=_STATE_JSON))
+        mock_presenter = MagicMock()
+        mock_presenter.present_notes.return_value = f"Excluded from commit index: {_STATE_JSON}"
+        note_context.presenter = mock_presenter
+        note_context.tool_name = "git_add_or_commit"
+        note_context.produce(Note(key="file_excluded", params={"file_path": _STATE_JSON}))
         base = ToolResult.text("abc1234")
 
         rendered = note_context.render_to_response(base)

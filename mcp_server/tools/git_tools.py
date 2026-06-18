@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.interfaces import IContextLoadedWriter, IStateReader
 from mcp_server.core.logging import get_logger
-from mcp_server.core.operation_notes import CommitNote, NoteContext
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import BranchDeleteResult, GitManager
 from mcp_server.managers.phase_contract_resolver import PhaseContractResolver
@@ -444,7 +444,7 @@ class GitCommitTool(ITool):
                 skip_paths=frozenset(),
                 issue_number=issue_number,
             )
-            ctx.produce(CommitNote(commit_hash=commit_hash))
+            ctx.produce(Note(key="commit", params={"commit_hash": commit_hash}))
             if self._state_engine is not None:
                 self._state_engine.record_sub_phase(current_branch, params.sub_phase)
 

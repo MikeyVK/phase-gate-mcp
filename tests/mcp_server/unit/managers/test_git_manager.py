@@ -18,7 +18,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import GitConfig
 from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConfig
 from mcp_server.core.exceptions import ExecutionError, PreflightError, ValidationError
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 
 # Module under test
 from mcp_server.managers.git_manager import GitManager
@@ -525,7 +525,10 @@ class TestGitManagerPrepareSubmission:
                 note_context=context,
             )
 
-        assert len(context.of_type(BlockerNote)) == 1
+        assert (
+            len([n for n in context.of_type(Note) if n.key == "submit_pr_dirty_workspace_blocker"])
+            == 1
+        )
         mock_adapter.neutralize_to_base.assert_not_called()
         mock_adapter.push.assert_not_called()
 
@@ -544,7 +547,9 @@ class TestGitManagerPrepareSubmission:
                 note_context=context,
             )
 
-        assert len(context.of_type(BlockerNote)) == 1
+        assert (
+            len([n for n in context.of_type(Note) if n.key == "submit_pr_no_upstream_blocker"]) == 1
+        )
         mock_adapter.neutralize_to_base.assert_not_called()
         mock_adapter.push.assert_not_called()
 
@@ -609,8 +614,9 @@ class TestGitManagerPrepareSubmission:
             )
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD")
-        assert len(context.of_type(RecoveryNote)) == 1
-        assert "Commit failed" in context.of_type(RecoveryNote)[0].message
+        notes = [n for n in context.entries if n.key == "submit_pr_commit_failed_recovery"]
+        assert len(notes) == 1
+        assert "commit failed" in notes[0].params.get("error_details", "")
         mock_adapter.push.assert_not_called()
 
     def test_prepare_submission_hard_resets_head_minus_one_on_push_failure_after_commit(
@@ -630,8 +636,11 @@ class TestGitManagerPrepareSubmission:
             )
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
-        assert len(context.of_type(RecoveryNote)) == 1
-        assert "Push failed" in context.of_type(RecoveryNote)[0].message
+        notes = [
+            n for n in context.entries if n.key == "submit_pr_push_failed_with_rollback_recovery"
+        ]
+        assert len(notes) == 1
+        assert "remote rejected" in notes[0].params.get("error_details", "")
 
     def test_prepare_submission_no_hard_reset_on_push_failure_when_no_commit(
         self, manager: GitManager, mock_adapter: MagicMock
@@ -649,7 +658,11 @@ class TestGitManagerPrepareSubmission:
             )
 
         mock_adapter.hard_reset.assert_not_called()
-        assert len(context.of_type(RecoveryNote)) == 1
+        notes = [
+            n for n in context.entries if n.key == "submit_pr_push_failed_no_rollback_recovery"
+        ]
+        assert len(notes) == 1
+        assert "network error" in notes[0].params.get("error_details", "")
 
     def test_prepare_submission_happy_path_calls_steps_in_order(
         self, manager: GitManager, mock_adapter: MagicMock
@@ -747,7 +760,7 @@ class TestGitManagerRollbackPush:
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
         mock_adapter.force_push_with_lease.assert_called_once()
-        assert len(context.of_type(RecoveryNote)) == 0
+        assert len(context.entries) == 0
 
     def test_rollback_push_produces_recovery_note_and_raises_on_force_push_failure(
         self, manager: GitManager, mock_adapter: MagicMock
@@ -761,8 +774,9 @@ class TestGitManagerRollbackPush:
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
         mock_adapter.force_push_with_lease.assert_called_once()
-        assert len(context.of_type(RecoveryNote)) == 1
-        assert "CRITICAL: Remote rollback failed" in context.of_type(RecoveryNote)[0].message
+        notes = [n for n in context.entries if n.key == "rollback_remote_push_failed_recovery"]
+        assert len(notes) == 1
+        assert "push rejected" in notes[0].params.get("error_details", "")
 
     def test_rollback_push_produces_recovery_note_and_raises_on_hard_reset_failure(
         self, manager: GitManager, mock_adapter: MagicMock
@@ -776,5 +790,6 @@ class TestGitManagerRollbackPush:
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
         mock_adapter.force_push_with_lease.assert_not_called()
-        assert len(context.of_type(RecoveryNote)) == 1
-        assert "CRITICAL: Local reset failed" in context.of_type(RecoveryNote)[0].message
+        notes = [n for n in context.entries if n.key == "rollback_local_reset_failed_recovery"]
+        assert len(notes) == 1
+        assert "reset failed" in notes[0].params.get("error_details", "")

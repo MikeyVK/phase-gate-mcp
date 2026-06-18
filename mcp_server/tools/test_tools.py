@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IPytestRunner
-from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.schemas.tool_outputs import RunTestsOutput, TestFailureDTO
 from mcp_server.tools.base import ITool
 from mcp_server.utils.schema_utils import resolve_schema_refs
@@ -93,7 +93,12 @@ class RunTestsInput(BaseModel):
 def _emit_lf_cache_note(result: PytestResult, params: RunTestsInput, context: NoteContext) -> None:
     """Emit the LF-empty informational note only when the user requested --lf."""
     if params.last_failed_only and result.lf_cache_was_empty:
-        context.produce(InfoNote("Last-failed cache was empty; ran full selection instead."))
+        context.produce(
+            Note(
+                key="pytest_lf_cache_empty_info",
+                params={},
+            )
+        )
 
 
 def _find_timeout_expired(exc: BaseException) -> subprocess.TimeoutExpired | None:
@@ -188,15 +193,18 @@ class RunTestsTool(ITool):
         except Exception as exc:
             if _find_timeout_expired(exc) is not None:
                 context.produce(
-                    RecoveryNote(
-                        f"Tests timed out after {effective_timeout}s. "
-                        "Run a smaller subset or raise the timeout."
+                    Note(
+                        key="pytest_timeout_recovery",
+                        params={"timeout": effective_timeout},
                     )
                 )
                 raise ExecutionError(f"Tests timed out after {effective_timeout}s") from None
             if isinstance(exc, OSError):
                 context.produce(
-                    RecoveryNote("Verify the Python interpreter and venv are reachable.")
+                    Note(
+                        key="pytest_interpreter_recovery",
+                        params={},
+                    )
                 )
                 raise ExecutionError(f"Failed to run tests: {exc}") from exc
             raise
@@ -209,12 +217,12 @@ class RunTestsTool(ITool):
             failing_files = sorted({f.location for f in result.failures if f.location})
             if failing_files:
                 failing_files_str = " ".join(failing_files)
-                msg = (
-                    "Some tests failed. To see detailed tracebacks and stdout/stderr, "
-                    "rerun with verbose=True. Suggested command: "
-                    f"run_tests(path='{failing_files_str}', verbose=True)"
+                context.produce(
+                    Note(
+                        key="pytest_failed_verbose_suggestion",
+                        params={"failing_files": failing_files_str},
+                    )
                 )
-                context.produce(RecoveryNote(msg))
 
         if result.should_raise:
             raise ExecutionError(f"pytest exited with returncode {result.exit_code}")

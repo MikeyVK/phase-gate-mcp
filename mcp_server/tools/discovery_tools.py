@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
@@ -83,9 +83,21 @@ class SearchDocumentationTool(ITool):
         docs_dir = Path(self._settings.server.workspace_root) / "docs"
 
         if not docs_dir.exists():
-            context.produce(RecoveryNote(message=f"Expected directory: {docs_dir}"))
-            context.produce(RecoveryNote(message="Create docs/ directory in workspace root"))
-            context.produce(RecoveryNote(message="Add markdown files to document project"))
+            context.produce(
+                Note(key="docs_dir_not_found_expected", params={"expected_dir": str(docs_dir)})
+            )
+            context.produce(
+                Note(
+                    key="docs_dir_not_found_create",
+                    params={},
+                )
+            )
+            context.produce(
+                Note(
+                    key="docs_dir_not_found_add_files",
+                    params={},
+                )
+            )
             raise ExecutionError("Documentation directory not found")
 
         index = DocumentIndexer.build_index(docs_dir)
@@ -284,7 +296,7 @@ class GetWorkContextTool(ITool):
         """Build recovery-oriented warning text for known workflow + invalid phase state."""
         valid_phase_text = ", ".join(valid_phases) if valid_phases else "(none)"
         return (
-            f"⚠️ Invalid workflow state: workflow '{workflow}' does not contains phase '{phase}'.\n"
+            f"Invalid workflow state: workflow '{workflow}' does not contains phase '{phase}'.\n"
             f"Valid phases: {valid_phase_text}\n"
             "Recovery: use force_phase_transition to move this branch to a valid phase, "
             "then call get_work_context again."

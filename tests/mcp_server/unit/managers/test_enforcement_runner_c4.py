@@ -17,7 +17,7 @@ import pytest
 
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.interfaces import IContextLoadedReader
-from mcp_server.core.operation_notes import NoteContext, SuggestionNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.enforcement_runner import (
     EnforcementAction,
     EnforcementConfig,
@@ -172,7 +172,7 @@ class TestCheckContextLoadedHandler:
                 note_context=note_context,
             )
 
-        notes = note_context.of_type(SuggestionNote)
+        notes = [n for n in note_context.of_type(Note) if n.key == "load_context_suggestion"]
         assert len(notes) >= 1
 
     def test_exempt_tool_bypasses_when_not_loaded(self, tmp_path: Path) -> None:
