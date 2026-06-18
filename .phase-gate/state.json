@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "issue_title": "feature: Russian Doll Decorator Pipeline for exception mapping",
   "issue_title": "refactor: Russian Doll Decorator Pipeline for exception mapping",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-18T10:55:42.316320+00:00",
