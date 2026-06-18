@@ -120,11 +120,12 @@ We compare three options for composing the wrapper pipeline:
 
 ---
 
-## 4. Open Questions
+## 4. Resolved Architectural Questions
 
-1. **Decorator Construction Dependency Injection**: Should `ToolFactory` be injected with the full configuration settings, or should it receive individual manager/caching interfaces? (Recommendation: pass narrow interfaces like `IToolResponseCache` and `EnforcementRunner` to maintain loose coupling).
-2. **NoteContext Routing**: Should note-context formatting remain in `server.py` after execution, or should a decorator handle notes presentation? (Recommendation: leave notes presentation to the outer execution boundary to keep decorators focused on execution flow).
-
+1. **Decorator Construction Dependency Injection:**
+   - **Decision:** `ToolFactory` constructor will be injected with narrow interfaces (`IToolResponseCache` and `EnforcementRunner`) rather than the full configuration settings or `ServerBootstrapper`. This enforces the Interface Segregation Principle (ISP) and keeps the factory decoupled.
+2. **NoteContext Routing & Presentation:**
+   - **Decision:** Introduce a dedicated `NotePresentationDecorator` in the pipeline. This decorator will be responsible for calling `TextPresenter.present_notes(tool_name, notes)` and appending the rendered markdown block to the `ToolResult`'s content list. This achieves complete separation of concerns, ensuring `server.py` has zero knowledge of notes presentation.
 ---
 
 ## 5. Approved Strategy
@@ -135,6 +136,7 @@ The strategy is explicitly defined per affected boundary:
 - **Tool Composition / Instantiation Boundary:** **Clean break**. The temporary try-except, validation, and enforcement blocks inside `server.py` (`handle_call_tool`) will be completely removed and replaced with the modular decorator pipeline.
 - **Test Suite Boundary:** **Clean break / Refactoring**. Mocked tests in `test_server.py` that currently target `server.py` exception mapping will be refactored to verify decorators or target the fully wrapped tools. New unit tests will be introduced in `test_decorators.py`.
 - **Logging & Diagnostics Boundary:** **New requirement**. Standardize exception logging inside the decorators to write tracebacks to `sys.stderr` / `mcp_audit.log`, resolving the logging gaps.
+- **Notes Boundary / Content Separation:** **Clean break / Strict Contract**. In accordance with Section 15 of `ARCHITECTURE_PRINCIPLES.md`, no Python code in managers, adapters, or tools is permitted to define, format, or return user-facing text messages or emojis. Notes must be produced strictly as generic `Note(key, params)` metadata events, and their templates must live exclusively in `presentation.yaml`.
 ---
 
 ## 6. Expected Results

@@ -320,6 +320,16 @@ runner = EnforcementRunner(workspace_root=tmp_path, config=config, merge_readine
 
 ---
 
+## 15. Notes Boundary Constraint — No User-Facing Text in Code
+
+**Binding rules:**
+- No python code (including managers, adapters, and tools) may define, format, or return user-facing text messages, emojis, or templates for operation notes.
+- All notes must be produced exclusively as generic `Note(key, params)` metadata events.
+- All associated text templates, note headers, note group emojis, and layouts must live strictly in the `presentation.yaml` configuration file.
+- The `TextPresenter` class is the sole authority responsible for resolving keys, formatting placeholders, and rendering markdown groups.
+
+---
+
 ## Quick Reference — Prohibited Patterns
 
 | Pattern | Violation | Alternative |
@@ -339,3 +349,4 @@ runner = EnforcementRunner(workspace_root=tmp_path, config=config, merge_readine
 | `runner._handle_x(...)` in test | §14 — Public API | `runner.run(event=..., timing=..., context=...)` |
 | `assert obj._internal is x` in test | §14 — Public API | Assert via observable behaviour of public method |
 | `# pyright: ignore[reportPrivateUsage]` without rationale | §14 — Public API | Rewrite test, or add rationale explaining why no public alternative exists |
+| Hardcoded note emoji or message string in Python | §15 — Notes Boundary | Produce generic `Note(key, params)`; configure template in `presentation.yaml` |
