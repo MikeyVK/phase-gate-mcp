@@ -63,62 +63,84 @@ While this bridge successfully achieved 100% of functional goals, it resulted in
 
 ## 3. Findings & Analysis
 
-### 3.1. Responsibility & Coupling Analysis
-Currently, `MCPServer.handle_call_tool` is responsible for:
-- Orchestrating JSON-RPC request decoding.
-- Creating a unique `call_id` and tracking duration.
-- Validating tool schemas and wrapping arguments.
-- Running pre-execution lifecycle enforcement rules.
-- Invoking the core tool execute command.
-- Writing success/error DTOs to the response cache.
-- Running post-execution lifecycle enforcement rules.
-- Resolving templates and rendering note groups using `TextPresenter`.
-- Handling double fault protection on cache/publishing exceptions.
-- Translating the final payload into MCP-compliant protocol structures.
+### 3.1. Target Server Architecture Model
+To align the MCP server with the core project principles (SOLID, DIP, Separation of Concerns), the server must be refactored from a monolithic controller into four logically isolated, decoupled subsystems that communicate exclusively via strict interfaces:
 
-This constitutes a clear violation of the Single Responsibility Principle (SRP). A change in lifecycle rules, error formatting, caching, or transport protocol all target `server.py`, increasing maintenance risk.
+```mermaid
+graph TD
+    Client[LLM / JSON-RPC Client] -->|1. Request| Transport[Transport Layer: server.py]
+    Transport -->|2. Execute| ExecSub[Execution Sub-system: ITool Pipeline]
+    ExecSub -->|3. DTO| Transport
+    Transport -->|4. Store| CacheSub[Persistence Sub-system: IToolResponseCache]
+    CacheSub -->|5. run_id| Transport
+    Transport -->|6. Present| PresSub[Presentation Sub-system: IPresenter]
+    PresSub -->|7. Markdown| Transport
+    Transport -->|8. JSON-RPC Result| Client
+```
 
-### 3.1.1. Orchestration and Contract Gaps
-A deep review of the current codebase reveals several critical architectural gaps:
-1. **Presenter Encapsulation Leakage:** The presenter (`TextPresenter`) is currently treated as a multi-disciplinary helper class for the server rather than an encapsulated component. The server must have explicit knowledge of `presentation_category`, manually extract `note_context.entries`, check next instructions, and format the URI reference template. This leaks presentation-specific logic into the transport orchestrator.
-2. **Missing Interface Protocols:** There is no formal `IPresenter` interface protocol. The server is tightly coupled to the concrete `TextPresenter` implementation.
-3. **Polluted `__init__.py` Files:** The `mcp_server/core/interfaces/__init__.py` file contains the actual definitions of all system protocols (e.g., `IStateReader`, `IToolResponseCache`). Best practices dictate that `__init__.py` files must be pure facades/re-export files, and definitions must reside in appropriately named modules.
-4. **Key Generation Leakage:** The server currently generates `run_id` and constructs the cache URI structure (`pgmcp://cache/runs/{run_id}`), which are implementation details of the persistence/caching subsystem.
-### 3.2. Error Taxonomy Coverage Validation
-We checked the coverage of the 6 system error categories identified in `issue404/design.md` against our decorator pipeline design:
+1. **Transport Layer (The Orchestrator / Controller - `server.py`):**
+   * **Role:** Manages the LLM JSON-RPC connection over stdin/stdout, parses incoming tool calls, and serializes outgoing responses.
+   * **Boundary:** Implements the protocol transportation layer. It has zero knowledge of validation schemas, lifecycle policies, caching formats, or presentation templates. It orchestrates the other subsystems purely through abstract interfaces.
 
-| Category | Description | Coverage in Decorator Pipeline |
+2. **Execution Sub-system (The Model / Domain Boundary - `ITool` Pipeline):**
+   * **Role:** Guards and executes the domain logic. It validates input parameters, checks pre/post enforcement guards, executes the core tool code, and catches execution exceptions, mapping them to taxonomical error DTOs.
+   * **Boundary:** Exposed via the `ITool` protocol. It guarantees that `await tool.execute(...)` always returns a valid DTO (success or error) without leaking exceptions.
+
+3. **Persistence Sub-system (The Caching Layer - `IToolResponseCache`):**
+   * **Role:** Manages the storage and retrieval of tool outputs (DTOs) to make them accessible as MCP resources.
+   * **Boundary:** Exposed via `IToolResponseCache`. It is the sole authority responsible for key generation (`run_id`), URI construction (`pgmcp://cache/runs/{run_id}`), and storage operations.
+
+4. **Presentation Sub-system (The View / Presenter - `IPresenter`):**
+   * **Role:** Translates data DTOs and operational notes into formatted markdown strings based on configuration templates (`presentation.yaml`).
+   * **Boundary:** Exposed via `IPresenter`. It encapsulates all template lookups, formatting functions, fallback JSON dumps (in case of cache failure), and note presentation.
+
+### 3.2. Systemic Mis-Alignment Analysis
+The current monolithic implementation of `MCPServer.handle_call_tool` violates the core architecture contract in several critical areas:
+
+| Current Violation | Architectural Mis-Alignment | Target Architecture Alignment |
 | :--- | :--- | :--- |
-| **1. Server Startup** | Configuration or bootstrap failures | Handled by `ServerBootstrapper` (outside decorators). |
-| **2. Tool Input Schema Validation** | Pydantic validation failures of LLM arguments | `InputValidationDecorator` catches `ValidationError` and returns `ValidationErrorOutput`. |
-| **3. Tool Platform Errors** | Unexpected infrastructural errors bubbling from tools | `ToolErrorHandlerDecorator` catches generic exceptions and returns `ExecutionErrorOutput`. |
-| **4. Tool Domain Errors** | Expected business logic failures | Core tool execution returns `success=False` domain DTOs (normal flow, passes through). |
-| **5. MCP Server / Cache Errors** | Failures within the caching pipeline itself | Handled by the server orchestrator directly during the caching step. |
-| **6. Enforcement Errors** | Phase-guard or lifecycle rule blocks | `EnforcementDecorator` catches `MCPError` and returns `EnforcementErrorOutput`. |
+| **Inline Validation & Guards:** `server.py` contains try-except blocks for `ValidationError` and `MCPError`. | Violates SRP and OCP. Transport layer changes when validation or business guards change. | Validation and enforcement are encapsulated in `InputValidationDecorator` and `EnforcementDecorator`. |
+| **Transport Handles Key Gen:** `server.py` generates `run_id` and constructs the cache URI. | Violates DIP and SoC. Key structure and storage location are leaked to the orchestrator. | Caching subsystem (`IToolResponseCache.put`) generates and returns the `run_id` upon successful write. |
+| **Monolithic Formatting & Assembly:** `server.py` resolves templates, formats links, and parses note context lists. | Violates Presentation Boundary and Demeter. Server needs internal knowledge of `NoteContext` and formatter. | Presenter (`IPresenter.present_result`) accepts DTO, `run_id` (or `None`), and `NoteContext`, returning the final markdown. |
+| **Loose Coupling / Missing Contracts:** Server directly accesses concrete classes with no interface boundaries. | Violates DIP. Components cannot be mocked or refactored independently. | Server communicates with other subsystems strictly via `ITool`, `IToolResponseCache`, and `IPresenter` protocols. |
 
-This confirms that the decorator pipeline provides 100% functional coverage for all execution-related error types.
+### 3.3. Control and Data Flow (Outside-in)
+The execution of a tool call flows through the subsystems sequentially, communicating purely via DTOs and interfaces:
 
-### 3.3. Double Fault Prevention Flow
+1. **Transport Layer** receives JSON-RPC request and routes it to the matching `ITool` instance.
+2. **Execution Sub-system** (`ITool` pipeline) executes:
+   - `InputValidationDecorator` validates arguments against schema -> returns `ValidationErrorOutput` on failure.
+   - `EnforcementDecorator` runs pre-guards -> returns `EnforcementErrorOutput` on failure.
+   - Core `ITool` executes business logic -> returns success DTO.
+   - `ToolErrorHandlerDecorator` catches any unexpected tool crash -> returns `ExecutionErrorOutput` DTO.
+3. **Transport Layer** receives the resulting DTO and calls `IToolResponseCache.put(dto)` to persist it.
+4. **Persistence Sub-system** caches the DTO, generates a unique `run_id`, and returns it. If caching fails (e.g., disk full), the exception is caught by the server, which sets `run_id = None`.
+5. **Transport Layer** calls `IPresenter.present_result(..., data=dto, run_id=run_id, note_context=note_context)` to format the output.
+6. **Presentation Sub-system** looks up templates and formats the DTO, notes, and cache link (or provides a JSON fallback dump if `run_id` is `None`).
+7. **Transport Layer** packages the formatted text into the final JSON-RPC response and writes to stdout.
+
+### 3.4. Double Fault Prevention Flow
 Robust double fault prevention requires that a crash in the caching/presentation steps (such as a full disk or permissions failure) does not crash the client connection:
 - If tool execution fails or succeeds, a DTO is returned to the server orchestrator.
-- The server orchestrator attempts to write the DTO to the response cache. If this write fails (raising a caching exception), the server catches it, logs the warning to `sys.stderr`/`mcp_audit.log`, and formats a safe plaintext fallback (mapped to `CacheErrorOutput`).
+- The server orchestrator attempts to write the DTO to the response cache. If this write fails (raising a caching exception), the server catches it, logs the warning to `sys.stderr`/`mcp_audit.log`, and calls the presenter with `run_id = None`.
+- The presenter formats the output normally using the template but appends a fallback JSON dump of the DTO to ensure the LLM still receives 100% of the data.
 - This ensures the JSON-RPC channel remains completely stable.
 
-### 3.4. Blast Radius & Test Suite Coupling
-- **`mcp_server/tools/decorators.py`**: Will host all new decorator classes. Currently only hosts `ResourcePublishingDecorator` (which will be renamed/extended).
+### 3.5. Blast Radius & Test Suite Coupling
+- **`mcp_server/tools/decorators.py`**: Will host all new decorator classes.
 - **`mcp_server/bootstrap.py`**: `ToolFactory.build_tool` will assemble the decorators. `ServerBootstrapper` must pass the required dependencies (`response_cache`, `enforcement_runner`).
-- **`mcp_server/server.py`**: The bridge in `handle_call_tool` will be replaced with a single `tool.execute()` call and NoteContext rendering.
+- **`mcp_server/server.py`**: The bridge in `handle_call_tool` will be replaced with the clean, sequential invocation of the subsystems.
 - **`tests/mcp_server/unit/test_server.py`**: Currently asserts exceptions directly on `server.py` mock targets. These tests will be refactored to verify decorator behavior.
 
-### 3.5. Logging and Stderr Hygiene
+### 3.6. Logging and Stderr Hygiene
 We analyzed the logging architecture and identified a minor gap in the current implementation:
 - **Current Gap:** Unexpected tool execution exceptions (`exec_exc`) are caught by the temporary bridge in `server.py`, converted to `ExecutionErrorOutput`, and returned. However, they are **not** written to the system error logger or `sys.stderr`/`mcp_audit.log`. This makes it difficult for administrators to monitor errors on the server side.
 - **Hygiene Requirement:** Conform to `decorator_pipeline_design.md` §3 by implementing explicit logging inside the decorators:
   - `ToolErrorHandlerDecorator` will log caught execution exceptions to `sys.stderr` / `mcp_audit.log` via the structured logger with `exc_info=True`.
-  - The server orchestrator will log publishing/caching failures with exc_info=True.
+  - The server orchestrator will log publishing/caching failures with `exc_info=True`.
   - Standard output (`sys.stdout`) remains strictly protected for JSON-RPC messages.
 
-### 3.6. Strategy Options & Trade-offs
+### 3.7. Strategy Options & Trade-offs
 We compare three options for composing the wrapper pipeline:
 
 | Option | Cost | Risk | Impact | Trade-offs / Verdict |
@@ -159,3 +181,4 @@ Complete decoupling of server.py from validation, enforcement, and exception han
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2026-06-18 | Agent | Initial validation and decorator analysis report |
+| 1.1.0 | 2026-06-18 | Agent | Re-oriented research from outside-in server target architecture |
