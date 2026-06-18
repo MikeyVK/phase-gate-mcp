@@ -346,7 +346,7 @@ class MCPServer:
                             )
                         except ValidationError as val_exc:
                             err_dto = ValidationErrorOutput(
-                                message="Validation failed",
+                                message=f"Invalid input for {name}",
                                 validation_errors=val_exc.errors(),
                                 input_schema=tool.input_schema,
                                 params=arguments or {},

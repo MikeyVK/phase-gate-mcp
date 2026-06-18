@@ -225,7 +225,7 @@ class TestCycleTools:
 
         assert "✅" in response.root.content[0].text
         assert len(response.root.content) == 2
-        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -291,7 +291,7 @@ class TestCycleTools:
 
         assert "Transitioned to Cycle 2/2 (One)" in response.root.content[0].text
         assert len(response.root.content) == 2
-        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list

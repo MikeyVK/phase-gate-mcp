@@ -745,7 +745,7 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
         content = response.root.content
         assert len(content) == 2  # The formatted text + the schema resource
         text = getattr(content[0], "text", "")
-        assert "❌ Failure: Validation failed" in text
+        assert "❌ Failure: Invalid input for dummy_tool" in text
         assert "pgmcp://cache/runs/" in text
 
         import re  # noqa: PLC0415
