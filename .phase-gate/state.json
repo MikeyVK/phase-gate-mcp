@@ -1,13 +1,14 @@
 {
   "branch": "refactor/406-decorator-pipeline-exception-mapping",
   "issue_number": 406,
-  "workflow_name": "refactor",
+  "workflow_name": "feature",
   "current_phase": "research",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
   "required_phases": [
     "research",
+    "design",
     "planning",
     "implementation",
     "validation",
