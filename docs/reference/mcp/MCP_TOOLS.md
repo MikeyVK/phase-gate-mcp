@@ -82,7 +82,7 @@ Full GitHub API integration for issues, pull requests, labels, and milestones. R
 > **Note:** `CreatePRTool` has been deleted (issue #283). Use `submit_pr` — it performs an
 > atomically robust submission: preflights before any mutation (dirty-tree + upstream checks),
 > conditional artifact neutralization + commit, push, GitHub API call, and `PRStatus.OPEN`.
-> On any failure the branch is rolled back to a clean, retryable state (RecoveryNote produced).
+> On any failure the branch is rolled back to a clean, retryable state (recovery note produced).
 > Blocked unless `current_phase == "ready"`.
 
 **Usage Example:**

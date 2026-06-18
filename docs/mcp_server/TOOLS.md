@@ -91,7 +91,7 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 **Safeguards:**
 - Blocked unless `.phase-gate/state.json` reports `current_phase == "ready"`
 - Blocked for any branch-mutating tool while the branch already has `PRStatus.OPEN`
-- Returns a `RecoveryNote` when the flow fails after neutralization and the branch tip may have changed
+- Returns a `recovery` note when the flow fails after neutralization and the branch tip may have changed
 
 **Public output:**
 - Success: `Created PR #<number>: <url>`

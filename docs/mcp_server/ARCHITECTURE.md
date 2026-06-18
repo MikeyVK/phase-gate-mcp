@@ -209,7 +209,7 @@ mcp_server/
 │   ├── exceptions.py              # MCPError hierarchy
 │   ├── error_handling.py          # @tool_error_handler decorator
 │   ├── logging.py                 # Structured logging + audit log
-│   ├── operation_notes.py         # NoteContext + 6 NoteEntry variants
+│   ├── operation_notes.py         # NoteContext + generic Note class
 │   ├── phase_detection.py         # ScopeDecoder
 │   ├── policy_engine.py           # PolicyEngine
 │   ├── proxy.py                   # MCPProxy (transparent restart)
@@ -478,8 +478,9 @@ sequenceDiagram
     Tool-->>Server: ToolResult
 
     Server->>Enforce: post-enforcement
-    Server->>Notes: render_to_response(result)
-    Notes-->>Agent: CallToolResult with notes
+    Server->>Presenter: present_notes(tool_name, notes)
+    Presenter-->>Server: notes_text
+    Server-->>Agent: CallToolResult with formatted notes
 ```
 
 ### 6.3 Tool Categories (50 tools)
@@ -520,9 +521,11 @@ tool name or tool category. Four built-in action types:
 
 ### 6.6 NoteContext System
 
-Per-tool-call bidirectional notes bus. Six typed note variants:
-`ExclusionNote`, `CommitNote`, `SuggestionNote`, `BlockerNote`, `RecoveryNote`,
-`InfoNote`. Notes are rendered into the final tool response for user-visible feedback.
+Per-tool-call bidirectional notes bus. Operates on a single generic `Note(key, params)`
+dataclass (legacy subclasses like `ExclusionNote`, `RecoveryNote`, etc. have been removed).
+Notes are formatted, prioritized, and grouped by the `TextPresenter` using templates
+defined in `presentation.yaml` under the `notes` configuration section before being
+returned in the final tool response.
 
 ---
 

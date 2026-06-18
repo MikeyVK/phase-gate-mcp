@@ -422,15 +422,15 @@ This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...
       d. Conditional: neutralize and commit (only if diffs detected)
          └─ GitManager.neutralize_to_base(paths, base)
          └─ GitManager.commit_with_scope(workflow_phase="ready", ...)
-         → on commit failure: hard_reset("HEAD") + RecoveryNote + raises
-      e. Push the branch to origin (always)
-         → on push failure: hard_reset("HEAD~1") if commit made + RecoveryNote + raises
+          → on commit failure: hard_reset("HEAD") + a recovery note + raises
+       e. Push the branch to origin (always)
+          → on push failure: hard_reset("HEAD~1") if commit made + a recovery note + raises
       Returns True if a neutralization commit was made, False otherwise
 2. Create the GitHub PR via API
    └─ GitHubManager.create_pr(...)
    → on failure + commit_made=True: rollback_push called automatically
       └─ GitManager.rollback_push(note_context) — hard_reset("HEAD~1") + force-push
-      Produces a RecoveryNote; branch left in pre-submit state
+       Produces a recovery note; branch left in pre-submit state
 3. Write PRStatus.OPEN to the session cache
    └─ IPRStatusWriter.set_pr_status(branch, PRStatus.OPEN)
 ```
@@ -438,8 +438,8 @@ This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...
 | Failure stage | Error type | Branch state after | Retry safe? |
 |---------------|-----------|-------------------|-------------|
 | Preflight (dirty tree / no upstream) | `PreflightError` | Unchanged | Yes |
-| Commit or push (inside `prepare_submission`) | `ExecutionError` | Rolled back internally; RecoveryNote produced | Yes |
-| GitHub API (`create_pr`) | `ExecutionError` | Auto-rolled back via `rollback_push`; RecoveryNote produced | Yes |
+| Commit or push (inside `prepare_submission`) | `ExecutionError` | Rolled back internally; recovery note produced | Yes |
+| GitHub API (`create_pr`) | `ExecutionError` | Auto-rolled back via `rollback_push`; recovery note produced | Yes |
 
 
 #### Branch-Local Artifacts
@@ -460,9 +460,9 @@ Configured in `.phase-gate/config/contracts.yaml` → `branch_local_artifacts`.
 
 **Enforcement runner** (`.phase-gate/config/enforcement.yaml`, runs before execution):
 1. **`check_phase_readiness`** — blocks unless `state.json` shows `current_phase == "ready"`.
-   Produces a `SuggestionNote` with `transition_phase(to_phase="ready")`.
+   Produces a `suggestion` note with `transition_phase(to_phase="ready")`.
 2. **`check_pr_status`** (via `BranchMutatingTool`) — blocks if the branch already has
-   `PRStatus.OPEN` in cache. Produces a `SuggestionNote` to call `merge_pr` first.
+   `PRStatus.OPEN` in cache. Produces a `suggestion` note to call `merge_pr` first.
 
 **Internal preflights** (inside `GitManager.prepare_submission`, run before any mutation):
 3. **Dirty-tree check** — blocks with `PreflightError` if working tree is not clean.
@@ -477,7 +477,7 @@ Created PR #45: https://github.com/owner/repo/pull/45
 Error result on failure:
 ```
 <error details from PreflightError or ExecutionError>
-(RecoveryNote in context describes rollback status and retry instructions.)
+(A recovery note in context describes rollback status and retry instructions.)
 ```
 
 #### Example Usage

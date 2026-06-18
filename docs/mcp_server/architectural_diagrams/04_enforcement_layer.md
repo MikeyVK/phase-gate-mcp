@@ -159,7 +159,7 @@ Three action handlers are registered in `EnforcementRunner._build_default_regist
 
 Reads `action.rules[branch_type]` from `enforcement.yaml` → list of allowed base-branch
 patterns (glob). Raises `ValidationError` if the requested `base_branch` does not match
-any pattern. Produces `SuggestionNote` with the allowed bases.
+any pattern. Produces a `suggestion` note with the allowed bases.
 
 ### `check_pr_status`
 
@@ -168,14 +168,14 @@ Reads `IPRStatusReader.get_pr_status(branch)`. Branch is resolved from:
 2. `_get_current_git_branch(workspace_root)` (git rev-parse)
 3. `context.tool_name` (last resort)
 
-Raises `ValidationError` when `PRStatus.OPEN`. Produces `SuggestionNote` to call `merge_pr`.
+Raises `ValidationError` when `PRStatus.OPEN`. Produces a `suggestion` note to call `merge_pr`.
 Raises `ConfigError` at startup if no `pr_status_reader` is injected.
 
 ### `check_phase_readiness`
 
 Reads `action.policy` as the required phase name. Reads `current_phase` from
 `.phase-gate/state.json` at call time (no caching). Raises `ValidationError` on mismatch or absent
-state file. Produces `SuggestionNote` with `transition_phase(to_phase="<policy>")`.
+state file. Produces a `suggestion` note with `transition_phase(to_phase="<policy>")`.
 
 ---
 
@@ -217,7 +217,7 @@ is now handled directly by the transition tools.
 | YAML configuration for enforcement | Declarative; hot-reloadable without code changes | Hardcoded in Python (requires redeployment per rule change) |
 | Registry validation at startup | Fail-fast on unknown action types; prevents silent runtime failures | Lazy validation per event (errors only surface during use) |
 | `BranchMutatingTool` category for bulk rule dispatch | One `enforcement.yaml` entry covers all 18 branch-mutating tools | Individual tool entries (18× more config, easy to miss new tools) |
-| `SubmitPRTool` owns artifact neutralization | Self-contained atomic flow; enforcement runner stays stateless | Enforcement runner pre-populates `ExclusionNote` list (removed in C6 GREEN) |
+| `SubmitPRTool` owns artifact neutralization | Self-contained atomic flow; enforcement runner stays stateless | Enforcement runner pre-populates exclusions list (removed in C6 GREEN) |
 | `MergePRTool` excluded from `BranchMutatingTool` | Avoids `check_pr_status` deadlock — MergePR is the escape hatch | Including it → blocked while OPEN, so the PR could never be merged (deadlock) |
 | `check_phase_readiness` reads state.json at call time | Always reflects live phase without session coupling | Cache with invalidation (over-engineered for a single file read) |
 
