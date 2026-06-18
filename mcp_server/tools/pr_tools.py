@@ -294,9 +294,10 @@ class SubmitPRTool(ITool):
                                 "message": (
                                     f"GitHub PR creation failed: {exc}. "
                                     "Remote branch has been rolled back to pre-submit state. "
-                                    "Working tree is clean. Retry submit_pr once the API issue is resolved."
+                                    "Working tree is clean. "
+                                    "Retry submit_pr once the API issue is resolved."
                                 )
-                            }
+                            },
                         )
                     )
                 except ExecutionError:

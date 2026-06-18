@@ -270,7 +270,10 @@ class EnforcementRunner:
             return
 
         note_context.produce(
-            Note(key="suggestion_message", params={"message": f"Allowed bases: {', '.join(allowed_patterns)}"})
+            Note(
+                key="suggestion_message",
+                params={"message": f"Allowed bases: {', '.join(allowed_patterns)}"},
+            )
         )
         raise ValidationError(
             f"Branch type '{branch_type}' cannot be created from base '{base_branch}'",
@@ -305,10 +308,11 @@ class EnforcementRunner:
         )
         status = self._pr_status_reader.get_pr_status(branch)
         if status == PRStatus.OPEN:
+            msg = "Call merge_pr to close the open PR before continuing branch work."
             note_context.produce(
                 Note(
                     key="suggestion_message",
-                    params={"message": "Call merge_pr to close the open PR before continuing branch work."}
+                    params={"message": msg},
                 )
             )
             raise ValidationError(
@@ -338,7 +342,10 @@ class EnforcementRunner:
             current_phase = None
         if current_phase != required_phase:
             note_context.produce(
-                Note(key="suggestion_message", params={"message": f'transition_phase(to_phase="{required_phase}")'})
+                Note(
+                    key="suggestion_message",
+                    params={"message": f'transition_phase(to_phase="{required_phase}")'},
+                )
             )
             raise ValidationError(
                 f"Tool requires phase '{required_phase}'. Current phase: '{current_phase}'.",
@@ -400,7 +407,10 @@ class EnforcementRunner:
 
         if not self._context_loaded_reader.is_context_loaded(branch):
             note_context.produce(
-                Note(key="suggestion_message", params={"message": "Call get_work_context before using this tool."})
+                Note(
+                    key="suggestion_message",
+                    params={"message": "Call get_work_context before using this tool."},
+                )
             )
             raise ValidationError(
                 f"get_work_context has not been called for branch '{branch}'. "

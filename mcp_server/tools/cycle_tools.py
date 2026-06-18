@@ -24,7 +24,6 @@ from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas.tool_outputs import CycleTransitionOutput, ForceCycleTransitionOutput
 from mcp_server.tools.base import ITool
-from mcp_server.tools.phase_tools import TRANSITION_ADVISORY_NOTE
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 __all__ = [

@@ -368,7 +368,10 @@ class TextPresenter:
                     elif note.key == "recovery_message":
                         rendered_note = RecoveryNote(message=note.params.get("message", ""))
                     elif note.key == "suggestion_message":
-                        rendered_note = SuggestionNote(message=note.params.get("message", ""), subject=note.params.get("subject"))
+                        rendered_note = SuggestionNote(
+                            message=note.params.get("message", ""),
+                            subject=note.params.get("subject"),
+                        )
                     elif note.key == "info_message":
                         rendered_note = InfoNote(message=note.params.get("message", ""))
                     elif note.key == "file_excluded":
@@ -388,7 +391,9 @@ class TextPresenter:
                             .lstrip()
                         )
                         grouped_texts["recoveries"].append(cleaned)
-                    elif isinstance(rendered_note, InfoNote) or isinstance(rendered_note, BlockerNote):
+                    elif isinstance(rendered_note, InfoNote) or isinstance(
+                        rendered_note, BlockerNote
+                    ):
                         grouped_texts["info"].append(msg)
                     else:
                         grouped_texts["info"].append(msg)

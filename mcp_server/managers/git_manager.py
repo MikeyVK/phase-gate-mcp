@@ -80,7 +80,12 @@ class GitManager:
         # Convention #1: Branch type validation via GitConfig
         if not self._git_config.has_branch_type(branch_type):
             note_context.produce(
-                Note(key="suggestion_message", params={"message": f"Allowed types: {', '.join(self._git_config.branch_types)}"})
+                Note(
+                    key="suggestion_message",
+                    params={
+                        "message": f"Allowed types: {', '.join(self._git_config.branch_types)}"
+                    },
+                )
             )
             raise ValidationError(f"Invalid branch type: {branch_type}")
 
@@ -89,7 +94,9 @@ class GitManager:
             note_context.produce(
                 Note(
                     key="suggestion_message",
-                    params={"message": f"Must match pattern: {self._git_config.branch_name_pattern}"}
+                    params={
+                        "message": f"Must match pattern: {self._git_config.branch_name_pattern}"
+                    },
                 )
             )
             raise ValidationError(f"Invalid branch name: {name}")
@@ -113,7 +120,10 @@ class GitManager:
         # Pre-flight check
         if not self.adapter.is_clean():
             note_context.produce(
-                Note(key="blocker_message", params={"message": "Commit or stash changes before creating a new branch"})
+                Note(
+                    key="blocker_message",
+                    params={"message": "Commit or stash changes before creating a new branch"},
+                )
             )
             raise PreflightError("Working directory is not clean")
 
@@ -175,7 +185,9 @@ class GitManager:
             note_context.produce(
                 Note(
                     key="suggestion_message",
-                    params={"message": "Omit 'files' to commit everything, or provide at least one path"}
+                    params={
+                        "message": "Omit 'files' to commit everything, or provide at least one path"
+                    },
                 )
             )
             raise ValidationError("Files list cannot be empty")
@@ -218,7 +230,12 @@ class GitManager:
             source: Git ref to restore from (default HEAD).
         """
         if not files:
-            note_context.produce(Note(key="suggestion_message", params={"message": "Provide at least one path to restore"}))
+            note_context.produce(
+                Note(
+                    key="suggestion_message",
+                    params={"message": "Provide at least one path to restore"},
+                )
+            )
             raise ValidationError("Files list cannot be empty")
         self.adapter.restore(files=files, source=source)
 
@@ -255,11 +272,18 @@ class GitManager:
         - manager.pull(note_context, remote="origin", rebase=False)
         """
         if not self.adapter.is_clean():
-            note_context.produce(Note(key="blocker_message", params={"message": "Commit or stash changes before pulling"}))
+            note_context.produce(
+                Note(
+                    key="blocker_message",
+                    params={"message": "Commit or stash changes before pulling"},
+                )
+            )
             raise PreflightError("Working directory is not clean")
 
         if self.adapter.get_current_branch() == "HEAD":
-            note_context.produce(Note(key="blocker_message", params={"message": "Checkout a branch before pulling"}))
+            note_context.produce(
+                Note(key="blocker_message", params={"message": "Checkout a branch before pulling"})
+            )
             raise PreflightError("Detached HEAD - cannot pull")
 
         if not self.adapter.has_upstream():
@@ -271,11 +295,14 @@ class GitManager:
                             "Set upstream tracking"
                             " (e.g. 'git branch --set-upstream-to=origin/<branch>')"
                         )
-                    }
+                    },
                 )
             )
             note_context.produce(
-                Note(key="blocker_message", params={"message": "Or pull with an explicit refspec (not supported yet)"})
+                Note(
+                    key="blocker_message",
+                    params={"message": "Or pull with an explicit refspec (not supported yet)"},
+                )
             )
             raise PreflightError("No upstream configured for current branch")
 
@@ -284,7 +311,12 @@ class GitManager:
     def merge(self, branch_name: str, note_context: NoteContext) -> None:
         """Merge a branch into current branch."""
         if not self.adapter.is_clean():
-            note_context.produce(Note(key="blocker_message", params={"message": "Commit or stash changes before merging"}))
+            note_context.produce(
+                Note(
+                    key="blocker_message",
+                    params={"message": "Commit or stash changes before merging"},
+                )
+            )
             raise PreflightError("Working directory is not clean")
         self.adapter.merge(branch_name)
 
@@ -298,10 +330,11 @@ class GitManager:
         """Delete a branch locally, remotely, or both."""
         # Convention #4: Protected branches via GitConfig
         if self._git_config.is_protected(branch_name):
+            protected_list = ", ".join(self._git_config.protected_branches)
             note_context.produce(
                 Note(
                     key="suggestion_message",
-                    params={"message": f"Protected branches: {', '.join(self._git_config.protected_branches)}"}
+                    params={"message": f"Protected branches: {protected_list}"},
                 )
             )
             raise ValidationError(f"Cannot delete protected branch: {branch_name}")
@@ -442,7 +475,7 @@ class GitManager:
                             "Working tree is not clean. "
                             "Commit or stash all changes before submit_pr."
                         )
-                    }
+                    },
                 )
             )
             raise PreflightError("Working directory is not clean")
@@ -457,7 +490,7 @@ class GitManager:
                             "No upstream tracking branch configured. "
                             "Run git_push(set_upstream=True) before submit_pr."
                         )
-                    }
+                    },
                 )
             )
             raise PreflightError("No upstream configured for current branch")
@@ -493,9 +526,10 @@ class GitManager:
                         params={
                             "message": (
                                 f"Commit failed: {exc}. Local neutralization commit rolled back. "
-                                "Working tree is clean. Retry submit_pr after resolving the commit issue."
+                                "Working tree is clean. "
+                                "Retry submit_pr after resolving the commit issue."
                             )
-                        }
+                        },
                     )
                 )
                 raise
@@ -512,9 +546,10 @@ class GitManager:
                         params={
                             "message": (
                                 f"Push failed: {exc}. Local neutralization commit rolled back. "
-                                "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                                "Working tree is clean. "
+                                "Retry submit_pr after resolving the remote issue."
                             )
-                        }
+                        },
                     )
                 )
             else:
@@ -524,9 +559,10 @@ class GitManager:
                         params={
                             "message": (
                                 f"Push failed: {exc}. No local commit to roll back. "
-                                "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                                "Working tree is clean. "
+                                "Retry submit_pr after resolving the remote issue."
                             )
-                        }
+                        },
                     )
                 )
             raise
@@ -559,7 +595,7 @@ class GitManager:
                             "git reset --hard HEAD~1, then git push --force-with-lease. "
                             "Do not commit until resolved."
                         )
-                    }
+                    },
                 )
             )
             raise
@@ -577,7 +613,7 @@ class GitManager:
                             "Manual recovery for remote: git push --force-with-lease. "
                             "Do not commit until resolved."
                         )
-                    }
+                    },
                 )
             )
             raise

@@ -93,7 +93,12 @@ class RunTestsInput(BaseModel):
 def _emit_lf_cache_note(result: PytestResult, params: RunTestsInput, context: NoteContext) -> None:
     """Emit the LF-empty informational note only when the user requested --lf."""
     if params.last_failed_only and result.lf_cache_was_empty:
-        context.produce(Note(key="info_message", params={"message": "Last-failed cache was empty; ran full selection instead."}))
+        context.produce(
+            Note(
+                key="info_message",
+                params={"message": "Last-failed cache was empty; ran full selection instead."},
+            )
+        )
 
 
 def _find_timeout_expired(exc: BaseException) -> subprocess.TimeoutExpired | None:
@@ -195,13 +200,16 @@ class RunTestsTool(ITool):
                                 f"Tests timed out after {effective_timeout}s. "
                                 "Run a smaller subset or raise the timeout."
                             )
-                        }
+                        },
                     )
                 )
                 raise ExecutionError(f"Tests timed out after {effective_timeout}s") from None
             if isinstance(exc, OSError):
                 context.produce(
-                    Note(key="recovery_message", params={"message": "Verify the Python interpreter and venv are reachable."})
+                    Note(
+                        key="recovery_message",
+                        params={"message": "Verify the Python interpreter and venv are reachable."},
+                    )
                 )
                 raise ExecutionError(f"Failed to run tests: {exc}") from exc
             raise

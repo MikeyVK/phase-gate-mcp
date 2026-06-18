@@ -202,18 +202,25 @@ class NoteContext:
                 results.append(n)
             elif isinstance(n, Note):
                 if t is BlockerNote and n.key == "blocker_message":
-                    results.append(BlockerNote(message=n.params.get("message", "")))  # type: ignore
+                    msg = n.params.get("message", "")
+                    results.append(BlockerNote(message=msg))  # type: ignore
                 elif t is RecoveryNote and n.key == "recovery_message":
-                    results.append(RecoveryNote(message=n.params.get("message", "")))  # type: ignore
+                    msg = n.params.get("message", "")
+                    results.append(RecoveryNote(message=msg))  # type: ignore
                 elif t is SuggestionNote and n.key == "suggestion_message":
-                    results.append(SuggestionNote(message=n.params.get("message", ""), subject=n.params.get("subject")))  # type: ignore
+                    msg = n.params.get("message", "")
+                    sub = n.params.get("subject")
+                    results.append(SuggestionNote(message=msg, subject=sub))  # type: ignore
                 elif t is InfoNote and n.key == "info_message":
-                    results.append(InfoNote(message=n.params.get("message", "")))  # type: ignore
+                    msg = n.params.get("message", "")
+                    results.append(InfoNote(message=msg))  # type: ignore
                 elif t is ExclusionNote and n.key == "file_excluded":
-                    results.append(ExclusionNote(file_path=n.params.get("file_path", "")))  # type: ignore
+                    fp = n.params.get("file_path", "")
+                    results.append(ExclusionNote(file_path=fp))  # type: ignore
                 elif t is CommitNote and n.key == "commit":
-                    results.append(CommitNote(commit_hash=n.params.get("commit_hash", "")))  # type: ignore
-        return results  # type: ignore
+                    h = n.params.get("commit_hash", "")
+                    results.append(CommitNote(commit_hash=h))  # type: ignore
+        return results
 
     def discard_info_message(self, message: str) -> None:
         """Remove matching InfoNote entries while preserving order of remaining notes."""

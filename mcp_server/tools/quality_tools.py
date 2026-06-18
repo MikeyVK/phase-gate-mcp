@@ -126,7 +126,9 @@ class RunQualityGatesTool(ITool):
             context.produce(
                 Note(
                     key="recovery_message",
-                    params={"message": f"Quality state write failed — retry the quality gates run: {e}"}
+                    params={
+                        "message": f"Quality state write failed — retry the quality gates run: {e}"
+                    },
                 )
             )
             return RunQualityGatesOutput(
@@ -151,7 +153,7 @@ class RunQualityGatesTool(ITool):
                             "to retrieve complete linter/checker tracebacks. "
                             f"Suggested command: run_quality_gates({scope_part}, verbose=True)"
                         )
-                    }
+                    },
                 )
             )
 

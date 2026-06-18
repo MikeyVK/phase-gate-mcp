@@ -80,33 +80,50 @@ _EXIT_CODE_POLICY: dict[int, ExitCodePolicy] = {
     PytestExitCode.TESTS_FAILED: ExitCodePolicy("ok", None, ""),
     PytestExitCode.INTERRUPTED: ExitCodePolicy(
         "error",
-        lambda _: Note(key="recovery_message", params={"message": "Pytest was interrupted; check for hung tests or external SIGINT."}),
+        lambda _: Note(
+            key="recovery_message",
+            params={"message": "Pytest was interrupted; check for hung tests or external SIGINT."},
+        ),
         "pytest interrupted (exit 2)",
     ),
     PytestExitCode.INTERNAL_ERROR: ExitCodePolicy(
         "error",
-        lambda _: Note(key="recovery_message", params={
-            "message": "Pytest reported an internal error; inspect stderr and pytest plugins."
-        }),
+        lambda _: Note(
+            key="recovery_message",
+            params={
+                "message": "Pytest reported an internal error; inspect stderr and pytest plugins."
+            },
+        ),
         "pytest internal error (exit 3)",
     ),
     PytestExitCode.USAGE_ERROR: ExitCodePolicy(
         "error",
-        lambda _: Note(key="recovery_message", params={
-            "message": "Pytest could not start. Verify the path exists and the CLI options are valid."
-        }),
+        lambda _: Note(
+            key="recovery_message",
+            params={
+                "message": (
+                    "Pytest could not start. Verify the path exists and the CLI options are valid."
+                )
+            },
+        ),
         "pytest usage error (exit 4)",
     ),
     PytestExitCode.NO_TESTS_COLLECTED: ExitCodePolicy(
         "ok",
-        lambda _: Note(key="suggestion_message", params={"message": "No tests matched the filter. Check markers and path."}),
+        lambda _: Note(
+            key="suggestion_message",
+            params={"message": "No tests matched the filter. Check markers and path."},
+        ),
         "no tests collected",
     ),
 }
 
 _UNKNOWN_CODE_POLICY = ExitCodePolicy(
     "raise",
-    lambda c: Note(key="recovery_message", params={"message": f"Pytest exited with unexpected code {c}; inspect stderr."}),
+    lambda c: Note(
+        key="recovery_message",
+        params={"message": f"Pytest exited with unexpected code {c}; inspect stderr."},
+    ),
     "pytest exited with unexpected code",
 )
 
