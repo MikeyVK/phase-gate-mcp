@@ -1,9 +1,9 @@
 <!-- docs\development\issue406\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-06-18T11:15s updated= -->
+<!-- template=research version=8b7bb3ab created=2026-06-18T11:15s updated=2026-06-18T16:55s -->
 # Research: Russian Doll Decorator Pipeline for Exception Mapping
 
 **Status:** APPROVED  
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Last Updated:** 2026-06-18
 
 ## Prerequisites
@@ -16,28 +16,28 @@ Read these first:
 
 ## Problem Statement
 
-Exception interception is currently implemented as a temporary bridge directly in server.py (handle_call_tool). This violates the Single Responsibility Principle (SRP) by coupling transport/control logic with validation, enforcement, caching, and exception mapping. To scale the architecture and clean up server.py, we need a modular middleware/decorator pipeline to wrap tool execution.
+The current monolithic implementation of `server.py` (`handle_call_tool`) violates the Single Responsibility Principle (SRP) and Dependency Inversion Principle (DIP) by tightly coupling protocol transport (JSON-RPC) with parameter validation, lifecycle enforcement (guards), response caching, and markdown presentation. To establish a clean, maintainable architecture, the server must be refactored into decoupled subsystems that communicate via strict interface contracts, delegating execution guards to a Russian Doll decorator pipeline and leaving caching, presentation, and double-fault handling to sequential server orchestration.
 
 ## Research Goals
 
-- Map the 6 system error categories to specific decorators in a Russian Doll chain.
-- Ensure robust double fault prevention by separating CacheErrorHandler and ToolErrorHandler.
-- Decouple server.py from direct try-except, validation, and enforcement blocks.
-- Maintain 100% backward compatibility of JSON-RPC response boundaries and error DTO formats.
+- Define a target server architecture of decoupled subsystems (Transport, Execution, Persistence, Presentation, Construction).
+- Map execution-related errors (Validation, Enforcement, Platform crashes) to specific decorators in a Russian Doll chain.
+- Design a resilient post-execution flow in `server.py` that handles persistence failures and provides a fallback view (Double Fault Prevention).
+- Define strict protocols (`ITool`, `IPresenter`, `IToolResponseCache`) to decouple the subsystems and eliminate implementation leaks (such as `presentation_category`).
+- Restructure the `interfaces/` package to follow the pure facade pattern, removing definitions from `__init__.py`.
 
 ---
 
 ## 1. Scope
 
 ### 1.1. In Scope
-- Refactoring the temporary integration bridge in `server.py` (`handle_call_tool`) into modular `ITool` decorators.
-- Defining decorators for tool error handling, argument validation, and lifecycle/phase enforcement.
-- Updating `ToolFactory` in `bootstrap.py` to assemble the decorator chain.
-- Refactoring `tests/mcp_server/unit/test_server.py` to target the decorated tools instead of raw server methods.
-- Designing and defining the `IPresenter` interface protocol to decouple the server from presentation-specific logic.
-- Designing the refactoring of the interfaces package (moving protocols out of `mcp_server/core/interfaces/__init__.py` into dedicated modules, and moving `ITool` and `ToolExecutionEnvelope` to `mcp_server/core/interfaces/itool.py`).
-- Designing the updated cache contract (`IToolResponseCache.put`) to delegate `run_id` generation to the cache subsystem.
-- Defining a resilient fallback mechanism (Option B: JSON dump fallback) for cache failures.
+- **Subsystem Refactoring:** Refactoring the monolithic bridge in `server.py` (`handle_call_tool`) into sequential subsystem invocations.
+- **Execution Pipeline:** Designing the modular `ITool` decorators for validation, enforcement, and tool error handling.
+- **Construction Layer:** Updating `ToolFactory` in `bootstrap.py` to assemble the decorator chain and inject required dependencies.
+- **Presenter Interface Contract:** Designing and defining the `IPresenter` interface protocol, shifting all presentation-specific logic (notes formatting, next instructions, and JSON dumps) to the presenter.
+- **Persistence Interface Contract:** Updating the `IToolResponseCache` protocol to delegate `run_id` generation to the caching subsystem.
+- **Interfaces Packaging:** Reorganizing the `interfaces/` package to move protocol definitions into separate, well-named modules.
+- **Test Suite Refactoring:** Refactoring `tests/mcp_server/unit/test_server.py` to assert against the decorated tools and subsystem boundaries.
 
 ### 1.2. Out of Scope
 - Changing the public JSON-RPC API contracts or response structures.
@@ -48,49 +48,46 @@ Exception interception is currently implemented as a temporary bridge directly i
 
 ## 2. Background & Prior Art
 
-In Issue #404, we resolved the formatting gaps and established the taxonomical error DTO models (`ValidationErrorOutput`, `EnforcementErrorOutput`, `ExecutionErrorOutput`, `CacheErrorOutput`). 
-To keep the test suite protected and stable, we built a temporary integration bridge directly in `server.py` inside `handle_call_tool`.
-This temporary bridge intercepts:
-1. `ValidationError` (from argument checking) -> `ValidationErrorOutput`
-2. `MCPError` (from pre-enforcement guards) -> `EnforcementErrorOutput`
-3. Generic `Exception` (from tool execution) -> `ExecutionErrorOutput`
-4. Caching failures (double fault validation) -> `CacheErrorOutput`
-5. `MCPError` (from post-enforcement guards) -> `EnforcementErrorOutput`
+In Issue #404, we resolved the formatting gaps and established the taxonomical error DTO models (`ValidationErrorOutput`, `EnforcementErrorOutput`, `ExecutionErrorOutput`, `CacheErrorOutput`). To protect the test suite, we built a temporary integration bridge directly in `server.py` inside `handle_call_tool` to intercept exceptions and map them to DTOs.
 
-While this bridge successfully achieved 100% of functional goals, it resulted in high coupling inside `server.py` and mixed protocol transportation logic with domain execution concerns. The blueprint in `decorator_pipeline_design.md` outlines the decorator pipeline pattern as the target solution.
+While this bridge successfully proved the DTO contracts, it resulted in high coupling inside `server.py`. The blueprint in `decorator_pipeline_design.md` outlined a 6-layer decorator chain. However, based on our target server architecture, we refine this blueprint: caching and presentation are cross-cutting infrastructure concerns rather than tool execution concerns. They are extracted from the decorator pipeline and handled sequentially in the server orchestrator, keeping the decorator pipeline focused purely on execution-related integrity.
 
 ---
 
 ## 3. Findings & Analysis
 
 ### 3.1. Target Server Architecture Model
-To align the MCP server with the core project principles (SOLID, DIP, Separation of Concerns), the server must be refactored from a monolithic controller into four logically isolated, decoupled subsystems that communicate exclusively via strict interfaces:
+The server refactoring is grounded in a clean separation of five distinct subsystems:
 
 ```mermaid
 graph TD
-    Client[LLM / JSON-RPC Client] -->|1. Request| Transport[Transport Layer: server.py]
-    Transport -->|2. Execute| ExecSub[Execution Sub-system: ITool Pipeline]
-    ExecSub -->|3. DTO| Transport
-    Transport -->|4. Store| CacheSub[Persistence Sub-system: IToolResponseCache]
-    CacheSub -->|5. run_id| Transport
-    Transport -->|6. Present| PresSub[Presentation Sub-system: IPresenter]
-    PresSub -->|7. Markdown| Transport
+    Boot[ServerBootstrapper / ToolFactory] -->|1. Constructs & Wires| Pipeline[ITool Pipeline]
+    Boot -->|2. Injecteert| Transport[Transport Layer: server.py]
+    Client[LLM / JSON-RPC Client] -->|3. Request| Transport
+    Transport -->|4. Execute| Pipeline
+    Pipeline -->|5. DTO| Transport
+    Transport -->|6. Store| Cache[Persistence Sub-system]
+    Transport -->|7. Present| Presenter[Presentation Sub-system]
     Transport -->|8. JSON-RPC Result| Client
 ```
 
-1. **Transport Layer (The Orchestrator / Controller - `server.py`):**
+1. **Construction Layer (Composition Root - `ToolFactory`):**
+   * **Role:** Composes and wires the subsystems at startup. Constructs the decorator chain around the core tools and injects necessary dependencies (such as `EnforcementRunner` and the cache).
+   * **Boundary:** All concrete class instantiations (`new`, `Decorator(...)`) are restricted to this layer (`bootstrap.py`).
+
+2. **Transport Layer (The Orchestrator / Controller - `server.py`):**
    * **Role:** Manages the LLM JSON-RPC connection over stdin/stdout, parses incoming tool calls, and serializes outgoing responses.
    * **Boundary:** Implements the protocol transportation layer. It has zero knowledge of validation schemas, lifecycle policies, caching formats, or presentation templates. It orchestrates the other subsystems purely through abstract interfaces.
 
-2. **Execution Sub-system (The Model / Domain Boundary - `ITool` Pipeline):**
+3. **Execution Sub-system (The Model / Domain Boundary - `ITool` Pipeline):**
    * **Role:** Guards and executes the domain logic. It validates input parameters, checks pre/post enforcement guards, executes the core tool code, and catches execution exceptions, mapping them to taxonomical error DTOs.
    * **Boundary:** Exposed via the `ITool` protocol. It guarantees that `await tool.execute(...)` always returns a valid DTO (success or error) without leaking exceptions.
 
-3. **Persistence Sub-system (The Caching Layer - `IToolResponseCache`):**
+4. **Persistence Sub-system (The Caching Layer - `IToolResponseCache`):**
    * **Role:** Manages the storage and retrieval of tool outputs (DTOs) to make them accessible as MCP resources.
    * **Boundary:** Exposed via `IToolResponseCache`. It is the sole authority responsible for key generation (`run_id`), URI construction (`pgmcp://cache/runs/{run_id}`), and storage operations.
 
-4. **Presentation Sub-system (The View / Presenter - `IPresenter`):**
+5. **Presentation Sub-system (The View / Presenter - `IPresenter`):**
    * **Role:** Translates data DTOs and operational notes into formatted markdown strings based on configuration templates (`presentation.yaml`).
    * **Boundary:** Exposed via `IPresenter`. It encapsulates all template lookups, formatting functions, fallback JSON dumps (in case of cache failure), and note presentation.
 
@@ -159,6 +156,8 @@ We compare three options for composing the wrapper pipeline:
    - **Decision:** Keep note context presentation at the server orchestrator layer rather than creating a new decorator (avoiding YAGNI/overcomplication). The server remains responsible for calling `TextPresenter.present_notes(tool.name, notes)` on the accumulated note entries after tool execution completes and appending the rendered markdown block to the final response.
 3. **Caching and Error DTO Presentation:**
    - **Decision:** Caching the output DTOs, presenting the DTOs using `TextPresenter`, and handling any caching-related double faults will remain under the responsibility of the server orchestrator rather than being delegated to custom decorators. This avoids YAGNI, simplifies the decorator pipeline to only execution-related concerns, and keeps the server as the central orchestrator of transport/presentation.
+4. **Interface Reorganization:**
+   - **Decision:** Establish a facade pattern for the `interfaces/` package. Protocols are moved to dedicated modules and re-exported from `interfaces/__init__.py`. Move the `ITool` protocol to `mcp_server/core/interfaces/itool.py`.
 
 ## 5. Approved Strategy
 
@@ -169,10 +168,11 @@ The strategy is explicitly defined per affected boundary:
 - **Test Suite Boundary:** **Clean break / Refactoring**. Mocked tests in `test_server.py` that currently target `server.py` exception mapping will be refactored to verify decorators or target the fully wrapped tools. New unit tests will be introduced in `test_decorators.py`.
 - **Logging & Diagnostics Boundary:** **New requirement**. Standardize exception logging inside the decorators to write tracebacks to `sys.stderr` / `mcp_audit.log`, resolving the logging gaps.
 - **Presentation Boundary / Content Separation:** **Clean break / Strict Contract**. In accordance with Section 15 of `ARCHITECTURE_PRINCIPLES.md`, no core domain, business logic, or adapter code may contain hardcoded user-facing text, emojis, or formatting templates. All human-readable outputs and formatting must be resolved in the presentation layer (via `TextPresenter`) or external configuration (`presentation.yaml`).
+- **Interfaces & Packaging Boundary:** **Clean break**. Refactor the `interfaces/` package to move protocol definitions to separate, well-named modules under `mcp_server/core/interfaces/`, leaving `__init__.py` as a pure export facade.
 
 ## 6. Expected Results
 
-Complete decoupling of server.py from validation, enforcement, and exception handling blocks. Clean, modular decorators in decorators.py that implement the ITool interface. 100% test success across all 2873 unit and integration tests.
+Complete decoupling of `server.py` from validation, enforcement, and exception handling blocks. Clean, modular decorators in `decorators.py` that implement the `ITool` interface. 100% test success across all 2873 unit and integration tests.
 
 ---
 
@@ -180,5 +180,5 @@ Complete decoupling of server.py from validation, enforcement, and exception han
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0.0 | 2026-06-18 | Agent | Initial validation and decorator analysis report |
-| 1.1.0 | 2026-06-18 | Agent | Re-oriented research from outside-in server target architecture |
+| 1.0.0   | 2026-06-18 | Agent  | Initial validation and decorator analysis report |
+| 1.1.0   | 2026-06-18 | Agent  | Re-oriented research from outside-in server target architecture and added the construction layer |
