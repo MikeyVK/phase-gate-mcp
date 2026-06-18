@@ -271,8 +271,8 @@ class EnforcementRunner:
 
         note_context.produce(
             Note(
-                key="suggestion_message",
-                params={"message": f"Allowed bases: {', '.join(allowed_patterns)}"},
+                key="allowed_bases_suggestion",
+                params={"bases": ", ".join(allowed_patterns)},
             )
         )
         raise ValidationError(
@@ -308,11 +308,10 @@ class EnforcementRunner:
         )
         status = self._pr_status_reader.get_pr_status(branch)
         if status == PRStatus.OPEN:
-            msg = "Call merge_pr to close the open PR before continuing branch work."
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={"message": msg},
+                    key="close_open_pr_suggestion",
+                    params={},
                 )
             )
             raise ValidationError(
@@ -343,8 +342,8 @@ class EnforcementRunner:
         if current_phase != required_phase:
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={"message": f'transition_phase(to_phase="{required_phase}")'},
+                    key="transition_phase_suggestion",
+                    params={"required_phase": required_phase},
                 )
             )
             raise ValidationError(
@@ -408,8 +407,8 @@ class EnforcementRunner:
         if not self._context_loaded_reader.is_context_loaded(branch):
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={"message": "Call get_work_context before using this tool."},
+                    key="load_context_suggestion",
+                    params={},
                 )
             )
             raise ValidationError(

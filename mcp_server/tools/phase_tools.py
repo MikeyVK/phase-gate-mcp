@@ -185,7 +185,9 @@ class TransitionPhaseTool(_BaseTransitionTool):
             )
 
         except StateMutationConflictError as e:
-            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
             return PhaseTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,
@@ -281,7 +283,9 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
                 passing_gates_info=passing_gates_info,
             )
         except StateMutationConflictError as e:
-            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
             return ForcePhaseTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,

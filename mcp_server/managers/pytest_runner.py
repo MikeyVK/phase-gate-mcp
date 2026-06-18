@@ -81,38 +81,32 @@ _EXIT_CODE_POLICY: dict[int, ExitCodePolicy] = {
     PytestExitCode.INTERRUPTED: ExitCodePolicy(
         "error",
         lambda _: Note(
-            key="recovery_message",
-            params={"message": "Pytest was interrupted; check for hung tests or external SIGINT."},
+            key="pytest_interrupted_recovery",
+            params={},
         ),
         "pytest interrupted (exit 2)",
     ),
     PytestExitCode.INTERNAL_ERROR: ExitCodePolicy(
         "error",
         lambda _: Note(
-            key="recovery_message",
-            params={
-                "message": "Pytest reported an internal error; inspect stderr and pytest plugins."
-            },
+            key="pytest_internal_error_recovery",
+            params={},
         ),
         "pytest internal error (exit 3)",
     ),
     PytestExitCode.USAGE_ERROR: ExitCodePolicy(
         "error",
         lambda _: Note(
-            key="recovery_message",
-            params={
-                "message": (
-                    "Pytest could not start. Verify the path exists and the CLI options are valid."
-                )
-            },
+            key="pytest_usage_error_recovery",
+            params={},
         ),
         "pytest usage error (exit 4)",
     ),
     PytestExitCode.NO_TESTS_COLLECTED: ExitCodePolicy(
         "ok",
         lambda _: Note(
-            key="suggestion_message",
-            params={"message": "No tests matched the filter. Check markers and path."},
+            key="pytest_no_tests_collected_suggestion",
+            params={},
         ),
         "no tests collected",
     ),
@@ -121,8 +115,8 @@ _EXIT_CODE_POLICY: dict[int, ExitCodePolicy] = {
 _UNKNOWN_CODE_POLICY = ExitCodePolicy(
     "raise",
     lambda c: Note(
-        key="recovery_message",
-        params={"message": f"Pytest exited with unexpected code {c}; inspect stderr."},
+        key="pytest_unexpected_code_recovery",
+        params={"exit_code": c},
     ),
     "pytest exited with unexpected code",
 )

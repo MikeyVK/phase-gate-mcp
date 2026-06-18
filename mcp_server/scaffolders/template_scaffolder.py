@@ -121,10 +121,10 @@ class TemplateScaffolder(BaseScaffolder):
             if note_context is not None:
                 note_context.produce(
                     Note(
-                        key="suggestion_message",
+                        key="scaffold_missing_fields_suggestion",
                         params={
-                            "message": f"Provide the missing fields: {', '.join(missing)}",
-                            "subject": artifact_type,
+                            "missing_fields": ", ".join(missing),
+                            "artifact_type": artifact_type,
                         },
                     )
                 )

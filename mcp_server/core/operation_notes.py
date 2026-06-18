@@ -2,16 +2,12 @@
 """
 NoteEntry typed notes protocol and NoteContext.
 
-Defines all six NoteEntry variants (ExclusionNote, CommitNote, SuggestionNote,
-BlockerNote, RecoveryNote, InfoNote), the Renderable protocol, the NoteEntry
-union type, and NoteContext — the bidirectional per-call notes bus.
+Defines the generic Note dataclass and NoteContext — the per-call notes bus.
 
 @layer: Core
 @dependencies: [collections.abc, dataclasses, typing, mcp_server.tools.tool_result]
 @responsibilities:
-    - Define the Renderable protocol (runtime_checkable) for user-visible notes
-    - Define six typed NoteEntry variants as frozen dataclasses
-    - Provide NoteEntry union type for exhaustive pattern matching
+    - Define the generic Note dataclass for declarative presentation
     - Implement NoteContext: per-call notes bus with produce, of_type,
       render_to_response
 """
@@ -21,132 +17,12 @@ from __future__ import annotations
 # Standard library
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol, TypeVar, runtime_checkable
+from typing import Any, TypeVar
 
 # Project modules
 from mcp_server.tools.tool_result import ToolResult
 
 T = TypeVar("T")
-
-
-@runtime_checkable
-class Renderable(Protocol):
-    """Note variants that produce user-visible output implement this protocol.
-
-    Variants without to_message() are machine-readable coordination notes only
-    and do not appear in the rendered user-facing response.
-    """
-
-    def to_message(self) -> str: ...
-
-
-@dataclass(frozen=True)
-class ExclusionNote:
-    """Written by EnforcementRunner when a file is confirmed tracked
-    and identified for exclusion from the commit index.
-    """
-
-    kind: Literal["exclusion"] = field(default="exclusion", init=False)
-    file_path: str  # workspace-relative path
-
-    def to_message(self) -> str:
-        return f"Excluded from commit index: {self.file_path}"
-
-
-@dataclass(frozen=True)
-class CommitNote:
-    """Written by GitCommitTool after a successful commit.
-
-    NOT Renderable: the commit hash is already in ToolResult.text(sha).
-    Exists solely for type-safe test assertions via context.of_type(CommitNote).
-    Implementing to_message() would duplicate the primary output -- a DRY violation.
-    """
-
-    kind: Literal["commit"] = field(default="commit", init=False)
-    commit_hash: str
-    # Intentionally does not implement to_message()
-
-
-@dataclass(frozen=True)
-class SuggestionNote:
-    """Written immediately before raising an exception where the action is advisory.
-
-    Semantic contract:
-      - message is ACTIONABLE -- tells the user what to do next.
-      - The exception message is DIAGNOSTIC -- describes what failed.
-      - The two must not overlap. Together they are more informative than either alone.
-
-    Example:
-      Exception:      ConfigError("Phase 'foo' not found in workphases config")
-      SuggestionNote: "Verify phase names in workphases.yaml"
-    """
-
-    kind: Literal["suggestion"] = field(default="suggestion", init=False)
-    message: str
-    subject: str | None = None  # optional named context (e.g., config file path)
-
-    def to_message(self) -> str:
-        base = f"Suggestion: {self.message}"
-        return f"{base} ({self.subject})" if self.subject else base
-
-
-@dataclass(frozen=True)
-class BlockerNote:
-    """Written immediately before raising PreflightError.
-
-    Replaces the former PreflightError(blockers=[...]) constructor parameter.
-    Each blocking condition becomes a separate BlockerNote for machine-readability.
-
-    Semantic contract:
-      - message describes a condition that BLOCKS further execution.
-      - The exception message is DIAGNOSTIC -- describes that preflight failed.
-      - Together: exception says "preflight failed"; BlockerNote says "because X".
-
-    Example:
-      Exception:   PreflightError("Preflight checks failed")
-      BlockerNote: "Branch 'feature/42' is not in a clean state -- commit or stash changes"
-    """
-
-    kind: Literal["blocker"] = field(default="blocker", init=False)
-    message: str
-
-    def to_message(self) -> str:
-        return f"Blocker: {self.message}"
-
-
-@dataclass(frozen=True)
-class RecoveryNote:
-    """Written immediately before raising ExecutionError.
-
-    Replaces the former ExecutionError(recovery=[...]) constructor parameter.
-    Each recovery action becomes a separate RecoveryNote for machine-readability.
-
-    Semantic contract:
-      - message describes a RECOVERY ACTION the user can take.
-      - The exception message is DIAGNOSTIC -- describes what execution failed.
-      - Together: exception says "execution failed"; RecoveryNote says "try X".
-
-    Example:
-      Exception:    ExecutionError("Git commit failed")
-      RecoveryNote: "Run 'git status' to check for unresolved merge conflicts"
-    """
-
-    kind: Literal["recovery"] = field(default="recovery", init=False)
-    message: str
-
-    def to_message(self) -> str:
-        return f"\n🩹 Recovery: {self.message}"
-
-
-@dataclass(frozen=True)
-class InfoNote:
-    """General informational note produced by any component."""
-
-    kind: Literal["info"] = field(default="info", init=False)
-    message: str
-
-    def to_message(self) -> str:
-        return self.message
 
 
 @dataclass(frozen=True)
@@ -161,9 +37,7 @@ class Note:
     params: dict[str, Any] = field(default_factory=dict)
 
 
-NoteEntry = (
-    ExclusionNote | CommitNote | SuggestionNote | BlockerNote | RecoveryNote | InfoNote | Note
-)
+NoteEntry = Note
 
 
 @dataclass
@@ -194,47 +68,23 @@ class NoteContext:
         """Return all notes of the given type, in insertion order.
 
         Type-safe: pyright infers the return element type from the argument.
-        Example: context.of_type(ExclusionNote) -> Sequence[ExclusionNote]
+        Example: context.of_type(Note) -> Sequence[Note]
         """
-        results = []
-        for n in self._entries:
-            if isinstance(n, t):
-                results.append(n)
-            elif isinstance(n, Note):
-                if t is BlockerNote and n.key == "blocker_message":
-                    msg = n.params.get("message", "")
-                    results.append(BlockerNote(message=msg))  # type: ignore
-                elif t is RecoveryNote and n.key == "recovery_message":
-                    msg = n.params.get("message", "")
-                    results.append(RecoveryNote(message=msg))  # type: ignore
-                elif t is SuggestionNote and n.key == "suggestion_message":
-                    msg = n.params.get("message", "")
-                    sub = n.params.get("subject")
-                    results.append(SuggestionNote(message=msg, subject=sub))  # type: ignore
-                elif t is InfoNote and n.key == "info_message":
-                    msg = n.params.get("message", "")
-                    results.append(InfoNote(message=msg))  # type: ignore
-                elif t is ExclusionNote and n.key == "file_excluded":
-                    fp = n.params.get("file_path", "")
-                    results.append(ExclusionNote(file_path=fp))  # type: ignore
-                elif t is CommitNote and n.key == "commit":
-                    h = n.params.get("commit_hash", "")
-                    results.append(CommitNote(commit_hash=h))  # type: ignore
-        return results
+        return [n for n in self._entries if isinstance(n, t)]
 
     def discard_info_message(self, message: str) -> None:
-        """Remove matching InfoNote entries while preserving order of remaining notes."""
+        """Remove matching info Note entries while preserving order of remaining notes."""
         self._entries = [
             note
             for note in self._entries
-            if not isinstance(note, InfoNote) or note.message != message
+            if note.key != "info_message" or note.params.get("message") != message
         ]
 
     def render_to_response(self, base: ToolResult) -> ToolResult:
-        """Append all Renderable notes as an additional TextContent block.
+        """Append all notes as an additional TextContent block using the presenter.
 
         Called once by the server after tool execution, on both success and
-        error paths. Returns base unchanged when no Renderable entries exist.
+        error paths. Returns base unchanged when no presenter or entries exist.
         Insertion order is preserved.
         """
         if self.presenter is not None and self.tool_name is not None:
@@ -244,9 +94,4 @@ class NoteContext:
             augmented = list(base.content) + [{"type": "text", "text": notes_text}]
             return base.model_copy(update={"content": augmented})
 
-        renderable = [n for n in self._entries if isinstance(n, Renderable)]
-        if not renderable:
-            return base
-        notes_text = "\n".join(n.to_message() for n in renderable)
-        augmented = list(base.content) + [{"type": "text", "text": notes_text}]
-        return base.model_copy(update={"content": augmented})
+        return base

@@ -113,7 +113,9 @@ class RunQualityGatesTool(ITool):
                 **kwargs,
             )
         except QualityStateMutationConflictError as e:
-            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
             return RunQualityGatesOutput(
                 success=False,
                 error_message=e.diagnostic,
@@ -125,10 +127,8 @@ class RunQualityGatesTool(ITool):
         except OSError as e:
             context.produce(
                 Note(
-                    key="recovery_message",
-                    params={
-                        "message": f"Quality state write failed — retry the quality gates run: {e}"
-                    },
+                    key="quality_state_write_failed_recovery",
+                    params={"error_details": str(e)},
                 )
             )
             return RunQualityGatesOutput(
@@ -146,14 +146,8 @@ class RunQualityGatesTool(ITool):
                 scope_part += f", files={params.files!r}"
             context.produce(
                 Note(
-                    key="recovery_message",
-                    params={
-                        "message": (
-                            "Some quality gates failed. Rerun the tool with verbose=True "
-                            "to retrieve complete linter/checker tracebacks. "
-                            f"Suggested command: run_quality_gates({scope_part}, verbose=True)"
-                        )
-                    },
+                    key="quality_gates_failed_verbose_suggestion",
+                    params={"scope_part": scope_part},
                 )
             )
 

@@ -81,10 +81,8 @@ class GitManager:
         if not self._git_config.has_branch_type(branch_type):
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={
-                        "message": f"Allowed types: {', '.join(self._git_config.branch_types)}"
-                    },
+                    key="allowed_branch_types",
+                    params={"types": ", ".join(self._git_config.branch_types)},
                 )
             )
             raise ValidationError(f"Invalid branch type: {branch_type}")
@@ -93,10 +91,8 @@ class GitManager:
         if not self._git_config.validate_branch_name(name):
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={
-                        "message": f"Must match pattern: {self._git_config.branch_name_pattern}"
-                    },
+                    key="branch_name_pattern_mismatch",
+                    params={"pattern": self._git_config.branch_name_pattern},
                 )
             )
             raise ValidationError(f"Invalid branch name: {name}")
@@ -121,8 +117,8 @@ class GitManager:
         if not self.adapter.is_clean():
             note_context.produce(
                 Note(
-                    key="blocker_message",
-                    params={"message": "Commit or stash changes before creating a new branch"},
+                    key="dirty_workspace_branch_blocker",
+                    params={},
                 )
             )
             raise PreflightError("Working directory is not clean")
@@ -184,10 +180,8 @@ class GitManager:
         if files is not None and not files:
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={
-                        "message": "Omit 'files' to commit everything, or provide at least one path"
-                    },
+                    key="commit_empty_files_suggestion",
+                    params={},
                 )
             )
             raise ValidationError("Files list cannot be empty")
@@ -232,8 +226,8 @@ class GitManager:
         if not files:
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={"message": "Provide at least one path to restore"},
+                    key="restore_empty_files_suggestion",
+                    params={},
                 )
             )
             raise ValidationError("Files list cannot be empty")
@@ -274,34 +268,26 @@ class GitManager:
         if not self.adapter.is_clean():
             note_context.produce(
                 Note(
-                    key="blocker_message",
-                    params={"message": "Commit or stash changes before pulling"},
+                    key="pull_dirty_workspace_blocker",
+                    params={},
                 )
             )
             raise PreflightError("Working directory is not clean")
 
         if self.adapter.get_current_branch() == "HEAD":
-            note_context.produce(
-                Note(key="blocker_message", params={"message": "Checkout a branch before pulling"})
-            )
-            raise PreflightError("Detached HEAD - cannot pull")
+            note_context.produce(Note(key="pull_detached_head_blocker", params={}))
 
         if not self.adapter.has_upstream():
             note_context.produce(
                 Note(
-                    key="blocker_message",
-                    params={
-                        "message": (
-                            "Set upstream tracking"
-                            " (e.g. 'git branch --set-upstream-to=origin/<branch>')"
-                        )
-                    },
+                    key="pull_no_upstream_blocker",
+                    params={},
                 )
             )
             note_context.produce(
                 Note(
-                    key="blocker_message",
-                    params={"message": "Or pull with an explicit refspec (not supported yet)"},
+                    key="pull_refspec_not_supported_blocker",
+                    params={},
                 )
             )
             raise PreflightError("No upstream configured for current branch")
@@ -313,8 +299,8 @@ class GitManager:
         if not self.adapter.is_clean():
             note_context.produce(
                 Note(
-                    key="blocker_message",
-                    params={"message": "Commit or stash changes before merging"},
+                    key="merge_dirty_workspace_blocker",
+                    params={},
                 )
             )
             raise PreflightError("Working directory is not clean")
@@ -333,8 +319,8 @@ class GitManager:
             protected_list = ", ".join(self._git_config.protected_branches)
             note_context.produce(
                 Note(
-                    key="suggestion_message",
-                    params={"message": f"Protected branches: {protected_list}"},
+                    key="delete_protected_branch_suggestion",
+                    params={"protected_branches": protected_list},
                 )
             )
             raise ValidationError(f"Cannot delete protected branch: {branch_name}")
@@ -469,13 +455,8 @@ class GitManager:
         if not self.adapter.is_clean():
             note_context.produce(
                 Note(
-                    key="blocker_message",
-                    params={
-                        "message": (
-                            "Working tree is not clean. "
-                            "Commit or stash all changes before submit_pr."
-                        )
-                    },
+                    key="submit_pr_dirty_workspace_blocker",
+                    params={},
                 )
             )
             raise PreflightError("Working directory is not clean")
@@ -484,13 +465,8 @@ class GitManager:
         if not self.adapter.has_upstream():
             note_context.produce(
                 Note(
-                    key="blocker_message",
-                    params={
-                        "message": (
-                            "No upstream tracking branch configured. "
-                            "Run git_push(set_upstream=True) before submit_pr."
-                        )
-                    },
+                    key="submit_pr_no_upstream_blocker",
+                    params={},
                 )
             )
             raise PreflightError("No upstream configured for current branch")
@@ -522,14 +498,8 @@ class GitManager:
                 self.adapter.hard_reset("HEAD")
                 note_context.produce(
                     Note(
-                        key="recovery_message",
-                        params={
-                            "message": (
-                                f"Commit failed: {exc}. Local neutralization commit rolled back. "
-                                "Working tree is clean. "
-                                "Retry submit_pr after resolving the commit issue."
-                            )
-                        },
+                        key="submit_pr_commit_failed_recovery",
+                        params={"error_details": str(exc)},
                     )
                 )
                 raise
@@ -542,27 +512,15 @@ class GitManager:
                 self.adapter.hard_reset("HEAD~1")
                 note_context.produce(
                     Note(
-                        key="recovery_message",
-                        params={
-                            "message": (
-                                f"Push failed: {exc}. Local neutralization commit rolled back. "
-                                "Working tree is clean. "
-                                "Retry submit_pr after resolving the remote issue."
-                            )
-                        },
+                        key="submit_pr_push_failed_with_rollback_recovery",
+                        params={"error_details": str(exc)},
                     )
                 )
             else:
                 note_context.produce(
                     Note(
-                        key="recovery_message",
-                        params={
-                            "message": (
-                                f"Push failed: {exc}. No local commit to roll back. "
-                                "Working tree is clean. "
-                                "Retry submit_pr after resolving the remote issue."
-                            )
-                        },
+                        key="submit_pr_push_failed_no_rollback_recovery",
+                        params={"error_details": str(exc)},
                     )
                 )
             raise
@@ -587,15 +545,8 @@ class GitManager:
         except ExecutionError as exc:
             note_context.produce(
                 Note(
-                    key="recovery_message",
-                    params={
-                        "message": (
-                            f"CRITICAL: Local reset failed: {exc}. "
-                            "Remote is still at pushed commit. Manual recovery: "
-                            "git reset --hard HEAD~1, then git push --force-with-lease. "
-                            "Do not commit until resolved."
-                        )
-                    },
+                    key="rollback_local_reset_failed_recovery",
+                    params={"error_details": str(exc)},
                 )
             )
             raise
@@ -605,15 +556,8 @@ class GitManager:
         except ExecutionError as exc:
             note_context.produce(
                 Note(
-                    key="recovery_message",
-                    params={
-                        "message": (
-                            f"CRITICAL: Remote rollback failed: {exc}. "
-                            "Local branch is in pre-submit state. "
-                            "Manual recovery for remote: git push --force-with-lease. "
-                            "Do not commit until resolved."
-                        )
-                    },
+                    key="rollback_remote_push_failed_recovery",
+                    params={"error_details": str(exc)},
                 )
             )
             raise

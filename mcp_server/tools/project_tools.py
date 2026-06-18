@@ -380,10 +380,9 @@ class GetProjectPlanTool(ITool):
 
             context.produce(
                 Note(
-                    key="suggestion_message",
+                    key="initialize_project_suggestion",
                     params={
-                        "message": "Run initialize_project first to create a project plan.",
-                        "subject": f"issue #{params.issue_number}",
+                        "issue_number": params.issue_number,
                     },
                 )
             )

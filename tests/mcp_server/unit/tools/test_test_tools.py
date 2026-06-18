@@ -12,12 +12,7 @@ import pytest
 
 from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError
-from mcp_server.core.operation_notes import (
-    InfoNote,
-    NoteContext,
-    RecoveryNote,
-    SuggestionNote,
-)
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.pytest_runner import FailureDetail, PytestResult
 from mcp_server.schemas.tool_outputs import RunTestsOutput
 from mcp_server.tools.test_tools import RunTestsInput, RunTestsTool
@@ -43,7 +38,7 @@ def _make_pytest_result(
     coverage_pct: float | None = None,
     lf_cache_was_empty: bool = False,
     should_raise: bool = False,
-    note: RecoveryNote | SuggestionNote | InfoNote | None = None,
+    note: Note | None = None,
     is_error: bool = False,
     stderr: str = "",
 ) -> PytestResult:
@@ -173,7 +168,7 @@ async def test_c4_run_tests_all_passed_via_injected_runner(injected_settings: Se
 
     assert result.content[1]["text"] == "2 passed in 0.45s"
     assert result.content[0]["json"]["summary"]["passed"] == 2
-    assert len(context.of_type(RecoveryNote)) == 0
+    assert len(context.entries) == 0
 
 
 @pytest.mark.asyncio
@@ -211,7 +206,7 @@ async def test_c4_run_tests_interrupted_raises_execution_error(
             exit_code=2,
             summary_line="pytest interrupted (exit 2)",
             is_error=True,
-            note=RecoveryNote("Pytest was interrupted; check for hung tests or external SIGINT."),
+            note=Note(key="pytest_interrupted_recovery", params={}),
         )
     )
     tool = RunTestsTool(runner=runner, settings=injected_settings)
@@ -220,7 +215,7 @@ async def test_c4_run_tests_interrupted_raises_execution_error(
     result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
     assert result.is_error is True
-    assert len(context.of_type(RecoveryNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_interrupted_recovery"]) == 1
 
 
 @pytest.mark.asyncio
@@ -232,9 +227,7 @@ async def test_c4_run_tests_internal_error_raises_execution_error(
             exit_code=3,
             summary_line="pytest internal error (exit 3)",
             is_error=True,
-            note=RecoveryNote(
-                "Pytest reported an internal error; inspect stderr and pytest plugins."
-            ),
+            note=Note(key="pytest_internal_error_recovery", params={}),
         )
     )
     tool = RunTestsTool(runner=runner, settings=injected_settings)
@@ -243,7 +236,7 @@ async def test_c4_run_tests_internal_error_raises_execution_error(
     result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
     assert result.is_error is True
-    assert len(context.of_type(RecoveryNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_internal_error_recovery"]) == 1
 
 
 @pytest.mark.asyncio
@@ -255,9 +248,7 @@ async def test_c4_run_tests_usage_error_raises_execution_error(
             exit_code=4,
             summary_line="pytest usage error (exit 4)",
             is_error=True,
-            note=RecoveryNote(
-                "Pytest could not start. Verify the path exists and the CLI options are valid."
-            ),
+            note=Note(key="pytest_usage_error_recovery", params={}),
         )
     )
     tool = RunTestsTool(runner=runner, settings=injected_settings)
@@ -266,7 +257,7 @@ async def test_c4_run_tests_usage_error_raises_execution_error(
     result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
     assert result.is_error is True
-    assert len(context.of_type(RecoveryNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_usage_error_recovery"]) == 1
 
 
 @pytest.mark.asyncio
@@ -279,7 +270,7 @@ async def test_c4_run_tests_no_tests_collected_returns_suggestion_note(
             summary_line="no tests collected",
             passed=0,
             failed=0,
-            note=SuggestionNote("No tests matched the filter. Check markers and path."),
+            note=Note(key="pytest_no_tests_collected_suggestion", params={}),
         )
     )
     tool = RunTestsTool(runner=runner, settings=injected_settings)
@@ -288,7 +279,7 @@ async def test_c4_run_tests_no_tests_collected_returns_suggestion_note(
     result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
     assert result.content[1]["text"] == "no tests collected"
-    assert len(context.of_type(SuggestionNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_no_tests_collected_suggestion"]) == 1
 
 
 @pytest.mark.asyncio
@@ -300,7 +291,7 @@ async def test_c4_run_tests_unknown_exit_code_raises_execution_error(
             exit_code=99,
             summary_line="pytest exited with unexpected code",
             should_raise=True,
-            note=RecoveryNote("Pytest exited with unexpected code 99; inspect stderr."),
+            note=Note(key="pytest_unexpected_code_recovery", params={"exit_code": 99}),
         )
     )
     tool = RunTestsTool(runner=runner, settings=injected_settings)
@@ -309,7 +300,7 @@ async def test_c4_run_tests_unknown_exit_code_raises_execution_error(
     with pytest.raises(ExecutionError, match="pytest exited with returncode 99"):
         await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
 
-    assert len(context.of_type(RecoveryNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_unexpected_code_recovery"]) == 1
 
 
 @pytest.mark.asyncio
@@ -322,7 +313,7 @@ async def test_c4_run_tests_lf_empty_emits_info_note_when_requested(
 
     await tool.execute(RunTestsInput(path="tests/unit", last_failed_only=True), context)
 
-    assert len(context.of_type(InfoNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_lf_cache_empty_info"]) == 1
 
 
 @pytest.mark.asyncio
@@ -335,7 +326,7 @@ async def test_c4_run_tests_lf_cache_populated_emits_no_info_note(
 
     await tool.execute(RunTestsInput(path="tests/unit", last_failed_only=True), context)
 
-    assert len(context.of_type(InfoNote)) == 0
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_lf_cache_empty_info"]) == 0
 
 
 @pytest.mark.asyncio
@@ -348,7 +339,7 @@ async def test_c4_run_tests_lf_flag_ignored_when_not_requested(
 
     await tool.execute(RunTestsInput(path="tests/unit", last_failed_only=False), context)
 
-    assert len(context.of_type(InfoNote)) == 0
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_lf_cache_empty_info"]) == 0
 
 
 @pytest.mark.asyncio
@@ -395,7 +386,7 @@ async def test_c4_run_tests_timeout_raises_execution_error(
     with pytest.raises(ExecutionError, match="Tests timed out after 12s"):
         await _execute_unwrapped(tool, RunTestsInput(path="tests/unit", timeout=12), context)
 
-    assert len(context.of_type(RecoveryNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_timeout_recovery"]) == 1
 
 
 @pytest.mark.asyncio
@@ -408,7 +399,7 @@ async def test_c4_run_tests_oserror_raises_execution_error(
     with pytest.raises(ExecutionError, match="Failed to run tests: Boom"):
         await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
 
-    assert len(context.of_type(RecoveryNote)) == 1
+    assert len([n for n in context.of_type(Note) if n.key == "pytest_interpreter_recovery"]) == 1
 
 
 @pytest.mark.asyncio
@@ -523,8 +514,9 @@ class TestC3ToToolResultRouting:
                 exit_code=2,
                 summary_line="pytest interrupted (exit 2)",
                 is_error=True,
-                note=RecoveryNote(
-                    "Pytest was interrupted; check for hung tests or external SIGINT."
+                note=Note(
+                    key="pytest_interrupted_recovery",
+                    params={},
                 ),
             )
         )
@@ -745,14 +737,9 @@ async def test_c4_run_tests_recovery_note_on_failure(injected_settings: Settings
         context,
     )
 
-    notes = context.of_type(RecoveryNote)
+    notes = [n for n in context.of_type(Note) if n.key == "pytest_failed_verbose_suggestion"]
     assert len(notes) == 1
-    expected_msg = (
-        "Some tests failed. To see detailed tracebacks and stdout/stderr, "
-        "rerun with verbose=True. Suggested command: "
-        "run_tests(path='tests/unit/test_a.py tests/unit/test_b.py', verbose=True)"
-    )
-    assert notes[0].message == expected_msg
+    assert notes[0].params.get("failing_files") == "tests/unit/test_a.py tests/unit/test_b.py"
 
 
 @pytest.mark.asyncio
@@ -786,6 +773,5 @@ async def test_c4_run_tests_no_recovery_note_when_verbose_true(
         context,
     )
 
-    notes = context.of_type(RecoveryNote)
-    rerun_notes = [n for n in notes if "verbose=True" in n.message]
-    assert len(rerun_notes) == 0
+    notes = [n for n in context.of_type(Note) if n.key == "pytest_failed_verbose_suggestion"]
+    assert len(notes) == 0

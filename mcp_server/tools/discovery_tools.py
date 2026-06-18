@@ -84,18 +84,18 @@ class SearchDocumentationTool(ITool):
 
         if not docs_dir.exists():
             context.produce(
-                Note(key="recovery_message", params={"message": f"Expected directory: {docs_dir}"})
+                Note(key="docs_dir_not_found_expected", params={"expected_dir": str(docs_dir)})
             )
             context.produce(
                 Note(
-                    key="recovery_message",
-                    params={"message": "Create docs/ directory in workspace root"},
+                    key="docs_dir_not_found_create",
+                    params={},
                 )
             )
             context.produce(
                 Note(
-                    key="recovery_message",
-                    params={"message": "Add markdown files to document project"},
+                    key="docs_dir_not_found_add_files",
+                    params={},
                 )
             )
             raise ExecutionError("Documentation directory not found")

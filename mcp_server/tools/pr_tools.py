@@ -289,15 +289,8 @@ class SubmitPRTool(ITool):
                     self._git_manager.rollback_push(context)
                     context.produce(
                         Note(
-                            key="recovery_message",
-                            params={
-                                "message": (
-                                    f"GitHub PR creation failed: {exc}. "
-                                    "Remote branch has been rolled back to pre-submit state. "
-                                    "Working tree is clean. "
-                                    "Retry submit_pr once the API issue is resolved."
-                                )
-                            },
+                            key="submit_pr_api_failed_with_rollback_recovery",
+                            params={"error_details": str(exc)},
                         )
                     )
                 except ExecutionError:

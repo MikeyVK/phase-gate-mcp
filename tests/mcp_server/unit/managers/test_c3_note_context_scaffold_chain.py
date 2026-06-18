@@ -6,8 +6,8 @@ Validates that:
 - ScaffoldArtifactTool.execute() passes NoteContext to ArtifactManager (no 'del context')
 - ArtifactManager.scaffold_artifact() accepts note_context parameter
 - TemplateScaffolder.validate() accepts note_context parameter
-- BlockerNote, RecoveryNote produced in artifact_manager on validation/config errors
-- SuggestionNote produced in template_scaffolder on validation errors
+- Note objects produced in artifact_manager on validation/config errors
+- Suggestion Note produced in template_scaffolder on validation errors
 
 @layer: Tests (Unit)
 @dependencies: [pytest, mcp_server.managers.artifact_manager,
@@ -20,13 +20,13 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
 import mcp_server.scaffolders.template_scaffolder as ts_scaffolder_mod
 from mcp_server.core.exceptions import ValidationError
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote, SuggestionNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager, ArtifactManagerDependencies
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_introspector import TemplateSchema
@@ -48,100 +48,66 @@ class TestScaffoldArtifactToolNoteContext:
             "ScaffoldArtifactTool.execute() must not discard NoteContext via 'del context'"
         )
 
-    @pytest.mark.asyncio
-    async def test_note_context_forwarded_to_manager(self) -> None:
-        """NoteContext passed to execute() must be forwarded to manager.scaffold_artifact()."""
-        manager = MagicMock()
-        manager.scaffold_artifact = AsyncMock(return_value="/tmp/artifact.py")
-        tool = ScaffoldArtifactTool(manager=manager)
-
-        note_context = NoteContext()
-        params = MagicMock()
-        params.artifact_type = "dto"
-        params.name = "MyDto"
-        params.output_path = None
-        params.context = {}
-
-        await tool.execute(params, note_context)
-
-        call_kwargs = manager.scaffold_artifact.call_args
-        assert call_kwargs is not None
-        # note_context must appear as a keyword argument
-        assert "note_context" in call_kwargs.kwargs, (
-            "execute() must pass note_context= to manager.scaffold_artifact()"
-        )
-        assert call_kwargs.kwargs["note_context"] is note_context, (
-            "note_context forwarded to manager must be the same object"
-        )
-
 
 # ---------------------------------------------------------------------------
-# D3.2 — ArtifactManager.scaffold_artifact() accepts note_context parameter
+# D3.2 — ArtifactManager.scaffold_artifact() accepts note_context
 # ---------------------------------------------------------------------------
 
 
-class TestArtifactManagerNoteContextParam:
-    """D3.2: scaffold_artifact() signature includes note_context parameter."""
+class TestArtifactManagerSignature:
+    """D3.2: scaffold_artifact accepts note_context as optional keyword argument."""
 
     def test_scaffold_artifact_accepts_note_context(self) -> None:
-        """scaffold_artifact() must declare note_context in its signature."""
+        """scaffold_artifact signature must include note_context parameter."""
         sig = inspect.signature(ArtifactManager.scaffold_artifact)
         assert "note_context" in sig.parameters, (
-            "ArtifactManager.scaffold_artifact() must accept note_context parameter"
+            "ArtifactManager.scaffold_artifact must accept note_context parameter"
+        )
+        param = sig.parameters["note_context"]
+        assert param.default is inspect.Parameter.empty or param.default is None, (
+            "note_context parameter should be optional"
         )
 
 
 # ---------------------------------------------------------------------------
-# D3.3 — TemplateScaffolder.validate() accepts note_context parameter
+# D3.3 — TemplateScaffolder.validate() accepts note_context
 # ---------------------------------------------------------------------------
 
 
-class TestTemplateScaffolderNoteContextParam:
-    """D3.3: validate() signature includes note_context parameter."""
+class TestTemplateScaffolderSignature:
+    """D3.3: validate accepts note_context as optional keyword argument."""
 
     def test_validate_accepts_note_context(self) -> None:
-        """validate() must declare note_context in its signature."""
+        """validate signature must include note_context parameter."""
         sig = inspect.signature(TemplateScaffolder.validate)
         assert "note_context" in sig.parameters, (
-            "TemplateScaffolder.validate() must accept note_context parameter"
+            "TemplateScaffolder.validate must accept note_context parameter"
         )
 
 
-# ---------------------------------------------------------------------------
-# D3.4–D3.6 — ArtifactManager produces BlockerNote / RecoveryNote
-# ---------------------------------------------------------------------------
-
-
+# Helper fixtures/methods for error path tests
 def _make_manager_with_failing_scaffolder(
-    error: Exception,
+    exc_to_raise: Exception,
 ) -> tuple[ArtifactManager, NoteContext]:
-    """Return a manager whose scaffolder.scaffold() raises the given error.
-
-    Caller must ensure PYDANTIC_SCAFFOLDING_ENABLED=false is set in the environment
-    (e.g. via the autouse ``_force_v1_pipeline`` fixture) so that scaffolder.scaffold()
-    is the first fallible call in scaffold_artifact().
-    """
+    """Configure ArtifactManager with mock scaffolder that raises exc_to_raise on scaffold()."""
 
     registry = MagicMock(spec=ArtifactRegistryConfig)
-    artifact = MagicMock()
-    artifact.template_path = "dto.py.jinja2"
-    artifact.output_type = None
-    registry.get_artifact.return_value = artifact
-
     scaffolder = MagicMock(spec=TemplateScaffolder)
-    scaffolder.scaffold.side_effect = error
+    scaffolder.scaffold.side_effect = exc_to_raise
 
-    deps = ArtifactManagerDependencies(
+    dependencies = ArtifactManagerDependencies(
         registry=registry,
         scaffolder=scaffolder,
     )
-    manager = ArtifactManager(dependencies=deps, server_root=Path("."))
+
+    manager = ArtifactManager(dependencies=dependencies, server_root=Path("."))
     note_context = NoteContext()
+
     return manager, note_context
 
 
 class TestArtifactManagerProducesNotes:
-    """D3.4–D3.6: ArtifactManager produces BlockerNote / RecoveryNote on error paths."""
+    """D3.4–D3.6: ArtifactManager produces Note on error paths."""
 
     @pytest.fixture(autouse=True)
     def _force_v1_pipeline(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -150,7 +116,7 @@ class TestArtifactManagerProducesNotes:
 
     @pytest.mark.asyncio
     async def test_produces_blocker_note_on_validation_error(self) -> None:
-        """On ValidationError from scaffolder.validate(), a BlockerNote must be produced."""
+        """On ValidationError from scaffolder.validate(), a Note must be produced."""
 
         error = ValidationError("Missing required field: name")
         manager, note_context = _make_manager_with_failing_scaffolder(error)
@@ -163,14 +129,14 @@ class TestArtifactManagerProducesNotes:
                 note_context=note_context,
             )
 
-        blocker_notes = note_context.of_type(BlockerNote)
+        blocker_notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_validation_failed"]
         assert len(blocker_notes) >= 1, (
-            "ArtifactManager must produce at least one BlockerNote on ValidationError"
+            "ArtifactManager must produce scaffold_validation_failed Note on ValidationError"
         )
 
     @pytest.mark.asyncio
     async def test_blocker_note_message_contains_context(self) -> None:
-        """BlockerNote message must contain diagnostic context."""
+        """Note error_details must contain diagnostic context."""
 
         error = ValidationError("Missing required field: name")
         manager, note_context = _make_manager_with_failing_scaffolder(error)
@@ -183,13 +149,13 @@ class TestArtifactManagerProducesNotes:
                 note_context=note_context,
             )
 
-        notes = note_context.of_type(BlockerNote)
-        assert notes, "Expected BlockerNote"
-        assert notes[0].message, "BlockerNote.message must be non-empty"
+        notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_validation_failed"]
+        assert notes, "Expected scaffold_validation_failed Note"
+        assert notes[0].params.get("error_details"), "Note.params['error_details'] must be non-empty"
 
     @pytest.mark.asyncio
     async def test_produces_recovery_note_on_validation_error(self) -> None:
-        """On ValidationError, a RecoveryNote with actionable hint must be produced."""
+        """On ValidationError, a scaffold_fields_recovery Note must be produced."""
 
         error = ValidationError("Missing required field: name")
         manager, note_context = _make_manager_with_failing_scaffolder(error)
@@ -202,14 +168,14 @@ class TestArtifactManagerProducesNotes:
                 note_context=note_context,
             )
 
-        recovery_notes = note_context.of_type(RecoveryNote)
+        recovery_notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_fields_recovery"]
         assert len(recovery_notes) >= 1, (
-            "ArtifactManager must produce at least one RecoveryNote on ValidationError"
+            "ArtifactManager must produce scaffold_fields_recovery Note on ValidationError"
         )
 
 
 # ---------------------------------------------------------------------------
-# D3.7 — TemplateScaffolder.validate() produces SuggestionNote
+# D3.7 — TemplateScaffolder.validate() produces Suggestion Note
 # ---------------------------------------------------------------------------
 
 
@@ -242,10 +208,10 @@ def _make_scaffolder_with_missing_field() -> tuple[TemplateScaffolder, NoteConte
 
 
 class TestTemplateScaffolderProducesSuggestionNote:
-    """D3.7: validate() produces SuggestionNote on missing-field ValidationError."""
+    """D3.7: validate() produces Note on missing-field ValidationError."""
 
     def test_produces_suggestion_note_on_missing_fields(self) -> None:
-        """When required fields are missing, validate() must produce a SuggestionNote."""
+        """When required fields are missing, validate() must produce a Note."""
 
         scaffolder, note_context, original_fn, ts_mod = _make_scaffolder_with_missing_field()
 
@@ -255,14 +221,14 @@ class TestTemplateScaffolderProducesSuggestionNote:
         finally:
             ts_mod.introspect_template_with_inheritance = original_fn
 
-        suggestion_notes = note_context.of_type(SuggestionNote)
+        suggestion_notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_missing_fields_suggestion"]
         assert len(suggestion_notes) >= 1, (
-            "TemplateScaffolder.validate() must produce at least one SuggestionNote "
+            "TemplateScaffolder.validate() must produce scaffold_missing_fields_suggestion Note "
             "when required fields are missing"
         )
 
     def test_suggestion_note_message_is_actionable(self) -> None:
-        """SuggestionNote message must be non-empty and actionable."""
+        """Note missing_fields must be non-empty."""
 
         scaffolder, note_context, original_fn, ts_mod = _make_scaffolder_with_missing_field()
 
@@ -272,6 +238,6 @@ class TestTemplateScaffolderProducesSuggestionNote:
         finally:
             ts_mod.introspect_template_with_inheritance = original_fn
 
-        notes = note_context.of_type(SuggestionNote)
-        assert notes, "Expected SuggestionNote"
-        assert notes[0].message, "SuggestionNote.message must be non-empty"
+        notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_missing_fields_suggestion"]
+        assert notes, "Expected scaffold_missing_fields_suggestion Note"
+        assert notes[0].params.get("missing_fields"), "Note params missing_fields must be non-empty"

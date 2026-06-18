@@ -763,12 +763,13 @@ class ArtifactManager:
             )
         except ValidationError as exc:
             if note_context is not None:
-                note_context.produce(Note(key="blocker_message", params={"message": str(exc)}))
-                msg = f"Provide all required fields for artifact type '{artifact_type}'"
+                note_context.produce(
+                    Note(key="scaffold_validation_failed", params={"error_details": str(exc)})
+                )
                 note_context.produce(
                     Note(
-                        key="recovery_message",
-                        params={"message": msg},
+                        key="scaffold_fields_recovery",
+                        params={"artifact_type": artifact_type},
                     )
                 )
             raise

@@ -194,7 +194,9 @@ class TransitionCycleTool(_BaseIToolTransition):
                 skipped_gates_count=len(result.get("skipped_gates", [])),
             )
         except StateMutationConflictError as e:
-            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
             return CycleTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,
@@ -300,7 +302,9 @@ class ForceCycleTransitionTool(_BaseIToolTransition):
                 human_approval=params.human_approval,
             )
         except StateMutationConflictError as e:
-            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
             return ForceCycleTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,

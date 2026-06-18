@@ -356,14 +356,16 @@ class TestTextPresenter:
             validate_presentation_alignment(presenter, [])
         assert "placeholder" in str(exc_info.value).lower()
 
-    def test_drift_validator_legacy_notes_invalid_placeholder(self) -> None:
+    def test_drift_validator_generic_notes_invalid_placeholder(self) -> None:
         """Test that validator raises ConfigError when placeholders in
-        legacy note templates do not align with note class.
+        generic note templates do not align with expected fields.
         """
         config_data = {
             "global": {
                 "notes": {
-                    "templates": {"exclusions": {"file_excluded": "Excluded: {invalid_field}"}}
+                    "templates": {
+                        "suggestions": {"allowed_branch_types": "Allowed: {invalid_field}"}
+                    }
                 }
             },
             "tools": {},

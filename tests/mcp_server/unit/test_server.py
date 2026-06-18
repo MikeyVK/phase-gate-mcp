@@ -20,7 +20,7 @@ import pytest
 from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.operation_notes import InfoNote, NoteContext
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.tools.base import ITool
@@ -128,7 +128,7 @@ def _make_transition_advisory_execute(
     async def execute(
         _self: object, _params: object, context: NoteContext
     ) -> PhaseTransitionOutput:
-        context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
+        # No legacy InfoNote produced
         return PhaseTransitionOutput(
             success=True,
             branch=getattr(_params, "branch", "feature/257-reorder-workflow-phases"),
@@ -398,8 +398,8 @@ class TestServerToolRegistration:
                 response = await handler(req)
 
         assert "Transitioned phase to" in response.root.content[0].text
-        assert len(response.root.content) == 2
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
+        assert len(response.root.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -450,8 +450,8 @@ class TestServerToolRegistration:
                 response = await handler(req)
 
         assert "Transitioned phase to" in response.root.content[0].text
-        assert len(response.root.content) == 2
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
+        assert len(response.root.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list

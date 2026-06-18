@@ -32,5 +32,5 @@ def test_git_manager_produces_generic_note_when_dirty(git_config: GitConfig) -> 
     notes = context.entries
     assert len(notes) == 1
     assert isinstance(notes[0], Note)
-    assert notes[0].key == "blocker_message"
-    assert notes[0].params == {"message": "Commit or stash changes before creating a new branch"}
+    assert notes[0].key == "dirty_workspace_branch_blocker"
+    assert notes[0].params == {}

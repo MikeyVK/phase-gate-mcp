@@ -17,7 +17,7 @@ from mcp.types import CallToolRequest, CallToolRequestParams
 from pydantic import BaseModel
 
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.operation_notes import InfoNote, NoteContext
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.tools.cycle_tools import (
     ForceCycleTransitionInput,
     ForceCycleTransitionTool,
@@ -67,13 +67,12 @@ def _make_transition_advisory_execute(
     is_force: bool = False,
 ) -> Callable[[object, object, NoteContext], Awaitable[BaseModel]]:
     async def execute(_self: object, _params: object, context: NoteContext) -> BaseModel:
-        from mcp_server.core.operation_notes import InfoNote  # noqa: PLC0415
         from mcp_server.schemas.tool_outputs import (  # noqa: PLC0415
             CycleTransitionOutput,
             ForceCycleTransitionOutput,
         )
 
-        context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
+        # No legacy InfoNote produced
         if is_force:
             return ForceCycleTransitionOutput(
                 success=success,
@@ -224,8 +223,8 @@ class TestCycleTools:
                 response = await handler(req)
 
         assert "✅" in response.root.content[0].text
-        assert len(response.root.content) == 2
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
+        assert len(response.root.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -290,8 +289,8 @@ class TestCycleTools:
                 response = await handler(req)
 
         assert "Transitioned to Cycle 2/2 (One)" in response.root.content[0].text
-        assert len(response.root.content) == 2
-        assert TRANSITION_ADVISORY_NOTE in response.root.content[1].text
+        assert len(response.root.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -531,8 +530,7 @@ class TestTransitionCycleToolAdvisoryNote:
         assert result.success
         assert state_engine.last_call is not None
         assert state_engine.last_call["gate_runner"] is gate_runner
-        notes = context.of_type(InfoNote)
-        assert len(notes) == 0
+        assert len(context.entries) == 0
 
 
 class TestForceCycleToolAdvisoryNote:
@@ -581,8 +579,7 @@ class TestForceCycleToolAdvisoryNote:
 
         assert isinstance(result, ForceCycleTransitionOutput)
         assert result.success
-        notes = context.of_type(InfoNote)
-        assert len(notes) == 0
+        assert len(context.entries) == 0
 
 
 class TestForceCycleToolFormatting:

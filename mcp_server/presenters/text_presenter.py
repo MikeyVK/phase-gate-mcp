@@ -17,15 +17,7 @@ from mcp_server.config.schemas.presentation_config import (
     ToolPresentationConfig,
 )
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.operation_notes import (
-    BlockerNote,
-    ExclusionNote,
-    InfoNote,
-    Note,
-    NoteEntry,
-    RecoveryNote,
-    SuggestionNote,
-)
+from mcp_server.core.operation_notes import NoteEntry
 
 
 class SafeNoneFormatter(string.Formatter):
@@ -44,26 +36,7 @@ class SafeNoneFormatter(string.Formatter):
             return str(value)
 
 
-def map_legacy_note_to_event(note: NoteEntry) -> tuple[str, dict[str, Any]]:
-    """Maps legacy typed notes to generic key-parameter tuples for the presenter.
-
-    # TODO: Remove in Cycle 6 (Clean Break)
-    """
-    if isinstance(note, Note):
-        return note.key, note.params
-    elif isinstance(note, ExclusionNote):
-        return "file_excluded", {"file_path": note.file_path}
-    elif isinstance(note, SuggestionNote):
-        return "suggestion_message", {"message": note.message, "subject": note.subject}
-    elif isinstance(note, BlockerNote):
-        return "blocker_message", {"message": note.message}
-    elif isinstance(note, RecoveryNote):
-        return "recovery_message", {"message": note.message}
-    elif isinstance(note, InfoNote):
-        return "info_message", {"message": note.message}
-    elif hasattr(note, "key"):
-        return getattr(note, "key"), getattr(note, "params", {})
-    return "unknown_note", {"message": str(note)}
+# Legacy note mapping removed
 
 
 class TextPresenter:
@@ -297,7 +270,8 @@ class TextPresenter:
                 group_configs = getattr(global_notes, "groups", {})
 
         for note in notes:
-            key, params = map_legacy_note_to_event(note)
+            key = note.key
+            params = note.params
 
             # Search for template and group
             found_template = None
@@ -360,43 +334,6 @@ class TextPresenter:
                     grouped_texts[found_group].append(formatted_text)
                 except Exception as exc:
                     grouped_texts[found_group].append(f"Format error: {exc}")
-            else:
-                rendered_note = note
-                if isinstance(note, Note):
-                    if note.key == "blocker_message":
-                        rendered_note = BlockerNote(message=note.params.get("message", ""))
-                    elif note.key == "recovery_message":
-                        rendered_note = RecoveryNote(message=note.params.get("message", ""))
-                    elif note.key == "suggestion_message":
-                        rendered_note = SuggestionNote(
-                            message=note.params.get("message", ""),
-                            subject=note.params.get("subject"),
-                        )
-                    elif note.key == "info_message":
-                        rendered_note = InfoNote(message=note.params.get("message", ""))
-                    elif note.key == "file_excluded":
-                        rendered_note = ExclusionNote(file_path=note.params.get("file_path", ""))
-                if hasattr(rendered_note, "to_message") and callable(rendered_note.to_message):
-                    msg = rendered_note.to_message()
-                    if isinstance(rendered_note, ExclusionNote):
-                        grouped_texts["exclusions"].append(msg)
-                    elif isinstance(rendered_note, SuggestionNote):
-                        grouped_texts["suggestions"].append(msg)
-                    elif isinstance(rendered_note, RecoveryNote):
-                        cleaned = (
-                            msg.lstrip()
-                            .removeprefix("🩹")
-                            .lstrip()
-                            .removeprefix("Recovery:")
-                            .lstrip()
-                        )
-                        grouped_texts["recoveries"].append(cleaned)
-                    elif isinstance(rendered_note, InfoNote) or isinstance(
-                        rendered_note, BlockerNote
-                    ):
-                        grouped_texts["info"].append(msg)
-                    else:
-                        grouped_texts["info"].append(msg)
         lines = []
         for group in group_names:
             items = grouped_texts[group]
@@ -478,13 +415,44 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
         "cache": {"message", "params", "success", "error_type", "traceback"},
     }
 
-    # Mapping for legacy notes
-    legacy_note_fields = {
-        "file_excluded": {"file_path"},
-        "suggestion_message": {"message", "subject"},
-        "blocker_message": {"message"},
-        "recovery_message": {"message"},
-        "info_message": {"message"},
+    # Mapping for generic notes keys to their allowed parameters
+    generic_note_fields = {
+        "allowed_bases_suggestion": {"bases"},
+        "initialize_project_suggestion": {"issue_number"},
+        "close_open_pr_suggestion": set(),
+        "transition_phase_suggestion": {"required_phase"},
+        "load_context_suggestion": set(),
+        "allowed_branch_types": {"types"},
+        "branch_name_pattern_mismatch": {"pattern"},
+        "commit_empty_files_suggestion": set(),
+        "restore_empty_files_suggestion": set(),
+        "delete_protected_branch_suggestion": {"protected_branches"},
+        "pytest_no_tests_collected_suggestion": set(),
+        "scaffold_missing_fields_suggestion": {"missing_fields", "artifact_type"},
+        "submit_pr_commit_failed_recovery": {"error_details"},
+        "submit_pr_push_failed_with_rollback_recovery": {"error_details"},
+        "submit_pr_push_failed_no_rollback_recovery": {"error_details"},
+        "rollback_local_reset_failed_recovery": {"error_details"},
+        "rollback_remote_push_failed_recovery": {"error_details"},
+        "submit_pr_api_failed_with_rollback_recovery": {"error_details"},
+        "scaffold_fields_recovery": {"artifact_type"},
+        "pytest_interrupted_recovery": set(),
+        "pytest_internal_error_recovery": set(),
+        "pytest_usage_error_recovery": set(),
+        "pytest_unexpected_code_recovery": {"exit_code"},
+        "transition_conflict_recovery": {"recovery_steps"},
+        "docs_dir_not_found_expected": {"expected_dir"},
+        "docs_dir_not_found_create": set(),
+        "docs_dir_not_found_add_files": set(),
+        "dirty_workspace_branch_blocker": set(),
+        "pull_dirty_workspace_blocker": set(),
+        "pull_detached_head_blocker": set(),
+        "pull_no_upstream_blocker": set(),
+        "pull_refspec_not_supported_blocker": set(),
+        "merge_dirty_workspace_blocker": set(),
+        "submit_pr_dirty_workspace_blocker": set(),
+        "submit_pr_no_upstream_blocker": set(),
+        "scaffold_validation_failed": {"error_details"},
     }
 
     def get_placeholders(tmpl: str) -> list[str]:
@@ -505,7 +473,7 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
                 # Exceptions
                 if is_default_fail and p == "error_message":
                     continue
-                if template_key in legacy_note_fields and p == "message":
+                if template_key in generic_note_fields and p == "message":
                     continue
                 raise ConfigError(
                     f"Template for '{template_key}' uses blacklisted generic parameter '{p}'"
@@ -553,8 +521,8 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
         for key, template in group_templates.items():
             check_blacklist(template, key)
             placeholders = get_placeholders(template)
-            if key in legacy_note_fields:
-                allowed = legacy_note_fields[key]
+            if key in generic_note_fields:
+                allowed = generic_note_fields[key]
                 for p in placeholders:
                     if p not in allowed:
                         raise ConfigError(
@@ -620,8 +588,8 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
             for key, template in notes_dict.items():
                 check_blacklist(template, key)
                 placeholders = get_placeholders(template)
-                if key in legacy_note_fields:
-                    allowed = legacy_note_fields[key]
+                if key in generic_note_fields:
+                    allowed = generic_note_fields[key]
                     for p in placeholders:
                         if p not in allowed:
                             raise ConfigError(

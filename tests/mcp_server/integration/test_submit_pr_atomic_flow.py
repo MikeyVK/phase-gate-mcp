@@ -43,7 +43,7 @@ import mcp_server.server as server_module
 from mcp_server.config.schemas.contracts_config import BranchLocalArtifact
 from mcp_server.core.exceptions import ExecutionError, PreflightError
 from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import NoteContext, Note
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
@@ -369,8 +369,9 @@ class TestSubmitPRAtomicRefactored:
         with pytest.raises(ExecutionError):
             asyncio.run(tool.execute(_make_params(), context))
         git_manager.rollback_push.assert_called_once()
-        assert len(context.of_type(RecoveryNote)) == 1
-        assert "rolled back" in context.of_type(RecoveryNote)[0].message
+        notes = [n for n in context.of_type(Note) if n.key == "submit_pr_api_failed_with_rollback_recovery"]
+        assert len(notes) == 1
+        assert "API 503" in notes[0].params.get("error_details", "")
         pr_status_writer.set_pr_status.assert_not_called()
 
     def test_failure_c_no_rollback_when_no_neutralization_commit(self) -> None:
