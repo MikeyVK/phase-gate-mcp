@@ -111,18 +111,16 @@ The execution of a tool call flows through the subsystems sequentially, communic
    - Core `ITool` executes business logic -> returns success DTO.
    - `ToolErrorHandlerDecorator` catches any unexpected tool crash -> returns `ExecutionErrorOutput` DTO.
 3. **Transport Layer** receives the resulting DTO and calls `IToolResponseCache.put(dto)` to persist it.
-4. **Persistence Sub-system** caches the DTO, generates a unique `run_id`, and returns it. If caching fails (e.g., disk full), the exception is caught by the server, which sets `run_id = None`.
+4. **Persistence Sub-system** caches the DTO, generates a unique `run_id`, and returns it. If caching fails (e.g., disk full, write permissions), the caching subsystem catches the exception internally, logs a warning with `exc_info=True` to `sys.stderr`/`mcp_audit.log`, and returns `None`.
 5. **Transport Layer** calls `IPresenter.present_result(..., data=dto, run_id=run_id, note_context=note_context)` to format the output.
-6. **Presentation Sub-system** looks up templates and formats the DTO, notes, and cache link (or provides a JSON fallback dump if `run_id` is `None`).
+6. **Presentation Sub-system** looks up templates and formats the DTO, notes, and cache link. If presentation formatting fails (e.g., templating syntax error, missing config keys), the presenter catches the exception internally, logs it, and returns a safe fallback markdown (a message explaining the failure plus a raw JSON dump of the DTO).
 7. **Transport Layer** packages the formatted text into the final JSON-RPC response and writes to stdout.
 
-### 3.4. Double Fault Prevention Flow
-Robust double fault prevention requires that a crash in the caching/presentation steps (such as a full disk or permissions failure) does not crash the client connection:
-- If tool execution fails or succeeds, a DTO is returned to the server orchestrator.
-- The server orchestrator attempts to write the DTO to the response cache. If this write fails (raising a caching exception), the server catches it, logs the warning to `sys.stderr`/`mcp_audit.log`, and calls the presenter with `run_id = None`.
-- The presenter formats the output normally using the template but appends a fallback JSON dump of the DTO to ensure the LLM still receives 100% of the data.
-- This ensures the JSON-RPC channel remains completely stable.
-
+### 3.4. Double Fault Prevention Flow (Subsystem Self-Resilience)
+To prevent creating a complex anti-pattern of try-except blocks in the transport orchestrator (`server.py`), both persistence and presentation subsystems are designed to be self-resilient. This keeps the transport layer completely linear and focused on JSON-RPC transport:
+- **No Caching Crashes:** Caching operations (`IToolResponseCache.put`) catch write exceptions internally and return `None` (rather than propagating errors to `server.py`).
+- **No Presentation Crashes:** Formatting operations (`IPresenter.present_result`) catch templating and formatting errors internally, returning a safe default markdown representation with a raw JSON dump of the data DTO (rather than raising errors to `server.py`).
+- **Linear Transport:** The server orchestrator contains zero recovery logic or try-except blocks for caching or presentation. It executes the operations sequentially, receiving safe default fallbacks when subsystems fail.
 ### 3.5. Blast Radius & Test Suite Coupling
 - **`mcp_server/tools/decorators.py`**: Will host all new decorator classes.
 - **`mcp_server/bootstrap.py`**: `ToolFactory.build_tool` will assemble the decorators. `ServerBootstrapper` must pass the required dependencies (`response_cache`, `enforcement_runner`).
@@ -175,17 +173,16 @@ To prevent breaking the entire system during this rigorous refactor, the impleme
 ### 5.2. Subsystem Boundary Guardrails
 - **Protocol / JSON-RPC Boundary (Preserve Compatibility):** No changes to public JSON-RPC response formats, error schemas, or DTO structures.
 - **Transport Layer (`server.py` Guardrails):**
-  * `server.py` must contain **no** try-except blocks for tool execution exceptions (e.g. `ValidationError`, `MCPError`). All execution safety is delegated to the decorator pipeline.
-  * `server.py` is permitted to catch exceptions only from the persistence layer (`IToolResponseCache.put`), logging a warning to `stderr` and setting `run_id = None`.
+  * `server.py` must contain **no** try-except blocks whatsoever for execution, caching, or presentation logic. The handler flow must remain completely linear.
 - **Execution Pipeline (`ITool` Decorator Guardrails):**
   * All decorators must implement the `ITool` protocol.
-  * The execution pipeline must guarantee that `ITool.execute()` returns a DTO (success or error) and never propagates an exception.
+  * The execution pipeline must guarantee that `ITool.execute()` returns a DTO (success or error) and never propagates execution exceptions.
 - **Persistence Subsystem (`IToolResponseCache` Guardrails):**
-  * Generation of `run_id` and formatting of the cache URI (`pgmcp://cache/runs/...`) must be encapsulated within the cache subsystem. `server.py` must not generate keys.
+  * Generation of `run_id` and formatting of the cache URI (`pgmcp://cache/runs/...`) must be encapsulated within the cache subsystem.
+  * The cache subsystem must catch filesystem and storage write exceptions internally, log the warning to `sys.stderr` with traceback, and return `None` (instead of propagating exceptions).
 - **Presentation Subsystem (`IPresenter` Guardrails):**
   * Formatting of DTOs, notes, and cache links must be handled exclusively by the presentation layer.
-  * If `run_id` is `None` (caching failed), the presenter must format the DTO normally and append a raw JSON block containing the full DTO output to prevent data loss.
-
+  * The presentation subsystem must catch rendering/formatting exceptions internally, log them to `sys.stderr`, and return a safe fallback markdown containing a warning and a raw JSON dump of the DTO (instead of propagating exceptions).
 ### 5.3. Test Suite Refactoring & Retirement Plan
 With the decoupling of validation, enforcement, and error mapping from `server.py`, the existing unit tests in `tests/mcp_server/unit/test_server.py` that target the temporary integration bridge become obsolete. We will execute a structured retirement and migration of these tests:
 - **Test Retirement (Obsolete in `test_server.py`):**
