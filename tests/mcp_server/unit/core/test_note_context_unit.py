@@ -142,3 +142,14 @@ def test_note_context_delegation() -> None:
     assert len(result.content) == 2
     assert result.content[0] == {"type": "text", "text": "base content"}
     assert result.content[1] == {"type": "text", "text": "Formatted markdown"}
+
+
+def test_clean_break_legacy_constructs_removed() -> None:
+    """Legacy note subclasses and mapper must be completely removed."""
+    module = _load_operation_notes_module()
+    for name in ["ExclusionNote", "SuggestionNote", "BlockerNote", "RecoveryNote", "InfoNote", "CommitNote", "Renderable"]:
+        assert not hasattr(module, name), f"{name} should be removed"
+
+    import importlib  # noqa: PLC0415
+    presenter_module = importlib.import_module("mcp_server.presenters.text_presenter")
+    assert not hasattr(presenter_module, "map_legacy_note_to_event"), "map_legacy_note_to_event should be removed"
