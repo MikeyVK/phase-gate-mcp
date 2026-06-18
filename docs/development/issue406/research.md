@@ -34,6 +34,10 @@ Exception interception is currently implemented as a temporary bridge directly i
 - Defining decorators for tool error handling, argument validation, and lifecycle/phase enforcement.
 - Updating `ToolFactory` in `bootstrap.py` to assemble the decorator chain.
 - Refactoring `tests/mcp_server/unit/test_server.py` to target the decorated tools instead of raw server methods.
+- Designing and defining the `IPresenter` interface protocol to decouple the server from presentation-specific logic.
+- Designing the refactoring of the interfaces package (moving protocols out of `mcp_server/core/interfaces/__init__.py` into dedicated modules, and moving `ITool` and `ToolExecutionEnvelope` to `mcp_server/core/interfaces/itool.py`).
+- Designing the updated cache contract (`IToolResponseCache.put`) to delegate `run_id` generation to the cache subsystem.
+- Defining a resilient fallback mechanism (Option B: JSON dump fallback) for cache failures.
 
 ### 1.2. Out of Scope
 - Changing the public JSON-RPC API contracts or response structures.
@@ -74,6 +78,12 @@ Currently, `MCPServer.handle_call_tool` is responsible for:
 
 This constitutes a clear violation of the Single Responsibility Principle (SRP). A change in lifecycle rules, error formatting, caching, or transport protocol all target `server.py`, increasing maintenance risk.
 
+### 3.1.1. Orchestration and Contract Gaps
+A deep review of the current codebase reveals several critical architectural gaps:
+1. **Presenter Encapsulation Leakage:** The presenter (`TextPresenter`) is currently treated as a multi-disciplinary helper class for the server rather than an encapsulated component. The server must have explicit knowledge of `presentation_category`, manually extract `note_context.entries`, check next instructions, and format the URI reference template. This leaks presentation-specific logic into the transport orchestrator.
+2. **Missing Interface Protocols:** There is no formal `IPresenter` interface protocol. The server is tightly coupled to the concrete `TextPresenter` implementation.
+3. **Polluted `__init__.py` Files:** The `mcp_server/core/interfaces/__init__.py` file contains the actual definitions of all system protocols (e.g., `IStateReader`, `IToolResponseCache`). Best practices dictate that `__init__.py` files must be pure facades/re-export files, and definitions must reside in appropriately named modules.
+4. **Key Generation Leakage:** The server currently generates `run_id` and constructs the cache URI structure (`pgmcp://cache/runs/{run_id}`), which are implementation details of the persistence/caching subsystem.
 ### 3.2. Error Taxonomy Coverage Validation
 We checked the coverage of the 6 system error categories identified in `issue404/design.md` against our decorator pipeline design:
 
