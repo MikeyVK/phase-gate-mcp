@@ -169,7 +169,7 @@ To prevent breaking the entire system during this rigorous refactor, the impleme
 2. **Decorator Core Implementation:** Implement `InputValidationDecorator`, `EnforcementDecorator`, and `ToolErrorHandlerDecorator` in `mcp_server/tools/decorators.py`. Write isolated unit tests in `tests/mcp_server/unit/test_decorators.py` to assert their behavior under mock inputs and exceptions. Do not wire them to the server yet.
 3. **ToolFactory Refactor:** Update `ToolFactory.build_tool` to assemble the decorators around the core tools. Write assembly verification tests.
 4. **Server Orchestration Refactor:** Remove the temporary exception-handling bridge from `server.py:handle_call_tool` and replace it with sequential calls to the execution pipeline, caching layer (with try-except double-fault fallback), and presentation layer.
-5. **Test Suite Refactoring & Cleanup:** Refactor `tests/mcp_server/unit/test_server.py` to target the decorated tools and verify sequential orchestrator flow. Delete any legacy code.
+5. **Test Suite Refactoring & Cleanup:** Retire the obsolete exception-mapping tests in `tests/mcp_server/unit/test_server.py`, move validation/enforcement logic assertions to `tests/mcp_server/unit/test_decorators.py`, and clean up any dead test helpers.
 6. **Validation & Quality Gates:** Run `run_quality_gates` and execute the full test suite to guarantee 100% correctness.
 
 ### 5.2. Subsystem Boundary Guardrails
@@ -185,6 +185,19 @@ To prevent breaking the entire system during this rigorous refactor, the impleme
 - **Presentation Subsystem (`IPresenter` Guardrails):**
   * Formatting of DTOs, notes, and cache links must be handled exclusively by the presentation layer.
   * If `run_id` is `None` (caching failed), the presenter must format the DTO normally and append a raw JSON block containing the full DTO output to prevent data loss.
+
+### 5.3. Test Suite Refactoring & Retirement Plan
+With the decoupling of validation, enforcement, and error mapping from `server.py`, the existing unit tests in `tests/mcp_server/unit/test_server.py` that target the temporary integration bridge become obsolete. We will execute a structured retirement and migration of these tests:
+- **Test Retirement (Obsolete in `test_server.py`):**
+  * `test_call_tool_handles_itool_bridge`: Retired, as `server.py` no longer directly wraps tools with cache decorators; wrapping is delegated to `ToolFactory`.
+  * `test_handle_call_tool_validation_error_intercept`: Retired, as `server.py` does not perform validation.
+  * `test_handle_call_tool_enforcement_error_intercept`: Retired, as `server.py` does not run enforcement.
+  * `test_handle_call_tool_execution_error_intercept`: Retired, as `server.py` does not intercept tool crashes.
+- **Migration & Re-implementation in `test_decorators.py`:**
+  * These tests will be re-implemented in `tests/mcp_server/unit/test_decorators.py` to test the decorators (`InputValidationDecorator`, `EnforcementDecorator`, `ToolErrorHandlerDecorator`) in pure isolation using simple mock tools.
+- **Server Orchestration Assertions in `test_server.py`:**
+  * `test_server.py` will be reduced to testing pure orchestration: verifying that a request to `handle_call_tool` executes the tool pipeline, attempts to write to the cache, formats the results using `IPresenter`, and routes notes using `TextPresenter.present_notes`.
+  * We will add `test_handle_call_tool_cache_write_failure_double_fault_fallback` to verify that when caching raises an exception, the orchestrator catches it, logs to `stderr`, and calls the presenter with `run_id = None`.
 
 ---
 
@@ -208,6 +221,7 @@ To verify the success of the refactoring and ensure it is fully actionable, the 
   * The server orchestrator does not crash or raise an exception.
   * A warning with tracebacks is logged to standard error.
   * The returned markdown contains a fallback raw JSON block representing the complete DTO.
+- **Test Retirement Audit:** The following obsolete tests in `test_server.py` are verified as retired: `test_call_tool_handles_itool_bridge`, `test_handle_call_tool_validation_error_intercept`, `test_handle_call_tool_enforcement_error_intercept`, and `test_handle_call_tool_execution_error_intercept`. They are fully replaced by the isolated decorator unit tests.
 - **No Regressions:** All 2873+ existing tests pass.
 
 ---
@@ -219,3 +233,4 @@ To verify the success of the refactoring and ensure it is fully actionable, the 
 | 1.0.0   | 2026-06-18 | Agent  | Initial validation and decorator analysis report |
 | 1.1.0   | 2026-06-18 | Agent  | Re-oriented research from outside-in server target architecture and added the construction layer |
 | 1.2.0   | 2026-06-18 | Agent  | Added guardrails, sequence of operations strategy, and actionable expected results for refactoring boundaries |
+| 1.3.0   | 2026-06-18 | Agent  | Documented test suite refactoring, retirement of obsolete test_server.py tests, and migration to test_decorators.py |
