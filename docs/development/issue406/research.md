@@ -108,6 +108,16 @@ We analyzed the logging architecture and identified a minor gap in the current i
   - `ToolErrorHandlerDecorator` will log caught execution exceptions to `sys.stderr` / `mcp_audit.log` via the structured logger with `exc_info=True`.
   - `CacheErrorHandlerDecorator` will log publishing/caching failures with `exc_info=True`.
   - Standard output (`sys.stdout`) remains strictly protected for JSON-RPC messages.
+
+### 3.6. Strategy Options & Trade-offs
+We compare three options for composing the wrapper pipeline:
+
+| Option | Cost | Risk | Impact | Trade-offs / Verdict |
+| :--- | :--- | :--- | :--- | :--- |
+| **Option A: Dynamic Runtime Decorators (Russian Doll)** | **Low** (Simple subclassing of `ITool`, reuse existing decorator pattern). | **Low** (Decoupled decorators can be unit tested individually. No reflection required). | **Excellent** (Zero impact on JSON-RPC boundaries. Highly modular, complies with SRP). | **Selected**. Clean, composable, and leverages standard Python class delegation. |
+| **Option B: Static Compile-Time Composition** | **Medium** (Requires building custom tool runner classes or compile-time codegen). | **Medium** (Increases complexity in `ToolFactory`, hard to mock or dynamically swap). | **Good** (Keeps execution path flat). | Rejected due to over-engineering and rigidity. |
+| **Option C: Middleware-based Pipeline (ASGI/FastAPI style)** | **High** (Requires writing a custom middleware registration layer, request/response context wrappers). | **High** (Complex stack traces, harder to debug within simple MCP connection). | **Excellent** (Highly generic). | Rejected. The MCP server does not run an ASGI server or require full middleware frameworks. |
+
 ---
 
 ## 4. Open Questions
@@ -119,8 +129,12 @@ We analyzed the logging architecture and identified a minor gap in the current i
 
 ## 5. Approved Strategy
 
-Preserve compatibility across all external JSON-RPC boundaries and error DTO shapes. The temporary integration bridge in server.py will be completely replaced by the modular decorator pipeline, keeping the public contracts identical. No special migration policy is required for clients.
+The strategy is explicitly defined per affected boundary:
 
+- **Protocol / JSON-RPC Boundary:** **Preserve compatibility**. There will be zero changes to the public JSON-RPC response shapes, payload contracts, or the error DTO schemas.
+- **Tool Composition / Instantiation Boundary:** **Clean break**. The temporary try-except, validation, and enforcement blocks inside `server.py` (`handle_call_tool`) will be completely removed and replaced with the modular decorator pipeline.
+- **Test Suite Boundary:** **Clean break / Refactoring**. Mocked tests in `test_server.py` that currently target `server.py` exception mapping will be refactored to verify decorators or target the fully wrapped tools. New unit tests will be introduced in `test_decorators.py`.
+- **Logging & Diagnostics Boundary:** **New requirement**. Standardize exception logging inside the decorators to write tracebacks to `sys.stderr` / `mcp_audit.log`, resolving the logging gaps.
 ---
 
 ## 6. Expected Results
