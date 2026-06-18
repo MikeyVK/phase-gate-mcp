@@ -101,6 +101,13 @@ Robust double fault protection requires that a crash in the publisher/cache laye
 - **`mcp_server/server.py`**: The bridge in `handle_call_tool` will be replaced with a single `tool.execute()` call and NoteContext rendering.
 - **`tests/mcp_server/unit/test_server.py`**: Currently asserts exceptions directly on `server.py` mock targets. These tests will be refactored to verify decorator behavior.
 
+### 3.5. Logging and Stderr Hygiene
+We analyzed the logging architecture and identified a minor gap in the current implementation:
+- **Current Gap:** Unexpected tool execution exceptions (`exec_exc`) are caught by the temporary bridge in `server.py`, converted to `ExecutionErrorOutput`, and returned. However, they are **not** written to the system error logger or `sys.stderr`/`mcp_audit.log`. This makes it difficult for administrators to monitor errors on the server side.
+- **Hygiene Requirement:** Conform to `decorator_pipeline_design.md` §3 by implementing explicit logging inside the decorators:
+  - `ToolErrorHandlerDecorator` will log caught execution exceptions to `sys.stderr` / `mcp_audit.log` via the structured logger with `exc_info=True`.
+  - `CacheErrorHandlerDecorator` will log publishing/caching failures with `exc_info=True`.
+  - Standard output (`sys.stdout`) remains strictly protected for JSON-RPC messages.
 ---
 
 ## 4. Open Questions
