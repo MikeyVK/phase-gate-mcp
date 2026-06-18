@@ -31,7 +31,7 @@ Exception interception is currently implemented as a temporary bridge directly i
 
 ### 1.1. In Scope
 - Refactoring the temporary integration bridge in `server.py` (`handle_call_tool`) into modular `ITool` decorators.
-- Defining decorators for cache error handling, resource publishing, tool error handling, argument validation, and lifecycle/phase enforcement.
+- Defining decorators for tool error handling, argument validation, and lifecycle/phase enforcement.
 - Updating `ToolFactory` in `bootstrap.py` to assemble the decorator chain.
 - Refactoring `tests/mcp_server/unit/test_server.py` to target the decorated tools instead of raw server methods.
 
@@ -83,17 +83,16 @@ We checked the coverage of the 6 system error categories identified in `issue404
 | **2. Tool Input Schema Validation** | Pydantic validation failures of LLM arguments | `InputValidationDecorator` catches `ValidationError` and returns `ValidationErrorOutput`. |
 | **3. Tool Platform Errors** | Unexpected infrastructural errors bubbling from tools | `ToolErrorHandlerDecorator` catches generic exceptions and returns `ExecutionErrorOutput`. |
 | **4. Tool Domain Errors** | Expected business logic failures | Core tool execution returns `success=False` domain DTOs (normal flow, passes through). |
-| **5. MCP Server / Cache Errors** | Failures within the caching pipeline itself | `CacheErrorHandlerDecorator` catches cache write issues and returns `CacheErrorOutput`. |
+| **5. MCP Server / Cache Errors** | Failures within the caching pipeline itself | Handled by the server orchestrator directly during the caching step. |
 | **6. Enforcement Errors** | Phase-guard or lifecycle rule blocks | `EnforcementDecorator` catches `MCPError` and returns `EnforcementErrorOutput`. |
 
-This confirms that the decorator pipeline provides 100% functional coverage for all error types.
+This confirms that the decorator pipeline provides 100% functional coverage for all execution-related error types.
 
 ### 3.3. Double Fault Prevention Flow
-Robust double fault protection requires that a crash in the publisher/cache layer (such as a full disk or permissions failure) does not crash the client connection:
-- In the sequence `Server -> CacheErrorHandler -> ResourcePublisher -> ToolErrorHandler`, the `CacheErrorHandler` sits outside the `ResourcePublisher`.
-- If `ToolErrorHandler` or core execution raises an error, it is returned to `ResourcePublisher` as a DTO.
-- `ResourcePublisher` attempts to write it to cache. If this write fails (raising a caching exception), `CacheErrorHandler` intercepts it and formats a safe `CacheErrorOutput` plaintext fallback.
-- This ensures the JSON-RPC channel remains stable.
+Robust double fault prevention requires that a crash in the caching/presentation steps (such as a full disk or permissions failure) does not crash the client connection:
+- If tool execution fails or succeeds, a DTO is returned to the server orchestrator.
+- The server orchestrator attempts to write the DTO to the response cache. If this write fails (raising a caching exception), the server catches it, logs the warning to `sys.stderr`/`mcp_audit.log`, and formats a safe plaintext fallback (mapped to `CacheErrorOutput`).
+- This ensures the JSON-RPC channel remains completely stable.
 
 ### 3.4. Blast Radius & Test Suite Coupling
 - **`mcp_server/tools/decorators.py`**: Will host all new decorator classes. Currently only hosts `ResourcePublishingDecorator` (which will be renamed/extended).
@@ -106,7 +105,7 @@ We analyzed the logging architecture and identified a minor gap in the current i
 - **Current Gap:** Unexpected tool execution exceptions (`exec_exc`) are caught by the temporary bridge in `server.py`, converted to `ExecutionErrorOutput`, and returned. However, they are **not** written to the system error logger or `sys.stderr`/`mcp_audit.log`. This makes it difficult for administrators to monitor errors on the server side.
 - **Hygiene Requirement:** Conform to `decorator_pipeline_design.md` §3 by implementing explicit logging inside the decorators:
   - `ToolErrorHandlerDecorator` will log caught execution exceptions to `sys.stderr` / `mcp_audit.log` via the structured logger with `exc_info=True`.
-  - `CacheErrorHandlerDecorator` will log publishing/caching failures with `exc_info=True`.
+  - The server orchestrator will log publishing/caching failures with exc_info=True.
   - Standard output (`sys.stdout`) remains strictly protected for JSON-RPC messages.
 
 ### 3.6. Strategy Options & Trade-offs
@@ -126,6 +125,8 @@ We compare three options for composing the wrapper pipeline:
    - **Decision:** `ToolFactory` constructor will be injected with narrow interfaces (`IToolResponseCache` and `EnforcementRunner`) rather than the full configuration settings or `ServerBootstrapper`. This enforces the Interface Segregation Principle (ISP) and keeps the factory decoupled.
 2. **NoteContext Routing & Presentation:**
    - **Decision:** Keep note context presentation at the server orchestrator layer rather than creating a new decorator (avoiding YAGNI/overcomplication). The server remains responsible for calling `TextPresenter.present_notes(tool.name, notes)` on the accumulated note entries after tool execution completes and appending the rendered markdown block to the final response.
+3. **Caching and Error DTO Presentation:**
+   - **Decision:** Caching the output DTOs, presenting the DTOs using `TextPresenter`, and handling any caching-related double faults will remain under the responsibility of the server orchestrator rather than being delegated to custom decorators. This avoids YAGNI, simplifies the decorator pipeline to only execution-related concerns, and keeps the server as the central orchestrator of transport/presentation.
 
 ## 5. Approved Strategy
 
@@ -135,7 +136,7 @@ The strategy is explicitly defined per affected boundary:
 - **Tool Composition / Instantiation Boundary:** **Clean break**. The temporary try-except, validation, and enforcement blocks inside `server.py` (`handle_call_tool`) will be completely removed and replaced with the modular decorator pipeline.
 - **Test Suite Boundary:** **Clean break / Refactoring**. Mocked tests in `test_server.py` that currently target `server.py` exception mapping will be refactored to verify decorators or target the fully wrapped tools. New unit tests will be introduced in `test_decorators.py`.
 - **Logging & Diagnostics Boundary:** **New requirement**. Standardize exception logging inside the decorators to write tracebacks to `sys.stderr` / `mcp_audit.log`, resolving the logging gaps.
-- **Notes Boundary / Content Separation:** **Clean break / Strict Contract**. In accordance with Section 15 of `ARCHITECTURE_PRINCIPLES.md`, no Python code in managers, adapters, or tools is permitted to define, format, or return user-facing text messages or emojis. Notes must be produced strictly as generic metadata-only events, and their templates must live exclusively in the external configuration (`presentation.yaml`).
+- **Presentation Boundary / Content Separation:** **Clean break / Strict Contract**. In accordance with Section 15 of `ARCHITECTURE_PRINCIPLES.md`, no core domain, business logic, or adapter code may contain hardcoded user-facing text, emojis, or formatting templates. All human-readable outputs and formatting must be resolved in the presentation layer (via `TextPresenter`) or external configuration (`presentation.yaml`).
 
 ## 6. Expected Results
 

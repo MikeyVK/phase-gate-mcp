@@ -320,13 +320,13 @@ runner = EnforcementRunner(workspace_root=tmp_path, config=config, merge_readine
 
 ---
 
-## 15. Notes Boundary Constraint — No User-Facing Text in Code
+## 15. Presentation Boundary — Separation of Domain and User-Facing Text
 
 **Binding rules:**
-- No production python code (including business managers, adapters, and tools) may define, format, or return user-facing text messages, emojis, or formatting templates for operational notes.
-- All notes must be produced exclusively as generic metadata events containing a template key and a dictionary of raw parameters.
-- All associated text templates, formatting rules, group emojis, headers, and visual layouts must reside strictly within external configuration files.
-- The presentation layer is the sole authority responsible for resolving keys, applying format specifiers, and rendering note groups into display formats.
+- No core domain, business logic, or adapter code may hardcode user-facing messages, text templates, emojis, or visual formatting layouts.
+- Core and domain services must produce structured data outputs (such as models, data transfer objects, error codes, or metadata event keys with raw parameter dictionaries).
+- The presentation of these outputs (including human-readable translations, formatting, iconography/emojis, and visual structures) is the exclusive responsibility of a dedicated presentation layer or external configuration/localization files.
+- This ensures the domain layer remains fully agnostic of the final display format and media (e.g., CLI, JSON-RPC responses, web UI, or logs).
 ---
 
 ## Quick Reference — Prohibited Patterns
@@ -348,4 +348,4 @@ runner = EnforcementRunner(workspace_root=tmp_path, config=config, merge_readine
 | `runner._handle_x(...)` in test | §14 — Public API | `runner.run(event=..., timing=..., context=...)` |
 | `assert obj._internal is x` in test | §14 — Public API | Assert via observable behaviour of public method |
 | `# pyright: ignore[reportPrivateUsage]` without rationale | §14 — Public API | Rewrite test, or add rationale explaining why no public alternative exists |
-| Hardcoded note emoji or message string in Python | §15 — Notes Boundary | Produce generic metadata-only events; configure template in external configuration |
+| Hardcoded user-facing text, emojis, or UI layouts in core logic | §15 — Presentation Boundary | Produce structured domain data; resolve presentation in the UI/presentation layer or via configuration |
