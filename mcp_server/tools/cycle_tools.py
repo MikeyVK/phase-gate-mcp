@@ -17,7 +17,7 @@ import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner
-from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -182,7 +182,6 @@ class TransitionCycleTool(_BaseIToolTransition):
 
         try:
             result = await anyio.to_thread.run_sync(do_transition)
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
             return CycleTransitionOutput(
                 success=True,
                 branch=branch,
@@ -196,7 +195,7 @@ class TransitionCycleTool(_BaseIToolTransition):
                 skipped_gates_count=len(result.get("skipped_gates", [])),
             )
         except StateMutationConflictError as e:
-            context.produce(RecoveryNote(message=e.recovery))
+            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
             return CycleTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,
@@ -287,7 +286,6 @@ class ForceCycleTransitionTool(_BaseIToolTransition):
 
         try:
             result = await anyio.to_thread.run_sync(do_force_transition)
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
             return ForceCycleTransitionOutput(
                 success=True,
                 branch=branch,
@@ -303,7 +301,7 @@ class ForceCycleTransitionTool(_BaseIToolTransition):
                 human_approval=params.human_approval,
             )
         except StateMutationConflictError as e:
-            context.produce(RecoveryNote(message=e.recovery))
+            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
             return ForceCycleTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,

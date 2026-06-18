@@ -17,7 +17,7 @@ from typing import Any, ClassVar
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from mcp_server.core.operation_notes import NoteContext, SuggestionNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
@@ -379,9 +379,12 @@ class GetProjectPlanTool(ITool):
                 )
 
             context.produce(
-                SuggestionNote(
-                    "Run initialize_project first to create a project plan.",
-                    subject=f"issue #{params.issue_number}",
+                Note(
+                    key="suggestion_message",
+                    params={
+                        "message": "Run initialize_project first to create a project plan.",
+                        "subject": f"issue #{params.issue_number}",
+                    },
                 )
             )
             return ProjectPlanOutput(

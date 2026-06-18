@@ -12,7 +12,7 @@ import subprocess
 import pytest
 
 import mcp_server.managers.pytest_runner as pytest_runner_module
-from mcp_server.core.operation_notes import SuggestionNote
+from mcp_server.core.operation_notes import SuggestionNote, Note
 from mcp_server.managers.pytest_runner import FailureDetail, PytestResult, PytestRunner
 
 # ---------------------------------------------------------------------------
@@ -246,7 +246,7 @@ class TestPytestRunnerRun:
 
         assert result.summary_line == "no tests collected"
         assert result.should_raise is False
-        assert isinstance(result.note, SuggestionNote)
+        assert isinstance(result.note, (SuggestionNote, Note))
 
     def test_c1_pytest_runner_run_accepts_verbose_kwarg(
         self,

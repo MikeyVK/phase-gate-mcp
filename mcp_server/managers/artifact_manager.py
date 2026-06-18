@@ -28,7 +28,7 @@ from typing import Any, cast
 from mcp_server.adapters.filesystem import FilesystemAdapter
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
@@ -763,10 +763,13 @@ class ArtifactManager:
             )
         except ValidationError as exc:
             if note_context is not None:
-                note_context.produce(BlockerNote(message=str(exc)))
+                note_context.produce(Note(key="blocker_message", params={"message": str(exc)}))
                 note_context.produce(
-                    RecoveryNote(
-                        message=f"Provide all required fields for artifact type '{artifact_type}'"
+                    Note(
+                        key="recovery_message",
+                        params={
+                            "message": f"Provide all required fields for artifact type '{artifact_type}'"
+                        },
                     )
                 )
             raise

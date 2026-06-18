@@ -361,14 +361,25 @@ class TextPresenter:
                 except Exception as exc:
                     grouped_texts[found_group].append(f"Format error: {exc}")
             else:
-                # Fallback: if it's a legacy note, render it using to_message()
-                if hasattr(note, "to_message") and callable(note.to_message):
-                    msg = note.to_message()
-                    if isinstance(note, ExclusionNote):
+                rendered_note = note
+                if isinstance(note, Note):
+                    if note.key == "blocker_message":
+                        rendered_note = BlockerNote(message=note.params.get("message", ""))
+                    elif note.key == "recovery_message":
+                        rendered_note = RecoveryNote(message=note.params.get("message", ""))
+                    elif note.key == "suggestion_message":
+                        rendered_note = SuggestionNote(message=note.params.get("message", ""), subject=note.params.get("subject"))
+                    elif note.key == "info_message":
+                        rendered_note = InfoNote(message=note.params.get("message", ""))
+                    elif note.key == "file_excluded":
+                        rendered_note = ExclusionNote(file_path=note.params.get("file_path", ""))
+                if hasattr(rendered_note, "to_message") and callable(rendered_note.to_message):
+                    msg = rendered_note.to_message()
+                    if isinstance(rendered_note, ExclusionNote):
                         grouped_texts["exclusions"].append(msg)
-                    elif isinstance(note, SuggestionNote):
+                    elif isinstance(rendered_note, SuggestionNote):
                         grouped_texts["suggestions"].append(msg)
-                    elif isinstance(note, RecoveryNote):
+                    elif isinstance(rendered_note, RecoveryNote):
                         cleaned = (
                             msg.lstrip()
                             .removeprefix("🩹")
@@ -377,11 +388,10 @@ class TextPresenter:
                             .lstrip()
                         )
                         grouped_texts["recoveries"].append(cleaned)
-                    elif isinstance(note, InfoNote):
+                    elif isinstance(rendered_note, InfoNote) or isinstance(rendered_note, BlockerNote):
                         grouped_texts["info"].append(msg)
                     else:
                         grouped_texts["info"].append(msg)
-
         lines = []
         for group in group_names:
             items = grouped_texts[group]

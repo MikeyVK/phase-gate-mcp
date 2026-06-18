@@ -532,11 +532,7 @@ class TestTransitionCycleToolAdvisoryNote:
         assert state_engine.last_call is not None
         assert state_engine.last_call["gate_runner"] is gate_runner
         notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert notes[0].message == (
-            "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
-            "to load the current phase context for this branch."
-        )
+        assert len(notes) == 0
 
 
 class TestForceCycleToolAdvisoryNote:
@@ -586,11 +582,7 @@ class TestForceCycleToolAdvisoryNote:
         assert isinstance(result, ForceCycleTransitionOutput)
         assert result.success
         notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert notes[0].message == (
-            "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
-            "to load the current phase context for this branch."
-        )
+        assert len(notes) == 0
 
 
 class TestForceCycleToolFormatting:

@@ -114,8 +114,7 @@ class TestTransitionPhaseTool:
         assert result.success is True
 
         notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert "Call get_work_context now" in notes[0].message
+        assert len(notes) == 0
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_validates_sequence(

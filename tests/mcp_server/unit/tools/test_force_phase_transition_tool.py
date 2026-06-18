@@ -189,11 +189,7 @@ class TestForcePhaseTransitionTool:
         await tool.execute(params, context)
 
         notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert notes[0].message == (
-            "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
-            "to load the current phase context for this branch."
-        )
+        assert len(notes) == 0
 
     def test_force_phase_transition_tool_requires_skip_reason(
         self, initialized_branch: str, feature_phases: list[str]

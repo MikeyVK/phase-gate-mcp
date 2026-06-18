@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.settings import Settings
 from mcp_server.core.exceptions import ExecutionError
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
@@ -83,9 +83,9 @@ class SearchDocumentationTool(ITool):
         docs_dir = Path(self._settings.server.workspace_root) / "docs"
 
         if not docs_dir.exists():
-            context.produce(RecoveryNote(message=f"Expected directory: {docs_dir}"))
-            context.produce(RecoveryNote(message="Create docs/ directory in workspace root"))
-            context.produce(RecoveryNote(message="Add markdown files to document project"))
+            context.produce(Note(key="recovery_message", params={"message": f"Expected directory: {docs_dir}"}))
+            context.produce(Note(key="recovery_message", params={"message": "Create docs/ directory in workspace root"}))
+            context.produce(Note(key="recovery_message", params={"message": "Add markdown files to document project"}))
             raise ExecutionError("Documentation directory not found")
 
         index = DocumentIndexer.build_index(docs_dir)

@@ -196,7 +196,24 @@ class NoteContext:
         Type-safe: pyright infers the return element type from the argument.
         Example: context.of_type(ExclusionNote) -> Sequence[ExclusionNote]
         """
-        return [n for n in self._entries if isinstance(n, t)]
+        results = []
+        for n in self._entries:
+            if isinstance(n, t):
+                results.append(n)
+            elif isinstance(n, Note):
+                if t is BlockerNote and n.key == "blocker_message":
+                    results.append(BlockerNote(message=n.params.get("message", "")))  # type: ignore
+                elif t is RecoveryNote and n.key == "recovery_message":
+                    results.append(RecoveryNote(message=n.params.get("message", "")))  # type: ignore
+                elif t is SuggestionNote and n.key == "suggestion_message":
+                    results.append(SuggestionNote(message=n.params.get("message", ""), subject=n.params.get("subject")))  # type: ignore
+                elif t is InfoNote and n.key == "info_message":
+                    results.append(InfoNote(message=n.params.get("message", "")))  # type: ignore
+                elif t is ExclusionNote and n.key == "file_excluded":
+                    results.append(ExclusionNote(file_path=n.params.get("file_path", "")))  # type: ignore
+                elif t is CommitNote and n.key == "commit":
+                    results.append(CommitNote(commit_hash=n.params.get("commit_hash", "")))  # type: ignore
+        return results  # type: ignore
 
     def discard_info_message(self, message: str) -> None:
         """Remove matching InfoNote entries while preserving order of remaining notes."""

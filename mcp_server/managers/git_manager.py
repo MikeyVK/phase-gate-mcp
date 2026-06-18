@@ -23,7 +23,7 @@ from typing import Any, Literal
 from mcp_server.adapters.git_adapter import GitAdapter
 from mcp_server.core.exceptions import ExecutionError, PreflightError, ValidationError
 from mcp_server.core.logging import get_logger
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote, SuggestionNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.core.scope_encoder import ScopeEncoder
 from mcp_server.schemas import GitConfig, WorkphasesConfig
 
@@ -80,15 +80,16 @@ class GitManager:
         # Convention #1: Branch type validation via GitConfig
         if not self._git_config.has_branch_type(branch_type):
             note_context.produce(
-                SuggestionNote(message=f"Allowed types: {', '.join(self._git_config.branch_types)}")
+                Note(key="suggestion_message", params={"message": f"Allowed types: {', '.join(self._git_config.branch_types)}"})
             )
             raise ValidationError(f"Invalid branch type: {branch_type}")
 
         # Convention #5: Branch name pattern via GitConfig
         if not self._git_config.validate_branch_name(name):
             note_context.produce(
-                SuggestionNote(
-                    message=f"Must match pattern: {self._git_config.branch_name_pattern}"
+                Note(
+                    key="suggestion_message",
+                    params={"message": f"Must match pattern: {self._git_config.branch_name_pattern}"}
                 )
             )
             raise ValidationError(f"Invalid branch name: {name}")
@@ -112,7 +113,7 @@ class GitManager:
         # Pre-flight check
         if not self.adapter.is_clean():
             note_context.produce(
-                BlockerNote(message="Commit or stash changes before creating a new branch")
+                Note(key="blocker_message", params={"message": "Commit or stash changes before creating a new branch"})
             )
             raise PreflightError("Working directory is not clean")
 
@@ -172,8 +173,9 @@ class GitManager:
         """
         if files is not None and not files:
             note_context.produce(
-                SuggestionNote(
-                    message="Omit 'files' to commit everything, or provide at least one path"
+                Note(
+                    key="suggestion_message",
+                    params={"message": "Omit 'files' to commit everything, or provide at least one path"}
                 )
             )
             raise ValidationError("Files list cannot be empty")
@@ -216,7 +218,7 @@ class GitManager:
             source: Git ref to restore from (default HEAD).
         """
         if not files:
-            note_context.produce(SuggestionNote(message="Provide at least one path to restore"))
+            note_context.produce(Note(key="suggestion_message", params={"message": "Provide at least one path to restore"}))
             raise ValidationError("Files list cannot be empty")
         self.adapter.restore(files=files, source=source)
 
@@ -253,22 +255,27 @@ class GitManager:
         - manager.pull(note_context, remote="origin", rebase=False)
         """
         if not self.adapter.is_clean():
-            note_context.produce(BlockerNote(message="Commit or stash changes before pulling"))
+            note_context.produce(Note(key="blocker_message", params={"message": "Commit or stash changes before pulling"}))
             raise PreflightError("Working directory is not clean")
 
         if self.adapter.get_current_branch() == "HEAD":
-            note_context.produce(BlockerNote(message="Checkout a branch before pulling"))
+            note_context.produce(Note(key="blocker_message", params={"message": "Checkout a branch before pulling"}))
             raise PreflightError("Detached HEAD - cannot pull")
 
         if not self.adapter.has_upstream():
             note_context.produce(
-                BlockerNote(
-                    message="Set upstream tracking"
-                    " (e.g. 'git branch --set-upstream-to=origin/<branch>')"
+                Note(
+                    key="blocker_message",
+                    params={
+                        "message": (
+                            "Set upstream tracking"
+                            " (e.g. 'git branch --set-upstream-to=origin/<branch>')"
+                        )
+                    }
                 )
             )
             note_context.produce(
-                BlockerNote(message="Or pull with an explicit refspec (not supported yet)")
+                Note(key="blocker_message", params={"message": "Or pull with an explicit refspec (not supported yet)"})
             )
             raise PreflightError("No upstream configured for current branch")
 
@@ -277,7 +284,7 @@ class GitManager:
     def merge(self, branch_name: str, note_context: NoteContext) -> None:
         """Merge a branch into current branch."""
         if not self.adapter.is_clean():
-            note_context.produce(BlockerNote(message="Commit or stash changes before merging"))
+            note_context.produce(Note(key="blocker_message", params={"message": "Commit or stash changes before merging"}))
             raise PreflightError("Working directory is not clean")
         self.adapter.merge(branch_name)
 
@@ -292,10 +299,9 @@ class GitManager:
         # Convention #4: Protected branches via GitConfig
         if self._git_config.is_protected(branch_name):
             note_context.produce(
-                SuggestionNote(
-                    message=(
-                        f"Protected branches: {', '.join(self._git_config.protected_branches)}"
-                    )
+                Note(
+                    key="suggestion_message",
+                    params={"message": f"Protected branches: {', '.join(self._git_config.protected_branches)}"}
                 )
             )
             raise ValidationError(f"Cannot delete protected branch: {branch_name}")
@@ -429,9 +435,14 @@ class GitManager:
         # Step 1: dirty-tree preflight (root-cause fix for Failure B)
         if not self.adapter.is_clean():
             note_context.produce(
-                BlockerNote(
-                    message="Working tree is not clean. "
-                    "Commit or stash all changes before submit_pr."
+                Note(
+                    key="blocker_message",
+                    params={
+                        "message": (
+                            "Working tree is not clean. "
+                            "Commit or stash all changes before submit_pr."
+                        )
+                    }
                 )
             )
             raise PreflightError("Working directory is not clean")
@@ -439,9 +450,14 @@ class GitManager:
         # Step 2: upstream preflight (Failure A)
         if not self.adapter.has_upstream():
             note_context.produce(
-                BlockerNote(
-                    message="No upstream tracking branch configured. "
-                    "Run git_push(set_upstream=True) before submit_pr."
+                Note(
+                    key="blocker_message",
+                    params={
+                        "message": (
+                            "No upstream tracking branch configured. "
+                            "Run git_push(set_upstream=True) before submit_pr."
+                        )
+                    }
                 )
             )
             raise PreflightError("No upstream configured for current branch")
@@ -472,9 +488,14 @@ class GitManager:
             except ExecutionError as exc:
                 self.adapter.hard_reset("HEAD")
                 note_context.produce(
-                    RecoveryNote(
-                        message=f"Commit failed: {exc}. Local neutralization commit rolled back. "
-                        "Working tree is clean. Retry submit_pr after resolving the commit issue."
+                    Note(
+                        key="recovery_message",
+                        params={
+                            "message": (
+                                f"Commit failed: {exc}. Local neutralization commit rolled back. "
+                                "Working tree is clean. Retry submit_pr after resolving the commit issue."
+                            )
+                        }
                     )
                 )
                 raise
@@ -486,16 +507,26 @@ class GitManager:
             if commit_made:
                 self.adapter.hard_reset("HEAD~1")
                 note_context.produce(
-                    RecoveryNote(
-                        message=f"Push failed: {exc}. Local neutralization commit rolled back. "
-                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                    Note(
+                        key="recovery_message",
+                        params={
+                            "message": (
+                                f"Push failed: {exc}. Local neutralization commit rolled back. "
+                                "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                            )
+                        }
                     )
                 )
             else:
                 note_context.produce(
-                    RecoveryNote(
-                        message=f"Push failed: {exc}. No local commit to roll back. "
-                        "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                    Note(
+                        key="recovery_message",
+                        params={
+                            "message": (
+                                f"Push failed: {exc}. No local commit to roll back. "
+                                "Working tree is clean. Retry submit_pr after resolving the remote issue."
+                            )
+                        }
                     )
                 )
             raise
@@ -519,13 +550,16 @@ class GitManager:
             self.adapter.hard_reset("HEAD~1")
         except ExecutionError as exc:
             note_context.produce(
-                RecoveryNote(
-                    message=(
-                        f"CRITICAL: Local reset failed: {exc}. "
-                        "Remote is still at pushed commit. Manual recovery: "
-                        "git reset --hard HEAD~1, then git push --force-with-lease. "
-                        "Do not commit until resolved."
-                    )
+                Note(
+                    key="recovery_message",
+                    params={
+                        "message": (
+                            f"CRITICAL: Local reset failed: {exc}. "
+                            "Remote is still at pushed commit. Manual recovery: "
+                            "git reset --hard HEAD~1, then git push --force-with-lease. "
+                            "Do not commit until resolved."
+                        )
+                    }
                 )
             )
             raise
@@ -534,11 +568,16 @@ class GitManager:
             self.adapter.force_push_with_lease()
         except ExecutionError as exc:
             note_context.produce(
-                RecoveryNote(
-                    message=f"CRITICAL: Remote rollback failed: {exc}. "
-                    "Local branch is in pre-submit state. "
-                    "Manual recovery for remote: git push --force-with-lease. "
-                    "Do not commit until resolved."
+                Note(
+                    key="recovery_message",
+                    params={
+                        "message": (
+                            f"CRITICAL: Remote rollback failed: {exc}. "
+                            "Local branch is in pre-submit state. "
+                            "Manual recovery for remote: git push --force-with-lease. "
+                            "Do not commit until resolved."
+                        )
+                    }
                 )
             )
             raise

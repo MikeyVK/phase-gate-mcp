@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError, PreflightError
 from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
 from mcp_server.schemas import GitConfig
@@ -288,10 +288,15 @@ class SubmitPRTool(ITool):
                 try:
                     self._git_manager.rollback_push(context)
                     context.produce(
-                        RecoveryNote(
-                            f"GitHub PR creation failed: {exc}. "
-                            "Remote branch has been rolled back to pre-submit state. "
-                            "Working tree is clean. Retry submit_pr once the API issue is resolved."
+                        Note(
+                            key="recovery_message",
+                            params={
+                                "message": (
+                                    f"GitHub PR creation failed: {exc}. "
+                                    "Remote branch has been rolled back to pre-submit state. "
+                                    "Working tree is clean. Retry submit_pr once the API issue is resolved."
+                                )
+                            }
                         )
                     )
                 except ExecutionError:

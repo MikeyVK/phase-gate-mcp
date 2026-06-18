@@ -19,7 +19,7 @@ from typing import Any, ClassVar
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
@@ -172,7 +172,6 @@ class TransitionPhaseTool(_BaseTransitionTool):
 
         try:
             result = await anyio.to_thread.run_sync(do_transition)
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
 
             return PhaseTransitionOutput(
                 success=True,
@@ -186,7 +185,7 @@ class TransitionPhaseTool(_BaseTransitionTool):
             )
 
         except StateMutationConflictError as e:
-            context.produce(RecoveryNote(message=e.recovery))
+            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
             return PhaseTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,
@@ -267,7 +266,6 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
             if passing:
                 passing_gates_info = f"\nℹ️ Gates that would have passed: {', '.join(passing)}"
 
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
             return ForcePhaseTransitionOutput(
                 success=True,
                 branch=params.branch,
@@ -283,7 +281,7 @@ class ForcePhaseTransitionTool(_BaseTransitionTool):
                 passing_gates_info=passing_gates_info,
             )
         except StateMutationConflictError as e:
-            context.produce(RecoveryNote(message=e.recovery))
+            context.produce(Note(key="recovery_message", params={"message": e.recovery}))
             return ForcePhaseTransitionOutput(
                 success=False,
                 error_message=e.diagnostic,
