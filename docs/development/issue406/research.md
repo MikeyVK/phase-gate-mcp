@@ -161,18 +161,54 @@ We compare three options for composing the wrapper pipeline:
 
 ## 5. Approved Strategy
 
-The strategy is explicitly defined per affected boundary:
+The refactoring strategy is explicitly defined per affected boundary with strict guardrails and sequential implementation steps to prevent regressions:
 
-- **Protocol / JSON-RPC Boundary:** **Preserve compatibility**. There will be zero changes to the public JSON-RPC response shapes, payload contracts, or the error DTO schemas.
-- **Tool Composition / Instantiation Boundary:** **Clean break**. The temporary try-except, validation, and enforcement blocks inside `server.py` (`handle_call_tool`) will be completely removed and replaced with the modular decorator pipeline.
-- **Test Suite Boundary:** **Clean break / Refactoring**. Mocked tests in `test_server.py` that currently target `server.py` exception mapping will be refactored to verify decorators or target the fully wrapped tools. New unit tests will be introduced in `test_decorators.py`.
-- **Logging & Diagnostics Boundary:** **New requirement**. Standardize exception logging inside the decorators to write tracebacks to `sys.stderr` / `mcp_audit.log`, resolving the logging gaps.
-- **Presentation Boundary / Content Separation:** **Clean break / Strict Contract**. In accordance with Section 15 of `ARCHITECTURE_PRINCIPLES.md`, no core domain, business logic, or adapter code may contain hardcoded user-facing text, emojis, or formatting templates. All human-readable outputs and formatting must be resolved in the presentation layer (via `TextPresenter`) or external configuration (`presentation.yaml`).
-- **Interfaces & Packaging Boundary:** **Clean break**. Refactor the `interfaces/` package to move protocol definitions to separate, well-named modules under `mcp_server/core/interfaces/`, leaving `__init__.py` as a pure export facade.
+### 5.1. Refactoring Sequence of Operations (The "Safe-Path" Plan)
+To prevent breaking the entire system during this rigorous refactor, the implementation must proceed in the following order:
+1. **Interface Extraction & Packaging:** Move protocol definitions to dedicated modules under `mcp_server/core/interfaces/` and refactor `mcp_server/interfaces/__init__.py` to be a pure export facade. Confirm all existing imports are green by running tests.
+2. **Decorator Core Implementation:** Implement `InputValidationDecorator`, `EnforcementDecorator`, and `ToolErrorHandlerDecorator` in `mcp_server/tools/decorators.py`. Write isolated unit tests in `tests/mcp_server/unit/test_decorators.py` to assert their behavior under mock inputs and exceptions. Do not wire them to the server yet.
+3. **ToolFactory Refactor:** Update `ToolFactory.build_tool` to assemble the decorators around the core tools. Write assembly verification tests.
+4. **Server Orchestration Refactor:** Remove the temporary exception-handling bridge from `server.py:handle_call_tool` and replace it with sequential calls to the execution pipeline, caching layer (with try-except double-fault fallback), and presentation layer.
+5. **Test Suite Refactoring & Cleanup:** Refactor `tests/mcp_server/unit/test_server.py` to target the decorated tools and verify sequential orchestrator flow. Delete any legacy code.
+6. **Validation & Quality Gates:** Run `run_quality_gates` and execute the full test suite to guarantee 100% correctness.
+
+### 5.2. Subsystem Boundary Guardrails
+- **Protocol / JSON-RPC Boundary (Preserve Compatibility):** No changes to public JSON-RPC response formats, error schemas, or DTO structures.
+- **Transport Layer (`server.py` Guardrails):**
+  * `server.py` must contain **no** try-except blocks for tool execution exceptions (e.g. `ValidationError`, `MCPError`). All execution safety is delegated to the decorator pipeline.
+  * `server.py` is permitted to catch exceptions only from the persistence layer (`IToolResponseCache.put`), logging a warning to `stderr` and setting `run_id = None`.
+- **Execution Pipeline (`ITool` Decorator Guardrails):**
+  * All decorators must implement the `ITool` protocol.
+  * The execution pipeline must guarantee that `ITool.execute()` returns a DTO (success or error) and never propagates an exception.
+- **Persistence Subsystem (`IToolResponseCache` Guardrails):**
+  * Generation of `run_id` and formatting of the cache URI (`pgmcp://cache/runs/...`) must be encapsulated within the cache subsystem. `server.py` must not generate keys.
+- **Presentation Subsystem (`IPresenter` Guardrails):**
+  * Formatting of DTOs, notes, and cache links must be handled exclusively by the presentation layer.
+  * If `run_id` is `None` (caching failed), the presenter must format the DTO normally and append a raw JSON block containing the full DTO output to prevent data loss.
+
+---
 
 ## 6. Expected Results
 
-Complete decoupling of `server.py` from validation, enforcement, and exception handling blocks. Clean, modular decorators in `decorators.py` that implement the `ITool` interface. 100% test success across all 2873 unit and integration tests.
+To verify the success of the refactoring and ensure it is fully actionable, the implementation must meet the following measurable criteria:
+
+### 6.1. Metrics & Decoupling Targets
+- **Code Reduction:** At least 80 lines of try-except mapping, presentation formatting, and key-generation logic removed from `server.py`.
+- **Flat Orchestration Flow:** `MCPServer.handle_call_tool` reduced to a linear sequence of 4 subsystem operations: execution, persistence, presentation formatting, and note routing.
+- **Type Checking Pass:** Strict Pyright and MyPy checks pass with 0 errors on all modified files, with no global type ignores.
+- **Facade Purity:** `interfaces/__init__.py` has exactly 0 lines of execution or protocol definition logic, serving solely as an export catalog.
+
+### 6.2. Test Coverage & Verification Criteria
+- **Decorator Unit Tests:** 100% coverage of the newly created `decorators.py` with at least 15 distinct unit tests in `tests/mcp_server/unit/test_decorators.py` verifying:
+  * `InputValidationDecorator` returns `ValidationErrorOutput` on schema mismatch.
+  * `EnforcementDecorator` returns `EnforcementErrorOutput` on pre/post guard violations.
+  * `ToolErrorHandlerDecorator` intercepts arbitrary crashes and returns `ExecutionErrorOutput` while logging traceback to `stderr`.
+  * Context parameters and call arguments are correctly forwarded.
+- **Double-Fault Integration Verification:** A unit test in `tests/mcp_server/unit/test_server.py` where `IToolResponseCache.put` is mocked to raise an `OSError` (e.g., disk full), verifying that:
+  * The server orchestrator does not crash or raise an exception.
+  * A warning with tracebacks is logged to standard error.
+  * The returned markdown contains a fallback raw JSON block representing the complete DTO.
+- **No Regressions:** All 2873+ existing tests pass.
 
 ---
 
@@ -182,3 +218,4 @@ Complete decoupling of `server.py` from validation, enforcement, and exception h
 |---------|------|--------|---------|
 | 1.0.0   | 2026-06-18 | Agent  | Initial validation and decorator analysis report |
 | 1.1.0   | 2026-06-18 | Agent  | Re-oriented research from outside-in server target architecture and added the construction layer |
+| 1.2.0   | 2026-06-18 | Agent  | Added guardrails, sequence of operations strategy, and actionable expected results for refactoring boundaries |
