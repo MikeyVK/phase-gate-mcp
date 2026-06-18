@@ -473,6 +473,8 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
                 # Exceptions
                 if is_default_fail and p == "error_message":
                     continue
+                if template_key == "template_failure" and p == "error_message":
+                    continue
                 if template_key in generic_note_fields and p == "message":
                     continue
                 raise ConfigError(
@@ -607,7 +609,8 @@ def validate_presentation_alignment(presenter: TextPresenter, tools: list[Any]) 
         allowed_fields = set(output_model.model_fields.keys())
         allowed_fields.update({"success", "error_message", "post_tool_instruction"})
 
-        for _, template in templates_to_check:
+        for key, template in templates_to_check:
+            check_blacklist(template, key)
             placeholders = get_placeholders(template)
             for base_field in placeholders:
                 if base_field.startswith("emoji_"):

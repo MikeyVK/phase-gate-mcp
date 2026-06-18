@@ -38,12 +38,12 @@ from mcp_server.schemas.tool_outputs import BaseToolOutput
 
 
 class DummyOutput(BaseToolOutput):
-    message: str = ""
+    result: str = ""
     items: list[str] = []
 
 
 class DummySimpleOutput(BaseToolOutput):
-    message: str = ""
+    result: str = ""
 
 
 class DummyTool:
@@ -83,7 +83,7 @@ class TestTextPresenter:
             },
             "tools": {
                 "dummy_tool": {
-                    "template_success": "Success: {message}",
+                    "template_success": "Success: {result}",
                     "template_failure": "Error: {error_message}",
                     "next_instructions": ["test_advisory"],
                 },
@@ -94,7 +94,7 @@ class TestTextPresenter:
     def test_present_success(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting success output with custom template and emoji prefix."""
         presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = DummyOutput(success=True, message="Operation completed")
+        dto = DummyOutput(success=True, result="Operation completed")
 
         text = presenter.present(
             tool_name="dummy_tool", success=True, presentation_category="query", data=dto
@@ -133,7 +133,7 @@ class TestTextPresenter:
 
         class MockDTO(BaseModel):
             success: bool = True
-            message: str = "Op"
+            result: str = "Op"
             run_id: str = "abc-123"
 
         dto = MockDTO()

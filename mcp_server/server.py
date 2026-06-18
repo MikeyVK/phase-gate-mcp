@@ -31,7 +31,7 @@ from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext
-from mcp_server.presenters.text_presenter import TextPresenter
+from mcp_server.presenters.text_presenter import TextPresenter, SafeNoneFormatter
 from mcp_server.resources.base import BaseResource
 
 # Resources
@@ -40,9 +40,6 @@ from mcp_server.resources.base import BaseResource
 from mcp_server.tools.base import ITool
 
 # Tools
-from mcp_server.tools.phase_tools import (
-    TRANSITION_ADVISORY_NOTE,
-)
 from mcp_server.tools.tool_result import ToolResult
 from mcp_server.schemas.error_outputs import (
     ValidationErrorOutput,
@@ -57,13 +54,6 @@ from mcp_server.utils.mcp_converters import (
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
-
-TRANSITION_ADVISORY_TOOL_NAMES = {
-    "transition_phase",
-    "force_phase_transition",
-    "transition_cycle",
-    "force_cycle_transition",
-}
 
 
 class MCPServer:
@@ -197,8 +187,22 @@ class MCPServer:
         else:
             text = str(err_dto)
 
-        uri = f"pgmcp://cache/runs/{run_id}"
-        full_text = f"{text}\n\nJSON data for this run is available as an MCP Resource: {uri}"
+        uri_ref_tmpl = None
+        if self.presenter is not None:
+            uri_ref_tmpl = self.presenter.get_next_instruction_texts().get("uri_reference")
+        if uri_ref_tmpl:
+            try:
+                none_val = getattr(self.presenter, "_get_none_value", lambda: "-")()
+                formatter = SafeNoneFormatter(none_val)
+                uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
+            except Exception:
+                uri_text = uri_ref_tmpl.format(run_id=run_id)
+        else:
+            uri_text = (
+                "*(Full details available in the structured JSON payload. "
+                f"View resource: pgmcp://cache/runs/{run_id})*"
+            )
+        full_text = f"{text}\n\n{uri_text}"
 
         content: list[Any] = [{"type": "text", "text": full_text}]
         if isinstance(err_dto, ValidationErrorOutput):
@@ -410,11 +414,24 @@ class MCPServer:
                             )
                         else:
                             text = str(data_dto)
-                        uri = f"pgmcp://cache/runs/{run_id}"
-                        full_text = (
-                            f"{text}\n\n"
-                            f"JSON data for this run is available as an MCP Resource: {uri}"
-                        )
+                        uri_ref_tmpl = None
+                        if self.presenter is not None:
+                            uri_ref_tmpl = self.presenter.get_next_instruction_texts().get(
+                                "uri_reference"
+                            )
+                        if uri_ref_tmpl:
+                            try:
+                                none_val = getattr(self.presenter, "_get_none_value", lambda: "-")()
+                                formatter = SafeNoneFormatter(none_val)
+                                uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
+                            except Exception:
+                                uri_text = uri_ref_tmpl.format(run_id=run_id)
+                        else:
+                            uri_text = (
+                                "*(Full details available in the structured JSON payload. "
+                                f"View resource: pgmcp://cache/runs/{run_id})*"
+                            )
+                        full_text = f"{text}\n\n{uri_text}"
                         raw_result = ToolResult.text(full_text)
 
                         if not raw_result.is_error:
@@ -427,8 +444,6 @@ class MCPServer:
                                     result=raw_result,
                                 )
                             except MCPError as exc:
-                                if tool.name in TRANSITION_ADVISORY_TOOL_NAMES:
-                                    note_context.discard_info_message(TRANSITION_ADVISORY_NOTE)
                                 err_dto = EnforcementErrorOutput(
                                     message=exc.message,
                                     error_code=exc.code,

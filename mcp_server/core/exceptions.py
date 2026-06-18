@@ -56,14 +56,18 @@ class ValidationError(MCPError):
         self,
         message: str,
         schema: Any = None,  # noqa: ANN401  # Core layer; TemplateSchema would violate layer deps
+        error_code: str | None = None,
+        params: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the validation error.
 
         Args:
             message: Error message describing the validation failure
             schema: Optional TemplateSchema with required/optional fields
+            error_code: Optional custom error code
+            params: Optional dictionary of error parameters
         """
-        super().__init__(message, code="ERR_VALIDATION")
+        super().__init__(message, code=error_code or "ERR_VALIDATION", params=params)
         self.schema = schema
         self.missing: list[str] = []
         self.provided: list[str] = []

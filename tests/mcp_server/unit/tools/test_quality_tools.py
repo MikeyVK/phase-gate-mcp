@@ -685,7 +685,8 @@ class TestRunQualityGatesToolConflictC8:
 
         notes = [n for n in context.of_type(Note) if n.key == "quality_state_write_failed_recovery"]
         assert len(notes) == 1
-        assert "quality" in notes[0].params.get("error_details", "").lower() or "retry" in notes[0].params.get("error_details", "").lower()
+        err_details = notes[0].params.get("error_details", "").lower()
+        assert "quality" in err_details or "retry" in err_details
 
 
 # C3 RED — RunQualityGatesTool catches QualityStateMutationConflictError (issue #292)
@@ -812,7 +813,9 @@ class TestRunQualityGatesVerboseOption:
             RunQualityGatesInput(scope="files", files=["foo.py"], verbose=False), context
         )
 
-        notes = [n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"]
+        notes = [
+            n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"
+        ]
         assert len(notes) == 1
         assert "scope='files'" in notes[0].params.get("scope_part", "")
         assert "foo.py" in notes[0].params.get("scope_part", "")
@@ -846,5 +849,7 @@ class TestRunQualityGatesVerboseOption:
             RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True), context
         )
 
-        notes = [n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"]
+        notes = [
+            n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"
+        ]
         assert len(notes) == 0

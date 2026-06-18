@@ -26,9 +26,13 @@ from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.tools.base import ITool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
-    TRANSITION_ADVISORY_NOTE,
     ForcePhaseTransitionTool,
     TransitionPhaseTool,
+)
+
+TRANSITION_ADVISORY_NOTE = (
+    "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
+    "to load the current phase context for this branch."
 )
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import (

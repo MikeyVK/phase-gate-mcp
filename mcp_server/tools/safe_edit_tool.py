@@ -283,7 +283,7 @@ class SafeEditTool(ITool):
                         return SafeEditOutput(
                             success=False,
                             error_message=(
-                                f"❌ Edit rejected due to validation errors "
+                                f"Edit rejected due to validation errors "
                                 f"(Mode: strict):{issues_text}\n"
                                 "Use mode='interactive' to force save "
                                 "if necessary, or fix the content."
@@ -305,7 +305,7 @@ class SafeEditTool(ITool):
                     except OSError as e:
                         return SafeEditOutput(
                             success=False,
-                            error_message=f"❌ Failed to write file: {e}",
+                            error_message=f"Failed to write file: {e}",
                             path=params.path,
                             passed=passed,
                             issues=issues_text,
@@ -329,7 +329,7 @@ class SafeEditTool(ITool):
             return SafeEditOutput(
                 success=False,
                 error_message=(
-                    f"❌ File '{params.path}' is already being edited. "
+                    f"File '{params.path}' is already being edited. "
                     "Please wait or bundle multiple edits in one call using line_edits list."
                 ),
                 path=params.path,
@@ -451,7 +451,7 @@ class SafeEditTool(ITool):
         try:
             new_content, count = self._apply_search_replace(params, original)
             if params.mode == "strict" and not count:
-                error_msg = f"❌ Pattern '{params.search}' not found in file\n\n"
+                error_msg = f"Pattern '{params.search}' not found in file\n\n"
                 error_msg += self._build_file_context_preview(original)
                 return SafeEditOutput(
                     success=False,

@@ -525,7 +525,10 @@ class TestGitManagerPrepareSubmission:
                 note_context=context,
             )
 
-        assert len([n for n in context.of_type(Note) if n.key == "submit_pr_dirty_workspace_blocker"]) == 1
+        assert (
+            len([n for n in context.of_type(Note) if n.key == "submit_pr_dirty_workspace_blocker"])
+            == 1
+        )
         mock_adapter.neutralize_to_base.assert_not_called()
         mock_adapter.push.assert_not_called()
 
@@ -544,7 +547,9 @@ class TestGitManagerPrepareSubmission:
                 note_context=context,
             )
 
-        assert len([n for n in context.of_type(Note) if n.key == "submit_pr_no_upstream_blocker"]) == 1
+        assert (
+            len([n for n in context.of_type(Note) if n.key == "submit_pr_no_upstream_blocker"]) == 1
+        )
         mock_adapter.neutralize_to_base.assert_not_called()
         mock_adapter.push.assert_not_called()
 
@@ -631,7 +636,9 @@ class TestGitManagerPrepareSubmission:
             )
 
         mock_adapter.hard_reset.assert_called_once_with("HEAD~1")
-        notes = [n for n in context.entries if n.key == "submit_pr_push_failed_with_rollback_recovery"]
+        notes = [
+            n for n in context.entries if n.key == "submit_pr_push_failed_with_rollback_recovery"
+        ]
         assert len(notes) == 1
         assert "remote rejected" in notes[0].params.get("error_details", "")
 
@@ -651,7 +658,9 @@ class TestGitManagerPrepareSubmission:
             )
 
         mock_adapter.hard_reset.assert_not_called()
-        notes = [n for n in context.entries if n.key == "submit_pr_push_failed_no_rollback_recovery"]
+        notes = [
+            n for n in context.entries if n.key == "submit_pr_push_failed_no_rollback_recovery"
+        ]
         assert len(notes) == 1
         assert "network error" in notes[0].params.get("error_details", "")
 

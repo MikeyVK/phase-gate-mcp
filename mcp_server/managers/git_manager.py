@@ -85,7 +85,11 @@ class GitManager:
                     params={"types": ", ".join(self._git_config.branch_types)},
                 )
             )
-            raise ValidationError(f"Invalid branch type: {branch_type}")
+            raise ValidationError(
+                f"Invalid branch type: {branch_type}",
+                error_code="invalid_branch_type",
+                params={"branch_type": branch_type},
+            )
 
         # Convention #5: Branch name pattern via GitConfig
         if not self._git_config.validate_branch_name(name):
@@ -95,7 +99,11 @@ class GitManager:
                     params={"pattern": self._git_config.branch_name_pattern},
                 )
             )
-            raise ValidationError(f"Invalid branch name: {name}")
+            raise ValidationError(
+                f"Invalid branch name: {name}",
+                error_code="invalid_branch_name",
+                params={"name": name},
+            )
 
         full_name = f"{branch_type}/{name}"
 
@@ -121,7 +129,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise PreflightError("Working directory is not clean")
+            raise PreflightError(
+                "Working directory is not clean",
+                error_code="dirty_workdir",
+                params={"branch": current_branch},
+            )
 
         self.adapter.create_branch(full_name, base=base_branch)
 
@@ -184,7 +196,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise ValidationError("Files list cannot be empty")
+            raise ValidationError(
+                "Files list cannot be empty",
+                error_code="empty_files_list",
+                params={},
+            )
 
         if self._workphases_config is None:
             raise RuntimeError(
@@ -230,7 +246,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise ValidationError("Files list cannot be empty")
+            raise ValidationError(
+                "Files list cannot be empty",
+                error_code="empty_files_list",
+                params={},
+            )
         self.adapter.restore(files=files, source=source)
 
     def checkout(self, branch_name: str) -> None:
@@ -272,7 +292,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise PreflightError("Working directory is not clean")
+            raise PreflightError(
+                "Working directory is not clean",
+                error_code="dirty_workdir",
+                params={"branch": self.adapter.get_current_branch()},
+            )
 
         if self.adapter.get_current_branch() == "HEAD":
             note_context.produce(Note(key="pull_detached_head_blocker", params={}))
@@ -290,7 +314,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise PreflightError("No upstream configured for current branch")
+            raise PreflightError(
+                "No upstream configured for current branch",
+                error_code="no_upstream",
+                params={"branch": self.adapter.get_current_branch()},
+            )
 
         return self.adapter.pull(remote=remote, rebase=rebase)
 
@@ -303,7 +331,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise PreflightError("Working directory is not clean")
+            raise PreflightError(
+                "Working directory is not clean",
+                error_code="dirty_workdir",
+                params={"branch": self.adapter.get_current_branch()},
+            )
         self.adapter.merge(branch_name)
 
     def delete_branch(
@@ -323,7 +355,11 @@ class GitManager:
                     params={"protected_branches": protected_list},
                 )
             )
-            raise ValidationError(f"Cannot delete protected branch: {branch_name}")
+            raise ValidationError(
+                f"Cannot delete protected branch: {branch_name}",
+                error_code="cannot_delete_protected_branch",
+                params={"branch_name": branch_name},
+            )
 
         local_status: Literal["deleted", "absent", "skipped"] = "skipped"
         remote_status: Literal["deleted", "absent", "skipped"] = "skipped"
@@ -459,7 +495,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise PreflightError("Working directory is not clean")
+            raise PreflightError(
+                "Working directory is not clean",
+                error_code="dirty_workdir",
+                params={"branch": self.adapter.get_current_branch()},
+            )
 
         # Step 2: upstream preflight (Failure A)
         if not self.adapter.has_upstream():
@@ -469,7 +509,11 @@ class GitManager:
                     params={},
                 )
             )
-            raise PreflightError("No upstream configured for current branch")
+            raise PreflightError(
+                "No upstream configured for current branch",
+                error_code="no_upstream",
+                params={"branch": self.adapter.get_current_branch()},
+            )
 
         # Step 3: filter artifacts that have a net diff against base
         to_neutralize = frozenset(

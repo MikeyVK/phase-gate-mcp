@@ -129,7 +129,9 @@ class TestArtifactManagerProducesNotes:
                 note_context=note_context,
             )
 
-        blocker_notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_validation_failed"]
+        blocker_notes = [
+            n for n in note_context.of_type(Note) if n.key == "scaffold_validation_failed"
+        ]
         assert len(blocker_notes) >= 1, (
             "ArtifactManager must produce scaffold_validation_failed Note on ValidationError"
         )
@@ -151,7 +153,9 @@ class TestArtifactManagerProducesNotes:
 
         notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_validation_failed"]
         assert notes, "Expected scaffold_validation_failed Note"
-        assert notes[0].params.get("error_details"), "Note.params['error_details'] must be non-empty"
+        assert notes[0].params.get("error_details"), (
+            "Note.params['error_details'] must be non-empty"
+        )
 
     @pytest.mark.asyncio
     async def test_produces_recovery_note_on_validation_error(self) -> None:
@@ -168,7 +172,9 @@ class TestArtifactManagerProducesNotes:
                 note_context=note_context,
             )
 
-        recovery_notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_fields_recovery"]
+        recovery_notes = [
+            n for n in note_context.of_type(Note) if n.key == "scaffold_fields_recovery"
+        ]
         assert len(recovery_notes) >= 1, (
             "ArtifactManager must produce scaffold_fields_recovery Note on ValidationError"
         )
@@ -221,7 +227,9 @@ class TestTemplateScaffolderProducesSuggestionNote:
         finally:
             ts_mod.introspect_template_with_inheritance = original_fn
 
-        suggestion_notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_missing_fields_suggestion"]
+        suggestion_notes = [
+            n for n in note_context.of_type(Note) if n.key == "scaffold_missing_fields_suggestion"
+        ]
         assert len(suggestion_notes) >= 1, (
             "TemplateScaffolder.validate() must produce scaffold_missing_fields_suggestion Note "
             "when required fields are missing"
@@ -238,6 +246,8 @@ class TestTemplateScaffolderProducesSuggestionNote:
         finally:
             ts_mod.introspect_template_with_inheritance = original_fn
 
-        notes = [n for n in note_context.of_type(Note) if n.key == "scaffold_missing_fields_suggestion"]
+        notes = [
+            n for n in note_context.of_type(Note) if n.key == "scaffold_missing_fields_suggestion"
+        ]
         assert notes, "Expected scaffold_missing_fields_suggestion Note"
         assert notes[0].params.get("missing_fields"), "Note params missing_fields must be non-empty"

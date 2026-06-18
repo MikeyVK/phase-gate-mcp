@@ -27,11 +27,6 @@ from mcp_server.schemas import WorkphasesConfig
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput, PhaseTransitionOutput
 from mcp_server.tools.base import ITool
 
-TRANSITION_ADVISORY_NOTE = (
-    "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
-    "to load the current phase context for this branch."
-)
-
 
 class TransitionPhaseInput(BaseModel):
     """Input model for TransitionPhaseTool."""

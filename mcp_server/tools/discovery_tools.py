@@ -296,7 +296,7 @@ class GetWorkContextTool(ITool):
         """Build recovery-oriented warning text for known workflow + invalid phase state."""
         valid_phase_text = ", ".join(valid_phases) if valid_phases else "(none)"
         return (
-            f"⚠️ Invalid workflow state: workflow '{workflow}' does not contains phase '{phase}'.\n"
+            f"Invalid workflow state: workflow '{workflow}' does not contains phase '{phase}'.\n"
             f"Valid phases: {valid_phase_text}\n"
             "Recovery: use force_phase_transition to move this branch to a valid phase, "
             "then call get_work_context again."

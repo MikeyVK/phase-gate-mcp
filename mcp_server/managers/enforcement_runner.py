@@ -277,6 +277,8 @@ class EnforcementRunner:
         )
         raise ValidationError(
             f"Branch type '{branch_type}' cannot be created from base '{base_branch}'",
+            error_code="invalid_base_branch",
+            params={"branch_type": branch_type, "base_branch": base_branch},
         )
 
     def _handle_check_pr_status(
@@ -317,6 +319,8 @@ class EnforcementRunner:
             raise ValidationError(
                 f"Branch '{branch}' has an open PR. "
                 "Branch-mutating tools are blocked until the PR is merged.",
+                error_code="open_pr_blocker",
+                params={"branch": branch},
             )
 
     def _handle_check_phase_readiness(
@@ -348,6 +352,8 @@ class EnforcementRunner:
             )
             raise ValidationError(
                 f"Tool requires phase '{required_phase}'. Current phase: '{current_phase}'.",
+                error_code="phase_readiness_mismatch",
+                params={"required_phase": required_phase, "current_phase": current_phase},
             )
 
     def _handle_check_context_loaded(
@@ -414,4 +420,6 @@ class EnforcementRunner:
             raise ValidationError(
                 f"get_work_context has not been called for branch '{branch}'. "
                 "Call get_work_context before using this tool.",
+                error_code="context_not_loaded",
+                params={"branch": branch},
             )

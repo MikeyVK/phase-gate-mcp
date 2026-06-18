@@ -13,6 +13,23 @@ global:
     branch_lockdown: "⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
     todo_discipline: "📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
     recheck_quality: "📋 REQUIRED NEXT STEP: Run run_quality_gates(scope='files', files={modified_files}) to verify that the auto-fixed files now pass all quality checks."
+  failures:
+    dirty_workdir: "Branch '{branch}' is not in a clean state -- commit or stash changes."
+    no_upstream: "No upstream tracking branch configured for branch '{branch}'."
+    invalid_base_branch: "Branch type '{branch_type}' cannot be created from base '{base_branch}'"
+    open_pr_blocker: "Branch '{branch}' has an open PR. Branch-mutating tools are blocked until the PR is merged."
+    phase_readiness_mismatch: "Tool requires phase '{required_phase}'. Current phase: '{current_phase}'."
+    context_not_loaded: "get_work_context has not been called for branch '{branch}'. Call get_work_context before using this tool."
+    invalid_context_class: "Invalid Context class name: {class_name} (must end with 'Context')"
+    render_context_not_found: "RenderContext class not found: {class_name}"
+    generic_output_path_required: "Generic artifacts require explicit output_path in context"
+    artifact_validation_failed: "Generated {artifact_type} artifact failed validation:\n{issues}"
+    missing_output_path: "Missing output_path for file artifact '{artifact_type}'"
+    context_validation_failed: "Failed to validate {artifact_type} context: {error_details}"
+    invalid_branch_type: "Invalid branch type: {branch_type}"
+    invalid_branch_name: "Invalid branch name: {name}"
+    empty_files_list: "Files list cannot be empty"
+    cannot_delete_protected_branch: "Cannot delete protected branch: {branch_name}"
   notes:
     groups:
       exclusions:

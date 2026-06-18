@@ -72,14 +72,6 @@ class NoteContext:
         """
         return [n for n in self._entries if isinstance(n, t)]
 
-    def discard_info_message(self, message: str) -> None:
-        """Remove matching info Note entries while preserving order of remaining notes."""
-        self._entries = [
-            note
-            for note in self._entries
-            if note.key != "info_message" or note.params.get("message") != message
-        ]
-
     def render_to_response(self, base: ToolResult) -> ToolResult:
         """Append all notes as an additional TextContent block using the presenter.
 

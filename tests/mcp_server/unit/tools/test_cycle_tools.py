@@ -24,7 +24,11 @@ from mcp_server.tools.cycle_tools import (
     TransitionCycleInput,
     TransitionCycleTool,
 )
-from mcp_server.tools.phase_tools import TRANSITION_ADVISORY_NOTE
+
+TRANSITION_ADVISORY_NOTE = (
+    "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
+    "to load the current phase context for this branch."
+)
 from tests.mcp_server.test_support import (
     make_git_manager,
     make_phase_state_engine,

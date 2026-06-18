@@ -279,7 +279,10 @@ async def test_c4_run_tests_no_tests_collected_returns_suggestion_note(
     result = await tool.execute(RunTestsInput(path="tests/unit"), context)
 
     assert result.content[1]["text"] == "no tests collected"
-    assert len([n for n in context.of_type(Note) if n.key == "pytest_no_tests_collected_suggestion"]) == 1
+    assert (
+        len([n for n in context.of_type(Note) if n.key == "pytest_no_tests_collected_suggestion"])
+        == 1
+    )
 
 
 @pytest.mark.asyncio
@@ -300,7 +303,9 @@ async def test_c4_run_tests_unknown_exit_code_raises_execution_error(
     with pytest.raises(ExecutionError, match="pytest exited with returncode 99"):
         await _execute_unwrapped(tool, RunTestsInput(path="tests/unit"), context)
 
-    assert len([n for n in context.of_type(Note) if n.key == "pytest_unexpected_code_recovery"]) == 1
+    assert (
+        len([n for n in context.of_type(Note) if n.key == "pytest_unexpected_code_recovery"]) == 1
+    )
 
 
 @pytest.mark.asyncio

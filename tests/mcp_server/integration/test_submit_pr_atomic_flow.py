@@ -369,7 +369,11 @@ class TestSubmitPRAtomicRefactored:
         with pytest.raises(ExecutionError):
             asyncio.run(tool.execute(_make_params(), context))
         git_manager.rollback_push.assert_called_once()
-        notes = [n for n in context.of_type(Note) if n.key == "submit_pr_api_failed_with_rollback_recovery"]
+        notes = [
+            n
+            for n in context.of_type(Note)
+            if n.key == "submit_pr_api_failed_with_rollback_recovery"
+        ]
         assert len(notes) == 1
         assert "API 503" in notes[0].params.get("error_details", "")
         pr_status_writer.set_pr_status.assert_not_called()
