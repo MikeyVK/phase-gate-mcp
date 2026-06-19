@@ -471,11 +471,12 @@ class IPresenter(Protocol):
     ) -> str:
         """Format the output DTO and operation notes into a single user-facing markdown string.
 
-        If run_id is None, the presenter will format the output without the
-        URI reference link or with a fallback message. The server/orchestrator
-        does not participate in run_id logic.
+        Handling of run_id = None (Graceful Degradation):
+        - If run_id is None (cache write failed or is disabled), the presenter must:
+          1. Render a clear warning note: `*(Cache publication failed. Full details dumped inline)*`.
+          2. Dump the entire output DTO serialized as a formatted JSON block at the bottom of the output.
+          3. Security/Traceback Auditing (Option A): If the DTO is an `ExecutionErrorOutput`, the presenter must strip the `traceback` field from the data dictionary before dumping it to prevent environment/path information leaks and context window pollution.
         """
-        ...
 ```
 
 ### 3.6. [DESIGN-5] Transport Orchestration (`server.py` Flow)
