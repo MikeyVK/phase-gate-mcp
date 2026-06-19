@@ -97,6 +97,7 @@ select = [
     "C4",  # flake8-comprehensions
     "DTZ", # flake8-datetimez
     "T10", # flake8-debugger
+    "T20", # flake8-print
     "ISC", # flake8-implicit-str-concat
     "RET", # flake8-return
     "SIM", # flake8-simplify

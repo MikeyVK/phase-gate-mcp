@@ -5,7 +5,7 @@
 Unit tests for ToolFactory composition root.
 
 @layer: Tests (Unit)
-@dependencies: [pytest, mcp_server.core.tool_factory, unittest.mock]
+@dependencies: [mcp_server.core.tool_factory, unittest.mock]
 @responsibilities:
     - Test TestToolFactory functionality
 """
@@ -15,7 +15,6 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 # Third-party
-import pytest
 
 # Project modules
 from mcp_server.core.decorators.enforcement_decorator import EnforcementDecorator
@@ -46,14 +45,14 @@ class TestToolFactory:
         assert isinstance(decorated, ToolErrorHandlerDecorator)
 
         # 2. Middle decorator: InputValidationDecorator
-        middle = decorated._inner_tool
+        middle = decorated._inner_tool  # pyright: ignore[reportPrivateUsage]
         assert isinstance(middle, InputValidationDecorator)
 
         # 3. Inner decorator: EnforcementDecorator
-        inner = middle._inner_tool
+        inner = middle._inner_tool  # pyright: ignore[reportPrivateUsage]
         assert isinstance(inner, EnforcementDecorator)
-        assert inner._enforcement_runner == mock_runner
-        assert inner._workspace_root == mock_root
+        assert inner._enforcement_runner == mock_runner  # pyright: ignore[reportPrivateUsage]
+        assert inner._workspace_root == mock_root  # pyright: ignore[reportPrivateUsage]
 
         # 4. Target tool
-        assert inner._inner_tool == mock_core_tool
+        assert inner._inner_tool == mock_core_tool  # pyright: ignore[reportPrivateUsage]
