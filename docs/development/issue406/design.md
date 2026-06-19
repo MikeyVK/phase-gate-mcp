@@ -556,6 +556,40 @@ class ToolFactory:
         
         # 3. Wrap with catch-all error handling
         return ToolErrorHandlerDecorator(validated_stacked)
+        return ToolErrorHandlerDecorator(validated_stacked)
+```
+
+#### 3.7.1. Wiring in `bootstrap.py`
+The `bootstrap` method in `bootstrap.py` is updated to instantiate `ToolFactory` using the constructed `EnforcementRunner`, wrap the core tools returned by `_build_tools`, and pass the list of decorated `ITool` instances to `MCPServer`.
+
+**File:** [bootstrap.py](file:///c:/temp/pgmcp/mcp_server/bootstrap.py) [MODIFY]
+
+```python
+    def bootstrap(self) -> MCPServer:
+        # ... (logging, registry, config, and manager graph setup) ...
+
+        # 1. Build core tools (now implementing ICoreTool)
+        core_tools = self._build_tools(configs, managers)
+        resources = self._build_resources(configs, managers)
+
+        # 2. Instantiate composition factory and decorate tools
+        tool_factory = ToolFactory(enforcement_runner=managers.enforcement_runner)
+        tools = [tool_factory.create_tool(t) for t in core_tools]
+
+        # 3. Instantiate presenter
+        presenter = TextPresenter(config=configs.presentation_config)
+        validate_presentation_alignment(presenter, core_tools)
+
+        # 4. Return composed server
+        from mcp_server.server import MCPServer
+        return MCPServer(
+            settings=settings,
+            configs=configs,
+            managers=managers,
+            tools=tools,
+            resources=resources,
+            presenter=presenter,
+        )
 ```
 
 ## Related Documentation
