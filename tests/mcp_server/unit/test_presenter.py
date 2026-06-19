@@ -252,7 +252,9 @@ class TestTextPresenter:
 
         # Test EnforcementErrorOutput
         enf_err = EnforcementErrorOutput(
-            error_message="Enforcement blocked", params={"rule": "no-push"}, error_code="RULE_VIOLATION"
+            error_message="Enforcement blocked",
+            params={"rule": "no-push"},
+            error_code="RULE_VIOLATION",
         )
         assert enf_err.success is False
         assert enf_err.error_type == "EnforcementError"

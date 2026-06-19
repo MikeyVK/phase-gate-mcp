@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from typing import TYPE_CHECKING
 
@@ -37,7 +38,33 @@ class CachedResponseResource(BaseResource):
         """Read the resource content from the cache and return compact JSON."""
         dto = self._cache.get(uri)
         if not dto:
-            raise ValueError(f"No cached data found for URI: {uri}")
+            # Try to resolve hyphenation mismatch (hex vs hyphenated UUID)
+            if "-" in uri:
+                dto = self._cache.get(uri.replace("-", ""))
+            else:
+                match = re.match(r"^pgmcp://cache/runs/([a-f0-9]{32})$", uri)
+                if match:
+                    h = match.group(1)
+                    hyphenated = (
+                        f"pgmcp://cache/runs/{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:]}"
+                    )
+                    dto = self._cache.get(hyphenated)
+
+        if not dto:
+            raise ValueError("No cached data found")
 
         # Returns whitespace-stripped compact JSON with None values excluded
-        return dto.model_dump_json(exclude_none=True)
+        try:
+            return dto.model_dump_json(exclude_none=True)
+        except Exception as e:
+            fallback = {
+                "success": False,
+                "error_type": "SerializationError",
+                "message": f"Unable to serialize DTO: {e}",
+                "dto_type": type(dto).__name__,
+            }
+            if hasattr(dto, "error_message") and dto.error_message:
+                fallback["error_message"] = str(dto.error_message)
+            if hasattr(dto, "traceback") and dto.traceback:
+                fallback["traceback"] = str(dto.traceback)
+            return json.dumps(fallback)

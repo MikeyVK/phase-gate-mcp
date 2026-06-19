@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from mcp_server.core.interfaces.icore_tool import ICoreTool
-from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.interfaces.icore_tool import ICoreTool as ICoreTool
+from mcp_server.core.interfaces.itool import ITool as ITool
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
