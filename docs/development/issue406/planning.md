@@ -24,10 +24,15 @@ Refactor the monolithic exception mapping and validation bridge in server.py int
 **Tests:**
 - tests/mcp_server/unit/test_presenter.py
 - tests/mcp_server/unit/test_server.py
+- tests/mcp_server/unit/tools/test_base.py
+- tests/mcp_server/integration/test_pr_status_lockdown.py
+- tests/mcp_server/integration/test_strict_input_validation_response.py
+- tests/mcp_server/unit/server/test_validate_tool_arguments.py
 
 **Success Criteria:**
-New interfaces compile, legacy imports resolved using ILegacyTool, DTO constructors updated in tests
-
+- **(a) Import renaming:** All imports of `ITool` from `mcp_server.tools.base` in all 31 affected files (25 production, 6 test files) are updated to use `ILegacyTool` to avoid name collisions.
+- **(b) DTO constructor updates:** All error DTO instantiations in test suites (specifically `test_presenter.py` and `test_server.py`) are updated to use the new `error_message=` keyword argument.
+- All new and updated files pass Pyright type checking and Ruff quality gates.
 
 
 ### Cycle 2: Decorator Pipeline (Cycle 2)
@@ -86,10 +91,13 @@ ToolFactory correctly wraps core tools, pyproject.toml and quality.yaml enforce 
 **Tests:**
 - tests/mcp_server/unit/tools/test_cycle_tools.py
 - tests/mcp_server/unit/tools/test_project_tools.py
+- Full unit test suite (including all 44 files in `tests/mcp_server/unit/tools/`)
 
 **Success Criteria:**
-All ~50 tool endpoints migrated to use typed inputs/outputs; legacy base tool files removed
-
+- All ~50 tool endpoints migrated to use typed inputs/outputs.
+- Legacy `tools/base.py` files (ILegacyTool and ToolExecutionEnvelope) removed.
+- **The entire test suite** (including all 44 tool unit test files) passes successfully.
+- Pyright type checking and Ruff quality gates pass with zero ignores.
 
 
 ### Cycle 7: Transport Orchestratie & E2E (Cycle 6b)

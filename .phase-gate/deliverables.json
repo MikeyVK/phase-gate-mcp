@@ -60,7 +60,7 @@
                 "description": "Rename ITool to ILegacyTool in tools/base.py and update ToolErrorOutput signatures"
               }
             ],
-            "exit_criteria": "New interfaces compiled and legacy import conflicts resolved"
+            "exit_criteria": "Import renaming completed in all 31 files, DTO constructors updated to error_message, and interfaces compile."
           },
           {
             "cycle_number": 2,
@@ -159,7 +159,7 @@
                 "description": "Migrate all concrete tools under tools/ to ICoreTool and retire ILegacyTool/ToolExecutionEnvelope"
               }
             ],
-            "exit_criteria": "All 50 tool endpoints migrated to typed models and legacy files removed"
+            "exit_criteria": "All 50 tools migrated, legacy base tool files removed, and the entire test suite passes successfully."
           },
           {
             "cycle_number": 7,
