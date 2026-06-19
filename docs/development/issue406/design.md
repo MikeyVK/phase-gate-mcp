@@ -590,6 +590,50 @@ The `bootstrap` method in `bootstrap.py` is updated to instantiate `ToolFactory`
         )
 ```
 
+#### 3.7.2. Ruff `T20` (print-check) Configuration
+To enforce that no `print()` statements are introduced, Ruff's `T20` rule is added to both the local developer baseline and the authoritative Quality Gate configuration.
+
+**File:** [pyproject.toml](file:///c:/temp/pgmcp/pyproject.toml) [MODIFY]
+```toml
+[tool.ruff.lint]
+select = [
+    # ... (existing rules) ...
+    "T20", # flake8-print
+]
+```
+
+**File:** [quality.yaml](file:///c:/temp/pgmcp/.phase-gate/config/quality.yaml) [MODIFY]
+```yaml
+  gate1_formatting:
+    execution:
+      command:
+        [
+          "python",
+          "-m",
+          "ruff",
+          "check",
+          "--isolated",
+          "--output-format=json",
+          "--select=E,W,F,I,N,UP,ANN,B,C4,DTZ,T10,T20,ISC,RET,SIM,ARG,PLC",
+          "--ignore=E501,PLC0415",
+          "--per-file-ignores=tests/**/*.py:ANN,ARG",
+          "--line-length=100",
+          "--target-version=py311"
+        ]
+      fix_command: [
+        "python",
+        "-m",
+        "ruff",
+        "check",
+        "--isolated",
+        "--fix",
+        "--select=E,W,F,I,N,UP,ANN,B,C4,DTZ,T10,T20,ISC,RET,SIM,ARG,PLC",
+        "--ignore=E501,PLC0415",
+        "--per-file-ignores=tests/**/*.py:ANN,ARG",
+        "--line-length=100",
+        "--target-version=py311"
+      ]
+```
 ## Verification Plan
 
 To guarantee that the refactored target server architecture works correctly, doesn't break backward compatibility, and passes all gates, the following verification plan will be implemented:
