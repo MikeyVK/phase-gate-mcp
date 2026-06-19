@@ -367,7 +367,7 @@ class TestTextPresenter:
             },
             "templates": {
                 "suggestions": {"suggestion_msg": "Suggestion: {message}"},
-            }
+            },
         }
         presenter = TextPresenter(config_data=config_data)
         dto = DummyOutput(success=True, result="Notes test")
@@ -378,7 +378,7 @@ class TestTextPresenter:
             data=dto,
             notes=notes,
             run_id="run-123",
-            presentation_category="query"
+            presentation_category="query",
         )
 
         assert "💡 Suggestions" in text
@@ -394,20 +394,24 @@ class TestTextPresenter:
             data=dto,
             notes=[],
             run_id=None,
-            presentation_category="query"
+            presentation_category="query",
         )
 
         assert "*(Cache publication failed. Full details dumped inline)*" in text
         assert "```json" in text
         assert '"result": "Fallback JSON test"' in text
 
-    def test_present_fallback_run_id_none_execution_error(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting when run_id is None and DTO is ExecutionErrorOutput, verifying traceback is stripped."""
+    def test_present_fallback_run_id_none_execution_error(
+        self, mock_yaml_config: dict[str, Any]
+    ) -> None:
+        """Test presenting when run_id is None and DTO is ExecutionErrorOutput,
+        verifying traceback is stripped.
+        """
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = ExecutionErrorOutput(
             error_message="Test Execution Error",
             traceback="secret_path/to_file.py: line 42",
-            params={"arg1": "val1"}
+            params={"arg1": "val1"},
         )
 
         text = presenter.present(
@@ -415,7 +419,7 @@ class TestTextPresenter:
             data=dto,
             notes=[],
             run_id=None,
-            presentation_category="query"
+            presentation_category="query",
         )
 
         assert "*(Cache publication failed. Full details dumped inline)*" in text
@@ -441,68 +445,3 @@ class TestTextPresenter:
         with pytest.raises(ConfigError) as exc_info:
             validate_presentation_alignment(presenter, [])
         assert "placeholder" in str(exc_info.value).lower()
-
-    def test_present_with_notes_and_run_id(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting with notes and run_id."""
-        config_data = dict(mock_yaml_config)
-        config_data["global"]["notes"] = {
-            "groups": {
-                "suggestions": {"emoji": "💡", "header": "Suggestions"},
-            },
-            "templates": {
-                "suggestions": {"suggestion_msg": "Suggestion: {message}"},
-            }
-        }
-        presenter = TextPresenter(config_data=config_data)
-        dto = DummyOutput(success=True, result="Notes test")
-        notes = [Note(key="suggestion_msg", params={"message": "Try caching"})]
-
-        text = presenter.present(
-            tool_name="dummy_tool",
-            data=dto,
-            notes=notes,
-            run_id="run-123",
-            presentation_category="query"
-        )
-
-        assert "💡 Suggestions" in text
-        assert "Suggestion: Try caching" in text
-
-    def test_present_fallback_run_id_none(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting when run_id is None, verifying warning and JSON block."""
-        presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = DummyOutput(success=True, result="Fallback JSON test")
-
-        text = presenter.present(
-            tool_name="dummy_tool",
-            data=dto,
-            notes=[],
-            run_id=None,
-            presentation_category="query"
-        )
-
-        assert "*(Cache publication failed. Full details dumped inline)*" in text
-        assert "```json" in text
-        assert '"result": "Fallback JSON test"' in text
-
-    def test_present_fallback_run_id_none_execution_error(self, mock_yaml_config: dict[str, Any]) -> None:
-        """Test presenting when run_id is None and DTO is ExecutionErrorOutput, verifying traceback is stripped."""
-        presenter = TextPresenter(config_data=mock_yaml_config)
-        dto = ExecutionErrorOutput(
-            error_message="Test Execution Error",
-            traceback="secret_path/to_file.py: line 42",
-            params={"arg1": "val1"}
-        )
-
-        text = presenter.present(
-            tool_name="dummy_tool",
-            data=dto,
-            notes=[],
-            run_id=None,
-            presentation_category="query"
-        )
-
-        assert "*(Cache publication failed. Full details dumped inline)*" in text
-        assert "```json" in text
-        assert "Test Execution Error" in text
-        assert "traceback" not in text

@@ -5,6 +5,7 @@
 @layer: Presenters
 """
 
+import json
 import string
 from typing import Any
 
@@ -37,6 +38,9 @@ class SafeNoneFormatter(string.Formatter):
 
 
 # Legacy note mapping removed
+
+
+_DEFAULT_RUN_ID = "DEFAULT_RUN_ID_SENTINEL"
 
 
 class TextPresenter:
@@ -90,15 +94,30 @@ class TextPresenter:
     def present(
         self,
         tool_name: str,
-        success: bool,
-        presentation_category: str,
         data: BaseModel | dict[str, Any],
+        notes: list[NoteEntry] | None = None,
+        run_id: str | None = _DEFAULT_RUN_ID,
+        success: bool | None = None,
+        presentation_category: str | None = None,
     ) -> str:
         """Present the DTO or dict as a formatted string."""
-        # 1. Convert DTO/dict to a flat dictionary for formatting
+
+        # 1. Resolve success and presentation category
+        resolved_success = success if success is not None else getattr(data, "success", True)
+        resolved_cat = presentation_category if presentation_category is not None else "query"
+
+        # 2. Convert DTO/dict to a flat dictionary for formatting
         data_dict = data.model_dump() if isinstance(data, BaseModel) else dict(data)
 
-        # 2. Bepaal template op basis van success
+        # 3. Resolve run_id for placeholders and fallback trigger
+        if run_id == _DEFAULT_RUN_ID:
+            placeholder_run_id = data_dict.get("run_id")
+            should_trigger_fallback = False
+        else:
+            placeholder_run_id = run_id
+            should_trigger_fallback = run_id is None
+
+        # 4. Bepaal template op basis van success
         tool_cfg = self.tools_config.get(tool_name)
         template = None
         next_instructions = []
@@ -106,18 +125,20 @@ class TextPresenter:
         if tool_cfg is not None:
             # Support both Pydantic model and raw dict for tool config
             if isinstance(tool_cfg, ToolPresentationConfig):
-                template = tool_cfg.template_success if success else tool_cfg.template_failure
+                template = (
+                    tool_cfg.template_success if resolved_success else tool_cfg.template_failure
+                )
                 next_instructions = tool_cfg.next_instructions
             else:
                 template = (
                     tool_cfg.get("template_success")
-                    if success
+                    if resolved_success
                     else tool_cfg.get("template_failure")
                 )
                 next_instructions = tool_cfg.get("next_instructions") or []
 
         # Fallback for failure template
-        if not success and not template:
+        if not resolved_success and not template:
             # Try to resolve template via error_code if present
             error_code = None
             if isinstance(data, BaseModel):
@@ -172,13 +193,14 @@ class TextPresenter:
         else:
             # If no template is found, use a fallback text or DTO string
             text = data_dict.get("message") or data_dict.get("error_message") or str(data_dict)
-        # 3. Prepend emoji prefix
+
+        # 5. Prepend emoji prefix
         emojis = self._get_emoji_config()
-        if not success:
+        if not resolved_success:
             emoji = emojis.failure
         else:
             # Map presentation_category to emoji
-            cat = presentation_category.lower()
+            cat = resolved_cat.lower()
             if cat in ("mutation", "admin"):
                 key = "success"
             elif cat in ("query", "testing"):
@@ -192,8 +214,8 @@ class TextPresenter:
         if emoji:
             text = f"{emoji} {text}"
 
-        # 4. Resolve and append next instructions
-        if success and next_instructions:
+        # 6. Resolve and append next instructions
+        if resolved_success and next_instructions:
             instruction_texts = self.get_next_instruction_texts()
             for key in next_instructions:
                 raw_text = instruction_texts.get(key, "")
@@ -209,12 +231,31 @@ class TextPresenter:
 
                         format_dict = {}
                         for k in placeholders:
-                            format_dict[k] = data_dict.get(k, None)
+                            if k == "run_id":
+                                format_dict[k] = placeholder_run_id
+                            else:
+                                format_dict[k] = data_dict.get(k, None)
 
                         formatted_instruction = formatter.format(raw_text, **format_dict)
                         text = f"{text}\n\n{formatted_instruction}"
                     except Exception as exc:
                         text = f"{text}\n\nFormat error in instruction '{key}': {exc}"
+
+        # 7. Append formatted notes if provided
+        if notes:
+            notes_text = self.present_notes(tool_name, notes)
+            if notes_text:
+                text = f"{text}\n\n{notes_text}"
+
+        # 8. Fallback when run_id is None
+        if should_trigger_fallback:
+            warning_note = "*(Cache publication failed. Full details dumped inline)*"
+            # Strip traceback from ExecutionErrorOutput DTO to avoid leaking secrets
+            json_dict = dict(data_dict)
+            if "traceback" in json_dict:
+                json_dict.pop("traceback", None)
+            json_str = json.dumps(json_dict, indent=2)
+            text = f"{text}\n\n{warning_note}\n```json\n{json_str}\n```"
 
         return text
 
