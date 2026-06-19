@@ -11,10 +11,10 @@
 This design document is structured as a living specification. To maintain high architectural cohesion and prevent chaos, the design is elaborated sequentially in the following order:
 
 1. **[DESIGN-1] Domain & Execution Contracts (`ITool` and `ICoreTool` Generics)**
+   - Status: *DRAFTED*
+   - Focus: Defining the core interfaces and generic parameter/return types to protect tool developer productivity.
 2. **[DESIGN-2] Execution Decorators (Russian Doll pipeline)**
    - Status: *DRAFTED*
-2. **[DESIGN-2] Execution Decorators (Russian Doll pipeline)**
-   - Status: *PENDING*
    - Focus: Defining validation, enforcement, and error-handling decorators, including parameter translation and exception interception.
 3. **[DESIGN-3] Persistence Subsystem Contract (`IToolResponseCache`)**
    - Status: *DRAFTED*
@@ -28,7 +28,6 @@ This design document is structured as a living specification. To maintain high a
 6. **[DESIGN-6] Composition & Construction (`ToolFactory` in `bootstrap.py`)**
    - Status: *DRAFTED*
    - Focus: Defining composition root assembly, dependency injection, and wiring order.
-
 ---
 
 ## 1. Context & Requirements
@@ -556,7 +555,6 @@ class ToolFactory:
         
         # 3. Wrap with catch-all error handling
         return ToolErrorHandlerDecorator(validated_stacked)
-        return ToolErrorHandlerDecorator(validated_stacked)
 ```
 
 #### 3.7.1. Wiring in `bootstrap.py`
@@ -591,6 +589,26 @@ The `bootstrap` method in `bootstrap.py` is updated to instantiate `ToolFactory`
             presenter=presenter,
         )
 ```
+
+## Verification Plan
+
+To guarantee that the refactored target server architecture works correctly, doesn't break backward compatibility, and passes all gates, the following verification plan will be implemented:
+
+### Automated Tests
+
+1. **Unit Tests (TDD cycles)**
+   - Decorator pipeline testing: Assert that validation, enforcement, and catch-all error decorators correctly trap exceptions, format error-free DTOs (e.g. `ValidationErrorOutput`, `EnforcementErrorOutput`, `ExecutionErrorOutput`), and log tracebacks to stderr.
+   - Cache resilience testing: Mock disk full and directory read/write permissions failures, verifying that `IToolResponseCache` handles them gracefully, logs warnings, and returns `None` for `run_id` without raising exceptions.
+   - Presentation fallback testing: Verify that `TextPresenter` correctly extracts placeholders, applies the `SafeNoneFormatter`, resolves templates from `presentation.yaml` based on the error code, and filters out the `traceback` from the presented markdown output for `ExecutionErrorOutput` to prevent context leakage.
+
+2. **E2E Integration Test**
+   - A complete end-to-end integration test will be implemented in `tests/mcp_server/integration/test_pipeline_e2e.py`.
+   - It will instantiate a factory-decorated test tool, run it through the orchestrator pipeline, verify note gathering, DTO serialization, disk-based cache writing, presenter-based formatting, and output assertions.
+
+### Linting & Static Code Analysis
+- Verify that the codebase passes strict type checking with Pyright and MyPy with zero ignored errors.
+- Ensure Ruff formatting and lint rules are met.
+- Auditing rule `T20` (Ruff `flake8-print` rule): Verify that no stdout `print()` calls are introduced, as writing directly to standard output will corrupt the JSON-RPC communication stream of the MCP server.
 
 ## Related Documentation
 None
