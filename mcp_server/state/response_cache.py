@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import uuid
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Type, TypeVar
+from typing import TYPE_CHECKING, Type, TypeVar, cast
 
 from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
 
@@ -71,7 +71,7 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
                 return dto
             return None
 
-        return dto  # type: ignore[return-value]
+        return cast(T, dto)
 
     def exists(self, run_id: str) -> bool:
         """Check if a cached result exists for the run_id."""
