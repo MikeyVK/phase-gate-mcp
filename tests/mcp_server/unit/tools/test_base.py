@@ -1,4 +1,4 @@
-"""Tests for ITool base components and decorators.
+"""Tests for ILegacyTool base components and decorators.
 
 @layer: Tests (Unit)
 """
@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 import mcp_server.tools.base as base_mod
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.state.response_cache import ResponseCacheManager
-from mcp_server.tools.base import ITool, ToolExecutionEnvelope
+from mcp_server.tools.base import ILegacyTool, ToolExecutionEnvelope
 from mcp_server.tools.decorators import ResourcePublishingDecorator
 
 
@@ -20,14 +20,14 @@ class DummyDTO(BaseModel):
     message: str
 
 
-class DummyITool(ITool):
+class DummyITool(ILegacyTool):
     @property
     def name(self) -> str:
         return "dummy_itool"
 
     @property
     def description(self) -> str:
-        return "Dummy ITool"
+        return "Dummy ILegacyTool"
 
     @property
     def args_model(self) -> type[BaseModel] | None:

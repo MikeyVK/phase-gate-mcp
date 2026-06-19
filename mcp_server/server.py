@@ -37,7 +37,7 @@ from mcp_server.resources.base import BaseResource
 # Resources
 # Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 # Tools
 from mcp_server.tools.tool_result import ToolResult
@@ -64,7 +64,7 @@ class MCPServer:
         settings: Settings,
         configs: ConfigLayer,
         managers: ManagerGraph,
-        tools: list[ITool],
+        tools: list[ILegacyTool],
         resources: list[BaseResource],
         presenter: TextPresenter | None = None,
     ) -> None:
@@ -105,7 +105,7 @@ class MCPServer:
         self.setup_handlers()
 
     def _validate_tool_arguments(
-        self, tool: ITool, arguments: dict[str, Any] | None, call_id: str, name: str
+        self, tool: ILegacyTool, arguments: dict[str, Any] | None, call_id: str, name: str
     ) -> BaseModel | dict[str, Any] | ToolResult:
         """Validate tool arguments against args_model.
 
@@ -142,7 +142,7 @@ class MCPServer:
 
     async def _handle_error_dto(
         self,
-        tool: ITool,
+        tool: ILegacyTool,
         err_dto: BaseModel,
         start_time: float,
         call_id: str,
@@ -165,15 +165,15 @@ class MCPServer:
         if cache_error_occurred:
             # Wrap as CacheErrorOutput
             cache_dto = CacheErrorOutput(
-                message=cache_err_message,
+                error_message=cache_err_message,
                 params={
-                    "original_error": err_dto.message
-                    if hasattr(err_dto, "message")
+                    "original_error": err_dto.error_message
+                    if hasattr(err_dto, "error_message")
                     else str(err_dto)
                 },
             )
             # Format using plain text directly (double fault prevention)
-            text = f"CacheError: {cache_dto.message}"
+            text = f"CacheError: {cache_dto.error_message}"
             raw_result = ToolResult(content=[{"type": "text", "text": text}], is_error=True)
             return self._convert_tool_result_to_mcp_result(raw_result)
 
@@ -254,7 +254,7 @@ class MCPServer:
 
     def _run_tool_enforcement(
         self,
-        tool: ITool,
+        tool: ILegacyTool,
         timing: str,
         params: BaseModel | dict[str, Any],
         note_context: NoteContext,
@@ -353,7 +353,7 @@ class MCPServer:
                             )
                         except ValidationError as val_exc:
                             err_dto = ValidationErrorOutput(
-                                message=f"Invalid input for {name}",
+                                error_message=f"Invalid input for {name}",
                                 validation_errors=val_exc.errors(),
                                 input_schema=tool.input_schema,
                                 params=arguments or {},
@@ -372,7 +372,7 @@ class MCPServer:
                                 getattr(exc, "params", None),
                             )
                             err_dto = EnforcementErrorOutput(
-                                message=exc.message,
+                                error_message=exc.message,
                                 error_code=exc.code,
                                 params=exc.params or {},
                             )
@@ -387,7 +387,7 @@ class MCPServer:
                             if isinstance(exec_exc, asyncio.CancelledError):
                                 raise
                             err_dto = ExecutionErrorOutput(
-                                message=str(exec_exc),
+                                error_message=str(exec_exc),
                                 traceback=traceback.format_exc(),
                                 params=arguments or {},
                             )
@@ -448,7 +448,7 @@ class MCPServer:
                                 )
                             except MCPError as exc:
                                 err_dto = EnforcementErrorOutput(
-                                    message=exc.message,
+                                    error_message=exc.message,
                                     error_code=exc.code,
                                     params=exc.params or {},
                                 )

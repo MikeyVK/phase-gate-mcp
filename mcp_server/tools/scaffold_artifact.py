@@ -22,7 +22,7 @@ from mcp_server.core.exceptions import ConfigError, MCPError, ValidationError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.schemas.tool_outputs import ScaffoldArtifactOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 
 class ScaffoldArtifactInput(BaseModel):
@@ -42,7 +42,7 @@ class ScaffoldArtifactInput(BaseModel):
     )
 
 
-class ScaffoldArtifactTool(ITool):
+class ScaffoldArtifactTool(ILegacyTool):
     """Unified artifact scaffolding tool.
 
     Handles both code artifacts (dto, worker, adapter, etc.)

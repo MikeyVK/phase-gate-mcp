@@ -28,7 +28,7 @@ from mcp_server.schemas.tool_outputs import (
     GitStashOutput,
     GitStatusOutput,
 )
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 logger = get_logger("tools.git")
 
@@ -108,7 +108,7 @@ class CreateBranchInput(BaseModel):
     )
 
 
-class CreateBranchTool(ITool):
+class CreateBranchTool(ILegacyTool):
     """Tool to create a git branch from specified base."""
 
     tool_category = "branch_mutating"
@@ -191,7 +191,7 @@ class GitStatusInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class GitStatusTool(ITool):
+class GitStatusTool(ILegacyTool):
     """Tool to check git status."""
 
     @property
@@ -306,7 +306,7 @@ class GitCommitInput(BaseModel):
     )
 
 
-class GitCommitTool(ITool):
+class GitCommitTool(ILegacyTool):
     """Tool to commit changes with workflow-scoped commit messages."""
 
     tool_category = "branch_mutating"
@@ -483,7 +483,7 @@ class GitRestoreInput(BaseModel):
     source: str = Field(default="HEAD", description="Git ref to restore from (default: HEAD)")
 
 
-class GitRestoreTool(ITool):
+class GitRestoreTool(ILegacyTool):
     """Tool to restore files to a ref (discard local changes)."""
 
     tool_category = "branch_mutating"
@@ -547,7 +547,7 @@ class GitCheckoutInput(BaseModel):
     branch: str = Field(..., description="Branch name to checkout")
 
 
-class GitCheckoutTool(ITool):
+class GitCheckoutTool(ILegacyTool):
     """Tool to checkout to a branch.
 
     Automatically synchronizes PhaseStateEngine state after branch switch
@@ -646,7 +646,7 @@ class GitPushInput(BaseModel):
     )
 
 
-class GitPushTool(ITool):
+class GitPushTool(ILegacyTool):
     """Tool to push current branch to origin."""
 
     tool_category = "branch_mutating"
@@ -716,7 +716,7 @@ class GitMergeInput(BaseModel):
     branch: str = Field(..., description="Branch name to merge")
 
 
-class GitMergeTool(ITool):
+class GitMergeTool(ILegacyTool):
     """Tool to merge a branch into current branch."""
 
     tool_category = "branch_mutating"
@@ -788,7 +788,7 @@ class GitDeleteBranchInput(BaseModel):
     )
 
 
-class GitDeleteBranchTool(ITool):
+class GitDeleteBranchTool(ILegacyTool):
     """Tool to delete a branch."""
 
     tool_category = "branch_mutating"
@@ -866,7 +866,7 @@ class GitStashInput(BaseModel):
     )
 
 
-class GitStashTool(ITool):
+class GitStashTool(ILegacyTool):
     """Tool to stash changes in a dirty working directory."""
 
     @property
@@ -941,7 +941,7 @@ class GetParentBranchInput(BaseModel):
     )
 
 
-class GetParentBranchTool(ITool):
+class GetParentBranchTool(ILegacyTool):
     """Tool to show a branch's configured parent branch.
 
     Issue #79: Parent branch is tracked in PhaseStateEngine state.
@@ -1018,7 +1018,7 @@ class CheckMergeInput(BaseModel):
     )
 
 
-class CheckMergeTool(ITool):
+class CheckMergeTool(ILegacyTool):
     """Read-only tool to verify a merge commit SHA is reachable from HEAD.
 
     Wraps `git merge-base --is-ancestor <sha> HEAD`.

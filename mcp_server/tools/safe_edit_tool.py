@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import SafeEditOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.validation.validation_service import ValidationService
 
 
@@ -181,7 +181,7 @@ class SafeEditInput(BaseModel):
         return self
 
 
-class SafeEditTool(ITool):
+class SafeEditTool(ILegacyTool):
     """Tool for safely editing files with validation and multiple edit modes.
 
     Supports four mutually exclusive edit modes:

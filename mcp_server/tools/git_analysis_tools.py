@@ -12,7 +12,7 @@ from mcp_server.schemas.tool_outputs import (
     GitDiffOutput,
     GitListBranchesOutput,
 )
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 
 class GitListBranchesInput(BaseModel):
@@ -24,7 +24,7 @@ class GitListBranchesInput(BaseModel):
     remote: bool = Field(default=False, description="Include remote branches (-r)")
 
 
-class GitListBranchesTool(ITool):
+class GitListBranchesTool(ILegacyTool):
     """Tool to list git branches with optional details."""
 
     @property
@@ -117,7 +117,7 @@ class GitDiffInput(BaseModel):
     source_branch: str = Field(default="HEAD", description="Source branch (default: HEAD)")
 
 
-class GitDiffTool(ITool):
+class GitDiffTool(ILegacyTool):
     """Tool to get diff statistics between branches."""
 
     @property

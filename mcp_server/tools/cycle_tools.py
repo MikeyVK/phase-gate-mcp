@@ -23,7 +23,7 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas.tool_outputs import CycleTransitionOutput, ForceCycleTransitionOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 __all__ = [
@@ -34,8 +34,8 @@ __all__ = [
 ]
 
 
-class _BaseIToolTransition(ITool):
-    """Base class for cycle transition tools implementing ITool."""
+class _BaseIToolTransition(ILegacyTool):
+    """Base class for cycle transition tools implementing ILegacyTool."""
 
     def __init__(
         self,

@@ -227,7 +227,7 @@ class TestTextPresenter:
         """Test that error DTO subclasses compile and enforce frozen and forbid-extra rules."""
         # Test ValidationErrorOutput
         val_err = ValidationErrorOutput(
-            message="Validation failed",
+            error_message="Validation failed",
             params={"param1": "val1"},
             validation_errors=[{"loc": ["field"], "msg": "invalid"}],
             input_schema={"type": "object"},
@@ -238,12 +238,12 @@ class TestTextPresenter:
 
         # Verify frozen
         with pytest.raises(Exception):
-            val_err.message = "new message"  # type: ignore
+            val_err.error_message = "new message"  # type: ignore
 
         # Verify extra forbid
         with pytest.raises(Exception):
             ValidationErrorOutput(
-                message="Err",
+                error_message="Err",
                 params={},
                 validation_errors=[],
                 input_schema={},
@@ -252,18 +252,18 @@ class TestTextPresenter:
 
         # Test EnforcementErrorOutput
         enf_err = EnforcementErrorOutput(
-            message="Enforcement blocked", params={"rule": "no-push"}, error_code="RULE_VIOLATION"
+            error_message="Enforcement blocked", params={"rule": "no-push"}, error_code="RULE_VIOLATION"
         )
         assert enf_err.success is False
         assert enf_err.error_type == "EnforcementError"
         assert enf_err.error_code == "RULE_VIOLATION"
 
         # Verify ExecutionErrorOutput compile
-        exec_err = ExecutionErrorOutput(message="Fail", params={})
+        exec_err = ExecutionErrorOutput(error_message="Fail", params={})
         assert exec_err.error_type == "ExecutionError"
 
         # Verify CacheErrorOutput compile
-        cache_err = CacheErrorOutput(message="Disk full", params={})
+        cache_err = CacheErrorOutput(error_message="Disk full", params={})
         assert cache_err.error_type == "CacheError"
 
     def test_safe_none_formatter(self) -> None:

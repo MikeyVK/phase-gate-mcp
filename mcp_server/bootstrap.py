@@ -82,7 +82,7 @@ from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.admin_tools import RestartServerTool
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.discovery_tools import GetWorkContextTool, SearchDocumentationTool
 from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
@@ -196,10 +196,10 @@ class ToolFactory:
         self._response_cache = response_cache
 
     def build_tool(self, tool: Any) -> Any:  # noqa: ANN401
-        from mcp_server.tools.base import ITool  # noqa: PLC0415
+        from mcp_server.tools.base import ILegacyTool  # noqa: PLC0415
         from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
 
-        if isinstance(tool, ITool) and not isinstance(tool, ResourcePublishingDecorator):
+        if isinstance(tool, ILegacyTool) and not isinstance(tool, ResourcePublishingDecorator):
             return ResourcePublishingDecorator(tool=tool, cache=self._response_cache)
         return tool
 
@@ -443,13 +443,13 @@ class ServerBootstrapper:
             response_cache=response_cache,
         )
 
-    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[ITool]:
+    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[ILegacyTool]:
         """Compose the list of available tools."""
         settings = self._settings
 
         _branch_validated_reader = BranchValidatedStateReader(inner=managers.state_repository)
 
-        tools: list[ITool] = [
+        tools: list[ILegacyTool] = [
             # Git tools
             CreateBranchTool(manager=managers.git_manager),
             GitStatusTool(manager=managers.git_manager),

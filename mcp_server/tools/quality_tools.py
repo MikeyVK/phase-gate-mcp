@@ -8,7 +8,7 @@ from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import QualityStateMutationConflictError
 from mcp_server.schemas.tool_outputs import AutoFixOutput, GateResultDTO, RunQualityGatesOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
@@ -59,7 +59,7 @@ class RunQualityGatesInput(BaseModel):
         return self
 
 
-class RunQualityGatesTool(ITool):
+class RunQualityGatesTool(ILegacyTool):
     """Tool to run quality gates."""
 
     @property
@@ -210,7 +210,7 @@ class AutoFixInput(BaseModel):
         return self
 
 
-class AutoFixTool(ITool):
+class AutoFixTool(ILegacyTool):
     """Tool to run auto fixes."""
 
     presentation_category = "mutation"

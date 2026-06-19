@@ -25,7 +25,7 @@ from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas import WorkphasesConfig
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput, PhaseTransitionOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 
 class TransitionPhaseInput(BaseModel):
@@ -71,8 +71,8 @@ class ForcePhaseTransitionInput(BaseModel):
         return v.strip()
 
 
-class _BaseTransitionTool(ITool):
-    """Base class for phase transition tools implementing ITool."""
+class _BaseTransitionTool(ILegacyTool):
+    """Base class for phase transition tools implementing ILegacyTool."""
 
     presentation_category = "mutation"
     tool_category = "branch_mutating"

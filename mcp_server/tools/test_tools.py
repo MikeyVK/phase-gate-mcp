@@ -16,7 +16,7 @@ from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IPytestRunner
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.schemas.tool_outputs import RunTestsOutput, TestFailureDTO
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 if TYPE_CHECKING:
@@ -117,7 +117,7 @@ def _find_timeout_expired(exc: BaseException) -> subprocess.TimeoutExpired | Non
     return None
 
 
-class RunTestsTool(ITool):
+class RunTestsTool(ILegacyTool):
     """Thin MCP adapter for pytest execution via an injected runner."""
 
     @property

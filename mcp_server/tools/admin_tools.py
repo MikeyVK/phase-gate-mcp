@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import RestartServerOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 # Helper functions (module-level marker path helper removed — now an instance method)
 
@@ -80,7 +80,7 @@ class RestartServerInput(BaseModel):
     )
 
 
-class RestartServerTool(ITool):
+class RestartServerTool(ILegacyTool):
     """Tool to restart MCP server to reload code changes.
 
     **Purpose:** Enable agent autonomy during TDD workflows.

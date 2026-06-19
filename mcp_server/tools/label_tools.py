@@ -19,7 +19,7 @@ from mcp_server.schemas.tool_outputs import (
     LabelOutputModel,
     ListLabelsOutput,
 )
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 
 class ListLabelsInput(BaseModel):
@@ -30,7 +30,7 @@ class ListLabelsInput(BaseModel):
     # No input fields needed currently, but model required for consistency
 
 
-class ListLabelsTool(ITool):
+class ListLabelsTool(ILegacyTool):
     """Tool to list all labels in the repository."""
 
     @property
@@ -93,7 +93,7 @@ class CreateLabelInput(BaseModel):
     description: str | None = Field(default="", description="Label description")
 
 
-class CreateLabelTool(ITool):
+class CreateLabelTool(ILegacyTool):
     """Tool to create a new label in the repository."""
 
     @property
@@ -168,7 +168,7 @@ class DeleteLabelInput(BaseModel):
     name: str = Field(..., description="Label name to delete")
 
 
-class DeleteLabelTool(ITool):
+class DeleteLabelTool(ILegacyTool):
     """Tool to delete a label from the repository."""
 
     @property
@@ -210,7 +210,7 @@ class RemoveLabelsInput(BaseModel):
     labels: list[str] = Field(..., description="List of labels to remove")
 
 
-class RemoveLabelsTool(ITool):
+class RemoveLabelsTool(ILegacyTool):
     """Tool to remove labels from an issue or PR."""
 
     @property
@@ -261,7 +261,7 @@ class AddLabelsInput(BaseModel):
     )
 
 
-class AddLabelsTool(ITool):
+class AddLabelsTool(ILegacyTool):
     """Tool to add labels to an issue or PR."""
 
     @property

@@ -30,7 +30,7 @@ from mcp_server.schemas.tool_outputs import (
     PlanningDeliverablesOutput,
     ProjectPlanOutput,
 )
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class InitializeProjectInput(BaseModel):
         return self
 
 
-class InitializeProjectTool(ITool):
+class InitializeProjectTool(ILegacyTool):
     """Tool for initializing projects with atomic state management.
 
     Phase 0.5: Human selects workflow_name → generates project phase plan.
@@ -313,7 +313,7 @@ class GetProjectPlanInput(BaseModel):
     issue_number: int = Field(..., description="GitHub issue number")
 
 
-class GetProjectPlanTool(ITool):
+class GetProjectPlanTool(ILegacyTool):
     """Tool for retrieving project plan."""
 
     output_model: ClassVar[type[BaseModel]] = ProjectPlanOutput
@@ -423,7 +423,7 @@ class SavePlanningDeliverablesInput(BaseModel):
     )
 
 
-class SavePlanningDeliverablesTool(ITool):
+class SavePlanningDeliverablesTool(ILegacyTool):
     """Tool to persist planning deliverables for an issue to deliverables.json.
 
     Issue #229 Cycle 4 / Issue #390:
@@ -560,7 +560,7 @@ class UpdatePlanningDeliverablesInput(BaseModel):
     )
 
 
-class UpdatePlanningDeliverablesTool(ITool):
+class UpdatePlanningDeliverablesTool(ILegacyTool):
     """Tool to merge-update planning deliverables for an issue in deliverables.json.
 
     Issue #229 Cycle 5 / Issue #390:

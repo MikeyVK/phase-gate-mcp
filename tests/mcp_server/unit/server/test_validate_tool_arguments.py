@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.server import MCPServer
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import make_test_server
 
@@ -48,7 +48,7 @@ class SimpleInput(BaseModel):
     optional_field: int = 42
 
 
-class MockSimpleTool(ITool):
+class MockSimpleTool(ILegacyTool):
     """Minimal mock tool for argument validation tests."""
 
     @property

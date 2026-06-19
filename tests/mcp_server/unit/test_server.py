@@ -23,7 +23,7 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
@@ -195,7 +195,7 @@ class TestServerToolRegistration:
     ) -> None:
         """call_tool handler should log correlation id and duration."""
 
-        class DummyTool(ITool):
+        class DummyTool(ILegacyTool):
             """Dummy tool for testing server call_tool logging."""
 
             @property
@@ -615,12 +615,12 @@ class TestServerToolRegistration:
 
 @pytest.mark.asyncio
 async def test_call_tool_handles_itool_bridge() -> None:
-    """MCPServer should format ITool responses as pure TextContent and cache the DTO."""
+    """MCPServer should format ILegacyTool responses as pure TextContent and cache the DTO."""
     from pydantic import BaseModel, ConfigDict  # noqa: PLC0415
 
     # We expect this to fail in RED phase because these don't exist yet
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
-    from mcp_server.tools.base import ITool  # noqa: PLC0415
+    from mcp_server.tools.base import ILegacyTool  # noqa: PLC0415
     from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
     from tests.mcp_server.test_support import assert_itool_result  # noqa: PLC0415
 
@@ -628,7 +628,7 @@ async def test_call_tool_handles_itool_bridge() -> None:
         model_config = ConfigDict(frozen=True)
         val: int
 
-    class DummyITool(ITool):
+    class DummyITool(ILegacyTool):
         @property
         def name(self) -> str:
             return "dummy_itool"
@@ -694,7 +694,7 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
     class DummyArgs(BaseModel):
         val: int = Field(..., description="Integer field")
 
-    class DummyTool(ITool):
+    class DummyTool(ILegacyTool):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -776,7 +776,7 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
     from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
     from mcp_server.core.exceptions import MCPError  # noqa: PLC0415
 
-    class DummyTool(ITool):
+    class DummyTool(ILegacyTool):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -867,7 +867,7 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
     from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
 
-    class DummyTool(ITool):
+    class DummyTool(ILegacyTool):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -933,7 +933,7 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
         assert isinstance(cached, ExecutionErrorOutput)
         assert cached.success is False
         assert cached.error_type == "ExecutionError"
-        assert "Execution failed completely" in cached.message
+        assert "Execution failed completely" in cached.error_message
         assert cached.traceback is not None
 
 
@@ -946,7 +946,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
     from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
 
-    class DummyTool(ITool):
+    class DummyTool(ILegacyTool):
         @property
         def name(self) -> str:
             return "dummy_tool"

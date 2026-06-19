@@ -14,7 +14,7 @@ from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
 from mcp_server.schemas import GitConfig
 from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.schemas.tool_outputs import ListPRsOutput, MergePROutput, PROutput, PRSummaryDTO
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 if TYPE_CHECKING:
     from mcp_server.managers.git_manager import GitManager
@@ -46,7 +46,7 @@ def _map_pr_to_output(pr: PRReadModel) -> PROutput:
     )
 
 
-class ListPRsTool(ITool):
+class ListPRsTool(ILegacyTool):
     """Tool to list pull requests."""
 
     @property
@@ -107,7 +107,7 @@ class MergePRInput(BaseModel):
     )
 
 
-class MergePRTool(ITool):
+class MergePRTool(ILegacyTool):
     """Tool to merge a pull request."""
 
     @property
@@ -165,7 +165,7 @@ class GetPRInput(BaseModel):
     pr_number: int = Field(..., description="Pull request number")
 
 
-class GetPRTool(ITool):
+class GetPRTool(ILegacyTool):
     """Tool to get a single pull request."""
 
     @property
@@ -215,7 +215,7 @@ class SubmitPRInput(BaseModel):
     draft: bool = Field(default=False, description="Create as draft PR")
 
 
-class SubmitPRTool(ITool):
+class SubmitPRTool(ILegacyTool):
     """Atomic branch-submission tool.
 
     Performs: neutralize branch-local artifacts → commit → push → create PR

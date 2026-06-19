@@ -14,7 +14,7 @@ from mcp_server.schemas.tool_outputs import (
     MilestoneOutput,
     MilestoneSummaryDTO,
 )
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 
 class ListMilestonesInput(BaseModel):
@@ -27,7 +27,7 @@ class ListMilestonesInput(BaseModel):
     )
 
 
-class ListMilestonesTool(ITool):
+class ListMilestonesTool(ILegacyTool):
     """Tool to list milestones in the repository."""
 
     @property
@@ -85,7 +85,7 @@ class CreateMilestoneInput(BaseModel):
     )
 
 
-class CreateMilestoneTool(ITool):
+class CreateMilestoneTool(ILegacyTool):
     """Tool to create a new milestone."""
 
     @property
@@ -133,7 +133,7 @@ class CloseMilestoneInput(BaseModel):
     milestone_number: int = Field(..., description="Milestone number to close")
 
 
-class CloseMilestoneTool(ITool):
+class CloseMilestoneTool(ILegacyTool):
     """Tool to close a milestone."""
 
     @property

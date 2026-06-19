@@ -11,14 +11,14 @@ from pydantic import BaseModel
 
 from mcp_server.core.interfaces import IToolResponseCache
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.tools.base import ITool, ToolExecutionEnvelope
+from mcp_server.tools.base import ILegacyTool, ToolExecutionEnvelope
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
-class ResourcePublishingDecorator(ITool):
-    """Decorator that caches ITool execution envelopes for resource retrieval."""
+class ResourcePublishingDecorator(ILegacyTool):
+    """Decorator that caches ILegacyTool execution envelopes for resource retrieval."""
 
-    def __init__(self, tool: ITool, cache: IToolResponseCache) -> None:
+    def __init__(self, tool: ILegacyTool, cache: IToolResponseCache) -> None:
         self._tool = tool
         self._cache = cache
 

@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import TemplateValidationErrorDTO, TemplateValidationOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 from mcp_server.validation.template_validator import TemplateValidator
 
 
@@ -23,7 +23,7 @@ class TemplateValidationInput(BaseModel):
     )
 
 
-class TemplateValidationTool(ITool):
+class TemplateValidationTool(ILegacyTool):
     """Tool to validate a file against a specific template."""
 
     @property

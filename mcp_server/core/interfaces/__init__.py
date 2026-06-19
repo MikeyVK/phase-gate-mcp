@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.core.interfaces.itool import ITool
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum

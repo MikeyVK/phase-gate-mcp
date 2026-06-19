@@ -22,7 +22,7 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.schemas.tool_outputs import ScaffoldSchemaOutput
-from mcp_server.tools.base import ITool
+from mcp_server.tools.base import ILegacyTool
 
 
 class ScaffoldSchemaInput(BaseModel):
@@ -36,7 +36,7 @@ class ScaffoldSchemaInput(BaseModel):
     )
 
 
-class ScaffoldSchemaTool(ITool):
+class ScaffoldSchemaTool(ILegacyTool):
     """Read-only tool that returns the JSON Schema for an artifact context.
 
     Enables agents to discover required and optional context fields
