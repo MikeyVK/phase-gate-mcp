@@ -580,7 +580,6 @@ return ToolResult.text(markdown)
 ```
 
 ### 3.7. [DESIGN-6] Composition & Construction (`ToolFactory`)
-### 3.7. [DESIGN-6] Composition & Construction (`ToolFactory`)
 A new `ToolFactory` handles the construction and Russian Doll decoration of all tools. This decouples the construction layer from the transport layer.
 
 **File:** [tool_factory.py](file:///c:/temp/pgmcp/mcp_server/core/tool_factory.py) [NEW]
