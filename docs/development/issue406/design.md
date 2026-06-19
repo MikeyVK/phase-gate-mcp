@@ -11,22 +11,22 @@
 This design document is structured as a living specification. To maintain high architectural cohesion and prevent chaos, the design is elaborated sequentially in the following order:
 
 1. **[DESIGN-1] Domain & Execution Contracts (`ITool` and `ICoreTool` Generics)**
+2. **[DESIGN-2] Execution Decorators (Russian Doll pipeline)**
    - Status: *DRAFTED*
-   - Focus: Defining the core interfaces and generic parameter/return types to protect tool developer productivity.
 2. **[DESIGN-2] Execution Decorators (Russian Doll pipeline)**
    - Status: *PENDING*
    - Focus: Defining validation, enforcement, and error-handling decorators, including parameter translation and exception interception.
 3. **[DESIGN-3] Persistence Subsystem Contract (`IToolResponseCache`)**
-   - Status: *PENDING*
+   - Status: *DRAFTED*
    - Focus: Defining cache boundaries, key/URI generation, and file/storage resilience.
 4. **[DESIGN-4] Presentation Subsystem Contract (`IPresenter`)**
-   - Status: *PENDING*
+   - Status: *DRAFTED*
    - Focus: Defining markdown layout rendering, emoji classification, note presentation, and formatting fallbacks.
 5. **[DESIGN-5] Transport Orchestration (`server.py` Flow)**
-   - Status: *PENDING*
+   - Status: *DRAFTED*
    - Focus: Defining the clean, sequential orchestrator pipeline without try-except recovery blocks.
 6. **[DESIGN-6] Composition & Construction (`ToolFactory` in `bootstrap.py`)**
-   - Status: *PENDING*
+   - Status: *DRAFTED*
    - Focus: Defining composition root assembly, dependency injection, and wiring order.
 
 ---
@@ -208,7 +208,7 @@ class InputValidationDecorator(ITool):
             validated = self.args_model.model_validate(params)
         except ValidationError as e:
             return ValidationErrorOutput(
-                message=f"Invalid input for {self.name}",
+                error_message=None,
                 validation_errors=[
                     {"field": ".".join(map(str, err["loc"])), "error": err["msg"]}
                     for err in e.errors()
@@ -216,6 +216,346 @@ class InputValidationDecorator(ITool):
             )
         
         return await self._inner_tool.execute(validated, context)
+```
+
+### 3.3. [DESIGN-2] Execution Decorators (Russian Doll pipeline)
+
+The decorators are organized in a nested Russian Doll structure. The outer layer (`ToolErrorHandlerDecorator`) handles top-level execution exceptions. The middle layer (`InputValidationDecorator`) validates incoming raw dictionaries. The inner layer (`EnforcementDecorator`) runs before/after policies.
+
+```mermaid
+sequenceDiagram
+    participant Transport as server.py (Transport)
+    participant ErrorHandler as ToolErrorHandlerDecorator (ITool)
+    participant Validator as InputValidationDecorator (ITool)
+    participant Enforcement as EnforcementDecorator (ICoreTool)
+    participant CoreTool as CoreTool (ICoreTool)
+
+    Transport->>ErrorHandler: execute(dict_params, context)
+    note over ErrorHandler: Vangt onvoorziene fouten op en logt ze.<br/>Return: ExecutionErrorOutput
+
+    ErrorHandler->>Validator: execute(dict_params, context)
+    note over Validator: Pydantic validatie (dict -> TInput).<br/>Bij fout -> Return: ValidationErrorOutput
+
+    Validator->>Enforcement: execute(TInput, context)
+    note over Enforcement: 1. Voer 'pre' policy checks uit.<br/>Bij fout -> Return: EnforcementErrorOutput
+
+    Enforcement->>CoreTool: execute(TInput, context)
+    CoreTool-->>Enforcement: return TOutput (DTO)
+
+    note over Enforcement: 2. Voer 'post' policy checks uit.<br/>Bij fout -> Return: EnforcementErrorOutput
+    
+    Enforcement-->>Validator: return TOutput
+    Validator-->>ErrorHandler: return TOutput
+    ErrorHandler-->>Transport: return TOutput
+```
+
+#### 3.3.1. `ToolErrorHandlerDecorator`
+The `ToolErrorHandlerDecorator` acts as the outermost boundary of the execution pipeline. It catches any unhandled exceptions from the inner decorators or tool execution, logs the traceback with `exc_info=True` to `stderr`, and returns an `ExecutionErrorOutput` DTO.
+
+**File:** [tool_error_handler_decorator.py](file:///c:/temp/pgmcp/mcp_server/core/decorators/tool_error_handler_decorator.py) [NEW]
+
+```python
+import logging
+from typing import Any
+from pydantic import BaseModel
+from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.error_outputs import ExecutionErrorOutput
+
+logger = logging.getLogger(__name__)
+
+class ToolErrorHandlerDecorator(ITool):
+    """Outermost decorator that traps unhandled exceptions and converts them to error DTOs."""
+
+    def __init__(self, inner_tool: ITool) -> None:
+        self._inner_tool = inner_tool
+
+    @property
+    def name(self) -> str:
+        return self._inner_tool.name
+
+    @property
+    def description(self) -> str:
+        return self._inner_tool.description
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return self._inner_tool.args_model
+
+    async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
+        try:
+            return await self._inner_tool.execute(params, context)
+        except Exception as exc:
+            import traceback
+            # Log traceback to stderr
+            logger.error(
+                "Unhandled exception during tool execution for %s: %s",
+                self.name,
+                str(exc),
+                exc_info=True,
+            )
+            return ExecutionErrorOutput(
+                error_message=f"{exc.__class__.__name__}: {str(exc)}",
+                traceback=traceback.format_exc(),
+                params=params,
+            )
+```
+
+#### 3.3.2. `EnforcementDecorator`
+The `EnforcementDecorator` executes policy preflights and rules checks (both `pre` and `post` execution). It implements the `ICoreTool` interface and wraps the inner core tool implementation. It catches `ValidationError` or any policy-level `MCPError` raised by the `EnforcementRunner` and maps them to an `EnforcementErrorOutput` DTO.
+
+**File:** [enforcement_decorator.py](file:///c:/temp/pgmcp/mcp_server/core/decorators/enforcement_decorator.py) [NEW]
+
+```python
+from typing import TypeVar
+from pydantic import BaseModel
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.exceptions import ValidationError, MCPError
+from mcp_server.managers.enforcement_runner import EnforcementRunner, EnforcementContext
+from mcp_server.schemas.error_outputs import EnforcementErrorOutput, ToolErrorOutput
+
+TInput = TypeVar("TInput", bound=BaseModel)
+TOutput = TypeVar("TOutput", bound=BaseModel)
+
+class EnforcementDecorator(ICoreTool[TInput, TOutput]):
+    """Inner decorator that runs policies before/after execution and traps enforcement errors."""
+
+    def __init__(
+        self,
+        inner_tool: ICoreTool[TInput, TOutput],
+        enforcement_runner: EnforcementRunner,
+    ) -> None:
+        self._inner_tool = inner_tool
+        self._enforcement_runner = enforcement_runner
+
+    @property
+    def name(self) -> str:
+        return self._inner_tool.name
+
+    @property
+    def description(self) -> str:
+        return self._inner_tool.description
+
+    @property
+    def args_model(self) -> type[TInput] | None:
+        return self._inner_tool.args_model
+
+    @property
+    def tool_category(self) -> str | None:
+        return getattr(self._inner_tool, "tool_category", None)
+
+    async def execute(self, params: TInput, context: NoteContext) -> TOutput:
+        # 1. Run "pre" execution policy checks
+        try:
+            self._enforcement_runner.run(
+                event=self.name,
+                timing="pre",
+                tool_category=self.tool_category,
+                enforcement_ctx=EnforcementContext(
+                    workspace_root=self._enforcement_runner.workspace_root,
+                    tool_name=self.name,
+                    params=params,
+                ),
+                note_context=context,
+            )
+        except ValidationError as exc:
+            return EnforcementErrorOutput(
+                error_message=None,
+                error_code=exc.code,
+                params=exc.params,
+            )  # type: ignore[return-value]
+
+        # 2. Execute target tool
+        result = await self._inner_tool.execute(params, context)
+
+        # Skip "post" checks if tool execution returned a validation or other error DTO
+        if isinstance(result, ToolErrorOutput):
+            return result
+
+        # 3. Run "post" execution policy checks
+        try:
+            self._enforcement_runner.run(
+                event=self.name,
+                timing="post",
+                tool_category=self.tool_category,
+                enforcement_ctx=EnforcementContext(
+                    workspace_root=self._enforcement_runner.workspace_root,
+                    tool_name=self.name,
+                    params=params,
+                ),
+                note_context=context,
+            )
+        except ValidationError as exc:
+            return EnforcementErrorOutput(
+                error_message=None,
+                error_code=exc.code,
+                params=exc.params,
+            )  # type: ignore[return-value]
+
+        return result
+```
+
+#### 3.3.3. Schema Modification for Error DTOs
+To prevent the propagation of ad-hoc user-facing text strings from python code, and to maintain consistency with `BaseToolOutput`, the base `ToolErrorOutput` schema is modified to replace `message: str` with `error_message: str | None = None`.
+
+Developers must not use `error_message` for user-facing texts. Instead, all policy check failures must register an explicit `error_code` and supply required variables in `params`, allowing `TextPresenter` to resolve user-facing text templates from `presentation.yaml`.
+
+**File:** [error_outputs.py](file:///c:/temp/pgmcp/mcp_server/schemas/error_outputs.py) [MODIFY]
+
+```python
+class ToolErrorOutput(BaseModel):
+    """Base class for all structured tool error outputs."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    success: bool = False
+    error_type: str
+    error_message: str | None = None
+    traceback: str | None = None
+    params: dict[str, Any] = Field(default_factory=dict)
+```
+
+### 3.4. [DESIGN-3] Persistence Subsystem Contract (`IToolResponseCache`)
+
+The persistence subsystem provides a structured interface for storing and retrieving tool outputs on disk. It must be resilient against disk failures (e.g. disk full, read/write errors) and enforce strict type safety for retrieved DTOs.
+
+**File:** [itool_response_cache.py](file:///c:/temp/pgmcp/mcp_server/core/interfaces/itool_response_cache.py) [NEW]
+
+```python
+from typing import Protocol, Type, TypeVar
+from pydantic import BaseModel
+
+T = TypeVar("T", bound=BaseModel)
+
+class IToolResponseCache(Protocol):
+    """Interface for publishing and retrieving tool execution results."""
+
+    def put(self, tool_name: str, output: BaseModel) -> str | None:
+        """Publish the output DTO to the cache and return a unique run_id.
+
+        If a cache write fails (e.g. disk full), the implementation must trap
+        the exception, log a warning/error, and return None. It must never
+        crash the tool execution pipeline.
+        """
+        ...
+
+    def get(self, run_id: str, response_model: Type[T]) -> T | None:
+        """Retrieve and deserialize a cached DTO using the expected type-safe model."""
+        ...
+
+    def exists(self, run_id: str) -> bool:
+        """Check if a cached result exists for the run_id."""
+        ...
+```
+
+### 3.5. [DESIGN-4] Presentation Subsystem Contract (`IPresenter`)
+
+The presentation subsystem translates structured DTOs and note contexts into formatted markdown. It has a single public layout method, keeping all styling, emojis, next instructions, and layout alignment rules fully decoupled from the transport layer.
+
+**File:** [ipresenter.py](file:///c:/temp/pgmcp/mcp_server/core/interfaces/ipresenter.py) [NEW]
+
+```python
+from typing import Protocol
+from pydantic import BaseModel
+from mcp_server.core.operation_notes import Note
+
+class IPresenter(Protocol):
+    """Interface for translating execution results and notes into markdown."""
+
+    def present(
+        self,
+        tool_name: str,
+        data: BaseModel,
+        notes: list[Note],
+        run_id: str | None = None,
+    ) -> str:
+        """Format the output DTO and operation notes into a single user-facing markdown string.
+
+        If run_id is None, the presenter will format the output without the
+        URI reference link or with a fallback message. The server/orchestrator
+        does not participate in run_id logic.
+        """
+        ...
+```
+
+### 3.6. [DESIGN-5] Transport Orchestration (`server.py` Flow)
+
+The orchestrator in `server.py` acts as a pure, sequential controller. It coordinates tool execution, caching, and presentation linearly without any try-except blocks for error mapping or layout creation.
+
+```mermaid
+sequenceDiagram
+    participant Transport as server.py (Transport)
+    participant Pipeline as Outer Tool Pipeline (ITool)
+    participant Cache as ToolResponseCache (IToolResponseCache)
+    participant Presenter as TextPresenter (IPresenter)
+
+    Transport->>Pipeline: execute(dict_params, context)
+    Pipeline-->>Transport: return DTO (success or error)
+    
+    Transport->>Cache: put(tool.name, DTO)
+    Cache-->>Transport: return run_id (or None)
+    
+    Transport->>Presenter: present(tool.name, DTO, context.entries, run_id)
+    Presenter-->>Transport: return markdown_text
+    
+    Transport-->>Transport: Construct and return ToolResult.text(markdown_text)
+```
+
+The core flow in `server.py`'s protocol handler will be:
+
+```python
+# 1. Initialize per-call notes bus
+context = NoteContext()
+
+# 2. Execute target tool (guaranteed to return a BaseModel DTO)
+result_dto = await tool_pipeline.execute(arguments, context)
+
+# 3. Publish result to cache (resilient; returns None on failure)
+run_id = self.cache.put(tool.name, result_dto)
+
+# 4. Generate user-facing markdown output (resilient; formats both DTO and notes)
+markdown = self.presenter.present(
+    tool_name=tool.name,
+    data=result_dto,
+    notes=context.entries,
+    run_id=run_id,
+)
+
+# 5. Return standardized ToolResult
+return ToolResult.text(markdown)
+```
+
+### 3.7. [DESIGN-6] Composition & Construction (`ToolFactory`)
+
+A new `ToolFactory` handles the construction and Russian Doll decoration of all tools. This decouples the construction layer from the transport layer.
+
+**File:** [tool_factory.py](file:///c:/temp/pgmcp/mcp_server/core/tool_factory.py) [NEW]
+
+```python
+from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.core.decorators.tool_error_handler_decorator import ToolErrorHandlerDecorator
+from mcp_server.core.decorators.input_validation_decorator import InputValidationDecorator
+from mcp_server.core.decorators.enforcement_decorator import EnforcementDecorator
+from mcp_server.managers.enforcement_runner import EnforcementRunner
+
+class ToolFactory:
+    """Composition root for wrapping business logic tools into decorators."""
+
+    def __init__(self, enforcement_runner: EnforcementRunner) -> None:
+        self._enforcement_runner = enforcement_runner
+
+    def create_tool(self, core_tool: ICoreTool) -> ITool:
+        """Compose the Russian Doll decorator stack for a core tool."""
+        # 1. Wrap the core tool with Enforcement policy checking
+        enforcement_stacked = EnforcementDecorator(core_tool, self._enforcement_runner)
+        
+        # 2. Wrap with validation checking (Bridges ICoreTool to ITool)
+        validated_stacked = InputValidationDecorator(enforcement_stacked)
+        
+        # 3. Wrap with catch-all error handling
+        return ToolErrorHandlerDecorator(validated_stacked)
 ```
 
 ## Related Documentation
