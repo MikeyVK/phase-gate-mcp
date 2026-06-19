@@ -933,6 +933,7 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
         assert isinstance(cached, ExecutionErrorOutput)
         assert cached.success is False
         assert cached.error_type == "ExecutionError"
+        assert cached.error_message is not None
         assert "Execution failed completely" in cached.error_message
         assert cached.traceback is not None
 
