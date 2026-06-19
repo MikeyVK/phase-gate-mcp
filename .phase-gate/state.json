@@ -2,7 +2,7 @@
   "branch": "feature/406-decorator-pipeline-exception-mapping",
   "issue_number": 406,
   "workflow_name": "feature",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -26,6 +26,14 @@
       "to_phase": "design",
       "timestamp": "2026-06-18T15:30:42.077133+00:00",
       "human_approval": "Research complete with guardrails and actionable expected results for boundaries",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-06-19T21:02:53.635221+00:00",
+      "human_approval": "Go voor planning, voer de transitie uit",
       "forced": false,
       "skip_reason": null
     }
