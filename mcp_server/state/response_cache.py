@@ -10,16 +10,19 @@
 
 from __future__ import annotations
 
+import uuid
 from collections import OrderedDict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type, TypeVar
 
-from mcp_server.core.interfaces import IToolResponseCache
+from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
+T = TypeVar("T", bound="BaseModel")
 
-class ResponseCacheManager(IToolResponseCache):
+
+class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
     """In-memory session cache manager for tool responses.
 
     Uses OrderedDict to implement a simple bounded FIFO cache eviction.
@@ -29,23 +32,50 @@ class ResponseCacheManager(IToolResponseCache):
         self._max_size = max_size
         self._cache: OrderedDict[str, BaseModel] = OrderedDict()
 
-    def put(self, uri: str, output: BaseModel) -> None:
-        """Cache the *output* DTO instance under the *uri* key."""
-        if uri in self._cache:
-            self._cache.move_to_end(uri)
-        self._cache[uri] = output
+    def put(self, tool_name: str, output: BaseModel) -> str | None:
+        """Publish the output DTO to the cache and return a unique run_id."""
+        try:
+            # Generate a new unique run_id (or extract it if tool_name is a URI)
+            run_id = tool_name
+            if "pgmcp://cache/runs/" in tool_name:
+                run_id = tool_name.split("/")[-1]
+            else:
+                run_id = uuid.uuid4().hex
 
-        # Enforce FIFO eviction
-        if len(self._cache) > self._max_size:
-            self._cache.popitem(last=False)
+            if run_id in self._cache:
+                self._cache.move_to_end(run_id)
+            self._cache[run_id] = output
 
-    def get(self, uri: str) -> BaseModel | None:
-        """Retrieve the cached DTO instance for *uri*, or None."""
-        if uri not in self._cache:
+            # Enforce FIFO eviction
+            if len(self._cache) > self._max_size:
+                self._cache.popitem(last=False)
+            return run_id
+        except Exception:
             return None
-        self._cache.move_to_end(uri)
-        return self._cache[uri]
 
-    def exists(self, uri: str) -> bool:
-        """Check if *uri* is present in the cache."""
-        return uri in self._cache
+    def get(self, run_id: str, response_model: Type[T] | None = None) -> T | None:
+        """Retrieve and deserialize a cached DTO using the expected type-safe model."""
+        actual_id = run_id
+        if "pgmcp://cache/runs/" in run_id:
+            actual_id = run_id.split("/")[-1]
+
+        if actual_id not in self._cache:
+            return None
+
+        self._cache.move_to_end(actual_id)
+        dto = self._cache[actual_id]
+
+        # If response_model is provided, check or cast
+        if response_model is not None:
+            if isinstance(dto, response_model):
+                return dto
+            return None
+
+        return dto  # type: ignore[return-value]
+
+    def exists(self, run_id: str) -> bool:
+        """Check if a cached result exists for the run_id."""
+        actual_id = run_id
+        if "pgmcp://cache/runs/" in run_id:
+            actual_id = run_id.split("/")[-1]
+        return actual_id in self._cache

@@ -14,10 +14,11 @@ import json
 import re
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
 from mcp_server.resources.base import BaseResource
 
 if TYPE_CHECKING:
-    from mcp_server.core.interfaces import IToolResponseCache
+    from mcp_server.core.interfaces import IToolResponseReader
 
 
 class CachedResponseResource(BaseResource):
@@ -27,7 +28,7 @@ class CachedResponseResource(BaseResource):
     description = "Cached tool execution results"
     mime_type = "application/json"
 
-    def __init__(self, cache: IToolResponseCache) -> None:
+    def __init__(self, cache: IToolResponseReader) -> None:
         self._cache = cache
 
     def matches(self, uri: str) -> bool:
@@ -36,19 +37,19 @@ class CachedResponseResource(BaseResource):
 
     async def read(self, uri: str) -> str:
         """Read the resource content from the cache and return compact JSON."""
-        dto = self._cache.get(uri)
+        run_id = uri.split("/")[-1]
+
+        dto = self._cache.get(run_id, BaseModel)
         if not dto:
             # Try to resolve hyphenation mismatch (hex vs hyphenated UUID)
-            if "-" in uri:
-                dto = self._cache.get(uri.replace("-", ""))
+            if "-" in run_id:
+                dto = self._cache.get(run_id.replace("-", ""), BaseModel)
             else:
-                match = re.match(r"^pgmcp://cache/runs/([a-f0-9]{32})$", uri)
+                match = re.match(r"^([a-f0-9]{32})$", run_id)
                 if match:
                     h = match.group(1)
-                    hyphenated = (
-                        f"pgmcp://cache/runs/{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:]}"
-                    )
-                    dto = self._cache.get(hyphenated)
+                    hyphenated = f"{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:]}"
+                    dto = self._cache.get(hyphenated, BaseModel)
 
         if not dto:
             raise ValueError("No cached data found")
