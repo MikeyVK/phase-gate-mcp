@@ -57,21 +57,31 @@ The monolithic exception mapping and validation bridge in server.py violates SRP
 
 ## 2. Design Options
 
-### 2.1. Option A: Option A: Single ITool interface with Any parameters
+### 2.1. Option A: Single ITool interface with Any parameters
 
 Simple interface but lacks IDE autocomplete and type checks for developers writing tools.
 
 **Pros:**
+- Simpler design with only a single interface to manage and implement.
+- No generic type parameters needed, reducing boilerplate code.
 
 **Cons:**
+- Lacks IDE autocomplete for specific tool input parameters.
+- Static analysis tools (like Pyright/mypy) cannot verify correct parameter types at build time.
+- Higher risk of runtime parameter mapping bugs.
 
-### 2.2. Option B: Option B: Dual generic ITool and ICoreTool interfaces
+### 2.2. Option B: Dual generic ITool and ICoreTool interfaces
 
 Provides full type safety and autocomplete in the IDE by separating outer and inner tool contracts.
 
 **Pros:**
+- Strong type safety: catches parameter mismatch errors at development/build time.
+- Excellent developer experience: IDE autocomplete works automatically for tool input models.
+- Hides generic complexity inside the decorator pipeline, exposing clean interfaces to tool developers.
 
 **Cons:**
+- Slightly more complex architecture with two distinct interfaces (`ITool` and `ICoreTool`).
+- Requires mapping between untyped transport layer (`dict[str, Any]`) and typed core tools (`BaseModel`).
 ---
 
 ## 3. Chosen Design
@@ -256,9 +266,10 @@ The `ToolErrorHandlerDecorator` acts as the outermost boundary of the execution 
 import logging
 from typing import Any
 from pydantic import BaseModel
+from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.schemas.error_outputs import ExecutionErrorOutput
+from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 
 logger = logging.getLogger(__name__)
 
@@ -303,7 +314,7 @@ class ToolErrorHandlerDecorator(ITool):
                 traceback=traceback.format_exc(),
                 params=params,
             )
-
+```
 #### 3.3.2. `EnforcementDecorator`
 The `EnforcementDecorator` executes policy preflights and rules checks (both `pre` and `post` execution). It implements the `ICoreTool` interface and wraps the inner core tool implementation. It catches `ValidationError` and `PreflightError` raised by the `EnforcementRunner` and maps them to an `EnforcementErrorOutput` DTO, while letting system configuration errors (`ConfigError`) bubble up.
 
@@ -315,7 +326,7 @@ from typing import TypeVar
 from pydantic import BaseModel
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.core.exceptions import ValidationError, PreflightError, MCPError
+from mcp_server.core.exceptions import ValidationError
 from mcp_server.managers.enforcement_runner import EnforcementRunner, EnforcementContext
 from mcp_server.schemas.error_outputs import EnforcementErrorOutput, ToolErrorOutput
 
@@ -365,7 +376,7 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
                 ),
                 note_context=context,
             )
-        except (ValidationError, PreflightError) as exc:
+        except ValidationError as exc:
             return EnforcementErrorOutput(
                 error_message=None,
                 error_code=exc.code,
@@ -392,7 +403,7 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
                 ),
                 note_context=context,
             )
-        except (ValidationError, PreflightError) as exc:
+        except ValidationError as exc:
             return EnforcementErrorOutput(
                 error_message=None,
                 error_code=exc.code,
@@ -570,7 +581,6 @@ return ToolResult.text(markdown)
 
 ### 3.7. [DESIGN-6] Composition & Construction (`ToolFactory`)
 ### 3.7. [DESIGN-6] Composition & Construction (`ToolFactory`)
-
 A new `ToolFactory` handles the construction and Russian Doll decoration of all tools. This decouples the construction layer from the transport layer.
 
 **File:** [tool_factory.py](file:///c:/temp/pgmcp/mcp_server/core/tool_factory.py) [NEW]
