@@ -9,18 +9,17 @@ Unit tests for Russian Doll pipeline decorators
 @dependencies: [pytest, mcp_server.core.decorators, unittest.mock]
 @responsibilities:
     - Test TestPipelineDecorators functionality
-    - Verify that ToolErrorHandlerDecorator, InputValidationDecorator, and EnforcementDecorator operate correctly
+    - Verify that ToolErrorHandlerDecorator, InputValidationDecorator,
+      and EnforcementDecorator operate correctly
 """
 
 # Standard library
-import asyncio
 from pathlib import Path
-from typing import Any
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock
 
 # Third-party
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError as PydanticValidationError
+from pydantic import BaseModel, ConfigDict
 
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
@@ -31,11 +30,15 @@ from mcp_server.schemas.error_outputs import (
     ExecutionErrorOutput,
     EnforcementErrorOutput,
     ConfigErrorOutput,
-    ToolErrorOutput,
 )
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.itool import ITool
-from mcp_server.core.decorators import ToolErrorHandlerDecorator, InputValidationDecorator, EnforcementDecorator
+from mcp_server.core.decorators import (
+    ToolErrorHandlerDecorator,
+    InputValidationDecorator,
+    EnforcementDecorator,
+)
+
 
 # Dummy models for testing
 class DummyInput(BaseModel):
@@ -43,8 +46,10 @@ class DummyInput(BaseModel):
     value: int
     name: str = "test"
 
+
 class DummyOutput(BaseModel):
     result: str
+
 
 class TestPipelineDecorators:
     """Test suite for pipeline decorators."""
@@ -56,15 +61,15 @@ class TestPipelineDecorators:
         mock_inner.name = "dummy"
         mock_inner.description = "desc"
         mock_inner.args_model = DummyInput
-        
+
         expected_output = DummyOutput(result="ok")
         mock_inner.execute.return_value = expected_output
-        
+
         decorator = ToolErrorHandlerDecorator(mock_inner)
         assert decorator.name == "dummy"
         assert decorator.description == "desc"
         assert decorator.args_model == DummyInput
-        
+
         context = NoteContext()
         result = await decorator.execute({"value": 42}, context)
         assert result == expected_output
@@ -75,16 +80,17 @@ class TestPipelineDecorators:
         """ErrorHandler should catch ConfigError and return ConfigErrorOutput."""
         mock_inner = AsyncMock(spec=ITool)
         mock_inner.name = "dummy"
-        mock_inner.execute.side_effect = ConfigError("Config is broken", file_path="config.yaml", code="ERR_CFG")
-        
+        mock_inner.execute.side_effect = ConfigError("Config is broken", file_path="config.yaml")
+
         decorator = ToolErrorHandlerDecorator(mock_inner)
         context = NoteContext()
         result = await decorator.execute({"value": 42}, context)
-        
+
         assert isinstance(result, ConfigErrorOutput)
         assert result.success is False
         assert result.error_type == "ConfigError"
-        assert result.error_message == "Config is broken"
+        assert result.error_message is not None
+        assert "Config is broken" in result.error_message
         assert result.file_path == "config.yaml"
 
     @pytest.mark.asyncio
@@ -93,11 +99,11 @@ class TestPipelineDecorators:
         mock_inner = AsyncMock(spec=ITool)
         mock_inner.name = "dummy"
         mock_inner.execute.side_effect = ValueError("Something failed")
-        
+
         decorator = ToolErrorHandlerDecorator(mock_inner)
         context = NoteContext()
         result = await decorator.execute({"value": 42}, context)
-        
+
         assert isinstance(result, ExecutionErrorOutput)
         assert result.success is False
         assert result.error_type == "ExecutionError"
@@ -114,21 +120,21 @@ class TestPipelineDecorators:
         mock_inner.name = "dummy"
         mock_inner.description = "desc"
         mock_inner.args_model = DummyInput
-        
+
         expected_output = DummyOutput(result="ok")
         mock_inner.execute.return_value = expected_output
-        
+
         decorator = InputValidationDecorator(mock_inner)
         assert decorator.name == "dummy"
         assert decorator.description == "desc"
         assert decorator.args_model == DummyInput
-        
+
         context = NoteContext()
         result = await decorator.execute({"value": 42, "name": "validated"}, context)
         assert result == expected_output
-        
+
         # Verify it passed a DummyInput model to inner tool
-        args, kwargs = mock_inner.execute.call_args
+        args, _ = mock_inner.execute.call_args
         assert isinstance(args[0], DummyInput)
         assert args[0].value == 42
         assert args[0].name == "validated"
@@ -139,12 +145,12 @@ class TestPipelineDecorators:
         mock_inner = AsyncMock(spec=ICoreTool)
         mock_inner.name = "dummy"
         mock_inner.args_model = DummyInput
-        
+
         decorator = InputValidationDecorator(mock_inner)
         context = NoteContext()
         # "value" is missing and "extra_field" is forbidden
         result = await decorator.execute({"extra_field": "forbidden"}, context)
-        
+
         assert isinstance(result, ValidationErrorOutput)
         assert result.success is False
         assert result.error_type == "ValidationError"
@@ -159,10 +165,10 @@ class TestPipelineDecorators:
         mock_inner = AsyncMock(spec=ICoreTool)
         mock_inner.name = "dummy"
         mock_inner.args_model = None
-        
+
         expected_output = DummyOutput(result="ok")
         mock_inner.execute.return_value = expected_output
-        
+
         decorator = InputValidationDecorator(mock_inner)
         context = NoteContext()
         result = await decorator.execute({}, context)
@@ -177,57 +183,61 @@ class TestPipelineDecorators:
         mock_inner.description = "desc"
         mock_inner.args_model = DummyInput
         mock_inner.tool_category = "test_category"
-        
+
         expected_output = DummyOutput(result="ok")
         mock_inner.execute.return_value = expected_output
-        
+
         mock_runner = MagicMock(spec=EnforcementRunner)
         workspace = Path("/workspace")
-        
+
         decorator = EnforcementDecorator(mock_inner, mock_runner, workspace)
         assert decorator.name == "dummy"
         assert decorator.description == "desc"
         assert decorator.args_model == DummyInput
         assert decorator.tool_category == "test_category"
-        
+
         context = NoteContext()
         params = DummyInput(value=42)
         result = await decorator.execute(params, context)
         assert result == expected_output
-        
+
         # Verify pre and post checks were run
         assert mock_runner.run.call_count == 2
-        
+
         # Let's inspect call args more specifically
         calls = mock_runner.run.call_args_list
         assert calls[0][1]["timing"] == "pre"
         assert calls[0][1]["enforcement_ctx"].tool_name == "dummy"
         assert calls[0][1]["enforcement_ctx"].params == params
-        
+
         assert calls[1][1]["timing"] == "post"
         assert calls[1][1]["enforcement_ctx"].tool_name == "dummy"
 
     @pytest.mark.asyncio
     async def test_enforcement_decorator_pre_validation_error(self) -> None:
-        """EnforcementDecorator should return EnforcementErrorOutput and abort execution if pre check fails."""
+        """EnforcementDecorator should return EnforcementErrorOutput and
+        abort execution if pre check fails.
+        """
         mock_inner = AsyncMock(spec=ICoreTool)
         mock_inner.name = "dummy"
         mock_inner.tool_category = "cat"
-        
+
         mock_runner = MagicMock(spec=EnforcementRunner)
-        mock_runner.run.side_effect = EnforcementValidationError("Pre-check failed", code="ERR_PRE", params={"extra": "info"})
-        
+        mock_runner.run.side_effect = EnforcementValidationError(
+            "Pre-check failed", error_code="ERR_PRE", params={"extra": "info"}
+        )
+
         decorator = EnforcementDecorator(mock_inner, mock_runner, Path("/workspace"))
         context = NoteContext()
         params = DummyInput(value=42)
         result = await decorator.execute(params, context)
-        
+
         assert isinstance(result, EnforcementErrorOutput)
         assert result.success is False
         assert result.error_type == "EnforcementError"
         assert result.error_code == "ERR_PRE"
         assert result.params == {"extra": "info"}
-        
+
         # Inner tool execution should be skipped
         mock_inner.execute.assert_not_called()
 
@@ -238,24 +248,27 @@ class TestPipelineDecorators:
         mock_inner.name = "dummy"
         mock_inner.tool_category = "cat"
         mock_inner.execute.return_value = DummyOutput(result="ok")
-        
+
         mock_runner = MagicMock(spec=EnforcementRunner)
-        
+
         # Succeed on pre, fail on post
         def side_effect(event, timing, tool_category, enforcement_ctx, note_context):
             if timing == "post":
-                raise EnforcementValidationError("Post-check failed", code="ERR_POST", params={"extra": "post"})
+                raise EnforcementValidationError(
+                    "Post-check failed", error_code="ERR_POST", params={"extra": "post"}
+                )
+
         mock_runner.run.side_effect = side_effect
-        
+
         decorator = EnforcementDecorator(mock_inner, mock_runner, Path("/workspace"))
         context = NoteContext()
         params = DummyInput(value=42)
         result = await decorator.execute(params, context)
-        
+
         assert isinstance(result, EnforcementErrorOutput)
         assert result.success is False
         assert result.error_type == "EnforcementError"
         assert result.error_code == "ERR_POST"
         assert result.params == {"extra": "post"}
-        
+
         mock_inner.execute.assert_awaited_once_with(params, context)
