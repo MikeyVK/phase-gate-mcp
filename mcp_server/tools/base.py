@@ -21,7 +21,7 @@ class ToolExecutionEnvelope:
 
 
 @runtime_checkable
-class ITool(Protocol):
+class ILegacyTool(Protocol):
     """Protocol for the new MVP tool architecture."""
 
     @property

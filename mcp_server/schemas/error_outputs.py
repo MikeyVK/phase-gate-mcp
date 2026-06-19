@@ -19,7 +19,7 @@ class ToolErrorOutput(BaseModel):
 
     success: bool = False
     error_type: str
-    message: str
+    error_message: str | None = None
     traceback: str | None = None
     params: dict[str, Any] = Field(default_factory=dict)
 
