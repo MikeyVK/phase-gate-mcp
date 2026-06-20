@@ -168,9 +168,18 @@
                   "file": "mcp_server/core/interfaces/__init__.py",
                   "text": "class IStateReader"
                 }
+              },
+              {
+                "id": "D8.3",
+                "description": "TypeVar declarations in icore_tool.py corrected to invariant",
+                "validates": {
+                  "type": "absent_text",
+                  "file": "mcp_server/core/interfaces/icore_tool.py",
+                  "text": "contravariant=True"
+                }
               }
             ],
-            "exit_criteria": "All concrete class and protocol definitions are extracted from interfaces/__init__.py and it contains only facade imports."
+            "exit_criteria": "All concrete class and protocol definitions are extracted from interfaces/__init__.py and it contains only facade imports. TypeVar variance and IPresenter runtime checkable are corrected."
           },
           {
             "cycle_number": 9,
@@ -186,7 +195,7 @@
               },
               {
                 "id": "D9.2",
-                "description": "TextPresenter accepts CachePublication",
+                "description": "TextPresenter and IPresenter signatures accept CachePublication",
                 "validates": {
                   "type": "contains_text",
                   "file": "mcp_server/presenters/text_presenter.py",
@@ -219,7 +228,7 @@
                 }
               }
             ],
-            "exit_criteria": "MCPServer orchestrator handles sequential linear execution flow and returns ValidationErrorOutput schema dynamically."
+            "exit_criteria": "MCPServer orchestrator handles sequential linear execution flow and returns ValidationErrorOutput schema dynamically. Unused manager dependencies are removed and test_server.py mock coupling is refactored."
           }
         ]
       }
