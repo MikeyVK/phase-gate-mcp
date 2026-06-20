@@ -2,9 +2,9 @@
   "branch": "feature/406-decorator-pipeline-exception-mapping",
   "issue_number": 406,
   "workflow_name": "feature",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 7,
-  "last_cycle": 6,
+  "last_cycle": 7,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -81,8 +81,16 @@
       "human_approval": "Voer nu enkel de transitie naar implementatie uit",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-06-20T09:10:29.981094+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
