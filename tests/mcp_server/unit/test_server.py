@@ -703,3 +703,19 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         assert kwargs.get("cache_pub") is not None
         assert kwargs.get("cache_pub").success is False
         mock_put.assert_called_once()
+
+
+def test_server_constructor_clean() -> None:
+    """Verify that MCPServer can be constructed without configs or managers."""
+    from mcp_server.server import MCPServer
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+        settings = mock_settings_cls.from_env.return_value
+        server = MCPServer(
+            settings=settings,
+            tools=[],
+            resources=[],
+            presenter=None,
+            publisher=None,
+        )
+        assert server is not None

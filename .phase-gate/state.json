@@ -3,8 +3,8 @@
   "issue_number": 406,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 9,
-  "last_cycle": 8,
+  "current_cycle": 10,
+  "last_cycle": 9,
   "cycle_history": [
     {
       "cycle_number": 8,
@@ -27,6 +27,12 @@
       "name": "Cycle 9: Decoupled Visual Presentation & Config Fallbacks",
       "forced": false,
       "entered": "2026-06-20T18:38:38.016723+00:00"
+    },
+    {
+      "cycle_number": 10,
+      "name": "Cycle 10: Validation Schema Integration & Orchestration Clean-up",
+      "forced": false,
+      "entered": "2026-06-20T18:48:52.524371+00:00"
     }
   ],
   "required_phases": [
@@ -94,5 +100,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
