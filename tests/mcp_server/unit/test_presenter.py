@@ -431,3 +431,18 @@ class TestTextPresenter:
         with pytest.raises(ConfigError) as exc_info:
             validate_presentation_alignment(presenter, [])
         assert "placeholder" in str(exc_info.value).lower()
+
+    def test_present_cache_publication_failure(self, mock_yaml_config: dict[str, Any]) -> None:
+        """Test presenting with CachePublication indicating failure."""
+        from mcp_server.schemas.cache_publication import CachePublication
+        presenter = TextPresenter(config_data=mock_yaml_config)
+        dto = DummyOutput(success=True, result="Fallback JSON test")
+        cache_pub = CachePublication(success=False, error_code="write_failed")
+        text = presenter.present(
+            tool_name="dummy_tool",
+            data=dto,
+            notes=[],
+            cache_pub=cache_pub,
+        )
+        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        assert "```json" in text
