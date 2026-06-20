@@ -12,6 +12,9 @@ from unittest.mock import patch
 from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource
 from pydantic import BaseModel, ConfigDict
 
+from pathlib import Path
+from mcp_server.config.settings import Settings
+from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
 from mcp_server.server import MCPServer
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.tools.tool_result import ToolResult
@@ -64,10 +67,6 @@ class TestStrictInputValidationResponse:
     @pytest_asyncio.fixture
     async def server(self) -> MCPServer:
         """MCPServer with MockIntegrationTool registered."""
-        from mcp_server.config.settings import Settings
-        from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
-        from pathlib import Path
-
         settings = Settings.from_env()
         bootstrapper = ServerBootstrapper(settings)
         configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]

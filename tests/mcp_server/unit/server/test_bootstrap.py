@@ -342,8 +342,6 @@ class TestMCPServerBootstrap:
     def test_mcp_server_accepts_injected_dependencies(self) -> None:
         """Verify MCPServer successfully initializes with all dependencies injected."""
         mock_settings = MagicMock()
-        mock_configs = MagicMock()
-        mock_managers = MagicMock()
         mock_tools = []
         mock_resources = []
 

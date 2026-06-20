@@ -7,7 +7,6 @@ import sys
 import time
 import uuid
 from io import TextIOWrapper
-from pathlib import Path
 from typing import Any
 
 import anyio
@@ -24,7 +23,6 @@ from mcp.types import (
 from pydantic import AnyUrl
 
 # Config
-from mcp_server.bootstrap import ConfigLayer, ManagerGraph
 from mcp_server.config.settings import Settings
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
@@ -170,7 +168,9 @@ class MCPServer:
                                         "resource": {
                                             "uri": "schema://validation",
                                             "mimeType": "application/json",
-                                            "text": json.dumps(getattr(result_dto, "input_schema", {})),
+                                            "text": json.dumps(
+                                                getattr(result_dto, "input_schema", {})
+                                            ),
                                         },
                                     }
                                 )

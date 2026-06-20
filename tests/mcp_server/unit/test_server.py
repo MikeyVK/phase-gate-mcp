@@ -18,6 +18,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import BaseModel
+
+from mcp_server.server import MCPServer
+from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
 from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
@@ -69,15 +72,14 @@ def _patch_server_settings(
     mock.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
 
-def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Any, Path]:
-    from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
+def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
     bootstrapper = ServerBootstrapper(settings)
     configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
     workspace_root = Path(settings.server.workspace_root)
     server_root = workspace_root / settings.server.server_root_dir
     template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
     managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
-    return configs, managers, workspace_root
+    return managers, workspace_root
 
 
 def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
@@ -230,7 +232,9 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
-            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -294,7 +298,9 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
             manager = MagicMock()
@@ -381,7 +387,9 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -436,7 +444,9 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -510,7 +520,9 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -562,7 +574,9 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
-            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
             factory = ToolFactory(managers.enforcement_runner, workspace_root)
@@ -679,7 +693,9 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         }
         presenter = TextPresenter(config_data=config_data)
 
-        configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
+        managers, workspace_root = _get_test_bootstrap_context(
+            mock_settings_cls.from_env.return_value
+        )
         server = make_test_server()
         server.presenter = presenter
         tool = DummyTool()
@@ -724,7 +740,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
 
 def test_server_constructor_clean() -> None:
     """Verify that MCPServer can be constructed without configs or managers."""
-    from mcp_server.server import MCPServer
+
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
         _patch_server_settings(mock_settings_cls)
         settings = mock_settings_cls.from_env.return_value

@@ -6,65 +6,571 @@ configfile: pyproject.toml
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [2 items]
+8 workers [260 items]
 
 scheduling tests via LoadScheduling
 
-tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_extra_field_returns_call_tool_result_error 
+tests/mcp_server/integration/mcp_server/test_scaffold_tool_execute_e2e.py::test_tool_execute_scaffolds_design_doc 
+tests/mcp_server/integration/mcp_server/test_server_lifecycle.py::test_server_shutdown_logged_to_audit 
+tests/mcp_server/integration/test_concrete_templates.py::TestScaffoldedOutputCodingStandards::test_scaffolded_dto_has_module_docstring_with_annotations 
+tests/mcp_server/integration/test_artifact_e2e.py::test_artifact_scaffolding_smoke 
+tests/mcp_server/integration/test_config_error_e2e.py::test_config_error_includes_file_path 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestMergePRToolPRStatusWriter::test_merge_pr_tool_constructor_accepts_pr_status_writer 
+tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_force_cycle_transition_tool_registered 
+tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_name_property 
+[gw4] [  0%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestMergePRToolPRStatusWriter::test_merge_pr_tool_constructor_accepts_pr_status_writer 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestMergePRToolPRStatusWriter::test_merge_pr_sets_pr_status_absent_on_success 
+[gw4] [  0%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestMergePRToolPRStatusWriter::test_merge_pr_sets_pr_status_absent_on_success 
+[gw7] [  1%] PASSED tests/mcp_server/integration/test_config_error_e2e.py::test_config_error_includes_file_path 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_blocks_tool_when_context_not_loaded 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestMergePRToolPRStatusWriter::test_merge_pr_does_not_set_pr_status_on_failure 
+[gw4] [  1%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestMergePRToolPRStatusWriter::test_merge_pr_does_not_set_pr_status_on_failure 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_dto_template_exists 
+[gw4] [  1%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_dto_template_exists 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_worker_template_exists 
+[gw4] [  2%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_worker_template_exists 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_service_command_template_exists 
+[gw4] [  2%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_service_command_template_exists 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_generic_template_exists 
+[gw4] [  3%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_generic_template_exists 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_design_template_exists 
+[gw4] [  3%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateExistence::test_design_template_exists 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedResets::test_pull_resets_context_loaded 
+[gw4] [  3%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedResets::test_pull_resets_context_loaded 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedResets::test_phase_transition_resets_context_loaded 
+[gw5] [  4%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestScaffoldedOutputCodingStandards::test_scaffolded_dto_has_module_docstring_with_annotations 
+tests/mcp_server/integration/test_concrete_templates.py::TestScaffoldedOutputCodingStandards::test_scaffolded_worker_has_import_section_headers 
+[gw0] [  4%] PASSED tests/mcp_server/integration/mcp_server/test_scaffold_tool_execute_e2e.py::test_tool_execute_scaffolds_design_doc 
+tests/mcp_server/integration/mcp_server/test_scaffold_tool_execute_e2e.py::test_tool_execute_scaffolds_dto 
+[gw3] [  5%] PASSED tests/mcp_server/integration/test_artifact_e2e.py::test_artifact_scaffolding_smoke 
+[gw6] [  5%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_name_property 
+tests/mcp_server/integration/test_artifact_e2e.py::test_artifact_scaffolding_code_to_disk 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[dto.py.jinja2] 
+[gw6] [  5%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[dto.py.jinja2] 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[worker.py.jinja2] 
+[gw7] [  6%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_blocks_tool_when_context_not_loaded 
+[gw6] [  6%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[worker.py.jinja2] 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[service_command.py.jinja2] 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_allows_tool_when_context_loaded 
+[gw6] [  6%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[service_command.py.jinja2] 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[generic.py.jinja2] 
+[gw6] [  7%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_python_templates_have_scaffold_metadata[generic.py.jinja2] 
+tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_design_template_has_scaffold_metadata 
+[gw6] [  7%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestConcreteTemplateStructure::test_design_template_has_scaffold_metadata 
+tests/mcp_server/integration/test_config_error_e2e.py::test_config_error_for_invalid_yaml 
+[gw6] [  8%] PASSED tests/mcp_server/integration/test_config_error_e2e.py::test_config_error_for_invalid_yaml 
+tests/mcp_server/integration/test_config_error_e2e.py::test_config_error_for_missing_required_field 
+[gw6] [  8%] PASSED tests/mcp_server/integration/test_config_error_e2e.py::test_config_error_for_missing_required_field 
+tests/mcp_server/integration/test_create_issue_e2e.py::test_title_too_long_is_refused_before_api_call 
+[gw4] [  8%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedResets::test_phase_transition_resets_context_loaded 
+tests/mcp_server/integration/test_create_issue_e2e.py::test_minimal_input_creates_issue_with_correct_labels 
+[gw7] [  9%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_allows_tool_when_context_loaded 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_force_phase_transition_exempt 
+[gw0] [  9%] PASSED tests/mcp_server/integration/mcp_server/test_scaffold_tool_execute_e2e.py::test_tool_execute_scaffolds_dto 
+tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_with_real_docs 
+[gw3] [ 10%] PASSED tests/mcp_server/integration/test_artifact_e2e.py::test_artifact_scaffolding_code_to_disk 
+[gw5] [ 10%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestScaffoldedOutputCodingStandards::test_scaffolded_worker_has_import_section_headers 
+tests/mcp_server/integration/test_concrete_templates.py::TestScaffoldedOutputCodingStandards::test_scaffolded_generic_has_complete_coding_standards 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestCreatePRToolRemoval::test_create_pr_tool_class_removed 
+[gw3] [ 10%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestCreatePRToolRemoval::test_create_pr_tool_class_removed 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestCreatePRToolRemoval::test_create_pr_input_class_removed 
+[gw3] [ 11%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestCreatePRToolRemoval::test_create_pr_input_class_removed 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestCreatePRToolRemoval::test_enforcement_yaml_has_no_create_pr_rule 
+[gw3] [ 11%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestCreatePRToolRemoval::test_enforcement_yaml_has_no_create_pr_rule 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestGitHubManagerGetPRStatus::test_get_pr_status_returns_open_when_open_pr_exists 
+[gw3] [ 11%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestGitHubManagerGetPRStatus::test_get_pr_status_returns_open_when_open_pr_exists 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestGitHubManagerGetPRStatus::test_get_pr_status_returns_absent_when_no_open_pr 
+[gw3] [ 12%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestGitHubManagerGetPRStatus::test_get_pr_status_returns_absent_when_no_open_pr 
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestGitHubManagerGetPRStatus::test_get_pr_status_is_not_a_stub 
+[gw0] [ 12%] PASSED tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_with_real_docs 
+tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_with_scope_filter 
+[gw3] [ 13%] PASSED tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestGitHubManagerGetPRStatus::test_get_pr_status_is_not_a_stub 
+tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_renders_research_goals_as_list 
+[gw3] [ 13%] PASSED tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_renders_research_goals_as_list 
+[gw7] [ 13%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_force_phase_transition_exempt 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_force_cycle_transition_exempt 
+tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_renders_open_questions_with_emoji 
+[gw0] [ 14%] PASSED tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_with_scope_filter 
+tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_no_results 
+[gw5] [ 14%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestScaffoldedOutputCodingStandards::test_scaffolded_generic_has_complete_coding_standards 
+tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_iworker_lifecycle_imports 
+[gw0] [ 15%] PASSED tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_no_results 
+tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_relevance_ranking 
+[gw6] [ 15%] PASSED tests/mcp_server/integration/test_create_issue_e2e.py::test_title_too_long_is_refused_before_api_call 
+tests/mcp_server/integration/test_create_issue_e2e.py::test_milestone_accepted_when_milestones_yaml_is_empty 
+[gw0] [ 15%] PASSED tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_execute_relevance_ranking 
+tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_handles_missing_docs_dir 
+[gw0] [ 16%] PASSED tests/mcp_server/integration/mcp_server/test_search_documentation_e2e.py::TestSearchDocumentationE2E::test_tool_handles_missing_docs_dir 
+[gw3] [ 16%] PASSED tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_renders_open_questions_with_emoji 
+tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_has_multiline_header_fields 
+tests/mcp_server/integration/mcp_server/test_server_lifecycle.py::test_server_startup_logged_to_audit 
+[gw4] [ 16%] PASSED tests/mcp_server/integration/test_create_issue_e2e.py::test_minimal_input_creates_issue_with_correct_labels 
+tests/mcp_server/integration/test_create_issue_e2e.py::test_all_options_creates_issue_with_full_label_set 
+[gw3] [ 17%] PASSED tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_has_multiline_header_fields 
+tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_renders_cycles 
+[gw7] [ 17%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_force_cycle_transition_exempt 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_inactive_on_bootstrap_no_state_json 
+[gw2] [ 18%] PASSED tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_force_cycle_transition_tool_registered 
+tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_transition_cycle_tool_has_correct_name 
+[gw3] [ 18%] PASSED tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_renders_cycles 
+tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_success_criteria_handles_string 
+[gw5] [ 18%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_iworker_lifecycle_imports 
+tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_implements_protocols 
+[gw1] [ 19%] PASSED tests/mcp_server/integration/mcp_server/test_server_lifecycle.py::test_server_shutdown_logged_to_audit 
+tests/mcp_server/integration/mcp_server/test_server_startup.py::test_server_initialization 
+[gw3] [ 19%] PASSED tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_success_criteria_handles_string 
+tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_success_criteria_handles_list 
+[gw6] [ 20%] PASSED tests/mcp_server/integration/test_create_issue_e2e.py::test_milestone_accepted_when_milestones_yaml_is_empty 
+tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_has_title_from_name_fallback 
+[gw7] [ 20%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_inactive_on_bootstrap_no_state_json 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_inactive_when_issue_number_mismatches_branch 
+[gw3] [ 20%] PASSED tests/mcp_server/integration/test_document_templates.py::TestPlanningTemplate::test_success_criteria_handles_list 
+tests/mcp_server/integration/test_document_templates.py::TestArchitectureTemplate::test_has_multiline_header_fields 
+[gw4] [ 21%] PASSED tests/mcp_server/integration/test_create_issue_e2e.py::test_all_options_creates_issue_with_full_label_set 
+tests/mcp_server/integration/test_create_issue_e2e.py::test_invalid_issue_type_is_refused_before_api_call 
+[gw6] [ 21%] PASSED tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_has_title_from_name_fallback 
+tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_has_multiline_header_fields 
+[gw3] [ 21%] PASSED tests/mcp_server/integration/test_document_templates.py::TestArchitectureTemplate::test_has_multiline_header_fields 
+tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_recovery_with_invalid_branch_name 
+[gw6] [ 22%] PASSED tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_has_multiline_header_fields 
+tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_no_frontmatter 
+[gw5] [ 22%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_implements_protocols 
+tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_build_spec_constructor 
+[gw7] [ 23%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_inactive_when_issue_number_mismatches_branch 
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedResets::test_checkout_resets_context_loaded 
+[gw7] [ 23%] PASSED tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedResets::test_checkout_resets_context_loaded 
+tests/mcp_server/integration/test_document_templates.py::TestArchitectureTemplate::test_renders_numbered_concept_sections 
+[gw6] [ 23%] PASSED tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_no_frontmatter 
+tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_has_proper_dividers_with_blank_lines 
+[gw7] [ 24%] PASSED tests/mcp_server/integration/test_document_templates.py::TestArchitectureTemplate::test_renders_numbered_concept_sections 
+tests/mcp_server/integration/test_document_templates.py::TestArchitectureTemplate::test_renders_constraints_and_decisions_table 
+[gw4] [ 24%] PASSED tests/mcp_server/integration/test_create_issue_e2e.py::test_invalid_issue_type_is_refused_before_api_call 
+tests/mcp_server/integration/test_create_issue_e2e.py::test_invalid_scope_is_refused_before_api_call 
+[gw7] [ 25%] PASSED tests/mcp_server/integration/test_document_templates.py::TestArchitectureTemplate::test_renders_constraints_and_decisions_table 
+tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_has_definitive_status 
+[gw6] [ 25%] PASSED tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_has_proper_dividers_with_blank_lines 
+tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_renders_problem_statement 
+[gw7] [ 25%] PASSED tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_has_definitive_status 
+tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_has_source_and_test_links 
+[gw5] [ 26%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_build_spec_constructor 
+tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_initialize_method 
+[gw7] [ 26%] PASSED tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_has_source_and_test_links 
+tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_renders_api_reference_with_methods 
+[gw0] [ 26%] PASSED tests/mcp_server/integration/mcp_server/test_server_lifecycle.py::test_server_startup_logged_to_audit 
+[gw7] [ 27%] PASSED tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_renders_api_reference_with_methods 
+tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_renders_usage_examples_with_code_blocks 
+tests/mcp_server/integration/test_exception_propagation.py::test_validation_error_propagates_from_scaffolder 
+[gw6] [ 27%] PASSED tests/mcp_server/integration/test_document_templates.py::TestResearchTemplate::test_renders_problem_statement 
+tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_ephemeral_returns_temp_path 
+[gw6] [ 28%] SKIPPED tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_ephemeral_returns_temp_path 
+tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_registry_roundtrip 
+[gw2] [ 28%] PASSED tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_transition_cycle_tool_has_correct_name 
+tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_force_cycle_transition_tool_has_correct_name 
+[gw7] [ 28%] PASSED tests/mcp_server/integration/test_document_templates.py::TestReferenceTemplate::test_renders_usage_examples_with_code_blocks 
+tests/mcp_server/integration/test_pipeline_e2e.py::TestPipelineE2E::test_pipeline_cache_fallback 
+[gw0] [ 29%] PASSED tests/mcp_server/integration/test_exception_propagation.py::test_validation_error_propagates_from_scaffolder 
+tests/mcp_server/integration/test_exception_propagation.py::test_config_error_for_unknown_artifact_type 
+[gw5] [ 29%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_initialize_method 
+tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_shutdown_method 
+[gw4] [ 30%] PASSED tests/mcp_server/integration/test_create_issue_e2e.py::test_invalid_scope_is_refused_before_api_call 
+tests/mcp_server/integration/test_create_issue_e2e.py::test_invalid_priority_is_refused_before_api_call 
+[gw1] [ 30%] PASSED tests/mcp_server/integration/mcp_server/test_server_startup.py::test_server_initialization 
+tests/mcp_server/integration/mcp_server/test_server_startup.py::test_list_resources 
+[gw0] [ 30%] PASSED tests/mcp_server/integration/test_exception_propagation.py::test_config_error_for_unknown_artifact_type 
+tests/mcp_server/integration/test_exception_propagation.py::test_validation_error_has_hints 
+[gw5] [ 31%] PASSED tests/mcp_server/integration/test_concrete_templates.py::TestWorkerIWorkerLifecyclePattern::test_scaffolded_worker_has_shutdown_method 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitMergeTool] 
+[gw5] [ 31%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitMergeTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitDeleteBranchTool] 
+[gw5] [ 31%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitDeleteBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitPullTool] 
+[gw5] [ 32%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitPullTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[SafeEditTool] 
+[gw5] [ 32%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[SafeEditTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[ScaffoldArtifactTool] 
+[gw5] [ 33%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[ScaffoldArtifactTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[InitializeProjectTool] 
+[gw5] [ 33%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[InitializeProjectTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[SavePlanningDeliverablesTool] 
+[gw5] [ 33%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[SavePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[UpdatePlanningDeliverablesTool] 
+[gw5] [ 34%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[UpdatePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitRestoreTool] 
+[gw6] [ 34%] PASSED tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_registry_roundtrip 
+[gw5] [ 35%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitRestoreTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitPushTool] 
+tests/mcp_server/integration/test_model1_branch_tip_neutralization.py::TestModel1BranchTipNeutralization::test_scenario_c_without_exclusion_notes_normal_commit_includes_all_files 
+[gw5] [ 35%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitPushTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitMergeTool] 
+[gw5] [ 35%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitMergeTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitDeleteBranchTool] 
+[gw5] [ 36%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitDeleteBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitPullTool] 
+[gw5] [ 36%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitPullTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[SafeEditTool] 
+[gw5] [ 36%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[SafeEditTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[ScaffoldArtifactTool] 
+[gw5] [ 37%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[ScaffoldArtifactTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[InitializeProjectTool] 
+[gw5] [ 37%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[InitializeProjectTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[SavePlanningDeliverablesTool] 
+[gw5] [ 38%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[SavePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[UpdatePlanningDeliverablesTool] 
+[gw5] [ 38%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[UpdatePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[TransitionPhaseTool] 
+[gw5] [ 38%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[TransitionPhaseTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[ForcePhaseTransitionTool] 
+[gw5] [ 39%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[ForcePhaseTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[TransitionCycleTool] 
+[gw5] [ 39%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[TransitionCycleTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[ForceCycleTransitionTool] 
+[gw5] [ 40%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[ForceCycleTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[SubmitPRTool] 
+[gw0] [ 40%] PASSED tests/mcp_server/integration/test_exception_propagation.py::test_validation_error_has_hints 
+[gw5] [ 40%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[SubmitPRTool] 
+tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_complete_cross_machine_flow 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestMergePREscapeHatch::test_merge_pr_tool_is_not_branch_mutating 
+[gw5] [ 41%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestMergePREscapeHatch::test_merge_pr_tool_is_not_branch_mutating 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[CreateBranchTool] 
+[gw4] [ 41%] PASSED tests/mcp_server/integration/test_create_issue_e2e.py::test_invalid_priority_is_refused_before_api_call 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[TransitionPhaseTool] 
+[gw4] [ 41%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[TransitionPhaseTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[ForcePhaseTransitionTool] 
+[gw4] [ 42%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[ForcePhaseTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[TransitionCycleTool] 
+[gw4] [ 42%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[TransitionCycleTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[ForceCycleTransitionTool] 
+[gw4] [ 43%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[ForceCycleTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[SubmitPRTool] 
+[gw4] [ 43%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[SubmitPRTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[CreateBranchTool] 
+[gw4] [ 43%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[CreateBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitCommitTool] 
+[gw4] [ 44%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_tool_category_is_branch_mutating[GitCommitTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitMergeTool] 
+[gw4] [ 44%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitMergeTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitDeleteBranchTool] 
+[gw5] [ 45%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[CreateBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitCommitTool] 
+[gw7] [ 45%] PASSED tests/mcp_server/integration/test_pipeline_e2e.py::TestPipelineE2E::test_pipeline_cache_fallback 
+tests/mcp_server/integration/test_pipeline_e2e.py::TestPipelineE2E::test_pipeline_enforcement_blocker 
+[gw2] [ 45%] PASSED tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_force_cycle_transition_tool_has_correct_name 
+tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_blocks_on_format_error 
+[gw4] [ 46%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitDeleteBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitPullTool] 
+[gw2] [ 46%] PASSED tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_blocks_on_format_error 
+tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_blocks_on_architectural_error 
+[gw5] [ 46%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitCommitTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitRestoreTool] 
+[gw2] [ 47%] PASSED tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_blocks_on_architectural_error 
+tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_allows_with_guideline_warnings 
+[gw4] [ 47%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitPullTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[SafeEditTool] 
+[gw2] [ 48%] PASSED tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_allows_with_guideline_warnings 
+tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_includes_agent_hints 
+[gw1] [ 48%] PASSED tests/mcp_server/integration/mcp_server/test_server_startup.py::test_list_resources 
+tests/mcp_server/integration/mcp_server/test_server_startup.py::test_read_resource 
+[gw4] [ 48%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[SafeEditTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[ScaffoldArtifactTool] 
+[gw5] [ 49%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitRestoreTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitPushTool] 
+[gw2] [ 49%] PASSED tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_safe_edit_includes_agent_hints 
+tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_validator_registry_loads_from_templates 
+[gw5] [ 50%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[GitPushTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[CreateBranchTool] 
+[gw4] [ 50%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[ScaffoldArtifactTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[InitializeProjectTool] 
+[gw2] [ 50%] PASSED tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py::TestSafeEditValidationIntegration::test_validator_registry_loads_from_templates 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[ForcePhaseTransitionTool] 
+[gw7] [ 51%] PASSED tests/mcp_server/integration/test_pipeline_e2e.py::TestPipelineE2E::test_pipeline_enforcement_blocker 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[CreateBranchTool] 
+[gw7] [ 51%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[CreateBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitCommitTool] 
+[gw7] [ 51%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitCommitTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitRestoreTool] 
+[gw7] [ 52%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitRestoreTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitPushTool] 
+[gw7] [ 52%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolInheritance::test_inherits_branch_mutating_tool[GitPushTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitDeleteBranchTool] 
+[gw3] [ 53%] PASSED tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_recovery_with_invalid_branch_name 
+tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_file_artifact_has_metadata 
+[gw4] [ 53%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[InitializeProjectTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[SavePlanningDeliverablesTool] 
+[gw2] [ 53%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[ForcePhaseTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[TransitionCycleTool] 
+[gw5] [ 54%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[CreateBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitCommitTool] 
+[gw4] [ 54%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[SavePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[UpdatePlanningDeliverablesTool] 
+[gw7] [ 55%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitDeleteBranchTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitPullTool] 
+[gw2] [ 55%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[TransitionCycleTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[ForceCycleTransitionTool] 
+[gw4] [ 55%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[UpdatePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[TransitionPhaseTool] 
+[gw3] [ 56%] PASSED tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_file_artifact_has_metadata 
+tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_file_artifact_returns_path 
+[gw1] [ 56%] PASSED tests/mcp_server/integration/mcp_server/test_server_startup.py::test_read_resource 
+tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_scaffold_artifact_tool_registered 
+[gw2] [ 56%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[ForceCycleTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[SubmitPRTool] 
+[gw4] [ 57%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[TransitionPhaseTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[InitializeProjectTool] 
+[gw7] [ 57%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitPullTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[SafeEditTool] 
+[gw5] [ 58%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitCommitTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitRestoreTool] 
+[gw2] [ 58%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolBlockedWhenPROpen::test_blocked_when_pr_open[SubmitPRTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[ForcePhaseTransitionTool] 
+[gw4] [ 58%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[InitializeProjectTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[SavePlanningDeliverablesTool] 
+[gw3] [ 59%] PASSED tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_scaffold_file_artifact_returns_path 
+tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_manual_file_without_metadata_returns_none 
+[gw7] [ 59%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[SafeEditTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[ScaffoldArtifactTool] 
+[gw3] [ 60%] PASSED tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_manual_file_without_metadata_returns_none 
+tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_invalid_metadata_format_fails_gracefully 
+[gw3] [ 60%] PASSED tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_invalid_metadata_format_fails_gracefully 
+tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_workspace_root_not_set_gives_helpful_error 
+[gw5] [ 60%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitRestoreTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitPushTool] 
+[gw2] [ 61%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[ForcePhaseTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[TransitionCycleTool] 
+[gw1] [ 61%] PASSED tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_scaffold_artifact_tool_registered 
+tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_legacy_scaffold_tools_not_registered 
+[gw3] [ 61%] PASSED tests/mcp_server/integration/test_metadata_e2e.py::TestMetadataEndToEnd::test_workspace_root_not_set_gives_helpful_error 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[design-.md] 
+[gw4] [ 62%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[SavePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[UpdatePlanningDeliverablesTool] 
+[gw5] [ 62%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitPushTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitMergeTool] 
+[gw7] [ 63%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[ScaffoldArtifactTool] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[dto-.py] 
+[gw2] [ 63%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[TransitionCycleTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[ForceCycleTransitionTool] 
+[gw4] [ 63%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[UpdatePlanningDeliverablesTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[TransitionPhaseTool] 
+[gw3] [ 64%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[design-.md] 
+[gw5] [ 64%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[GitMergeTool] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[service] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[dto] 
+[gw7] [ 65%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[dto-.py] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[worker-.py] 
+[gw1] [ 65%] PASSED tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_legacy_scaffold_tools_not_registered 
+tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_scaffold_artifact_tool_has_correct_name 
+[gw2] [ 65%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[ForceCycleTransitionTool] 
+tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[SubmitPRTool] 
+[gw4] [ 66%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[TransitionPhaseTool] 
+tests/mcp_server/integration/test_qa.py::test_qa_manager_run_gates_with_real_file 
+[gw5] [ 66%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[service] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[generic] 
+[gw3] [ 66%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[dto] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[worker] 
+[gw2] [ 67%] PASSED tests/mcp_server/integration/test_pr_status_lockdown.py::TestBranchMutatingToolAllowedWhenPRAbsent::test_allowed_when_pr_absent[SubmitPRTool] 
+tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_git_commit_tool_enforcement_event 
+[gw2] [ 67%] PASSED tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_git_commit_tool_enforcement_event 
+tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_submit_pr_tool_enforcement_event 
+[gw2] [ 68%] PASSED tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_submit_pr_tool_enforcement_event 
+tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_submit_pr_blocked_outside_pr_allowed_phase 
+[gw7] [ 68%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[worker-.py] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[service-.py] 
+[gw2] [ 68%] PASSED tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_submit_pr_blocked_outside_pr_allowed_phase 
+tests/mcp_server/integration/test_scaffold_validation_e2e.py::test_system_fields_filtered_from_schema 
+[gw5] [ 69%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[generic] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_design_doc_tier_chain_traceable 
+[gw1] [ 69%] PASSED tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_scaffold_artifact_tool_has_correct_name 
+tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_transition_cycle_tool_registered 
+[gw2] [ 70%] PASSED tests/mcp_server/integration/test_scaffold_validation_e2e.py::test_system_fields_filtered_from_schema 
+tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_end_to_end_search_flow 
+[gw7] [ 70%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[service-.py] 
+tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[generic-.py] 
+[gw3] [ 70%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_tier_chain_traceable[worker] 
+tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_submit_pr_allowed_in_pr_allowed_phase 
+[gw2] [ 71%] PASSED tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_end_to_end_search_flow 
+tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_handles_non_markdown_files 
+[gw2] [ 71%] PASSED tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_handles_non_markdown_files 
+tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_nested_directory_structure 
+[gw2] [ 71%] PASSED tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_nested_directory_structure 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[adapter] 
+[gw6] [ 72%] PASSED tests/mcp_server/integration/test_model1_branch_tip_neutralization.py::TestModel1BranchTipNeutralization::test_scenario_c_without_exclusion_notes_normal_commit_includes_all_files 
+tests/mcp_server/integration/test_phase_state_engine_concurrent.py::TestPrimaryMixedConcurrentWritesC4::test_force_transition_and_force_cycle_transition_concurrent 
+[gw3] [ 72%] PASSED tests/mcp_server/integration/test_ready_phase_enforcement.py::TestReadyPhaseEnforcement::test_submit_pr_allowed_in_pr_allowed_phase 
+tests/mcp_server/integration/test_scaffold_validation_e2e.py::test_validation_error_returns_schema 
+[gw5] [ 73%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_design_doc_tier_chain_traceable 
+tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_scope_filtering_works_with_real_docs 
+[gw7] [ 73%] PASSED tests/mcp_server/integration/test_provenance_e2e.py::TestProvenanceE2E::test_scaffold_produces_valid_scaffold_header[generic-.py] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[dto] 
+[gw5] [ 73%] PASSED tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_scope_filtering_works_with_real_docs 
+tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_relevance_sorting_with_real_content 
+[gw5] [ 74%] PASSED tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_relevance_sorting_with_real_content 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[resource] 
+[gw3] [ 74%] PASSED tests/mcp_server/integration/test_scaffold_validation_e2e.py::test_validation_error_returns_schema 
+tests/mcp_server/integration/test_scaffold_validation_e2e.py::test_success_response_includes_schema 
+[gw2] [ 75%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[adapter] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[tool] 
+[gw3] [ 75%] PASSED tests/mcp_server/integration/test_scaffold_validation_e2e.py::test_success_response_includes_schema 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[interface] 
+[gw5] [ 75%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[resource] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[schema] 
+[gw1] [ 76%] PASSED tests/mcp_server/integration/mcp_server/test_server_tool_registration.py::test_transition_cycle_tool_registered 
+tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_snippet_extraction_from_real_docs 
+[gw1] [ 76%] PASSED tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_snippet_extraction_from_real_docs 
+tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_empty_directory_returns_empty_index 
+[gw1] [ 76%] PASSED tests/mcp_server/integration/test_search_integration.py::TestSearchServiceIntegration::test_empty_directory_returns_empty_index 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[integration_test] 
+[gw7] [ 77%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[dto] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[worker] 
+[gw2] [ 77%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[tool] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[service] 
+[gw3] [ 78%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[interface] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[generic] 
+[gw0] [ 78%] PASSED tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_complete_cross_machine_flow 
+tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_recovery_with_no_phase_commits 
+[gw5] [ 78%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[schema] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[unit_test] 
+[gw7] [ 79%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[worker] 
+[gw1] [ 79%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[integration_test] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[planning] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[research] 
+[gw2] [ 80%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[service] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[design] 
+[gw3] [ 80%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[generic] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[architecture] 
+[gw6] [ 80%] PASSED tests/mcp_server/integration/test_phase_state_engine_concurrent.py::TestPrimaryMixedConcurrentWritesC4::test_force_transition_and_force_cycle_transition_concurrent 
+tests/mcp_server/integration/test_phase_state_engine_concurrent.py::TestSecondaryHomogeneousConcurrentWritesC4::test_two_concurrent_force_transitions_both_records_present 
+[gw7] [ 81%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[planning] 
+[gw1] [ 81%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[research] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[validation_report] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[generic_doc] 
+[gw5] [ 81%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[unit_test] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[reference] 
+[gw2] [ 82%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[design] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[commit] 
+[gw3] [ 82%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[architecture] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[pr] 
+[gw7] [ 83%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[validation_report] 
+tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[issue] 
+[gw5] [ 83%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[reference] 
 tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_schema_resource_in_error_response 
-[gw1] [ 50%] ERROR tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_schema_resource_in_error_response 
-[gw0] [100%] ERROR tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_extra_field_returns_call_tool_result_error 
+[gw1] [ 83%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[generic_doc] 
+tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_extra_field_returns_call_tool_result_error 
+[gw2] [ 84%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[commit] 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRHappyPath::test_submit_pr_happy_path 
+[gw2] [ 84%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRHappyPath::test_submit_pr_happy_path 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRNoAdapterBypass::test_submit_pr_tool_execute_has_no_adapter_calls 
+[gw2] [ 85%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRNoAdapterBypass::test_submit_pr_tool_execute_has_no_adapter_calls 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_create_pr_tool_not_instantiated_in_server 
+[gw2] [ 85%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_create_pr_tool_not_instantiated_in_server 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_git_commit_tool_has_no_neutralize_path 
+[gw2] [ 85%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_git_commit_tool_has_no_neutralize_path 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_submit_pr_tool_declares_enforcement_event 
+[gw2] [ 86%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_submit_pr_tool_declares_enforcement_event 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_enforcement_yaml_has_exclude_artifacts_and_phase_readiness_for_submit_pr 
+[gw2] [ 86%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestCompositionRootContracts::test_enforcement_yaml_has_exclude_artifacts_and_phase_readiness_for_submit_pr 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRNeutralizesQualityState::test_quality_state_json_in_phase_contracts_branch_local_artifacts 
+[gw3] [ 86%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[pr] 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRHappyPath::test_submit_pr_skips_neutralize_when_no_exclusions 
+[gw3] [ 87%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRHappyPath::test_submit_pr_skips_neutralize_when_no_exclusions 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_a_no_upstream_blocked_before_mutation 
+[gw3] [ 87%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_a_no_upstream_blocked_before_mutation 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_b_dirty_tree_blocked_before_mutation 
+[gw3] [ 88%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_b_dirty_tree_blocked_before_mutation 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_c_create_pr_failure_triggers_rollback_push 
+[gw3] [ 88%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_c_create_pr_failure_triggers_rollback_push 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_c_no_rollback_when_no_neutralization_commit 
+[gw3] [ 88%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_c_no_rollback_when_no_neutralization_commit 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_c_meta_rollback_failure_surfaced_via_recovery_note 
+[gw3] [ 89%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_c_meta_rollback_failure_surfaced_via_recovery_note 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_d_push_fails_prepare_submission_raises_execution_error 
+[gw3] [ 89%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_failure_d_push_fails_prepare_submission_raises_execution_error 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_happy_path_prepare_submission_then_create_pr_then_status 
+[gw7] [ 90%] PASSED tests/mcp_server/integration/test_smoke_all_types.py::test_v2_smoke_produces_nonempty_output[issue] 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRHappyPath::test_submit_pr_pr_status_written_open 
+[gw3] [ 90%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_happy_path_prepare_submission_then_create_pr_then_status 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_happy_path_artifact_paths_extracted_from_merge_readiness_context 
+[gw7] [ 90%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRHappyPath::test_submit_pr_pr_status_written_open 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRBaseFromReader::test_pr_opened_against_reader_provided_parent_branch 
+[gw3] [ 91%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRAtomicRefactored::test_happy_path_artifact_paths_extracted_from_merge_readiness_context 
+tests/mcp_server/integration/test_template_missing_e2e.py::test_template_missing_error_propagates_through_call_chain 
+[gw7] [ 91%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRBaseFromReader::test_pr_opened_against_reader_provided_parent_branch 
+tests/mcp_server/integration/test_tool_error_contract_e2e.py::test_config_error_preserves_contract 
+[gw2] [ 91%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRNeutralizesQualityState::test_quality_state_json_in_phase_contracts_branch_local_artifacts 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRNeutralizesQualityState::test_quality_state_artifact_registered_in_server_merge_readiness 
+[gw7] [ 92%] PASSED tests/mcp_server/integration/test_tool_error_contract_e2e.py::test_config_error_preserves_contract 
+tests/mcp_server/integration/test_tool_error_contract_e2e.py::test_execution_error_preserves_contract 
+[gw3] [ 92%] PASSED tests/mcp_server/integration/test_template_missing_e2e.py::test_template_missing_error_propagates_through_call_chain 
+tests/mcp_server/integration/test_tool_error_contract_e2e.py::test_validation_error_preserves_contract 
+[gw3] [ 93%] PASSED tests/mcp_server/integration/test_tool_error_contract_e2e.py::test_validation_error_preserves_contract 
+tests/mcp_server/integration/test_validation_policy_e2e.py::test_invalid_doc_artifact_warns_writes_file 
+[gw7] [ 93%] PASSED tests/mcp_server/integration/test_tool_error_contract_e2e.py::test_execution_error_preserves_contract 
+tests/mcp_server/integration/test_validation_policy_e2e.py::test_invalid_code_artifact_blocks_no_file 
+[gw2] [ 93%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRNeutralizesQualityState::test_quality_state_artifact_registered_in_server_merge_readiness 
+tests/mcp_server/integration/test_tool_error_e2e.py::test_scaffold_artifact_tool_preserves_error_contract 
+[gw3] [ 94%] PASSED tests/mcp_server/integration/test_validation_policy_e2e.py::test_invalid_doc_artifact_warns_writes_file 
+tests/mcp_server/integration/test_validation_policy_e2e.py::test_valid_code_artifact_writes_successfully 
+[gw7] [ 94%] PASSED tests/mcp_server/integration/test_validation_policy_e2e.py::test_invalid_code_artifact_blocks_no_file 
+tests/mcp_server/integration/test_workflow_cycle_e2e.py::test_full_workflow_cycle_with_scope_detection 
+[gw2] [ 95%] PASSED tests/mcp_server/integration/test_tool_error_e2e.py::test_scaffold_artifact_tool_preserves_error_contract 
+[gw6] [ 95%] PASSED tests/mcp_server/integration/test_phase_state_engine_concurrent.py::TestSecondaryHomogeneousConcurrentWritesC4::test_two_concurrent_force_transitions_both_records_present 
+tests/mcp_server/integration/test_pipeline_e2e.py::TestPipelineE2E::test_pipeline_e2e_flow 
+[gw3] [ 95%] PASSED tests/mcp_server/integration/test_validation_policy_e2e.py::test_valid_code_artifact_writes_successfully 
+[gw5] [ 96%] PASSED tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_schema_resource_in_error_response 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRPartialFailure::test_push_failure_produces_recovery_note 
+[gw5] [ 96%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRPartialFailure::test_push_failure_produces_recovery_note 
+[gw1] [ 96%] PASSED tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_extra_field_returns_call_tool_result_error 
+tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRPartialFailure::test_create_pr_failure_produces_recovery_note 
+[gw1] [ 97%] PASSED tests/mcp_server/integration/test_submit_pr_atomic_flow.py::TestSubmitPRPartialFailure::test_create_pr_failure_produces_recovery_note 
+[gw6] [ 97%] PASSED tests/mcp_server/integration/test_pipeline_e2e.py::TestPipelineE2E::test_pipeline_e2e_flow 
+[gw0] [ 98%] PASSED tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_recovery_with_no_phase_commits 
+tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_recovery_respects_workflow_phases 
+[gw0] [ 98%] PASSED tests/mcp_server/integration/test_issue39_cross_machine.py::TestIssue39CrossMachine::test_recovery_respects_workflow_phases 
+[gw7] [ 98%] PASSED tests/mcp_server/integration/test_workflow_cycle_e2e.py::test_full_workflow_cycle_with_scope_detection 
+[gw4] [ 99%] PASSED tests/mcp_server/integration/test_qa.py::test_qa_manager_run_gates_with_real_file 
+tests/mcp_server/integration/test_qa.py::test_quality_tool_output_format 
+[gw4] [ 99%] PASSED tests/mcp_server/integration/test_qa.py::test_quality_tool_output_format 
+tests/mcp_server/integration/test_qa.py::test_switching_active_gates_changes_execution 
+[gw4] [100%] PASSED tests/mcp_server/integration/test_qa.py::test_switching_active_gates_changes_execution 
 
-=================================== ERRORS ====================================
-_ ERROR at setup of TestStrictInputValidationResponse.test_schema_resource_in_error_response _
-[gw1] win32 -- Python 3.13.7 c:\temp\pgmcp\.venv\Scripts\python.exe
+============================== warnings summary ===============================
+tests/mcp_server/integration/test_c5_cleanup_and_prstatus.py::TestMergePRToolPRStatusWriter::test_merge_pr_sets_pr_status_absent_on_success
+  c:\temp\pgmcp\tests\mcp_server\integration\test_c5_cleanup_and_prstatus.py:130: DeprecationWarning: There is no current event loop
+    result = asyncio.get_event_loop().run_until_complete(tool.execute(params, NoteContext()))
 
-self = <tests.mcp_server.integration.test_strict_input_validation_response.TestStrictInputValidationResponse object at 0x0000018E5D90F250>
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_blocks_tool_when_context_not_loaded
+  tests\mcp_server\integration\test_context_loaded_enforcement.py:105: PytestWarning: The test <Function test_gate_blocks_tool_when_context_not_loaded> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_gate_blocks_tool_when_context_not_loaded(self, tmp_path: Path) -> None:
 
-    @pytest_asyncio.fixture
-    async def server(self) -> MCPServer:
-        """MCPServer with MockIntegrationTool registered."""
-        s = make_test_server()
-    
-        factory = ToolFactory(
->           enforcement_runner=s.enforcement_runner,
-                               ^^^^^^^^^^^^^^^^^^^^
-            workspace_root=s._workspace_root,  # type: ignore[reportPrivateUsage]
-        )
-E       AttributeError: 'MCPServer' object has no attribute 'enforcement_runner'
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedResets::test_phase_transition_resets_context_loaded
+  tests\mcp_server\integration\test_context_loaded_enforcement.py:265: PytestWarning: The test <Function test_phase_transition_resets_context_loaded> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_phase_transition_resets_context_loaded(self, tmp_path: Path) -> None:
 
-tests\mcp_server\integration\test_strict_input_validation_response.py:70: AttributeError
----------------------------- Captured stderr setup ----------------------------
-{"timestamp": "2026-06-20 22:11:12,612", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
-{"timestamp": "2026-06-20 22:11:12,613", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
------------------------------ Captured log setup ------------------------------
-[32mINFO    [0m mcp_server.server_lifecycle:bootstrap.py:208 MCP server starting via bootstrapper
-[32mINFO    [0m mcp_server.server_lifecycle:bootstrap.py:220 Template registry initialized
-_ ERROR at setup of TestStrictInputValidationResponse.test_extra_field_returns_call_tool_result_error _
-[gw0] win32 -- Python 3.13.7 c:\temp\pgmcp\.venv\Scripts\python.exe
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_allows_tool_when_context_loaded
+  tests\mcp_server\integration\test_context_loaded_enforcement.py:119: PytestWarning: The test <Function test_gate_allows_tool_when_context_loaded> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_gate_allows_tool_when_context_loaded(self, tmp_path: Path) -> None:
 
-self = <tests.mcp_server.integration.test_strict_input_validation_response.TestStrictInputValidationResponse object at 0x000001970DD17890>
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_force_phase_transition_exempt
+  tests\mcp_server\integration\test_context_loaded_enforcement.py:134: PytestWarning: The test <Function test_force_phase_transition_exempt> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_force_phase_transition_exempt(self, tmp_path: Path) -> None:
 
-    @pytest_asyncio.fixture
-    async def server(self) -> MCPServer:
-        """MCPServer with MockIntegrationTool registered."""
-        s = make_test_server()
-    
-        factory = ToolFactory(
->           enforcement_runner=s.enforcement_runner,
-                               ^^^^^^^^^^^^^^^^^^^^
-            workspace_root=s._workspace_root,  # type: ignore[reportPrivateUsage]
-        )
-E       AttributeError: 'MCPServer' object has no attribute 'enforcement_runner'
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_force_cycle_transition_exempt
+  tests\mcp_server\integration\test_context_loaded_enforcement.py:148: PytestWarning: The test <Function test_force_cycle_transition_exempt> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_force_cycle_transition_exempt(self, tmp_path: Path) -> None:
 
-tests\mcp_server\integration\test_strict_input_validation_response.py:70: AttributeError
----------------------------- Captured stderr setup ----------------------------
-{"timestamp": "2026-06-20 22:11:12,612", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
-{"timestamp": "2026-06-20 22:11:12,613", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
------------------------------ Captured log setup ------------------------------
-[32mINFO    [0m mcp_server.server_lifecycle:bootstrap.py:208 MCP server starting via bootstrapper
-[32mINFO    [0m mcp_server.server_lifecycle:bootstrap.py:220 Template registry initialized
-=========================== short test summary info ===========================
-ERROR tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_schema_resource_in_error_response
-ERROR tests/mcp_server/integration/test_strict_input_validation_response.py::TestStrictInputValidationResponse::test_extra_field_returns_call_tool_result_error
-============================== 2 errors in 6.95s ==============================
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_inactive_on_bootstrap_no_state_json
+  tests\mcp_server\integration\test_context_loaded_enforcement.py:162: PytestWarning: The test <Function test_gate_inactive_on_bootstrap_no_state_json> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_gate_inactive_on_bootstrap_no_state_json(self, tmp_path: Path) -> None:
+
+tests/mcp_server/integration/test_context_loaded_enforcement.py::TestContextLoadedGate::test_gate_inactive_when_issue_number_mismatches_branch
+  tests\mcp_server\integration\test_context_loaded_enforcement.py:176: PytestWarning: The test <Function test_gate_inactive_when_issue_number_mismatches_branch> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_gate_inactive_when_issue_number_mismatches_branch(self, tmp_path: Path) -> None:
+
+tests/mcp_server/integration/test_qa.py::test_qa_manager_run_gates_with_real_file
+  tests\mcp_server\integration\test_qa.py:33: PytestWarning: The test <Function test_qa_manager_run_gates_with_real_file> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_qa_manager_run_gates_with_real_file() -> None:
+
+tests/mcp_server/integration/test_qa.py::test_switching_active_gates_changes_execution
+  tests\mcp_server\integration\test_qa.py:63: PytestWarning: The test <Function test_switching_active_gates_changes_execution> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_switching_active_gates_changes_execution(tmp_path: Path) -> None:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================ 259 passed, 1 skipped, 10 warnings in 19.89s =================
