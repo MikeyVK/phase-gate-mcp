@@ -30,6 +30,199 @@
     ],
     "skip_reason": null,
     "parent_branch": "refactor/406-decorator-pipeline-exception-mapping",
-    "created_at": "2026-06-20T09:36:46.953127+00:00"
+    "created_at": "2026-06-20T09:36:46.953127+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 10,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "Cycle 1: Interfaces & Type Foundation",
+            "deliverables": [
+              {
+                "id": "D1.1",
+                "description": "Introduce new ITool/ICoreTool interfaces under mcp_server/core/interfaces/",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/core/interfaces/itool.py"
+                }
+              },
+              {
+                "id": "D1.2",
+                "description": "Rename old ITool to ILegacyTool in tools/base.py and update ToolErrorOutput signatures",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/core/interfaces/icore_tool.py"
+                }
+              }
+            ],
+            "exit_criteria": "ITool/ICoreTool exist and imports are updated to ILegacyTool"
+          },
+          {
+            "cycle_number": 2,
+            "name": "Cycle 2: Decorator Pipeline",
+            "deliverables": [
+              {
+                "id": "D2.1",
+                "description": "Implement ToolErrorHandlerDecorator, InputValidationDecorator, and EnforcementDecorator under mcp_server/core/decorators/",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/core/decorators/input_validation_decorator.py"
+                }
+              }
+            ],
+            "exit_criteria": "Decorators handle validation, enforcement, and error mapping"
+          },
+          {
+            "cycle_number": 3,
+            "name": "Cycle 3: CQRS Cache Segregation",
+            "deliverables": [
+              {
+                "id": "D3.1",
+                "description": "Segregate cache interfaces to publisher/reader and implement ResponseCacheManager updates",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/core/interfaces/itool_response_cache.py"
+                }
+              }
+            ],
+            "exit_criteria": "Publisher/Reader segregated and ResponseCacheManager updated"
+          },
+          {
+            "cycle_number": 4,
+            "name": "Cycle 4: Presenter Engine & Fallback Unit Tests",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "Implement IPresenter interface and TextPresenter fallback",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/core/interfaces/ipresenter.py"
+                }
+              }
+            ],
+            "exit_criteria": "IPresenter and TextPresenter fallback implemented"
+          },
+          {
+            "cycle_number": 5,
+            "name": "Cycle 5: ToolFactory & Bootstrap Prep",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "Implement ToolFactory composition root",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/core/tool_factory.py"
+                }
+              }
+            ],
+            "exit_criteria": "ToolFactory implemented and Ruff T20 print check enabled"
+          },
+          {
+            "cycle_number": 6,
+            "name": "Cycle 6: Tool-laag Migratie",
+            "deliverables": [
+              {
+                "id": "D6.1",
+                "description": "Migrate all tool endpoints to ICoreTool and retire base.py",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/tools/safe_edit_tool.py"
+                }
+              }
+            ],
+            "exit_criteria": "Migrate all tool endpoints to ICoreTool"
+          },
+          {
+            "cycle_number": 7,
+            "name": "Cycle 7: Transport Orchestratie & E2E",
+            "deliverables": [
+              {
+                "id": "D7.1",
+                "description": "Refactor server.py handle_call_tool and add E2E test",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "tests/mcp_server/integration/test_pipeline_e2e.py"
+                }
+              }
+            ],
+            "exit_criteria": "Refactor server.py and add E2E test"
+          },
+          {
+            "cycle_number": 8,
+            "name": "Cycle 8: Interface Packaging Refactor (Facade init)",
+            "deliverables": [
+              {
+                "id": "D8.1",
+                "description": "Concrete interface and type definitions extracted from __init__.py",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/core/interfaces/gate.py"
+                }
+              },
+              {
+                "id": "D8.2",
+                "description": "Facade interfaces/__init__.py with 0 concrete implementations",
+                "validates": {
+                  "type": "absent_text",
+                  "file": "mcp_server/core/interfaces/__init__.py",
+                  "text": "class IStateReader"
+                }
+              }
+            ],
+            "exit_criteria": "All concrete class and protocol definitions are extracted from interfaces/__init__.py and it contains only facade imports."
+          },
+          {
+            "cycle_number": 9,
+            "name": "Cycle 9: Decoupled Visual Presentation & Config Fallbacks",
+            "deliverables": [
+              {
+                "id": "D9.1",
+                "description": "CachePublication DTO is defined",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "mcp_server/schemas/cache_publication.py"
+                }
+              },
+              {
+                "id": "D9.2",
+                "description": "TextPresenter accepts CachePublication",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "mcp_server/presenters/text_presenter.py",
+                  "text": "cache_pub: CachePublication"
+                }
+              }
+            ],
+            "exit_criteria": "Visual presentation formatted in TextPresenter and fallback warnings fetched from presentation.yaml using CachePublication."
+          },
+          {
+            "cycle_number": 10,
+            "name": "Cycle 10: Validation Schema Integration & Orchestration Clean-up",
+            "deliverables": [
+              {
+                "id": "D10.1",
+                "description": "MCPServer constructor stripped of unused dependencies",
+                "validates": {
+                  "type": "absent_text",
+                  "file": "mcp_server/server.py",
+                  "text": "self.git_manager = managers.git_manager"
+                }
+              },
+              {
+                "id": "D10.2",
+                "description": "MCPServer extracts validation schema dynamically from ValidationErrorOutput DTO",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "mcp_server/server.py",
+                  "text": "isinstance(result_dto, ValidationErrorOutput)"
+                }
+              }
+            ],
+            "exit_criteria": "MCPServer orchestrator handles sequential linear execution flow and returns ValidationErrorOutput schema dynamically."
+          }
+        ]
+      }
+    }
   }
 }
