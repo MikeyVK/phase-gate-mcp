@@ -16,8 +16,8 @@ from pydantic import BaseModel
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
 
-TInput = TypeVar("TInput", bound=BaseModel, contravariant=True)
-TOutput = TypeVar("TOutput", bound=BaseModel, covariant=True)
+TInput = TypeVar("TInput", bound=BaseModel)
+TOutput = TypeVar("TOutput", bound=BaseModel)
 
 
 @runtime_checkable

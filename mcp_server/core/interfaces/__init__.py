@@ -206,15 +206,3 @@ class IContextLoadedWriter(Protocol):
         raise NotImplementedError
 
 
-@runtime_checkable
-class IToolResponseCache(Protocol):
-    """Protocol for response cache managers."""
-
-    def put(self, uri: str, output: BaseModel) -> None:
-        raise NotImplementedError
-
-    def get(self, uri: str) -> BaseModel | None:
-        raise NotImplementedError
-
-    def exists(self, uri: str) -> bool:
-        raise NotImplementedError
