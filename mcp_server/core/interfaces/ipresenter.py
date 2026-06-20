@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 # Project modules
 from mcp_server.core.operation_notes import Note
+from mcp_server.schemas.cache_publication import CachePublication
 
 
 @runtime_checkable
@@ -26,7 +27,7 @@ class IPresenter(Protocol):
         tool_name: str,
         data: BaseModel,
         notes: list[Note],
-        run_id: str | None = None,
+        cache_pub: CachePublication | None = None,
     ) -> str:
         """Format the output DTO and operation notes into a single user-facing markdown string."""
         ...

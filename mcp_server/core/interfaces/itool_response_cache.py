@@ -10,8 +10,9 @@ CQRS cache interfaces.
 # Standard library
 from typing import Protocol, Type, TypeVar, runtime_checkable
 
-# Third-party
 from pydantic import BaseModel
+
+from mcp_server.schemas.cache_publication import CachePublication
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -20,12 +21,12 @@ T = TypeVar("T", bound=BaseModel)
 class IToolResponsePublisher(Protocol):
     """Write-only interface for publishing tool execution results to the cache."""
 
-    def put(self, tool_name: str, output: BaseModel) -> str | None:
-        """Publish the output DTO to the cache and return a unique run_id.
+    def put(self, tool_name: str, output: BaseModel) -> CachePublication:
+        """Publish the output DTO to the cache and return a CachePublication.
 
         If a cache write fails, the implementation must trap the exception,
-        log a warning/error, and return None. It must never crash the tool
-        execution pipeline.
+        log a warning/error, and return a CachePublication with success=False.
+        It must never crash the tool execution pipeline.
         """
         ...
 

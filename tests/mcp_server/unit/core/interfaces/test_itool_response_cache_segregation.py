@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 # Project modules
 from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
+from mcp_server.schemas.cache_publication import CachePublication
 
 
 class DummyModel(BaseModel):
@@ -18,8 +19,8 @@ class DummyModel(BaseModel):
 
 
 class DummyPublisher:
-    def put(self, tool_name: str, output: BaseModel) -> str | None:
-        return "run-123"
+    def put(self, tool_name: str, output: BaseModel) -> CachePublication:
+        return CachePublication(run_id="run-123", success=True)
 
 
 class DummyReader:

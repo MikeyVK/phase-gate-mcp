@@ -30,6 +30,7 @@ from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.presenters.text_presenter import TextPresenter
 from mcp.types import CallToolRequest, CallToolRequestParams
 from tests.mcp_server.test_support import make_test_server, assert_itool_result
+from mcp_server.schemas.cache_publication import CachePublication
 
 
 # Dummy Core Tool for E2E validation
@@ -137,7 +138,10 @@ class TestPipelineE2E:
         if the cache manager returns None on put (simulating cache write failure).
         """
         cache_manager = MagicMock(spec=ResponseCacheManager)
-        cache_manager.put.return_value = None  # Force failure / None return
+        cache_pub_fail = CachePublication(run_id=None, success=False, error_code="write_failed")
+        cache_manager.put.return_value = (
+            cache_pub_fail  # Force failure / CachePublication fail return
+        )
         enforcement_runner = MagicMock(spec=EnforcementRunner)
 
         factory = ToolFactory(enforcement_runner=enforcement_runner, workspace_root=temp_workspace)

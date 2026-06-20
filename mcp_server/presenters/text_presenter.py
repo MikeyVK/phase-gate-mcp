@@ -19,6 +19,7 @@ from mcp_server.config.schemas.presentation_config import (
 )
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteEntry
+from mcp_server.schemas.cache_publication import CachePublication
 
 
 class SafeNoneFormatter(string.Formatter):
@@ -96,7 +97,7 @@ class TextPresenter:
         tool_name: str,
         data: BaseModel | dict[str, Any],
         notes: list[NoteEntry] | None = None,
-        run_id: str | None = _DEFAULT_RUN_ID,
+        cache_pub: CachePublication | None = None,
         success: bool | None = None,
     ) -> str:
         """Present the DTO or dict as a formatted string."""
@@ -142,12 +143,12 @@ class TextPresenter:
         data_dict = data.model_dump() if isinstance(data, BaseModel) else dict(data)
 
         # 3. Resolve run_id for placeholders and fallback trigger
-        if run_id == _DEFAULT_RUN_ID:
+        if cache_pub is not None:
+            placeholder_run_id = cache_pub.run_id
+            should_trigger_fallback = not cache_pub.success
+        else:
             placeholder_run_id = data_dict.get("run_id")
             should_trigger_fallback = False
-        else:
-            placeholder_run_id = run_id
-            should_trigger_fallback = run_id is None
 
         # 4. Bepaal template op basis van success
         tool_cfg = self.tools_config.get(tool_name)
@@ -279,9 +280,29 @@ class TextPresenter:
             if notes_text:
                 text = f"{text}\n\n{notes_text}"
 
-        # 8. Fallback when run_id is None
+        # Check if cache URI needs to be appended (moved from server.py)
+        if placeholder_run_id and "pgmcp://cache/runs/" not in text:
+            uri_ref_tmpl = self.get_next_instruction_texts().get("uri_reference")
+            if uri_ref_tmpl:
+                try:
+                    none_val = self.get_none_value()
+                    formatter = SafeNoneFormatter(none_val)
+                    uri_text = formatter.format(uri_ref_tmpl, run_id=placeholder_run_id)
+                except Exception:
+                    uri_text = uri_ref_tmpl.format(run_id=placeholder_run_id)
+            else:
+                uri_text = (
+                    "*(Full details available in the structured JSON payload. "
+                    f"View resource: pgmcp://cache/runs/{placeholder_run_id})*"
+                )
+            text = f"{text}\n\n{uri_text}"
+
+        # 8. Fallback when cache publication failed
         if should_trigger_fallback:
-            warning_note = "*(Cache publication failed. Full details dumped inline)*"
+            warning_note = self.get_next_instruction_texts().get(
+                "cache_publication_failed",
+                "*(Cache publication failed. Full details dumped inline)*",
+            )
             # Strip traceback from ExecutionErrorOutput DTO to avoid leaking secrets
             json_dict = dict(data_dict)
             if "traceback" in json_dict:

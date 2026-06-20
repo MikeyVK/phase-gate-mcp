@@ -23,6 +23,7 @@ from mcp_server.core.exceptions import ConfigError
 # Project modules
 from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.core.operation_notes import Note
+from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.presenters.text_presenter import (
     SafeNoneFormatter,
     TextPresenter,
@@ -369,7 +370,7 @@ class TestTextPresenter:
             tool_name="dummy_tool",
             data=dto,
             notes=notes,
-            run_id="run-123",
+            cache_pub=CachePublication(run_id="run-123", success=True),
         )
         assert "💡 Suggestions" in text
         assert "Suggestion: Try caching" in text
@@ -383,7 +384,7 @@ class TestTextPresenter:
             tool_name="dummy_tool",
             data=dto,
             notes=[],
-            run_id=None,
+            cache_pub=CachePublication(run_id=None, success=False, error_code="write_failed"),
         )
         assert "*(Cache publication failed. Full details dumped inline)*" in text
         assert "```json" in text
@@ -406,7 +407,7 @@ class TestTextPresenter:
             tool_name="dummy_tool",
             data=dto,
             notes=[],
-            run_id=None,
+            cache_pub=CachePublication(run_id=None, success=False, error_code="write_failed"),
         )
         assert "*(Cache publication failed. Full details dumped inline)*" in text
         assert "```json" in text
@@ -434,7 +435,6 @@ class TestTextPresenter:
 
     def test_present_cache_publication_failure(self, mock_yaml_config: dict[str, Any]) -> None:
         """Test presenting with CachePublication indicating failure."""
-        from mcp_server.schemas.cache_publication import CachePublication
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=True, result="Fallback JSON test")
         cache_pub = CachePublication(success=False, error_code="write_failed")

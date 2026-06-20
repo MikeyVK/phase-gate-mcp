@@ -28,7 +28,7 @@ from mcp_server.bootstrap import ConfigLayer, ManagerGraph
 from mcp_server.config.settings import Settings
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.presenters.text_presenter import TextPresenter, SafeNoneFormatter
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.base import BaseResource
 
 # Resources
@@ -164,9 +164,9 @@ class MCPServer:
                         result_dto = await tool.execute(arguments or {}, note_context)
 
                         # 2. Publish result to cache (resilient; returns None on failure)
-                        run_id = None
+                        cache_pub = None
                         if self.response_cache_manager is not None:
-                            run_id = self.response_cache_manager.put(tool.name, result_dto)
+                            cache_pub = self.response_cache_manager.put(tool.name, result_dto)
 
                         # 3. Generate markdown output (resilient; formats DTO and notes)
                         if self.presenter is not None:
@@ -174,32 +174,10 @@ class MCPServer:
                                 tool_name=tool.name,
                                 data=result_dto,
                                 notes=note_context.entries,
-                                run_id=run_id,
+                                cache_pub=cache_pub,
                             )
                         else:
                             markdown = str(result_dto)
-
-                        # Check if cache URI needs to be appended
-                        if run_id and "pgmcp://cache/runs/" not in markdown:
-                            uri_ref_tmpl = None
-                            if self.presenter is not None:
-                                uri_ref_tmpl = self.presenter.get_next_instruction_texts().get(
-                                    "uri_reference"
-                                )
-                            if uri_ref_tmpl and self.presenter is not None:
-                                try:
-                                    none_val = self.presenter.get_none_value()
-                                    formatter = SafeNoneFormatter(none_val)
-                                    uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
-                                except Exception:
-                                    uri_text = uri_ref_tmpl.format(run_id=run_id)
-                            else:
-                                uri_text = (
-                                    "*(Full details available in the structured JSON payload. "
-                                    f"View resource: pgmcp://cache/runs/{run_id})*"
-                                )
-                            markdown = f"{markdown}\n\n{uri_text}"
-
                         # 4. Construct and return normalized ToolResult
                         raw_result = ToolResult.text(markdown)
 

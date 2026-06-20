@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
@@ -671,8 +672,11 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
         server.tools = [factory.create_tool(tool)]
 
-        # Mock put to return None (representing cache write failure)
-        with patch.object(cache_manager, "put", return_value=None) as mock_put:
+        with patch.object(
+            cache_manager,
+            "put",
+            return_value=CachePublication(success=False, error_code="write_failed"),
+        ) as mock_put:
             handler = server.server.request_handlers[CallToolRequest]
 
             req = CallToolRequest(
@@ -690,11 +694,12 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         text = getattr(content[0], "text", "")
         # Should return direct text block formatted by presenter
         assert "success" in text
-        # Since run_id is None, there should be NO cache URI in output
+        # Since cache_pub.run_id is None, there should be NO cache URI in output
         assert "pgmcp://cache/runs/" not in text
 
-        # Verify presenter was called with run_id=None
+        # Verify presenter was called with cache_pub
         mock_present.assert_called_once()
         _, kwargs = mock_present.call_args
-        assert kwargs.get("run_id") is None
+        assert kwargs.get("cache_pub") is not None
+        assert kwargs.get("cache_pub").success is False
         mock_put.assert_called_once()

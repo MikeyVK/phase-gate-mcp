@@ -15,6 +15,7 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, Type, TypeVar, cast
 
 from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
+from mcp_server.schemas.cache_publication import CachePublication
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -32,8 +33,8 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
         self._max_size = max_size
         self._cache: OrderedDict[str, BaseModel] = OrderedDict()
 
-    def put(self, tool_name: str, output: BaseModel) -> str | None:
-        """Publish the output DTO to the cache and return a unique run_id."""
+    def put(self, tool_name: str, output: BaseModel) -> CachePublication:
+        """Publish the output DTO to the cache and return a CachePublication."""
         try:
             # Generate a new unique run_id (or extract it if tool_name is a URI)
             run_id = tool_name
@@ -49,9 +50,9 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
             # Enforce FIFO eviction
             if len(self._cache) > self._max_size:
                 self._cache.popitem(last=False)
-            return run_id
+            return CachePublication(run_id=run_id, success=True)
         except Exception:
-            return None
+            return CachePublication(run_id=None, success=False, error_code="write_failed")
 
     def get(self, run_id: str, response_model: Type[T] | None = None) -> T | None:
         """Retrieve and deserialize a cached DTO using the expected type-safe model."""
