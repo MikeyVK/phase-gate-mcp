@@ -49,6 +49,10 @@ class RunTestsInput(BaseModel):
         default=False,
         description="Enable branch coverage and enforce the 90% threshold.",
     )
+    collect_only: bool = Field(
+        default=False,
+        description="Only collect tests, do not run them (pytest --collect-only).",
+    )
     verbose: bool = Field(
         default=False,
         description=(
@@ -175,6 +179,8 @@ class RunTestsTool(ICoreTool[RunTestsInput, RunTestsOutput]):
                     "--cov-fail-under=90",
                 ]
             )
+        if params.collect_only:
+            cmd.append("--collect-only")
         return cmd
 
     async def execute(self, params: RunTestsInput, context: NoteContext) -> RunTestsOutput:
