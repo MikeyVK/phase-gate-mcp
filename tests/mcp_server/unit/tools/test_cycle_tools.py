@@ -35,6 +35,7 @@ from tests.mcp_server.test_support import (
     make_project_manager,
     make_test_server,
 )
+from mcp_server.core.tool_factory import ToolFactory
 
 
 class FakeForceCycleStateEngine:
@@ -201,8 +202,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
-            from mcp_server.core.tool_factory import ToolFactory
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
                 factory.create_tool(
                     TransitionCycleTool(
@@ -237,6 +237,7 @@ class TestCycleTools:
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
         )
+
     @pytest.mark.asyncio
     async def test_call_tool_post_enforcement_runs_after_force_cycle_transition(
         self,
@@ -260,8 +261,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
-            from mcp_server.core.tool_factory import ToolFactory
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
                 factory.create_tool(
                     ForceCycleTransitionTool(
@@ -369,8 +369,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
-            from mcp_server.core.tool_factory import ToolFactory
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
                 factory.create_tool(
                     TransitionCycleTool(
@@ -432,8 +431,7 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
-            from mcp_server.core.tool_factory import ToolFactory
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
                 factory.create_tool(
                     ForceCycleTransitionTool(

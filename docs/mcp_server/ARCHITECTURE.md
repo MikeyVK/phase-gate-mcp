@@ -207,7 +207,7 @@ mcp_server/
 │
 ├── core/                          # Core infrastructure
 │   ├── exceptions.py              # MCPError hierarchy
-│   ├── error_handling.py          # @tool_error_handler decorator
+│   ├── error_handling.py          # General error handling
 │   ├── logging.py                 # Structured logging + audit log
 │   ├── operation_notes.py         # NoteContext + generic Note class
 │   ├── phase_detection.py         # ScopeDecoder
@@ -216,8 +216,18 @@ mcp_server/
 │   ├── scope_encoder.py
 │   ├── commit_phase_detector.py
 │   ├── directory_policy_resolver.py
+│   ├── tool_factory.py            # ToolFactory composition root
+│   ├── decorators/                # Russian Doll execution decorators
+│   │   ├── __init__.py            # Re-exports all decorators
+│   │   ├── enforcement_decorator.py
+│   │   ├── input_validation_decorator.py
+│   │   └── tool_error_handler_decorator.py
 │   └── interfaces/
-│       └── __init__.py            # 13 Protocol interfaces
+│       ├── __init__.py            # Re-exports interfaces + 13 legacy Protocol interfaces
+│       ├── itool.py               # Pure execution interface ITool
+│       ├── icore_tool.py          # Generic execution interface ICoreTool
+│       ├── ipresenter.py          # IPresenter interface
+│       └── itool_response_cache.py # CQRS segregated cache interfaces
 │
 ├── managers/                      # Business logic (18 files)
 │   ├── git_manager.py

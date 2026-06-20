@@ -312,7 +312,7 @@ class PytestRunner:
         )
         match = collect_pattern.search(stdout)
         return match.group(1).strip() if match else ""
-        return match.group(1).strip() if match else ""
+
     def _parse_coverage(self, stdout: str) -> float | None:
         """Extract total coverage percentage from coverage report line."""
         match = _COVERAGE_RE.search(stdout)

@@ -440,9 +440,7 @@ class TestC4XdistTracebackExtraction:
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
 
-    def test_extract_traceback_windows_crlf_and_dots(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_extract_traceback_windows_crlf_and_dots(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Verify traceback extraction on Windows with CRLF and class-method dot separator."""
         crlf_stdout = (
             "============================= FAILURES =============================\r\n"
