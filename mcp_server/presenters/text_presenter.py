@@ -98,14 +98,46 @@ class TextPresenter:
         notes: list[NoteEntry] | None = None,
         run_id: str | None = _DEFAULT_RUN_ID,
         success: bool | None = None,
-        presentation_category: str | None = None,
     ) -> str:
         """Present the DTO or dict as a formatted string."""
 
         # 1. Resolve success and presentation category
         resolved_success = success if success is not None else getattr(data, "success", True)
-        resolved_cat = presentation_category if presentation_category is not None else "query"
 
+        # Resolve category internally based on tool name to decouple transport
+        resolved_cat = "query"
+        # Mutation tools
+        if tool_name in (
+            "create_branch",
+            "git_add_or_commit",
+            "git_checkout",
+            "git_push",
+            "git_merge",
+            "git_delete_branch",
+            "git_stash",
+            "git_restore",
+            "git_pull",
+            "transition_phase",
+            "force_phase_transition",
+            "transition_cycle",
+            "force_cycle_transition",
+            "safe_edit_file",
+            "scaffold_artifact",
+            "create_issue",
+            "update_issue",
+            "close_issue",
+            "submit_pr",
+            "merge_pr",
+            "create_label",
+            "add_labels",
+            "remove_labels",
+            "create_milestone",
+            "close_milestone",
+            "auto_fix",
+        ):
+            resolved_cat = "mutation"
+        elif tool_name in ("initialize_project", "restart_server"):
+            resolved_cat = "bootstrap"
         # 2. Convert DTO/dict to a flat dictionary for formatting
         data_dict = data.model_dump() if isinstance(data, BaseModel) else dict(data)
 

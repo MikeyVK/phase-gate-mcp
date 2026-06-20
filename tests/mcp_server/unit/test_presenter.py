@@ -96,9 +96,7 @@ class TestTextPresenter:
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=True, result="Operation completed")
 
-        text = presenter.present(
-            tool_name="dummy_tool", success=True, presentation_category="query", data=dto
-        )
+        text = presenter.present(tool_name="dummy_tool", success=True, data=dto)
 
         # 'query' category maps to '📋' Success maps to '📋' + template + \n\n + next_instructions
         assert text == "📋 Success: Operation completed\n\n🚀 TEST ADVISORY WARNING"
@@ -108,9 +106,7 @@ class TestTextPresenter:
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=False, error_message="Something failed")
 
-        text = presenter.present(
-            tool_name="dummy_tool", success=False, presentation_category="query", data=dto
-        )
+        text = presenter.present(tool_name="dummy_tool", success=False, data=dto)
 
         assert text == "❌ Error: Something failed"
 
@@ -119,9 +115,7 @@ class TestTextPresenter:
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummySimpleOutput(success=False, error_message="Fallback failure")
 
-        text = presenter.present(
-            tool_name="dummy_no_model", success=False, presentation_category="mutation", data=dto
-        )
+        text = presenter.present(tool_name="dummy_no_model", success=False, data=dto)
 
         assert text == "❌ Failed: Fallback failure"
 
@@ -137,9 +131,7 @@ class TestTextPresenter:
             run_id: str = "abc-123"
 
         dto = MockDTO()
-        text = presenter.present(
-            tool_name="dummy_tool", success=True, presentation_category="query", data=dto
-        )
+        text = presenter.present(tool_name="dummy_tool", success=True, data=dto)
 
         expected_text = (
             "📋 Success: Op\n\n"
@@ -378,9 +370,7 @@ class TestTextPresenter:
             data=dto,
             notes=notes,
             run_id="run-123",
-            presentation_category="query",
         )
-
         assert "💡 Suggestions" in text
         assert "Suggestion: Try caching" in text
 
@@ -394,9 +384,7 @@ class TestTextPresenter:
             data=dto,
             notes=[],
             run_id=None,
-            presentation_category="query",
         )
-
         assert "*(Cache publication failed. Full details dumped inline)*" in text
         assert "```json" in text
         assert '"result": "Fallback JSON test"' in text
@@ -419,9 +407,7 @@ class TestTextPresenter:
             data=dto,
             notes=[],
             run_id=None,
-            presentation_category="query",
         )
-
         assert "*(Cache publication failed. Full details dumped inline)*" in text
         assert "```json" in text
         assert "Test Execution Error" in text

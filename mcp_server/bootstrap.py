@@ -48,7 +48,7 @@ from mcp_server.config.schemas import (
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
-from mcp_server.core.interfaces import IToolResponseCache
+from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.artifact_manager import ArtifactManager
@@ -185,7 +185,7 @@ class ManagerGraph:
     artifact_manager: ArtifactManager
     pr_status_cache: PRStatusCache
     enforcement_runner: EnforcementRunner
-    response_cache: IToolResponseCache
+    response_cache: IToolResponsePublisher | IToolResponseReader
 
 
 class ServerBootstrapper:
@@ -226,7 +226,7 @@ class ServerBootstrapper:
         managers = self._build_manager_graph(configs, template_registry)
 
         # Build Tools and Resources
-        tools = self._build_tools(configs, managers)
+        core_tools = self._build_tools(configs, managers)
         resources = self._build_resources(configs, managers)
 
         from mcp_server.presenters.text_presenter import (  # noqa: PLC0415
@@ -235,7 +235,16 @@ class ServerBootstrapper:
         )
 
         presenter = TextPresenter(config=configs.presentation_config)
-        validate_presentation_alignment(presenter, tools)
+        validate_presentation_alignment(presenter, core_tools)
+
+        # Decorate core tools using ToolFactory composition root
+        from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory  # noqa: PLC0415
+
+        factory = CoreToolFactory(
+            enforcement_runner=managers.enforcement_runner,
+            workspace_root=Path(settings.server.workspace_root),
+        )
+        tools = [factory.create_tool(t) for t in core_tools]
 
         # Import dynamically to avoid circular dependencies
         from mcp_server.server import MCPServer  # noqa: PLC0415
@@ -247,6 +256,7 @@ class ServerBootstrapper:
             tools=tools,
             resources=resources,
             presenter=presenter,
+            publisher=managers.response_cache,
         )
 
     def _build_config_layer(self) -> ConfigLayer:
@@ -629,14 +639,7 @@ class ServerBootstrapper:
             )
 
         tools.append(AutoFixTool(qa_manager=managers.qa_manager))
-
-        from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory  # noqa: PLC0415
-
-        factory = CoreToolFactory(
-            enforcement_runner=managers.enforcement_runner,
-            workspace_root=Path(self._settings.server.workspace_root),
-        )
-        return [factory.create_tool(t) for t in tools]
+        return tools
 
     def _build_resources(
         self,

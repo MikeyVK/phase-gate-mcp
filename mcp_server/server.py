@@ -35,12 +35,10 @@ from mcp_server.resources.base import BaseResource
 # Resources
 # Scaffolding infrastructure (Issue #72)
 from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 
 # Tools
 from mcp_server.tools.tool_result import ToolResult
-from mcp_server.schemas.error_outputs import (
-    CacheErrorOutput,
-)
 from mcp_server.utils.mcp_converters import (
     convert_tool_result_to_mcp_result,
 )
@@ -60,14 +58,12 @@ class MCPServer:
         tools: list[ITool],
         resources: list[BaseResource],
         presenter: TextPresenter | None = None,
+        publisher: IToolResponsePublisher | None = None,
     ) -> None:
         """Initialize the MCP server with resources and tools."""
         self._settings = settings
         self._configs = configs
         self.presenter = presenter
-        """Initialize the MCP server with resources and tools."""
-        self._settings = settings
-        self._configs = configs
         server_name = settings.server.name
         workspace_root = Path(settings.server.workspace_root)
 
@@ -88,8 +84,7 @@ class MCPServer:
         self.artifact_manager = managers.artifact_manager
         self.pr_status_cache = managers.pr_status_cache
         self.enforcement_runner = managers.enforcement_runner
-        self.response_cache = getattr(managers, "response_cache", None)
-        self.response_cache_manager = self.response_cache
+        self.response_cache_manager = publisher
 
         self.server = Server(server_name)
         self.resources = resources
@@ -170,30 +165,8 @@ class MCPServer:
 
                         # 2. Publish result to cache (resilient; returns None on failure)
                         run_id = None
-                        cache_error_occurred = False
-                        cache_err_message = ""
                         if self.response_cache_manager is not None:
-                            try:
-                                run_id = self.response_cache_manager.put(tool.name, result_dto)
-                            except Exception as cache_exc:
-                                cache_error_occurred = True
-                                cache_err_message = str(cache_exc)
-
-                        if cache_error_occurred:
-                            # Wrap as CacheErrorOutput
-                            cache_dto = CacheErrorOutput(
-                                error_message=cache_err_message,
-                                params={
-                                    "original_error": getattr(result_dto, "error_message", None)
-                                    or str(result_dto)
-                                },
-                            )
-                            # Format using plain text directly (double fault prevention)
-                            text = f"CacheError: {cache_dto.error_message}"
-                            raw_result = ToolResult(
-                                content=[{"type": "text", "text": text}], is_error=True
-                            )
-                            return self._convert_tool_result_to_mcp_result(raw_result)
+                            run_id = self.response_cache_manager.put(tool.name, result_dto)
 
                         # 3. Generate markdown output (resilient; formats DTO and notes)
                         if self.presenter is not None:
@@ -202,7 +175,6 @@ class MCPServer:
                                 data=result_dto,
                                 notes=note_context.entries,
                                 run_id=run_id,
-                                presentation_category=getattr(tool, "tool_category", None),
                             )
                         else:
                             markdown = str(result_dto)

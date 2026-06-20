@@ -33,7 +33,7 @@ from mcp_server.config.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-from mcp_server.core.interfaces import IToolResponseCache
+from mcp_server.core.interfaces import IToolResponsePublisher
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -106,7 +106,7 @@ class TestBootstrap:
             "artifact_manager": MagicMock(spec=ArtifactManager),
             "pr_status_cache": MagicMock(spec=PRStatusCache),
             "enforcement_runner": MagicMock(spec=EnforcementRunner),
-            "response_cache": MagicMock(spec=IToolResponseCache),
+            "response_cache": MagicMock(spec=IToolResponsePublisher),
         }
         graph = ManagerGraph(**mock_managers)
 

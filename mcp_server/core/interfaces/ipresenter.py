@@ -8,7 +8,7 @@ Interface for translating execution results and notes into markdown.
 """
 
 # Standard library
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 # Third-party
 from pydantic import BaseModel
@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from mcp_server.core.operation_notes import Note
 
 
+@runtime_checkable
 class IPresenter(Protocol):
     """Interface for translating execution results and notes into markdown."""
 

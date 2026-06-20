@@ -130,3 +130,115 @@ class TestPipelineE2E:
         cached_dto = cache_manager.get(run_id, DummyOutput)
         assert cached_dto is not None
         assert cached_dto.result == "Value: 42"
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_fallback(self, temp_workspace):
+        """Verify that the pipeline functions correctly and falls back to run_id=None
+        if the cache manager returns None on put (simulating cache write failure).
+        """
+        cache_manager = MagicMock(spec=ResponseCacheManager)
+        cache_manager.put.return_value = None  # Force failure / None return
+        enforcement_runner = MagicMock(spec=EnforcementRunner)
+
+        factory = ToolFactory(enforcement_runner=enforcement_runner, workspace_root=temp_workspace)
+        decorated_tool = factory.create_tool(DummyCoreTool())
+
+        server = make_test_server()
+        server.response_cache_manager = cache_manager
+        config_data = {
+            "global": {
+                "next_instruction_texts": {
+                    "uri_reference": (
+                        "*(Full details available in the structured JSON payload. "
+                        "View resource: pgmcp://cache/runs/{run_id})*"
+                    )
+                }
+            },
+            "tools": {
+                "dummy_core_tool": {
+                    "template_success": "Success: {result}",
+                    "next_instructions": ["uri_reference"],
+                }
+            },
+        }
+        server.presenter = TextPresenter(config_data=config_data)
+        server.tools = [decorated_tool]
+
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="dummy_core_tool",
+                arguments={"val": 100},
+            )
+        )
+        response = await handler(req)
+
+        text_content = assert_itool_result(response.root)
+        assert "Value: 100" in text_content
+        # Check that fallback warning and inline JSON dump are present
+        assert "*(Cache publication failed. Full details dumped inline)*" in text_content
+        assert '"result": "Value: 100"' in text_content
+        cache_manager.put.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_pipeline_enforcement_blocker(self, temp_workspace):
+        """Verify that when the enforcement runner raises a ValidationError,
+        the pipeline maps it to EnforcementErrorOutput DTO and returns it formatted.
+        """
+        from mcp_server.core.exceptions import ValidationError as CoreValidationError  # noqa: PLC0415
+        from mcp_server.schemas.error_outputs import EnforcementErrorOutput  # noqa: PLC0415
+
+        cache_manager = ResponseCacheManager()
+        enforcement_runner = MagicMock(spec=EnforcementRunner)
+        # Configure preflight enforcement to raise ValidationError
+        enforcement_runner.run.side_effect = CoreValidationError(
+            message="Dirty workdir detected",
+            error_code="dirty_workdir",
+            params={"branch": "feature-branch"},
+        )
+
+        factory = ToolFactory(enforcement_runner=enforcement_runner, workspace_root=temp_workspace)
+        decorated_tool = factory.create_tool(DummyCoreTool())
+
+        server = make_test_server()
+        server.response_cache_manager = cache_manager
+        config_data = {
+            "global": {
+                "default_failure_template": "Failure: {error_message}",
+                "emojis": {"failure": "❌"},
+                "failures": {"dirty_workdir": "Branch {branch} is dirty!"},
+            },
+            "tools": {},
+        }
+        server.presenter = TextPresenter(config_data=config_data)
+        server.tools = [decorated_tool]
+
+        handler = server.server.request_handlers[CallToolRequest]
+        req = CallToolRequest(
+            params=CallToolRequestParams(
+                name="dummy_core_tool",
+                arguments={"val": 42},
+            )
+        )
+        response = await handler(req)
+
+        # Check that is_error is True
+        assert getattr(response.root, "is_error", False) or getattr(response.root, "isError", False)
+
+        # Get the text content from response.root.content
+        assert len(response.root.content) == 1
+        text_content = response.root.content[0].text
+        # The presenter should format the failure with the custom failure message and emoji
+        assert "❌ Branch feature-branch is dirty!" in text_content
+
+        # Extract run_id to verify the error output was correctly cached
+        match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text_content)
+        assert match is not None
+        run_id = match.group(1)
+
+        cached_dto = cache_manager.get(run_id, EnforcementErrorOutput)
+        assert cached_dto is not None
+        assert cached_dto.success is False
+        assert cached_dto.error_type == "EnforcementError"
+        assert cached_dto.error_code == "dirty_workdir"
+        assert cached_dto.params == {"branch": "feature-branch"}

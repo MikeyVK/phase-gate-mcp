@@ -44,6 +44,10 @@ class TestToolFactory:
         # 1. Outer decorator: ToolErrorHandlerDecorator
         assert isinstance(decorated, ToolErrorHandlerDecorator)
 
+        # Private attribute access (_inner_tool, _enforcement_runner, _workspace_root) is
+        # required in this unit test to verify the structural ordering and configuration
+        # of the nested decorator pipeline stack.
+
         # 2. Middle decorator: InputValidationDecorator
         middle = decorated._inner_tool  # pyright: ignore[reportPrivateUsage]
         assert isinstance(middle, InputValidationDecorator)
