@@ -26,15 +26,14 @@ During the initial implementation of Issue 406, we identified several violations
 
 ---
 
-## Findings
-
-1. Presentation Leak: server.py directly formats cache links. 2. Caching Implicit Status: run_id is None is used to check for cache failure. 3. Hardcoded warnings: fallback warning is in text_presenter.py instead of presentation.yaml. 4. Validation Resource Gap: the target design missed returning validation schemas via schema://validation. 5. Interface Packaging: concrete classes are still in interfaces/__init__.py.
-
+1. Presentation Leak: server.py directly formats cache links (L183–201), importing SafeNoneFormatter.
+2. Caching Implicit Status: run_id is None is used by the presenter to check for cache failure.
+3. Hardcoded warnings: fallback warning is in text_presenter.py instead of presentation.yaml.
+4. Validation Resource Gap: the target design missed returning validation schemas via schema://validation.
+5. Interface Packaging: concrete classes are still in interfaces/__init__.py.
 ---
 
-## Approved Strategy
-
-Use clean Russian Doll decorators for execution, pass explicit CachePublication DTOs to the presenter, configure all user-facing strings in presentation.yaml, and extract concrete interface implementations from __init__.py into separate files.
+Use clean Russian Doll decorators for execution. Introduce a frozen CachePublication DTO (encapsulating run_id, success, and error_code) returned by the publisher and passed explicitly to the presenter. Configure all user-facing fallback warnings in presentation.yaml. Move all URI-link formatting and SafeNoneFormatter calls out of server.py to TextPresenter. Extract concrete interface implementations from __init__.py into separate files.
 
 ---
 

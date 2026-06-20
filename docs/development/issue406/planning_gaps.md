@@ -29,13 +29,21 @@ This planning document outlines the additional TDD cycles (Cycles 8, 9, and 10) 
 * `mcp_server/core/interfaces/state.py` [NEW]
 * `mcp_server/core/interfaces/ipr_status.py` [NEW]
 * `mcp_server/core/interfaces/ipytest_runner.py` [NEW]
+* `mcp_server/core/interfaces/git.py` [NEW]
+* `mcp_server/core/interfaces/quality.py` [NEW]
+* `mcp_server/core/interfaces/workflow.py` [NEW]
+* `mcp_server/core/interfaces/context.py` [NEW]
 
 **Migration Strategy (Strategy A: Move + Re-export):**
 1. Extract classes to their dedicated sub-modules:
    * `gate.py`: `GateReport`, `GateViolation`, `IWorkflowGateRunner`
    * `state.py`: `IStateReader`, `IStateRepository`, `IStateReconstructor`
-   * `ipr_status.py`: `PRStatus`, `IPRStatusReader`, `IPRStatusWriter`
+   * `ipr_status.py`: `PRStatus` (enum), `IPRStatusReader`, `IPRStatusWriter`
    * `ipytest_runner.py`: `IPytestRunner`
+   * `git.py`: `IGitContextReader`, `IBranchParentReader`
+   * `quality.py`: `IQualityStateRepository`
+   * `workflow.py`: `IWorkflowStateMutator`
+   * `context.py`: `IContextLoadedReader`, `IContextLoadedWriter`
 2. Update `mcp_server/core/interfaces/__init__.py` to act as a pure facade containing only re-exports (e.g., `from mcp_server.core.interfaces.gate import GateReport as GateReport`). This ensures zero changes or breakage for the 66+ consumer files importing from `core.interfaces`.
 
 **TDD RED Test:**
@@ -56,19 +64,23 @@ This planning document outlines the additional TDD cycles (Cycles 8, 9, and 10) 
 * `mcp_server/core/interfaces/ipresenter.py`
 * `mcp_server/presenters/text_presenter.py`
 * `mcp_server/core/interfaces/itool_response_cache.py`
-* `mcp_server/managers/artifact_manager.py` (ResponseCacheManager)
+* `mcp_server/state/response_cache.py`
+* `tests/mcp_server/unit/core/interfaces/test_itool_response_cache_segregation.py`
 * `mcp_server/server.py`
 * `presentation.yaml`
 
-**CachePublication DTO Specification:**
+**CachePublication DTO Specification (Pydantic BaseModel):**
 ```python
-@dataclass(frozen=True)
-class CachePublication:
+from pydantic import BaseModel, ConfigDict
+
+class CachePublication(BaseModel):
+    model_config = ConfigDict(frozen=True)
     run_id: str | None = None
     success: bool = True
     error_code: str | None = None
 ```
 It is returned by `IToolResponsePublisher.put()` and passed to `presenter.present()`.
+* **Breaking API Change Risk:** Updating the return type of `IToolResponsePublisher.put()` to `CachePublication` is a breaking API change that cascades to the concrete implementation `ResponseCacheManager.put()` and the unit test `test_itool_response_cache_segregation.py`. Both are marked in-scope for Cycle 9 to ensure concurrent refactoring and prevent regressions.
 
 **TDD RED Test:**
 * Write a test in `tests/mcp_server/unit/test_presenter.py` that calls `TextPresenter.present` with `cache_pub=CachePublication(success=False, error_code="write_failed")` and verify it formats the fallback JSON dump without tracebacks. This test should raise `TypeError` initially due to signature mismatch.

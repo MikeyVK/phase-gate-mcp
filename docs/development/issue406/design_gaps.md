@@ -73,6 +73,7 @@ The presentation formatting and caching failure logic are leaked into the transp
       error_code: str | None = None
   ```
 * **Creator:** `IToolResponsePublisher.put()` signature is updated to return `CachePublication` instead of `str | None`. If a write failure occurs, it catches the exception and returns `CachePublication(run_id=None, success=False, error_code="write_failed")`.
+  * **Breaking Change Risk:** This signature change is a breaking API modification affecting `IToolResponsePublisher` and its concrete implementer `ResponseCacheManager`. All tests mocking or verifying the caching publisher must be updated to handle the new return type instead of expecting `str | None`. The planning lists all affected files in scope to mitigate this regression risk.
 * **Presenter Integration:** Both `IPresenter.present()` and `TextPresenter.present()` are updated in lock-step to accept `cache_pub: CachePublication | None = None` instead of `run_id: str | None`.
 
 #### 3.1.2. Agnostic Transport Layer & URI Link Formatting
