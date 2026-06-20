@@ -64,11 +64,23 @@ class TestStrictInputValidationResponse:
     @pytest_asyncio.fixture
     async def server(self) -> MCPServer:
         """MCPServer with MockIntegrationTool registered."""
+        from mcp_server.config.settings import Settings
+        from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
+        from pathlib import Path
+
+        settings = Settings.from_env()
+        bootstrapper = ServerBootstrapper(settings)
+        configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
+        workspace_root = Path(settings.server.workspace_root)
+        server_root = workspace_root / settings.server.server_root_dir
+        template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
+        managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
+
         s = make_test_server()
 
         factory = ToolFactory(
-            enforcement_runner=s.enforcement_runner,
-            workspace_root=s._workspace_root,  # type: ignore[reportPrivateUsage]
+            enforcement_runner=managers.enforcement_runner,
+            workspace_root=workspace_root,
         )
         s.tools.append(factory.create_tool(MockIntegrationTool()))
         return s
