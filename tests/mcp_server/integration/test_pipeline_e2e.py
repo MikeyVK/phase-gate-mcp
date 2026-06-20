@@ -14,11 +14,9 @@ E2E pipeline integration tests verifying Russian doll decorator wrapping, cachin
 """
 
 # Standard library
-import tempfile
+import re
 import shutil
-import asyncio
-from pathlib import Path
-from typing import Any
+from unittest.mock import MagicMock
 
 # Third-party
 import pytest
@@ -30,7 +28,6 @@ from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.presenters.text_presenter import TextPresenter
-from mcp_server.server import MCPServer
 from mcp.types import CallToolRequest, CallToolRequestParams
 from tests.mcp_server.test_support import make_test_server, assert_itool_result
 
@@ -80,10 +77,10 @@ class TestPipelineE2E:
     async def test_pipeline_e2e_flow(self, temp_workspace):
         """Test the end-to-end flow of the new pipeline structure."""
         # Initialize dependencies
-        from unittest.mock import MagicMock
+
         cache_manager = ResponseCacheManager()
         enforcement_runner = MagicMock(spec=EnforcementRunner)
-        
+
         # Build tool using new factory
         factory = ToolFactory(enforcement_runner=enforcement_runner, workspace_root=temp_workspace)
         decorated_tool = factory.create_tool(DummyCoreTool())
@@ -91,7 +88,23 @@ class TestPipelineE2E:
         # Set up test server
         server = make_test_server()
         server.response_cache_manager = cache_manager
-        server.presenter = TextPresenter()
+        config_data = {
+            "global": {
+                "next_instruction_texts": {
+                    "uri_reference": (
+                        "*(Full details available in the structured JSON payload. "
+                        "View resource: pgmcp://cache/runs/{run_id})*"
+                    )
+                }
+            },
+            "tools": {
+                "dummy_core_tool": {
+                    "template_success": "Success: {result}",
+                    "next_instructions": ["uri_reference"],
+                }
+            },
+        }
+        server.presenter = TextPresenter(config_data=config_data)
         server.tools = [decorated_tool]
 
         # Act - Trigger tool call request
@@ -107,9 +120,9 @@ class TestPipelineE2E:
         # Assert - Verify presented output and cache
         text_content = assert_itool_result(response.root)
         assert "Value: 42" in text_content
-        
+
         # Verify run_id cache resolution
-        import re
+
         match = re.search(r"pgmcp://cache/runs/([a-f0-9\-]+)", text_content)
         assert match is not None
         run_id = match.group(1)

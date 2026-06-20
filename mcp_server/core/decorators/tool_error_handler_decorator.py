@@ -46,6 +46,25 @@ class ToolErrorHandlerDecorator(ITool):
     def args_model(self) -> type[BaseModel] | None:
         return self._inner_tool.args_model
 
+    @property
+    def tool_category(self) -> str | None:
+        return getattr(self._inner_tool, "tool_category", None)
+
+    @property
+    def enforcement_event(self) -> str:
+        return getattr(self._inner_tool, "enforcement_event", self.name)
+
+    @property
+    def _tool(self) -> Any:
+        inner = self._inner_tool
+        while hasattr(inner, "_inner_tool"):
+            inner = getattr(inner, "_inner_tool")
+        return inner
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        return self._inner_tool.input_schema
+
     async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
         try:
             return await self._inner_tool.execute(params, context)

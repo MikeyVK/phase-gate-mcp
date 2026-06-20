@@ -5,11 +5,10 @@ import asyncio
 import json
 import sys
 import time
-import traceback
 import uuid
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import anyio
 from mcp.server import Server
@@ -22,33 +21,27 @@ from mcp.types import (
     TextContent,
     Tool,
 )
-from pydantic import AnyUrl, BaseModel, ValidationError
+from pydantic import AnyUrl
 
 # Config
 from mcp_server.bootstrap import ConfigLayer, ManagerGraph
 from mcp_server.config.settings import Settings
-from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.enforcement_runner import EnforcementContext
 from mcp_server.presenters.text_presenter import TextPresenter, SafeNoneFormatter
 from mcp_server.resources.base import BaseResource
 
 # Resources
 # Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.decorators import ILegacyTool
+from mcp_server.core.interfaces.itool import ITool
 
 # Tools
 from mcp_server.tools.tool_result import ToolResult
 from mcp_server.schemas.error_outputs import (
-    ValidationErrorOutput,
-    EnforcementErrorOutput,
-    ExecutionErrorOutput,
     CacheErrorOutput,
 )
 from mcp_server.utils.mcp_converters import (
-    convert_tool_result_to_content,
     convert_tool_result_to_mcp_result,
 )
 
@@ -64,7 +57,7 @@ class MCPServer:
         settings: Settings,
         configs: ConfigLayer,
         managers: ManagerGraph,
-        tools: list[ILegacyTool],
+        tools: list[ITool],
         resources: list[BaseResource],
         presenter: TextPresenter | None = None,
     ) -> None:
@@ -104,181 +97,9 @@ class MCPServer:
 
         self.setup_handlers()
 
-    def _validate_tool_arguments(
-        self, tool: ILegacyTool, arguments: dict[str, Any] | None, call_id: str, name: str
-    ) -> BaseModel | dict[str, Any] | ToolResult:
-        """Validate tool arguments against args_model.
-
-        Returns:
-            - Validated BaseModel instance if validation succeeds
-            - Raw arguments dict if no args_model
-            - ToolResult with is_error=True if validation fails
-        """
-        if not getattr(tool, "args_model", None):
-            return arguments or {}
-
-        model_cls = cast(type[BaseModel], tool.args_model)
-        logger.debug(
-            "Validating tool arguments",
-            extra={
-                "props": {
-                    "call_id": call_id,
-                    "tool_name": name,
-                    "model": model_cls.__name__,
-                }
-            },
-        )
-        model_validated = model_cls(**(arguments or {}))
-        logger.debug(
-            "Arguments validated successfully",
-            extra={
-                "props": {
-                    "call_id": call_id,
-                    "tool_name": name,
-                }
-            },
-        )
-        return model_validated
-
-    async def _handle_error_dto(
-        self,
-        tool: ILegacyTool,
-        err_dto: BaseModel,
-        start_time: float,
-        call_id: str,
-        note_context: NoteContext | None = None,
-    ) -> CallToolResult:
-        # TODO: [Phase 2] Error DTO presentation logic will be refactored into a decorator pipeline
-        run_id = uuid.uuid4().hex
-        cache_error_occurred = False
-        cache_err_message = ""
-
-        # 1. Try to cache the error DTO
-        if self.response_cache is not None:
-            try:
-                self.response_cache.put(f"pgmcp://cache/runs/{run_id}", err_dto)
-            except Exception as cache_exc:
-                cache_error_occurred = True
-                cache_err_message = str(cache_exc)
-
-        # 2. Present the DTO
-        if cache_error_occurred:
-            # Wrap as CacheErrorOutput
-            cache_dto = CacheErrorOutput(
-                error_message=cache_err_message,
-                params={
-                    "original_error": err_dto.error_message
-                    if hasattr(err_dto, "error_message")
-                    else str(err_dto)
-                },
-            )
-            # Format using plain text directly (double fault prevention)
-            text = f"CacheError: {cache_dto.error_message}"
-            raw_result = ToolResult(content=[{"type": "text", "text": text}], is_error=True)
-            return self._convert_tool_result_to_mcp_result(raw_result)
-
-        # Present the original error DTO
-        if self.presenter is not None:
-            text = self.presenter.present(
-                tool_name=tool.name,
-                success=False,
-                presentation_category="query",
-                data=err_dto,
-            )
-        else:
-            text = str(err_dto)
-
-        uri_ref_tmpl = None
-        if self.presenter is not None:
-            uri_ref_tmpl = self.presenter.get_next_instruction_texts().get("uri_reference")
-        if uri_ref_tmpl and self.presenter is not None:
-            try:
-                none_val = self.presenter.get_none_value()
-                formatter = SafeNoneFormatter(none_val)
-                uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
-            except Exception:
-                uri_text = uri_ref_tmpl.format(run_id=run_id)
-        else:
-            uri_text = (
-                "*(Full details available in the structured JSON payload. "
-                f"View resource: pgmcp://cache/runs/{run_id})*"
-            )
-        full_text = f"{text}\n\n{uri_text}"
-
-        content: list[Any] = [{"type": "text", "text": full_text}]
-        if isinstance(err_dto, ValidationErrorOutput):
-            content.append(
-                {
-                    "type": "resource",
-                    "resource": {
-                        "uri": "schema://validation",
-                        "mimeType": "application/json",
-                        "text": json.dumps(tool.input_schema),
-                    },
-                }
-            )
-
-        # Append notes if any
-        if note_context is not None and self.presenter is not None:
-            notes = note_context.entries
-            if notes:
-                notes_text = self.presenter.present_notes(tool.name, notes)
-                if notes_text:
-                    content.append({"type": "text", "text": notes_text})
-
-        raw_result = ToolResult(content=content, is_error=True)
-
-        duration_ms = (time.perf_counter() - start_time) * 1000.0
-        logger.debug(
-            "Tool call completed with error",
-            extra={
-                "props": {
-                    "call_id": call_id,
-                    "tool_name": tool.name,
-                    "duration_ms": duration_ms,
-                    "error_type": type(err_dto).__name__,
-                }
-            },
-        )
-        return self._convert_tool_result_to_mcp_result(raw_result)
-
-    def _convert_tool_result_to_content(
-        self, result: ToolResult
-    ) -> list[TextContent | ImageContent | EmbeddedResource]:
-        """Convert ToolResult to MCP content list."""
-        return convert_tool_result_to_content(result.content)
-
     def _convert_tool_result_to_mcp_result(self, result: ToolResult) -> CallToolResult:
         """Convert ToolResult to CallToolResult while preserving error semantics."""
         return convert_tool_result_to_mcp_result(result)
-
-    def _run_tool_enforcement(
-        self,
-        tool: ILegacyTool,
-        timing: str,
-        params: BaseModel | dict[str, Any],
-        note_context: NoteContext,
-        result: ToolResult | None = None,
-    ) -> ToolResult | None:
-        """Execute pre/post enforcement for one tool when configured."""
-        event = getattr(tool, "enforcement_event", None)
-        tool_category = getattr(tool, "tool_category", None)
-        if event is None and tool_category is None:
-            return None
-
-        enforcement_ctx = EnforcementContext(
-            workspace_root=self._workspace_root,
-            tool_name=tool.name,
-            params=params,
-            tool_result=result,
-        )
-        self.enforcement_runner.run(
-            event=event or "",
-            timing=timing,
-            tool_category=tool_category,
-            enforcement_ctx=enforcement_ctx,
-            note_context=note_context,
-        )
 
     def setup_handlers(self) -> None:
         """Set up the MCP protocol handlers."""
@@ -341,131 +162,90 @@ class MCPServer:
 
             for tool in self.tools:
                 if tool.name == name:
-                    # TODO: [Phase 2] Exception interception and enforcement will be
-                    # refactored into a decorator pipeline
                     try:
                         note_context = NoteContext()
 
-                        try:
-                            # Validate arguments
-                            validated = self._validate_tool_arguments(
-                                tool, arguments, call_id, name
-                            )
-                        except ValidationError as val_exc:
-                            err_dto = ValidationErrorOutput(
-                                error_message=f"Invalid input for {name}",
-                                validation_errors=val_exc.errors(),
-                                input_schema=tool.input_schema,
-                                params=arguments or {},
-                            )
-                            return await self._handle_error_dto(tool, err_dto, start_time, call_id)
+                        # 1. Execute target tool (guaranteed to return a BaseModel DTO)
+                        result_dto = await tool.execute(arguments or {}, note_context)
 
-                        try:
-                            self._run_tool_enforcement(
-                                tool, "pre", validated, note_context=note_context
-                            )
-                        except MCPError as exc:
-                            logger.error(
-                                "Enforcement check failed: exc=%r, code=%r, params=%r",
-                                exc,
-                                getattr(exc, "code", None),
-                                getattr(exc, "params", None),
-                            )
-                            err_dto = EnforcementErrorOutput(
-                                error_message=exc.message,
-                                error_code=exc.code,
-                                params=exc.params or {},
-                            )
-                            return await self._handle_error_dto(
-                                tool, err_dto, start_time, call_id, note_context
-                            )
+                        # 2. Publish result to cache (resilient; returns None on failure)
+                        run_id = None
+                        cache_error_occurred = False
+                        cache_err_message = ""
+                        if self.response_cache_manager is not None:
+                            try:
+                                run_id = self.response_cache_manager.put(tool.name, result_dto)
+                            except Exception as cache_exc:
+                                cache_error_occurred = True
+                                cache_err_message = str(cache_exc)
 
-                        # Execute tool
-                        try:
-                            raw_result = await tool.execute(validated, note_context)
-                        except Exception as exec_exc:
-                            if isinstance(exec_exc, asyncio.CancelledError):
-                                raise
-                            err_dto = ExecutionErrorOutput(
-                                error_message=str(exec_exc),
-                                traceback=traceback.format_exc(),
-                                params=arguments or {},
+                        if cache_error_occurred:
+                            # Wrap as CacheErrorOutput
+                            cache_dto = CacheErrorOutput(
+                                error_message=cache_err_message,
+                                params={
+                                    "original_error": getattr(result_dto, "error_message", None)
+                                    or str(result_dto)
+                                },
                             )
-                            return await self._handle_error_dto(
-                                tool, err_dto, start_time, call_id, note_context
+                            # Format using plain text directly (double fault prevention)
+                            text = f"CacheError: {cache_dto.error_message}"
+                            raw_result = ToolResult(
+                                content=[{"type": "text", "text": text}], is_error=True
                             )
+                            return self._convert_tool_result_to_mcp_result(raw_result)
 
-                        from mcp_server.tools.decorators import ToolExecutionEnvelope  # noqa: PLC0415
-
-                        if isinstance(raw_result, ToolExecutionEnvelope):
-                            data_dto = raw_result.data
-                            run_id = raw_result.run_id
-                        else:
-                            data_dto = raw_result
-                            run_id = "test-run"
-
+                        # 3. Generate markdown output (resilient; formats DTO and notes)
                         if self.presenter is not None:
-                            success = getattr(data_dto, "success", True)
-                            presentation_category = (
-                                getattr(tool, "presentation_category", None) or "query"
-                            )
-                            text = self.presenter.present(
+                            markdown = self.presenter.present(
                                 tool_name=tool.name,
-                                success=success,
-                                presentation_category=presentation_category,
-                                data=data_dto,
+                                data=result_dto,
+                                notes=note_context.entries,
+                                run_id=run_id,
+                                presentation_category=getattr(tool, "tool_category", None),
                             )
                         else:
-                            text = str(data_dto)
-                        uri_ref_tmpl = None
-                        if self.presenter is not None:
-                            uri_ref_tmpl = self.presenter.get_next_instruction_texts().get(
-                                "uri_reference"
-                            )
-                        if uri_ref_tmpl and self.presenter is not None:
-                            try:
-                                none_val = self.presenter.get_none_value()
-                                formatter = SafeNoneFormatter(none_val)
-                                uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
-                            except Exception:
-                                uri_text = uri_ref_tmpl.format(run_id=run_id)
-                        else:
-                            uri_text = (
-                                "*(Full details available in the structured JSON payload. "
-                                f"View resource: pgmcp://cache/runs/{run_id})*"
-                            )
-                        full_text = f"{text}\n\n{uri_text}"
-                        raw_result = ToolResult.text(full_text)
+                            markdown = str(result_dto)
 
-                        if not raw_result.is_error:
-                            try:
-                                self._run_tool_enforcement(
-                                    tool,
-                                    "post",
-                                    validated,
-                                    note_context=note_context,
-                                    result=raw_result,
+                        # Check if cache URI needs to be appended
+                        if run_id and "pgmcp://cache/runs/" not in markdown:
+                            uri_ref_tmpl = None
+                            if self.presenter is not None:
+                                uri_ref_tmpl = self.presenter.get_next_instruction_texts().get(
+                                    "uri_reference"
                                 )
-                            except MCPError as exc:
-                                err_dto = EnforcementErrorOutput(
-                                    error_message=exc.message,
-                                    error_code=exc.code,
-                                    params=exc.params or {},
+                            if uri_ref_tmpl and self.presenter is not None:
+                                try:
+                                    none_val = self.presenter.get_none_value()
+                                    formatter = SafeNoneFormatter(none_val)
+                                    uri_text = formatter.format(uri_ref_tmpl, run_id=run_id)
+                                except Exception:
+                                    uri_text = uri_ref_tmpl.format(run_id=run_id)
+                            else:
+                                uri_text = (
+                                    "*(Full details available in the structured JSON payload. "
+                                    f"View resource: pgmcp://cache/runs/{run_id})*"
                                 )
-                                return await self._handle_error_dto(
-                                    tool, err_dto, start_time, call_id, note_context
-                                )
+                            markdown = f"{markdown}\n\n{uri_text}"
 
-                        # Retrieve and format operation notes (decoupled)
-                        notes = note_context.entries
-                        if self.presenter is not None and notes:
-                            notes_text = self.presenter.present_notes(tool.name, notes)
-                            if notes_text:
-                                augmented = list(raw_result.content) + [
-                                    {"type": "text", "text": notes_text}
-                                ]
-                                raw_result = raw_result.model_copy(update={"content": augmented})
+                        # 4. Construct and return normalized ToolResult
+                        raw_result = ToolResult.text(markdown)
 
+                        # In case result DTO indicates an error, flag the ToolResult as an error
+                        success = getattr(result_dto, "success", True)
+                        if not success:
+                            raw_result = raw_result.model_copy(update={"is_error": True})
+                            if getattr(result_dto, "error_type", None) == "ValidationError":
+                                raw_result.content.append(
+                                    {
+                                        "type": "resource",
+                                        "resource": {
+                                            "uri": "schema://validation",
+                                            "mimeType": "application/json",
+                                            "text": json.dumps(tool.input_schema),
+                                        },
+                                    }
+                                )
                         response_content = self._convert_tool_result_to_mcp_result(raw_result)
 
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
@@ -493,7 +273,7 @@ class MCPServer:
                             },
                         )
                         raise
-                    except (KeyError, AttributeError, TypeError) as e:
+                    except Exception as e:
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.error(
                             "Response processing failed: %s",

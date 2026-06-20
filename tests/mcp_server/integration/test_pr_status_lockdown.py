@@ -49,7 +49,7 @@ from mcp_server.core.interfaces import IPRStatusReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.tools.decorators import ILegacyTool
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.git_pull_tool import GitPullTool
 from mcp_server.tools.git_tools import (
@@ -148,13 +148,13 @@ class TestBranchMutatingToolInheritance:
     """Each branch-mutating tool must carry tool_category == "branch_mutating"."""
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_inherits_branch_mutating_tool(self, tool_cls: type[ILegacyTool]) -> None:
+    def test_inherits_branch_mutating_tool(self, tool_cls: type[ICoreTool[Any, Any]]) -> None:
         assert getattr(tool_cls, "tool_category", None) == "branch_mutating", (
             f"{tool_cls.__name__} must carry tool_category == 'branch_mutating'"
         )
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_tool_category_is_branch_mutating(self, tool_cls: type[ILegacyTool]) -> None:
+    def test_tool_category_is_branch_mutating(self, tool_cls: type[ICoreTool[Any, Any]]) -> None:
         assert getattr(tool_cls, "tool_category", None) == "branch_mutating", (
             f"{tool_cls.__name__}.tool_category must be 'branch_mutating', "
             f"got {getattr(tool_cls, 'tool_category', None)!r}"
@@ -185,7 +185,9 @@ class TestBranchMutatingToolBlockedWhenPROpen:
     """EnforcementRunner must block every branch-mutating tool when PRStatus.OPEN."""
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_blocked_when_pr_open(self, tool_cls: type[ILegacyTool], tmp_path: Path) -> None:
+    def test_blocked_when_pr_open(
+        self, tool_cls: type[ICoreTool[Any, Any]], tmp_path: Path
+    ) -> None:
         runner = _make_runner(PRStatus.OPEN, tmp_path)
         ctx = EnforcementContext(
             workspace_root=tmp_path,
@@ -213,7 +215,9 @@ class TestBranchMutatingToolAllowedWhenPRAbsent:
     """EnforcementRunner must NOT block branch-mutating tools when PRStatus.ABSENT."""
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_allowed_when_pr_absent(self, tool_cls: type[ILegacyTool], tmp_path: Path) -> None:
+    def test_allowed_when_pr_absent(
+        self, tool_cls: type[ICoreTool[Any, Any]], tmp_path: Path
+    ) -> None:
         runner = _make_runner(PRStatus.ABSENT, tmp_path)
         ctx = EnforcementContext(
             workspace_root=tmp_path,

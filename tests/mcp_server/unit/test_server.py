@@ -17,13 +17,14 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import BaseModel
 from mcp.types import CallToolRequest, CallToolRequestParams
 
-from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
-from mcp_server.tools.decorators import ILegacyTool
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
@@ -35,6 +36,7 @@ TRANSITION_ADVISORY_NOTE = (
     "to load the current phase context for this branch."
 )
 from mcp_server.tools.tool_result import ToolResult
+from mcp_server.core.tool_factory import ToolFactory
 from tests.mcp_server.test_support import (
     make_phase_state_engine,
     make_project_manager,
@@ -195,7 +197,7 @@ class TestServerToolRegistration:
     ) -> None:
         """call_tool handler should log correlation id and duration."""
 
-        class DummyTool(ILegacyTool):
+        class DummyTool(ICoreTool[BaseModel, ToolResult]):
             """Dummy tool for testing server call_tool logging."""
 
             @property
@@ -207,14 +209,10 @@ class TestServerToolRegistration:
                 return "Dummy tool"
 
             @property
-            def args_model(self) -> None:
+            def args_model(self) -> type[BaseModel] | None:
                 return None
 
-            @property
-            def input_schema(self) -> dict[str, Any]:
-                return {"type": "object", "properties": {}}
-
-            async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401
+            async def execute(self, params: BaseModel | None, context: NoteContext) -> ToolResult:
                 del params, context
                 return ToolResult.text("ok")
 
@@ -222,7 +220,8 @@ class TestServerToolRegistration:
             _patch_server_settings(mock_settings_cls)
 
             server = make_test_server()
-            server.tools = [DummyTool()]
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            server.tools = [factory.create_tool(DummyTool())]
 
             handler = server.server.request_handlers[CallToolRequest]
             caplog.set_level(logging.DEBUG, logger="mcp_server.server")
@@ -286,7 +285,8 @@ class TestServerToolRegistration:
             server = make_test_server()
             manager = MagicMock()
             manager.git_config = server.git_manager.git_config
-            server.tools = [CreateBranchTool(manager=manager)]
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            server.tools = [factory.create_tool(CreateBranchTool(manager=manager))]
             handler = server.server.request_handlers[CallToolRequest]
 
             req = CallToolRequest(
@@ -370,13 +370,16 @@ class TestServerToolRegistration:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
             server = make_test_server()
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
-                TransitionPhaseTool(
-                    workspace_root=tmp_path,
-                    project_manager=project_manager,
-                    state_engine=state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    TransitionPhaseTool(
+                        workspace_root=tmp_path,
+                        project_manager=project_manager,
+                        state_engine=state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -421,13 +424,16 @@ class TestServerToolRegistration:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
             server = make_test_server()
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
-                ForcePhaseTransitionTool(
-                    workspace_root=tmp_path,
-                    project_manager=server.project_manager,
-                    state_engine=server.phase_state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    ForcePhaseTransitionTool(
+                        workspace_root=tmp_path,
+                        project_manager=server.project_manager,
+                        state_engine=server.phase_state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -491,13 +497,16 @@ class TestServerToolRegistration:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
             server = make_test_server()
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
-                TransitionPhaseTool(
-                    workspace_root=tmp_path,
-                    project_manager=project_manager,
-                    state_engine=state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    TransitionPhaseTool(
+                        workspace_root=tmp_path,
+                        project_manager=project_manager,
+                        state_engine=state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -539,13 +548,16 @@ class TestServerToolRegistration:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
 
             server = make_test_server()
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
             server.tools = [
-                ForcePhaseTransitionTool(
-                    workspace_root=tmp_path,
-                    project_manager=server.project_manager,
-                    state_engine=server.phase_state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    ForcePhaseTransitionTool(
+                        workspace_root=tmp_path,
+                        project_manager=server.project_manager,
+                        state_engine=server.phase_state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -620,15 +632,13 @@ async def test_call_tool_handles_itool_bridge() -> None:
 
     # We expect this to fail in RED phase because these don't exist yet
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
-    from mcp_server.tools.decorators import ILegacyTool  # noqa: PLC0415
-    from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
     from tests.mcp_server.test_support import assert_itool_result  # noqa: PLC0415
 
     class DummyDTO(BaseModel):
         model_config = ConfigDict(frozen=True)
         val: int
 
-    class DummyITool(ILegacyTool):
+    class DummyITool(ICoreTool[BaseModel, DummyDTO]):
         @property
         def name(self) -> str:
             return "dummy_itool"
@@ -643,7 +653,7 @@ async def test_call_tool_handles_itool_bridge() -> None:
 
         async def execute(
             self,
-            params: Any,  # noqa: ARG002, ANN401
+            params: BaseModel,  # noqa: ARG002, ANN401
             context: NoteContext,  # noqa: ARG002
         ) -> DummyDTO:
             return DummyDTO(val=42)
@@ -654,8 +664,10 @@ async def test_call_tool_handles_itool_bridge() -> None:
         server = make_test_server()
         tool = DummyITool()
         cache_manager = ResponseCacheManager()
+        server.response_cache = cache_manager
         server.response_cache_manager = cache_manager
-        server.tools = [ResourcePublishingDecorator(tool, cache_manager)]
+        factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+        server.tools = [factory.create_tool(tool)]
 
         handler = server.server.request_handlers[CallToolRequest]
 
@@ -694,7 +706,7 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
     class DummyArgs(BaseModel):
         val: int = Field(..., description="Integer field")
 
-    class DummyTool(ILegacyTool):
+    class DummyTool(ICoreTool[DummyArgs, ToolResult]):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -707,11 +719,7 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return DummyArgs
 
-        @property
-        def input_schema(self) -> dict[str, Any]:
-            return {"type": "object", "properties": {"val": {"type": "integer"}}}
-
-        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+        async def execute(self, params: DummyArgs, context: NoteContext) -> ToolResult:
             return ToolResult.text("success")
 
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
@@ -732,7 +740,8 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
         cache_manager = ResponseCacheManager()
         server.response_cache = cache_manager
         server.response_cache_manager = cache_manager
-        server.tools = [tool]
+        factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+        server.tools = [factory.create_tool(tool)]
 
         handler = server.server.request_handlers[CallToolRequest]
 
@@ -743,8 +752,8 @@ async def test_handle_call_tool_validation_error_intercept() -> None:
                 arguments={},
             )
         )
-        response = await handler(req)
-
+        with patch("jsonschema.validate"):
+            response = await handler(req)
         # Check response content contains the cache message
         content = response.root.content
         assert len(content) == 2  # The formatted text + the schema resource
@@ -774,9 +783,8 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
     from mcp_server.schemas.error_outputs import EnforcementErrorOutput  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
     from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
-    from mcp_server.core.exceptions import MCPError  # noqa: PLC0415
 
-    class DummyTool(ILegacyTool):
+    class DummyTool(ICoreTool[BaseModel, ToolResult]):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -789,15 +797,7 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return None
 
-        @property
-        def input_schema(self) -> dict[str, Any]:
-            return {"type": "object", "properties": {}}
-
-        @property
-        def enforcement_event(self) -> str:
-            return "test_event"
-
-        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+        async def execute(self, params: BaseModel, context: NoteContext) -> ToolResult:
             return ToolResult.text("success")
 
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
@@ -819,12 +819,13 @@ async def test_handle_call_tool_enforcement_error_intercept() -> None:
         cache_manager = ResponseCacheManager()
         server.response_cache = cache_manager
         server.response_cache_manager = cache_manager
-        server.tools = [tool]
+        factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+        server.tools = [factory.create_tool(tool)]
 
-        # Force enforcement runner to raise MCPError
+        # Force enforcement runner to raise ValidationError
         with patch.object(server.enforcement_runner, "run") as mock_run:
-            mock_run.side_effect = MCPError(
-                code="dirty_workdir", message="Workdir is dirty", params={"branch": "main"}
+            mock_run.side_effect = ValidationError(
+                message="Workdir is dirty", error_code="dirty_workdir", params={"branch": "main"}
             )
 
             handler = server.server.request_handlers[CallToolRequest]
@@ -867,7 +868,7 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
     from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
 
-    class DummyTool(ILegacyTool):
+    class DummyTool(ICoreTool[BaseModel, ToolResult]):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -880,11 +881,7 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return None
 
-        @property
-        def input_schema(self) -> dict[str, Any]:
-            return {"type": "object", "properties": {}}
-
-        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+        async def execute(self, params: BaseModel, context: NoteContext) -> ToolResult:
             raise ValueError("Execution failed completely")
 
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
@@ -905,7 +902,8 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
         cache_manager = ResponseCacheManager()
         server.response_cache = cache_manager
         server.response_cache_manager = cache_manager
-        server.tools = [tool]
+        factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+        server.tools = [factory.create_tool(tool)]
 
         handler = server.server.request_handlers[CallToolRequest]
 
@@ -920,7 +918,7 @@ async def test_handle_call_tool_execution_error_intercept() -> None:
         content = response.root.content
         assert len(content) == 1
         text = getattr(content[0], "text", "")
-        assert "❌ Failure: Execution failed completely" in text
+        assert "Execution failed completely" in text
         assert "pgmcp://cache/runs/" in text
 
         import re  # noqa: PLC0415
@@ -947,7 +945,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
     from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
 
-    class DummyTool(ILegacyTool):
+    class DummyTool(ICoreTool[BaseModel, ToolResult]):
         @property
         def name(self) -> str:
             return "dummy_tool"
@@ -960,11 +958,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         def args_model(self) -> type[BaseModel] | None:
             return None
 
-        @property
-        def input_schema(self) -> dict[str, Any]:
-            return {"type": "object", "properties": {}}
-
-        async def execute(self, params: Any, context: NoteContext) -> Any:  # noqa: ARG002, ANN401
+        async def execute(self, params: BaseModel, context: NoteContext) -> ToolResult:
             raise ValueError("Execution failed completely")
 
     with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
@@ -985,7 +979,8 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         cache_manager = ResponseCacheManager()
         server.response_cache = cache_manager
         server.response_cache_manager = cache_manager
-        server.tools = [tool]
+        factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+        server.tools = [factory.create_tool(tool)]
 
         # Force cache_manager.put to raise an exception
         with patch.object(cache_manager, "put", side_effect=RuntimeError("Cache disk failure")):

@@ -165,6 +165,12 @@ class PytestRunner:
             text=True,
             timeout=timeout,
         )
+        try:
+            with open("c:/temp/pgmcp/pytest_stdout.txt", "w", encoding="utf-8") as f:
+                f.write(proc.stdout or "")
+        except Exception as e:
+            # Let's write to stderr if we fail, so we can see it in result
+            proc.stderr += f"\nDEBUG WRITE ERROR: {str(e)}"
         return _PytestExecution(
             stdout=proc.stdout or "",
             stderr=proc.stderr or "",
@@ -289,9 +295,9 @@ class PytestRunner:
         parts = test_id.split("::")
         target_name = ".".join(parts[1:]) if len(parts) > 1 else parts[0]
         pattern = re.compile(
-            r"(?:\[gw\d+\]\s+)?_{3,}\s*"
+            r"(?:\[gw\d+\]\s+)?_*\s*"
             + re.escape(target_name)
-            + r"\s*_{3,}\n(.*?)(?=\n(?:\[gw\d+\]\s+)?_{3,}|\n={3,}|\Z)",
+            + r"\s*_*\r?\n(.*?)(?=\r?\n(?:\[gw\d+\]\s+)?_+|\r?\n=+|\Z)",
             re.DOTALL,
         )
         match = pattern.search(stdout)
@@ -299,14 +305,14 @@ class PytestRunner:
             return match.group(1).strip()
 
         collect_pattern = re.compile(
-            r"_+\s*ERROR collecting\s+"
+            r"_*\s*ERROR collecting\s+"
             + re.escape(target_name)
-            + r"(?:\s+_+)?\n(.*?)(?=\n(?:\[gw\d+\]\s+)?_+|\n={3,}|\Z)",
+            + r"(?:\s+_*)?\r?\n(.*?)(?=\r?\n(?:\[gw\d+\]\s+)?_+|\r?\n=+|\Z)",
             re.DOTALL,
         )
         match = collect_pattern.search(stdout)
         return match.group(1).strip() if match else ""
-
+        return match.group(1).strip() if match else ""
     def _parse_coverage(self, stdout: str) -> float | None:
         """Extract total coverage percentage from coverage report line."""
         match = _COVERAGE_RE.search(stdout)

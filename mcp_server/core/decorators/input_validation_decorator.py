@@ -43,6 +43,23 @@ class InputValidationDecorator(ITool):
     def args_model(self) -> type[BaseModel] | None:
         return self._inner_tool.args_model
 
+    @property
+    def tool_category(self) -> str | None:
+        return getattr(self._inner_tool, "tool_category", None)
+
+    @property
+    def enforcement_event(self) -> str:
+        return getattr(self._inner_tool, "enforcement_event", self.name)
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        if self.args_model:
+            return resolve_schema_refs(self.args_model.model_json_schema())
+        return {
+            "type": "object",
+            "properties": {},
+        }
+
     async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
         if not self.args_model:
             # Bypass validation if no input arguments model is defined

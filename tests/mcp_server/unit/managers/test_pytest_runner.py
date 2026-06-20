@@ -440,6 +440,29 @@ class TestC4XdistTracebackExtraction:
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
 
+    def test_extract_traceback_windows_crlf_and_dots(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify traceback extraction on Windows with CRLF and class-method dot separator."""
+        crlf_stdout = (
+            "============================= FAILURES =============================\r\n"
+            "________________ TestClass.test_method ________________\r\n"
+            "\r\n"
+            "    def test_method():\r\n"
+            ">       assert False\r\n"
+            "E       AssertionError: assert False\r\n"
+            "\r\n"
+            "tests/test_foo.py:10: AssertionError\r\n"
+            "=========================== short test summary info ===========================\r\n"
+            "FAILED tests/test_foo.py::TestClass::test_method - AssertionError: assert False\r\n"
+        )
+        result = _run(monkeypatch, crlf_stdout, returncode=1, verbose=True)
+        assert len(result.failures) == 1
+        failure = result.failures[0]
+        assert failure.test_id == "tests/test_foo.py::TestClass::test_method"
+        assert "AssertionError: assert False" in failure.traceback
+        assert failure.short_reason == "AssertionError: assert False"
+
 
 # ---------------------------------------------------------------------------
 # Pytest 9 format: short summary has NO "- reason" suffix

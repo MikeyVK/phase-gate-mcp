@@ -201,14 +201,18 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
+            from mcp_server.core.tool_factory import ToolFactory
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
             server.tools = [
-                TransitionCycleTool(
-                    workspace_root=tmp_path,
-                    project_manager=server.project_manager,
-                    state_engine=server.phase_state_engine,
-                    git_manager=server.git_manager,
-                    gate_runner=server.workflow_gate_runner,
-                    server_root=tmp_path / ".phase-gate",
+                factory.create_tool(
+                    TransitionCycleTool(
+                        workspace_root=tmp_path,
+                        project_manager=server.project_manager,
+                        state_engine=server.phase_state_engine,
+                        git_manager=server.git_manager,
+                        gate_runner=server.workflow_gate_runner,
+                        server_root=tmp_path / ".phase-gate",
+                    )
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -233,7 +237,6 @@ class TestCycleTools:
             call.kwargs.get("event") == "transition_cycle" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
         )
-
     @pytest.mark.asyncio
     async def test_call_tool_post_enforcement_runs_after_force_cycle_transition(
         self,
@@ -257,14 +260,18 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
+            from mcp_server.core.tool_factory import ToolFactory
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
             server.tools = [
-                ForceCycleTransitionTool(
-                    workspace_root=tmp_path,
-                    project_manager=server.project_manager,
-                    state_engine=server.phase_state_engine,
-                    git_manager=server.git_manager,
-                    gate_runner=server.workflow_gate_runner,
-                    server_root=tmp_path / ".phase-gate",
+                factory.create_tool(
+                    ForceCycleTransitionTool(
+                        workspace_root=tmp_path,
+                        project_manager=server.project_manager,
+                        state_engine=server.phase_state_engine,
+                        git_manager=server.git_manager,
+                        gate_runner=server.workflow_gate_runner,
+                        server_root=tmp_path / ".phase-gate",
+                    )
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -362,14 +369,18 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
+            from mcp_server.core.tool_factory import ToolFactory
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
             server.tools = [
-                TransitionCycleTool(
-                    workspace_root=tmp_path,
-                    project_manager=project_manager,
-                    state_engine=state_engine,
-                    git_manager=server.git_manager,
-                    gate_runner=server.workflow_gate_runner,
-                    server_root=tmp_path / ".phase-gate",
+                factory.create_tool(
+                    TransitionCycleTool(
+                        workspace_root=tmp_path,
+                        project_manager=project_manager,
+                        state_engine=state_engine,
+                        git_manager=server.git_manager,
+                        gate_runner=server.workflow_gate_runner,
+                        server_root=tmp_path / ".phase-gate",
+                    )
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]
@@ -421,14 +432,18 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
             server = make_test_server()
+            from mcp_server.core.tool_factory import ToolFactory
+            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))
             server.tools = [
-                ForceCycleTransitionTool(
-                    workspace_root=tmp_path,
-                    project_manager=server.project_manager,
-                    state_engine=server.phase_state_engine,
-                    git_manager=server.git_manager,
-                    gate_runner=server.workflow_gate_runner,
-                    server_root=tmp_path / ".phase-gate",
+                factory.create_tool(
+                    ForceCycleTransitionTool(
+                        workspace_root=tmp_path,
+                        project_manager=server.project_manager,
+                        state_engine=server.phase_state_engine,
+                        git_manager=server.git_manager,
+                        gate_runner=server.workflow_gate_runner,
+                        server_root=tmp_path / ".phase-gate",
+                    )
                 ),
             ]
             handler = server.server.request_handlers[CallToolRequest]

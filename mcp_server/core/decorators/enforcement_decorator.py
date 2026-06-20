@@ -59,11 +59,15 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
     def tool_category(self) -> str | None:
         return getattr(self._inner_tool, "tool_category", None)
 
+    @property
+    def enforcement_event(self) -> str:
+        return getattr(self._inner_tool, "enforcement_event", self.name)
+
     async def execute(self, params: TInput, context: NoteContext) -> TOutput:
         # 1. Run "pre" execution policy checks
         try:
             self._enforcement_runner.run(
-                event=self.name,
+                event=self.enforcement_event,
                 timing="pre",
                 tool_category=self.tool_category,
                 enforcement_ctx=EnforcementContext(
@@ -90,7 +94,7 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
         # 3. Run "post" execution policy checks
         try:
             self._enforcement_runner.run(
-                event=self.name,
+                event=self.enforcement_event,
                 timing="post",
                 tool_category=self.tool_category,
                 enforcement_ctx=EnforcementContext(

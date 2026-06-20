@@ -188,21 +188,6 @@ class ManagerGraph:
     response_cache: IToolResponseCache
 
 
-class ToolFactory:
-    """Factory to assemble tools with their decorators."""
-
-    def __init__(self, response_cache: IToolResponseCache) -> None:
-        self._response_cache = response_cache
-
-    def build_tool(self, tool: Any) -> Any:  # noqa: ANN401
-        from mcp_server.tools.decorators import ILegacyTool  # noqa: PLC0415
-        from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
-
-        if isinstance(tool, ILegacyTool) and not isinstance(tool, ResourcePublishingDecorator):
-            return ResourcePublishingDecorator(tool=tool, cache=self._response_cache)
-        return tool
-
-
 class ServerBootstrapper:
     """Orchestrates configuration loading and manager graph instantiation."""
 
@@ -645,8 +630,13 @@ class ServerBootstrapper:
 
         tools.append(AutoFixTool(qa_manager=managers.qa_manager))
 
-        factory = ToolFactory(response_cache=managers.response_cache)
-        return [factory.build_tool(t) for t in tools]
+        from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory  # noqa: PLC0415
+
+        factory = CoreToolFactory(
+            enforcement_runner=managers.enforcement_runner,
+            workspace_root=Path(self._settings.server.workspace_root),
+        )
+        return [factory.create_tool(t) for t in tools]
 
     def _build_resources(
         self,

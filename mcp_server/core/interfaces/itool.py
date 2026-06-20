@@ -36,6 +36,11 @@ class ITool(Protocol):
         """Args model of the tool."""
         ...
 
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        """Input schema of the tool."""
+        ...
+
     async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
         """Execute the contract operation."""
         ...
