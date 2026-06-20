@@ -216,10 +216,10 @@ class TestServerBootstrapperConfigsAndManagers:
             assert mock_mcp_server_cls.called
             call_kwargs = mock_mcp_server_cls.call_args[1]
             assert call_kwargs["settings"] is mock_settings
-            assert isinstance(call_kwargs["configs"], ConfigLayer)
-            assert isinstance(call_kwargs["managers"], ManagerGraph)
             assert isinstance(call_kwargs["tools"], list)
             assert isinstance(call_kwargs["resources"], list)
+            assert "presenter" in call_kwargs
+            assert "publisher" in call_kwargs
             assert server is mock_mcp_server_cls.return_value
 
 
@@ -349,8 +349,6 @@ class TestMCPServerBootstrap:
 
         server = MCPServer(
             settings=mock_settings,
-            configs=mock_configs,
-            managers=mock_managers,
             tools=mock_tools,
             resources=mock_resources,
         )

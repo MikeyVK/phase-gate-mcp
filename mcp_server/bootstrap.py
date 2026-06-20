@@ -251,8 +251,6 @@ class ServerBootstrapper:
 
         return MCPServer(
             settings=settings,
-            configs=configs,
-            managers=managers,
             tools=tools,
             resources=resources,
             presenter=presenter,

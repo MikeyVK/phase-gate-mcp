@@ -53,8 +53,6 @@ class MCPServer:
     def __init__(
         self,
         settings: Settings,
-        configs: ConfigLayer,
-        managers: ManagerGraph,
         tools: list[ITool],
         resources: list[BaseResource],
         presenter: TextPresenter | None = None,
@@ -62,29 +60,9 @@ class MCPServer:
     ) -> None:
         """Initialize the MCP server with resources and tools."""
         self._settings = settings
-        self._configs = configs
         self.presenter = presenter
-        server_name = settings.server.name
-        workspace_root = Path(settings.server.workspace_root)
-
-        self._workspace_root = workspace_root
-        self.template_registry = managers.template_registry
-        self.git_manager = managers.git_manager
-        self._state_repository = managers.state_repository
-        self.workflow_status_resolver = managers.workflow_status_resolver
-        self.project_manager = managers.project_manager
-        self.phase_contract_resolver = managers.phase_contract_resolver
-        self.workflow_gate_runner = managers.workflow_gate_runner
-        self.state_reconstructor = managers.state_reconstructor
-        self._workflow_state_mutator = managers.workflow_state_mutator
-        self._context_loaded_cache = managers.context_loaded_cache
-        self.phase_state_engine = managers.phase_state_engine
-        self.qa_manager = managers.qa_manager
-        self.github_manager = managers.github_manager
-        self.artifact_manager = managers.artifact_manager
-        self.pr_status_cache = managers.pr_status_cache
-        self.enforcement_runner = managers.enforcement_runner
         self.response_cache_manager = publisher
+        server_name = settings.server.name
 
         self.server = Server(server_name)
         self.resources = resources
@@ -192,7 +170,7 @@ class MCPServer:
                                         "resource": {
                                             "uri": "schema://validation",
                                             "mimeType": "application/json",
-                                            "text": json.dumps(tool.input_schema),
+                                            "text": json.dumps(getattr(result_dto, "input_schema", {})),
                                         },
                                     }
                                 )

@@ -38,6 +38,17 @@ from tests.mcp_server.test_support import (
 from mcp_server.core.tool_factory import ToolFactory
 
 
+def _get_test_bootstrap_context(settings: object) -> tuple[object, object, Path]:
+    from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
+    bootstrapper = ServerBootstrapper(settings)  # type: ignore[arg-type]
+    configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
+    workspace_root = Path(settings.server.workspace_root)  # type: ignore[attr-defined]
+    server_root = workspace_root / settings.server.server_root_dir  # type: ignore[attr-defined]
+    template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
+    managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
+    return configs, managers, workspace_root
+
+
 class FakeForceCycleStateEngine:
     """Minimal force-cycle state engine fake for wrapper tests."""
 
@@ -201,16 +212,17 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     TransitionCycleTool(
                         workspace_root=tmp_path,
-                        project_manager=server.project_manager,
-                        state_engine=server.phase_state_engine,
-                        git_manager=server.git_manager,
-                        gate_runner=server.workflow_gate_runner,
+                        project_manager=managers.project_manager,
+                        state_engine=managers.phase_state_engine,
+                        git_manager=managers.git_manager,
+                        gate_runner=managers.workflow_gate_runner,
                         server_root=tmp_path / ".phase-gate",
                     )
                 ),
@@ -218,7 +230,7 @@ class TestCycleTools:
             handler = server.server.request_handlers[CallToolRequest]
 
             with patch.object(
-                server.enforcement_runner,
+                managers.enforcement_runner,
                 "run",
                 return_value=[],
             ) as mock_run:
@@ -260,16 +272,17 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     ForceCycleTransitionTool(
                         workspace_root=tmp_path,
-                        project_manager=server.project_manager,
-                        state_engine=server.phase_state_engine,
-                        git_manager=server.git_manager,
-                        gate_runner=server.workflow_gate_runner,
+                        project_manager=managers.project_manager,
+                        state_engine=managers.phase_state_engine,
+                        git_manager=managers.git_manager,
+                        gate_runner=managers.workflow_gate_runner,
                         server_root=tmp_path / ".phase-gate",
                     )
                 ),
@@ -277,7 +290,7 @@ class TestCycleTools:
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run", return_value=[]) as mock_run,
+                patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
                 patch.object(
                     ForceCycleTransitionTool,
                     "execute",
@@ -368,16 +381,17 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     TransitionCycleTool(
                         workspace_root=tmp_path,
                         project_manager=project_manager,
                         state_engine=state_engine,
-                        git_manager=server.git_manager,
-                        gate_runner=server.workflow_gate_runner,
+                        git_manager=managers.git_manager,
+                        gate_runner=managers.workflow_gate_runner,
                         server_root=tmp_path / ".phase-gate",
                     )
                 ),
@@ -385,8 +399,8 @@ class TestCycleTools:
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run") as mock_run,
-                patch.object(server.git_manager, "get_current_branch", return_value=branch),
+                patch.object(managers.enforcement_runner, "run") as mock_run,
+                patch.object(managers.git_manager, "get_current_branch", return_value=branch),
             ):
 
                 def side_effect(*_args: object, **kwargs: object) -> list[str]:
@@ -430,16 +444,17 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.logging.level = "INFO"
             mock_settings_cls.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     ForceCycleTransitionTool(
                         workspace_root=tmp_path,
-                        project_manager=server.project_manager,
-                        state_engine=server.phase_state_engine,
-                        git_manager=server.git_manager,
-                        gate_runner=server.workflow_gate_runner,
+                        project_manager=managers.project_manager,
+                        state_engine=managers.phase_state_engine,
+                        git_manager=managers.git_manager,
+                        gate_runner=managers.workflow_gate_runner,
                         server_root=tmp_path / ".phase-gate",
                     )
                 ),
@@ -447,7 +462,7 @@ class TestCycleTools:
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run") as mock_run,
+                patch.object(managers.enforcement_runner, "run") as mock_run,
                 patch.object(
                     ForceCycleTransitionTool,
                     "execute",

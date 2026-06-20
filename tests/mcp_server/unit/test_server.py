@@ -69,6 +69,17 @@ def _patch_server_settings(
     mock.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
 
 
+def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Any, Path]:
+    from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
+    bootstrapper = ServerBootstrapper(settings)
+    configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
+    workspace_root = Path(settings.server.workspace_root)
+    server_root = workspace_root / settings.server.server_root_dir
+    template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
+    managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
+    return configs, managers, workspace_root
+
+
 def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
     state_file = workspace_root / ".phase-gate" / "state.json"
     state_file.parent.mkdir(parents=True, exist_ok=True)
@@ -219,9 +230,10 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
 
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [factory.create_tool(DummyTool())]
 
             handler = server.server.request_handlers[CallToolRequest]
@@ -282,11 +294,12 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
 
             server = make_test_server()
             manager = MagicMock()
-            manager.git_config = server.git_manager.git_config
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            manager.git_config = managers.git_manager.git_config
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [factory.create_tool(CreateBranchTool(manager=manager))]
             handler = server.server.request_handlers[CallToolRequest]
 
@@ -324,9 +337,8 @@ class TestServerToolRegistration:
             server = make_test_server()
             handler = server.server.request_handlers[CallToolRequest]
 
-            with patch.object(
-                server.github_manager,
-                "create_pr",
+            with patch(
+                "mcp_server.managers.github_manager.GitHubManager.create_pr",
                 side_effect=AssertionError("create_pr should not be called"),
             ) as mock_create_pr:
                 response = await handler(_make_submit_pr_request())
@@ -369,9 +381,10 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
 
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     TransitionPhaseTool(
@@ -386,7 +399,7 @@ class TestServerToolRegistration:
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run", return_value=[]) as mock_run,
+                patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
                 patch.object(
                     TransitionPhaseTool,
                     "execute",
@@ -423,15 +436,16 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
 
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     ForcePhaseTransitionTool(
                         workspace_root=tmp_path,
-                        project_manager=server.project_manager,
-                        state_engine=server.phase_state_engine,
+                        project_manager=managers.project_manager,
+                        state_engine=managers.phase_state_engine,
                         server_root=tmp_path / ".phase-gate",
                         workphases_config=None,
                     )
@@ -440,7 +454,7 @@ class TestServerToolRegistration:
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run", return_value=[]) as mock_run,
+                patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
                 patch.object(
                     ForcePhaseTransitionTool,
                     "execute",
@@ -496,9 +510,10 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
 
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     TransitionPhaseTool(
@@ -512,7 +527,7 @@ class TestServerToolRegistration:
             ]
             handler = server.server.request_handlers[CallToolRequest]
 
-            with patch.object(server.enforcement_runner, "run") as mock_run:
+            with patch.object(managers.enforcement_runner, "run") as mock_run:
 
                 def side_effect(*_args: object, **kwargs: object) -> list[str]:
                     if kwargs.get("event") == "transition_phase" and kwargs.get("timing") == "post":
@@ -547,15 +562,16 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
 
             server = make_test_server()
-            factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
                 factory.create_tool(
                     ForcePhaseTransitionTool(
                         workspace_root=tmp_path,
-                        project_manager=server.project_manager,
-                        state_engine=server.phase_state_engine,
+                        project_manager=managers.project_manager,
+                        state_engine=managers.phase_state_engine,
                         server_root=tmp_path / ".phase-gate",
                         workphases_config=None,
                     )
@@ -564,7 +580,7 @@ class TestServerToolRegistration:
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run") as mock_run,
+                patch.object(managers.enforcement_runner, "run") as mock_run,
                 patch.object(
                     ForcePhaseTransitionTool,
                     "execute",
@@ -663,13 +679,14 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         }
         presenter = TextPresenter(config_data=config_data)
 
+        configs, managers, workspace_root = _get_test_bootstrap_context(mock_settings_cls.from_env.return_value)
         server = make_test_server()
         server.presenter = presenter
         tool = DummyTool()
         cache_manager = ResponseCacheManager()
         server.response_cache = cache_manager
         server.response_cache_manager = cache_manager
-        factory = ToolFactory(server.enforcement_runner, Path(server._workspace_root))  # type: ignore[reportPrivateUsage]
+        factory = ToolFactory(managers.enforcement_runner, workspace_root)
         server.tools = [factory.create_tool(tool)]
 
         with patch.object(
