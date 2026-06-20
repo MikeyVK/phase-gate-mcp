@@ -780,3 +780,20 @@ async def test_c4_run_tests_no_recovery_note_when_verbose_true(
 
     notes = [n for n in context.of_type(Note) if n.key == "pytest_failed_verbose_suggestion"]
     assert len(notes) == 0
+
+
+@pytest.mark.asyncio
+async def test_run_tests_build_cmd_collect_only(injected_settings: Settings) -> None:
+    """RunTestsTool._build_cmd includes --collect-only when collect_only is True."""
+    runner = FakePytestRunner(result=_make_pytest_result())
+    tool = RunTestsTool(runner=runner, settings=injected_settings)
+
+    await tool.execute(
+        RunTestsInput(
+            path="tests/mcp_server/unit/tools/test_test_tools.py",
+            collect_only=True,
+        ),
+        NoteContext(),
+    )
+    assert runner.captured_cmd is not None
+    assert "--collect-only" in runner.captured_cmd
