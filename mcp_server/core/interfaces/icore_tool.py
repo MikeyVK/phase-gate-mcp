@@ -16,12 +16,12 @@ from pydantic import BaseModel
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
 
-TInput = TypeVar("TInput", bound=BaseModel, contravariant=True)
-TOutput = TypeVar("TOutput", bound=BaseModel, covariant=True)
+TInput = TypeVar("TInput", bound=BaseModel)
+TOutput = TypeVar("TOutput", bound=BaseModel)
 
 
 @runtime_checkable
-class ICoreTool(Protocol, Generic[TInput, TOutput]):
+class ICoreTool(Protocol, Generic[TInput, TOutput]):  # type: ignore[misc]  # pyright: ignore[reportInvalidTypeVarUse]
     """Generic interface for typed core tool execution."""
 
     @property

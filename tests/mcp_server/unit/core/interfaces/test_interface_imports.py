@@ -13,29 +13,36 @@ None
     - None
 """
 
-# Standard library
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
-from typing import Any
-
-# Third-party
-import pytest
-from pathlib import Path
-
+# No external mocks/dependencies needed for import verification
 # Project modules
-from mcp_server.core.interfaces.gate import GateReport
+from mcp_server.core.interfaces.gate import GateReport, GateViolation, IWorkflowGateRunner
+from mcp_server.core.interfaces.state import IStateReader, IStateRepository, IStateReconstructor
+from mcp_server.core.interfaces.ipr_status import PRStatus, IPRStatusReader, IPRStatusWriter
+from mcp_server.core.interfaces.ipytest_runner import IPytestRunner
+from mcp_server.core.interfaces.git import IGitContextReader, IBranchParentReader
+from mcp_server.core.interfaces.quality import IQualityStateRepository
+from mcp_server.core.interfaces.workflow import IWorkflowStateMutator
+from mcp_server.core.interfaces.context import IContextLoadedReader, IContextLoadedWriter
 
 
 class TestInterfaceImports:
     """Test suite for gate."""
 
-    def test_placeholder(self):
-        """Placeholder test - replace with actual tests."""
-        # Arrange - Setup test data and preconditions
-        test_input = None
-        expected_output = None
-
-        # Act - Execute the functionality being tested
-        result = None  # Call function under test
-
-        # Assert - Verify the expected outcome
-        assert result == expected_output
+    def test_imports(self):
+        """Verify that all interfaces and types can be imported from their sub-modules."""
+        assert GateReport is not None
+        assert GateViolation is not None
+        assert IWorkflowGateRunner is not None
+        assert IStateReader is not None
+        assert IStateRepository is not None
+        assert IStateReconstructor is not None
+        assert PRStatus is not None
+        assert IPRStatusReader is not None
+        assert IPRStatusWriter is not None
+        assert IPytestRunner is not None
+        assert IGitContextReader is not None
+        assert IBranchParentReader is not None
+        assert IQualityStateRepository is not None
+        assert IWorkflowStateMutator is not None
+        assert IContextLoadedReader is not None
+        assert IContextLoadedWriter is not None
