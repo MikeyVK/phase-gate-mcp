@@ -58,14 +58,38 @@ The presentation formatting and caching failure logic are leaked into the transp
 
 **Rationale:** Maintains SRP, ISP, DIP, and Presentation Boundary, eliminating technical debt and hardcoded strings in code.
 
-### 3.1. Key Design Decisions
+### 3.1. Detailed Specifications
 
-| Decision | Rationale |
-|----------|-----------|
-| Agnostic Transport Layer | server.py delegates all rendering and fallback warnings to TextPresenter. |
-| Explicit CachePublication status | Conveys write results explicitly to the presenter to avoid magic note scanning. |
-| Interface package separation | Move all concrete classes from interfaces/__init__.py to individual modules to keep the facade clean. |
+#### 3.1.1. CachePublication DTO
+* **Location:** `mcp_server/schemas/cache_publication.py` [NEW]
+* **Definition:**
+  ```python
+  from pydantic import BaseModel, ConfigDict
+  
+  class CachePublication(BaseModel):
+      model_config = ConfigDict(frozen=True)
+      run_id: str | None = None
+      success: bool = True
+      error_code: str | None = None
+  ```
+* **Creator:** `IToolResponsePublisher.put()` signature is updated to return `CachePublication` instead of `str | None`. If a write failure occurs, it catches the exception and returns `CachePublication(run_id=None, success=False, error_code="write_failed")`.
+* **Presenter Integration:** Both `IPresenter.present()` and `TextPresenter.present()` are updated in lock-step to accept `cache_pub: CachePublication | None = None` instead of `run_id: str | None`.
 
+#### 3.1.2. Agnostic Transport Layer & URI Link Formatting
+* **Orchestration:** `server.py` performs zero rendering or string formatting. All templates, SafeNoneFormatter imports, and URI link formatting (formerly L183–201) are moved completely to `TextPresenter.present()`.
+* **Config Warning:** The fallback warning note is configured under `global.next_instruction_texts.cache_publication_failed` in `presentation.yaml`.
+
+#### 3.1.3. Validation Schema Presentation
+* **Schema Source:** The transport layer reads the schema directly from `result_dto.input_schema` (where `isinstance(result_dto, ValidationErrorOutput)`).
+* **Protocol Formatting:** The transport layer appends the resource block (`schema://validation`) containing this schema directly to the MCP `CallToolResult` blocks.
+
+#### 3.1.4. Interface Package Separation
+* **Facading:** All concrete interfaces/classes (e.g. `PRStatus`, `IPRStatusReader`, `GateReport`, etc.) are moved out of `interfaces/__init__.py` to individual files under `mcp_server/core/interfaces/`.
+* **Facade re-exports:** `interfaces/__init__.py` remains a pure facade that only re-exports these definitions, causing zero breaking changes to 66+ consumer files.
+
+#### 3.1.5. Test Coupling Migration
+* **Target:** `tests/mcp_server/unit/test_server.py` is in scope for Cycle 10.
+* **Orchestration:** References accessing `server.enforcement_runner` or `server._workspace_root` are refactored to construct `ToolFactory` and mock dependencies independently of the `MCPServer` instance.
 ## Related Documentation
 - **[docs/development/issue406/research_gaps.md][related-1]**
 
