@@ -3,8 +3,8 @@
   "issue_number": 406,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 5,
-  "last_cycle": 4,
+  "current_cycle": 6,
+  "last_cycle": 5,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -29,6 +29,12 @@
       "name": "ToolFactory & Bootstrap Prep",
       "forced": false,
       "entered": "2026-06-19T22:38:29.952437+00:00"
+    },
+    {
+      "cycle_number": 6,
+      "name": "Tool-laag Migratie (Cycle 6a)",
+      "forced": false,
+      "entered": "2026-06-19T22:44:23.045214+00:00"
     }
   ],
   "required_phases": [
@@ -72,5 +78,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }

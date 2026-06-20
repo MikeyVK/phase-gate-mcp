@@ -11,19 +11,18 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
-from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner
+from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner, ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas.tool_outputs import CycleTransitionOutput, ForceCycleTransitionOutput
-from mcp_server.tools.base import ILegacyTool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 __all__ = [
@@ -34,7 +33,11 @@ __all__ = [
 ]
 
 
-class _BaseIToolTransition(ILegacyTool):
+TInput = TypeVar("TInput", bound=BaseModel)
+TOutput = TypeVar("TOutput", bound=BaseModel)
+
+
+class _BaseIToolTransition(ICoreTool[TInput, TOutput], Generic[TInput, TOutput]):
     """Base class for cycle transition tools implementing ILegacyTool."""
 
     def __init__(
@@ -131,7 +134,7 @@ class TransitionCycleInput(BaseModel):
     )
 
 
-class TransitionCycleTool(_BaseIToolTransition):
+class TransitionCycleTool(_BaseIToolTransition[TransitionCycleInput, CycleTransitionOutput]):
     """Tool to transition to next implementation cycle with validation."""
 
     output_model: ClassVar[type[BaseModel]] = CycleTransitionOutput
@@ -233,7 +236,9 @@ class ForceCycleTransitionInput(BaseModel):
     )
 
 
-class ForceCycleTransitionTool(_BaseIToolTransition):
+class ForceCycleTransitionTool(
+    _BaseIToolTransition[ForceCycleTransitionInput, ForceCycleTransitionOutput]
+):
     """Tool to force TDD cycle transition with audit trail."""
 
     output_model: ClassVar[type[BaseModel]] = ForceCycleTransitionOutput

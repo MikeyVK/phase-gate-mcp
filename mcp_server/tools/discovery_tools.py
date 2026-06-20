@@ -21,9 +21,9 @@ from mcp_server.schemas.tool_outputs import (
     SearchDocumentationOutput,
     SearchResultDTO,
 )
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
-from mcp_server.tools.base import ILegacyTool
 
 if TYPE_CHECKING:
     from mcp_server.config.schemas.contracts_config import ContractsConfig
@@ -46,7 +46,7 @@ class SearchDocumentationInput(BaseModel):
     )
 
 
-class SearchDocumentationTool(ILegacyTool):
+class SearchDocumentationTool(ICoreTool[SearchDocumentationInput, SearchDocumentationOutput]):
     """Tool to search documentation files."""
 
     output_model: ClassVar[type[BaseModel]] = SearchDocumentationOutput
@@ -137,7 +137,7 @@ class GetWorkContextInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class GetWorkContextTool(ILegacyTool):
+class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
     """Tool to aggregate work context from Git and GitHub."""
 
     output_model: ClassVar[type[BaseModel]] = GetWorkContextOutput

@@ -82,7 +82,6 @@ from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.admin_tools import RestartServerTool
-from mcp_server.tools.base import ILegacyTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.discovery_tools import GetWorkContextTool, SearchDocumentationTool
 from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
@@ -196,7 +195,7 @@ class ToolFactory:
         self._response_cache = response_cache
 
     def build_tool(self, tool: Any) -> Any:  # noqa: ANN401
-        from mcp_server.tools.base import ILegacyTool  # noqa: PLC0415
+        from mcp_server.tools.decorators import ILegacyTool  # noqa: PLC0415
         from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
 
         if isinstance(tool, ILegacyTool) and not isinstance(tool, ResourcePublishingDecorator):
@@ -443,13 +442,13 @@ class ServerBootstrapper:
             response_cache=response_cache,
         )
 
-    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[ILegacyTool]:
+    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[Any]:
         """Compose the list of available tools."""
         settings = self._settings
 
         _branch_validated_reader = BranchValidatedStateReader(inner=managers.state_repository)
 
-        tools: list[ILegacyTool] = [
+        tools: list[Any] = [
             # Git tools
             CreateBranchTool(manager=managers.git_manager),
             GitStatusTool(manager=managers.git_manager),
@@ -655,11 +654,10 @@ class ServerBootstrapper:
         managers: ManagerGraph,  # noqa: ARG002
     ) -> list[BaseResource]:
         """Compose the list of available resources."""
-        resources: list[BaseResource] = [
-            StandardsResource(),
-            StatusResource(),
-            CachedResponseResource(cache=managers.response_cache),
-        ]
+        resources: list[BaseResource] = []
+        resources.append(StandardsResource())
+        resources.append(StatusResource())
+        resources.append(CachedResponseResource(cache=managers.response_cache))
 
         if self._settings.github.token:
             resources.append(GitHubIssuesResource())

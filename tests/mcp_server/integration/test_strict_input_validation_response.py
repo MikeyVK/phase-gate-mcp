@@ -12,7 +12,7 @@ from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.server import MCPServer
-from mcp_server.tools.base import ILegacyTool
+from mcp_server.tools.decorators import ILegacyTool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import make_test_server
 

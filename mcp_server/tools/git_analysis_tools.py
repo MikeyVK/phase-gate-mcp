@@ -5,6 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.schemas.tool_outputs import (
@@ -12,7 +13,6 @@ from mcp_server.schemas.tool_outputs import (
     GitDiffOutput,
     GitListBranchesOutput,
 )
-from mcp_server.tools.base import ILegacyTool
 
 
 class GitListBranchesInput(BaseModel):
@@ -24,7 +24,7 @@ class GitListBranchesInput(BaseModel):
     remote: bool = Field(default=False, description="Include remote branches (-r)")
 
 
-class GitListBranchesTool(ILegacyTool):
+class GitListBranchesTool(ICoreTool[GitListBranchesInput, GitListBranchesOutput]):
     """Tool to list git branches with optional details."""
 
     @property
@@ -117,7 +117,7 @@ class GitDiffInput(BaseModel):
     source_branch: str = Field(default="HEAD", description="Source branch (default: HEAD)")
 
 
-class GitDiffTool(ILegacyTool):
+class GitDiffTool(ICoreTool[GitDiffInput, GitDiffOutput]):
     """Tool to get diff statistics between branches."""
 
     @property

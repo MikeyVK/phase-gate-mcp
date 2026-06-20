@@ -22,7 +22,7 @@ from mcp_server.core.exceptions import ConfigError, MCPError, ValidationError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.schemas.tool_outputs import ScaffoldArtifactOutput
-from mcp_server.tools.base import ILegacyTool
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 
 
 class ScaffoldArtifactInput(BaseModel):
@@ -42,7 +42,7 @@ class ScaffoldArtifactInput(BaseModel):
     )
 
 
-class ScaffoldArtifactTool(ILegacyTool):
+class ScaffoldArtifactTool(ICoreTool[ScaffoldArtifactInput, ScaffoldArtifactOutput]):
     """Unified artifact scaffolding tool.
 
     Handles both code artifacts (dto, worker, adapter, etc.)
@@ -68,7 +68,7 @@ class ScaffoldArtifactTool(ILegacyTool):
         return "Scaffold any artifact type (code or document) from unified registry."
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[ScaffoldArtifactInput] | None:
         return ScaffoldArtifactInput
 
     @property

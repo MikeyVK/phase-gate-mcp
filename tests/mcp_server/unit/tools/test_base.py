@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 import mcp_server.tools.base as base_mod
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.state.response_cache import ResponseCacheManager
-from mcp_server.tools.base import ILegacyTool, ToolExecutionEnvelope
+from mcp_server.tools.decorators import ILegacyTool, ToolExecutionEnvelope
 from mcp_server.tools.decorators import ResourcePublishingDecorator
 
 
@@ -73,3 +73,5 @@ def test_legacy_classes_deleted() -> None:
     assert not hasattr(base_mod, "BaseTool")
     assert not hasattr(base_mod, "StructuredTool")
     assert not hasattr(base_mod, "BranchMutatingTool")
+    assert not hasattr(base_mod, "ILegacyTool")
+    assert not hasattr(base_mod, "ToolExecutionEnvelope")

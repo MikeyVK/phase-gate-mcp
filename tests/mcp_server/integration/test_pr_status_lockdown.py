@@ -36,7 +36,7 @@ from __future__ import annotations
 # Standard library
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from unittest.mock import MagicMock
 
 # Third-party
@@ -49,7 +49,7 @@ from mcp_server.core.interfaces import IPRStatusReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.tools.base import ILegacyTool
+from mcp_server.tools.decorators import ILegacyTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.git_pull_tool import GitPullTool
 from mcp_server.tools.git_tools import (
@@ -78,7 +78,7 @@ _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 # ---------------------------------------------------------------------------
 # Parametrize: the complete list of 17 branch-mutating tools
 # ---------------------------------------------------------------------------
-BRANCH_MUTATING_TOOLS: list[type[ILegacyTool]] = [
+BRANCH_MUTATING_TOOLS: list[type[Any]] = [
     # git_tools
     CreateBranchTool,
     GitCommitTool,

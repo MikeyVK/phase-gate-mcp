@@ -22,14 +22,13 @@ import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
-from mcp_server.core.interfaces import IContextLoadedWriter
+from mcp_server.core.interfaces import IContextLoadedWriter, ICoreTool
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers import phase_state_engine
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas.tool_outputs import GitPullOutput
-from mcp_server.tools.base import ILegacyTool
 
 logger = get_logger("tools.git_pull")
 
@@ -49,7 +48,7 @@ class GitPullInput(BaseModel):
     )
 
 
-class GitPullTool(ILegacyTool):
+class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
     """Pull updates from a remote into the current branch.
 
     Responsibilities:

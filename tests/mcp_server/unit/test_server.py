@@ -23,7 +23,7 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
 from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
-from mcp_server.tools.base import ILegacyTool
+from mcp_server.tools.decorators import ILegacyTool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
     ForcePhaseTransitionTool,
@@ -620,7 +620,7 @@ async def test_call_tool_handles_itool_bridge() -> None:
 
     # We expect this to fail in RED phase because these don't exist yet
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
-    from mcp_server.tools.base import ILegacyTool  # noqa: PLC0415
+    from mcp_server.tools.decorators import ILegacyTool  # noqa: PLC0415
     from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
     from tests.mcp_server.test_support import assert_itool_result  # noqa: PLC0415
 

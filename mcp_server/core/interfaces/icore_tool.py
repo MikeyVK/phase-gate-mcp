@@ -16,7 +16,7 @@ from pydantic import BaseModel
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
 
-TInput = TypeVar("TInput", bound=BaseModel)
+TInput = TypeVar("TInput", bound=BaseModel, contravariant=True)
 TOutput = TypeVar("TOutput", bound=BaseModel, covariant=True)
 
 
@@ -35,9 +35,7 @@ class ICoreTool(Protocol, Generic[TInput, TOutput]):
         ...
 
     @property
-    def args_model(self) -> type[TInput] | None:
-        """Args model of the tool."""
-        ...
+    def args_model(self) -> type[BaseModel] | None: ...
 
     async def execute(self, params: TInput, context: NoteContext) -> TOutput:
         """Execute the contract operation."""

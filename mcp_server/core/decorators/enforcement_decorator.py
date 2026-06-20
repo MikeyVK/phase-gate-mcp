@@ -52,7 +52,7 @@ class EnforcementDecorator(ICoreTool[TInput, TOutput]):
         return self._inner_tool.description
 
     @property
-    def args_model(self) -> type[TInput] | None:
+    def args_model(self) -> type[BaseModel] | None:
         return self._inner_tool.args_model
 
     @property

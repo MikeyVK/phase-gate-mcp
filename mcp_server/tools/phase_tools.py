@@ -14,18 +14,18 @@ phase transitions via PhaseStateEngine.
 """
 
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.schemas import WorkphasesConfig
 from mcp_server.schemas.tool_outputs import ForcePhaseTransitionOutput, PhaseTransitionOutput
-from mcp_server.tools.base import ILegacyTool
 
 
 class TransitionPhaseInput(BaseModel):
@@ -71,7 +71,11 @@ class ForcePhaseTransitionInput(BaseModel):
         return v.strip()
 
 
-class _BaseTransitionTool(ILegacyTool):
+TInput = TypeVar("TInput", bound=BaseModel)
+TOutput = TypeVar("TOutput", bound=BaseModel)
+
+
+class _BaseTransitionTool(ICoreTool[TInput, TOutput], Generic[TInput, TOutput]):
     """Base class for phase transition tools implementing ILegacyTool."""
 
     presentation_category = "mutation"
@@ -127,7 +131,7 @@ class _BaseTransitionTool(ILegacyTool):
         return self._state_engine
 
 
-class TransitionPhaseTool(_BaseTransitionTool):
+class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransitionOutput]):
     """MCP tool for standard sequential phase transitions.
 
     Validates transitions via PhaseStateEngine against workflow definitions.
@@ -200,7 +204,9 @@ class TransitionPhaseTool(_BaseTransitionTool):
             )
 
 
-class ForcePhaseTransitionTool(_BaseTransitionTool):
+class ForcePhaseTransitionTool(
+    _BaseTransitionTool[ForcePhaseTransitionInput, ForcePhaseTransitionOutput]
+):
     """MCP tool for forced non-sequential phase transitions.
 
     Bypasses workflow validation. Requires skip_reason and human_approval.

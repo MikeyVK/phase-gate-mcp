@@ -5,20 +5,46 @@ Decorators for MCP tools, including ResourcePublishingDecorator.
 @layer: tools
 """
 
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
+from pydantic import BaseModel, ConfigDict, Field
 
-from pydantic import BaseModel
-
-from mcp_server.core.interfaces import IToolResponseCache
+from mcp_server.core.interfaces import IToolResponseCache, ITool
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.tools.base import ILegacyTool, ToolExecutionEnvelope
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
-class ResourcePublishingDecorator(ILegacyTool):
-    """Decorator that caches ILegacyTool execution envelopes for resource retrieval."""
+class ToolExecutionEnvelope(BaseModel):
+    """Envelope containing the pure domain DTO and orchestration metadata."""
 
-    def __init__(self, tool: ILegacyTool, cache: IToolResponseCache) -> None:
+    model_config = ConfigDict(frozen=True)
+
+    run_id: str
+    data: BaseModel
+    presentation_context: dict[str, Any] = Field(default_factory=dict)
+
+
+@runtime_checkable
+class ILegacyTool(Protocol):
+    """Protocol for the legacy MVP tool architecture."""
+
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def description(self) -> str: ...
+
+    @property
+    def args_model(self) -> type[BaseModel] | None: ...
+
+    async def execute(self, params: Any, context: NoteContext) -> ToolExecutionEnvelope | BaseModel:  # noqa: ANN401
+        """Execute the tool and return either a ToolExecutionEnvelope or a pure BaseModel."""
+        ...
+
+
+class ResourcePublishingDecorator(ITool):
+    """Decorator that caches ITool execution envelopes for resource retrieval."""
+
+    def __init__(self, tool: ITool, cache: IToolResponseCache) -> None:
         self._tool = tool
         self._cache = cache
 

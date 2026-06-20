@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.schemas.tool_outputs import (
@@ -14,7 +15,6 @@ from mcp_server.schemas.tool_outputs import (
     MilestoneOutput,
     MilestoneSummaryDTO,
 )
-from mcp_server.tools.base import ILegacyTool
 
 
 class ListMilestonesInput(BaseModel):
@@ -27,7 +27,7 @@ class ListMilestonesInput(BaseModel):
     )
 
 
-class ListMilestonesTool(ILegacyTool):
+class ListMilestonesTool(ICoreTool[ListMilestonesInput, ListMilestonesOutput]):
     """Tool to list milestones in the repository."""
 
     @property
@@ -85,7 +85,7 @@ class CreateMilestoneInput(BaseModel):
     )
 
 
-class CreateMilestoneTool(ILegacyTool):
+class CreateMilestoneTool(ICoreTool[CreateMilestoneInput, MilestoneOutput]):
     """Tool to create a new milestone."""
 
     @property
@@ -133,7 +133,7 @@ class CloseMilestoneInput(BaseModel):
     milestone_number: int = Field(..., description="Milestone number to close")
 
 
-class CloseMilestoneTool(ILegacyTool):
+class CloseMilestoneTool(ICoreTool[CloseMilestoneInput, MilestoneOutput]):
     """Tool to close a milestone."""
 
     @property

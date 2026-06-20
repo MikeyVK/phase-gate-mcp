@@ -7,14 +7,13 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import ExecutionError, PreflightError
-from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus
+from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter, PRStatus, ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_contract_resolver import MergeReadinessContext
 from mcp_server.schemas import GitConfig
 from mcp_server.schemas.github_models import PRReadModel
 from mcp_server.schemas.tool_outputs import ListPRsOutput, MergePROutput, PROutput, PRSummaryDTO
-from mcp_server.tools.base import ILegacyTool
 
 if TYPE_CHECKING:
     from mcp_server.managers.git_manager import GitManager
@@ -46,7 +45,7 @@ def _map_pr_to_output(pr: PRReadModel) -> PROutput:
     )
 
 
-class ListPRsTool(ILegacyTool):
+class ListPRsTool(ICoreTool[ListPRsInput, ListPRsOutput]):
     """Tool to list pull requests."""
 
     @property
@@ -107,7 +106,7 @@ class MergePRInput(BaseModel):
     )
 
 
-class MergePRTool(ILegacyTool):
+class MergePRTool(ICoreTool[MergePRInput, MergePROutput]):
     """Tool to merge a pull request."""
 
     @property
@@ -165,7 +164,7 @@ class GetPRInput(BaseModel):
     pr_number: int = Field(..., description="Pull request number")
 
 
-class GetPRTool(ILegacyTool):
+class GetPRTool(ICoreTool[GetPRInput, PROutput]):
     """Tool to get a single pull request."""
 
     @property
@@ -208,18 +207,18 @@ class SubmitPRInput(BaseModel):
         default=None,
         description=(
             "Target branch (defaults to main). "
-            "Cascade: explicit value → state.json parent_branch → git_config.default_base_branch."
+            "Cascade: explicit value -> state.json parent_branch -> git_config.default_base_branch."
         ),
     )
     body: str | None = Field(default=None, description="PR description (markdown)")
     draft: bool = Field(default=False, description="Create as draft PR")
 
 
-class SubmitPRTool(ILegacyTool):
+class SubmitPRTool(ICoreTool[SubmitPRInput, PROutput]):
     """Atomic branch-submission tool.
 
-    Performs: neutralize branch-local artifacts → commit → push → create PR
-    → write PRStatus.OPEN to PRStatusCache in one tool call.
+    Performs: neutralize branch-local artifacts -> commit -> push -> create PR
+    -> write PRStatus.OPEN to PRStatusCache in one tool call.
 
     Readiness gate (phase == ready) is enforced via enforcement.yaml, not here.
     Blocked when PRStatus.OPEN already exists on this branch (check_pr_status rule).

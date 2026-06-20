@@ -37,7 +37,7 @@ from mcp_server.resources.base import BaseResource
 # Resources
 # Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.base import ILegacyTool
+from mcp_server.tools.decorators import ILegacyTool
 
 # Tools
 from mcp_server.tools.tool_result import ToolResult
@@ -395,7 +395,7 @@ class MCPServer:
                                 tool, err_dto, start_time, call_id, note_context
                             )
 
-                        from mcp_server.tools.base import ToolExecutionEnvelope  # noqa: PLC0415
+                        from mcp_server.tools.decorators import ToolExecutionEnvelope  # noqa: PLC0415
 
                         if isinstance(raw_result, ToolExecutionEnvelope):
                             data_dto = raw_result.data

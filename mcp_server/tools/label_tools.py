@@ -12,6 +12,7 @@ from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.schemas import LabelConfig, WorkphasesConfig
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.schemas.tool_outputs import (
     CreateLabelOutput,
     DeleteLabelOutput,
@@ -19,7 +20,6 @@ from mcp_server.schemas.tool_outputs import (
     LabelOutputModel,
     ListLabelsOutput,
 )
-from mcp_server.tools.base import ILegacyTool
 
 
 class ListLabelsInput(BaseModel):
@@ -30,7 +30,7 @@ class ListLabelsInput(BaseModel):
     # No input fields needed currently, but model required for consistency
 
 
-class ListLabelsTool(ILegacyTool):
+class ListLabelsTool(ICoreTool[ListLabelsInput, ListLabelsOutput]):
     """Tool to list all labels in the repository."""
 
     @property
@@ -93,7 +93,7 @@ class CreateLabelInput(BaseModel):
     description: str | None = Field(default="", description="Label description")
 
 
-class CreateLabelTool(ILegacyTool):
+class CreateLabelTool(ICoreTool[CreateLabelInput, CreateLabelOutput]):
     """Tool to create a new label in the repository."""
 
     @property
@@ -168,7 +168,7 @@ class DeleteLabelInput(BaseModel):
     name: str = Field(..., description="Label name to delete")
 
 
-class DeleteLabelTool(ILegacyTool):
+class DeleteLabelTool(ICoreTool[DeleteLabelInput, DeleteLabelOutput]):
     """Tool to delete a label from the repository."""
 
     @property
@@ -210,7 +210,7 @@ class RemoveLabelsInput(BaseModel):
     labels: list[str] = Field(..., description="List of labels to remove")
 
 
-class RemoveLabelsTool(ILegacyTool):
+class RemoveLabelsTool(ICoreTool[RemoveLabelsInput, LabelOperationOutput]):
     """Tool to remove labels from an issue or PR."""
 
     @property
@@ -261,7 +261,7 @@ class AddLabelsInput(BaseModel):
     )
 
 
-class AddLabelsTool(ILegacyTool):
+class AddLabelsTool(ICoreTool[AddLabelsInput, LabelOperationOutput]):
     """Tool to add labels to an issue or PR."""
 
     @property
