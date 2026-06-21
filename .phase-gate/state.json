@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested archiving the architectural gap analysis in the research phase.",
+  "skip_reason": "User requested transition to research to capture get_work_context gaps.",
   "issue_title": "feature: Russian Doll Decorator Pipeline for exception mapping",
   "parent_branch": "refactor/406-decorator-pipeline-exception-mapping",
   "created_at": "2026-06-20T20:29:22.199354+00:00",
@@ -36,6 +36,22 @@
       "human_approval": "Michel requested transition to research",
       "forced": true,
       "skip_reason": "User requested archiving the architectural gap analysis in the research phase."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-21T06:55:11.002072+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-06-21T07:26:36.124763+00:00",
+      "human_approval": "Michel requested transition back to research for get_work_context gaps analysis",
+      "forced": true,
+      "skip_reason": "User requested transition to research to capture get_work_context gaps."
     }
   ],
   "reconstructed": false,
