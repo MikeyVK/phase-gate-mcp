@@ -37,13 +37,14 @@ To prevent the chat client from dumping the tool response into an `output.txt` f
   * *Description:* Inject the entire markdown text of `phase_instructions` directly into the template.
   * *Pros:* Simple template rendering.
   * *Cons:* High risk of triggering `output.txt` dumps on long checklists, forcing the LLM to parse files instead of raw markdown text.
-* **Option B: Dedicated Resource Reference (Current Fallback)**
-  * *Description:* Keep `phase_instructions` out of the markdown and only provide a structured reference URI (e.g. `pgmcp://cache/runs/{run_id}`).
-  * *Pros:* 100% safe against client-side file truncation.
-  * *Cons:* Omit immediate context; the LLM must execute a second action to load the resource.
-* **Option C: Progressive Disclosure / Compact Checklist (Selected)**
-  * *Description:* The presenter renders a high-level summary checklist (e.g., only the task headers or a truncated block of the first 10 lines) and appends the cache resource link for the full, detailed instructions.
-  * *Pros:* Gives immediate context of the next steps without overloading the markdown payload. Safe against client-side truncation.
+* **Option B: Dedicated Resource Reference / "All-or-Nothing" (Selected Strategy)**
+  * *Description:* Keep `phase_instructions` entirely out of the markdown and only provide a structured reference URI (e.g. `pgmcp://cache/runs/{run_id}`).
+  * *Pros:* 100% safe against client-side file truncation. Keeps the markdown output clean, structured, and short.
+  * *Cons:* Requires a highly directive next instruction to force the LLM to read the cache resource.
+* **Option C: Progressive Disclosure / Compact Checklist (Rejected)**
+  * *Description:* Render a high-level summary checklist or truncated block of instructions.
+  * *Pros:* Immediate context.
+  * *Cons:* Hard to enforce dynamically and adds parsing complexity.
 
 ### 2. None-Value Formatting Gap
 - The presenter's `SafeNoneFormatter` formats `None` values into a placeholder (such as `-`), but the template prefix `Issue: #{issue_number}` leads to `Issue: #-` or `Issue: #None` because the `#` is static in the template.
@@ -56,7 +57,9 @@ To prevent the chat client from dumping the tool response into an `output.txt` f
 
 ## Approved Strategy
 
-Adopt a hybrid approach (Option B & C): The TextPresenter will dynamically render short metadata fields (current_cycle, sub_phase, invalid_phase_warning) directly in the markdown. For phase_instructions and handover_templates, the presenter will render a compact summarized preview or checklist along with a dedicated resource link, preventing client-side file truncation. All fallback formatting is moved from discovery_tools.py to the TextPresenter, and None values are formatted cleanly to avoid visual issues like '#None'.
+Adopt the **"Nothing" approach (Option B)**: The `TextPresenter` will completely omit the `phase_instructions` from the markdown presentation to guarantee that the output remains compact and never triggers client-side file truncation. To make this work, a highly directive and strict `next_instruction` warning (e.g., a mandatory TODO discipline rule) will be printed, forcing the agent to immediately read the cached run resource (`pgmcp://cache/runs/{run_id}`) to load the phase's authoritative operational checklist. 
+
+All other non-bloating metadata fields (like `current_cycle`, `sub_phase`, and `parent_branch`) will be rendered directly in the markdown. Hardcoded presentation fallbacks are moved from `discovery_tools.py` to `TextPresenter`, and `None` values are formatted cleanly to prevent visual leaks like `#None`.
 
 ---
 
@@ -64,15 +67,6 @@ Adopt a hybrid approach (Option B & C): The TextPresenter will dynamically rende
 
 1. get_work_context markdown presents all non-bloating fields (current_cycle, sub_phase, parent_branch) cleanly.
 2. None values are presented without prefix leaks (e.g., omitting '#None' entirely or showing 'None').
-3. Large phase_instructions are safely displayed or linked without triggering client-side output.txt dumps.
-4. discovery_tools.py contains no presentation fallbacks, satisfying the Presentation Boundary (§15).
-
-## Related Documentation
-None
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0.0 | 2026-06-21 | Agent | Initial draft |
+3. Large phase_instructions are completely omitted from the markdown, eliminating the risk of client-side output.txt dumps.
+4. A highly directive `next_instruction` block is printed, commanding the LLM to fetch and follow the cached phase instructions resource.
+5. discovery_tools.py contains no presentation fallbacks, satisfying the Presentation Boundary (§15).
