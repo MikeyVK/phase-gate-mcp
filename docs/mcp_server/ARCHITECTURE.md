@@ -110,8 +110,8 @@ graph TB
         end
 
         subgraph Tools ["Tool Layer (50 tools)"]
-            ICoreTool["ICoreTool"]
             Pipeline["Decorator Pipeline (ITool)"]
+            ICoreTool["ICoreTool"]
         end
 
         subgraph Resources ["Resource Layer (3 resources)"]
@@ -125,7 +125,8 @@ graph TB
             PhaseSE["PhaseStateEngine"]
             ArtMgr["ArtifactManager"]
             StateMut["WorkflowStateMutator"]
-            OtherMgr["... 12 more"]
+            EnforceRunner["EnforcementRunner"]
+            OtherMgr["... 11 more"]
         end
 
         subgraph Adapters ["Adapter Layer"]
@@ -145,18 +146,32 @@ graph TB
 
     Bootstrapper --> ConfigLayer
     Bootstrapper --> ManagerGraph
-    Bootstrapper --> Tools
-    Bootstrapper --> Resources
     Bootstrapper --> MCPServer
+    Bootstrapper --> Pipeline
+    Bootstrapper --> BaseRes
 
     MCPServer --> Pipeline
-    Pipeline --> Tools
-    MCPServer --> Resources
+    Pipeline --> ICoreTool
+    MCPServer --> BaseRes
 
-    Pipeline --> Managers
-    Tools --> Managers
-    Resources --> Managers
-    Managers --> Adapters
+    Pipeline --> EnforceRunner
+    Pipeline --> QAMgr
+    ICoreTool --> GitMgr
+    ICoreTool --> GHMgr
+    ICoreTool --> ArtMgr
+    ICoreTool --> PhaseSE
+    ICoreTool --> StateMut
+    ICoreTool --> OtherMgr
+
+    BaseRes --> GitMgr
+    BaseRes --> GHMgr
+    BaseRes --> PhaseSE
+
+    GitMgr --> GitAdapter
+    GHMgr --> GHAdapter
+    ArtMgr --> FSAdapter
+    StateMut --> FSAdapter
+    OtherMgr --> FSAdapter
 
     FSAdapter --> Repo
     GitAdapter --> Repo
