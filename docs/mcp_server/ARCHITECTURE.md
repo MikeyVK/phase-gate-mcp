@@ -459,25 +459,32 @@ dataclass — no service locator, no lazy resolution.
 
 ### 6.1 Tool Architecture
 
+Instead of inheriting from a monolithic base class, all tools implement the narrow, generic `ICoreTool` protocol. This protocol defines the metadata and execution boundary for a tool call:
+
 ```python
-class BaseTool(ABC):
-    name: str                                   # MCP tool name
-    description: str                            # Shown to AI agent
-    args_model: type[BaseModel] | None = None   # Pydantic input schema
-    enforcement_event: str | None = None        # Enforcement rule trigger
-    tool_category: str | None = None            # Category for enforcement
+@runtime_checkable
+class ICoreTool(Protocol, Generic[TInput, TOutput]):
+    @property
+    def name(self) -> str:
+        """Name of the tool shown to the client."""
+        ...
 
-    @abstractmethod
-    async def execute(self, params: Any, context: NoteContext) -> ToolResult: ...
+    @property
+    def description(self) -> str:
+        """Description of the tool shown to the client."""
+        ...
 
-class BranchMutatingTool(BaseTool):
-    """Marker ABC for tools that mutate branch state.
-    Sets tool_category = 'branch_mutating' for enforcement dispatch."""
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        """Pydantic input validation model."""
+        ...
+
+    async def execute(self, params: TInput, context: NoteContext) -> TOutput:
+        """Execute the contract operation."""
+        ...
 ```
 
-All tool subclasses are automatically wrapped with `@tool_error_handler` via
-`__init_subclass__()`. This catches the `MCPError` hierarchy and converts exceptions
-to structured `ToolResult.error()` responses.
+All concrete tools are registered in the `ServerBootstrapper` as raw `ICoreTool` implementations. At startup, the `ToolFactory` wraps them in the modular Russian Doll decorator pipeline (`ToolErrorHandlerDecorator`, `InputValidationDecorator`, `EnforcementDecorator`), converting them into executable `ITool` instances.
 
 ### 6.2 Tool Dispatch Flow
 
