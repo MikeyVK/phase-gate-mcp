@@ -146,7 +146,7 @@ graph TD
 For a detailed view of how the execution pipeline runs and interacts with the caching and presentation engines, see the sequence diagram in §6.2. The block diagram below illustrates the path of a tool call through the Russian Doll decorator chain:
 
 ```mermaid
-graph LR
+graph TD
     Client["Client / Agent"]
     MCPServer["MCPServer (Orchestrator)"]
     Pipeline["ITool Pipeline (Decorators)"]
