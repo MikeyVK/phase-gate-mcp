@@ -8,58 +8,48 @@
 
 ---
 
-## Purpose
+## High-Level Overview
 
-To document the remaining architectural gaps identified during Issue #406 regarding text presentation and error DTO structures, outlining the approved design for future implementation sessions.
-
-## Scope
-
-**In Scope:**
-Sanitization of BaseToolOutput, creation of BaseErrorOutput, status resolution updates in server.py and text_presenter.py, and declarative template mapping in presentation.yaml.
-
-**Out of Scope:**
-Implementation changes on the active branch (feature/406), which is being closed. These steps will be implemented in subsequent issues.
+Here is a high-level overview of all improvement steps and designs that we have discussed in the past chats and discussions, from the current implementation up to and including the latest DTO redesign:
 
 ---
 
-## Summary
+### 1. Phase Transition & Research
+* **Gap Documentation:** The branch was temporarily reverted to `research` to document the system-wide gaps ([research_arch_gap.md](file:///c:/temp/pgmcp/docs/development/issue406/research_arch_gap.md)) and the `get_work_context` gaps ([research_get_work_context_gaps.md](file:///c:/temp/pgmcp/docs/development/issue406/research_get_work_context_gaps.md)) in a structured and committed manner. Following this, the branch successfully transitioned to the `design` phase.
 
-This document records the design and implementation roadmap for resolving the backdoor in BaseToolOutput (error_message) and decoupling system errors from tool-level domain errors using the BaseErrorOutput hierarchy.
+### 2. `get_work_context` Presentation Refactoring
+* **Exposing Metadata:** Compact fields (`current_cycle`, `sub_phase`, `parent_branch`) are displayed directly in the markdown output to better orient the agent.
+* **Declarative None-Handling:** We leverage the existing [SafeNoneFormatter](file:///c:/temp/pgmcp/mcp_server/presenters/text_presenter.py#L25) (`none_value: "-"`) and clean up the templates in [presentation.yaml](file:///c:/temp/pgmcp/.phase-gate/config/presentation.yaml) (e.g., omitting the `#` prefix for issues) to prevent visual prefix leaks like `#-`.
+* **Large Instructions Solution ("Nothing" Approach):** We omit `phase_instructions` entirely from the markdown output to prevent client-side file truncation (`output.txt` dumps). This is combined with a highly directive `todo_discipline` next-instruction that forces the agent to read the cached run resource (`pgmcp://cache/runs/{run_id}`).
+* **Sanitizing the Tool Layer:** All hardcoded fallback texts and presentation logic are removed from [discovery_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/discovery_tools.py) to satisfy the Presentation Boundary (§15).
+
+### 3. Sanitizing `BaseToolOutput` & Closing Backdoors
+* **Cleaning `BaseToolOutput`:** We remove the `error_message` field from [BaseToolOutput](file:///c:/temp/pgmcp/mcp_server/schemas/tool_outputs.py#L14). This prevents tools from returning formatted error messages directly in Python.
+* **Declarative Domain Failures:** Domain-level failures of tools (`success=False`) are presented exclusively via tool-specific `template_failure` templates in [presentation.yaml](file:///c:/temp/pgmcp/.phase-gate/config/presentation.yaml), formatted using raw semantic parameters from the DTO (no backdoor strings in Python).
+
+### 4. Redesigning Error DTOs
+* **Introducing `BaseErrorOutput`:** We split [error_outputs.py](file:///c:/temp/pgmcp/mcp_server/schemas/error_outputs.py). System, decorator, and platform errors inherit directly from a new `BaseErrorOutput` that contains **no** `success` bool. Only real tool errors (`ToolErrorOutput`) retain the `success=False` property.
+* **Type-Safe Status and Routing:** The presenter [text_presenter.py](file:///c:/temp/pgmcp/mcp_server/presenters/text_presenter.py) and server-bridge [server.py](file:///c:/temp/pgmcp/mcp_server/server.py) determine the success status and template routing via type checks (`isinstance(data, BaseErrorOutput)`) instead of fragile string matching on `error_type`.
+
+### 5. Pragmatic Exceptions (Against Class Bloat)
+* **Generic Exceptions:** We do not introduce specific exception classes per error type. Instead, we reuse the existing generic classes from [exceptions.py](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py) (such as [PreflightError](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py#L122) and [ValidationError](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py#L52)) by simply providing them with a specific `error_code` and a `params` dictionary.
 
 ---
 
-## Key Changes
-
-### 1. Fase-transitie & Onderzoek
-* **Gap-documentatie:** De branche is tijdelijk teruggezet naar `research` om de systeembrede gaps ([research_arch_gap.md](file:///c:/temp/pgmcp/docs/development/issue406/research_arch_gap.md)) en de `get_work_context` gaps ([research_get_work_context_gaps.md](file:///c:/temp/pgmcp/docs/development/issue406/research_get_work_context_gaps.md)) gestructureerd en gecommit vast te leggen. Daarna is de branche succesvol overgegaan naar de `design` fase.
-
-### 2. `get_work_context` Presentatie-refactoring
-* **Exponeren van metadata:** Compacte velden (`current_cycle`, `sub_phase`, `parent_branch`) worden direct in de markdown getoond om de agent beter te oriënteren.
-* **Declaratieve None-afhandeling:** We gebruiken de bestaande [SafeNoneFormatter](file:///c:/temp/pgmcp/mcp_server/presenters/text_presenter.py#L25) (`none_value: "-"`) en schonen de templates in [presentation.yaml](file:///c:/temp/pgmcp/.phase-gate/config/presentation.yaml) op (bijv. `#` weglaten bij issues) om prefix-leaks zoals `#-` te voorkomen.
-* **Oplossing voor grote instructies ("Niets-aanpak"):** We laten `phase_instructions` volledig uit de markdown weg om client-side file-truncation (`output.txt` dumps) te voorkomen. Dit combineren we met uiterst dwingende `todo_discipline` next-instruction die de agent dwingt de cache-resource (`pgmcp://cache/runs/{run_id}`) uit te lezen.
-* **Sanering van de Tool-laag:** Alle hardcoded fallback-teksten en weergave-logica worden verwijderd uit [discovery_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/discovery_tools.py) om te voldoen aan de Presentation Boundary (§15).
-
-### 3. Sanering van `BaseToolOutput` & Backdoor-blokkade
-* **Opschonen `BaseToolOutput`:** We verwijderen het veld `error_message` uit [BaseToolOutput](file:///c:/temp/pgmcp/mcp_server/schemas/tool_outputs.py#L14). Dit voorkomt dat tools in Python geformatteerde foutboodschappen direct teruggeven.
-* **Declaratieve Domeinfouten:** Domein-fouten van tools (`success=False`) worden uitsluitend gepresenteerd via tool-specifieke `template_failure` templates in [presentation.yaml](file:///c:/temp/pgmcp/.phase-gate/config/presentation.yaml), geformatteerd met de specifieke data-attributen van die tool (geen backdoor-strings in Python).
-
-### 4. Herontwerp van de Error-DTO's
-* **Introductie van `BaseErrorOutput`:** We splitsen [error_outputs.py](file:///c:/temp/pgmcp/mcp_server/schemas/error_outputs.py) op. Systeem-, decorator- en platformfouten overerven direct van een nieuwe `BaseErrorOutput` die **geen** `success` bool bevat. Alleen echte tool-fouten (`ToolErrorOutput`) behouden de `success=False` property.
-* **Type-safe status en routing:** De presenter [text_presenter.py](file:///c:/temp/pgmcp/mcp_server/presenters/text_presenter.py) en server-bridge [server.py](file:///c:/temp/pgmcp/mcp_server/server.py) bepalen de succes-status en de template-routing via type-checks (`isinstance(data, BaseErrorOutput)`) in plaats van broze string-filters op `error_type`.
-
-### 5. Simpele exceptions (Tegen Class Bloat)
-* **Generieke uitzonderingen:** We introduceren geen specifieke exception-klassen per fouttype. In plaats daarvan hergebruiken we de reeds bestaande generieke klassen uit [exceptions.py](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py) (zoals [PreflightError](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py#L122) en [ValidationError](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py#L52)) door ze simpelweg te voorzien van een specifieke `error_code` en `params`.
+This overview maps out the complete chain with which we restore the presentation boundary, close backdoors, and maximize type safety around errors.
 
 ---
 
 ## Related Documentation
 - **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-1]**
 - **[docs/development/issue406/research_get_work_context_gaps.md][related-2]**
+- **[docs/development/issue406/research_arch_gap.md][related-3]**
 
 <!-- Link definitions -->
 
 [related-1]: docs/coding_standards/ARCHITECTURE_PRINCIPLES.md
 [related-2]: docs/development/issue406/research_get_work_context_gaps.md
+[related-3]: docs/development/issue406/research_arch_gap.md
 
 ---
 
@@ -67,4 +57,4 @@ This document records the design and implementation roadmap for resolving the ba
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0.0 | 2026-06-24 | Agent | Initial draft |
+| 1.0.0 | 2026-06-24 | Agent | Initial draft containing the English translation of the approved gaps overview. |
