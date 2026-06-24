@@ -500,21 +500,17 @@ sequenceDiagram
     Agent->>Server: CALL tool_name(params)
     Server->>Pipeline: execute(params, note_context)
     
-    rect rgb(220, 240, 255)
-        note right of Pipeline: Russian Doll Chain
-        Pipeline->>Pipeline: ToolErrorHandlerDecorator (traps exceptions)
-        Pipeline->>Pipeline: InputValidationDecorator (validates Pydantic)
-        Pipeline->>Pipeline: EnforcementDecorator (runs pre-guards)
-    end
+    note right of Pipeline: Russian Doll Chain:
+    note right of Pipeline: - ToolErrorHandlerDecorator (traps exceptions)
+    note right of Pipeline: - InputValidationDecorator (validates Pydantic)
+    note right of Pipeline: - EnforcementDecorator (runs pre-guards)
 
     Pipeline->>Tool: execute(validated_params, note_context)
     Tool-->>Pipeline: BaseToolOutput (DTO)
     
-    rect rgb(220, 240, 255)
-        Pipeline->>Pipeline: EnforcementDecorator (runs post-guards)
-    end
+    note right of Pipeline: EnforcementDecorator (runs post-guards)
     
-    Pipeline-->>Server: BaseToolOutput (DTO)
+    Pipeline-->>Server: BaseToolOutput / BaseErrorOutput (DTO)
     
     Server->>Cache: put(data)
     Cache-->>Server: CachePublication (DTO)
