@@ -147,42 +147,27 @@ For a detailed view of how the execution pipeline runs and interacts with the ca
 
 ```mermaid
 graph LR
-    MCPServer["MCPServer"]
-    Pipeline["ITool Pipeline\n(Decorators)"]
-    Tool["ICoreTool\n(Concrete Tool)"]
-    Cache["ResponseCacheManager\n(CQRS Cache)"]
-    Presenter["TextPresenter\n(Presentation)"]
+    Client["Client / Agent"]
+    MCPServer["MCPServer (Orchestrator)"]
+    Pipeline["ITool Pipeline (Decorators)"]
+    Tool["ICoreTool (Concrete Tool)"]
+    Cache["ResponseCacheManager (Cache)"]
+    Presenter["TextPresenter (Presenter)"]
+    Result["CallToolResult (Markdown)"]
 
-    MCPServer -->|"1. execute(params)"| Pipeline
+    Client -->|"1. CALL"| MCPServer
+    MCPServer -->|"2. execute"| Pipeline
     
     subgraph Decorators ["Decorator Chain"]
-        Pipeline -->|"Exception mapping"| ErrorHandler["ToolErrorHandlerDecorator"]
-        ErrorHandler -->|"Pydantic validation"| InputValidator["InputValidationDecorator"]
-        InputValidator -->|"Pre/post-guards"| Enforcement["EnforcementDecorator"]
+        Pipeline --> ErrorHandler["ToolErrorHandlerDecorator"]
+        ErrorHandler --> InputValidator["InputValidationDecorator"]
+        InputValidator --> Enforcement["EnforcementDecorator"]
     end
     
-    Enforcement -->|"2. execute()"| Tool
-    Tool -->|"3. return DTO"| MCPServer
-    
-    MCPServer -->|"4. publish DTO"| Cache
-    Cache -->|"5. return CachePublication"| MCPServer
-    MCPServer -->|"6. present(DTO, CachePub)"| Presenter
-    Presenter -->|"7. return Markdown"| MCPServer
-```
-
-    BaseRes --> GitMgr
-    BaseRes --> GHMgr
-    BaseRes --> PhaseSE
-
-    GitMgr --> GitAdapter
-    GHMgr --> GHAdapter
-    ArtMgr --> FSAdapter
-    StateMut --> FSAdapter
-    OtherMgr --> FSAdapter
-
-    FSAdapter --> Repo
-    GitAdapter --> Repo
-    GHAdapter --> Remote
+    Enforcement -->|"3. execute"| Tool
+    Tool -->|"4. return DTO"| Cache
+    Cache -->|"5. publish & return CachePub"| Presenter
+    Presenter -->|"6. present & return Markdown"| Result
 ```
 
 ### 3.2 Layer Responsibilities
