@@ -177,7 +177,7 @@ graph TD
 | **Composition Root** | `ServerBootstrapper`, `ConfigLayer`, `ManagerGraph` | Config loading, DI wiring, server construction |
 | **Runtime** | `MCPServer`, `NoteContext` | MCP protocol handling, tool dispatch coordination |
 | **Tools** | 50 `ICoreTool` instances wrapped in a decorator pipeline | Delegate business logic to managers and return semantic DTOs |
-| **Resources** | 3 `BaseResource` subclasses | Expose read-only project context via `pgmcp://` URIs |
+| **Resources** | 4 `BaseResource` subclasses | Expose read-only project context via `pgmcp://` URIs |
 | **Managers** | 18 manager classes | Business logic, workflow state, quality gates |
 | **Adapters** | `FilesystemAdapter`, `GitAdapter`, `GitHubAdapter` | External system integration |
 
@@ -287,8 +287,9 @@ mcp_server/
 │   ├── health_tools.py
 │   └── admin_tools.py
 │
-├── resources/                     # MCP resources (4 files)
+├── resources/                     # MCP resources (5 files)
 │   ├── base.py                    # BaseResource ABC
+│   ├── cache.py                   # pgmcp://cache/runs/{run_id}
 │   ├── standards.py               # pgmcp://rules/coding_standards
 │   ├── status.py                  # pgmcp://status/phase
 │   └── github.py                  # pgmcp://github/issues
@@ -569,13 +570,17 @@ returned in the final tool response.
 
 ## 7. Resource System
 
-### 7.1 URI Scheme: `pgmcp://`
+### 7.1 URI Schemes
 
-| Resource | URI | Description | Condition |
-|----------|-----|-------------|-----------|
-| Standards | `pgmcp://rules/coding_standards` | Coding standards and guidelines | Always |
-| Status | `pgmcp://status/phase` | Current workflow phase and status | Always |
-| Issues | `pgmcp://github/issues` | Open GitHub issues | When `GITHUB_TOKEN` set |
+The MCP server exposes various resources and validation schemas via the following URI patterns:
+
+| Type | Resource / Schema | URI | Description | Condition |
+|------|-------------------|-----|-------------|-----------|
+| Resource | Standards | `pgmcp://rules/coding_standards` | Coding standards and guidelines | Always |
+| Resource | Status | `pgmcp://status/phase` | Current workflow phase and status | Always |
+| Resource | Issues | `pgmcp://github/issues` | Open GitHub issues | When `GITHUB_TOKEN` set |
+| Resource | Cache Run | `pgmcp://cache/runs/{run_id}` | Cached tool execution results (DTO payloads) | Always |
+| Schema | Validation Schema | `schema://validation` | Pydantic validation input schemas (inline payload) | Always (on ValidationError) |
 
 ### 7.2 BaseResource
 
