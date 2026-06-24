@@ -223,11 +223,19 @@ mcp_server/
 │   │   ├── input_validation_decorator.py
 │   │   └── tool_error_handler_decorator.py
 │   └── interfaces/
-│       ├── __init__.py            # Re-exports interfaces + 13 legacy Protocol interfaces
+│       ├── __init__.py            # Re-exports interfaces facade
 │       ├── itool.py               # Pure execution interface ITool
 │       ├── icore_tool.py          # Generic execution interface ICoreTool
 │       ├── ipresenter.py          # IPresenter interface
-│       └── itool_response_cache.py # CQRS segregated cache interfaces
+│       ├── itool_response_cache.py # CQRS segregated cache interfaces
+│       ├── gate.py                # GateReport and workflow gate runner interfaces
+│       ├── state.py               # State reader and repository interfaces
+│       ├── git.py                 # Git context reader interfaces
+│       ├── ipr_status.py          # PR status reader and writer interfaces
+│       ├── ipytest_runner.py      # Pytest runner interface
+│       ├── quality.py             # Quality state repository interface
+│       ├── workflow.py            # Workflow state mutator interface
+│       └── context.py             # Context loaded reader and writer interfaces
 │
 ├── managers/                      # Business logic (18 files)
 │   ├── git_manager.py
@@ -469,28 +477,37 @@ to structured `ToolResult.error()` responses.
 sequenceDiagram
     participant Agent as AI Agent
     participant Server as MCPServer
-    participant Enforce as EnforcementRunner
-    participant Tool as BaseTool
-    participant Notes as NoteContext
-    participant Manager as Manager
+    participant Pipeline as Decorator Pipeline (ITool)
+    participant Tool as Concrete Tool (ICoreTool)
+    participant Cache as ResponseCacheManager
+    participant Presenter as TextPresenter
 
     Agent->>Server: CALL tool_name(params)
-    Server->>Server: _validate_tool_arguments(params)
-    Server->>Enforce: pre-enforcement check
-
-    alt Enforcement Blocked
-        Enforce-->>Agent: Error: precondition failed
+    Server->>Pipeline: execute(params, note_context)
+    
+    rect rgb(220, 240, 255)
+        note right of Pipeline: Russian Doll Chain
+        Pipeline->>Pipeline: ToolErrorHandlerDecorator (traps exceptions)
+        Pipeline->>Pipeline: InputValidationDecorator (validates Pydantic)
+        Pipeline->>Pipeline: EnforcementDecorator (runs pre-guards)
     end
 
-    Server->>Tool: execute(validated_params, note_context)
-    Tool->>Manager: delegate business logic
-    Manager-->>Tool: result
-    Tool-->>Server: ToolResult
-
-    Server->>Enforce: post-enforcement
-    Server->>Presenter: present_notes(tool_name, notes)
-    Presenter-->>Server: notes_text
-    Server-->>Agent: CallToolResult with formatted notes
+    Pipeline->>Tool: execute(validated_params, note_context)
+    Tool-->>Pipeline: BaseToolOutput (DTO)
+    
+    rect rgb(220, 240, 255)
+        Pipeline->>Pipeline: EnforcementDecorator (runs post-guards)
+    end
+    
+    Pipeline-->>Server: BaseToolOutput (DTO)
+    
+    Server->>Cache: put(data)
+    Cache-->>Server: CachePublication (DTO)
+    
+    Server->>Presenter: present(data, cache_pub)
+    Presenter-->>Server: presented_text (Markdown)
+    
+    Server-->>Agent: CallToolResult (Markdown + Cache/Validation Resource)
 ```
 
 ### 6.3 Tool Categories (50 tools)
@@ -663,11 +680,10 @@ MCPError (base, code="ERR_INTERNAL")
 
 ### 10.2 Error Response Pattern
 
-All tool errors are caught by `@tool_error_handler` and converted to structured
-`ToolResult.error()` responses with:
-- `error_code` — Machine-readable error code
-- `content` — Human-readable message with recovery hints
-- `is_error` — Always `True`
+All tool errors and platform/decorator exceptions are caught by `ToolErrorHandlerDecorator` and converted to structured DTOs (inheriting from `BaseErrorOutput` or `ValidationErrorOutput`), which are then published to the cache and formatted into markdown by `TextPresenter`.
+The presented markdown text:
+- Displays a clean error summary without python tracebacks
+- Appends recovery hints and a reference to the cache resource (`pgmcp://cache/runs/{run_id}`)
 
 ---
 
