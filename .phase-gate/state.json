@@ -2,7 +2,7 @@
   "branch": "feature/406-decorator-pipeline-exception-mapping",
   "issue_number": 406,
   "workflow_name": "feature",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Need to commit version history update in documentation phase",
+  "skip_reason": "User requested returning to documentation phase",
   "issue_title": "feature: Russian Doll Decorator Pipeline for exception mapping",
   "parent_branch": "refactor/406-decorator-pipeline-exception-mapping",
   "created_at": "2026-06-20T20:29:22.199354+00:00",
@@ -100,6 +100,30 @@
       "human_approval": "Approved by user in chat to update version history",
       "forced": true,
       "skip_reason": "Need to commit version history update in documentation phase"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-06-24T17:14:47.096476+00:00",
+      "human_approval": "Approved version history update and ready to complete",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "documentation",
+      "timestamp": "2026-06-24T17:17:54.066266+00:00",
+      "human_approval": "User explicitly requested this phase reset in chat",
+      "forced": true,
+      "skip_reason": "User requested returning to documentation phase"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-06-24T17:40:24.737183+00:00",
+      "human_approval": "User approved transition to ready phase",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

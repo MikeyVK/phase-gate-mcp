@@ -1,24 +1,42 @@
 <!-- docs\development\issue406\pr.md -->
-<!-- template=pr version=93bb9b4e created=2026-06-20T09:17Z updated= -->
-# feature: Russian Doll Decorator Pipeline for exception mapping
+<!-- template=pr version=93bb9b4e created=2026-06-24T17:41Z updated= -->
+# Russian Doll Decorator Pipeline for exception mapping
 
-Refactored the MCP server tool execution flow using a clean separation of concerns. Monolithic validation and exception routing is replaced by a modular Russian Doll decorator chain, with segregated cache persistence and graceful text presentation fallbacks.
+Refactored the monolithic exception mapping and validation bridge in server.py into a decoupled Russian Doll decorator pipeline with CQRS cache segregation, linear transport orchestration, and graceful presentation fallbacks. Also documented cache run resource and validation schema URIs.
 ## Changes
-Decomposed monolithic exception mapping and validation bridge into modular Russian Doll decorator pipeline. Introduced core interfaces (ITool, ICoreTool, IPresenter, IToolResponseCache) and decorators (InputValidationDecorator, EnforcementDecorator, ToolErrorHandlerDecorator). Cleaned up transport layer (server.py). Retired legacy decorators.
+- Introduced InputValidationDecorator, EnforcementDecorator, and ToolErrorHandlerDecorator in core/decorators/
+- Extracted narrow interfaces: ITool, ICoreTool, IPresenter, IToolResponsePublisher, IToolResponseReader in core/interfaces/
+- Refactored server.py to implement a clean linear 5-step orchestration flow in handle_call_tool
+- Added CachePublication DTO and configured user-facing fallback warnings in presentation.yaml
+- Documented cache run resource and validation schema URIs in ARCHITECTURE.md
 
 ## Testing
-Ran full test suite (2896 passed, 5 skipped, 2 xfailed, 1 xpassed) and verified all quality gates pass completely (10.00/10 on Ruff format, lint, imports, line length, and Pyright type-checking).
+Ran full unit test suite (2150 passed) and integration test suite (259 passed). All quality gates passed with 10.00/10.
 ## Checklist
 
-- [ ] All unit and integration tests pass successfully
-- [ ] Ruff formatting, linting, imports, and line lengths pass cleanly
-- [ ] Pyright type-checking passes with 0 violations
-- [ ] Legacy decorators and base tool definitions retired
-- [ ] Documentation updated to reflect new subsystems
+- [ ] Run quality gates successfully
+- [ ] Verify all tests pass
+- [ ] Document all URI schemes in ARCHITECTURE.md
+- [ ] Prepare deferred work transfer
 
+## ⚠️ Breaking Changes
+
+None. All JSON-RPC API structures and error DTO shapes have been preserved.
+## Deferred Work
+
+- Presenter (text_presenter.py) hardcoded tool classification: tool display categories are hardcoded as string literals in Python.
+- Presenter (text_presenter.py) startup template check: presentation.yaml templates are not validated against DTOs at startup.
+- Cache (cache.py/response_cache.py) normalization & canonicalization: run_id parsing and normalization are duplicated.
+- Bootstrapping (bootstrap.py) inline imports to bypass circular dependency: circular references bypass via local function imports.
+- Enforcement (enforcement_runner.py) split concrete check logic: dispatching and rule enforcement are in the same class.
+- Config Loader (loader.py) project structure validation & config root probing: validation is mixed with loading.
+- Validation (validator.py) ignore presentation config check: startup validator does not check presentation configs.
+- Physically delete empty/retired production & test files: tools/base.py and empty test files are not deleted yet.
+- Test Suite bloat, setup duplication, fakes/fixtures: setup duplication and redundant unit tests for metadata.
 ## Related Documentation
-- **[docs/development/issue406/validation.md][related-1]**
-- **[docs/mcp_server/ARCHITECTURE.md][related-2]**
+- **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-1]**
+- **[docs/development/issue406/validation.md][related-2]**
+- **[docs/mcp_server/ARCHITECTURE.md][related-3]**
 
 ---
 
