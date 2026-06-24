@@ -100,19 +100,18 @@ graph TB
     subgraph Server ["PhaseGate MCP Server"]
         subgraph Bootstrap ["Composition Root"]
             Bootstrapper["ServerBootstrapper"]
-            ConfigLayer["ConfigLayer\n(14 frozen configs)"]
+            ConfigLayer["ConfigLayer\n(15 frozen configs)"]
             ManagerGraph["ManagerGraph\n(16 services)"]
         end
 
         subgraph Runtime ["Runtime"]
             MCPServer["MCPServer"]
-            Enforcement["EnforcementRunner"]
             NoteCtx["NoteContext"]
         end
 
         subgraph Tools ["Tool Layer (50 tools)"]
-            BaseTool["BaseTool"]
-            BranchMut["BranchMutatingTool"]
+            ICoreTool["ICoreTool"]
+            Pipeline["Decorator Pipeline (ITool)"]
         end
 
         subgraph Resources ["Resource Layer (3 resources)"]
@@ -150,10 +149,11 @@ graph TB
     Bootstrapper --> Resources
     Bootstrapper --> MCPServer
 
-    MCPServer --> Enforcement
-    MCPServer --> Tools
+    MCPServer --> Pipeline
+    Pipeline --> Tools
     MCPServer --> Resources
 
+    Pipeline --> Managers
     Tools --> Managers
     Resources --> Managers
     Managers --> Adapters
@@ -168,8 +168,8 @@ graph TB
 | Layer | Components | Responsibility |
 |-------|------------|----------------|
 | **Composition Root** | `ServerBootstrapper`, `ConfigLayer`, `ManagerGraph` | Config loading, DI wiring, server construction |
-| **Runtime** | `MCPServer`, `EnforcementRunner`, `NoteContext` | MCP protocol handling, tool dispatch, enforcement |
-| **Tools** | 50 `BaseTool` / `BranchMutatingTool` subclasses | Validate input, delegate to managers, format output |
+| **Runtime** | `MCPServer`, `NoteContext` | MCP protocol handling, tool dispatch coordination |
+| **Tools** | 50 `ICoreTool` instances wrapped in a decorator pipeline | Delegate business logic to managers and return semantic DTOs |
 | **Resources** | 3 `BaseResource` subclasses | Expose read-only project context via `pgmcp://` URIs |
 | **Managers** | 18 manager classes | Business logic, workflow state, quality gates |
 | **Adapters** | `FilesystemAdapter`, `GitAdapter`, `GitHubAdapter` | External system integration |
@@ -387,14 +387,14 @@ sequenceDiagram
     BS->>BS: 5. build ConfigLayer (frozen)
     BS->>BS: 6. build ManagerGraph (frozen)
     BS->>BS: 7. build Tools + Resources
-    BS->>Server: MCPServer(settings, configs, managers, tools, resources)
+    BS->>Server: MCPServer(settings, tools, resources, presenter, publisher)
     Server->>Server: setup_handlers()
     Server->>Server: asyncio.run(server.run())
 ```
 
 ### 5.3 ConfigLayer (Frozen Dataclass)
 
-14 immutable config objects loaded from `.phase-gate/config/` YAML files:
+15 immutable config objects loaded from `.phase-gate/config/` YAML files:
 
 | Config | Source YAML | Purpose |
 |--------|-------------|--------|
@@ -412,6 +412,7 @@ sequenceDiagram
 | `project_structure_config` | `project_structure.yaml` | Directory policies |
 | `operation_policies_config` | `policies.yaml` | Phase-based operation restrictions |
 | `enforcement_config` | `enforcement.yaml` | Tool enforcement rules |
+| `presentation_config` | `presentation.yaml` | Note presentation templates, recovery hints, and link formats |
 
 ### 5.4 ManagerGraph (Frozen Dataclass)
 
@@ -717,27 +718,37 @@ Entry point: `python -m mcp_server.core.proxy`
 
 ### 13.1 Adding a New Tool
 
-1. Create a new class extending `BaseTool` (or `BranchMutatingTool` for state-mutating tools)
-2. Define `name`, `description`, `args_model` (Pydantic), and implement `execute()`
-3. Register the tool in `ServerBootstrapper._build_tools()` with injected dependencies
-4. Optionally add enforcement rules in `enforcement.yaml`
+1. Create a new class implementing `ICoreTool[MyToolInput, MyToolOutput]` where `MyToolInput` is a Pydantic model and `MyToolOutput` is a DTO inheriting from `BaseToolOutput`.
+2. Define `name`, `description`, `args_model` (pointing to `MyToolInput`), and optionally `tool_category` (for enforcement).
+3. Implement `execute(self, params: MyToolInput, context: NoteContext) -> MyToolOutput`.
+4. Register the core tool in `ServerBootstrapper._build_tools()`. It will be automatically decorated and wrapped at runtime by the `ToolFactory` composition root.
+5. Optionally add enforcement rules in `enforcement.yaml`.
 
 ```python
 # mcp_server/tools/my_tool.py
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.schemas.tool_outputs import BaseToolOutput
+from mcp_server.core.operation_notes import NoteContext
+from pydantic import BaseModel, Field
 
-class MyNewTool(BaseTool):
+class MyToolInput(BaseModel):
+    value: str = Field(description="Some input value")
+
+class MyToolOutput(BaseToolOutput):
+    result: str = Field(description="The outcome result")
+
+class MyNewTool(ICoreTool[MyToolInput, MyToolOutput]):
     name = "my_new_tool"
     description = "Description shown to the AI agent."
-    args_model = MyToolArgs  # Pydantic model
+    args_model = MyToolInput
+    tool_category = "utility"
 
     def __init__(self, some_manager: SomeManager) -> None:
         self._manager = some_manager
 
-    async def execute(self, params: MyToolArgs, context: NoteContext) -> ToolResult:
-        result = self._manager.do_something(params.value)
-        return ToolResult.text(result)
+    async def execute(self, params: MyToolInput, context: NoteContext) -> MyToolOutput:
+        result_str = self._manager.do_something(params.value)
+        return MyToolOutput(success=True, result=result_str)
 ```
 
 ### 13.2 Adding a New Resource
