@@ -1,8 +1,8 @@
 # PhaseGate MCP Server — Architecture
 
 **Status:** Current  
-**Version:** 3.0  
-**Last Updated:** 2026-06-10
+**Version:** 3.1  
+**Last Updated:** 2026-06-24
 
 ---
 
@@ -856,6 +856,7 @@ pip install phase_gate_mcp-1.0.0-py3-none-any.whl
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1 | 2026-06-24 | Separated ICoreTool/ILegacyTool interfaces, removed retired tools, corrected architectural diagrams, and documented cache run resource and validation schema URIs |
 | 3.0 | 2026-06-10 | Complete rewrite reflecting actual architecture: ServerBootstrapper composition root, 50 class-based tools, 15 YAML configs, enforcement system, proxy architecture |
 | 2.0 | 2025-12-08 | Original draft (now superseded) |
 | 1.0 | 2025-12-08 | Initial architecture |
