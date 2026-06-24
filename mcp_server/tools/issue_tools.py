@@ -16,6 +16,7 @@ from mcp_server.schemas import (
     IssueConfig,
     MilestoneConfig,
 )
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.schemas.github_models import IssueReadModel
 from mcp_server.schemas.tool_outputs import (
     CloseIssueOutput,
@@ -23,7 +24,6 @@ from mcp_server.schemas.tool_outputs import (
     IssueSummaryDTO,
     ListIssuesOutput,
 )
-from mcp_server.tools.base import ITool
 
 IssueState = Literal["open", "closed", "all"]
 
@@ -126,7 +126,7 @@ def _map_issue_to_output(issue: IssueReadModel) -> IssueOutput:
     )
 
 
-class CreateIssueTool(ITool):
+class CreateIssueTool(ICoreTool[CreateIssueInput, IssueOutput]):
     """Tool to create a new GitHub issue."""
 
     @property
@@ -252,7 +252,7 @@ class GetIssueInput(BaseModel):
     issue_number: int = Field(..., description="The issue number to retrieve")
 
 
-class GetIssueTool(ITool):
+class GetIssueTool(ICoreTool[GetIssueInput, IssueOutput]):
     """Tool to get issue details."""
 
     @property
@@ -293,7 +293,7 @@ class ListIssuesInput(BaseModel):
     labels: list[str] | None = Field(default=None, description="Filter by labels")
 
 
-class ListIssuesTool(ITool):
+class ListIssuesTool(ICoreTool[ListIssuesInput, ListIssuesOutput]):
     """Tool to list issues."""
 
     @property
@@ -372,7 +372,7 @@ class UpdateIssueInput(BaseModel):
     )
 
 
-class UpdateIssueTool(ITool):
+class UpdateIssueTool(ICoreTool[UpdateIssueInput, IssueOutput]):
     """Tool to update an issue."""
 
     @property
@@ -422,7 +422,7 @@ class CloseIssueInput(BaseModel):
     comment: str | None = Field(default=None, description="Optional closing comment")
 
 
-class CloseIssueTool(ITool):
+class CloseIssueTool(ICoreTool[CloseIssueInput, CloseIssueOutput]):
     """Tool to close an issue."""
 
     @property

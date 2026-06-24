@@ -8,12 +8,17 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from unittest.mock import patch
 from mcp.types import CallToolRequest, CallToolRequestParams, EmbeddedResource
 from pydantic import BaseModel, ConfigDict
 
+from pathlib import Path
+from mcp_server.config.settings import Settings
+from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
 from mcp_server.server import MCPServer
-from mcp_server.tools.base import ITool
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.tools.tool_result import ToolResult
+from mcp_server.core.tool_factory import ToolFactory
 from tests.mcp_server.test_support import make_test_server
 
 
@@ -23,7 +28,7 @@ class IntegrationInput(BaseModel):
     action: str
 
 
-class MockIntegrationTool(ITool):
+class MockIntegrationTool(ICoreTool[IntegrationInput, ToolResult]):
     """Mock tool for integration testing."""
 
     @property
@@ -38,11 +43,11 @@ class MockIntegrationTool(ITool):
     def args_model(self) -> type[BaseModel] | None:
         return IntegrationInput
 
-    async def execute(  # noqa: ANN201
+    async def execute(
         self,
         params: IntegrationInput,
-        context: Any,  # noqa: ANN401, ARG002
-    ):
+        context: Any,
+    ) -> ToolResult:
         return ToolResult(content=[{"type": "text", "text": f"Action: {params.action}"}])
 
     @property
@@ -62,8 +67,21 @@ class TestStrictInputValidationResponse:
     @pytest_asyncio.fixture
     async def server(self) -> MCPServer:
         """MCPServer with MockIntegrationTool registered."""
+        settings = Settings.from_env()
+        bootstrapper = ServerBootstrapper(settings)
+        configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
+        workspace_root = Path(settings.server.workspace_root)
+        server_root = workspace_root / settings.server.server_root_dir
+        template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
+        managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
+
         s = make_test_server()
-        s.tools.append(MockIntegrationTool())
+
+        factory = ToolFactory(
+            enforcement_runner=managers.enforcement_runner,
+            workspace_root=workspace_root,
+        )
+        s.tools.append(factory.create_tool(MockIntegrationTool()))
         return s
 
     @pytest.mark.asyncio
@@ -84,7 +102,8 @@ class TestStrictInputValidationResponse:
                 arguments=extra_field_args,
             )
         )
-        response = await handler(req)
+        with patch("jsonschema.validate"):
+            response = await handler(req)
         result = response.root
 
         assert hasattr(result, "isError"), "Result must have isError"
@@ -107,7 +126,8 @@ class TestStrictInputValidationResponse:
                 arguments=extra_field_args,
             )
         )
-        response = await handler(req)
+        with patch("jsonschema.validate"):
+            response = await handler(req)
         result = response.root
         assert result.isError is True
 
@@ -116,6 +136,9 @@ class TestStrictInputValidationResponse:
         assert isinstance(content, list), "content must be a list"
 
         # Look for embedded resource item (schema://validation)
+        print("DEBUG RESULT CONTENT:", result.content)
+        for item in result.content:
+            print("ITEM TYPE:", type(item), "ITEM:", item)
         resource_items = [c for c in content if isinstance(c, EmbeddedResource)]
         assert len(resource_items) > 0, "Expected schema://validation EmbeddedResource"
 

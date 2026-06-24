@@ -17,6 +17,7 @@ from typing import Any, ClassVar
 import anyio
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
@@ -30,7 +31,6 @@ from mcp_server.schemas.tool_outputs import (
     PlanningDeliverablesOutput,
     ProjectPlanOutput,
 )
-from mcp_server.tools.base import ITool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class InitializeProjectInput(BaseModel):
         return self
 
 
-class InitializeProjectTool(ITool):
+class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectOutput]):
     """Tool for initializing projects with atomic state management.
 
     Phase 0.5: Human selects workflow_name → generates project phase plan.
@@ -313,7 +313,7 @@ class GetProjectPlanInput(BaseModel):
     issue_number: int = Field(..., description="GitHub issue number")
 
 
-class GetProjectPlanTool(ITool):
+class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
     """Tool for retrieving project plan."""
 
     output_model: ClassVar[type[BaseModel]] = ProjectPlanOutput
@@ -423,7 +423,9 @@ class SavePlanningDeliverablesInput(BaseModel):
     )
 
 
-class SavePlanningDeliverablesTool(ITool):
+class SavePlanningDeliverablesTool(
+    ICoreTool[SavePlanningDeliverablesInput, PlanningDeliverablesOutput]
+):
     """Tool to persist planning deliverables for an issue to deliverables.json.
 
     Issue #229 Cycle 4 / Issue #390:
@@ -560,7 +562,9 @@ class UpdatePlanningDeliverablesInput(BaseModel):
     )
 
 
-class UpdatePlanningDeliverablesTool(ITool):
+class UpdatePlanningDeliverablesTool(
+    ICoreTool[UpdatePlanningDeliverablesInput, PlanningDeliverablesOutput]
+):
     """Tool to merge-update planning deliverables for an issue in deliverables.json.
 
     Issue #229 Cycle 5 / Issue #390:

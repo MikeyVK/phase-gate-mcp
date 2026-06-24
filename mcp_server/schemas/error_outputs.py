@@ -19,7 +19,7 @@ class ToolErrorOutput(BaseModel):
 
     success: bool = False
     error_type: str
-    message: str
+    error_message: str | None = None
     traceback: str | None = None
     params: dict[str, Any] = Field(default_factory=dict)
 
@@ -49,3 +49,10 @@ class EnforcementErrorOutput(ToolErrorOutput):
 
     error_type: str = "EnforcementError"
     error_code: str
+
+
+class ConfigErrorOutput(ToolErrorOutput):
+    """Error output for system configuration failures."""
+
+    error_type: str = "ConfigError"
+    file_path: str | None = None

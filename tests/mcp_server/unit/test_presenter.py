@@ -23,6 +23,7 @@ from mcp_server.core.exceptions import ConfigError
 # Project modules
 from mcp_server.config.schemas.presentation_config import PresentationConfig
 from mcp_server.core.operation_notes import Note
+from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.presenters.text_presenter import (
     SafeNoneFormatter,
     TextPresenter,
@@ -96,9 +97,7 @@ class TestTextPresenter:
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=True, result="Operation completed")
 
-        text = presenter.present(
-            tool_name="dummy_tool", success=True, presentation_category="query", data=dto
-        )
+        text = presenter.present(tool_name="dummy_tool", success=True, data=dto)
 
         # 'query' category maps to '📋' Success maps to '📋' + template + \n\n + next_instructions
         assert text == "📋 Success: Operation completed\n\n🚀 TEST ADVISORY WARNING"
@@ -108,9 +107,7 @@ class TestTextPresenter:
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummyOutput(success=False, error_message="Something failed")
 
-        text = presenter.present(
-            tool_name="dummy_tool", success=False, presentation_category="query", data=dto
-        )
+        text = presenter.present(tool_name="dummy_tool", success=False, data=dto)
 
         assert text == "❌ Error: Something failed"
 
@@ -119,9 +116,7 @@ class TestTextPresenter:
         presenter = TextPresenter(config_data=mock_yaml_config)
         dto = DummySimpleOutput(success=False, error_message="Fallback failure")
 
-        text = presenter.present(
-            tool_name="dummy_no_model", success=False, presentation_category="mutation", data=dto
-        )
+        text = presenter.present(tool_name="dummy_no_model", success=False, data=dto)
 
         assert text == "❌ Failed: Fallback failure"
 
@@ -137,9 +132,7 @@ class TestTextPresenter:
             run_id: str = "abc-123"
 
         dto = MockDTO()
-        text = presenter.present(
-            tool_name="dummy_tool", success=True, presentation_category="query", data=dto
-        )
+        text = presenter.present(tool_name="dummy_tool", success=True, data=dto)
 
         expected_text = (
             "📋 Success: Op\n\n"
@@ -227,7 +220,7 @@ class TestTextPresenter:
         """Test that error DTO subclasses compile and enforce frozen and forbid-extra rules."""
         # Test ValidationErrorOutput
         val_err = ValidationErrorOutput(
-            message="Validation failed",
+            error_message="Validation failed",
             params={"param1": "val1"},
             validation_errors=[{"loc": ["field"], "msg": "invalid"}],
             input_schema={"type": "object"},
@@ -238,12 +231,12 @@ class TestTextPresenter:
 
         # Verify frozen
         with pytest.raises(Exception):
-            val_err.message = "new message"  # type: ignore
+            val_err.error_message = "new message"  # type: ignore
 
         # Verify extra forbid
         with pytest.raises(Exception):
             ValidationErrorOutput(
-                message="Err",
+                error_message="Err",
                 params={},
                 validation_errors=[],
                 input_schema={},
@@ -252,18 +245,20 @@ class TestTextPresenter:
 
         # Test EnforcementErrorOutput
         enf_err = EnforcementErrorOutput(
-            message="Enforcement blocked", params={"rule": "no-push"}, error_code="RULE_VIOLATION"
+            error_message="Enforcement blocked",
+            params={"rule": "no-push"},
+            error_code="RULE_VIOLATION",
         )
         assert enf_err.success is False
         assert enf_err.error_type == "EnforcementError"
         assert enf_err.error_code == "RULE_VIOLATION"
 
         # Verify ExecutionErrorOutput compile
-        exec_err = ExecutionErrorOutput(message="Fail", params={})
+        exec_err = ExecutionErrorOutput(error_message="Fail", params={})
         assert exec_err.error_type == "ExecutionError"
 
         # Verify CacheErrorOutput compile
-        cache_err = CacheErrorOutput(message="Disk full", params={})
+        cache_err = CacheErrorOutput(error_message="Disk full", params={})
         assert cache_err.error_type == "CacheError"
 
     def test_safe_none_formatter(self) -> None:
@@ -356,6 +351,69 @@ class TestTextPresenter:
             validate_presentation_alignment(presenter, [])
         assert "placeholder" in str(exc_info.value).lower()
 
+    def test_present_with_notes_and_run_id(self, mock_yaml_config: dict[str, Any]) -> None:
+        """Test presenting with notes and run_id."""
+        config_data = dict(mock_yaml_config)
+        config_data["global"]["notes"] = {
+            "groups": {
+                "suggestions": {"emoji": "💡", "header": "Suggestions"},
+            },
+            "templates": {
+                "suggestions": {"suggestion_msg": "Suggestion: {message}"},
+            },
+        }
+        presenter = TextPresenter(config_data=config_data)
+        dto = DummyOutput(success=True, result="Notes test")
+        notes = [Note(key="suggestion_msg", params={"message": "Try caching"})]
+
+        text = presenter.present(
+            tool_name="dummy_tool",
+            data=dto,
+            notes=notes,
+            cache_pub=CachePublication(run_id="run-123", success=True),
+        )
+        assert "💡 Suggestions" in text
+        assert "Suggestion: Try caching" in text
+
+    def test_present_fallback_run_id_none(self, mock_yaml_config: dict[str, Any]) -> None:
+        """Test presenting when run_id is None, verifying warning and JSON block."""
+        presenter = TextPresenter(config_data=mock_yaml_config)
+        dto = DummyOutput(success=True, result="Fallback JSON test")
+
+        text = presenter.present(
+            tool_name="dummy_tool",
+            data=dto,
+            notes=[],
+            cache_pub=CachePublication(run_id=None, success=False, error_code="write_failed"),
+        )
+        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        assert "```json" in text
+        assert '"result": "Fallback JSON test"' in text
+
+    def test_present_fallback_run_id_none_execution_error(
+        self, mock_yaml_config: dict[str, Any]
+    ) -> None:
+        """Test presenting when run_id is None and DTO is ExecutionErrorOutput,
+        verifying traceback is stripped.
+        """
+        presenter = TextPresenter(config_data=mock_yaml_config)
+        dto = ExecutionErrorOutput(
+            error_message="Test Execution Error",
+            traceback="secret_path/to_file.py: line 42",
+            params={"arg1": "val1"},
+        )
+
+        text = presenter.present(
+            tool_name="dummy_tool",
+            data=dto,
+            notes=[],
+            cache_pub=CachePublication(run_id=None, success=False, error_code="write_failed"),
+        )
+        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        assert "```json" in text
+        assert "Test Execution Error" in text
+        assert "traceback" not in text
+
     def test_drift_validator_generic_notes_invalid_placeholder(self) -> None:
         """Test that validator raises ConfigError when placeholders in
         generic note templates do not align with expected fields.
@@ -374,3 +432,17 @@ class TestTextPresenter:
         with pytest.raises(ConfigError) as exc_info:
             validate_presentation_alignment(presenter, [])
         assert "placeholder" in str(exc_info.value).lower()
+
+    def test_present_cache_publication_failure(self, mock_yaml_config: dict[str, Any]) -> None:
+        """Test presenting with CachePublication indicating failure."""
+        presenter = TextPresenter(config_data=mock_yaml_config)
+        dto = DummyOutput(success=True, result="Fallback JSON test")
+        cache_pub = CachePublication(success=False, error_code="write_failed")
+        text = presenter.present(
+            tool_name="dummy_tool",
+            data=dto,
+            notes=[],
+            cache_pub=cache_pub,
+        )
+        assert "*(Cache publication failed. Full details dumped inline)*" in text
+        assert "```json" in text

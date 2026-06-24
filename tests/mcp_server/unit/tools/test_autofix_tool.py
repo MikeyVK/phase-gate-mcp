@@ -37,21 +37,30 @@ class TestAutoFixTool:
         dto4 = DummyDTO(success=True, value="four")
 
         # Add 3 items
-        cache.put("pgmcp://cache/runs/1", dto1)
-        cache.put("pgmcp://cache/runs/2", dto2)
-        cache.put("pgmcp://cache/runs/3", dto3)
+        run1 = cache.put("test_tool", dto1)
+        run2 = cache.put("test_tool", dto2)
+        run3 = cache.put("test_tool", dto3)
 
-        assert cache.get("pgmcp://cache/runs/1") == dto1
-        assert cache.get("pgmcp://cache/runs/2") == dto2
-        assert cache.get("pgmcp://cache/runs/3") == dto3
+        assert run1 is not None
+        assert run2 is not None
+        assert run3 is not None
+        assert run1.run_id is not None
+        assert run2.run_id is not None
+        assert run3.run_id is not None
 
-        # Add 4th item -> dto1 should be evicted (oldest)
-        cache.put("pgmcp://cache/runs/4", dto4)
+        assert cache.get(run1.run_id, DummyDTO) == dto1
+        assert cache.get(run2.run_id, DummyDTO) == dto2
+        assert cache.get(run3.run_id, DummyDTO) == dto3
 
-        assert cache.get("pgmcp://cache/runs/1") is None
-        assert cache.get("pgmcp://cache/runs/2") == dto2
-        assert cache.get("pgmcp://cache/runs/3") == dto3
-        assert cache.get("pgmcp://cache/runs/4") == dto4
+        # Add 4th item -> run1 should be evicted (oldest)
+        run4 = cache.put("test_tool", dto4)
+        assert run4 is not None
+        assert run4.run_id is not None
+
+        assert cache.get(run1.run_id, DummyDTO) is None
+        assert cache.get(run2.run_id, DummyDTO) == dto2
+        assert cache.get(run3.run_id, DummyDTO) == dto3
+        assert cache.get(run4.run_id, DummyDTO) == dto4
 
     @pytest.mark.asyncio
     async def test_cached_response_resource_matching_and_reading(self) -> None:
@@ -64,17 +73,18 @@ class TestAutoFixTool:
         cache = ResponseCacheManager(max_size=5)
         resource = CachedResponseResource(cache=cache)
 
-        uri_ok = "pgmcp://cache/runs/abc-123"
+        # Put DTO with None field
+        dto = DummyDTO(success=True, message=None)
+        pub = cache.put("test_tool", dto)
+        assert pub is not None
+        assert pub.run_id is not None
+
+        uri_ok = f"pgmcp://cache/runs/{pub.run_id}"
         uri_bad = "pgmcp://cache/runs"
         uri_wrong = "pgmcp://other/runs/abc-123"
-
         assert resource.matches(uri_ok) is True
         assert resource.matches(uri_bad) is False
         assert resource.matches(uri_wrong) is False
-
-        # Put DTO with None field
-        dto = DummyDTO(success=True, message=None)
-        cache.put(uri_ok, dto)
 
         # Read -> should return compact whitespace-stripped JSON with None field excluded
         json_data = await resource.read(uri_ok)

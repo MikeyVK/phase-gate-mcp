@@ -8,9 +8,9 @@ from typing import Any, ClassVar
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.config.settings import Settings
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import HealthCheckOutput, HealthStatus
-from mcp_server.tools.base import ITool
 
 START_TIME = time.time()
 
@@ -21,7 +21,7 @@ class HealthCheckInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class HealthCheckTool(ITool):
+class HealthCheckTool(ICoreTool[HealthCheckInput, HealthCheckOutput]):
     """Tool to check server health."""
 
     output_model: ClassVar[type[BaseModel]] = HealthCheckOutput

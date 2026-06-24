@@ -8,7 +8,7 @@ import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
-from mcp_server.core.interfaces import IContextLoadedWriter, IStateReader
+from mcp_server.core.interfaces import IContextLoadedWriter, IStateReader, ICoreTool
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers import phase_state_engine
@@ -28,7 +28,7 @@ from mcp_server.schemas.tool_outputs import (
     GitStashOutput,
     GitStatusOutput,
 )
-from mcp_server.tools.base import ITool
+
 
 logger = get_logger("tools.git")
 
@@ -108,7 +108,7 @@ class CreateBranchInput(BaseModel):
     )
 
 
-class CreateBranchTool(ITool):
+class CreateBranchTool(ICoreTool[CreateBranchInput, CreateBranchOutput]):
     """Tool to create a git branch from specified base."""
 
     tool_category = "branch_mutating"
@@ -191,7 +191,7 @@ class GitStatusInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class GitStatusTool(ITool):
+class GitStatusTool(ICoreTool[GitStatusInput, GitStatusOutput]):
     """Tool to check git status."""
 
     @property
@@ -306,7 +306,7 @@ class GitCommitInput(BaseModel):
     )
 
 
-class GitCommitTool(ITool):
+class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
     """Tool to commit changes with workflow-scoped commit messages."""
 
     tool_category = "branch_mutating"
@@ -483,7 +483,7 @@ class GitRestoreInput(BaseModel):
     source: str = Field(default="HEAD", description="Git ref to restore from (default: HEAD)")
 
 
-class GitRestoreTool(ITool):
+class GitRestoreTool(ICoreTool[GitRestoreInput, GitRestoreOutput]):
     """Tool to restore files to a ref (discard local changes)."""
 
     tool_category = "branch_mutating"
@@ -547,7 +547,7 @@ class GitCheckoutInput(BaseModel):
     branch: str = Field(..., description="Branch name to checkout")
 
 
-class GitCheckoutTool(ITool):
+class GitCheckoutTool(ICoreTool[GitCheckoutInput, GitCheckoutOutput]):
     """Tool to checkout to a branch.
 
     Automatically synchronizes PhaseStateEngine state after branch switch
@@ -646,7 +646,7 @@ class GitPushInput(BaseModel):
     )
 
 
-class GitPushTool(ITool):
+class GitPushTool(ICoreTool[GitPushInput, GitPushOutput]):
     """Tool to push current branch to origin."""
 
     tool_category = "branch_mutating"
@@ -716,7 +716,7 @@ class GitMergeInput(BaseModel):
     branch: str = Field(..., description="Branch name to merge")
 
 
-class GitMergeTool(ITool):
+class GitMergeTool(ICoreTool[GitMergeInput, GitMergeOutput]):
     """Tool to merge a branch into current branch."""
 
     tool_category = "branch_mutating"
@@ -788,7 +788,7 @@ class GitDeleteBranchInput(BaseModel):
     )
 
 
-class GitDeleteBranchTool(ITool):
+class GitDeleteBranchTool(ICoreTool[GitDeleteBranchInput, GitDeleteBranchOutput]):
     """Tool to delete a branch."""
 
     tool_category = "branch_mutating"
@@ -866,7 +866,7 @@ class GitStashInput(BaseModel):
     )
 
 
-class GitStashTool(ITool):
+class GitStashTool(ICoreTool[GitStashInput, GitStashOutput]):
     """Tool to stash changes in a dirty working directory."""
 
     @property
@@ -941,7 +941,7 @@ class GetParentBranchInput(BaseModel):
     )
 
 
-class GetParentBranchTool(ITool):
+class GetParentBranchTool(ICoreTool[GetParentBranchInput, GetParentBranchOutput]):
     """Tool to show a branch's configured parent branch.
 
     Issue #79: Parent branch is tracked in PhaseStateEngine state.
@@ -1018,7 +1018,7 @@ class CheckMergeInput(BaseModel):
     )
 
 
-class CheckMergeTool(ITool):
+class CheckMergeTool(ICoreTool[CheckMergeInput, CheckMergeOutput]):
     """Read-only tool to verify a merge commit SHA is reachable from HEAD.
 
     Wraps `git merge-base --is-ancestor <sha> HEAD`.

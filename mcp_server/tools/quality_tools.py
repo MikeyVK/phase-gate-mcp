@@ -4,11 +4,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import QualityStateMutationConflictError
 from mcp_server.schemas.tool_outputs import AutoFixOutput, GateResultDTO, RunQualityGatesOutput
-from mcp_server.tools.base import ITool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 
@@ -59,7 +59,7 @@ class RunQualityGatesInput(BaseModel):
         return self
 
 
-class RunQualityGatesTool(ITool):
+class RunQualityGatesTool(ICoreTool[RunQualityGatesInput, RunQualityGatesOutput]):
     """Tool to run quality gates."""
 
     @property
@@ -210,7 +210,7 @@ class AutoFixInput(BaseModel):
         return self
 
 
-class AutoFixTool(ITool):
+class AutoFixTool(ICoreTool[AutoFixInput, AutoFixOutput]):
     """Tool to run auto fixes."""
 
     presentation_category = "mutation"

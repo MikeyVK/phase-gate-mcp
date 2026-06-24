@@ -15,6 +15,7 @@ global:
     branch_lockdown: "⚠️ Warning: Branch is now locked down. Branch-mutating tools are blocked until the PR is merged."
     todo_discipline: "📋 TODO discipline: create or refresh your TODO list now; keep exactly one item in progress and update it after each material step."
     recheck_quality: "📋 REQUIRED NEXT STEP: Run run_quality_gates(scope='files', files={modified_files}) to verify that the auto-fixed files now pass all quality checks."
+    cache_publication_failed: "*(Cache publication failed. Full details dumped inline)*"
   failures:
     dirty_workdir: "Branch '{branch}' is not in a clean state -- commit or stash changes."
     no_upstream: "No upstream tracking branch configured for branch '{branch}'."

@@ -48,7 +48,7 @@ from mcp_server.config.schemas import (
 from mcp_server.config.settings import Settings
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.commit_phase_detector import CommitPhaseDetector
-from mcp_server.core.interfaces import IToolResponseCache
+from mcp_server.core.interfaces import IToolResponsePublisher, IToolResponseReader
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
 from mcp_server.managers.artifact_manager import ArtifactManager
@@ -82,7 +82,6 @@ from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
 from mcp_server.state.response_cache import ResponseCacheManager
 from mcp_server.tools.admin_tools import RestartServerTool
-from mcp_server.tools.base import ITool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.discovery_tools import GetWorkContextTool, SearchDocumentationTool
 from mcp_server.tools.git_analysis_tools import GitDiffTool, GitListBranchesTool
@@ -186,22 +185,7 @@ class ManagerGraph:
     artifact_manager: ArtifactManager
     pr_status_cache: PRStatusCache
     enforcement_runner: EnforcementRunner
-    response_cache: IToolResponseCache
-
-
-class ToolFactory:
-    """Factory to assemble tools with their decorators."""
-
-    def __init__(self, response_cache: IToolResponseCache) -> None:
-        self._response_cache = response_cache
-
-    def build_tool(self, tool: Any) -> Any:  # noqa: ANN401
-        from mcp_server.tools.base import ITool  # noqa: PLC0415
-        from mcp_server.tools.decorators import ResourcePublishingDecorator  # noqa: PLC0415
-
-        if isinstance(tool, ITool) and not isinstance(tool, ResourcePublishingDecorator):
-            return ResourcePublishingDecorator(tool=tool, cache=self._response_cache)
-        return tool
+    response_cache: IToolResponsePublisher | IToolResponseReader
 
 
 class ServerBootstrapper:
@@ -242,7 +226,7 @@ class ServerBootstrapper:
         managers = self._build_manager_graph(configs, template_registry)
 
         # Build Tools and Resources
-        tools = self._build_tools(configs, managers)
+        core_tools = self._build_tools(configs, managers)
         resources = self._build_resources(configs, managers)
 
         from mcp_server.presenters.text_presenter import (  # noqa: PLC0415
@@ -251,18 +235,26 @@ class ServerBootstrapper:
         )
 
         presenter = TextPresenter(config=configs.presentation_config)
-        validate_presentation_alignment(presenter, tools)
+        validate_presentation_alignment(presenter, core_tools)
+
+        # Decorate core tools using ToolFactory composition root
+        from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory  # noqa: PLC0415
+
+        factory = CoreToolFactory(
+            enforcement_runner=managers.enforcement_runner,
+            workspace_root=Path(settings.server.workspace_root),
+        )
+        tools = [factory.create_tool(t) for t in core_tools]
 
         # Import dynamically to avoid circular dependencies
         from mcp_server.server import MCPServer  # noqa: PLC0415
 
         return MCPServer(
             settings=settings,
-            configs=configs,
-            managers=managers,
             tools=tools,
             resources=resources,
             presenter=presenter,
+            publisher=managers.response_cache,
         )
 
     def _build_config_layer(self) -> ConfigLayer:
@@ -443,13 +435,13 @@ class ServerBootstrapper:
             response_cache=response_cache,
         )
 
-    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[ITool]:
+    def _build_tools(self, configs: ConfigLayer, managers: ManagerGraph) -> list[Any]:
         """Compose the list of available tools."""
         settings = self._settings
 
         _branch_validated_reader = BranchValidatedStateReader(inner=managers.state_repository)
 
-        tools: list[ITool] = [
+        tools: list[Any] = [
             # Git tools
             CreateBranchTool(manager=managers.git_manager),
             GitStatusTool(manager=managers.git_manager),
@@ -645,9 +637,7 @@ class ServerBootstrapper:
             )
 
         tools.append(AutoFixTool(qa_manager=managers.qa_manager))
-
-        factory = ToolFactory(response_cache=managers.response_cache)
-        return [factory.build_tool(t) for t in tools]
+        return tools
 
     def _build_resources(
         self,
@@ -655,11 +645,10 @@ class ServerBootstrapper:
         managers: ManagerGraph,  # noqa: ARG002
     ) -> list[BaseResource]:
         """Compose the list of available resources."""
-        resources: list[BaseResource] = [
-            StandardsResource(),
-            StatusResource(),
-            CachedResponseResource(cache=managers.response_cache),
-        ]
+        resources: list[BaseResource] = []
+        resources.append(StandardsResource())
+        resources.append(StatusResource())
+        resources.append(CachedResponseResource(cache=managers.response_cache))
 
         if self._settings.github.token:
             resources.append(GitHubIssuesResource())

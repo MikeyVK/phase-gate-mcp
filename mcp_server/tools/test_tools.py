@@ -16,7 +16,7 @@ from mcp_server.core.exceptions import ExecutionError
 from mcp_server.core.interfaces import IPytestRunner
 from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.schemas.tool_outputs import RunTestsOutput, TestFailureDTO
-from mcp_server.tools.base import ITool
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 if TYPE_CHECKING:
@@ -48,6 +48,10 @@ class RunTestsInput(BaseModel):
     coverage: bool = Field(
         default=False,
         description="Enable branch coverage and enforce the 90% threshold.",
+    )
+    collect_only: bool = Field(
+        default=False,
+        description="Only collect tests, do not run them (pytest --collect-only).",
     )
     verbose: bool = Field(
         default=False,
@@ -117,7 +121,7 @@ def _find_timeout_expired(exc: BaseException) -> subprocess.TimeoutExpired | Non
     return None
 
 
-class RunTestsTool(ITool):
+class RunTestsTool(ICoreTool[RunTestsInput, RunTestsOutput]):
     """Thin MCP adapter for pytest execution via an injected runner."""
 
     @property
@@ -129,7 +133,7 @@ class RunTestsTool(ITool):
         return "Run tests using pytest"
 
     @property
-    def args_model(self) -> type[BaseModel] | None:
+    def args_model(self) -> type[RunTestsInput] | None:
         return RunTestsInput
 
     DEFAULT_TIMEOUT = 300
@@ -175,6 +179,8 @@ class RunTestsTool(ITool):
                     "--cov-fail-under=90",
                 ]
             )
+        if params.collect_only:
+            cmd.append("--collect-only")
         return cmd
 
     async def execute(self, params: RunTestsInput, context: NoteContext) -> RunTestsOutput:

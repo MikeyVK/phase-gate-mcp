@@ -89,8 +89,8 @@ Baseline mutation is allowed only for effective `scope="auto"` runs.
 | `last_failed_only` | `bool` | No | `false` | Re-run only last-failed tests (`--lf`). Skipped if lf-cache is empty |
 | `timeout` | `int` | No | `300` | Hard kill timeout in seconds |
 | `coverage` | `bool` | No | `false` | Enable pytest-cov coverage reporting (`--cov`) |
+| `collect_only` | `bool` | No | `false` | Only collect tests, do not run them (pytest `--collect-only`) |
 | `verbose` | `bool` | No | `false` | Enable verbose mode to capture tracebacks and stdout/stderr. Only allowed in path-based execution targeting specific files |
-
 ### Validation rules
 
 - `path` and `scope` are mutually exclusive. Providing both → validation error.

@@ -33,7 +33,7 @@ from mcp_server.config.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
-from mcp_server.core.interfaces import IToolResponseCache
+from mcp_server.core.interfaces import IToolResponsePublisher
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -106,7 +106,7 @@ class TestBootstrap:
             "artifact_manager": MagicMock(spec=ArtifactManager),
             "pr_status_cache": MagicMock(spec=PRStatusCache),
             "enforcement_runner": MagicMock(spec=EnforcementRunner),
-            "response_cache": MagicMock(spec=IToolResponseCache),
+            "response_cache": MagicMock(spec=IToolResponsePublisher),
         }
         graph = ManagerGraph(**mock_managers)
 
@@ -216,10 +216,10 @@ class TestServerBootstrapperConfigsAndManagers:
             assert mock_mcp_server_cls.called
             call_kwargs = mock_mcp_server_cls.call_args[1]
             assert call_kwargs["settings"] is mock_settings
-            assert isinstance(call_kwargs["configs"], ConfigLayer)
-            assert isinstance(call_kwargs["managers"], ManagerGraph)
             assert isinstance(call_kwargs["tools"], list)
             assert isinstance(call_kwargs["resources"], list)
+            assert "presenter" in call_kwargs
+            assert "publisher" in call_kwargs
             assert server is mock_mcp_server_cls.return_value
 
 
@@ -342,15 +342,11 @@ class TestMCPServerBootstrap:
     def test_mcp_server_accepts_injected_dependencies(self) -> None:
         """Verify MCPServer successfully initializes with all dependencies injected."""
         mock_settings = MagicMock()
-        mock_configs = MagicMock()
-        mock_managers = MagicMock()
         mock_tools = []
         mock_resources = []
 
         server = MCPServer(
             settings=mock_settings,
-            configs=mock_configs,
-            managers=mock_managers,
             tools=mock_tools,
             resources=mock_resources,
         )

@@ -1,8 +1,8 @@
 # PhaseGate MCP Server — Architecture
 
 **Status:** Current  
-**Version:** 3.0  
-**Last Updated:** 2026-06-10
+**Version:** 3.1  
+**Last Updated:** 2026-06-24
 
 ---
 
@@ -88,79 +88,86 @@ The server supports multiple workflow types, each with its own phase sequence de
 ### 3.1 High-Level Overview
 
 ```mermaid
-graph TB
+graph TD
     subgraph Clients ["Client Layer"]
         IDE["IDE / VS Code"]
     end
 
     subgraph Proxy ["Proxy Layer (optional)"]
-        MCPProxy["MCPProxy\n(transparent restart)"]
+        MCPProxy["MCPProxy (restart controller)"]
     end
 
     subgraph Server ["PhaseGate MCP Server"]
-        subgraph Bootstrap ["Composition Root"]
+        subgraph Boot ["Bootstrap Layer"]
             Bootstrapper["ServerBootstrapper"]
-            ConfigLayer["ConfigLayer\n(14 frozen configs)"]
-            ManagerGraph["ManagerGraph\n(16 services)"]
+            ConfigLayer["ConfigLayer (15 configs)"]
+            ManagerGraph["ManagerGraph (16 services)"]
         end
 
-        subgraph Runtime ["Runtime"]
-            MCPServer["MCPServer"]
-            Enforcement["EnforcementRunner"]
-            NoteCtx["NoteContext"]
+        subgraph Core ["Execution Core"]
+            MCPServer["MCPServer (transport coordinator)"]
+            Pipeline["ITool Pipeline (decorators)"]
+            ICoreTool["ICoreTool (concrete tools)"]
+            BaseRes["BaseResource (semantic context)"]
         end
 
-        subgraph Tools ["Tool Layer (50 tools)"]
-            BaseTool["BaseTool"]
-            BranchMut["BranchMutatingTool"]
-        end
-
-        subgraph Resources ["Resource Layer (3 resources)"]
-            BaseRes["BaseResource"]
-        end
-
-        subgraph Managers ["Manager Layer (18 files)"]
-            GitMgr["GitManager"]
-            GHMgr["GitHubManager"]
-            QAMgr["QAManager"]
-            PhaseSE["PhaseStateEngine"]
-            ArtMgr["ArtifactManager"]
-            StateMut["WorkflowStateMutator"]
-            OtherMgr["... 12 more"]
-        end
-
-        subgraph Adapters ["Adapter Layer"]
-            FSAdapter["FilesystemAdapter"]
-            GitAdapter["GitAdapter"]
-            GHAdapter["GitHubAdapter"]
+        subgraph Infra ["Infrastructure Layer"]
+            Managers["Managers (business logic)"]
+            Adapters["Adapters (external gateways)"]
         end
     end
 
-    subgraph External ["External Systems"]
-        Repo[("Local Repository")]
-        Remote[("GitHub API")]
+    subgraph Ext ["External Layer"]
+        Repo[("Local Git/FS Repository")]
+        API[("GitHub API")]
     end
 
-    IDE <-->|"JSON-RPC over stdio"| MCPProxy
+    IDE <-->|"JSON-RPC"| MCPProxy
     MCPProxy <-->|"stdio"| MCPServer
-
+    
     Bootstrapper --> ConfigLayer
     Bootstrapper --> ManagerGraph
-    Bootstrapper --> Tools
-    Bootstrapper --> Resources
     Bootstrapper --> MCPServer
-
-    MCPServer --> Enforcement
-    MCPServer --> Tools
-    MCPServer --> Resources
-
-    Tools --> Managers
-    Resources --> Managers
+    
+    MCPServer --> Pipeline
+    Pipeline --> ICoreTool
+    MCPServer --> BaseRes
+    
+    ICoreTool --> Managers
+    BaseRes --> Managers
+    
     Managers --> Adapters
+    Adapters --> Repo
+    Adapters --> API
+```
 
-    FSAdapter --> Repo
-    GitAdapter --> Repo
-    GHAdapter --> Remote
+### 3.2 Detailed Execution Flow
+
+For a detailed view of how the execution pipeline runs and interacts with the caching and presentation engines, see the sequence diagram in §6.2. The block diagram below illustrates the path of a tool call through the Russian Doll decorator chain:
+
+```mermaid
+graph TD
+    Client["Client / Agent"]
+    MCPServer["MCPServer (Orchestrator)"]
+    Pipeline["ITool Pipeline (Decorators)"]
+    Tool["ICoreTool (Concrete Tool)"]
+    Cache["ResponseCacheManager (Cache)"]
+    Presenter["TextPresenter (Presenter)"]
+    Result["CallToolResult (Markdown)"]
+
+    Client -->|"1. CALL"| MCPServer
+    MCPServer -->|"2. execute"| Pipeline
+    
+    subgraph Decorators ["Decorator Chain"]
+        Pipeline --> ErrorHandler["ToolErrorHandlerDecorator"]
+        ErrorHandler --> InputValidator["InputValidationDecorator"]
+        InputValidator --> Enforcement["EnforcementDecorator"]
+    end
+    
+    Enforcement -->|"3. execute"| Tool
+    Tool -->|"4. return DTO"| Cache
+    Cache -->|"5. publish & return CachePub"| Presenter
+    Presenter -->|"6. present & return Markdown"| Result
 ```
 
 ### 3.2 Layer Responsibilities
@@ -168,9 +175,9 @@ graph TB
 | Layer | Components | Responsibility |
 |-------|------------|----------------|
 | **Composition Root** | `ServerBootstrapper`, `ConfigLayer`, `ManagerGraph` | Config loading, DI wiring, server construction |
-| **Runtime** | `MCPServer`, `EnforcementRunner`, `NoteContext` | MCP protocol handling, tool dispatch, enforcement |
-| **Tools** | 50 `BaseTool` / `BranchMutatingTool` subclasses | Validate input, delegate to managers, format output |
-| **Resources** | 3 `BaseResource` subclasses | Expose read-only project context via `pgmcp://` URIs |
+| **Runtime** | `MCPServer`, `NoteContext` | MCP protocol handling, tool dispatch coordination |
+| **Tools** | 50 `ICoreTool` instances wrapped in a decorator pipeline | Delegate business logic to managers and return semantic DTOs |
+| **Resources** | 4 `BaseResource` subclasses | Expose read-only project context via `pgmcp://` URIs |
 | **Managers** | 18 manager classes | Business logic, workflow state, quality gates |
 | **Adapters** | `FilesystemAdapter`, `GitAdapter`, `GitHubAdapter` | External system integration |
 
@@ -207,7 +214,7 @@ mcp_server/
 │
 ├── core/                          # Core infrastructure
 │   ├── exceptions.py              # MCPError hierarchy
-│   ├── error_handling.py          # @tool_error_handler decorator
+│   ├── error_handling.py          # General error handling
 │   ├── logging.py                 # Structured logging + audit log
 │   ├── operation_notes.py         # NoteContext + generic Note class
 │   ├── phase_detection.py         # ScopeDecoder
@@ -216,8 +223,26 @@ mcp_server/
 │   ├── scope_encoder.py
 │   ├── commit_phase_detector.py
 │   ├── directory_policy_resolver.py
+│   ├── tool_factory.py            # ToolFactory composition root
+│   ├── decorators/                # Russian Doll execution decorators
+│   │   ├── __init__.py            # Re-exports all decorators
+│   │   ├── enforcement_decorator.py
+│   │   ├── input_validation_decorator.py
+│   │   └── tool_error_handler_decorator.py
 │   └── interfaces/
-│       └── __init__.py            # 13 Protocol interfaces
+│       ├── __init__.py            # Re-exports interfaces facade
+│       ├── itool.py               # Pure execution interface ITool
+│       ├── icore_tool.py          # Generic execution interface ICoreTool
+│       ├── ipresenter.py          # IPresenter interface
+│       ├── itool_response_cache.py # CQRS segregated cache interfaces
+│       ├── gate.py                # GateReport and workflow gate runner interfaces
+│       ├── state.py               # State reader and repository interfaces
+│       ├── git.py                 # Git context reader interfaces
+│       ├── ipr_status.py          # PR status reader and writer interfaces
+│       ├── ipytest_runner.py      # Pytest runner interface
+│       ├── quality.py             # Quality state repository interface
+│       ├── workflow.py            # Workflow state mutator interface
+│       └── context.py             # Context loaded reader and writer interfaces
 │
 ├── managers/                      # Business logic (18 files)
 │   ├── git_manager.py
@@ -262,8 +287,9 @@ mcp_server/
 │   ├── health_tools.py
 │   └── admin_tools.py
 │
-├── resources/                     # MCP resources (4 files)
+├── resources/                     # MCP resources (5 files)
 │   ├── base.py                    # BaseResource ABC
+│   ├── cache.py                   # pgmcp://cache/runs/{run_id}
 │   ├── standards.py               # pgmcp://rules/coding_standards
 │   ├── status.py                  # pgmcp://status/phase
 │   └── github.py                  # pgmcp://github/issues
@@ -369,14 +395,14 @@ sequenceDiagram
     BS->>BS: 5. build ConfigLayer (frozen)
     BS->>BS: 6. build ManagerGraph (frozen)
     BS->>BS: 7. build Tools + Resources
-    BS->>Server: MCPServer(settings, configs, managers, tools, resources)
+    BS->>Server: MCPServer(settings, tools, resources, presenter, publisher)
     Server->>Server: setup_handlers()
     Server->>Server: asyncio.run(server.run())
 ```
 
 ### 5.3 ConfigLayer (Frozen Dataclass)
 
-14 immutable config objects loaded from `.phase-gate/config/` YAML files:
+15 immutable config objects loaded from `.phase-gate/config/` YAML files:
 
 | Config | Source YAML | Purpose |
 |--------|-------------|--------|
@@ -394,6 +420,7 @@ sequenceDiagram
 | `project_structure_config` | `project_structure.yaml` | Directory policies |
 | `operation_policies_config` | `policies.yaml` | Phase-based operation restrictions |
 | `enforcement_config` | `enforcement.yaml` | Tool enforcement rules |
+| `presentation_config` | `presentation.yaml` | Note presentation templates, recovery hints, and link formats |
 
 ### 5.4 ManagerGraph (Frozen Dataclass)
 
@@ -433,25 +460,32 @@ dataclass — no service locator, no lazy resolution.
 
 ### 6.1 Tool Architecture
 
+Instead of inheriting from a monolithic base class, all tools implement the narrow, generic `ICoreTool` protocol. This protocol defines the metadata and execution boundary for a tool call:
+
 ```python
-class BaseTool(ABC):
-    name: str                                   # MCP tool name
-    description: str                            # Shown to AI agent
-    args_model: type[BaseModel] | None = None   # Pydantic input schema
-    enforcement_event: str | None = None        # Enforcement rule trigger
-    tool_category: str | None = None            # Category for enforcement
+@runtime_checkable
+class ICoreTool(Protocol, Generic[TInput, TOutput]):
+    @property
+    def name(self) -> str:
+        """Name of the tool shown to the client."""
+        ...
 
-    @abstractmethod
-    async def execute(self, params: Any, context: NoteContext) -> ToolResult: ...
+    @property
+    def description(self) -> str:
+        """Description of the tool shown to the client."""
+        ...
 
-class BranchMutatingTool(BaseTool):
-    """Marker ABC for tools that mutate branch state.
-    Sets tool_category = 'branch_mutating' for enforcement dispatch."""
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        """Pydantic input validation model."""
+        ...
+
+    async def execute(self, params: TInput, context: NoteContext) -> TOutput:
+        """Execute the contract operation."""
+        ...
 ```
 
-All tool subclasses are automatically wrapped with `@tool_error_handler` via
-`__init_subclass__()`. This catches the `MCPError` hierarchy and converts exceptions
-to structured `ToolResult.error()` responses.
+All concrete tools are registered in the `ServerBootstrapper` as raw `ICoreTool` implementations. At startup, the `ToolFactory` wraps them in the modular Russian Doll decorator pipeline (`ToolErrorHandlerDecorator`, `InputValidationDecorator`, `EnforcementDecorator`), converting them into executable `ITool` instances.
 
 ### 6.2 Tool Dispatch Flow
 
@@ -459,28 +493,33 @@ to structured `ToolResult.error()` responses.
 sequenceDiagram
     participant Agent as AI Agent
     participant Server as MCPServer
-    participant Enforce as EnforcementRunner
-    participant Tool as BaseTool
-    participant Notes as NoteContext
-    participant Manager as Manager
+    participant Pipeline as Decorator Pipeline (ITool)
+    participant Tool as Concrete Tool (ICoreTool)
+    participant Cache as ResponseCacheManager
+    participant Presenter as TextPresenter
 
     Agent->>Server: CALL tool_name(params)
-    Server->>Server: _validate_tool_arguments(params)
-    Server->>Enforce: pre-enforcement check
+    Server->>Pipeline: execute(params, note_context)
+    
+    note right of Pipeline: Russian Doll Chain:
+    note right of Pipeline: - ToolErrorHandlerDecorator (traps exceptions)
+    note right of Pipeline: - InputValidationDecorator (validates Pydantic)
+    note right of Pipeline: - EnforcementDecorator (runs pre-guards)
 
-    alt Enforcement Blocked
-        Enforce-->>Agent: Error: precondition failed
-    end
-
-    Server->>Tool: execute(validated_params, note_context)
-    Tool->>Manager: delegate business logic
-    Manager-->>Tool: result
-    Tool-->>Server: ToolResult
-
-    Server->>Enforce: post-enforcement
-    Server->>Presenter: present_notes(tool_name, notes)
-    Presenter-->>Server: notes_text
-    Server-->>Agent: CallToolResult with formatted notes
+    Pipeline->>Tool: execute(validated_params, note_context)
+    Tool-->>Pipeline: BaseToolOutput (DTO)
+    
+    note right of Pipeline: EnforcementDecorator (runs post-guards)
+    
+    Pipeline-->>Server: BaseToolOutput / BaseErrorOutput (DTO)
+    
+    Server->>Cache: put(data)
+    Cache-->>Server: CachePublication (DTO)
+    
+    Server->>Presenter: present(data, cache_pub)
+    Presenter-->>Server: presented_text (Markdown)
+    
+    Server-->>Agent: CallToolResult (Markdown + Cache/Validation Resource)
 ```
 
 ### 6.3 Tool Categories (50 tools)
@@ -531,13 +570,17 @@ returned in the final tool response.
 
 ## 7. Resource System
 
-### 7.1 URI Scheme: `pgmcp://`
+### 7.1 URI Schemes
 
-| Resource | URI | Description | Condition |
-|----------|-----|-------------|-----------|
-| Standards | `pgmcp://rules/coding_standards` | Coding standards and guidelines | Always |
-| Status | `pgmcp://status/phase` | Current workflow phase and status | Always |
-| Issues | `pgmcp://github/issues` | Open GitHub issues | When `GITHUB_TOKEN` set |
+The MCP server exposes various resources and validation schemas via the following URI patterns:
+
+| Type | Resource / Schema | URI | Description | Condition |
+|------|-------------------|-----|-------------|-----------|
+| Resource | Standards | `pgmcp://rules/coding_standards` | Coding standards and guidelines | Always |
+| Resource | Status | `pgmcp://status/phase` | Current workflow phase and status | Always |
+| Resource | Issues | `pgmcp://github/issues` | Open GitHub issues | When `GITHUB_TOKEN` set |
+| Resource | Cache Run | `pgmcp://cache/runs/{run_id}` | Cached tool execution results (DTO payloads) | Always |
+| Schema | Validation Schema | `schema://validation` | Pydantic validation input schemas (inline payload) | Always (on ValidationError) |
 
 ### 7.2 BaseResource
 
@@ -653,11 +696,10 @@ MCPError (base, code="ERR_INTERNAL")
 
 ### 10.2 Error Response Pattern
 
-All tool errors are caught by `@tool_error_handler` and converted to structured
-`ToolResult.error()` responses with:
-- `error_code` — Machine-readable error code
-- `content` — Human-readable message with recovery hints
-- `is_error` — Always `True`
+All tool errors and platform/decorator exceptions are caught by `ToolErrorHandlerDecorator` and converted to structured DTOs (inheriting from `BaseErrorOutput` or `ValidationErrorOutput`), which are then published to the cache and formatted into markdown by `TextPresenter`.
+The presented markdown text:
+- Displays a clean error summary without python tracebacks
+- Appends recovery hints and a reference to the cache resource (`pgmcp://cache/runs/{run_id}`)
 
 ---
 
@@ -691,27 +733,37 @@ Entry point: `python -m mcp_server.core.proxy`
 
 ### 13.1 Adding a New Tool
 
-1. Create a new class extending `BaseTool` (or `BranchMutatingTool` for state-mutating tools)
-2. Define `name`, `description`, `args_model` (Pydantic), and implement `execute()`
-3. Register the tool in `ServerBootstrapper._build_tools()` with injected dependencies
-4. Optionally add enforcement rules in `enforcement.yaml`
+1. Create a new class implementing `ICoreTool[MyToolInput, MyToolOutput]` where `MyToolInput` is a Pydantic model and `MyToolOutput` is a DTO inheriting from `BaseToolOutput`.
+2. Define `name`, `description`, `args_model` (pointing to `MyToolInput`), and optionally `tool_category` (for enforcement).
+3. Implement `execute(self, params: MyToolInput, context: NoteContext) -> MyToolOutput`.
+4. Register the core tool in `ServerBootstrapper._build_tools()`. It will be automatically decorated and wrapped at runtime by the `ToolFactory` composition root.
+5. Optionally add enforcement rules in `enforcement.yaml`.
 
 ```python
 # mcp_server/tools/my_tool.py
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.schemas.tool_outputs import BaseToolOutput
+from mcp_server.core.operation_notes import NoteContext
+from pydantic import BaseModel, Field
 
-class MyNewTool(BaseTool):
+class MyToolInput(BaseModel):
+    value: str = Field(description="Some input value")
+
+class MyToolOutput(BaseToolOutput):
+    result: str = Field(description="The outcome result")
+
+class MyNewTool(ICoreTool[MyToolInput, MyToolOutput]):
     name = "my_new_tool"
     description = "Description shown to the AI agent."
-    args_model = MyToolArgs  # Pydantic model
+    args_model = MyToolInput
+    tool_category = "utility"
 
     def __init__(self, some_manager: SomeManager) -> None:
         self._manager = some_manager
 
-    async def execute(self, params: MyToolArgs, context: NoteContext) -> ToolResult:
-        result = self._manager.do_something(params.value)
-        return ToolResult.text(result)
+    async def execute(self, params: MyToolInput, context: NoteContext) -> MyToolOutput:
+        result_str = self._manager.do_something(params.value)
+        return MyToolOutput(success=True, result=result_str)
 ```
 
 ### 13.2 Adding a New Resource
@@ -804,6 +856,7 @@ pip install phase_gate_mcp-1.0.0-py3-none-any.whl
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1 | 2026-06-24 | Separated ICoreTool/ILegacyTool interfaces, removed retired tools, corrected architectural diagrams, and documented cache run resource and validation schema URIs |
 | 3.0 | 2026-06-10 | Complete rewrite reflecting actual architecture: ServerBootstrapper composition root, 50 class-based tools, 15 YAML configs, enforcement system, proxy architecture |
 | 2.0 | 2025-12-08 | Original draft (now superseded) |
 | 1.0 | 2025-12-08 | Initial architecture |

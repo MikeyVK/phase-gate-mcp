@@ -22,10 +22,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.schemas.tool_outputs import GitFetchOutput
-from mcp_server.tools.base import ITool
 
 logger = get_logger("tools.git_fetch")
 
@@ -45,7 +45,7 @@ class GitFetchInput(BaseModel):
     )
 
 
-class GitFetchTool(ITool):
+class GitFetchTool(ICoreTool[GitFetchInput, GitFetchOutput]):
     """Fetch updates from a remote.
 
     Responsibilities:

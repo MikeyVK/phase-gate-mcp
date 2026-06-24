@@ -159,7 +159,7 @@ Automated quality gates, test execution, and architectural validation.
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `run_quality_gates` | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required only with `scope="files"`) |
-| `run_tests` | Run pytest — outputs presented human-readable text pointing to the DTO cached in the MCP Resource cache | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage`, `verbose` |
+| `run_tests` | Run pytest — outputs presented human-readable text pointing to the DTO cached in the MCP Resource cache | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage`, `verbose`, `collect_only` |
 | `validate_template` | Validate file structure vs template | `path`, `template_type` |
 
 **📖 See:** [quality.md](quality.md) for quality gate configuration, test markers, and validation rule details.
