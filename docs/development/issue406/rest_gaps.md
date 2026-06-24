@@ -1,5 +1,5 @@
 <!-- docs\development\issue406\rest_gaps.md -->
-<!-- template=generic_doc version=43c84181 created=2026-06-24T05:42Z updated= -->
+<!-- template=generic_doc version=43c84181 created=2026-06-24T05:42Z updated=2026-06-24T07:48Z -->
 # Remaining Gaps: Presentation Layer & DTO Refactoring
 
 **Status:** APPROVED  
@@ -30,14 +30,27 @@ This document records the design and implementation roadmap for resolving the ba
 
 ## Key Changes
 
-- Remove error_message from BaseToolOutput to eliminate the Python-level text presentation backdoor.
-- Introduce BaseErrorOutput (without success field) in error_outputs.py for all platform, decorator, and system errors.
-- Update status resolution in server.py and text_presenter.py to check for BaseErrorOutput type (isinstance).
-- Update presenter template selection to route system errors to global failures/templates and domain errors to tool-specific template_failures.
-- Leverage generic core exception classes (PreflightError, ValidationError) carrying error_code and params instead of introducing custom exception classes.
+### 1. Fase-transitie & Onderzoek
+* **Gap-documentatie:** De branche is tijdelijk teruggezet naar `research` om de systeembrede gaps ([research_arch_gap.md](file:///c:/temp/pgmcp/docs/development/issue406/research_arch_gap.md)) en de `get_work_context` gaps ([research_get_work_context_gaps.md](file:///c:/temp/pgmcp/docs/development/issue406/research_get_work_context_gaps.md)) gestructureerd en gecommit vast te leggen. Daarna is de branche succesvol overgegaan naar de `design` fase.
 
+### 2. `get_work_context` Presentatie-refactoring
+* **Exponeren van metadata:** Compacte velden (`current_cycle`, `sub_phase`, `parent_branch`) worden direct in de markdown getoond om de agent beter te oriënteren.
+* **Declaratieve None-afhandeling:** We gebruiken de bestaande [SafeNoneFormatter](file:///c:/temp/pgmcp/mcp_server/presenters/text_presenter.py#L25) (`none_value: "-"`) en schonen de templates in [presentation.yaml](file:///c:/temp/pgmcp/.phase-gate/config/presentation.yaml) op (bijv. `#` weglaten bij issues) om prefix-leaks zoals `#-` te voorkomen.
+* **Oplossing voor grote instructies ("Niets-aanpak"):** We laten `phase_instructions` volledig uit de markdown weg om client-side file-truncation (`output.txt` dumps) te voorkomen. Dit combineren we met uiterst dwingende `todo_discipline` next-instruction die de agent dwingt de cache-resource (`pgmcp://cache/runs/{run_id}`) uit te lezen.
+* **Sanering van de Tool-laag:** Alle hardcoded fallback-teksten en weergave-logica worden verwijderd uit [discovery_tools.py](file:///c:/temp/pgmcp/mcp_server/tools/discovery_tools.py) om te voldoen aan de Presentation Boundary (§15).
 
+### 3. Sanering van `BaseToolOutput` & Backdoor-blokkade
+* **Opschonen `BaseToolOutput`:** We verwijderen het veld `error_message` uit [BaseToolOutput](file:///c:/temp/pgmcp/mcp_server/schemas/tool_outputs.py#L14). Dit voorkomt dat tools in Python geformatteerde foutboodschappen direct teruggeven.
+* **Declaratieve Domeinfouten:** Domein-fouten van tools (`success=False`) worden uitsluitend gepresenteerd via tool-specifieke `template_failure` templates in [presentation.yaml](file:///c:/temp/pgmcp/.phase-gate/config/presentation.yaml), geformatteerd met de specifieke data-attributen van die tool (geen backdoor-strings in Python).
 
+### 4. Herontwerp van de Error-DTO's
+* **Introductie van `BaseErrorOutput`:** We splitsen [error_outputs.py](file:///c:/temp/pgmcp/mcp_server/schemas/error_outputs.py) op. Systeem-, decorator- en platformfouten overerven direct van een nieuwe `BaseErrorOutput` die **geen** `success` bool bevat. Alleen echte tool-fouten (`ToolErrorOutput`) behouden de `success=False` property.
+* **Type-safe status en routing:** De presenter [text_presenter.py](file:///c:/temp/pgmcp/mcp_server/presenters/text_presenter.py) en server-bridge [server.py](file:///c:/temp/pgmcp/mcp_server/server.py) bepalen de succes-status en de template-routing via type-checks (`isinstance(data, BaseErrorOutput)`) in plaats van broze string-filters op `error_type`.
+
+### 5. Simpele exceptions (Tegen Class Bloat)
+* **Generieke uitzonderingen:** We introduceren geen specifieke exception-klassen per fouttype. In plaats daarvan hergebruiken we de reeds bestaande generieke klassen uit [exceptions.py](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py) (zoals [PreflightError](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py#L122) en [ValidationError](file:///c:/temp/pgmcp/mcp_server/core/exceptions.py#L52)) door ze simpelweg te voorzien van een specifieke `error_code` en `params`.
+
+---
 
 ## Related Documentation
 - **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-1]**
