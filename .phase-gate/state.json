@@ -2,7 +2,7 @@
   "branch": "feature/406-decorator-pipeline-exception-mapping",
   "issue_number": 406,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "documentation",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested transition to research phase to document and commit remaining gaps.",
+  "skip_reason": "Jumping from research to validation phase to perform final validation tasks as requested by the user.",
   "issue_title": "feature: Russian Doll Decorator Pipeline for exception mapping",
   "parent_branch": "refactor/406-decorator-pipeline-exception-mapping",
   "created_at": "2026-06-20T20:29:22.199354+00:00",
@@ -68,6 +68,22 @@
       "human_approval": "Approved by Michel in chat.",
       "forced": true,
       "skip_reason": "User requested transition to research phase to document and commit remaining gaps."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "validation",
+      "timestamp": "2026-06-24T05:50:36.851653+00:00",
+      "human_approval": "User approved direct transition to validation phase to wrap up the branch.",
+      "forced": true,
+      "skip_reason": "Jumping from research to validation phase to perform final validation tasks as requested by the user."
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-06-24T06:16:27.105919+00:00",
+      "human_approval": "User requested transition to documentation phase",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
