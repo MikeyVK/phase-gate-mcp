@@ -88,80 +88,87 @@ The server supports multiple workflow types, each with its own phase sequence de
 ### 3.1 High-Level Overview
 
 ```mermaid
-graph TB
+graph TD
     subgraph Clients ["Client Layer"]
         IDE["IDE / VS Code"]
     end
 
     subgraph Proxy ["Proxy Layer (optional)"]
-        MCPProxy["MCPProxy\n(transparent restart)"]
+        MCPProxy["MCPProxy (restart controller)"]
     end
 
     subgraph Server ["PhaseGate MCP Server"]
-        subgraph Bootstrap ["Composition Root"]
+        subgraph Boot ["Bootstrap Layer"]
             Bootstrapper["ServerBootstrapper"]
-            ConfigLayer["ConfigLayer\n(15 frozen configs)"]
-            ManagerGraph["ManagerGraph\n(16 services)"]
+            ConfigLayer["ConfigLayer (15 configs)"]
+            ManagerGraph["ManagerGraph (16 services)"]
         end
 
-        subgraph Runtime ["Runtime"]
-            MCPServer["MCPServer"]
-            NoteCtx["NoteContext"]
+        subgraph Core ["Execution Core"]
+            MCPServer["MCPServer (transport coordinator)"]
+            Pipeline["ITool Pipeline (decorators)"]
+            ICoreTool["ICoreTool (concrete tools)"]
+            BaseRes["BaseResource (semantic context)"]
         end
 
-        subgraph Tools ["Tool Layer (50 tools)"]
-            Pipeline["Decorator Pipeline (ITool)"]
-            ICoreTool["ICoreTool"]
-        end
-
-        subgraph Resources ["Resource Layer (3 resources)"]
-            BaseRes["BaseResource"]
-        end
-
-        subgraph Managers ["Manager Layer (18 files)"]
-            GitMgr["GitManager"]
-            GHMgr["GitHubManager"]
-            QAMgr["QAManager"]
-            PhaseSE["PhaseStateEngine"]
-            ArtMgr["ArtifactManager"]
-            StateMut["WorkflowStateMutator"]
-            EnforceRunner["EnforcementRunner"]
-            OtherMgr["... 11 more"]
-        end
-
-        subgraph Adapters ["Adapter Layer"]
-            FSAdapter["FilesystemAdapter"]
-            GitAdapter["GitAdapter"]
-            GHAdapter["GitHubAdapter"]
+        subgraph Infra ["Infrastructure Layer"]
+            Managers["Managers (business logic)"]
+            Adapters["Adapters (external gateways)"]
         end
     end
 
-    subgraph External ["External Systems"]
-        Repo[("Local Repository")]
-        Remote[("GitHub API")]
+    subgraph Ext ["External Layer"]
+        Repo[("Local Git/FS Repository")]
+        API[("GitHub API")]
     end
 
-    IDE <-->|"JSON-RPC over stdio"| MCPProxy
+    IDE <-->|"JSON-RPC"| MCPProxy
     MCPProxy <-->|"stdio"| MCPServer
-
+    
     Bootstrapper --> ConfigLayer
     Bootstrapper --> ManagerGraph
     Bootstrapper --> MCPServer
-    Bootstrapper --> Pipeline
-    Bootstrapper --> BaseRes
-
+    
     MCPServer --> Pipeline
     Pipeline --> ICoreTool
     MCPServer --> BaseRes
+    
+    ICoreTool --> Managers
+    BaseRes --> Managers
+    
+    Managers --> Adapters
+    Adapters --> Repo
+    Adapters --> API
+```
 
-    Pipeline --> EnforceRunner
-    Pipeline --> QAMgr
-    ICoreTool --> GitMgr
-    ICoreTool --> GHMgr
-    ICoreTool --> ArtMgr
-    ICoreTool --> PhaseSE
-    ICoreTool --> StateMut
-    ICoreTool --> OtherMgr
+### 3.2 Detailed Execution Flow
+
+For a detailed view of how the execution pipeline runs and interacts with the caching and presentation engines, see the sequence diagram in §6.2. The block diagram below illustrates the path of a tool call through the Russian Doll decorator chain:
+
+```mermaid
+graph LR
+    MCPServer["MCPServer"]
+    Pipeline["ITool Pipeline\n(Decorators)"]
+    Tool["ICoreTool\n(Concrete Tool)"]
+    Cache["ResponseCacheManager\n(CQRS Cache)"]
+    Presenter["TextPresenter\n(Presentation)"]
+
+    MCPServer -->|"1. execute(params)"| Pipeline
+    
+    subgraph Decorators ["Decorator Chain"]
+        Pipeline -->|"Exception mapping"| ErrorHandler["ToolErrorHandlerDecorator"]
+        ErrorHandler -->|"Pydantic validation"| InputValidator["InputValidationDecorator"]
+        InputValidator -->|"Pre/post-guards"| Enforcement["EnforcementDecorator"]
+    end
+    
+    Enforcement -->|"2. execute()"| Tool
+    Tool -->|"3. return DTO"| MCPServer
+    
+    MCPServer -->|"4. publish DTO"| Cache
+    Cache -->|"5. return CachePublication"| MCPServer
+    MCPServer -->|"6. present(DTO, CachePub)"| Presenter
+    Presenter -->|"7. return Markdown"| MCPServer
+```
 
     BaseRes --> GitMgr
     BaseRes --> GHMgr
