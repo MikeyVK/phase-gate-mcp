@@ -1,0 +1,131 @@
+{
+  "branch": "feature/406-decorator-pipeline-exception-mapping",
+  "issue_number": 406,
+  "workflow_name": "feature",
+  "current_phase": "ready",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": "User requested returning to documentation phase",
+  "issue_title": "feature: Russian Doll Decorator Pipeline for exception mapping",
+  "parent_branch": "refactor/406-decorator-pipeline-exception-mapping",
+  "created_at": "2026-06-20T20:29:22.199354+00:00",
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "validation",
+      "timestamp": "2026-06-20T20:29:28.311175+00:00",
+      "human_approval": "Michel requested reset to validation phase",
+      "forced": true,
+      "skip_reason": "User requested strict verification in the validation phase before proceeding to ready."
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "research",
+      "timestamp": "2026-06-21T06:38:50.558290+00:00",
+      "human_approval": "Michel requested transition to research",
+      "forced": true,
+      "skip_reason": "User requested archiving the architectural gap analysis in the research phase."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-21T06:55:11.002072+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-06-21T07:26:36.124763+00:00",
+      "human_approval": "Michel requested transition back to research for get_work_context gaps analysis",
+      "forced": true,
+      "skip_reason": "User requested transition to research to capture get_work_context gaps."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-21T07:48:23.390678+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-06-24T05:42:26.115232+00:00",
+      "human_approval": "Approved by Michel in chat.",
+      "forced": true,
+      "skip_reason": "User requested transition to research phase to document and commit remaining gaps."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "validation",
+      "timestamp": "2026-06-24T05:50:36.851653+00:00",
+      "human_approval": "User approved direct transition to validation phase to wrap up the branch.",
+      "forced": true,
+      "skip_reason": "Jumping from research to validation phase to perform final validation tasks as requested by the user."
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-06-24T06:16:27.105919+00:00",
+      "human_approval": "User requested transition to documentation phase",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-06-24T17:08:43.570177+00:00",
+      "human_approval": "Approved by user in chat",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "documentation",
+      "timestamp": "2026-06-24T17:14:37.459937+00:00",
+      "human_approval": "Approved by user in chat to update version history",
+      "forced": true,
+      "skip_reason": "Need to commit version history update in documentation phase"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-06-24T17:14:47.096476+00:00",
+      "human_approval": "Approved version history update and ready to complete",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "documentation",
+      "timestamp": "2026-06-24T17:17:54.066266+00:00",
+      "human_approval": "User explicitly requested this phase reset in chat",
+      "forced": true,
+      "skip_reason": "User requested returning to documentation phase"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-06-24T17:40:24.737183+00:00",
+      "human_approval": "User approved transition to ready phase",
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
+  "reconstructed": false,
+  "current_sub_phase": null
+}
