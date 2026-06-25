@@ -138,7 +138,6 @@ class TransitionCycleTool(_BaseIToolTransition[TransitionCycleInput, CycleTransi
     """Tool to transition to next implementation cycle with validation."""
 
     output_model: ClassVar[type[BaseModel]] = CycleTransitionOutput
-    tool_category = "branch_mutating"
     enforcement_event = "transition_cycle"
 
     @property
@@ -241,7 +240,6 @@ class ForceCycleTransitionTool(
     """Tool to force TDD cycle transition with audit trail."""
 
     output_model: ClassVar[type[BaseModel]] = ForceCycleTransitionOutput
-    tool_category = "branch_mutating"
     enforcement_event = "transition_cycle"
 
     @property

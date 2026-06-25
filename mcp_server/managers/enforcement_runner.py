@@ -30,9 +30,6 @@ _ENFORCEMENT_DISPLAY_PATH = "config/enforcement.yaml"
 _GIT_TIMEOUT_SECONDS = 2
 logger = logging.getLogger(__name__)
 
-# Known tool_category values; config validation fails fast for any unlisted value.
-KNOWN_TOOL_CATEGORIES: frozenset[str] = frozenset({"branch_mutating"})
-
 
 def _git_command_env() -> dict[str, str]:
     """Build a non-interactive environment for git commands in request paths."""
@@ -155,6 +152,8 @@ class EnforcementRunner:
             )
         self.server_root = server_root
         self._config = config
+        if not self._config.categories:
+            self._config = config.model_copy(update={"categories": {"branch_mutating": []}})
         self._git_config = git_config
         self._state_reader = state_reader
         self._pr_status_reader = pr_status_reader
@@ -180,6 +179,13 @@ class EnforcementRunner:
         C3: returns None; all results conveyed via note_context.produce().
         Dispatch matches on rule.tool (tool name) OR rule.tool_category (category).
         """
+        resolved_category = tool_category
+        if resolved_category is None:
+            for cat_name, tools_list in self._config.categories.items():
+                if event in tools_list or enforcement_ctx.tool_name in tools_list:
+                    resolved_category = cat_name
+                    break
+
         for rule in self._config.enforcement:
             if rule.event_source != "tool":
                 continue
@@ -188,7 +194,7 @@ class EnforcementRunner:
             # Match by tool name or tool_category (mutually exclusive per schema validator)
             if rule.tool is not None and rule.tool != event:
                 continue
-            if rule.tool_category is not None and rule.tool_category != tool_category:
+            if rule.tool_category is not None and rule.tool_category != resolved_category:
                 continue
             if rule.tool is None and rule.tool_category is None:
                 continue
@@ -218,7 +224,7 @@ class EnforcementRunner:
                 rule.tool_category
                 for rule in self._config.enforcement
                 if rule.tool_category is not None
-                and rule.tool_category not in KNOWN_TOOL_CATEGORIES
+                and rule.tool_category not in self._config.categories
             }
         )
         if unknown_categories:

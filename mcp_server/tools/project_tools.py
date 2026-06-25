@@ -82,7 +82,6 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
     """
 
     output_model: ClassVar[type[BaseModel]] = InitializeProjectOutput
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:
@@ -432,7 +431,6 @@ class SavePlanningDeliverablesTool(
     """
 
     output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:
@@ -572,7 +570,6 @@ class UpdatePlanningDeliverablesTool(
     """
 
     output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:

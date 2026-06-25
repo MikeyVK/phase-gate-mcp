@@ -78,7 +78,6 @@ TOutput = TypeVar("TOutput", bound=BaseModel)
 class _BaseTransitionTool(ICoreTool[TInput, TOutput], Generic[TInput, TOutput]):
     """Base class for phase transition tools implementing ILegacyTool."""
 
-    tool_category = "branch_mutating"
     enforcement_event = "transition_phase"
 
     def __init__(

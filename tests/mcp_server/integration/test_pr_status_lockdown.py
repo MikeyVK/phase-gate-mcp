@@ -144,20 +144,19 @@ def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
 # ---------------------------------------------------------------------------
 
 
-class TestBranchMutatingToolInheritance:
-    """Each branch-mutating tool must carry tool_category == "branch_mutating"."""
+class TestBranchMutatingToolRegistration:
+    """Each branch-mutating tool must be configured in enforcement.yaml categories."""
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_inherits_branch_mutating_tool(self, tool_cls: type[ICoreTool[Any, Any]]) -> None:
-        assert getattr(tool_cls, "tool_category", None) == "branch_mutating", (
-            f"{tool_cls.__name__} must carry tool_category == 'branch_mutating'"
-        )
-
-    @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_tool_category_is_branch_mutating(self, tool_cls: type[ICoreTool[Any, Any]]) -> None:
-        assert getattr(tool_cls, "tool_category", None) == "branch_mutating", (
-            f"{tool_cls.__name__}.tool_category must be 'branch_mutating', "
-            f"got {getattr(tool_cls, 'tool_category', None)!r}"
+    def test_is_registered_in_categories(self, tool_cls: type[ICoreTool[Any, Any]]) -> None:
+        assert tool_cls.name.fget is not None
+        tool_name = tool_cls.name.fget(None)
+        loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+        enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
+        config = loader.load_enforcement_config(config_path=enforcement_yaml)
+        assert tool_name in config.categories.get("branch_mutating", []), (
+            f"Tool '{tool_name}' ({tool_cls.__name__}) must be configured under "
+            f"categories.branch_mutating in enforcement.yaml"
         )
 
 
@@ -170,8 +169,12 @@ class TestMergePREscapeHatch:
     """MergePRTool is the escape hatch — it must NOT be a branch-mutating tool."""
 
     def test_merge_pr_tool_is_not_branch_mutating(self) -> None:
-        assert getattr(MergePRTool, "tool_category", None) != "branch_mutating", (
-            "MergePRTool must NOT have tool_category == 'branch_mutating'; "
+        loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+        config = loader.load_enforcement_config()
+        assert MergePRTool.name.fget is not None
+        tool_name = MergePRTool.name.fget(None)
+        assert tool_name not in config.categories.get("branch_mutating", []), (
+            f"MergePRTool ({tool_name}) must NOT be configured under branch_mutating; "
             "it is the escape hatch that clears PRStatus.OPEN"
         )
 
@@ -189,20 +192,21 @@ class TestBranchMutatingToolBlockedWhenPROpen:
         self, tool_cls: type[ICoreTool[Any, Any]], tmp_path: Path
     ) -> None:
         runner = _make_runner(PRStatus.OPEN, tmp_path)
+        assert tool_cls.name.fget is not None
+        tool_name = tool_cls.name.fget(None)
         ctx = EnforcementContext(
             workspace_root=tmp_path,
-            tool_name=tool_cls.name,
+            tool_name=tool_name,
             params=SimpleNamespace(),
         )
         note_context = NoteContext()
 
         with pytest.raises(ValidationError, match="open PR"):
             runner.run(
-                event=tool_cls.name,
+                event=tool_name,
                 timing="pre",
                 enforcement_ctx=ctx,
                 note_context=note_context,
-                tool_category=tool_cls.tool_category,
             )
 
 
@@ -219,9 +223,11 @@ class TestBranchMutatingToolAllowedWhenPRAbsent:
         self, tool_cls: type[ICoreTool[Any, Any]], tmp_path: Path
     ) -> None:
         runner = _make_runner(PRStatus.ABSENT, tmp_path)
+        assert tool_cls.name.fget is not None
+        tool_name = tool_cls.name.fget(None)
         ctx = EnforcementContext(
             workspace_root=tmp_path,
-            tool_name=tool_cls.name,
+            tool_name=tool_name,
             params=SimpleNamespace(),
         )
         note_context = NoteContext()
@@ -229,11 +235,10 @@ class TestBranchMutatingToolAllowedWhenPRAbsent:
         # Must not raise ValidationError from check_pr_status (other rules may still fire)
         try:
             runner.run(
-                event=tool_cls.name,
+                event=tool_name,
                 timing="pre",
                 enforcement_ctx=ctx,
                 note_context=note_context,
-                tool_category=tool_cls.tool_category,
             )
         except ValidationError as exc:
             assert "open PR" not in str(exc), (

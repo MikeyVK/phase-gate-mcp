@@ -143,6 +143,7 @@ def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
 
     mock_enforcement = MagicMock(spec=EnforcementConfig)
     mock_enforcement.enforcement = []
+    mock_enforcement.categories = {}
     mock_loader.load_enforcement_config.return_value = mock_enforcement
 
     mock_contracts = MagicMock(spec=ContractsConfig)

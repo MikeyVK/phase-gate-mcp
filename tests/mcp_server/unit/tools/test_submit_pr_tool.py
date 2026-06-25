@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+from pathlib import Path
 from unittest.mock import MagicMock
-
+from mcp_server.config.loader import ConfigLoader
 import pytest
 
 from mcp_server.core.interfaces import IBranchParentReader, IPRStatusWriter
@@ -49,8 +50,12 @@ class TestSubmitPRTool:
     def test_class_exists(self) -> None:
         assert SubmitPRTool is not None
 
-    def test_inherits_branch_mutating_tool(self) -> None:
-        assert SubmitPRTool.tool_category == "branch_mutating"
+    def test_is_branch_mutating_in_config(self) -> None:
+        repo_root = Path(__file__).parent.parent.parent.parent.parent
+        loader = ConfigLoader(config_root=repo_root / ".phase-gate" / "config")
+        config_path = repo_root / ".phase-gate" / "config" / "enforcement.yaml"
+        config = loader.load_enforcement_config(config_path=config_path)
+        assert "submit_pr" in config.categories.get("branch_mutating", [])
 
     def test_name_is_submit_pr(self) -> None:
         tool = SubmitPRTool(MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock())

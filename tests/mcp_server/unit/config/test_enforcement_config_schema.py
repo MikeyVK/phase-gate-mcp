@@ -74,21 +74,17 @@ class TestEnforcementActionExemptTools:
         action = EnforcementAction(type="check_context_loaded", exempt_tools=["create_branch"])
         assert action.exempt_tools == ["create_branch"]
 
-    def test_enforcement_action_exempt_tools_rejected_on_check_pr_status(
-        self,
-    ) -> None:
-        with pytest.raises(ValidationError):
-            EnforcementAction(type="check_pr_status", exempt_tools=["create_branch"])
+    def test_enforcement_action_exempt_tools_accepted_on_check_pr_status(self) -> None:
+        action = EnforcementAction(type="check_pr_status", exempt_tools=["create_branch"])
+        assert action.exempt_tools == ["create_branch"]
 
-    def test_enforcement_action_exempt_tools_rejected_on_check_phase_readiness(
-        self,
-    ) -> None:
-        with pytest.raises(ValidationError):
-            EnforcementAction(
-                type="check_phase_readiness",
-                policy="ready",
-                exempt_tools=["create_branch"],
-            )
+    def test_enforcement_action_exempt_tools_accepted_on_check_phase_readiness(self) -> None:
+        action = EnforcementAction(
+            type="check_phase_readiness",
+            policy="ready",
+            exempt_tools=["create_branch"],
+        )
+        assert action.exempt_tools == ["create_branch"]
 
     def test_enforcement_action_enabled_defaults_true(self) -> None:
         action = EnforcementAction(type="check_context_loaded")
