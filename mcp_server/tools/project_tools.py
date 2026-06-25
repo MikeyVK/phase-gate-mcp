@@ -507,16 +507,19 @@ class SavePlanningDeliverablesTool(
                 )
 
             phase_deliverables_count = 0
-            phase_keys = [
-                "research",
-                "planning",
-                "design",
-                "implementation",
-                "validation",
-                "documentation",
-                "ready",
-                "coordination",
-            ]
+            if self._manager.workphases_config is not None:
+                phase_keys = list(self._manager.workphases_config.phases.keys())
+            else:
+                phase_keys = [
+                    "research",
+                    "planning",
+                    "design",
+                    "implementation",
+                    "validation",
+                    "documentation",
+                    "ready",
+                    "coordination",
+                ]
             for pk in phase_keys:
                 if pk in pd:
                     phase_deliverables_count += len(pd[pk].get("deliverables", []))
@@ -647,16 +650,19 @@ class UpdatePlanningDeliverablesTool(
                 )
 
             phase_deliverables_count = 0
-            phase_keys = [
-                "research",
-                "planning",
-                "design",
-                "implementation",
-                "validation",
-                "documentation",
-                "ready",
-                "coordination",
-            ]
+            if self._manager.workphases_config is not None:
+                phase_keys = list(self._manager.workphases_config.phases.keys())
+            else:
+                phase_keys = [
+                    "research",
+                    "planning",
+                    "design",
+                    "implementation",
+                    "validation",
+                    "documentation",
+                    "ready",
+                    "coordination",
+                ]
             for pk in phase_keys:
                 if pk in pd:
                     phase_deliverables_count += len(pd[pk].get("deliverables", []))

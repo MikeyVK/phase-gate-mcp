@@ -1,36 +1,4 @@
 {
-  "baseline_sha": "b97d267f6e96eaab64473d776f2d1136e1d21ad6",
-  "failed_files": [
-    "mcp_server/config/schemas/enforcement_config.py",
-    "mcp_server/config/schemas/presentation_config.py",
-    "mcp_server/managers/enforcement_runner.py",
-    "mcp_server/presenters/text_presenter.py",
-    "mcp_server/resources/cache.py",
-    "mcp_server/schemas/cache_publication.py",
-    "mcp_server/state/response_cache.py",
-    "mcp_server/tools/admin_tools.py",
-    "mcp_server/tools/cycle_tools.py",
-    "mcp_server/tools/discovery_tools.py",
-    "mcp_server/tools/git_pull_tool.py",
-    "mcp_server/tools/git_tools.py",
-    "mcp_server/tools/health_tools.py",
-    "mcp_server/tools/phase_tools.py",
-    "mcp_server/tools/pr_tools.py",
-    "mcp_server/tools/project_tools.py",
-    "mcp_server/tools/quality_tools.py",
-    "mcp_server/tools/safe_edit_tool.py",
-    "mcp_server/tools/scaffold_artifact.py",
-    "mcp_server/tools/scaffold_schema_tool.py",
-    "tests/mcp_server/integration/test_pr_status_lockdown.py",
-    "tests/mcp_server/integration/test_ready_phase_enforcement.py",
-    "tests/mcp_server/unit/config/test_enforcement_config_schema.py",
-    "tests/mcp_server/unit/managers/test_artifact_manager.py",
-    "tests/mcp_server/unit/managers/test_enforcement_runner.py",
-    "tests/mcp_server/unit/resources/test_cache_resource.py",
-    "tests/mcp_server/unit/server/test_bootstrap.py",
-    "tests/mcp_server/unit/state/test_response_cache.py",
-    "tests/mcp_server/unit/test_presenter.py",
-    "tests/mcp_server/unit/tools/test_autofix_tool.py",
-    "tests/mcp_server/unit/tools/test_submit_pr_tool.py"
-  ]
+  "baseline_sha": "c7c3bed1c810b47fafa4f94bf9a1caabedd0e652",
+  "failed_files": []
 }

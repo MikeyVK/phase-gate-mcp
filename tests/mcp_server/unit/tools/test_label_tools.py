@@ -51,6 +51,8 @@ labels:
     color: "0052cc"
   - name: "new-label"
     color: "0000ff"
+  - name: "type:hotfix"
+    color: "ff0000"
 """
     yaml_file = tmp_path / "labels.yaml"
     yaml_file.write_text(yaml_content)

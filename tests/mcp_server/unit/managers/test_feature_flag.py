@@ -40,7 +40,9 @@ class ArtifactManagerProbe(ArtifactManager):
     def call_enrich_context(self, artifact_type: str, context: dict[str, Any]) -> dict[str, Any]:
         return self._enrich_context(artifact_type, context)
 
-    def call_enrich_schema_context(self, probe_context: BaseContext, probe_type: str) -> BaseContext:
+    def call_enrich_schema_context(
+        self, probe_context: BaseContext, probe_type: str
+    ) -> BaseContext:
         return self._enrich_schema_context(probe_context, probe_type)
 
 

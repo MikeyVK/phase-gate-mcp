@@ -73,6 +73,8 @@ class TestCreateLabelToolValidation:
 labels:
   - name: "type:feature"
     color: "1D76DB"
+  - name: "type:bug"
+    color: "FF0000"
 """
         label_config = _load_label_config(tmp_path, yaml_content)
 
