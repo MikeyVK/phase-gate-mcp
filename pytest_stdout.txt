@@ -6,65 +6,72 @@ configfile: pyproject.toml
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [19 items]
+8 workers [13 items]
 
 scheduling tests via LoadScheduling
 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_notes_lookup_and_grouping 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_error_dto_compilation_and_enforcement 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_failure_fallback 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_success 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_success 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_next_instruction_drift_detected 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_global_failures_invalid_placeholder 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_fallback_run_id_none 
-[gw2] [  5%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_success 
-[gw0] [ 10%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_success 
-[gw5] [ 15%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_notes_lookup_and_grouping 
-[gw1] [ 21%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_failure_fallback 
-[gw7] [ 26%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_fallback_run_id_none 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_drift_detected 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_failure_custom 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_blacklist_detected 
-[gw6] [ 31%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_global_failures_invalid_placeholder 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_multiple_next_instructions 
-[gw2] [ 36%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_drift_detected 
-[gw0] [ 42%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_failure_custom 
-[gw4] [ 47%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_error_dto_compilation_and_enforcement 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_fallback_run_id_none_execution_error 
-[gw5] [ 52%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_blacklist_detected 
-[gw1] [ 57%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_multiple_next_instructions 
-[gw7] [ 63%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_fallback_run_id_none_execution_error 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_with_notes_and_run_id 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_cache_publication_failure 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_generic_notes_invalid_placeholder 
-[gw6] [ 68%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_with_notes_and_run_id 
-[gw2] [ 73%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_cache_publication_failure 
-[gw3] [ 78%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_next_instruction_drift_detected 
-[gw0] [ 84%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_drift_validator_generic_notes_invalid_placeholder 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_safe_none_formatter 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_dynamic_category_emoji 
-[gw4] [ 89%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_safe_none_formatter 
-tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_presentation_config_schema_extended 
-[gw3] [ 94%] PASSED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_presentation_config_schema_extended 
-[gw5] [100%] FAILED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_dynamic_category_emoji 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_tool_event_source_requires_tool_name 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_legacy_commit_state_files_action_is_rejected_by_runner 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_constructor_raises_config_error_for_unknown_action_type 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_delete_file_action_requires_path 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_run_dispatches_registered_handler_for_matching_tool_event 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_enforcement_runner_handles_tool_guards_only 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_branch_policy_action_requires_rules 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_check_branch_policy_rejects_invalid_base_branch 
+[gw7] [  7%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_tool_event_source_requires_tool_name 
+[gw4] [ 15%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_branch_policy_action_requires_rules 
+[gw6] [ 23%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_delete_file_action_requires_path 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_exempt_tools_allowed_on_any_action_type 
+[gw2] [ 30%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_check_branch_policy_rejects_invalid_base_branch 
+[gw3] [ 38%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_enforcement_runner_handles_tool_guards_only 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_runner_validates_against_dynamic_categories 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_runner_resolves_category_dynamically 
+[gw0] [ 46%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_constructor_raises_config_error_for_unknown_action_type 
+[gw5] [ 53%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_legacy_commit_state_files_action_is_rejected_by_runner 
+[gw1] [ 61%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementRunner::test_run_dispatches_registered_handler_for_matching_tool_event 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_phase_event_source_requires_phase_name 
+tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_dynamic_categories_config_parsing 
+[gw0] [ 69%] PASSED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_phase_event_source_requires_phase_name 
+[gw4] [ 76%] FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_exempt_tools_allowed_on_any_action_type 
+[gw1] [ 84%] FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_dynamic_categories_config_parsing 
+[gw3] [ 92%] FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_runner_resolves_category_dynamically 
+[gw2] [100%] FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_runner_validates_against_dynamic_categories 
 
 ================================== FAILURES ===================================
-____________ TestTextPresenter.test_present_dynamic_category_emoji ____________
-[gw5] win32 -- Python 3.13.7 c:\temp\pgmcp\.venv\Scripts\python.exe
-tests\mcp_server\unit\test_presenter.py:467: in test_present_dynamic_category_emoji
-    presenter = TextPresenter(config_data=config_data)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-mcp_server\presenters\text_presenter.py:62: in __init__
-    resolved = PresentationConfig.model_validate(config_data)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   pydantic_core._pydantic_core.ValidationError: 2 validation errors for PresentationConfig
-E   global.emojis.custom_cat
-E     Extra inputs are not permitted [type=extra_forbidden, input_value='🦄', input_type=str]
+_ TestEnforcementSchemaValidation.test_exempt_tools_allowed_on_any_action_type _
+[gw4] win32 -- Python 3.13.7 c:\temp\pgmcp\.venv\Scripts\python.exe
+tests\mcp_server\unit\managers\test_enforcement_runner.py:299: in test_exempt_tools_allowed_on_any_action_type
+    action = EnforcementAction(
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for EnforcementAction
+E     Value error, exempt_tools is not supported for action type 'check_pr_status'; allowed types: ['check_context_loaded'] [type=value_error, input_value={'type': 'check_pr_status...t_tools': ['some_tool']}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/value_error
+___ TestEnforcementSchemaValidation.test_dynamic_categories_config_parsing ____
+[gw1] win32 -- Python 3.13.7 c:\temp\pgmcp\.venv\Scripts\python.exe
+tests\mcp_server\unit\managers\test_enforcement_runner.py:234: in test_dynamic_categories_config_parsing
+    config = EnforcementConfig(
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for EnforcementConfig
+E   categories
+E     Extra inputs are not permitted [type=extra_forbidden, input_value={'custom_category': ['cre...ranch', 'git_checkout']}, input_type=dict]
 E       For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
-E   tools.dummy_tool.category
-E     Extra inputs are not permitted [type=extra_forbidden, input_value='custom_cat', input_type=str]
+__ TestEnforcementSchemaValidation.test_runner_resolves_category_dynamically __
+[gw3] win32 -- Python 3.13.7 c:\temp\pgmcp\.venv\Scripts\python.exe
+tests\mcp_server\unit\managers\test_enforcement_runner.py:258: in test_runner_resolves_category_dynamically
+    config = EnforcementConfig(
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for EnforcementConfig
+E   categories
+E     Extra inputs are not permitted [type=extra_forbidden, input_value={'custom_category': ['create_branch']}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
+_ TestEnforcementSchemaValidation.test_runner_validates_against_dynamic_categories _
+[gw2] win32 -- Python 3.13.7 c:\temp\pgmcp\.venv\Scripts\python.exe
+tests\mcp_server\unit\managers\test_enforcement_runner.py:242: in test_runner_validates_against_dynamic_categories
+    config = EnforcementConfig(
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for EnforcementConfig
+E   categories
+E     Extra inputs are not permitted [type=extra_forbidden, input_value={'valid_cat': ['some_tool']}, input_type=dict]
 E       For further information visit https://errors.pydantic.dev/2.12/v/extra_forbidden
 =========================== short test summary info ===========================
-FAILED tests/mcp_server/unit/test_presenter.py::TestTextPresenter::test_present_dynamic_category_emoji
-======================== 1 failed, 18 passed in 4.29s =========================
+FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_exempt_tools_allowed_on_any_action_type
+FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_dynamic_categories_config_parsing
+FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_runner_resolves_category_dynamically
+FAILED tests/mcp_server/unit/managers/test_enforcement_runner.py::TestEnforcementSchemaValidation::test_runner_validates_against_dynamic_categories
+========================= 4 failed, 9 passed in 4.01s =========================

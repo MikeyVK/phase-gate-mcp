@@ -228,3 +228,76 @@ class TestEnforcementSchemaValidation:
         """Phase-triggered rules must include the phase name."""
         with pytest.raises(ValueError, match="requires phase"):
             EnforcementRule(event_source="phase", timing="post")
+
+    def test_dynamic_categories_config_parsing(self) -> None:
+        """EnforcementConfig must accept dynamic categories mapping."""
+        config = EnforcementConfig(
+            categories={"custom_category": ["create_branch", "git_checkout"]},
+            enforcement=[]
+        )
+        assert config.categories == {"custom_category": ["create_branch", "git_checkout"]}
+
+    def test_runner_validates_against_dynamic_categories(self, tmp_path: Path) -> None:
+        """Runner must reject rules with tool categories not present in config.categories."""
+        config = EnforcementConfig(
+            categories={"valid_cat": ["some_tool"]},
+            enforcement=[
+                EnforcementRule(
+                    event_source="tool",
+                    tool_category="invalid_cat",
+                    timing="pre",
+                    actions=[EnforcementAction(type="check_pr_status")]
+                )
+            ]
+        )
+        with pytest.raises(ConfigError, match="Unknown tool_category value"):
+            _make_runner(tmp_path, config)
+
+    def test_runner_resolves_category_dynamically(self, tmp_path: Path) -> None:
+        """Runner must resolve tool category dynamically when tool_category is omitted."""
+        config = EnforcementConfig(
+            categories={"custom_category": ["create_branch"]},
+            enforcement=[
+                EnforcementRule(
+                    event_source="tool",
+                    tool_category="custom_category",
+                    timing="pre",
+                    actions=[EnforcementAction(type="check_pr_status")]
+                )
+            ]
+        )
+        calls = []
+        def fake_handler(
+            action: EnforcementAction,
+            context: EnforcementContext,
+            workspace_root: Path,
+            note_context: NoteContext,
+        ) -> None:
+            calls.append(action.type)
+
+        runner = _make_runner(
+            tmp_path,
+            config,
+            registry={"check_pr_status": fake_handler}
+        )
+
+        runner.run(
+            event="create_branch",
+            timing="pre",
+            enforcement_ctx=EnforcementContext(
+                workspace_root=tmp_path,
+                tool_name="create_branch",
+                params=SimpleNamespace(),
+            ),
+            note_context=NoteContext(),
+            tool_category=None  # Omitted: must resolve dynamically
+        )
+        assert calls == ["check_pr_status"]
+
+    def test_exempt_tools_allowed_on_any_action_type(self) -> None:
+        """exempt_tools must be allowed on actions other than check_context_loaded."""
+        action = EnforcementAction(
+            type="check_pr_status",
+            exempt_tools=["some_tool"]
+        )
+        assert action.exempt_tools == ["some_tool"]
