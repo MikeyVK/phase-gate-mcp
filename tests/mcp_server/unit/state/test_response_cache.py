@@ -11,10 +11,11 @@ Tests for ResponseCacheManager key validation and normalization.
 
 # Third-party
 import pytest
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
 
 # Project modules
 from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.state.response_cache import ResponseCacheManager
 
 
 class TestResponseCache:
@@ -32,3 +33,27 @@ class TestResponseCache:
 
         with pytest.raises(ValidationError):
             CachePublication(run_id="g" * 32)  # Non-hex characters
+
+    def test_response_cache_manager_put_get_exists(self) -> None:
+        """Verify ResponseCacheManager put, get, and exists behavior with hex UUIDs."""
+        cache = ResponseCacheManager()
+
+        class DummyModel(BaseModel):
+            value: str
+
+        model = DummyModel(value="test")
+        pub = cache.put("test_tool", model)
+
+        assert pub.success
+        assert pub.run_id is not None
+        assert len(pub.run_id) == 32
+
+        # exists and get should work with the raw run_id
+        assert cache.exists(pub.run_id)
+        assert cache.get(pub.run_id, DummyModel) == model
+
+        # exists and get should reject invalid formats or URIs
+        assert not cache.exists("invalid-uuid")
+        assert cache.get("invalid-uuid") is None
+        assert not cache.exists(f"pgmcp://cache/runs/{pub.run_id}")
+        assert cache.get(f"pgmcp://cache/runs/{pub.run_id}") is None

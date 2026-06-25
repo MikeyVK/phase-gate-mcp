@@ -12,7 +12,10 @@ Data Transfer Object for CachePublication.
 from __future__ import annotations
 
 # Third-party
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+from pydantic import BaseModel, ConfigDict, StringConstraints
+
+HexUUID = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{32}$")]
 
 
 class CachePublication(BaseModel):
@@ -20,6 +23,6 @@ class CachePublication(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    run_id: str | None = None
+    run_id: HexUUID | None = None
     success: bool = True
     error_code: str | None = None

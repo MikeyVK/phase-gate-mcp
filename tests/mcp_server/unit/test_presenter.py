@@ -370,7 +370,7 @@ class TestTextPresenter:
             tool_name="dummy_tool",
             data=dto,
             notes=notes,
-            cache_pub=CachePublication(run_id="run-123", success=True),
+            cache_pub=CachePublication(run_id="a" * 32, success=True),
         )
         assert "💡 Suggestions" in text
         assert "Suggestion: Try caching" in text

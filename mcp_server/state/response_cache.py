@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Type, TypeVar, cast
@@ -36,12 +37,8 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
     def put(self, tool_name: str, output: BaseModel) -> CachePublication:
         """Publish the output DTO to the cache and return a CachePublication."""
         try:
-            # Generate a new unique run_id (or extract it if tool_name is a URI)
-            run_id = tool_name
-            if "pgmcp://cache/runs/" in tool_name:
-                run_id = tool_name.split("/")[-1]
-            else:
-                run_id = uuid.uuid4().hex
+            # Generate a new unique run_id
+            run_id = uuid.uuid4().hex
 
             if run_id in self._cache:
                 self._cache.move_to_end(run_id)
@@ -56,15 +53,14 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
 
     def get(self, run_id: str, response_model: Type[T] | None = None) -> T | None:
         """Retrieve and deserialize a cached DTO using the expected type-safe model."""
-        actual_id = run_id
-        if "pgmcp://cache/runs/" in run_id:
-            actual_id = run_id.split("/")[-1]
-
-        if actual_id not in self._cache:
+        if not re.match(r"^[a-f0-9]{32}$", run_id):
             return None
 
-        self._cache.move_to_end(actual_id)
-        dto = self._cache[actual_id]
+        if run_id not in self._cache:
+            return None
+
+        self._cache.move_to_end(run_id)
+        dto = self._cache[run_id]
 
         # If response_model is provided, check or cast
         if response_model is not None:
@@ -76,7 +72,6 @@ class ResponseCacheManager(IToolResponsePublisher, IToolResponseReader):
 
     def exists(self, run_id: str) -> bool:
         """Check if a cached result exists for the run_id."""
-        actual_id = run_id
-        if "pgmcp://cache/runs/" in run_id:
-            actual_id = run_id.split("/")[-1]
-        return actual_id in self._cache
+        if not re.match(r"^[a-f0-9]{32}$", run_id):
+            return False
+        return run_id in self._cache
