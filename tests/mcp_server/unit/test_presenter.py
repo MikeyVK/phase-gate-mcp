@@ -446,3 +446,29 @@ class TestTextPresenter:
         )
         assert "*(Cache publication failed. Full details dumped inline)*" in text
         assert "```json" in text
+
+    def test_present_dynamic_category_emoji(self) -> None:
+        """Verify that custom categories and emojis configured in YAML are resolved dynamically."""
+        config_data = {
+            "global": {
+                "emojis": {
+                    "success": "✅",
+                    "failure": "❌",
+                    "custom_cat": "🦄",
+                },
+            },
+            "tools": {
+                "dummy_tool": {
+                    "category": "custom_cat",
+                    "template_success": "Success: {result}",
+                }
+            }
+        }
+        presenter = TextPresenter(config_data=config_data)
+        dto = DummyOutput(success=True, result="Dynamic emoji test")
+        text = presenter.present(
+            tool_name="dummy_tool",
+            data=dto,
+            notes=[],
+        )
+        assert "🦄 Success: Dynamic emoji test" in text
