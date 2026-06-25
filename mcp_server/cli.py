@@ -1,10 +1,11 @@
 """Command line interface for the MCP server."""
 
 import argparse
+import asyncio
 import sys
 
+from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import Settings
-from mcp_server.server import main as server_main
 
 
 def main(settings: Settings | None = None) -> None:
@@ -21,7 +22,9 @@ def main(settings: Settings | None = None) -> None:
         print(f"Phase-Gate MCP Server v{_settings.server.version}")
         sys.exit(0)
 
-    server_main(_settings)
+    bootstrapper = ServerBootstrapper(_settings)
+    server = bootstrapper.bootstrap()
+    asyncio.run(server.run())
 
 
 if __name__ == "__main__":

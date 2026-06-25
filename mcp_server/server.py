@@ -245,17 +245,3 @@ class MCPServer:
     async def shutdown(self) -> None:
         """Shutdown the MCP server gracefully."""
         lifecycle_logger.info("MCP server shutting down")
-
-
-def main(settings: Settings | None = None) -> None:
-    """Entry point for the MCP server."""
-    from mcp_server.bootstrap import ServerBootstrapper  # noqa: PLC0415
-
-    settings = settings or Settings.from_env()
-    bootstrapper = ServerBootstrapper(settings)
-    server = bootstrapper.bootstrap()
-    asyncio.run(server.run())
-
-
-if __name__ == "__main__":
-    main()

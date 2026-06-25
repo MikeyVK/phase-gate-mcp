@@ -174,7 +174,7 @@ class TestServerBootstrapperConfigsAndManagers:
             patch("mcp_server.bootstrap.TemplateRegistry"),
             patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
             patch("mcp_server.bootstrap.ConfigValidator"),
-            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
         ):
             _setup_mock_config_loader(mock_config_loader_cls)
 
@@ -200,7 +200,7 @@ class TestServerBootstrapperConfigsAndManagers:
             patch("mcp_server.bootstrap.TemplateRegistry") as mock_template_registry_cls,
             patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
             patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls,
-            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
         ):
             _setup_mock_config_loader(mock_config_loader_cls)
 
