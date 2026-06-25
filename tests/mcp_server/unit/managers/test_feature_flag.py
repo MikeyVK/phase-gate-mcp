@@ -6,7 +6,7 @@ Tests:
 - Feature flag ON: schema-typed pipeline
 - Feature flag toggle (runtime switch)
 - Pipeline validates via Pydantic
-- Schema-typed enrichment (_enrich_context_v2)
+- Schema-typed enrichment (_enrich_schema_context)
 
 @layer: Tests (Unit)
 @dependencies: pytest, asyncio, pydantic, mcp_server.managers.artifact_manager
@@ -40,8 +40,8 @@ class ArtifactManagerProbe(ArtifactManager):
     def call_enrich_context(self, artifact_type: str, context: dict[str, Any]) -> dict[str, Any]:
         return self._enrich_context(artifact_type, context)
 
-    def call_enrich_context_v2(self, probe_context: BaseContext, probe_type: str) -> BaseContext:
-        return self._enrich_context_v2(probe_context, probe_type)
+    def call_enrich_schema_context(self, probe_context: BaseContext, probe_type: str) -> BaseContext:
+        return self._enrich_schema_context(probe_context, probe_type)
 
 
 def to_probe(manager: ArtifactManager) -> ArtifactManagerProbe:
@@ -56,10 +56,10 @@ def enrich_context_v2_for_test(
     artifact_type: str,
 ) -> BaseContext:
     """Route protected enrichment through a local helper for tests."""
-    return to_probe(manager).call_enrich_context_v2(context, artifact_type)
+    return to_probe(manager).call_enrich_schema_context(context, artifact_type)
 
 
-class TestFeatureFlagV2Routing:
+class TestFeatureFlagSchemaRouting:
     """Test feature flag controls v1/v2 pipeline routing."""
 
     @pytest.fixture
@@ -109,13 +109,13 @@ class TestFeatureFlagV2Routing:
     def test_feature_flag_on_uses_v2_pipeline(self, manager: ArtifactManager) -> None:
         """Feature flag ON should use v2 schema-typed pipeline.
 
-        REQUIREMENT (Cycle 4): V2 pipeline uses Pydantic validation.
+        # REQUIREMENT (Cycle 4): Schema pipeline uses Pydantic validation.
         """
         # Arrange: Flag ON
         os.environ["PYDANTIC_SCAFFOLDING_ENABLED"] = "true"
 
-        # Spy on _enrich_context_v2 to verify v2 called
-        original_v2 = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]
+        # Spy on _enrich_schema_context to verify v2 called
+        original_v2 = manager._enrich_schema_context  # pyright: ignore[reportPrivateUsage]
         v2_called = False
 
         def spy_v2(*args: Any, **kwargs: Any) -> object:  # noqa: ANN401
@@ -123,7 +123,7 @@ class TestFeatureFlagV2Routing:
             v2_called = True
             return original_v2(*args, **kwargs)
 
-        manager._enrich_context_v2 = spy_v2  # pyright: ignore[reportPrivateUsage]
+        manager._enrich_schema_context = spy_v2  # pyright: ignore[reportPrivateUsage]
 
         # Mock scaffolder and validation
         manager.scaffolder.scaffold = Mock(return_value=Mock(content="# test"))
@@ -142,7 +142,7 @@ class TestFeatureFlagV2Routing:
         )
 
         # Assert: v2 pipeline was used
-        assert v2_called, "V2 pipeline (_enrich_context_v2) should be called when flag ON"
+        assert v2_called, "Schema pipeline (_enrich_schema_context) should be called when flag ON"
 
         # Cleanup
         os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
@@ -179,9 +179,9 @@ class TestFeatureFlagV2Routing:
 
         # Test 2: Flag ON → v2
         os.environ["PYDANTIC_SCAFFOLDING_ENABLED"] = "true"
-        original_v2 = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]
+        original_v2 = manager._enrich_schema_context  # pyright: ignore[reportPrivateUsage]
         v2_calls = []
-        manager._enrich_context_v2 = lambda *args, **kw: (  # pyright: ignore[reportPrivateUsage]
+        manager._enrich_schema_context = lambda *args, **kw: (  # pyright: ignore[reportPrivateUsage]
             v2_calls.append(1),
             original_v2(*args, **kw),
         )[1]
@@ -189,7 +189,7 @@ class TestFeatureFlagV2Routing:
         asyncio.run(
             manager.scaffold_artifact("dto", output_path="test_scaffold_output.py", **context)
         )
-        assert len(v2_calls) == 1, "V2 should be called when flag ON (runtime toggle)"
+        assert len(v2_calls) == 1, "Schema pipeline should be called when flag ON (runtime toggle)"
 
         # Cleanup
         os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
@@ -230,8 +230,8 @@ class TestFeatureFlagV2Routing:
         assert "output_path" in captured_context, "V1 should add output_path"
         assert captured_context["dto_name"] == "TestDTO", "User context preserved"
 
-    def test_v2_pipeline_validates_input(self, manager: ArtifactManager) -> None:
-        """V2 pipeline should validate input via Pydantic schemas.
+    def test_schema_pipeline_validates_input(self, manager: ArtifactManager) -> None:
+        """Schema pipeline should validate input via Pydantic schemas.
 
         REQUIREMENT (Cycle 4): Pydantic catches errors (no silent | default failures).
         """
@@ -252,7 +252,7 @@ class TestFeatureFlagV2Routing:
             )
 
         # Verify error message mentions Pydantic validation
-        assert "V2 pipeline" in str(exc_info.value), "Error should mention V2 pipeline"
+        assert "Schema pipeline" in str(exc_info.value), "Error should mention Schema pipeline"
         assert "DTOContext" in str(exc_info.value), "Error should mention schema class"
 
         # Cleanup
@@ -260,17 +260,17 @@ class TestFeatureFlagV2Routing:
 
 
 class TestSchemaTypedEnrichment:
-    """Test schema-typed _enrich_context_v2 method with Naming Convention lookup."""
+    """Test schema-typed _enrich_schema_context method with Naming Convention lookup."""
 
     @pytest.fixture
     def manager(self, tmp_path: Path) -> ArtifactManager:
         """Create ArtifactManager with test workspace."""
         return make_artifact_manager(tmp_path)
 
-    def test_enrich_context_v2_dto_context_to_render_context(
+    def test_enrich_schema_context_dto_context_to_render_context(
         self, manager: ArtifactManager
     ) -> None:
-        """_enrich_context_v2(DTOContext) should return DTORenderContext.
+        """_enrich_schema_context(DTOContext) should return DTORenderContext.
 
         REQUIREMENT (Cycle 4): Schema-typed enrichment pipeline.
         REQUIREMENT: Naming Convention lookup (DTOContext → DTORenderContext via globals()).
@@ -292,8 +292,8 @@ class TestSchemaTypedEnrichment:
         assert render_context.output_path is not None, "Lifecycle: output_path"
         assert render_context.version_hash == "00000000", "Lifecycle: version_hash (placeholder)"
 
-    def test_enrich_context_v2_adds_lifecycle_fields(self, manager: ArtifactManager) -> None:
-        """_enrich_context_v2 should add 4 lifecycle fields to RenderContext.
+    def test_enrich_schema_context_adds_lifecycle_fields(self, manager: ArtifactManager) -> None:
+        """_enrich_schema_context should add 4 lifecycle fields to RenderContext.
 
         REQUIREMENT (Cycle 4): output_path, scaffold_created, template_id, version_hash.
         """
@@ -324,7 +324,7 @@ class TestSchemaTypedEnrichment:
         # Arrange
         dto_context = DTOContext(dto_name="TestDTO", fields=[])
 
-        # Act: _enrich_context_v2 uses Naming Convention internally
+        # Act: _enrich_schema_context uses Naming Convention internally
         render_context = enrich_context_v2_for_test(manager, dto_context, artifact_type="dto")
 
         # Assert: Correct type returned (proves globals() lookup succeeded)
