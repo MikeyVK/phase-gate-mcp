@@ -1,0 +1,34 @@
+# c:\temp\pgmcp\tests\mcp_server\unit\state\test_response_cache.py
+# template=unit_test version=3d15d309 created=2026-06-25T19:42Z updated=
+"""
+Unit tests for mcp_server.state.response_cache.
+
+Tests for ResponseCacheManager key validation and normalization.
+
+@layer: Tests (Unit)
+@dependencies: [pytest, mcp_server.state.response_cache, unittest.mock]
+"""
+
+# Third-party
+import pytest
+from pydantic import ValidationError
+
+# Project modules
+from mcp_server.schemas.cache_publication import CachePublication
+
+
+class TestResponseCache:
+    """Test suite for response_cache."""
+
+    def test_cache_publication_validation(self) -> None:
+        """Verify that CachePublication run_id enforces 32-character hex UUID format."""
+        # Valid hex UUID should pass
+        pub = CachePublication(run_id="a" * 32)
+        assert pub.run_id == "a" * 32
+
+        # Invalid strings should raise ValidationError
+        with pytest.raises(ValidationError):
+            CachePublication(run_id="invalid-uuid")
+
+        with pytest.raises(ValidationError):
+            CachePublication(run_id="g" * 32)  # Non-hex characters
