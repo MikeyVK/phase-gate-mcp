@@ -12,7 +12,6 @@ from typing import Any
 from pydantic import BaseModel
 
 from mcp_server.config.schemas.presentation_config import (
-    EmojisConfig,
     GlobalPresentationConfig,
     PresentationConfig,
     ToolPresentationConfig,
@@ -66,10 +65,6 @@ class TextPresenter:
         self.global_config = resolved.global_settings
         self.tools_config = resolved.tools
 
-    def _get_emoji_config(self) -> EmojisConfig:
-        """Get the emoji configuration model."""
-        return self.global_config.emojis
-
     def get_next_instruction_texts(self) -> dict[str, str]:
         """Get the next instruction texts lookup dictionary."""
         return self.global_config.next_instruction_texts
@@ -105,40 +100,14 @@ class TextPresenter:
         # 1. Resolve success and presentation category
         resolved_success = success if success is not None else getattr(data, "success", True)
 
-        # Resolve category internally based on tool name to decouple transport
+        # Resolve category internally based on tool config to decouple transport
+        tool_cfg = self.tools_config.get(tool_name)
         resolved_cat = "query"
-        # Mutation tools
-        if tool_name in (
-            "create_branch",
-            "git_add_or_commit",
-            "git_checkout",
-            "git_push",
-            "git_merge",
-            "git_delete_branch",
-            "git_stash",
-            "git_restore",
-            "git_pull",
-            "transition_phase",
-            "force_phase_transition",
-            "transition_cycle",
-            "force_cycle_transition",
-            "safe_edit_file",
-            "scaffold_artifact",
-            "create_issue",
-            "update_issue",
-            "close_issue",
-            "submit_pr",
-            "merge_pr",
-            "create_label",
-            "add_labels",
-            "remove_labels",
-            "create_milestone",
-            "close_milestone",
-            "auto_fix",
-        ):
-            resolved_cat = "mutation"
-        elif tool_name in ("initialize_project", "restart_server"):
-            resolved_cat = "bootstrap"
+        if tool_cfg is not None:
+            if isinstance(tool_cfg, ToolPresentationConfig):
+                resolved_cat = tool_cfg.category or "query"
+            else:
+                resolved_cat = tool_cfg.get("category") or "query"
         # 2. Convert DTO/dict to a flat dictionary for formatting
         data_dict = data.model_dump() if isinstance(data, BaseModel) else dict(data)
 
@@ -151,7 +120,6 @@ class TextPresenter:
             should_trigger_fallback = False
 
         # 4. Bepaal template op basis van success
-        tool_cfg = self.tools_config.get(tool_name)
         template = None
         next_instructions = []
 
@@ -228,22 +196,11 @@ class TextPresenter:
             text = data_dict.get("message") or data_dict.get("error_message") or str(data_dict)
 
         # 5. Prepend emoji prefix
-        emojis = self._get_emoji_config()
+        emojis = self.global_config.emojis
         if not resolved_success:
-            emoji = emojis.failure
+            emoji = emojis.get("failure", "❌")
         else:
-            # Map presentation_category to emoji
-            cat = resolved_cat.lower()
-            if cat in ("mutation", "admin"):
-                key = "success"
-            elif cat in ("query", "testing"):
-                key = "query"
-            elif cat in ("bootstrap",):
-                key = "bootstrap"
-            else:
-                key = "success"
-
-            emoji = getattr(emojis, key)
+            emoji = emojis.get(resolved_cat, emojis.get("success", "✅"))
         if emoji:
             text = f"{emoji} {text}"
 

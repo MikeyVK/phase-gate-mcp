@@ -50,7 +50,6 @@ class ScaffoldArtifactTool(ICoreTool[ScaffoldArtifactInput, ScaffoldArtifactOutp
     """
 
     output_model: ClassVar[type[BaseModel]] = ScaffoldArtifactOutput
-    presentation_category = "mutation"
     tool_category = "branch_mutating"
 
     def __init__(self, manager: ArtifactManager | None = None) -> None:

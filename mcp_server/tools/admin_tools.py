@@ -90,7 +90,6 @@ class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
     """
 
     output_model: ClassVar[type[BaseModel]] = RestartServerOutput
-    presentation_category = "admin"
 
     @property
     def name(self) -> str:

@@ -49,13 +49,11 @@ class DummySimpleOutput(BaseToolOutput):
 
 class DummyTool:
     name: ClassVar[str] = "dummy_tool"
-    presentation_category: ClassVar[str | None] = "query"
     output_model: ClassVar[type[BaseModel]] = DummyOutput
 
 
 class DummyNoOutputModelTool:
     name: ClassVar[str] = "dummy_no_model"
-    presentation_category: ClassVar[str | None] = "mutation"
     output_model: ClassVar[type[BaseModel] | None] = None
 
 
@@ -462,7 +460,7 @@ class TestTextPresenter:
                     "category": "custom_cat",
                     "template_success": "Success: {result}",
                 }
-            }
+            },
         }
         presenter = TextPresenter(config_data=config_data)
         dto = DummyOutput(success=True, result="Dynamic emoji test")

@@ -8,18 +8,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class EmojisConfig(BaseModel):
-    """Global emojis settings."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    success: str = "✅"
-    failure: str = "❌"
-    warning: str = "⚠️"
-    query: str = "📋"
-    bootstrap: str = "🚀"
-
-
 class FormattingConfig(BaseModel):
     """Formatting settings for text presentation."""
 
@@ -51,7 +39,7 @@ class GlobalPresentationConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    emojis: EmojisConfig = Field(default_factory=EmojisConfig)
+    emojis: dict[str, str] = Field(default_factory=dict)
     default_failure_template: str = "Failed: {error_message}"
     next_instruction_texts: dict[str, str] = Field(default_factory=dict)
     formatting: FormattingConfig = Field(default_factory=FormattingConfig)
@@ -64,6 +52,7 @@ class ToolPresentationConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
+    category: str | None = None
     template_success: str | None = None
     template_failure: str | None = None
     next_instructions: list[str] = Field(default_factory=list)

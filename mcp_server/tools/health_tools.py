@@ -25,7 +25,6 @@ class HealthCheckTool(ICoreTool[HealthCheckInput, HealthCheckOutput]):
     """Tool to check server health."""
 
     output_model: ClassVar[type[BaseModel]] = HealthCheckOutput
-    presentation_category = "query"
 
     @property
     def name(self) -> str:
