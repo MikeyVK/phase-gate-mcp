@@ -35,7 +35,7 @@ Based on the CQRS-like patterns in `DataCommandService` and `DataQueryService`, 
 We will create the following Jinja2 files inheriting from `base/base_component.py.jinja2`:
 
 #### A. MCP Components
--   **`tool.py.jinja2`**: Implements `BaseTool`. Fields: `input_schema`, `execute` stub.
+-   **`tool.py.jinja2`**: Implements `ICoreTool`. Fields: `input_schema`, `execute` stub.
 -   **`resource.py.jinja2`**: Implements `read()` and URI handling.
 
 #### B. Architecture Components

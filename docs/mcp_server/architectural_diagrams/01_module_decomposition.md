@@ -53,7 +53,7 @@ graph LR
 
 | Module | Files | Primary Responsibility |
 |--------|-------|------------------------|
-| `tools/` | 22 | MCP tool implementations (BaseTool subclasses) |
+| `tools/` | 22 | MCP tool implementations (ICoreTool implementations) |
 | `managers/` | 10 | Domain logic: phase state, git, GitHub, QA, artifacts |
 | `adapters/` | 3 | External system isolation: filesystem, git CLI, GitHub API |
 | `config/` | 16 | Pydantic settings and workflow definitions |

@@ -137,7 +137,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 **MCP Name:** `scaffold_schema`  
 **Class:** `ScaffoldSchemaTool`  
 **File:** [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
-**Inherits:** `BaseTool` (read-only — no branch mutation)
+**Implements:** `ICoreTool` (read-only — no branch mutation)
 
 Return the JSON Schema for the `context` parameter of an artifact type. Use this before calling `scaffold_artifact` to discover exactly which fields are required and optional for a given type.
 

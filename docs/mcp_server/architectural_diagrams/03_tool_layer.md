@@ -15,7 +15,7 @@ conventions, and existing inconsistencies.
 
 ## Scope
 
-**In Scope:** `tools/` directory, BaseTool hierarchy, MCP tool names, file name conventions
+**In Scope:** `tools/` directory, ICoreTool hierarchy, MCP tool names, file name conventions
 
 **Out of Scope:** Tool implementation detail, manager-internal logic
 

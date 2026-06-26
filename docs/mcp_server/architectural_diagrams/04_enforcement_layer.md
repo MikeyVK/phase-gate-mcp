@@ -11,14 +11,14 @@
 ## Purpose
 
 Show the enforcement layer: how tool events trigger configured actions, which handlers are
-registered, how the `BranchMutatingTool` category dispatches rules to all branch-mutating
+registered, how the `branch_mutating` category dispatches rules to all branch-mutating
 tools via a single `enforcement.yaml` entry, and how `SubmitPRTool` performs the atomic
 PR creation flow as a self-contained operation.
 
 ## Scope
 
 **In Scope:** `EnforcementRunner`, `EnforcementRegistry`, `enforcement.yaml`,
-`BranchMutatingTool`, `IPRStatusReader/Writer`, `PhaseStateEngine` instantiation routes
+`branch_mutating` category configuration, `IPRStatusReader/Writer`, `PhaseStateEngine` instantiation routes
 
 **Out of Scope:** Phase contract checks (see 02), git operation detail
 

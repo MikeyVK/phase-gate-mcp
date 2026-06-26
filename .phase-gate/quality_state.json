@@ -1,4 +1,10 @@
 {
   "baseline_sha": "6994a15b078c34de35e496e8bd6f21b19aabfb16",
-  "failed_files": []
+  "failed_files": [
+    "tests/mcp_server/integration/test_pr_status_lockdown.py",
+    "tests/mcp_server/integration/test_smoke_all_types.py",
+    "tests/mcp_server/unit/config/test_label_config.py",
+    "tests/mcp_server/unit/managers/test_enforcement_runner.py",
+    "tests/mcp_server/unit/tools/test_label_tools.py"
+  ]
 }

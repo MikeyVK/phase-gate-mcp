@@ -33,7 +33,9 @@ _PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 
 @pytest.fixture(name="v2_manager")
 def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactManager:
-    """ArtifactManager configured for schema-validated scaffolding pipeline with production registry + templates.
+    """ArtifactManager configured for schema-validated scaffolding pipeline.
+
+    Uses production registry + templates.
 
     Setup:
     - Copies production .phase-gate/artifacts.yaml into hermetic tmp workspace
