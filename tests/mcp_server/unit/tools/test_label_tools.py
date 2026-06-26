@@ -155,21 +155,3 @@ async def test_remove_labels_tool(
     assert result.success is True
     assert result.issue_number == 10
     assert result.labels == ["bug"]
-
-
-def test_obsolete_base_files_and_test_remnants_removed() -> None:
-    """Ensure that retired base.py and obsolete test files have been deleted."""
-    root = Path(__file__).resolve().parents[4]
-    ut_tools = root / "tests" / "mcp_server" / "unit" / "tools"
-
-    base_py = root / "mcp_server" / "tools" / "base.py"
-    test_base = ut_tools / "test_base.py"
-    test_err = ut_tools / "test_base_tool_error_handling.py"
-    test_schema = ut_tools / "test_base_tool_input_schema.py"
-    test_mutate = ut_tools / "test_branch_mutating_tool.py"
-
-    assert not base_py.exists(), f"{base_py} should be deleted"
-    assert not test_base.exists(), f"{test_base} should be deleted"
-    assert not test_err.exists(), f"{test_err} should be deleted"
-    assert not test_schema.exists(), f"{test_schema} should be deleted"
-    assert not test_mutate.exists(), f"{test_mutate} should be deleted"

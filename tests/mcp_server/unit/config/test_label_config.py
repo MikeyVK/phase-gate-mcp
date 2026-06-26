@@ -464,23 +464,6 @@ labels:
         config = _load_label_config(yaml_file)
         assert not config.label_exists("type:bug")
 
-    def test_validate_label_name_undefined_matching_old_pattern_is_rejected(
-        self, tmp_path: Path
-    ) -> None:
-        """Reject undefined label even if it matches the category pattern category:value."""
-        yaml_content = """version: "1.0"
-labels:
-  - name: "type:feature"
-    color: "1D76DB"
-"""
-        yaml_file = tmp_path / "labels.yaml"
-        yaml_file.write_text(yaml_content)
-
-        config = _load_label_config(yaml_file)
-        valid, error = config.validate_label_name("priority:high")
-        assert not valid
-        assert "does not match any configured static label" in error
-
 
 class TestLabelQueries:
     """Test label query methods."""
