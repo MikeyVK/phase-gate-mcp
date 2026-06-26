@@ -1,119 +1,25 @@
 {
-  "branch": "refactor/411-resolve-decorator-pipeline-technical-debt",
-  "issue_number": 411,
-  "workflow_name": "refactor",
-  "current_phase": "ready",
-  "current_cycle": 7,
-  "last_cycle": 7,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "C_CACHE.2",
-      "forced": false,
-      "entered": "2026-06-25T19:41:39.074981+00:00"
-    },
-    {
-      "cycle_number": 3,
-      "name": "C_PRESENTER.3",
-      "forced": false,
-      "entered": "2026-06-25T19:49:57.692013+00:00"
-    },
-    {
-      "cycle_number": 4,
-      "name": "C_ENFORCEMENT.4",
-      "forced": false,
-      "entered": "2026-06-25T20:04:31.793243+00:00"
-    },
-    {
-      "cycle_number": 5,
-      "name": "C_SCAFFOLD.5",
-      "forced": false,
-      "entered": "2026-06-25T20:16:00.704102+00:00"
-    },
-    {
-      "cycle_number": 6,
-      "name": "C_LABELS_PHASES.6",
-      "forced": false,
-      "entered": "2026-06-25T20:29:31.826003+00:00"
-    },
-    {
-      "cycle_number": 7,
-      "name": "C_CLEANUP.7",
-      "forced": false,
-      "entered": "2026-06-25T20:37:04.319099+00:00"
-    }
-  ],
+  "branch": "epic/289-installable-wheel-standalone-mcp-server",
+  "issue_number": 289,
+  "workflow_name": "epic",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Design phase complete, returning to planning phase",
-  "issue_title": "refactor: Resolve decorator pipeline technical debt and deferred items",
-  "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
-  "created_at": "2026-06-25T05:20:36.829060+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-06-25T11:29:47.352952+00:00",
-      "human_approval": "User approved strategy and research document",
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "design",
-      "timestamp": "2026-06-25T11:31:06.142535+00:00",
-      "human_approval": "User approved forcing design phase",
-      "forced": true,
-      "skip_reason": "User requested design phase inclusion in refactor workflow"
-    },
-    {
-      "from_phase": "design",
-      "to_phase": "planning",
-      "timestamp": "2026-06-25T19:14:36.974981+00:00",
-      "human_approval": "User approved transition to planning phase",
-      "forced": true,
-      "skip_reason": "Design phase complete, returning to planning phase"
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-06-25T19:22:17.978315+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-06-26T05:30:27.552128+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-06-26T06:01:28.622661+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-06-26T06:33:07.785392+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "skip_reason": null,
+  "issue_title": "Epic: Installable Wheel / Standalone MCP Server (phase-gate-mcp)",
+  "parent_branch": "main",
+  "created_at": "2026-06-11T20:12:19.103453+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
