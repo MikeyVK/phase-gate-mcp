@@ -1,7 +1,7 @@
 {
-  "branch": "epic/289-installable-wheel-standalone-mcp-server",
-  "issue_number": 289,
-  "workflow_name": "epic",
+  "branch": "refactor/413-redesign-error-dtos-segregate-base-tool-output",
+  "issue_number": 413,
+  "workflow_name": "refactor",
   "current_phase": "research",
   "current_cycle": null,
   "last_cycle": null,
@@ -9,16 +9,16 @@
   "required_phases": [
     "research",
     "planning",
-    "design",
-    "coordination",
+    "implementation",
+    "validation",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
   "skip_reason": null,
-  "issue_title": "Epic: Installable Wheel / Standalone MCP Server (phase-gate-mcp)",
-  "parent_branch": "main",
-  "created_at": "2026-06-11T20:12:19.103453+00:00",
+  "issue_title": "refactor: Redesign Error DTOs and segregate BaseToolOutput concerns",
+  "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
+  "created_at": "2026-06-26T07:30:29.606774+00:00",
   "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
