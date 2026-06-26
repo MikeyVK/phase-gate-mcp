@@ -64,15 +64,15 @@ def _run_v2_tracking(manager: ArtifactManager, artifact_type: str, context: dict
 
 
 def _spy_v2_routed(manager: ArtifactManager) -> list[bool]:
-    """Spy whether _enrich_context_v2 is called (V2 pipeline active, not V1 fallback)."""
+    """Spy whether _enrich_schema_context is called (V2 pipeline active, not V1 fallback)."""
     v2_calls: list[bool] = []
-    original = manager._enrich_context_v2  # type: ignore[reportPrivateUsage]
+    original = manager._enrich_schema_context  # type: ignore[reportPrivateUsage]
 
     def spy(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
         v2_calls.append(True)
         return original(*args, **kwargs)
 
-    manager._enrich_context_v2 = spy  # type: ignore[method-assign]
+    manager._enrich_schema_context = spy  # type: ignore[method-assign]
     return v2_calls
 
 
@@ -102,7 +102,7 @@ class TestCommitV2Parity:
         assert ctx.message == self._MINIMAL["message"]
 
     def test_commit_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Commit V2 pipeline routes via _enrich_context_v2 (not V1 fallback)."""
+        """Commit V2 pipeline routes via _enrich_schema_context (not V1 fallback)."""
         calls = _spy_v2_routed(manager)
         _run_v2_tracking(manager, "commit", self._MINIMAL)
         assert len(calls) == 1, "V2 routing not active for commit — not in _v2_context_registry"
@@ -139,7 +139,7 @@ class TestPRV2Parity:
         assert ctx.changes == self._MINIMAL["changes"]
 
     def test_pr_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """PR V2 pipeline routes via _enrich_context_v2 (not V1 fallback)."""
+        """PR V2 pipeline routes via _enrich_schema_context (not V1 fallback)."""
         calls = _spy_v2_routed(manager)
         _run_v2_tracking(manager, "pr", self._MINIMAL)
         assert len(calls) == 1, "V2 routing not active for pr — not in _v2_context_registry"
@@ -188,7 +188,7 @@ class TestIssueV2Parity:
         assert ctx.problem == self._MINIMAL["problem"]
 
     def test_issue_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Issue V2 pipeline routes via _enrich_context_v2 (not V1 fallback)."""
+        """Issue V2 pipeline routes via _enrich_schema_context (not V1 fallback)."""
         calls = _spy_v2_routed(manager)
         _run_v2_tracking(manager, "issue", self._MINIMAL)
         assert len(calls) == 1, "V2 routing not active for issue — not in _v2_context_registry"

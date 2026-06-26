@@ -213,8 +213,6 @@ class AutoFixInput(BaseModel):
 class AutoFixTool(ICoreTool[AutoFixInput, AutoFixOutput]):
     """Tool to run auto fixes."""
 
-    presentation_category = "mutation"
-
     @property
     def name(self) -> str:
         return "auto_fix"

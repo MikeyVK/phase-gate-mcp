@@ -92,7 +92,7 @@ class TestAutoFixTool:
 
         # Read missing URI -> raises ValueError
         with pytest.raises(ValueError, match="No cached data found"):
-            await resource.read("pgmcp://cache/runs/missing")
+            await resource.read("pgmcp://cache/runs/" + "f" * 32)
 
     def test_quality_config_validation_rules(self) -> None:
         """Verify that quality_config validation raises error for misconfigured autofix gates."""

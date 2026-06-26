@@ -461,7 +461,7 @@ Configured in `.phase-gate/config/contracts.yaml` → `branch_local_artifacts`.
 **Enforcement runner** (`.phase-gate/config/enforcement.yaml`, runs before execution):
 1. **`check_phase_readiness`** — blocks unless `state.json` shows `current_phase == "ready"`.
    Produces a `suggestion` note with `transition_phase(to_phase="ready")`.
-2. **`check_pr_status`** (via `BranchMutatingTool`) — blocks if the branch already has
+2. **`check_pr_status`** (via dynamic `branch_mutating` category configuration) — blocks if the branch already has
    `PRStatus.OPEN` in cache. Produces a `suggestion` note to call `merge_pr` first.
 
 **Internal preflights** (inside `GitManager.prepare_submission`, run before any mutation):
@@ -508,7 +508,7 @@ Error result on failure:
 - **Artifact Neutralization:** Skipped if no branch-local artifacts have a net diff (clean branch).
 - **Draft PRs:** Cannot be merged until marked ready for review on GitHub.
 - **Auto-link Issues:** Use `Closes #123` in body to auto-link issues.
-- **`MergePRTool` excluded from BranchMutatingTool:** Intentional — it is the escape hatch
+- **`MergePRTool` excluded from `branch_mutating` category list:** Intentional — it is the escape hatch
   that clears `PRStatus.OPEN`. Including it would cause a deadlock.
 
 ---

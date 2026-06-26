@@ -59,8 +59,6 @@ class GitPullTool(ICoreTool[GitPullInput, GitPullOutput]):
     - Call with {"remote": "origin", "rebase": false}
     """
 
-    tool_category = "branch_mutating"
-
     @property
     def name(self) -> str:
         return "git_pull"

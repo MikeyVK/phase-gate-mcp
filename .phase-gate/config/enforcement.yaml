@@ -1,3 +1,24 @@
+categories:
+  branch_mutating:
+    - create_branch
+    - git_add_or_commit
+    - git_restore
+    - git_checkout
+    - git_push
+    - git_merge
+    - git_delete_branch
+    - git_stash
+    - git_pull
+    - transition_phase
+    - force_phase_transition
+    - submit_pr
+    - initialize_project
+    - save_planning_deliverables
+    - update_planning_deliverables
+    - safe_edit_file
+    - scaffold_artifact
+    - transition_cycle
+    - force_cycle_transition
 enforcement:
   - event_source: tool
     tool: create_branch

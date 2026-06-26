@@ -135,7 +135,20 @@ class TestGetContextSchema:
     """Tests for ArtifactManager.get_context_schema() — C1.D7."""
 
     def _make_manager(self) -> ArtifactManager:
-        return ArtifactManager(registry=Mock(spec=ArtifactRegistryConfig), server_root=Path("."))
+        mock_registry = Mock(spec=ArtifactRegistryConfig)
+
+        def get_mock_artifact(artifact_type: str) -> Mock:
+            mock_art = Mock()
+            if artifact_type == "research":
+                mock_art.context_class = "ResearchContext"
+            elif artifact_type == "generic_doc":
+                mock_art.context_class = "GenericDocContext"
+            else:
+                mock_art.context_class = None
+            return mock_art
+
+        mock_registry.get_artifact.side_effect = get_mock_artifact
+        return ArtifactManager(registry=mock_registry, server_root=Path("."))
 
     def test_returns_json_schema_dict_for_v2_type(self) -> None:
         """get_context_schema returns JSON Schema dict for a V2-registered artifact type."""
@@ -160,5 +173,21 @@ class TestGetContextSchema:
         schema = manager.get_context_schema("generic_doc")
         assert isinstance(schema, dict)
         assert schema.get("type") == "object"
-        assert "properties" in schema
+        schema = manager.get_context_schema("generic_doc")
         assert {"title", "purpose", "summary"}.issubset(schema["properties"])
+
+
+class TestArtifactManagerDynamicContext:
+    """Tests for dynamic context class resolution in ArtifactManager."""
+
+    def test_artifact_definition_has_context_class(self) -> None:
+        """Verify context_class field is present on ArtifactDefinition."""
+        from mcp_server.config.schemas.artifact_registry_config import ArtifactDefinition  # noqa: PLC0415
+
+        assert "context_class" in ArtifactDefinition.model_fields
+
+    def test_v2_context_registry_removed(self) -> None:
+        """Verify _v2_context_registry has been removed from artifact_manager.py."""
+        import mcp_server.managers.artifact_manager as am  # noqa: PLC0415
+
+        assert not hasattr(am, "_v2_context_registry")

@@ -136,6 +136,12 @@ from mcp_server.tools.scaffold_artifact import ScaffoldArtifactTool
 from mcp_server.tools.scaffold_schema_tool import ScaffoldSchemaTool
 from mcp_server.tools.template_validation_tool import TemplateValidationTool
 from mcp_server.tools.test_tools import RunTestsTool
+from mcp_server.presenters.text_presenter import (
+    TextPresenter,
+    validate_presentation_alignment,
+)
+from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory
+from mcp_server.server import MCPServer
 
 if TYPE_CHECKING:
     from mcp_server.server import MCPServer
@@ -229,25 +235,15 @@ class ServerBootstrapper:
         core_tools = self._build_tools(configs, managers)
         resources = self._build_resources(configs, managers)
 
-        from mcp_server.presenters.text_presenter import (  # noqa: PLC0415
-            TextPresenter,
-            validate_presentation_alignment,
-        )
-
         presenter = TextPresenter(config=configs.presentation_config)
         validate_presentation_alignment(presenter, core_tools)
 
         # Decorate core tools using ToolFactory composition root
-        from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory  # noqa: PLC0415
-
         factory = CoreToolFactory(
             enforcement_runner=managers.enforcement_runner,
             workspace_root=Path(settings.server.workspace_root),
         )
         tools = [factory.create_tool(t) for t in core_tools]
-
-        # Import dynamically to avoid circular dependencies
-        from mcp_server.server import MCPServer  # noqa: PLC0415
 
         return MCPServer(
             settings=settings,

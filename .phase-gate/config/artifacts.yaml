@@ -15,6 +15,7 @@ artifact_types:
   # ===== CODE ARTIFACTS =====
   - type: code
     type_id: dto
+    context_class: "DTOContext"
     name: "Data Transfer Object"
     description: "Data Transfer Object - immutable data container (Pydantic BaseModel)"
     output_type: "file"
@@ -34,6 +35,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: worker
+    context_class: "WorkerContext"
     name: "Worker"
     description: "Worker - executes single domain operation (async task processor)"
     output_type: "file"
@@ -51,6 +53,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: adapter
+    context_class: "AdapterContext"
     name: "Adapter"
     description: "Adapter - integrates external systems (implements Interface)"
     output_type: "file"
@@ -65,6 +68,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: tool
+    context_class: "ToolContext"
     name: "MCP Tool"
     description: "MCP Tool - exposes functionality via MCP protocol"
     output_type: "file"
@@ -82,6 +86,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: resource
+    context_class: "ResourceContext"
     name: "MCP Resource"
     description: "MCP Resource - provides dynamic content"
     output_type: "file"
@@ -96,6 +101,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: schema
+    context_class: "SchemaContext"
     name: "Pydantic Schema"
     description: "Pydantic Schema - validation models"
     output_type: "file"
@@ -113,6 +119,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: interface
+    context_class: "InterfaceContext"
     name: "Interface"
     description: "Interface - abstract protocol definition"
     output_type: "file"
@@ -127,6 +134,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: service
+    context_class: "ServiceContext"
     name: "Service"
     description: "Service - orchestration or business logic"
     output_type: "file"
@@ -148,6 +156,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: generic
+    context_class: "GenericContext"
     name: "Generic Component"
     description: "Generic component from custom template"
     output_type: "file"
@@ -167,6 +176,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: unit_test
+    context_class: "UnitTestContext"
     name: "Unit Test"
     description: "Unit test file with proper structure and quality gates"
     output_type: "file"
@@ -187,6 +197,7 @@ artifact_types:
       valid_transitions: []
   - type: code
     type_id: integration_test
+    context_class: "IntegrationTestContext"
     name: "Integration Test"
     description: "Integration/E2E test file with @module structure"
     output_type: "file"
@@ -207,6 +218,7 @@ artifact_types:
   # ===== DOCUMENT ARTIFACTS =====
   - type: doc
     type_id: research
+    context_class: "ResearchContext"
     name: "Research Document"
     description: "Research phase findings and questions"
     output_type: "file"
@@ -225,6 +237,7 @@ artifact_types:
           to: [DEFINITIVE]
   - type: doc
     type_id: planning
+    context_class: "PlanningContext"
     name: "Planning Document"
     description: "Planning phase TDD cycle breakdown"
     output_type: "file"
@@ -243,6 +256,7 @@ artifact_types:
           to: [DEFINITIVE]
   - type: doc
     type_id: design
+    context_class: "DesignContext"
     name: "Design Document"
     description: "Design phase schemas and specifications"
     output_type: "file"
@@ -261,6 +275,7 @@ artifact_types:
           to: [DEFINITIVE]
   - type: doc
     type_id: architecture
+    context_class: "ArchitectureContext"
     name: "Architecture Document"
     description: "System architecture documentation"
     output_type: "file"
@@ -296,6 +311,7 @@ artifact_types:
   #     valid_transitions: []
   - type: doc
     type_id: reference
+    context_class: "ReferenceContext"
     name: "Reference Document"
     description: "Reference documentation"
     output_type: "file"
@@ -314,6 +330,7 @@ artifact_types:
           to: [DEFINITIVE]
   - type: doc
     type_id: generic_doc
+    context_class: "GenericDocContext"
     name: "Generic Document"
     description: "Generic flexible document with custom sections for migration guides and reference docs"
     output_type: "file"
@@ -332,6 +349,7 @@ artifact_types:
           to: [DEFINITIVE]
   - type: doc
     type_id: validation_report
+    context_class: "ValidationReportContext"
     name: "Validation Report"
     description: "Validation report documenting test results and quality gate status"
     output_type: "file"
@@ -351,6 +369,7 @@ artifact_types:
   # ===== TRACKING ARTIFACTS =====
   - type: tracking
     type_id: commit
+    context_class: "CommitContext"
     name: "Git Commit Message"
     description: "Git commit message for conventional commits format"
     output_type: "ephemeral"
@@ -365,6 +384,7 @@ artifact_types:
       valid_transitions: []
   - type: tracking
     type_id: pr
+    context_class: "PRContext"
     name: "Pull Request Description"
     description: "Pull request description with changes, testing, checklist sections"
     output_type: "ephemeral"
@@ -379,6 +399,7 @@ artifact_types:
       valid_transitions: []
   - type: tracking
     type_id: issue
+    context_class: "IssueContext"
     name: "GitHub Issue Description"
     description: "GitHub issue description with problem, expected, actual sections"
     output_type: "ephemeral"

@@ -105,7 +105,7 @@ read_resource("pgmcp://rules/coding_standards")
 The server infrastructure supports tools that return text, images, or embedded resources.
 
 ### Implemented Infrastructure
-- **BaseTool:** Abstract base class for all tools.
+- **ICoreTool:** Base interface protocol for all tools.
 - **ToolResult:** structured result object supporting text, image, and resource content.
 - **Error Handling:** Graceful error reporting to the agent.
 

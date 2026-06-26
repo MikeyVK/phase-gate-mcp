@@ -143,6 +143,7 @@ def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
 
     mock_enforcement = MagicMock(spec=EnforcementConfig)
     mock_enforcement.enforcement = []
+    mock_enforcement.categories = {}
     mock_loader.load_enforcement_config.return_value = mock_enforcement
 
     mock_contracts = MagicMock(spec=ContractsConfig)
@@ -174,7 +175,7 @@ class TestServerBootstrapperConfigsAndManagers:
             patch("mcp_server.bootstrap.TemplateRegistry"),
             patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
             patch("mcp_server.bootstrap.ConfigValidator"),
-            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
         ):
             _setup_mock_config_loader(mock_config_loader_cls)
 
@@ -200,7 +201,7 @@ class TestServerBootstrapperConfigsAndManagers:
             patch("mcp_server.bootstrap.TemplateRegistry") as mock_template_registry_cls,
             patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
             patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls,
-            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
         ):
             _setup_mock_config_loader(mock_config_loader_cls)
 

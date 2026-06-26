@@ -224,7 +224,6 @@ class SubmitPRTool(ICoreTool[SubmitPRInput, PROutput]):
     Blocked when PRStatus.OPEN already exists on this branch (check_pr_status rule).
     """
 
-    tool_category = "branch_mutating"
     enforcement_event: str | None = "submit_pr"
 
     @property

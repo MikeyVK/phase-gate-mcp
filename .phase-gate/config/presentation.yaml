@@ -5,6 +5,11 @@ global:
     warning: "⚠️"
     query: "📋"
     bootstrap: "🚀"
+    mutation: "✅"
+    planning: "📋"
+    testing: "🧪"
+    quality: "🔍"
+    scaffold: "🏗️"
   default_failure_template: "Failed: {error_message}"
   formatting:
     none_value: "-"
@@ -95,6 +100,7 @@ global:
         scaffold_validation_failed: "Validation failed: {error_details}"
 tools:
   auto_fix:
+    category: mutation
     template_success: |
       **Auto-Fix Run Completed Successfully**
       - Gates executed: {gates_executed_count} ({gates_executed})
@@ -106,6 +112,7 @@ tools:
       - Gates executed: {gates_executed_count} ({gates_executed})
       - Files modified: {modified_files_count}
   health_check:
+    category: query
     template_success: |
       **Server Health Status**
       - Status: {status}
@@ -114,20 +121,25 @@ tools:
       - Platform: {platform}
       - Uptime: {uptime_seconds} seconds
   restart_server:
+    category: mutation
     template_success: "Server restart initiated successfully (Reason: {reason})."
     next_instructions:
       - "server_restart"
   transition_cycle:
+    category: mutation
     template_success: "Transitioned to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     next_instructions:
       - "context_reset"
   force_cycle_transition:
+    category: mutation
     template_success: "Transitioned to Cycle {to_cycle}/{total_cycles} ({cycle_name}) on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     next_instructions:
       - "context_reset"
   search_documentation:
+    category: query
     template_success: "Found {results_count} documentation matches for query '{query}' in scope '{scope}'."
   get_work_context:
+    category: query
     template_success: |
       Branch: `{current_branch}` | Workflow: {workflow_name} | Issue: #{issue_number}
       Phase: {phase} (confidence={phase_confidence})
@@ -136,29 +148,38 @@ tools:
     next_instructions:
       - "todo_discipline"
   initialize_project:
+    category: bootstrap
     template_success: "Initialized project for issue #{issue_number} on branch '{branch}' (Initial Phase: '{initial_phase}')."
     next_instructions:
       - "context_reset"
   get_project_plan:
+    category: query
     template_success: "**Project Plan for Issue #{issue_number}** (Workflow: {workflow_name})."
   save_planning_deliverables:
+    category: planning
     template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
   update_planning_deliverables:
+    category: planning
     template_success: "Planning deliverables for issue #{issue_number} ({total_cycles} cycles, {total_deliverables} deliverables)."
   git_list_branches:
+    category: query
     template_success: "Found {branches_count} branches. Current branch is '{current_branch}'."
   git_diff_stat:
+    category: query
     template_success: |
       **Git Diff Summary** (Comparing {source_branch} -> {target_branch})
       - Files changed: {files_changed}
       - Insertions: +{insertions}
       - Deletions: -{deletions}
   get_parent_branch:
+    category: query
     template_success: "Branch '{branch}' has parent branch: '{parent_branch}'."
   check_merge:
+    category: query
     template_success: "Merge verification confirmed: SHA {merge_sha} is reachable from HEAD."
     template_failure: "Merge verification failed: SHA {merge_sha} is NOT reachable from HEAD."
   git_status:
+    category: query
     template_success: |
       **Git Status Summary**
       - Branch: {branch}
@@ -166,95 +187,130 @@ tools:
       - Modified: {modified_count} files
       - Untracked: {untracked_count} files
   create_branch:
+    category: mutation
     template_success: "Created branch '{branch_name}' of type '{branch_type}' from '{base_branch}'."
     next_instructions:
       - "context_reset"
   git_add_or_commit:
+    category: mutation
     template_success: "Committed changes to '{branch}' with hash {commit_hash} (Phase: {workflow_phase}, Type: {commit_type})."
   git_restore:
+    category: mutation
     template_success: "Restored {files_count} file(s) from {source}."
   git_checkout:
+    category: mutation
     template_success: "Switched branch '{previous_branch}' -> '{branch}' (Current Phase: '{current_phase}')."
     next_instructions:
       - "context_reset"
   git_push:
+    category: mutation
     template_success: "Pushed branch '{branch}' to origin (Upstream branch created: {new_upstream_created})."
   git_merge:
+    category: mutation
     template_success: "Merged branch '{source_branch}' into '{target_branch}' successfully."
   git_delete_branch:
+    category: mutation
     template_success: "Deleted branch '{branch}' (Local: {local_status}, Remote: {remote_status})."
   git_stash:
+    category: mutation
     template_success: "Stash action '{action}' executed successfully."
   git_fetch:
+    category: mutation
     template_success: "Fetched updates from remote '{remote}'."
   git_pull:
+    category: mutation
     template_success: "Pulled updates from remote '{remote}'."
     next_instructions:
       - "context_reset"
   create_issue:
+    category: mutation
     template_success: &issue_success_template "Issue #{number}: {title}.\nURL: {html_url}"
   update_issue:
+    category: mutation
     template_success: *issue_success_template
   get_issue:
+    category: query
     template_success: |
       **Issue #{number}: {title}**
       - State: {state}
       - Milestone: {milestone_title}
       - Assignees: {assignees_summary}
   close_issue:
+    category: mutation
     template_success: "Closed issue #{issue_number} successfully."
   list_issues:
+    category: query
     template_success: "Found {issues_count} issues matching criteria."
   get_pr:
+    category: query
     template_success: &pr_detail_template |
       PR #{number}: {title}
       URL: {html_url}
       - Target: {base_ref}
       - Source: {head_ref}
   submit_pr:
+    category: mutation
     template_success: *pr_detail_template
     next_instructions:
       - "branch_lockdown"
   merge_pr:
+    category: mutation
     template_success: "Merged PR #{pr_number} using strategy '{merge_method}' (SHA: {merge_sha})."
   list_prs:
+    category: query
     template_success: "Found {prs_count} pull requests matching criteria."
   list_labels:
+    category: query
     template_success: "Found {total_labels} labels."
   create_label:
+    category: mutation
     template_success: "Created label '{label_name}' (Color: #{color})."
   delete_label:
+    category: mutation
     template_success: "Deleted label '{label_name}' successfully."
   add_labels:
+    category: mutation
     template_success: "Added labels {formatted_labels} to issue #{issue_number}."
   remove_labels:
+    category: mutation
     template_success: "Removed labels {formatted_labels} from issue #{issue_number}."
   list_milestones:
+    category: query
     template_success: "Found {total_milestones} milestones."
   create_milestone:
+    category: mutation
     template_success: &milestone_success_template "Milestone '{title}' (Number: #{number})."
   close_milestone:
+    category: mutation
     template_success: *milestone_success_template
   transition_phase:
+    category: mutation
     template_success: "Transitioned phase to '{to_phase}' on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     next_instructions:
       - "context_reset"
   force_phase_transition:
+    category: mutation
     template_success: "Transitioned phase to '{to_phase}' on branch '{branch}' (Passed gates: {passing_gates_count}, Skipped gates: {skipped_gates_count})."
     next_instructions:
       - "context_reset"
   scaffold_artifact:
+    category: scaffold
     template_success: "Scaffolded artifact '{name}' of type '{artifact_type}' successfully (Created: {formatted_files_created})."
     template_failure: "Scaffolding failed: {error_message}.\n{schema_info}"
   scaffold_schema:
+    category: query
     template_success: "Retrieved schema for artifact type '{artifact_type}' successfully."
   run_quality_gates:
+    category: quality
     template_success: "Quality gates passed successfully (file count: {file_count}, overall pass: {overall_pass})."
     template_failure: "Quality gates failed (file count: {file_count}, overall pass: {overall_pass})."
   run_tests:
+    category: testing
     template_success: "Tests completed: {summary_line}."
   safe_edit_file:
+    category: mutation
     template_success: "File '{path}' edited successfully (passed validation: {passed}, written: {written})."
     template_failure: "File edit rejected: {error_message}"
   validate_template:
+    category: query
     template_success: "Template validation passed: {passed}."

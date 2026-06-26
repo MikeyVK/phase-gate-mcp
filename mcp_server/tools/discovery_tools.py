@@ -50,7 +50,6 @@ class SearchDocumentationTool(ICoreTool[SearchDocumentationInput, SearchDocument
     """Tool to search documentation files."""
 
     output_model: ClassVar[type[BaseModel]] = SearchDocumentationOutput
-    presentation_category = "query"
 
     @property
     def name(self) -> str:
@@ -141,7 +140,6 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
     """Tool to aggregate work context from Git and GitHub."""
 
     output_model: ClassVar[type[BaseModel]] = GetWorkContextOutput
-    presentation_category = "query"
 
     @property
     def name(self) -> str:

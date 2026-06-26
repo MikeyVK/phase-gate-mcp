@@ -201,8 +201,6 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
     - Example: [{"start_line": 1, "end_line": 1, "new_content": "..."}, ...]
     """
 
-    tool_category: str | None = "branch_mutating"
-
     @property
     def name(self) -> str:
         return "safe_edit_file"

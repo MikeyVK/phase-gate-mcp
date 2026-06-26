@@ -32,25 +32,22 @@ class CachedResponseResource(BaseResource):
         self._cache = cache
 
     def matches(self, uri: str) -> bool:
-        """Check if the URI matches the cached runs pattern."""
-        return bool(re.match(r"^pgmcp://cache/runs/[\w-]+$", uri))
+        """Check if the URI matches the cached runs pattern with a valid hex UUID."""
+        if not uri.startswith("pgmcp://cache/runs/"):
+            return False
+        run_id = uri.split("/")[-1]
+        return bool(re.match(r"^[a-f0-9]{32}$", run_id))
 
     async def read(self, uri: str) -> str:
         """Read the resource content from the cache and return compact JSON."""
+        if not uri.startswith("pgmcp://cache/runs/"):
+            raise ValueError(f"Invalid resource URI: {uri}")
+
         run_id = uri.split("/")[-1]
+        if not re.match(r"^[a-f0-9]{32}$", run_id):
+            raise ValueError(f"Invalid run_id format: {run_id}")
 
         dto = self._cache.get(run_id, BaseModel)
-        if not dto:
-            # Try to resolve hyphenation mismatch (hex vs hyphenated UUID)
-            if "-" in run_id:
-                dto = self._cache.get(run_id.replace("-", ""), BaseModel)
-            else:
-                match = re.match(r"^([a-f0-9]{32})$", run_id)
-                if match:
-                    h = match.group(1)
-                    hyphenated = f"{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:]}"
-                    dto = self._cache.get(hyphenated, BaseModel)
-
         if not dto:
             raise ValueError("No cached data found")
 

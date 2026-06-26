@@ -44,7 +44,6 @@ class ScaffoldSchemaTool(ICoreTool[ScaffoldSchemaInput, ScaffoldSchemaOutput]):
     """
 
     output_model: ClassVar[type[BaseModel]] = ScaffoldSchemaOutput
-    presentation_category = "query"
 
     def __init__(self, manager: ArtifactManager | None = None) -> None:
         """Initialize tool with an explicitly injected artifact manager."""

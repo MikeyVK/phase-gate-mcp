@@ -96,18 +96,11 @@ class LabelConfig(BaseModel):
         examples_str = (
             f" Dynamic patterns: {', '.join(pattern_examples)}." if pattern_examples else ""
         )
-        pattern_str = r"^(type|priority|status|phase|scope|component|effort|parent):[a-z0-9-]+$"
-        if not re.match(pattern_str, name):
-            return (
-                False,
-                f"Label '{name}' does not match required pattern. "
-                "Expected format: 'category:value' where category is one of "
-                "[type, priority, status, phase, scope, component, effort, parent] "
-                f"and value is lowercase alphanumeric with hyphens.{examples_str} "
-                "Freeform labels must be in freeform_exceptions list.",
-            )
-
-        return (True, "")
+        return (
+            False,
+            f"Label '{name}' does not match any configured static label, "
+            f"dynamic pattern,{examples_str} or freeform exception.",
+        )
 
     def label_exists(self, name: str) -> bool:
         return name in self._labels_by_name

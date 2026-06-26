@@ -82,8 +82,6 @@ class InitializeProjectTool(ICoreTool[InitializeProjectInput, InitializeProjectO
     """
 
     output_model: ClassVar[type[BaseModel]] = InitializeProjectOutput
-    presentation_category = "bootstrap"
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:
@@ -317,7 +315,6 @@ class GetProjectPlanTool(ICoreTool[GetProjectPlanInput, ProjectPlanOutput]):
     """Tool for retrieving project plan."""
 
     output_model: ClassVar[type[BaseModel]] = ProjectPlanOutput
-    presentation_category = "query"
 
     @property
     def name(self) -> str:
@@ -434,8 +431,6 @@ class SavePlanningDeliverablesTool(
     """
 
     output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
-    presentation_category = "planning"
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:
@@ -512,16 +507,19 @@ class SavePlanningDeliverablesTool(
                 )
 
             phase_deliverables_count = 0
-            phase_keys = [
-                "research",
-                "planning",
-                "design",
-                "implementation",
-                "validation",
-                "documentation",
-                "ready",
-                "coordination",
-            ]
+            if self._manager.workphases_config is not None:
+                phase_keys = list(self._manager.workphases_config.phases.keys())
+            else:
+                phase_keys = [
+                    "research",
+                    "planning",
+                    "design",
+                    "implementation",
+                    "validation",
+                    "documentation",
+                    "ready",
+                    "coordination",
+                ]
             for pk in phase_keys:
                 if pk in pd:
                     phase_deliverables_count += len(pd[pk].get("deliverables", []))
@@ -575,8 +573,6 @@ class UpdatePlanningDeliverablesTool(
     """
 
     output_model: ClassVar[type[BaseModel]] = PlanningDeliverablesOutput
-    presentation_category = "planning"
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:
@@ -654,16 +650,19 @@ class UpdatePlanningDeliverablesTool(
                 )
 
             phase_deliverables_count = 0
-            phase_keys = [
-                "research",
-                "planning",
-                "design",
-                "implementation",
-                "validation",
-                "documentation",
-                "ready",
-                "coordination",
-            ]
+            if self._manager.workphases_config is not None:
+                phase_keys = list(self._manager.workphases_config.phases.keys())
+            else:
+                phase_keys = [
+                    "research",
+                    "planning",
+                    "design",
+                    "implementation",
+                    "validation",
+                    "documentation",
+                    "ready",
+                    "coordination",
+                ]
             for pk in phase_keys:
                 if pk in pd:
                     phase_deliverables_count += len(pd[pk].get("deliverables", []))

@@ -7,7 +7,7 @@
 **Last Updated:** 2026-06-04
 
 **Source:** [mcp_server/tools/scaffold_artifact.py][source]
-**Tests:** [tests/mcp_server/integration/test_v2_smoke_all_types.py][tests]
+**Tests:** [tests/mcp_server/integration/test_smoke_all_types.py][tests]
 
 ---
 
@@ -193,7 +193,7 @@ All six steps are required. Steps 1–4 require Python source code changes.
 
 <!-- Link definitions -->
 [source]: ../../mcp_server/tools/scaffold_artifact.py
-[tests]: ../../tests/mcp_server/integration/test_v2_smoke_all_types.py
+[tests]: ../../tests/mcp_server/integration/test_smoke_all_types.py
 [related-1]: ../../docs/architecture/TEMPLATE_LIBRARY.md
 [related-2]: TEMPLATE_LIBRARY_QUICK_REFERENCE.md
 [related-3]: template_metadata_format.md

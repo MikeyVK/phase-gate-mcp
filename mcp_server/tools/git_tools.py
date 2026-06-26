@@ -111,8 +111,6 @@ class CreateBranchInput(BaseModel):
 class CreateBranchTool(ICoreTool[CreateBranchInput, CreateBranchOutput]):
     """Tool to create a git branch from specified base."""
 
-    tool_category = "branch_mutating"
-
     @property
     def name(self) -> str:
         return "create_branch"
@@ -309,8 +307,6 @@ class GitCommitInput(BaseModel):
 class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
     """Tool to commit changes with workflow-scoped commit messages."""
 
-    tool_category = "branch_mutating"
-
     @property
     def name(self) -> str:
         return "git_add_or_commit"
@@ -486,8 +482,6 @@ class GitRestoreInput(BaseModel):
 class GitRestoreTool(ICoreTool[GitRestoreInput, GitRestoreOutput]):
     """Tool to restore files to a ref (discard local changes)."""
 
-    tool_category = "branch_mutating"
-
     @property
     def name(self) -> str:
         return "git_restore"
@@ -649,8 +643,6 @@ class GitPushInput(BaseModel):
 class GitPushTool(ICoreTool[GitPushInput, GitPushOutput]):
     """Tool to push current branch to origin."""
 
-    tool_category = "branch_mutating"
-
     @property
     def name(self) -> str:
         return "git_push"
@@ -718,8 +710,6 @@ class GitMergeInput(BaseModel):
 
 class GitMergeTool(ICoreTool[GitMergeInput, GitMergeOutput]):
     """Tool to merge a branch into current branch."""
-
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:
@@ -790,8 +780,6 @@ class GitDeleteBranchInput(BaseModel):
 
 class GitDeleteBranchTool(ICoreTool[GitDeleteBranchInput, GitDeleteBranchOutput]):
     """Tool to delete a branch."""
-
-    tool_category = "branch_mutating"
 
     @property
     def name(self) -> str:
