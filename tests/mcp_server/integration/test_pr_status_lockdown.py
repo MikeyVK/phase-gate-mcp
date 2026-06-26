@@ -12,7 +12,6 @@ Verifies that:
 
 @layer: Tests (Integration)
 @dependencies: [pytest, unittest.mock,
-    mcp_server.tools.base,
     mcp_server.tools.git_tools,
     mcp_server.tools.git_pull_tool,
     mcp_server.tools.safe_edit_tool,

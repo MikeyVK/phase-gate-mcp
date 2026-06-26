@@ -464,7 +464,9 @@ labels:
         config = _load_label_config(yaml_file)
         assert not config.label_exists("type:bug")
 
-    def test_validate_label_name_undefined_matching_old_pattern_is_rejected(self, tmp_path: Path) -> None:
+    def test_validate_label_name_undefined_matching_old_pattern_is_rejected(
+        self, tmp_path: Path
+    ) -> None:
         """Reject undefined label even if it matches the category pattern category:value."""
         yaml_content = """version: "1.0"
 labels:
@@ -478,6 +480,7 @@ labels:
         valid, error = config.validate_label_name("priority:high")
         assert not valid
         assert "does not match any configured static label" in error
+
 
 class TestLabelQueries:
     """Test label query methods."""

@@ -98,8 +98,8 @@ class LabelConfig(BaseModel):
         )
         return (
             False,
-            f"Label '{name}' does not match any configured static label, dynamic pattern,{examples_str} "
-            "or freeform exception.",
+            f"Label '{name}' does not match any configured static label, "
+            f"dynamic pattern,{examples_str} or freeform exception.",
         )
 
     def label_exists(self, name: str) -> bool:

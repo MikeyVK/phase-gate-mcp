@@ -159,15 +159,14 @@ async def test_remove_labels_tool(
 
 def test_obsolete_base_files_and_test_remnants_removed() -> None:
     """Ensure that retired base.py and obsolete test files have been deleted."""
-    from pathlib import Path
-
     root = Path(__file__).resolve().parents[4]
+    ut_tools = root / "tests" / "mcp_server" / "unit" / "tools"
 
     base_py = root / "mcp_server" / "tools" / "base.py"
-    test_base = root / "tests" / "mcp_server" / "unit" / "tools" / "test_base.py"
-    test_err = root / "tests" / "mcp_server" / "unit" / "tools" / "test_base_tool_error_handling.py"
-    test_schema = root / "tests" / "mcp_server" / "unit" / "tools" / "test_base_tool_input_schema.py"
-    test_mutate = root / "tests" / "mcp_server" / "unit" / "tools" / "test_branch_mutating_tool.py"
+    test_base = ut_tools / "test_base.py"
+    test_err = ut_tools / "test_base_tool_error_handling.py"
+    test_schema = ut_tools / "test_base_tool_input_schema.py"
+    test_mutate = ut_tools / "test_branch_mutating_tool.py"
 
     assert not base_py.exists(), f"{base_py} should be deleted"
     assert not test_base.exists(), f"{test_base} should be deleted"

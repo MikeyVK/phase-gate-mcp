@@ -2,7 +2,7 @@
 """Unit tests for SubmitPRTool and SubmitPRInput scaffold.
 
 @layer: Tests (Unit)
-@dependencies: [pytest, mcp_server.tools.pr_tools, mcp_server.tools.base]
+@dependencies: [pytest, mcp_server.tools.pr_tools]
 """
 
 from __future__ import annotations
