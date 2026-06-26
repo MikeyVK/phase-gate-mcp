@@ -1,14 +1,13 @@
 # tests/mcp_server/integration/test_pr_status_lockdown.py
 # template=unit_test version=cycle6-red created=2026-04-23T00:00Z updated=
 """
-Integration tests for PR-status lockdown via BranchMutatingTool (issue #283 C6).
+Integration tests for PR-status lockdown via dynamic category enforcement (issue #283 C6).
 
 Verifies that:
-  1. Every branch-mutating tool is a subclass of BranchMutatingTool.
-  2. Every branch-mutating tool carries tool_category == "branch_mutating".
+  1. Every branch-mutating tool is configured under categories.branch_mutating in enforcement.yaml.
   3. EnforcementRunner blocks all 17 tools when PRStatus.OPEN.
   4. EnforcementRunner allows all 17 tools when PRStatus.ABSENT.
-  5. MergePRTool is explicitly NOT a BranchMutatingTool (escape hatch).
+  5. MergePRTool is explicitly NOT configured under branch_mutating (escape hatch).
 
 @layer: Tests (Integration)
 @dependencies: [pytest, unittest.mock,
@@ -24,9 +23,8 @@ Verifies that:
     mcp_server.managers.enforcement_runner,
     mcp_server.core.interfaces]
 @responsibilities:
-    - Verify BranchMutatingTool inheritance for all 17 branch-mutating tools
-    - Verify tool_category attribute on all 17 tools
-    - Verify EnforcementRunner dispatches check_pr_status for all 17 via category
+    - Verify config category mapping for all 17 branch-mutating tools
+    - Verify EnforcementRunner dispatches check_pr_status for all 17 via dynamic category
     - Verify MergePRTool escape hatch is preserved
 """
 

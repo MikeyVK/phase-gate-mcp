@@ -264,7 +264,6 @@ mcp_server/
 │   └── branch_parent_reader.py
 │
 ├── tools/                         # MCP tool implementations (22 files)
-│   ├── base.py                    # BaseTool + BranchMutatingTool ABCs
 │   ├── tool_result.py             # ToolResult value object
 │   ├── git_tools.py               # 11 Git tools
 │   ├── git_analysis_tools.py      # ListBranches, Diff

@@ -7,7 +7,7 @@
 **Last Updated:** 2026-06-05
 
 **Source:** [mcp_server/scaffolding/templates/][source]
-**Tests:** [tests/mcp_server/integration/test_v2_smoke_all_types.py][tests]
+**Tests:** [tests/mcp_server/integration/test_smoke_all_types.py][tests]
 
 ---
 
@@ -119,7 +119,7 @@ Templates root: `mcp_server/scaffolding/templates/`
 
 <!-- Link definitions -->
 [source]: ../../mcp_server/scaffolding/templates/
-[tests]: ../../tests/mcp_server/integration/test_v2_smoke_all_types.py
+[tests]: ../../tests/mcp_server/integration/test_smoke_all_types.py
 [related-1]: README.md
 [related-2]: TEMPLATE_LIBRARY_USAGE.md
 [related-3]: ../../docs/architecture/TEMPLATE_LIBRARY.md
