@@ -91,7 +91,7 @@ To resolve the identified violations while preserving system stability, we defin
   1. `BaseErrorOutput` and all internal DTOs (`ValidationErrorOutput`, `EnforcementErrorOutput`, `ConfigErrorOutput`) must **not** contain any form of `error_message`, `message`, `err_message`, or `msg` fields.
   2. All internal exceptions must only pass structured keys and parameters (such as `error_code`, `file_path`, `params`) to their corresponding DTOs.
   3. The `TextPresenter` is solely responsible for looking up and formatting user-facing messages from `presentation.yaml` using these parameters.
-  4. **Traceback isolation:** The `traceback: str | None` field is removed from `BaseErrorOutput` and lives **exclusively** on `ExecutionErrorOutput`.
+  4. **Traceback and message isolation:** The `traceback: str | None` and `error_message: str | None` fields are removed from `BaseErrorOutput` and live **exclusively** on `ExecutionErrorOutput`.
   5. **No tracebacks in templates:** Presentation templates in `presentation.yaml` must *never* contain `{traceback}` placeholders. The presenter only outputs a safe description and the cache resource URI (`pgmcp://cache/runs/{run_id}`) where the full traceback can be retrieved.
   6. **Boot-time validation:** `validate_presentation_alignment` will be verifiably executed as part of the centralized boot validation sequence (`BootstrapValidator`). It will use reflection to scan all subclasses of `BaseErrorOutput` and verify they have a matching template key under the `errors` block in `presentation.yaml`.
 
@@ -101,7 +101,7 @@ To resolve the identified violations while preserving system stability, we defin
   1. Core tool classes must **only** generate and return their specific success DTOs (e.g., `CycleTransitionOutput`). They must **never** return error DTOs.
   2. For any execution, validation, pre-flight, or configuration failure, the core tool must raise a structured exception (e.g., `ValidationError`, `PreflightError`, `ConfigError`).
   3. The decorator pipeline wraps the core tool and is exclusively responsible for catching these exceptions and mapping them to `BaseErrorOutput` subclasses.
-  4. The generic `ICoreTool` interface defines `execute` as returning `TOutput`. Under this kader, the core tool's type signature remains `TOutput` (only success DTO). Only the outer decorated `ITool` interface returns `Union[BaseToolOutput, BaseErrorOutput]`.
+  4. The generic `ICoreTool` interface defines `execute` as returning `TOutput`. Under this architecture, the core tool's type signature remains `TOutput` (only success DTO). Only the outer decorated `ITool` interface returns `Union[BaseToolOutput, BaseErrorOutput]`.
 
 ### Diagram 1: DTO & Exception Class Hierarchy
 ```mermaid
@@ -121,6 +121,7 @@ classDiagram
     class ConfigErrorOutput
     class ExecutionErrorOutput {
         +traceback: str | None
+        +error_message: str | None
     }
 
     BaseToolOutput <|-- ToolOutputDTOs
@@ -225,7 +226,7 @@ To establish a clean, non-compromised target state and clear the accumulated tec
 ### Boundary Strategies
 
 1. **DTO Schemas:**
-   - *Clean Break:* Remove `error_message` and `success` from `BaseToolOutput` and replace them with `passed: bool = True`. Remove `success` and `error_message` from all internal DTOs (`ValidationErrorOutput`, `EnforcementErrorOutput`, `ConfigErrorOutput`, `CacheErrorOutput`) in a single step. Isolate `traceback` exclusively to `ExecutionErrorOutput`. Delete `CacheErrorOutput`.
+   - *Clean Break:* Remove `error_message` and `success` from `BaseToolOutput` and replace them with `passed: bool = True`. Remove `success` and `error_message` from all internal DTOs (`ValidationErrorOutput`, `EnforcementErrorOutput`, `ConfigErrorOutput`, `CacheErrorOutput`) in a single step. Isolate `traceback` and `error_message` exclusively to `ExecutionErrorOutput`. Delete `CacheErrorOutput`.
    - *Rationale:* Keeping deprecated attributes would invite future coupling and violate the clean Separation of Concerns contract.
 
 2. **Core Tools Execution Returns:**
@@ -263,7 +264,7 @@ This refactoring affects several layers of the application. The table below repr
 | Layer | Component / File | Current Status | Expected Status |
 | :--- | :--- | :--- | :--- |
 | **Schemas** | `mcp_server/schemas/tool_outputs.py` | Defines `success` and `error_message` on `BaseToolOutput` (inherited by all success DTOs). | `BaseToolOutput` has `passed: bool = True`. Legacy fields are completely removed. |
-| **Schemas** | `mcp_server/schemas/error_outputs.py` | Defines `success`, `error_message`, and `traceback` on `ToolErrorOutput` (inherited by all error DTOs). Includes obsolete `CacheErrorOutput`. | `BaseErrorOutput` has no `success`, `error_message`, or `traceback` fields. `CacheErrorOutput` is deleted. `traceback` is exclusive to `ExecutionErrorOutput`. |
+| **Schemas** | `mcp_server/schemas/error_outputs.py` | Defines `success`, `error_message`, and `traceback` on `ToolErrorOutput` (inherited by all error DTOs). Includes obsolete `CacheErrorOutput`. | `BaseErrorOutput` has no `success`, `error_message`, or `traceback` fields. `CacheErrorOutput` is deleted. `traceback` and `error_message` are exclusive to `ExecutionErrorOutput`. |
 | **Server** | `mcp_server/server.py` | Uses `getattr(result_dto, "success", True)` for status checking and manual error response building. | Uses `isinstance(result_dto, BaseErrorOutput)` for checking execution errors and setting protocol `isError` flag. |
 | **Presentation** | `mcp_server/presenters/text_presenter.py` | Relies on `success` field for rendering templates. Fallback formats `error_message` strings. | Relies on `data.passed` to select success/failure templates for success DTOs. Formats error DTOs using templates in `errors:` section of `presentation.yaml`. |
 | **Presentation** | `.phase-gate/config/presentation.yaml` | Lacks a dedicated `errors` block. Templates for tools check legacy success/failure categories. | Contains a dedicated `errors` block mapping error DTO types to templates. |
