@@ -80,6 +80,15 @@
                   "file": "mcp_server/core/decorators/enforcement_decorator.py",
                   "text": "EnforcementError"
                 }
+              },
+              {
+                "id": "D2.3",
+                "description": "ToolErrorHandlerDecorator catches MCPSystemError and maps to ExecutionErrorOutput.",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "mcp_server/core/decorators/tool_error_handler_decorator.py",
+                  "text": "MCPSystemError"
+                }
               }
             ],
             "exit_criteria": "EnforcementError exception integrated into Core Exceptions, EnforcementRunner, and EnforcementDecorator, with passing unit tests."
@@ -167,7 +176,25 @@
               },
               {
                 "id": "D5.2",
-                "description": "quality_tools.py returns success DTO with passed=False on fixer/gate failure.",
+                "description": "git_fetch_tool.py and git_pull_tool.py bubble exceptions and remove success=False returned DTOs.",
+                "validates": {
+                  "type": "absent_text",
+                  "file": "mcp_server/tools/git_fetch_tool.py",
+                  "text": "success=False"
+                }
+              },
+              {
+                "id": "D5.3",
+                "description": "scaffold_artifact.py and scaffold_schema_tool.py bubble exceptions and remove success=False returned DTOs.",
+                "validates": {
+                  "type": "absent_text",
+                  "file": "mcp_server/tools/scaffold_artifact.py",
+                  "text": "success=False"
+                }
+              },
+              {
+                "id": "D5.4",
+                "description": "quality_tools.py, test_tools.py, safe_edit_tool.py, and template_validation_tool.py return success DTO with passed=False on failure.",
                 "validates": {
                   "type": "contains_text",
                   "file": "mcp_server/tools/quality_tools.py",
@@ -175,7 +202,7 @@
                 }
               },
               {
-                "id": "D5.3",
+                "id": "D5.5",
                 "description": "All tool execution methods use strict execute return type annotations.",
                 "validates": {
                   "type": "contains_text",
@@ -184,7 +211,7 @@
                 }
               }
             ],
-            "exit_criteria": "All 15+ core tools refactored to bubble exceptions instead of returning success=False DTOs, type checking passes, and legacy compatibility layers are removed."
+            "exit_criteria": "All 14 tool modules refactored to bubble exceptions and remove local try-except faal-DTO blocks, type checking passes, and legacy compatibility layers are removed."
           }
         ]
       }

@@ -17,7 +17,7 @@ This plan decomposes the Clean Break refactoring of the error DTO taxonomy and e
 ## TDD Cycles
 
 
-### Cycle 1: Cycle 1: Test Suite Preparation & Assertion Helpers
+### Cycle 1: Test Suite Preparation & Assertion Helpers
 
 **Goal:** Abstract DTO success/failure assertions in tests to minimize blast radius and clean up test suite bloat.
 
@@ -31,9 +31,9 @@ This plan decomposes the Clean Break refactoring of the error DTO taxonomy and e
 
 
 
-### Cycle 2: Cycle 2: Exceptions Taxonomy Expansion
+### Cycle 2: Exceptions Taxonomy Expansion
 
-**Goal:** Define and integrate the new `EnforcementError` exception to segregate input validation from policy gates.
+**Goal:** Define and integrate the new `EnforcementError` exception to segregate input validation from policy gates, and update exception handling for system/preflight errors.
 
 **Tests:**
 - tests/mcp_server/unit/core/test_exceptions.py
@@ -43,12 +43,13 @@ This plan decomposes the Clean Break refactoring of the error DTO taxonomy and e
 - `EnforcementError` exception defined in `mcp_server/core/exceptions.py`.
 - `EnforcementRunner` raises `EnforcementError` instead of `ValidationError` for policy gate checks.
 - `EnforcementDecorator` catches `EnforcementError` and `PreflightError` and maps them to `EnforcementErrorOutput`.
+- `ToolErrorHandlerDecorator` is updated to catch `MCPSystemError` and map it to `ExecutionErrorOutput` (with traceback/message details).
 - All unit tests pass.
 
 **Dependencies:** Cycle 1
 
 
-### Cycle 3: Cycle 3: DTO Schemas Segregation
+### Cycle 3: DTO Schemas Segregation
 
 **Goal:** Restructure success and error DTO models to adhere to Single Responsibility Principle (SRP) and delete redundant schemas.
 
@@ -67,7 +68,7 @@ This plan decomposes the Clean Break refactoring of the error DTO taxonomy and e
 **Dependencies:** Cycle 2
 
 
-### Cycle 4: Cycle 4: Dispatch & Presentation Alignment
+### Cycle 4: Dispatch & Presentation Alignment
 
 **Goal:** Align server dispatch, presenter formatting lookup order, and boot-time template checks with the new DTO hierarchy.
 
@@ -85,16 +86,30 @@ This plan decomposes the Clean Break refactoring of the error DTO taxonomy and e
 **Dependencies:** Cycle 3
 
 
-### Cycle 5: Cycle 5: Core Tools Refactoring
+### Cycle 5: Core Tools Refactoring
 
 **Goal:** Convert all core tools to only return success DTOs and bubble up structured exceptions.
 
 **Tests:**
-- Individual unit tests for all 15+ refactored tools in `tests/mcp_server/unit/tools/`
+- Individual unit tests for refactored tools in `tests/mcp_server/unit/tools/`
 
 **Success Criteria:**
-- All 15+ tool classes in `mcp_server/tools/` refactored to bubble exceptions and remove try-except faal-DTO blocks.
-- Logical tool failures (fixers, tests) return success DTOs with `passed=False`.
+- The following 14 tool modules in `mcp_server/tools/` are refactored to bubble exceptions and remove local try-except faal-DTO blocks:
+  1. `git_tools.py` (all git mutation tools)
+  2. `git_fetch_tool.py` (`GitFetchTool`)
+  3. `git_pull_tool.py` (`GitPullTool`)
+  4. `git_analysis_tools.py` (`GitDiffStatTool`, etc.)
+  5. `cycle_tools.py` (`TransitionCycleTool`, `ForceCycleTransitionTool`)
+  6. `phase_tools.py` (`TransitionPhaseTool`, `ForcePhaseTransitionTool`)
+  7. `pr_tools.py` (`SubmitPRTool`, etc.)
+  8. `project_tools.py` (`InitializeProjectTool`, etc.)
+  9. `scaffold_artifact.py` (`ScaffoldArtifactTool`)
+  10. `scaffold_schema_tool.py` (`ScaffoldSchemaTool`)
+  11. `quality_tools.py` (`AutoFixTool`, `RunQualityGatesTool`)
+  12. `test_tools.py` (`RunTestsTool`)
+  13. `safe_edit_tool.py` (`SafeEditTool`)
+  14. `template_validation_tool.py` (`TemplateValidationTool`)
+- Logical tool failures (fixers, tests, dry-runs) return success DTOs with `passed=False` instead of raising exceptions (e.g. `AutoFixOutput`, `RunQualityGatesOutput`, `RunTestsOutput`, `SafeEditOutput`, `TemplateValidationOutput`).
 - Legacy compatibility attributes in `assertion_helpers.py` are cleaned up.
 - Mypy and pyright type-checking pass 100% without global ignores.
 - All tests pass.
