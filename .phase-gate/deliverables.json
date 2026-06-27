@@ -21,12 +21,12 @@
     "execution_mode": "interactive",
     "required_phases": [
       "research",
+      "design",
       "planning",
       "implementation",
       "validation",
       "documentation",
       "ready"
-    ],
     "skip_reason": null,
     "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
     "created_at": "2026-06-26T07:30:29.507478+00:00",
