@@ -2,7 +2,7 @@
   "branch": "refactor/413-redesign-error-dtos-segregate-base-tool-output",
   "issue_number": 413,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -15,7 +15,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested to return to research phase to finalize taxonomy design and review mermaid diagrams before proceeding.",
+  "skip_reason": "User instructed to transition to design phase and wait for instructions.",
   "issue_title": "refactor: Redesign Error DTOs and segregate BaseToolOutput concerns",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-26T07:30:29.606774+00:00",
@@ -35,6 +35,14 @@
       "human_approval": "Yes, approved by user in chat.",
       "forced": true,
       "skip_reason": "User requested to return to research phase to finalize taxonomy design and review mermaid diagrams before proceeding."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-06-27T08:56:13.035390+00:00",
+      "human_approval": "Yes, requested by user.",
+      "forced": true,
+      "skip_reason": "User instructed to transition to design phase and wait for instructions."
     }
   ],
   "reconstructed": false,
