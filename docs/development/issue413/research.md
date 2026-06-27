@@ -285,8 +285,8 @@ Based on [user_facing_text_inventory.md](../issue404/user_facing_text_inventory.
 - [ARCHITECTURE_PRINCIPLES.md](../../coding_standards/ARCHITECTURE_PRINCIPLES.md)
 - [DOCUMENTATION_STANDARD.md](../../coding_standards/DOCUMENTATION_STANDARD.md)
 - [presentation.yaml](../../.phase-gate/config/presentation.yaml)
-- [exceptions.py](../../core/exceptions.py)
-- [error_outputs.py](../../schemas/error_outputs.py)
+- [exceptions.py](../../mcp_server/core/exceptions.py)
+- [error_outputs.py](../../mcp_server/schemas/error_outputs.py)
 
 ---
 
