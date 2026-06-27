@@ -29,6 +29,68 @@
     ],
     "skip_reason": null,
     "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
-    "created_at": "2026-06-26T07:30:29.507478+00:00"
+    "created_at": "2026-06-26T07:30:29.507478+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 5,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C_SCHEMA",
+            "deliverables": [
+              {
+                "id": "D1.1",
+                "description": "Define BaseErrorOutput with is_error property, remove success/error_message fields from error and success DTOs, and delete CacheErrorOutput."
+              }
+            ],
+            "exit_criteria": "Refactored schemas in error_outputs.py and tool_outputs.py with all tests passing in tests/schemas/"
+          },
+          {
+            "cycle_number": 2,
+            "name": "C_SERVER",
+            "deliverables": [
+              {
+                "id": "D2.1",
+                "description": "Update server.py and text_presenter.py to evaluate status via type check against BaseErrorOutput."
+              }
+            ],
+            "exit_criteria": "Server and presenter layers refactored to use isinstance status checking and tested."
+          },
+          {
+            "cycle_number": 3,
+            "name": "C_TOOLS",
+            "deliverables": [
+              {
+                "id": "D3.1",
+                "description": "Refactor tool classes execution and type signatures to only return success DTOs."
+              }
+            ],
+            "exit_criteria": "Core tool execution methods raise exceptions instead of returning error DTOs."
+          },
+          {
+            "cycle_number": 4,
+            "name": "C_DECORATORS",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "Decorator pipeline refactored to capture core exceptions and return mapped error DTOs."
+              }
+            ],
+            "exit_criteria": "Decorators catch exceptions and map them to error DTOs."
+          },
+          {
+            "cycle_number": 5,
+            "name": "C_TESTS",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "Remove/refactor legacy assertions on error DTO fields success and error_message throughout the test suite."
+              }
+            ],
+            "exit_criteria": "Test suite assertions refactored to verify type safety and structured fields, and all tests pass."
+          }
+        ]
+      }
+    }
   }
 }

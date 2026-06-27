@@ -15,11 +15,28 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "User requested to return to research phase to finalize taxonomy design and review mermaid diagrams before proceeding.",
   "issue_title": "refactor: Redesign Error DTOs and segregate BaseToolOutput concerns",
   "parent_branch": "epic/289-installable-wheel-standalone-mcp-server",
   "created_at": "2026-06-26T07:30:29.606774+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-06-26T09:04:33.692921+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "research",
+      "timestamp": "2026-06-26T18:25:25.730624+00:00",
+      "human_approval": "Yes, approved by user in chat.",
+      "forced": true,
+      "skip_reason": "User requested to return to research phase to finalize taxonomy design and review mermaid diagrams before proceeding."
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
