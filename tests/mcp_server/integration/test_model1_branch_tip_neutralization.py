@@ -179,7 +179,7 @@ class TestModel1BranchTipNeutralization:
         )
         result = await tool.execute(params, note_ctx)
 
-        assert not result.is_error, f"Expected commit success but got: {result}"
+        assert result.success, f"Expected commit success but got: {result.error_message}"
         # Both files must appear in the commit diff (no neutralization)
         assert _has_net_diff(repo, "normal.py", "main"), (
             "normal.py must be in diff after normal commit"

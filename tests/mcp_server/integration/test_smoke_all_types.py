@@ -1,14 +1,14 @@
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
-"""Integration Step 1: V2 pipeline smoke test for all 21 artifact types.
+"""Integration Step 1: Schema-validated scaffolding smoke test for all 21 artifact types.
 
 Validates that PYDANTIC_SCAFFOLDING_ENABLED=true produces non-empty output
-for every type registered in _v2_context_registry. One parametrized test per type.
+for every type registered in artifacts.yaml. One parametrized test per type.
 
-@module: tests.integration.test_v2_smoke_all_types
+@module: tests.mcp_server.integration.test_smoke_all_types
 @layer: Test Infrastructure
 @dependencies: mcp_server.managers.artifact_manager, mcp_server.config
 @responsibilities:
-  - E2E smoke: V2 pipeline → non-empty string output for all 21 types
+  - E2E smoke: Schema-validated scaffolding → non-empty string output for all 21 types
   - Covers: 8 code, 5 doc, 3 tracking (ephemeral)
   - Does NOT assert file existence for ephemeral artifacts
 """
@@ -33,7 +33,9 @@ _PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 
 @pytest.fixture(name="v2_manager")
 def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactManager:
-    """ArtifactManager configured for V2 pipeline with production registry + templates.
+    """ArtifactManager configured for schema-validated scaffolding pipeline.
+
+    Uses production registry + templates.
 
     Setup:
     - Copies production .phase-gate/artifacts.yaml into hermetic tmp workspace
@@ -41,7 +43,7 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     - Changes CWD → tmp_path (so registry + ephemeral writes resolve there)
     - Enables PYDANTIC_SCAFFOLDING_ENABLED=true
     """
-    # Enable V2 pipeline
+    # Enable schema-validated scaffolding
     monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "true")
 
     # Point template discovery to actual production templates
@@ -195,6 +197,8 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
             "requirements_nonfunctional": ["Must complete within 5 seconds"],
             "decision": "Use Pydantic pipeline",
             "rationale": "Type-safe context validation",
+            "options": [],
+            "key_decisions": [],
         },
         False,
         ".md",

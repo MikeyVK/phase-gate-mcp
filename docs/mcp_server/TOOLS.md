@@ -1,7 +1,7 @@
 # PhaseGate MCP Server - Public Tool Surface
 
 **Status:** CURRENT
-**Last Updated:** 2026-04-23
+**Last Updated:** 2026-06-15
 **Derived From:** [mcp_server/server.py](../../mcp_server/server.py)
 
 > This document is the current public MCP tool surface summary. Detailed per-tool behavior lives in [docs/reference/mcp/MCP_TOOLS.md](../reference/mcp/MCP_TOOLS.md) and the category references under [docs/reference/mcp/tools/](../reference/mcp/tools/README.md).
@@ -91,7 +91,7 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 **Safeguards:**
 - Blocked unless `.phase-gate/state.json` reports `current_phase == "ready"`
 - Blocked for any branch-mutating tool while the branch already has `PRStatus.OPEN`
-- Returns a `RecoveryNote` when the flow fails after neutralization and the branch tip may have changed
+- Returns a `recovery` note when the flow fails after neutralization and the branch tip may have changed
 
 **Public output:**
 - Success: `Created PR #<number>: <url>`
@@ -129,13 +129,14 @@ GitHub issue tools are registered only when GitHub integration is available. `su
 |------|---------|----------------|
 | `safe_edit_file` | Multi-mode file editing with validation | `path`, `content` or edit payload, `mode` |
 | `scaffold_artifact` | Generate code/docs from `.phase-gate/config/artifacts.yaml` | `artifact_type`, `name`, `output_path`, `context` |
+| `scaffold_schema` | Return JSON Schema for artifact type context | `artifact_type` |
 
 ### 7. Quality & Validation
 
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
-| `run_quality_gates` | Run quality gates | `scope`, `files` |
-| `run_tests` | Run pytest | `path`, `scope`, `markers`, `timeout`, `last_failed_only`, `coverage` |
+| `run_quality_gates` | Run quality gates | `scope`, `files`, `verbose` |
+| `run_tests` | Run pytest | `path`, `scope`, `markers`, `timeout`, `last_failed_only`, `coverage`, `verbose` |
 | `validate_template` | Validate template/file structure | `path`, `template_type` |
 
 ### 8. Discovery & Admin

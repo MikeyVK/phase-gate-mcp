@@ -43,9 +43,9 @@ class ValidationService:
     def __init__(self) -> None:
         """Initialize validation service and register validators."""
         self.template_analyzer = TemplateAnalyzer(template_root=get_template_root())
-        self._setup_validators()
+        self.setup_validators()
 
-    def _setup_validators(self) -> None:
+    def setup_validators(self) -> None:
         """Register all validators with ValidatorRegistry."""
         # Register extension-based validators
         # For pre-write validation, use syntax-only mode (no quality.yaml needed)
@@ -79,8 +79,8 @@ class ValidationService:
             validators passed, and issues_text contains formatted validation
             issues (empty string if no issues).
         """
-        validators = self._get_applicable_validators(path)
-        return await self._run_validators(validators, path, content)
+        validators = self.get_applicable_validators(path)
+        return await self.run_validators(validators, path, content)
 
     def validate_syntax(self, path: str, content: str) -> tuple[bool, str]:
         """
@@ -157,7 +157,7 @@ class ValidationService:
         # This implements WARN policy: docs pass validation (manager can log warnings)
         return True, ""
 
-    def _get_applicable_validators(self, path: str) -> list[BaseValidator]:
+    def get_applicable_validators(self, path: str) -> list[BaseValidator]:
         """
         Get validators with context-specific filtering.
 
@@ -192,7 +192,7 @@ class ValidationService:
 
         return validators
 
-    async def _run_validators(
+    async def run_validators(
         self, validators: list[BaseValidator], path: str, content: str
     ) -> tuple[bool, str]:
         """

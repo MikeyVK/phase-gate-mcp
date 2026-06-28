@@ -19,6 +19,7 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
+    PresentationConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScaffoldMetadataConfig,
@@ -113,6 +114,10 @@ class ConfigLoader:
     def load_label_config(self, config_path: Path | None = None) -> LabelConfig:
         data, resolved_path = self._load_yaml("labels.yaml", config_path=config_path)
         return self._validate_schema(LabelConfig, data, resolved_path)
+
+    def load_presentation_config(self, config_path: Path | None = None) -> PresentationConfig:
+        data, resolved_path = self._load_yaml("presentation.yaml", config_path=config_path)
+        return self._validate_schema(PresentationConfig, data, resolved_path)
 
     def load_scope_config(self, config_path: Path | None = None) -> ScopeConfig:
         data, resolved_path = self._load_yaml("scopes.yaml", config_path=config_path)

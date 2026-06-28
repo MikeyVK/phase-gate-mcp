@@ -20,8 +20,8 @@ from typing import cast
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.core.interfaces import IContextLoadedReader, IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import (
+    Note,
     NoteContext,
-    SuggestionNote,
 )
 from mcp_server.schemas import EnforcementAction, EnforcementConfig, EnforcementRule, GitConfig
 from mcp_server.tools.tool_result import ToolResult
@@ -29,9 +29,6 @@ from mcp_server.tools.tool_result import ToolResult
 _ENFORCEMENT_DISPLAY_PATH = "config/enforcement.yaml"
 _GIT_TIMEOUT_SECONDS = 2
 logger = logging.getLogger(__name__)
-
-# Known tool_category values; config validation fails fast for any unlisted value.
-KNOWN_TOOL_CATEGORIES: frozenset[str] = frozenset({"branch_mutating"})
 
 
 def _git_command_env() -> dict[str, str]:
@@ -155,6 +152,8 @@ class EnforcementRunner:
             )
         self.server_root = server_root
         self._config = config
+        if not self._config.categories:
+            self._config = config.model_copy(update={"categories": {"branch_mutating": []}})
         self._git_config = git_config
         self._state_reader = state_reader
         self._pr_status_reader = pr_status_reader
@@ -180,6 +179,13 @@ class EnforcementRunner:
         C3: returns None; all results conveyed via note_context.produce().
         Dispatch matches on rule.tool (tool name) OR rule.tool_category (category).
         """
+        resolved_category = tool_category
+        if resolved_category is None:
+            for cat_name, tools_list in self._config.categories.items():
+                if event in tools_list or enforcement_ctx.tool_name in tools_list:
+                    resolved_category = cat_name
+                    break
+
         for rule in self._config.enforcement:
             if rule.event_source != "tool":
                 continue
@@ -188,7 +194,7 @@ class EnforcementRunner:
             # Match by tool name or tool_category (mutually exclusive per schema validator)
             if rule.tool is not None and rule.tool != event:
                 continue
-            if rule.tool_category is not None and rule.tool_category != tool_category:
+            if rule.tool_category is not None and rule.tool_category != resolved_category:
                 continue
             if rule.tool is None and rule.tool_category is None:
                 continue
@@ -218,7 +224,7 @@ class EnforcementRunner:
                 rule.tool_category
                 for rule in self._config.enforcement
                 if rule.tool_category is not None
-                and rule.tool_category not in KNOWN_TOOL_CATEGORIES
+                and rule.tool_category not in self._config.categories
             }
         )
         if unknown_categories:
@@ -270,10 +276,15 @@ class EnforcementRunner:
             return
 
         note_context.produce(
-            SuggestionNote(message=f"Allowed bases: {', '.join(allowed_patterns)}")
+            Note(
+                key="allowed_bases_suggestion",
+                params={"bases": ", ".join(allowed_patterns)},
+            )
         )
         raise ValidationError(
             f"Branch type '{branch_type}' cannot be created from base '{base_branch}'",
+            error_code="invalid_base_branch",
+            params={"branch_type": branch_type, "base_branch": base_branch},
         )
 
     def _handle_check_pr_status(
@@ -306,13 +317,16 @@ class EnforcementRunner:
         status = self._pr_status_reader.get_pr_status(branch)
         if status == PRStatus.OPEN:
             note_context.produce(
-                SuggestionNote(
-                    message="Call merge_pr to close the open PR before continuing branch work."
+                Note(
+                    key="close_open_pr_suggestion",
+                    params={},
                 )
             )
             raise ValidationError(
                 f"Branch '{branch}' has an open PR. "
                 "Branch-mutating tools are blocked until the PR is merged.",
+                error_code="open_pr_blocker",
+                params={"branch": branch},
             )
 
     def _handle_check_phase_readiness(
@@ -337,10 +351,15 @@ class EnforcementRunner:
             current_phase = None
         if current_phase != required_phase:
             note_context.produce(
-                SuggestionNote(message=f'transition_phase(to_phase="{required_phase}")')
+                Note(
+                    key="transition_phase_suggestion",
+                    params={"required_phase": required_phase},
+                )
             )
             raise ValidationError(
                 f"Tool requires phase '{required_phase}'. Current phase: '{current_phase}'.",
+                error_code="phase_readiness_mismatch",
+                params={"required_phase": required_phase, "current_phase": current_phase},
             )
 
     def _handle_check_context_loaded(
@@ -399,9 +418,14 @@ class EnforcementRunner:
 
         if not self._context_loaded_reader.is_context_loaded(branch):
             note_context.produce(
-                SuggestionNote(message="Call get_work_context before using this tool.")
+                Note(
+                    key="load_context_suggestion",
+                    params={},
+                )
             )
             raise ValidationError(
                 f"get_work_context has not been called for branch '{branch}'. "
                 "Call get_work_context before using this tool.",
+                error_code="context_not_loaded",
+                params={"branch": branch},
             )

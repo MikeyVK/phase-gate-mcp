@@ -99,15 +99,15 @@ def _assert_has_metadata_header(output: str, label: str) -> None:
 
 
 def _spy_v2_routed(manager: ArtifactManager) -> list[bool]:
-    """Spy if _enrich_context_v2 is called (v2 pipeline routed)."""
+    """Spy if _enrich_schema_context is called (v2 pipeline routed)."""
     v2_calls: list[bool] = []
-    original = manager._enrich_context_v2  # pyright: ignore[reportPrivateUsage]  # routing spy requires direct hook into the private v2 enrichment seam
+    original = manager._enrich_schema_context  # pyright: ignore[reportPrivateUsage]  # routing spy requires direct hook into the private v2 enrichment seam
 
     def spy(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
         v2_calls.append(True)
         return original(*args, **kwargs)
 
-    manager._enrich_context_v2 = spy  # type: ignore[method-assign]
+    manager._enrich_schema_context = spy  # type: ignore[method-assign]
     return v2_calls
 
 
@@ -156,7 +156,7 @@ class TestWorkerV2Parity:
         _assert_has_metadata_header(output, "worker/v2/full")
 
     def test_worker_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Worker v2 pipeline routes via _enrich_context_v2 (not fallen back to v1)."""
+        """Worker v2 pipeline routes via _enrich_schema_context (not fallen back to v1)."""
         calls = _spy_v2_routed(manager)
 
         async def mock_validate(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202, ARG001
@@ -175,7 +175,7 @@ class TestWorkerV2Parity:
         finally:
             os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
 
-        assert len(calls) == 1, "Worker v2 pipeline must route via _enrich_context_v2"
+        assert len(calls) == 1, "Worker v2 pipeline must route via _enrich_schema_context"
 
     def test_worker_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Worker v2 pipeline rejects invalid context via Pydantic validation."""
@@ -232,7 +232,7 @@ class TestToolV2Parity:
         _assert_has_metadata_header(output, "tool/v2/full")
 
     def test_tool_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Tool v2 pipeline routes via _enrich_context_v2."""
+        """Tool v2 pipeline routes via _enrich_schema_context."""
         calls = _spy_v2_routed(manager)
 
         async def mock_validate(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202, ARG001
@@ -251,7 +251,7 @@ class TestToolV2Parity:
         finally:
             os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
 
-        assert len(calls) == 1, "Tool v2 pipeline must route via _enrich_context_v2"
+        assert len(calls) == 1, "Tool v2 pipeline must route via _enrich_schema_context"
 
     def test_tool_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Tool v2 pipeline rejects invalid context (empty name)."""
@@ -306,7 +306,7 @@ class TestSchemaV2Parity:
         _assert_has_metadata_header(output, "schema/v2/full")
 
     def test_schema_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Schema v2 pipeline routes via _enrich_context_v2."""
+        """Schema v2 pipeline routes via _enrich_schema_context."""
         calls = _spy_v2_routed(manager)
 
         async def mock_validate(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202, ARG001
@@ -325,7 +325,7 @@ class TestSchemaV2Parity:
         finally:
             os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
 
-        assert len(calls) == 1, "Schema v2 pipeline must route via _enrich_context_v2"
+        assert len(calls) == 1, "Schema v2 pipeline must route via _enrich_schema_context"
 
     def test_schema_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Schema v2 pipeline rejects invalid context (empty name)."""
@@ -380,7 +380,7 @@ class TestServiceV2Parity:
         _assert_has_metadata_header(output, "service/v2/full")
 
     def test_service_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Service v2 pipeline routes via _enrich_context_v2."""
+        """Service v2 pipeline routes via _enrich_schema_context."""
         calls = _spy_v2_routed(manager)
 
         async def mock_validate(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202, ARG001
@@ -399,7 +399,7 @@ class TestServiceV2Parity:
         finally:
             os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
 
-        assert len(calls) == 1, "Service v2 pipeline must route via _enrich_context_v2"
+        assert len(calls) == 1, "Service v2 pipeline must route via _enrich_schema_context"
 
     def test_service_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Service v2 pipeline rejects invalid context (empty name)."""
@@ -459,7 +459,7 @@ class TestGenericV2Parity:
         _assert_has_metadata_header(output, "generic/v2/full")
 
     def test_generic_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Generic v2 pipeline routes via _enrich_context_v2."""
+        """Generic v2 pipeline routes via _enrich_schema_context."""
         calls = _spy_v2_routed(manager)
 
         async def mock_validate(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202, ARG001
@@ -478,7 +478,7 @@ class TestGenericV2Parity:
         finally:
             os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
 
-        assert len(calls) == 1, "Generic v2 pipeline must route via _enrich_context_v2"
+        assert len(calls) == 1, "Generic v2 pipeline must route via _enrich_schema_context"
 
     def test_generic_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Generic v2 pipeline rejects invalid context (empty name)."""
@@ -552,7 +552,7 @@ class TestUnitTestV2Parity:
         _assert_has_metadata_header(output, "unit_test/v2/full")
 
     def test_unit_test_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Unit test v2 pipeline routes via _enrich_context_v2."""
+        """Unit test v2 pipeline routes via _enrich_schema_context."""
         calls = _spy_v2_routed(manager)
 
         async def mock_validate(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202, ARG001
@@ -571,7 +571,7 @@ class TestUnitTestV2Parity:
         finally:
             os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
 
-        assert len(calls) == 1, "UnitTest v2 pipeline must route via _enrich_context_v2"
+        assert len(calls) == 1, "UnitTest v2 pipeline must route via _enrich_schema_context"
 
     def test_unit_test_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Unit test v2 pipeline rejects invalid context (empty module_under_test)."""
@@ -639,7 +639,7 @@ class TestIntegrationTestV2Parity:
         _assert_has_metadata_header(output, "integration_test/v2/full")
 
     def test_integration_test_v2_routing_confirmed(self, manager: ArtifactManager) -> None:
-        """Integration test v2 pipeline routes via _enrich_context_v2."""
+        """Integration test v2 pipeline routes via _enrich_schema_context."""
         calls = _spy_v2_routed(manager)
 
         async def mock_validate(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202, ARG001
@@ -658,7 +658,7 @@ class TestIntegrationTestV2Parity:
         finally:
             os.environ.pop("PYDANTIC_SCAFFOLDING_ENABLED", None)
 
-        assert len(calls) == 1, "IntegrationTest v2 pipeline must route via _enrich_context_v2"
+        assert len(calls) == 1, "IntegrationTest v2 pipeline must route via _enrich_schema_context"
 
     def test_integration_test_v2_rejects_invalid_context(self, manager: ArtifactManager) -> None:
         """Integration test v2 pipeline rejects invalid context (empty test_scenario)."""

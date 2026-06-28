@@ -72,6 +72,7 @@ artifact_types:
     optional_fields:
       - sections
       - status
+    context_class: DesignContext
     state_machine:
       states: [DRAFT, APPROVED, DEFINITIVE]
       initial_state: DRAFT
@@ -96,6 +97,7 @@ artifact_types:
     optional_fields:
       - fields
       - validation_rules
+    context_class: DTOContext
     state_machine:
       states: [CREATED]
       initial_state: CREATED

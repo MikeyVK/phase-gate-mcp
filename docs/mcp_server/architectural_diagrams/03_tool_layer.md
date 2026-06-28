@@ -15,7 +15,7 @@ conventions, and existing inconsistencies.
 
 ## Scope
 
-**In Scope:** `tools/` directory, BaseTool hierarchy, MCP tool names, file name conventions
+**In Scope:** `tools/` directory, ICoreTool hierarchy, MCP tool names, file name conventions
 
 **Out of Scope:** Tool implementation detail, manager-internal logic
 
@@ -23,26 +23,28 @@ conventions, and existing inconsistencies.
 
 ## 1. Base Class Hierarchy
 
-Every tool inherits from `BaseTool`. The `_BaseTransitionTool` sub-base provides shared
-logic for both phase and cycle transition tools. The `EnforcementRunner` wraps `execute()`
-as a pre/post-hook at the server level — tools themselves are unaware of enforcement.
+Every tool implements the generic `ICoreTool` interface protocol defined in `core/interfaces/icore_tool.py`.
+Transition tools inherit from shared sub-bases like `_BaseTransitionTool` (for phase transitions) and `_BaseIToolTransition` (for cycle transitions) which implement `ICoreTool`.
+At runtime, the `ToolFactory` wraps tools with decorator layers (`EnforcementDecorator`, `InputValidationDecorator`, `ToolErrorHandlerDecorator`) to handle enforcement and validations, keeping tools completely decoupled.
 
 ```mermaid
 graph TD
-    BT["BaseTool<br/>(tools/base.py)"]
+    ICT["ICoreTool<br/>(core/interfaces/icore_tool.py)"]
     BBT["_BaseTransitionTool<br/>(phase_tools.py)"]
+    BBCT["_BaseIToolTransition<br/>(cycle_tools.py)"]
     TP["TransitionPhaseTool"]
     FP["ForcePhaseTransitionTool"]
     TC["TransitionCycleTool"]
     FC["ForceCycleTransitionTool"]
-    ER["EnforcementRunner<br/>(pre/post hooks)"]
+    TF["ToolFactory<br/>(wraps tools with decorators)"]
 
-    BT --> BBT
+    ICT --> BBT
+    ICT --> BBCT
     BBT --> TP
     BBT --> FP
-    BBT --> TC
-    BBT --> FC
-    ER -.->|"wraps execute()"| BT
+    BBCT --> TC
+    BBCT --> FC
+    TF -.->|"wraps tools at startup"| ICT
 
     style BBT fill:#ffe,color:#000
 ```
@@ -92,7 +94,7 @@ Most files follow the `*_tools.py` (plural) convention. The four ⚠ files devia
 | Decision | Rationale | Alternatives Rejected |
 |----------|-----------|----------------------|
 | EnforcementRunner as pre/post hook at server level | Tools need not know about enforcement; clean separation of concerns | Enforcement logic inside each tool (duplication) |
-| All tools via BaseTool | Uniform `execute()` interface; consistent `ToolResult` response shape | Standalone functions (no polymorphism, harder to wrap) |
+| All tools via ICoreTool | Uniform interface and decorator-based composition root wrappers | Standalone functions (harder to wrap dynamically) |
 
 ---
 

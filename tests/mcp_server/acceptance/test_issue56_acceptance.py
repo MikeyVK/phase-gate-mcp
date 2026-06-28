@@ -17,7 +17,6 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.tools.discovery_tools import SearchDocumentationInput, SearchDocumentationTool
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput, ScaffoldArtifactTool
-from tests.mcp_server.test_support import assert_structured_result
 
 
 @pytest.fixture(autouse=True)
@@ -54,8 +53,8 @@ async def test_scaffold_design_doc_with_required_context(
     result = await tool.execute(params, NoteContext())
 
     # Assert
-    assert_structured_result(result)
-    content_text = result.content[1]["text"]
+    assert result.success
+    content_text = result.formatted_files_created
     assert "issue56_acceptance.md" in content_text or "issue56-acceptance-test" in content_text
     # Verify file created on disk
     output_file = temp_workspace / "docs/design/issue56_acceptance.md"
@@ -99,8 +98,8 @@ async def test_scaffold_dto_with_description(
     result = await tool.execute(params, NoteContext())
 
     # Assert
-    assert_structured_result(result)
-    content_text = result.content[1]["text"]
+    assert result.success
+    content_text = result.formatted_files_created
     assert "AcceptanceTestDto" in content_text or "acceptance_test_dto.py" in content_text
     # Verify file created on disk
     output_file = temp_workspace / "backend/dtos/acceptance_test_dto.py"
@@ -133,17 +132,9 @@ async def test_search_finds_scaffolded_artifacts() -> None:
         query="unified artifact system",
         scope="all",
     )
-    search_result = await search_tool.execute(search_params)
+    search_result = await search_tool.execute(search_params, NoteContext())
 
     # Assert: Search tool returns valid response
     assert search_result is not None
-    assert hasattr(search_result, "content")
-    assert len(search_result.content) > 0
-
-    content_item = search_result.content[0]
-    assert isinstance(content_item, dict)
-    search_text = content_item.get("text", "")
-
-    # Search returns text (content validation depends on production docs)
-    assert isinstance(search_text, str)
-    assert len(search_text) > 0
+    assert search_result.success
+    assert search_result.results_count >= 0

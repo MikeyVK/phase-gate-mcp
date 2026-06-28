@@ -3,8 +3,8 @@
 # Scaffolding Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-06-02  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/tools/scaffold_artifact.py](../../../../mcp_server/tools/scaffold_artifact.py) | [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_scaffold_schema_tool.py](../../../../tests/mcp_server/unit/tools/test_scaffold_schema_tool.py)
@@ -62,27 +62,20 @@ Generate any artifact type (code or document) from unified registry.
 | `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.phase-gate/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "success": true,
-  "artifact": {
-    "type": "dto",
-    "name": "OrderDTO",
-    "path": "/workspace/backend/dtos/order_dto.py",
-    "template": "dto.py.j2",
-    "context": {
-      "name": "OrderDTO",
-      "fields": [
-        {"name": "id", "type": "int"},
-        {"name": "total", "type": "Decimal"}
-      ]
-    }
-  },
-  "message": "Artifact 'OrderDTO' scaffolded successfully"
-}
-```
+`scaffold_artifact` returns a single `TextContent` block containing confirmation and the resource cache link pointing to the cached `ScaffoldArtifactOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `message`: `string`
+- `artifact`: `ScaffoldedArtifactDetails` containing:
+  - `type`: `string`
+  - `name`: `string`
+  - `path`: `string`
+  - `template`: `string`
+  - `context`: `dict`
 
 #### Example Usage
 
@@ -144,7 +137,7 @@ Generate any artifact type (code or document) from unified registry.
 **MCP Name:** `scaffold_schema`  
 **Class:** `ScaffoldSchemaTool`  
 **File:** [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
-**Inherits:** `BaseTool` (read-only — no branch mutation)
+**Implements:** `ICoreTool` (read-only — no branch mutation)
 
 Return the JSON Schema for the `context` parameter of an artifact type. Use this before calling `scaffold_artifact` to discover exactly which fields are required and optional for a given type.
 
@@ -154,10 +147,14 @@ Return the JSON Schema for the `context` parameter of an artifact type. Use this
 |-----------|------|----------|-------------|
 | `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available enum values are populated at runtime from `artifacts.yaml`. |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-A JSON Schema object (Pydantic `model_json_schema()` with `$defs` resolved inline) describing the `context` parameter for the specified type.
+`scaffold_schema` returns a single `TextContent` block pointing to the resource cache link of the cached `ScaffoldSchemaOutput` DTO.
 
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `schema_data`: `dict` (the JSON Schema describing the `context` parameter)
 #### Error Handling
 
 | Condition | Response |

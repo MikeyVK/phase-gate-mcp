@@ -11,22 +11,19 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar, Generic, TypeVar
 
 import anyio
 from pydantic import BaseModel, ConfigDict, Field
 
-from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner
-from mcp_server.core.operation_notes import InfoNote, NoteContext, RecoveryNote
+from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner, ICoreTool
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
-from mcp_server.tools.phase_tools import TRANSITION_ADVISORY_NOTE
-from mcp_server.tools.phase_tools import (
-    _BaseTransitionTool as BaseTransitionTool,  # pyright: ignore[reportPrivateUsage]  # Shared transition base pending tool consolidation.
-)
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import CycleTransitionOutput, ForceCycleTransitionOutput
+from mcp_server.utils.schema_utils import resolve_schema_refs
 
 __all__ = [
     "ForceCycleTransitionInput",
@@ -34,6 +31,95 @@ __all__ = [
     "TransitionCycleInput",
     "TransitionCycleTool",
 ]
+
+
+TInput = TypeVar("TInput", bound=BaseModel)
+TOutput = TypeVar("TOutput", bound=BaseModel)
+
+
+class _BaseIToolTransition(ICoreTool[TInput, TOutput], Generic[TInput, TOutput]):
+    """Base class for cycle transition tools implementing ILegacyTool."""
+
+    def __init__(
+        self,
+        workspace_root: Path | str,
+        project_manager: ProjectManager | None = None,
+        state_engine: PhaseStateEngine | None = None,
+        git_manager: GitManager | None = None,
+        gate_runner: IWorkflowGateRunner | None = None,
+        server_root: Path | None = None,
+    ) -> None:
+        self.workspace_root = Path(workspace_root)
+        if server_root is None:
+            raise ValueError("_BaseIToolTransition requires server_root.")
+        self.server_root = server_root
+        self._project_manager = project_manager
+        self._state_engine = state_engine
+        self._git_manager = git_manager
+        self._gate_runner = gate_runner
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        if self.args_model:
+            return resolve_schema_refs(self.args_model.model_json_schema())
+        return {
+            "type": "object",
+            "properties": {},
+        }
+
+    def _create_project_manager(self) -> ProjectManager:
+        """Return the injected ProjectManager."""
+        if self._project_manager is None:
+            raise ValueError("ProjectManager must be injected for transition tools")
+        return self._project_manager
+
+    def _create_engine(self) -> PhaseStateEngine:
+        """Return the injected PhaseStateEngine instance."""
+        if self._state_engine is None:
+            raise ValueError("PhaseStateEngine must be injected for transition tools")
+        return self._state_engine
+
+    def _get_git_manager(self) -> GitManager:
+        """Return the injected GitManager."""
+        if self._git_manager is None:
+            raise ValueError("GitManager must be injected for cycle transition tools")
+        return self._git_manager
+
+    def _extract_issue_number(self, branch: str) -> int | None:
+        """Extract issue number from git config when available, else from branch syntax."""
+        extracted = None
+        with_config = getattr(self._get_git_manager(), "git_config", None)
+        if with_config is not None:
+            extract = getattr(with_config, "extract_issue_number", None)
+            if callable(extract):
+                extracted = extract(branch)
+                if isinstance(extracted, int):
+                    return extracted
+
+        match = re.search(r"/(\d+)(?:-|$)", branch)
+        return int(match.group(1)) if match else None
+
+    def _get_current_branch(self) -> str:
+        """Resolve the active branch, falling back to a single saved state entry."""
+        branch: str | None = None
+        try:
+            branch = self._get_git_manager().get_current_branch()
+        except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
+            branch = None
+
+        # NOTE: IStateReader requires a known branch as input; raw state.json read retained
+        # intentionally here because this method's purpose is to discover the branch itself.
+        state_file = self.server_root / "state.json"
+        if state_file.exists():
+            state_data = json.loads(state_file.read_text(encoding="utf-8"))
+            if isinstance(state_data, dict):
+                state_branch = state_data.get("branch")
+                if isinstance(state_branch, str) and state_branch:
+                    return state_branch
+
+        if branch is None:
+            raise RuntimeError("Unable to determine current branch")
+        return branch
 
 
 class TransitionCycleInput(BaseModel):
@@ -48,36 +134,42 @@ class TransitionCycleInput(BaseModel):
     )
 
 
-class TransitionCycleTool(BaseTransitionTool):
+class TransitionCycleTool(_BaseIToolTransition[TransitionCycleInput, CycleTransitionOutput]):
     """Tool to transition to next implementation cycle with validation."""
 
-    def __init__(
-        self,
-        workspace_root: Path | str,
-        project_manager: ProjectManager | None = None,
-        state_engine: PhaseStateEngine | None = None,
-        git_manager: GitManager | None = None,
-        gate_runner: IWorkflowGateRunner | None = None,
-        server_root: Path | None = None,
-    ) -> None:
-        super().__init__(workspace_root, project_manager, state_engine, server_root)
-        self._git_manager = git_manager
-        self._gate_runner = gate_runner
-
-    name = "transition_cycle"
-    description = (
-        "Transition to next TDD cycle (forward-only, sequential). "
-        "Use force_cycle_transition to skip cycles or go backwards."
-    )
-    args_model = TransitionCycleInput
+    output_model: ClassVar[type[BaseModel]] = CycleTransitionOutput
     enforcement_event = "transition_cycle"
 
-    async def execute(self, params: TransitionCycleInput, context: NoteContext) -> ToolResult:
+    @property
+    def name(self) -> str:
+        return "transition_cycle"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Transition to next TDD cycle (forward-only, sequential). "
+            "Use force_cycle_transition to skip cycles or go backwards."
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return TransitionCycleInput
+
+    async def execute(
+        self, params: TransitionCycleInput, context: NoteContext
+    ) -> CycleTransitionOutput:
         """Execute cycle transition through the shared orchestration path."""
         branch = self._get_current_branch()
         issue_number = params.issue_number or self._extract_issue_number(branch)
         if issue_number is None:
-            return ToolResult.error("Cannot detect issue number from branch")
+            return CycleTransitionOutput(
+                success=False,
+                error_message="Cannot detect issue number from branch",
+                branch=branch,
+                to_cycle=params.to_cycle,
+                total_cycles=0,
+                cycle_name="",
+            )
 
         state_engine = self._create_engine()
 
@@ -90,64 +182,46 @@ class TransitionCycleTool(BaseTransitionTool):
 
         try:
             result = await anyio.to_thread.run_sync(do_transition)
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
-            return ToolResult.text(
-                f"✅ Transitioned to TDD Cycle {result['to_cycle']}/{result['total_cycles']}: "
-                f"{result['cycle_name']}"
+            return CycleTransitionOutput(
+                success=True,
+                branch=branch,
+                from_cycle=result.get("from_cycle"),
+                to_cycle=result["to_cycle"],
+                total_cycles=result["total_cycles"],
+                cycle_name=result["cycle_name"],
+                passing_gates=result.get("passing_gates", []),
+                skipped_gates=result.get("skipped_gates", []),
+                passing_gates_count=len(result.get("passing_gates", [])),
+                skipped_gates_count=len(result.get("skipped_gates", [])),
             )
         except StateMutationConflictError as e:
-            context.produce(RecoveryNote(message=e.recovery))
-            return ToolResult.error(e.diagnostic)
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
+            return CycleTransitionOutput(
+                success=False,
+                error_message=e.diagnostic,
+                branch=branch,
+                to_cycle=params.to_cycle,
+                total_cycles=0,
+                cycle_name="",
+            )
         except (GateViolation, OSError, ValueError, RuntimeError, KeyError) as exc:
-            return ToolResult.error(f"Transition failed: {exc}")
-
-    def _get_git_manager(self) -> GitManager:
-        """Return the injected GitManager."""
-        if self._git_manager is None:
-            raise ValueError("GitManager must be injected for cycle transition tools")
-        return self._git_manager
-
-    def _extract_issue_number(self, branch: str) -> int | None:
-        """Extract issue number from git config when available, else from branch syntax."""
-        extracted = None
-        with_config = getattr(self._get_git_manager(), "git_config", None)
-        if with_config is not None:
-            extract = getattr(with_config, "extract_issue_number", None)
-            if callable(extract):
-                extracted = extract(branch)
-                if isinstance(extracted, int):
-                    return extracted
-
-        match = re.search(r"/(\d+)(?:-|$)", branch)
-        return int(match.group(1)) if match else None
-
-    def _get_current_branch(self) -> str:
-        """Resolve the active branch, falling back to a single saved state entry."""
-        branch: str | None = None
-        try:
-            branch = self._get_git_manager().get_current_branch()
-        except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
-            branch = None
-
-        # NOTE: IStateReader requires a known branch as input; raw state.json read retained
-        # intentionally here because this method's purpose is to discover the branch itself.
-        state_file = self.server_root / "state.json"
-        if state_file.exists():
-            state_data = json.loads(state_file.read_text(encoding="utf-8"))
-            if isinstance(state_data, dict):
-                state_branch = state_data.get("branch")
-                if isinstance(state_branch, str) and state_branch:
-                    return state_branch
-
-        if branch is None:
-            raise RuntimeError("Unable to determine current branch")
-        return branch
+            return CycleTransitionOutput(
+                success=False,
+                error_message=f"Transition failed: {exc}",
+                branch=branch,
+                to_cycle=params.to_cycle,
+                total_cycles=0,
+                cycle_name="",
+            )
 
 
 class ForceCycleTransitionInput(BaseModel):
     """Input for force_cycle_transition tool."""
 
     model_config = ConfigDict(extra="forbid")
+
     to_cycle: int = Field(..., description="Target cycle number (any direction)")
     skip_reason: str = Field(..., description="Reason for forced transition (backward/skip)")
     human_approval: str = Field(
@@ -160,36 +234,46 @@ class ForceCycleTransitionInput(BaseModel):
     )
 
 
-class ForceCycleTransitionTool(BaseTransitionTool):
-    """Tool to force implementation cycle transition with audit trail."""
+class ForceCycleTransitionTool(
+    _BaseIToolTransition[ForceCycleTransitionInput, ForceCycleTransitionOutput]
+):
+    """Tool to force TDD cycle transition with audit trail."""
 
-    def __init__(
-        self,
-        workspace_root: Path | str,
-        project_manager: ProjectManager | None = None,
-        state_engine: PhaseStateEngine | None = None,
-        git_manager: GitManager | None = None,
-        gate_runner: IWorkflowGateRunner | None = None,
-        server_root: Path | None = None,
-    ) -> None:
-        super().__init__(workspace_root, project_manager, state_engine, server_root)
-        self._git_manager = git_manager
-        self._gate_runner = gate_runner
-
-    name = "force_cycle_transition"
-    description = (
-        "Force transition to any TDD cycle (backward or skip). "
-        "Requires skip_reason and human_approval for audit trail."
-    )
-    args_model = ForceCycleTransitionInput
+    output_model: ClassVar[type[BaseModel]] = ForceCycleTransitionOutput
     enforcement_event = "transition_cycle"
 
-    async def execute(self, params: ForceCycleTransitionInput, context: NoteContext) -> ToolResult:
+    @property
+    def name(self) -> str:
+        return "force_cycle_transition"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Force transition to any TDD cycle (backward or skip). "
+            "Requires skip_reason and human_approval for audit trail."
+        )
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return ForceCycleTransitionInput
+
+    async def execute(
+        self, params: ForceCycleTransitionInput, context: NoteContext
+    ) -> ForceCycleTransitionOutput:
         """Execute forced cycle transition through the shared inspection path."""
         branch = self._get_current_branch()
         issue_number = params.issue_number or self._extract_issue_number(branch)
         if issue_number is None:
-            return ToolResult.error("Cannot detect issue number from branch")
+            return ForceCycleTransitionOutput(
+                success=False,
+                error_message="Cannot detect issue number from branch",
+                branch=branch,
+                to_cycle=params.to_cycle,
+                total_cycles=0,
+                cycle_name="",
+                skip_reason=params.skip_reason,
+                human_approval=params.human_approval,
+            )
 
         state_engine = self._create_engine()
 
@@ -204,76 +288,42 @@ class ForceCycleTransitionTool(BaseTransitionTool):
 
         try:
             result = await anyio.to_thread.run_sync(do_force_transition)
-            blocking = result.get("skipped_gates", [])
-            passing = result.get("passing_gates", [])
-            direction = "backward" if params.to_cycle < result["from_cycle"] else "skip"
-
-            lines: list[str] = []
-            if blocking:
-                lines.append(
-                    f"⚠️ ACTION REQUIRED: {len(blocking)} skipped gate(s) would have "
-                    "BLOCKED a normal cycle transition:"
-                )
-                for gate in blocking:
-                    lines.append(f"  - {gate}")
-                lines.append("  Verify or resolve before proceeding.")
-
-            lines.append(
-                f"✅ Forced {direction} transition to TDD Cycle "
-                f"{result['to_cycle']}/{result['total_cycles']}: {result['cycle_name']}"
+            return ForceCycleTransitionOutput(
+                success=True,
+                branch=branch,
+                from_cycle=result.get("from_cycle"),
+                to_cycle=result["to_cycle"],
+                total_cycles=result["total_cycles"],
+                cycle_name=result["cycle_name"],
+                passing_gates=result.get("passing_gates", []),
+                skipped_gates=result.get("skipped_gates", []),
+                passing_gates_count=len(result.get("passing_gates", [])),
+                skipped_gates_count=len(result.get("skipped_gates", [])),
+                skip_reason=params.skip_reason,
+                human_approval=params.human_approval,
             )
-            lines.append(f"Reason: {params.skip_reason}")
-            lines.append(f"Approval: {params.human_approval}")
-
-            if passing:
-                lines.append(f"ℹ️ Gates that would have passed: {', '.join(passing)}")
-
-            context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
-            return ToolResult.text("\n".join(lines))
         except StateMutationConflictError as e:
-            context.produce(RecoveryNote(message=e.recovery))
-            return ToolResult.error(e.diagnostic)
+            context.produce(
+                Note(key="transition_conflict_recovery", params={"recovery_steps": e.recovery})
+            )
+            return ForceCycleTransitionOutput(
+                success=False,
+                error_message=e.diagnostic,
+                branch=branch,
+                to_cycle=params.to_cycle,
+                total_cycles=0,
+                cycle_name="",
+                skip_reason=params.skip_reason,
+                human_approval=params.human_approval,
+            )
         except (GateViolation, OSError, ValueError, RuntimeError, KeyError) as exc:
-            return ToolResult.error(f"Forced transition failed: {exc}")
-
-    def _get_git_manager(self) -> GitManager:
-        """Return the injected GitManager."""
-        if self._git_manager is None:
-            raise ValueError("GitManager must be injected for cycle transition tools")
-        return self._git_manager
-
-    def _extract_issue_number(self, branch: str) -> int | None:
-        """Extract issue number from git config when available, else from branch syntax."""
-        extracted = None
-        with_config = getattr(self._get_git_manager(), "git_config", None)
-        if with_config is not None:
-            extract = getattr(with_config, "extract_issue_number", None)
-            if callable(extract):
-                extracted = extract(branch)
-                if isinstance(extracted, int):
-                    return extracted
-
-        match = re.search(r"/(\d+)(?:-|$)", branch)
-        return int(match.group(1)) if match else None
-
-    def _get_current_branch(self) -> str:
-        """Resolve the active branch, falling back to a single saved state entry."""
-        branch: str | None = None
-        try:
-            branch = self._get_git_manager().get_current_branch()
-        except (ValueError, OSError, RuntimeError):  # git unavailable — fall back to state file
-            branch = None
-
-        # NOTE: IStateReader requires a known branch as input; raw state.json read retained
-        # intentionally here because this method's purpose is to discover the branch itself.
-        state_file = self.server_root / "state.json"
-        if state_file.exists():
-            state_data = json.loads(state_file.read_text(encoding="utf-8"))
-            if isinstance(state_data, dict):
-                state_branch = state_data.get("branch")
-                if isinstance(state_branch, str) and state_branch:
-                    return state_branch
-
-        if branch is None:
-            raise RuntimeError("Unable to determine current branch")
-        return branch
+            return ForceCycleTransitionOutput(
+                success=False,
+                error_message=f"Forced transition failed: {exc}",
+                branch=branch,
+                to_cycle=params.to_cycle,
+                total_cycles=0,
+                cycle_name="",
+                skip_reason=params.skip_reason,
+                human_approval=params.human_approval,
+            )

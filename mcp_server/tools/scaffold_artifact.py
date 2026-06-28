@@ -14,13 +14,15 @@ Handles all artifact types (code + documents) via ArtifactManager.
     - Let tool_error_handler decorator handle all errors uniformly
 """
 
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mcp_server.core.exceptions import ConfigError, MCPError, ValidationError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
-from mcp_server.tools.base import BranchMutatingTool, StructuredTool
+from mcp_server.schemas.tool_outputs import ScaffoldArtifactOutput
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 
 
 class ScaffoldArtifactInput(BaseModel):
@@ -40,46 +42,55 @@ class ScaffoldArtifactInput(BaseModel):
     )
 
 
-class ScaffoldArtifactTool(StructuredTool, BranchMutatingTool):
+class ScaffoldArtifactTool(ICoreTool[ScaffoldArtifactInput, ScaffoldArtifactOutput]):
     """Unified artifact scaffolding tool.
 
     Handles both code artifacts (dto, worker, adapter, etc.)
     and document artifacts (design, architecture, etc.).
     """
 
-    name = "scaffold_artifact"
-    description = "Scaffold any artifact type (code or document) from unified registry."
-    args_model = ScaffoldArtifactInput
+    output_model: ClassVar[type[BaseModel]] = ScaffoldArtifactOutput
 
     def __init__(self, manager: ArtifactManager | None = None) -> None:
         """Initialize tool with an explicitly injected artifact manager."""
-        super().__init__()
         if manager is None:
             raise ValueError("ArtifactManager must be injected for scaffold_artifact")
         self.manager = manager
 
     @property
+    def name(self) -> str:
+        return "scaffold_artifact"
+
+    @property
+    def description(self) -> str:
+        return "Scaffold any artifact type (code or document) from unified registry."
+
+    @property
+    def args_model(self) -> type[ScaffoldArtifactInput] | None:
+        return ScaffoldArtifactInput
+
+    @property
     def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
+        from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
+
+        assert self.args_model is not None
+        schema = resolve_schema_refs(self.args_model.model_json_schema())
         schema["properties"]["artifact_type"]["enum"] = self.manager.registry.list_type_ids()
         return schema
 
-    async def execute_structured(
+    async def execute(
         self,
         params: ScaffoldArtifactInput,
         context: NoteContext,
-    ) -> tuple[dict[str, Any], str]:
+    ) -> ScaffoldArtifactOutput:
         """Execute artifact scaffolding.
-
-        All exceptions are handled by tool_error_handler decorator,
-        which preserves MCPError contract (error_code, hints, file_path).
 
         Args:
             params: Scaffolding parameters
             context: NoteContext for note production
 
         Returns:
-            Tuple of (data_dict, summary_text)
+            ScaffoldArtifactOutput DTO
         """
         # Prepare kwargs from template context
         template_ctx = params.context or {}
@@ -89,15 +100,47 @@ class ScaffoldArtifactTool(StructuredTool, BranchMutatingTool):
         if params.output_path:
             kwargs["output_path"] = params.output_path
 
-        # Scaffold artifact via manager, forwarding NoteContext for note production
-        artifact_path = await self.manager.scaffold_artifact(
-            params.artifact_type, note_context=context, **kwargs
-        )
+        try:
+            # Scaffold artifact via manager, forwarding NoteContext for note production
+            artifact_path = await self.manager.scaffold_artifact(
+                params.artifact_type, note_context=context, **kwargs
+            )
 
-        # Success result
-        data = {
-            "artifact_type": params.artifact_type,
-            "artifact_path": str(artifact_path),
-        }
-        summary = f"✅ Scaffolded {params.artifact_type}: {artifact_path}"
-        return data, summary
+            files_created = [str(artifact_path)]
+            formatted_files_created = str(artifact_path)
+
+            return ScaffoldArtifactOutput(
+                success=True,
+                artifact_type=params.artifact_type,
+                name=params.name,
+                files_created=files_created,
+                formatted_files_created=formatted_files_created,
+            )
+        except ValidationError as e:
+            schema_info = getattr(e, "schema_info", "")
+            validation_schema = getattr(e, "schema", None)
+            if validation_schema is not None:
+                if hasattr(validation_schema, "to_dict"):
+                    validation_schema = validation_schema.to_dict()
+                elif isinstance(validation_schema, BaseModel):
+                    validation_schema = validation_schema.model_dump()
+            missing_fields = getattr(e, "missing_fields", [])
+            provided_fields = getattr(e, "provided_fields", [])
+
+            return ScaffoldArtifactOutput(
+                success=False,
+                error_message=str(e),
+                artifact_type=params.artifact_type,
+                name=params.name,
+                schema_info=schema_info,
+                validation_schema=validation_schema,
+                missing_fields=missing_fields,
+                provided_fields=provided_fields,
+            )
+        except (ConfigError, OSError, ValueError, RuntimeError, MCPError) as e:
+            return ScaffoldArtifactOutput(
+                success=False,
+                error_message=str(e),
+                artifact_type=params.artifact_type,
+                name=params.name,
+            )

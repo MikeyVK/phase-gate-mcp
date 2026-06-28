@@ -5,8 +5,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import TemplateValidationErrorDTO, TemplateValidationOutput
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.validation.template_validator import TemplateValidator
 
 
@@ -23,38 +23,56 @@ class TemplateValidationInput(BaseModel):
     )
 
 
-class TemplateValidationTool(BaseTool):
+class TemplateValidationTool(ICoreTool[TemplateValidationInput, TemplateValidationOutput]):
     """Tool to validate a file against a specific template."""
 
-    name = "validate_template"
-    description = "Validate a file's structure against a project template (worker, tool, dto, etc.)"
-    args_model = TemplateValidationInput
+    @property
+    def name(self) -> str:
+        return "validate_template"
+
+    @property
+    def description(self) -> str:
+        return "Validate a file's structure against a project template (worker, tool, dto, etc.)"
+
+    @property
+    def args_model(self) -> type[TemplateValidationInput] | None:
+        return TemplateValidationInput
 
     @property
     def input_schema(self) -> dict[str, Any]:
         assert self.args_model is not None
         return self.args_model.model_json_schema()
 
-    async def execute(self, params: TemplateValidationInput, context: NoteContext) -> ToolResult:
+    async def execute(
+        self, params: TemplateValidationInput, context: NoteContext
+    ) -> TemplateValidationOutput:
         """Execute template validation."""
         del context  # Not used
         try:
             validator = TemplateValidator(params.template_type)
             val_result = await validator.validate(params.path)
 
-            status = (
-                "✅ Template Validation Passed"
-                if val_result.passed
-                else "❌ Template Validation Failed"
-            )
-            details = ""
-            if val_result.issues:
-                details = "\n\nIssues:\n" + "\n".join(
-                    f"- [{'❌' if i.severity == 'error' else '⚠️'}] {i.message}"
-                    for i in val_result.issues
+            errors_list = []
+            for issue in val_result.issues:
+                errors_list.append(
+                    TemplateValidationErrorDTO(
+                        severity=issue.severity,
+                        message=issue.message,
+                    )
                 )
 
-            return ToolResult.text(f"{status}{details}")
+            return TemplateValidationOutput(
+                success=True,
+                passed=val_result.passed,
+                errors_count=len(errors_list),
+                errors=errors_list,
+            )
 
         except (ValueError, OSError) as e:
-            return ToolResult.text(f"❌ Validation error: {e}")
+            return TemplateValidationOutput(
+                success=False,
+                error_message=str(e),
+                passed=False,
+                errors_count=0,
+                errors=[],
+            )

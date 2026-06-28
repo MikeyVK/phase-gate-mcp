@@ -27,6 +27,8 @@ check_phase_readiness reads state.json directly.
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
+from mcp_server.core.interfaces import IPRStatusReader, PRStatus, IContextLoadedReader
 
 # Third-party
 import pytest
@@ -68,10 +70,19 @@ def _make_runner(tmp_path: Path) -> EnforcementRunner:
     enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
     loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
     config = loader.load_enforcement_config(config_path=enforcement_yaml)
+
+    pr_reader = MagicMock(spec=IPRStatusReader)
+    pr_reader.get_pr_status.return_value = PRStatus.ABSENT
+
+    context_reader = MagicMock(spec=IContextLoadedReader)
+    context_reader.is_context_loaded.return_value = True
+
     return EnforcementRunner(
         workspace_root=tmp_path,
         config=config,
         git_config=loader.load_git_config(),
+        pr_status_reader=pr_reader,
+        context_loaded_reader=context_reader,
         server_root=tmp_path / ".phase-gate",
         state_reader=FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json"),
     )

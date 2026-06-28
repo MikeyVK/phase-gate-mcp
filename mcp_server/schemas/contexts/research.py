@@ -42,3 +42,11 @@ class ResearchContext(DocArtifactContext):
     related_docs: list[str] = Field(
         default_factory=list, description="Related documents in the project"
     )
+    approved_strategy: str | None = Field(
+        default=None,
+        description="The approved compatibility and migration policy/strategy for the issue",
+    )
+    expected_results: str | None = Field(
+        default=None,
+        description="The expected outcomes and verification baseline for the issue",
+    )

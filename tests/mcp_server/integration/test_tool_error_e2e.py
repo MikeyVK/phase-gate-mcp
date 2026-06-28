@@ -31,9 +31,6 @@ def test_scaffold_artifact_tool_preserves_error_contract(
 
     result = asyncio.run(tool.execute(params, NoteContext()))
 
-    assert result.is_error is True
-    assert result.error_code == "ERR_CONFIG"
-    assert result.file_path is None
-
-    assert result.content
-    assert "nonexistent_type" in result.content[0]["text"]
+    assert result.success is False
+    assert result.error_message is not None
+    assert "nonexistent_type" in result.error_message

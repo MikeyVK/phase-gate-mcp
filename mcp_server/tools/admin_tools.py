@@ -14,14 +14,14 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.tools.base import BaseTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.schemas.tool_outputs import RestartServerOutput
 
 # Helper functions (module-level marker path helper removed — now an instance method)
 
@@ -80,7 +80,7 @@ class RestartServerInput(BaseModel):
     )
 
 
-class RestartServerTool(BaseTool):
+class RestartServerTool(ICoreTool[RestartServerInput, RestartServerOutput]):
     """Tool to restart MCP server to reload code changes.
 
     **Purpose:** Enable agent autonomy during TDD workflows.
@@ -89,13 +89,22 @@ class RestartServerTool(BaseTool):
     intervention, allowing fully autonomous test-driven development cycles.
     """
 
-    name = "restart_server"
-    description = "Restart MCP server to reload code changes"
-    args_model = RestartServerInput
+    output_model: ClassVar[type[BaseModel]] = RestartServerOutput
+
+    @property
+    def name(self) -> str:
+        return "restart_server"
+
+    @property
+    def description(self) -> str:
+        return "Restart MCP server to reload code changes"
+
+    @property
+    def args_model(self) -> type[BaseModel] | None:
+        return RestartServerInput
 
     def __init__(self, server_root: Path) -> None:
         """Initialize with the injected server_root directory."""
-        super().__init__()
         self._server_root = server_root
 
     def _get_restart_marker_path(self) -> Path:
@@ -109,7 +118,9 @@ class RestartServerTool(BaseTool):
             return {}
         return self.args_model.model_json_schema()
 
-    async def execute(self, params: RestartServerInput, context: NoteContext) -> ToolResult:
+    async def execute(
+        self, params: RestartServerInput, context: NoteContext
+    ) -> RestartServerOutput:
         """Execute server restart.
 
         **Workflow:**
@@ -219,11 +230,12 @@ class RestartServerTool(BaseTool):
         # Start background exit task (fire-and-forget)
         asyncio.create_task(delayed_exit())
 
-        # Return success immediately (before exit happens)
-        return ToolResult.text(
-            f"Server restart scheduled (reason: {params.reason}). "
-            "⏳ WAIT 3 SECONDS before continuing - server needs time to reload. "
-            "Service will be unavailable briefly during restart."
+        return RestartServerOutput(
+            success=True,
+            reason=params.reason,
+            pid=os.getpid(),
+            timestamp=restart_time.timestamp(),
+            iso_time=restart_time.isoformat(),
         )
 
 

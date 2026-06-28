@@ -3,8 +3,8 @@
 # GitHub Integration Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-05-27  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/tools/issue_tools.py](../../../../mcp_server/tools/issue_tools.py), [pr_tools.py](../../../../mcp_server/tools/pr_tools.py), [label_tools.py](../../../../mcp_server/tools/label_tools.py), [milestone_tools.py](../../../../mcp_server/tools/milestone_tools.py)  
 **Tests:** [tests/unit/test_github_tools.py](../../../../tests/unit/test_github_tools.py)  
@@ -150,28 +150,25 @@ Retrieve detailed information about a specific issue.
 |-----------|------|----------|-------------|
 | `issue_number` | `int` | **Yes** | Issue number to retrieve |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "number": 123,
-  "url": "https://github.com/owner/repo/issues/123",
-  "title": "Feature request: Add user authentication",
-  "body": "## Description\n\nDetailed issue body...",
-  "state": "open",
-  "labels": ["type:feature", "priority:high"],
-  "milestone": {
-    "number": 5,
-    "title": "v2.0",
-    "state": "open"
-  },
-  "assignees": ["username1"],
-  "created_at": "2026-02-01T10:00:00+00:00",
-  "updated_at": "2026-02-08T12:00:00+00:00",
-  "closed_at": null,
-  "author": "username2"
-}
-```
+`get_issue` returns a single `TextContent` block containing formatted markdown of the issue details and the resource cache link pointing to the cached `GetIssueOutput` DTO.
+
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `number`: `int`
+- `url`: `string`
+- `title`: `string`
+- `body`: `string`
+- `state`: `string`
+- `labels`: `list[string]`
+- `milestone`: `MilestoneDTO | null` (having `number`, `title`, `state`)
+- `assignees`: `list[string]`
+- `created_at`: `string`
+- `updated_at`: `string`
+- `closed_at`: `string | null`
+- `author`: `string`
 
 #### Example Usage
 
@@ -425,15 +422,15 @@ This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...
       d. Conditional: neutralize and commit (only if diffs detected)
          └─ GitManager.neutralize_to_base(paths, base)
          └─ GitManager.commit_with_scope(workflow_phase="ready", ...)
-         → on commit failure: hard_reset("HEAD") + RecoveryNote + raises
-      e. Push the branch to origin (always)
-         → on push failure: hard_reset("HEAD~1") if commit made + RecoveryNote + raises
+          → on commit failure: hard_reset("HEAD") + a recovery note + raises
+       e. Push the branch to origin (always)
+          → on push failure: hard_reset("HEAD~1") if commit made + a recovery note + raises
       Returns True if a neutralization commit was made, False otherwise
 2. Create the GitHub PR via API
    └─ GitHubManager.create_pr(...)
    → on failure + commit_made=True: rollback_push called automatically
       └─ GitManager.rollback_push(note_context) — hard_reset("HEAD~1") + force-push
-      Produces a RecoveryNote; branch left in pre-submit state
+       Produces a recovery note; branch left in pre-submit state
 3. Write PRStatus.OPEN to the session cache
    └─ IPRStatusWriter.set_pr_status(branch, PRStatus.OPEN)
 ```
@@ -441,8 +438,8 @@ This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...
 | Failure stage | Error type | Branch state after | Retry safe? |
 |---------------|-----------|-------------------|-------------|
 | Preflight (dirty tree / no upstream) | `PreflightError` | Unchanged | Yes |
-| Commit or push (inside `prepare_submission`) | `ExecutionError` | Rolled back internally; RecoveryNote produced | Yes |
-| GitHub API (`create_pr`) | `ExecutionError` | Auto-rolled back via `rollback_push`; RecoveryNote produced | Yes |
+| Commit or push (inside `prepare_submission`) | `ExecutionError` | Rolled back internally; recovery note produced | Yes |
+| GitHub API (`create_pr`) | `ExecutionError` | Auto-rolled back via `rollback_push`; recovery note produced | Yes |
 
 
 #### Branch-Local Artifacts
@@ -463,9 +460,9 @@ Configured in `.phase-gate/config/contracts.yaml` → `branch_local_artifacts`.
 
 **Enforcement runner** (`.phase-gate/config/enforcement.yaml`, runs before execution):
 1. **`check_phase_readiness`** — blocks unless `state.json` shows `current_phase == "ready"`.
-   Produces a `SuggestionNote` with `transition_phase(to_phase="ready")`.
-2. **`check_pr_status`** (via `BranchMutatingTool`) — blocks if the branch already has
-   `PRStatus.OPEN` in cache. Produces a `SuggestionNote` to call `merge_pr` first.
+   Produces a `suggestion` note with `transition_phase(to_phase="ready")`.
+2. **`check_pr_status`** (via dynamic `branch_mutating` category configuration) — blocks if the branch already has
+   `PRStatus.OPEN` in cache. Produces a `suggestion` note to call `merge_pr` first.
 
 **Internal preflights** (inside `GitManager.prepare_submission`, run before any mutation):
 3. **Dirty-tree check** — blocks with `PreflightError` if working tree is not clean.
@@ -480,7 +477,7 @@ Created PR #45: https://github.com/owner/repo/pull/45
 Error result on failure:
 ```
 <error details from PreflightError or ExecutionError>
-(RecoveryNote in context describes rollback status and retry instructions.)
+(A recovery note in context describes rollback status and retry instructions.)
 ```
 
 #### Example Usage
@@ -511,7 +508,7 @@ Error result on failure:
 - **Artifact Neutralization:** Skipped if no branch-local artifacts have a net diff (clean branch).
 - **Draft PRs:** Cannot be merged until marked ready for review on GitHub.
 - **Auto-link Issues:** Use `Closes #123` in body to auto-link issues.
-- **`MergePRTool` excluded from BranchMutatingTool:** Intentional — it is the escape hatch
+- **`MergePRTool` excluded from `branch_mutating` category list:** Intentional — it is the escape hatch
   that clears `PRStatus.OPEN`. Including it would cause a deadlock.
 
 ---
@@ -664,21 +661,21 @@ Retrieve detailed information about a specific pull request.
 |-----------|------|----------|-------------|
 | `pr_number` | `int` | **Yes** | Pull request number to retrieve |
 
-#### Returns (via MCP structuredContent)
+#### Returns (via MCP Resource Cache)
 
-```json
-{
-  "pr_number": 45,
-  "title": "Feature: Add OAuth2 authentication",
-  "state": "closed",
-  "base_branch": "main",
-  "head_branch": "feature/123-oauth",
-  "merged_at": "2026-05-27T12:00:00+00:00",
-  "merge_sha": "abc123def456",
-  "body": "## Description\n\nThis PR adds OAuth2 authentication support."
-}
-```
+`get_pr` returns a single `TextContent` block containing formatted markdown of the PR details and the resource cache link pointing to the cached `GetPROutput` DTO.
 
+The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and contains the following fields:
+- `success`: `bool`
+- `error_message`: `string | null`
+- `pr_number`: `int`
+- `title`: `string`
+- `state`: `string`
+- `base_branch`: `string`
+- `head_branch`: `string`
+- `merged_at`: `string | null`
+- `merge_sha`: `string | null`
+- `body`: `string`
 #### Example Usage
 
 ```json

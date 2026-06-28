@@ -7,8 +7,7 @@ import sys
 import time
 import uuid
 from io import TextIOWrapper
-from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import anyio
 from mcp.server import Server
@@ -21,40 +20,29 @@ from mcp.types import (
     TextContent,
     Tool,
 )
-from pydantic import AnyUrl, BaseModel, ValidationError
+from pydantic import AnyUrl
 
 # Config
-from mcp_server.bootstrap import ConfigLayer, ManagerGraph
 from mcp_server.config.settings import Settings
-from mcp_server.core.exceptions import MCPError
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.enforcement_runner import EnforcementContext
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.resources.base import BaseResource
 
 # Resources
+# Resources
 # Scaffolding infrastructure (Issue #72)
-from mcp_server.tools.base import BaseTool
+from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 
 # Tools
-from mcp_server.tools.phase_tools import (
-    TRANSITION_ADVISORY_NOTE,
-)
 from mcp_server.tools.tool_result import ToolResult
 from mcp_server.utils.mcp_converters import (
-    convert_tool_result_to_content,
     convert_tool_result_to_mcp_result,
 )
 
 logger = get_logger("server")
 lifecycle_logger = get_logger("server_lifecycle")
-
-TRANSITION_ADVISORY_TOOL_NAMES = {
-    "transition_phase",
-    "force_phase_transition",
-    "transition_cycle",
-    "force_cycle_transition",
-}
 
 
 class MCPServer:
@@ -63,34 +51,16 @@ class MCPServer:
     def __init__(
         self,
         settings: Settings,
-        configs: ConfigLayer,
-        managers: ManagerGraph,
-        tools: list[BaseTool],
+        tools: list[ITool],
         resources: list[BaseResource],
+        presenter: TextPresenter | None = None,
+        publisher: IToolResponsePublisher | None = None,
     ) -> None:
         """Initialize the MCP server with resources and tools."""
         self._settings = settings
-        self._configs = configs
+        self.presenter = presenter
+        self.response_cache_manager = publisher
         server_name = settings.server.name
-        workspace_root = Path(settings.server.workspace_root)
-
-        self._workspace_root = workspace_root
-        self.template_registry = managers.template_registry
-        self.git_manager = managers.git_manager
-        self._state_repository = managers.state_repository
-        self.workflow_status_resolver = managers.workflow_status_resolver
-        self.project_manager = managers.project_manager
-        self.phase_contract_resolver = managers.phase_contract_resolver
-        self.workflow_gate_runner = managers.workflow_gate_runner
-        self.state_reconstructor = managers.state_reconstructor
-        self._workflow_state_mutator = managers.workflow_state_mutator
-        self._context_loaded_cache = managers.context_loaded_cache
-        self.phase_state_engine = managers.phase_state_engine
-        self.qa_manager = managers.qa_manager
-        self.github_manager = managers.github_manager
-        self.artifact_manager = managers.artifact_manager
-        self.pr_status_cache = managers.pr_status_cache
-        self.enforcement_runner = managers.enforcement_runner
 
         self.server = Server(server_name)
         self.resources = resources
@@ -98,115 +68,9 @@ class MCPServer:
 
         self.setup_handlers()
 
-    def _validate_tool_arguments(
-        self, tool: BaseTool, arguments: dict[str, Any] | None, call_id: str, name: str
-    ) -> BaseModel | dict[str, Any] | ToolResult:
-        """Validate tool arguments against args_model.
-
-        Returns:
-            - Validated BaseModel instance if validation succeeds
-            - Raw arguments dict if no args_model
-            - ToolResult with is_error=True if validation fails
-        """
-        if not getattr(tool, "args_model", None):
-            return arguments or {}
-
-        model_cls = cast(type[BaseModel], tool.args_model)
-        logger.debug(
-            "Validating tool arguments",
-            extra={
-                "props": {
-                    "call_id": call_id,
-                    "tool_name": name,
-                    "model": model_cls.__name__,
-                }
-            },
-        )
-        try:
-            model_validated = model_cls(**(arguments or {}))
-            logger.debug(
-                "Arguments validated successfully",
-                extra={
-                    "props": {
-                        "call_id": call_id,
-                        "tool_name": name,
-                    }
-                },
-            )
-            return model_validated
-        except ValidationError as validation_error:
-            logger.warning(
-                "Argument validation failed: %s",
-                validation_error,
-                extra={
-                    "props": {
-                        "call_id": call_id,
-                        "tool_name": name,
-                        "model": model_cls.__name__,
-                        "arguments": arguments,
-                    }
-                },
-            )
-            error_details = str(validation_error)
-            return ToolResult(
-                content=[
-                    {"type": "text", "text": f"Invalid input for {name}: {error_details}"},
-                    {
-                        "type": "resource",
-                        "resource": {
-                            "uri": "schema://validation",
-                            "mimeType": "application/json",
-                            "text": json.dumps(tool.input_schema),
-                        },
-                    },
-                ],
-                is_error=True,
-            )
-
-    def _convert_tool_result_to_content(
-        self, result: ToolResult
-    ) -> list[TextContent | ImageContent | EmbeddedResource]:
-        """Convert ToolResult to MCP content list."""
-        return convert_tool_result_to_content(result.content)
-
     def _convert_tool_result_to_mcp_result(self, result: ToolResult) -> CallToolResult:
         """Convert ToolResult to CallToolResult while preserving error semantics."""
         return convert_tool_result_to_mcp_result(result)
-
-    def _run_tool_enforcement(
-        self,
-        tool: BaseTool,
-        timing: str,
-        params: BaseModel | dict[str, Any],
-        note_context: NoteContext,
-        result: ToolResult | None = None,
-    ) -> ToolResult | None:
-        """Execute pre/post enforcement for one tool when configured."""
-        event = getattr(tool, "enforcement_event", None)
-        tool_category = getattr(tool, "tool_category", None)
-        if event is None and tool_category is None:
-            return None
-
-        enforcement_ctx = EnforcementContext(
-            workspace_root=self._workspace_root,
-            tool_name=tool.name,
-            params=params,
-            tool_result=result,
-        )
-        try:
-            self.enforcement_runner.run(
-                event=event or "",
-                timing=timing,
-                tool_category=tool_category,
-                enforcement_ctx=enforcement_ctx,
-                note_context=note_context,
-            )
-        except MCPError as exc:
-            if timing == "post" and tool.name in TRANSITION_ADVISORY_TOOL_NAMES:
-                note_context.discard_info_message(TRANSITION_ADVISORY_NOTE)
-            base = ToolResult.error(message=exc.message, error_code=exc.code)
-            return note_context.render_to_response(base)
-        return None
 
     def setup_handlers(self) -> None:
         """Set up the MCP protocol handlers."""
@@ -225,17 +89,28 @@ class MCPServer:
 
         @self.server.read_resource()  # type: ignore[no-untyped-call, untyped-decorator]
         async def handle_read_resource(uri: str) -> str:
+            uri_str = str(uri)
             for resource in self.resources:
-                if resource.matches(uri):
-                    return await resource.read(uri)
-            raise ValueError(f"Resource not found: {uri}")
+                if resource.matches(uri_str):
+                    return await resource.read(uri_str)
+            raise ValueError(f"Resource not found: {uri_str}")
 
         @self.server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
         async def handle_list_tools() -> list[Tool]:
-            return [
-                Tool(name=t.name, description=t.description, inputSchema=t.input_schema)
-                for t in self.tools
-            ]
+            tools_list = []
+            for t in self.tools:
+                output_schema = None
+                if hasattr(t, "output_model") and getattr(t, "output_model", None) is not None:
+                    output_schema = t.output_model.model_json_schema()
+                tools_list.append(
+                    Tool(
+                        name=t.name,
+                        description=t.description,
+                        inputSchema=t.input_schema,
+                        outputSchema=output_schema,
+                    )
+                )
+            return tools_list
 
         @self.server.call_tool()  # type: ignore[untyped-decorator]
         async def handle_call_tool(
@@ -259,40 +134,49 @@ class MCPServer:
             for tool in self.tools:
                 if tool.name == name:
                     try:
-                        # Validate arguments
-                        validated = self._validate_tool_arguments(tool, arguments, call_id, name)
-                        # Early return if validation failed
-                        if isinstance(validated, ToolResult):
-                            return self._convert_tool_result_to_mcp_result(validated)
-
                         note_context = NoteContext()
 
-                        pre_result = self._run_tool_enforcement(
-                            tool, "pre", validated, note_context=note_context
-                        )
-                        if pre_result is not None:
-                            return self._convert_tool_result_to_mcp_result(pre_result)
+                        # 1. Execute target tool (guaranteed to return a BaseModel DTO)
+                        result_dto = await tool.execute(arguments or {}, note_context)
 
-                        # Execute tool
-                        raw_result = await tool.execute(validated, note_context)
+                        # 2. Publish result to cache (resilient; returns None on failure)
+                        cache_pub = None
+                        if self.response_cache_manager is not None:
+                            cache_pub = self.response_cache_manager.put(tool.name, result_dto)
 
-                        if not raw_result.is_error:
-                            post_result = self._run_tool_enforcement(
-                                tool,
-                                "post",
-                                validated,
-                                note_context=note_context,
-                                result=raw_result,
+                        # 3. Generate markdown output (resilient; formats DTO and notes)
+                        if self.presenter is not None:
+                            markdown = self.presenter.present(
+                                tool_name=tool.name,
+                                data=result_dto,
+                                notes=note_context.entries,
+                                cache_pub=cache_pub,
                             )
-                            if post_result is not None:
-                                return self._convert_tool_result_to_mcp_result(post_result)
+                        else:
+                            markdown = str(result_dto)
+                        # 4. Construct and return normalized ToolResult
+                        raw_result = ToolResult.text(markdown)
 
-                        # Render notes and convert result to MCP content
-                        result = note_context.render_to_response(raw_result)
-                        response_content = self._convert_tool_result_to_mcp_result(result)
+                        # In case result DTO indicates an error, flag the ToolResult as an error
+                        success = getattr(result_dto, "success", True)
+                        if not success:
+                            raw_result = raw_result.model_copy(update={"is_error": True})
+                            if getattr(result_dto, "error_type", None) == "ValidationError":
+                                raw_result.content.append(
+                                    {
+                                        "type": "resource",
+                                        "resource": {
+                                            "uri": "schema://validation",
+                                            "mimeType": "application/json",
+                                            "text": json.dumps(
+                                                getattr(result_dto, "input_schema", {})
+                                            ),
+                                        },
+                                    }
+                                )
+                        response_content = self._convert_tool_result_to_mcp_result(raw_result)
 
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
-
                         logger.debug(
                             "Tool call completed",
                             extra={
@@ -317,8 +201,7 @@ class MCPServer:
                             },
                         )
                         raise
-                    except (KeyError, AttributeError, TypeError) as e:
-                        # Response processing error (dict access, attribute access, type issues)
+                    except Exception as e:
                         duration_ms = (time.perf_counter() - start_time) * 1000.0
                         logger.error(
                             "Response processing failed: %s",
@@ -362,17 +245,3 @@ class MCPServer:
     async def shutdown(self) -> None:
         """Shutdown the MCP server gracefully."""
         lifecycle_logger.info("MCP server shutting down")
-
-
-def main(settings: Settings | None = None) -> None:
-    """Entry point for the MCP server."""
-    from mcp_server.bootstrap import ServerBootstrapper  # noqa: PLC0415
-
-    settings = settings or Settings.from_env()
-    bootstrapper = ServerBootstrapper(settings)
-    server = bootstrapper.bootstrap()
-    asyncio.run(server.run())
-
-
-if __name__ == "__main__":
-    main()

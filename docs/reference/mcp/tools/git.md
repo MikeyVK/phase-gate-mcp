@@ -3,8 +3,8 @@
 # Git Workflow & Analysis Tools
 
 **Status:** DEFINITIVE  
-**Version:** 2.1  
-**Last Updated:** 2026-05-29  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/tools/git_tools.py](../../../../mcp_server/tools/git_tools.py), [git_fetch_tool.py](../../../../mcp_server/tools/git_fetch_tool.py), [git_pull_tool.py](../../../../mcp_server/tools/git_pull_tool.py), [git_analysis_tools.py](../../../../mcp_server/tools/git_analysis_tools.py)  
 **Tests:** [tests/unit/test_git_tools.py](../../../../tests/unit/test_git_tools.py)  
@@ -27,11 +27,13 @@ The MCP server provides **15 Git tools** across 4 functional categories:
 | **Git Sync** | 2 | Thread-safe fetch/pull with lock files |
 | **Git Analysis** | 2 | Branch listing with verbose info, diff statistics |
 | **TOTAL** | **15** | — |
-All tools:
 - ✅ Execute in workspace root (detected from environment)
-- ✅ Return structured responses with `success` boolean
+- ✅ Return structured responses via the MCP Resource Cache (using Pydantic DTOs)
 - ✅ Validate inputs before git operations
 - ✅ Integrate with PhaseStateEngine for branch state tracking
+
+> [!NOTE]
+> **Unified DTO & MCP Resource Caching:** Every Git tool returns a single `TextContent` block containing a human-readable summary and the resource cache link (`pgmcp://cache/runs/{run_id}`). The raw JSON objects documented in the `#### Returns` sections below are stored as DTOs in the MCP Resource Cache and can be retrieved by client/caller using the cached resource URI.
 
 ---
 

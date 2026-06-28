@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from mcp_server.core.exceptions import ValidationError
-from mcp_server.core.operation_notes import NoteContext, SuggestionNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.scaffolders.base_scaffolder import BaseScaffolder
 from mcp_server.scaffolders.scaffold_result import ScaffoldResult
 from mcp_server.scaffolding.renderer import JinjaRenderer
@@ -56,6 +56,11 @@ class TemplateScaffolder(BaseScaffolder):
             template_dir = get_template_root()
             renderer = JinjaRenderer(template_dir=template_dir)
         self._renderer = renderer
+
+    @property
+    def renderer(self) -> JinjaRenderer:
+        """Get the template renderer."""
+        return self._renderer
 
     def validate(
         self,
@@ -115,9 +120,12 @@ class TemplateScaffolder(BaseScaffolder):
             error.provided = list(provided)
             if note_context is not None:
                 note_context.produce(
-                    SuggestionNote(
-                        message=f"Provide the missing fields: {', '.join(missing)}",
-                        subject=artifact_type,
+                    Note(
+                        key="scaffold_missing_fields_suggestion",
+                        params={
+                            "missing_fields": ", ".join(missing),
+                            "artifact_type": artifact_type,
+                        },
                     )
                 )
             raise error

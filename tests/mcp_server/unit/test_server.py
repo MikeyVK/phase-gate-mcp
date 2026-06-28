@@ -17,19 +17,30 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pydantic import BaseModel
+
+from mcp_server.server import MCPServer
+from mcp_server.bootstrap import ServerBootstrapper, TemplateRegistry
 from mcp.types import CallToolRequest, CallToolRequestParams
 
 from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.operation_notes import InfoNote, NoteContext
+from mcp_server.schemas.cache_publication import CachePublication
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.state_repository import InMemoryStateRepository
-from mcp_server.tools.base import BaseTool
+from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.tools.git_tools import CreateBranchTool
 from mcp_server.tools.phase_tools import (
-    TRANSITION_ADVISORY_NOTE,
     ForcePhaseTransitionTool,
     TransitionPhaseTool,
 )
+
+TRANSITION_ADVISORY_NOTE = (
+    "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
+    "to load the current phase context for this branch."
+)
 from mcp_server.tools.tool_result import ToolResult
+from mcp_server.core.tool_factory import ToolFactory
 from tests.mcp_server.test_support import (
     make_phase_state_engine,
     make_project_manager,
@@ -59,6 +70,16 @@ def _patch_server_settings(
     mock.from_env.return_value.github.repo = "repo"
     mock.from_env.return_value.logging.level = "INFO"
     mock.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
+
+
+def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
+    bootstrapper = ServerBootstrapper(settings)
+    configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
+    workspace_root = Path(settings.server.workspace_root)
+    server_root = workspace_root / settings.server.server_root_dir
+    template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
+    managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
+    return managers, workspace_root
 
 
 def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
@@ -122,11 +143,22 @@ def _make_submit_pr_request() -> CallToolRequest:
 
 
 def _make_transition_advisory_execute(
-    text: str,
-) -> Callable[[object, object, NoteContext], Awaitable[ToolResult]]:
-    async def execute(_self: object, _params: object, context: NoteContext) -> ToolResult:
-        context.produce(InfoNote(message=TRANSITION_ADVISORY_NOTE))
-        return ToolResult.text(text)
+    _text: str,
+) -> Callable[[object, object, NoteContext], Awaitable[PhaseTransitionOutput]]:
+    async def execute(
+        _self: object, _params: object, context: NoteContext
+    ) -> PhaseTransitionOutput:
+        # No legacy InfoNote produced
+        return PhaseTransitionOutput(
+            success=True,
+            branch=getattr(_params, "branch", "feature/257-reorder-workflow-phases"),
+            from_phase="research",
+            to_phase=getattr(_params, "to_phase", "planning"),
+            passing_gates=[],
+            skipped_gates=[],
+            passing_gates_count=0,
+            skipped_gates_count=0,
+        )
 
     return execute
 
@@ -179,22 +211,34 @@ class TestServerToolRegistration:
     ) -> None:
         """call_tool handler should log correlation id and duration."""
 
-        class DummyTool(BaseTool):
+        class DummyTool(ICoreTool[BaseModel, ToolResult]):
             """Dummy tool for testing server call_tool logging."""
 
-            name = "dummy_tool"
-            description = "Dummy tool"
-            args_model = None
+            @property
+            def name(self) -> str:
+                return "dummy_tool"
 
-            async def execute(self, params: Any, context: NoteContext) -> ToolResult:  # noqa: ANN401
+            @property
+            def description(self) -> str:
+                return "Dummy tool"
+
+            @property
+            def args_model(self) -> type[BaseModel] | None:
+                return None
+
+            async def execute(self, params: BaseModel | None, context: NoteContext) -> ToolResult:
                 del params, context
                 return ToolResult.text("ok")
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls)
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
-            server.tools = [DummyTool()]
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
+            server.tools = [factory.create_tool(DummyTool())]
 
             handler = server.server.request_handlers[CallToolRequest]
             caplog.set_level(logging.DEBUG, logger="mcp_server.server")
@@ -254,11 +298,15 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
             manager = MagicMock()
-            manager.git_config = server.git_manager.git_config
-            server.tools = [CreateBranchTool(manager=manager)]
+            manager.git_config = managers.git_manager.git_config
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
+            server.tools = [factory.create_tool(CreateBranchTool(manager=manager))]
             handler = server.server.request_handlers[CallToolRequest]
 
             req = CallToolRequest(
@@ -295,9 +343,8 @@ class TestServerToolRegistration:
             server = make_test_server()
             handler = server.server.request_handlers[CallToolRequest]
 
-            with patch.object(
-                server.github_manager,
-                "create_pr",
+            with patch(
+                "mcp_server.managers.github_manager.GitHubManager.create_pr",
                 side_effect=AssertionError("create_pr should not be called"),
             ) as mock_create_pr:
                 response = await handler(_make_submit_pr_request())
@@ -340,21 +387,27 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
-                TransitionPhaseTool(
-                    workspace_root=tmp_path,
-                    project_manager=project_manager,
-                    state_engine=state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    TransitionPhaseTool(
+                        workspace_root=tmp_path,
+                        project_manager=project_manager,
+                        state_engine=state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run", return_value=[]) as mock_run,
+                patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
                 patch.object(
                     TransitionPhaseTool,
                     "execute",
@@ -373,9 +426,9 @@ class TestServerToolRegistration:
                 )
                 response = await handler(req)
 
-        assert "Successfully transitioned" in response.root.content[0].text
-        assert len(response.root.content) == 2
-        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
+        assert "Transitioned phase to" in response.root.content[0].text
+        assert len(response.root.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -391,21 +444,27 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
-                ForcePhaseTransitionTool(
-                    workspace_root=tmp_path,
-                    project_manager=server.project_manager,
-                    state_engine=server.phase_state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    ForcePhaseTransitionTool(
+                        workspace_root=tmp_path,
+                        project_manager=managers.project_manager,
+                        state_engine=managers.phase_state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run", return_value=[]) as mock_run,
+                patch.object(managers.enforcement_runner, "run", return_value=[]) as mock_run,
                 patch.object(
                     ForcePhaseTransitionTool,
                     "execute",
@@ -425,9 +484,9 @@ class TestServerToolRegistration:
                 )
                 response = await handler(req)
 
-        assert response.root.content[0].text == "✅ Forced phase transition"
-        assert len(response.root.content) == 2
-        assert response.root.content[1].text == TRANSITION_ADVISORY_NOTE
+        assert "Transitioned phase to" in response.root.content[0].text
+        assert len(response.root.content) == 1
+        assert TRANSITION_ADVISORY_NOTE in response.root.content[0].text
         assert any(
             call.kwargs.get("event") == "transition_phase" and call.kwargs.get("timing") == "post"
             for call in mock_run.call_args_list
@@ -461,20 +520,26 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
-                TransitionPhaseTool(
-                    workspace_root=tmp_path,
-                    project_manager=project_manager,
-                    state_engine=state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    TransitionPhaseTool(
+                        workspace_root=tmp_path,
+                        project_manager=project_manager,
+                        state_engine=state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
 
-            with patch.object(server.enforcement_runner, "run") as mock_run:
+            with patch.object(managers.enforcement_runner, "run") as mock_run:
 
                 def side_effect(*_args: object, **kwargs: object) -> list[str]:
                     if kwargs.get("event") == "transition_phase" and kwargs.get("timing") == "post":
@@ -509,21 +574,27 @@ class TestServerToolRegistration:
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             _patch_server_settings(mock_settings_cls, workspace_root=str(tmp_path))
+            managers, workspace_root = _get_test_bootstrap_context(
+                mock_settings_cls.from_env.return_value
+            )
 
             server = make_test_server()
+            factory = ToolFactory(managers.enforcement_runner, workspace_root)
             server.tools = [
-                ForcePhaseTransitionTool(
-                    workspace_root=tmp_path,
-                    project_manager=server.project_manager,
-                    state_engine=server.phase_state_engine,
-                    server_root=tmp_path / ".phase-gate",
-                    workphases_config=None,
+                factory.create_tool(
+                    ForcePhaseTransitionTool(
+                        workspace_root=tmp_path,
+                        project_manager=managers.project_manager,
+                        state_engine=managers.phase_state_engine,
+                        server_root=tmp_path / ".phase-gate",
+                        workphases_config=None,
+                    )
                 )
             ]
             handler = server.server.request_handlers[CallToolRequest]
 
             with (
-                patch.object(server.enforcement_runner, "run") as mock_run,
+                patch.object(managers.enforcement_runner, "run") as mock_run,
                 patch.object(
                     ForcePhaseTransitionTool,
                     "execute",
@@ -583,3 +654,101 @@ class TestServerToolRegistration:
 
         mock_settings_cls.from_env.assert_not_called()
         mock_run.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_handle_call_tool_cache_error_intercept() -> None:
+    """If cache write fails (returns None), the presenter should be called with run_id=None
+    and format the fallback message correctly without crashing.
+    """
+    from pydantic import BaseModel  # noqa: PLC0415
+    from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
+
+    class DummyTool(ICoreTool[BaseModel, ToolResult]):
+        @property
+        def name(self) -> str:
+            return "dummy_tool"
+
+        @property
+        def description(self) -> str:
+            return "Dummy Tool"
+
+        @property
+        def args_model(self) -> type[BaseModel] | None:
+            return None
+
+        async def execute(self, params: BaseModel, context: NoteContext) -> ToolResult:
+            return ToolResult.text("success")
+
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+
+        config_data = {
+            "global": {
+                "default_failure_template": "Failure: {error_message}",
+                "emojis": {"failure": "❌"},
+            },
+            "tools": {},
+        }
+        presenter = TextPresenter(config_data=config_data)
+
+        managers, workspace_root = _get_test_bootstrap_context(
+            mock_settings_cls.from_env.return_value
+        )
+        server = make_test_server()
+        server.presenter = presenter
+        tool = DummyTool()
+        cache_manager = ResponseCacheManager()
+        server.response_cache = cache_manager
+        server.response_cache_manager = cache_manager
+        factory = ToolFactory(managers.enforcement_runner, workspace_root)
+        server.tools = [factory.create_tool(tool)]
+
+        with patch.object(
+            cache_manager,
+            "put",
+            return_value=CachePublication(success=False, error_code="write_failed"),
+        ) as mock_put:
+            handler = server.server.request_handlers[CallToolRequest]
+
+            req = CallToolRequest(
+                params=CallToolRequestParams(
+                    name="dummy_tool",
+                    arguments={},
+                )
+            )
+
+            with patch.object(presenter, "present", wraps=presenter.present) as mock_present:
+                response = await handler(req)
+
+        content = response.root.content
+        assert len(content) == 1
+        text = getattr(content[0], "text", "")
+        # Should return direct text block formatted by presenter
+        assert "success" in text
+        # Since cache_pub.run_id is None, there should be NO cache URI in output
+        assert "pgmcp://cache/runs/" not in text
+
+        # Verify presenter was called with cache_pub
+        mock_present.assert_called_once()
+        _, kwargs = mock_present.call_args
+        assert kwargs.get("cache_pub") is not None
+        assert kwargs.get("cache_pub").success is False
+        mock_put.assert_called_once()
+
+
+def test_server_constructor_clean() -> None:
+    """Verify that MCPServer can be constructed without configs or managers."""
+
+    with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        _patch_server_settings(mock_settings_cls)
+        settings = mock_settings_cls.from_env.return_value
+        server = MCPServer(
+            settings=settings,
+            tools=[],
+            resources=[],
+            presenter=None,
+            publisher=None,
+        )
+        assert server is not None

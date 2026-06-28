@@ -21,7 +21,6 @@ RED contract:
 @layer: Tests (Unit)
 @dependencies: pytest, mcp_server.config.schemas.quality_config, mcp_server.managers.qa_manager
 """
-# pyright: reportPrivateUsage=false
 
 from __future__ import annotations
 
@@ -29,6 +28,7 @@ from pathlib import Path
 
 from mcp_server.config.schemas.quality_config import TextViolationsParsing
 from mcp_server.managers.qa_manager import QAManager
+from mcp_server.utils.violation_parser import ViolationParser
 from tests.mcp_server.test_support import make_qa_manager
 
 # ---------------------------------------------------------------------------
@@ -86,14 +86,13 @@ class TestParseTextViolationsFixable:
 
     def test_fixable_true_when_gate_supports_autofix(self) -> None:
         """When fixable_when='gate' and supports_autofix=True, violations are fixable."""
-        manager = _make_manager()
         parsing = TextViolationsParsing(
             pattern=_GATE0_PATTERN,
             severity_default="error",
             fixable_when="gate",
         )
 
-        violations = manager._parse_text_violations(
+        violations = ViolationParser.parse_text_violations(
             _RUFF_FORMAT_OUTPUT,
             parsing,
             supports_autofix=True,
@@ -106,14 +105,13 @@ class TestParseTextViolationsFixable:
 
     def test_fixable_false_when_gate_does_not_support_autofix(self) -> None:
         """When fixable_when='gate' but supports_autofix=False, violations are not fixable."""
-        manager = _make_manager()
         parsing = TextViolationsParsing(
             pattern=_GATE0_PATTERN,
             severity_default="error",
             fixable_when="gate",
         )
 
-        violations = manager._parse_text_violations(
+        violations = ViolationParser.parse_text_violations(
             _RUFF_FORMAT_OUTPUT,
             parsing,
             supports_autofix=False,
@@ -124,13 +122,12 @@ class TestParseTextViolationsFixable:
 
     def test_fixable_false_without_fixable_when(self) -> None:
         """Without fixable_when, violations are always fixable=False (backward compat)."""
-        manager = _make_manager()
         parsing = TextViolationsParsing(
             pattern=_GATE0_PATTERN,
             severity_default="error",
         )
 
-        violations = manager._parse_text_violations(
+        violations = ViolationParser.parse_text_violations(
             _RUFF_FORMAT_OUTPUT,
             parsing,
             supports_autofix=True,
@@ -150,7 +147,7 @@ class TestGate0AutofixIntegration:
 
     def test_gate0_parsing_config_has_fixable_when_gate(self) -> None:
         """Gate 0 text_violations config in quality.yaml includes fixable_when='gate'."""
-        config = _make_manager()._quality_config
+        config = _make_manager().quality_config
         assert config is not None
         gate0 = config.gates.get("gate0_ruff_format")
         assert gate0 is not None, "gate0_ruff_format must exist in quality.yaml"

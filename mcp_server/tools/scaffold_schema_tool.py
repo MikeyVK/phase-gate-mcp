@@ -14,13 +14,15 @@ enabling agents to discover required/optional fields before scaffolding.
     - Let tool_error_handler handle ConfigError for V1-only types
 """
 
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.artifact_manager import ArtifactManager
-from mcp_server.tools.base import StructuredTool
+from mcp_server.schemas.tool_outputs import ScaffoldSchemaOutput
+from mcp_server.core.interfaces.icore_tool import ICoreTool
 
 
 class ScaffoldSchemaInput(BaseModel):
@@ -34,45 +36,68 @@ class ScaffoldSchemaInput(BaseModel):
     )
 
 
-class ScaffoldSchemaTool(StructuredTool):
+class ScaffoldSchemaTool(ICoreTool[ScaffoldSchemaInput, ScaffoldSchemaOutput]):
     """Read-only tool that returns the JSON Schema for an artifact context.
 
     Enables agents to discover required and optional context fields
     before calling scaffold_artifact.
     """
 
-    name = "scaffold_schema"
-    description = "Return the JSON Schema for the context parameter of an artifact type."
-    args_model = ScaffoldSchemaInput
+    output_model: ClassVar[type[BaseModel]] = ScaffoldSchemaOutput
 
     def __init__(self, manager: ArtifactManager | None = None) -> None:
         """Initialize tool with an explicitly injected artifact manager."""
-        super().__init__()
         if manager is None:
             raise ValueError("ArtifactManager must be injected for scaffold_schema")
         self.manager = manager
 
     @property
+    def name(self) -> str:
+        return "scaffold_schema"
+
+    @property
+    def description(self) -> str:
+        return "Return the JSON Schema for the context parameter of an artifact type."
+
+    @property
+    def args_model(self) -> type[ScaffoldSchemaInput] | None:
+        return ScaffoldSchemaInput
+
+    @property
     def input_schema(self) -> dict[str, Any]:
-        schema = super().input_schema
+        from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
+
+        assert self.args_model is not None
+        schema = resolve_schema_refs(self.args_model.model_json_schema())
         schema["properties"]["artifact_type"]["enum"] = self.manager.registry.list_type_ids()
         return schema
 
-    async def execute_structured(
+    async def execute(
         self,
         params: ScaffoldSchemaInput,
-        context: NoteContext,  # noqa: ARG002
-    ) -> tuple[dict[str, Any], str]:
+        context: NoteContext,
+    ) -> ScaffoldSchemaOutput:
         """Return JSON Schema for the artifact type's context model.
-
-        All exceptions are handled by tool_error_handler decorator.
 
         Args:
             params: Input containing artifact_type
-            context: NoteContext (unused, required by protocol)
+            context: NoteContext (unused)
 
         Returns:
-            Tuple of (schema_dict, summary_text)
+            ScaffoldSchemaOutput DTO
         """
-        schema_dict = self.manager.get_context_schema(params.artifact_type)
-        return schema_dict, f"JSON Schema for '{params.artifact_type}'"
+        del context
+        try:
+            schema_dict = self.manager.get_context_schema(params.artifact_type)
+            return ScaffoldSchemaOutput(
+                success=True,
+                artifact_type=params.artifact_type,
+                schema_data=schema_dict,
+            )
+        except (ConfigError, ValueError, RuntimeError) as e:
+            return ScaffoldSchemaOutput(
+                success=False,
+                error_message=str(e),
+                artifact_type=params.artifact_type,
+                schema_data={},
+            )

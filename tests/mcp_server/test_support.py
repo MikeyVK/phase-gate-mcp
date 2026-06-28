@@ -46,7 +46,6 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.tools.issue_tools import CreateIssueTool
-from mcp_server.tools.tool_result import ToolResult
 
 if TYPE_CHECKING:
     from mcp_server.config.settings import Settings
@@ -568,20 +567,34 @@ def make_test_server(settings: Settings | None = None) -> MCPServer:
     return bootstrapper.bootstrap()
 
 
-def assert_structured_result(
-    result: ToolResult,
-    expected_data: dict[str, Any] | None = None,
-) -> None:
-    """Assert that a ToolResult is a valid structured result and optional checks on data."""
-    assert not result.is_error, f"Expected successful tool result, got error: {result}"
+def assert_itool_result(
+    result: Any,  # noqa: ANN401
+    text_contains: str | None = None,
+) -> str:
+    """Verifies the ToolResult structure for ITool (pure text, no JSON)."""
+    is_err = getattr(result, "is_error", None)
+    if is_err is None:
+        is_err = getattr(result, "isError", False)
+    assert not is_err, f"Expected successful tool result, got error: {result}"
 
-    # Check that it contains a json block and a text block
-    json_blocks = [c for c in result.content if c.get("type") == "json"]
-    text_blocks = [c for c in result.content if c.get("type") == "text"]
+    json_blocks = []
+    text_blocks = []
+    for c in result.content:
+        c_type = c.get("type") if isinstance(c, dict) else getattr(c, "type", None)
+        if c_type == "json":
+            json_blocks.append(c)
+        elif c_type == "text":
+            text_blocks.append(c)
 
-    assert len(json_blocks) == 1, f"Expected exactly one json block, got {len(json_blocks)}"
+    assert len(json_blocks) == 0, f"Expected no json block, got {len(json_blocks)}"
     assert len(text_blocks) == 1, f"Expected exactly one text block, got {len(text_blocks)}"
 
-    if expected_data is not None:
-        actual = json_blocks[0]["json"]
-        assert actual == expected_data, f"Data mismatch: {actual} != {expected_data}"
+    first_text = text_blocks[0]
+    text_content = (
+        first_text["text"] if isinstance(first_text, dict) else getattr(first_text, "text", "")
+    )
+
+    if text_contains:
+        assert text_contains in text_content
+
+    return text_content

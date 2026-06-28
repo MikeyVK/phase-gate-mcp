@@ -94,12 +94,26 @@ from mcp_server.schemas.render_contexts.tool import ToolRenderContext
 from mcp_server.schemas.render_contexts.unit_test import UnitTestRenderContext
 from mcp_server.schemas.render_contexts.validation_report import ValidationReportRenderContext
 from mcp_server.schemas.render_contexts.worker import WorkerRenderContext
+from mcp_server.schemas.tool_outputs import BaseToolOutput
+from mcp_server.schemas.error_outputs import (
+    ToolErrorOutput,
+    ValidationErrorOutput,
+    ExecutionErrorOutput,
+    CacheErrorOutput,
+    EnforcementErrorOutput,
+)
 
 __all__ = [
     # Infrastructure
     "LifecycleMixin",
     "BaseContext",
     "BaseRenderContext",
+    "BaseToolOutput",
+    "ToolErrorOutput",
+    "ValidationErrorOutput",
+    "ExecutionErrorOutput",
+    "CacheErrorOutput",
+    "EnforcementErrorOutput",
     # Context schemas (user-facing)
     "AdapterContext",
     "ArchitectureContext",

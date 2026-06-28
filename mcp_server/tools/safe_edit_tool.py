@@ -29,10 +29,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from mcp_server.core.operation_notes import NoteContext
-
-# Project modules
-from mcp_server.tools.base import BranchMutatingTool
-from mcp_server.tools.tool_result import ToolResult
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.schemas.tool_outputs import SafeEditOutput
 from mcp_server.validation.validation_service import ValidationService
 
 
@@ -183,7 +181,7 @@ class SafeEditInput(BaseModel):
         return self
 
 
-class SafeEditTool(BranchMutatingTool):
+class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
     """Tool for safely editing files with validation and multiple edit modes.
 
     Supports four mutually exclusive edit modes:
@@ -194,7 +192,6 @@ class SafeEditTool(BranchMutatingTool):
 
     All modes support:
     - Validation modes: strict (reject on error) / interactive (warn) / verify_only (dry-run)
-    - Diff preview: Shows unified diff before applying changes (default: enabled)
     - Validator integration: PythonValidator, MarkdownValidator, TemplateValidator
 
     **IMPORTANT - Concurrent Edit Protection:**
@@ -204,19 +201,26 @@ class SafeEditTool(BranchMutatingTool):
     - Example: [{"start_line": 1, "end_line": 1, "new_content": "..."}, ...]
     """
 
-    name = "safe_edit_file"
-    description = (
-        "Write content to a file with automatic validation. "
-        "Supports 'strict' mode (rejects on error) or 'interactive' (warns). "
-        "Shows diff preview by default. "
-        "Supports full content rewrite, chirurgical line-based edits, "
-        "line inserts, or search/replace."
-    )
-    args_model = SafeEditInput
+    @property
+    def name(self) -> str:
+        return "safe_edit_file"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Write content to a file with automatic validation. "
+            "Supports 'strict' mode (rejects on error) or 'interactive' (warns). "
+            "Shows diff preview by default. "
+            "Supports full content rewrite, chirurgical line-based edits, "
+            "line inserts, or search/replace."
+        )
+
+    @property
+    def args_model(self) -> type[SafeEditInput] | None:
+        return SafeEditInput
 
     def __init__(self) -> None:
         """Initialize tool and validation service."""
-        super().__init__()
         self.validation_service = ValidationService()
         # Mutex for preventing concurrent edits on same file
         self._file_locks: dict[str, asyncio.Lock] = {}
@@ -226,7 +230,7 @@ class SafeEditTool(BranchMutatingTool):
         """Return the input schema for the tool."""
         return SafeEditInput.model_json_schema()
 
-    async def execute(self, params: SafeEditInput, context: NoteContext) -> ToolResult:
+    async def execute(self, params: SafeEditInput, context: NoteContext) -> SafeEditOutput:
         """Execute the safe edit with validation.
 
         Uses file-level locking to prevent concurrent edits on the same file.
@@ -245,107 +249,226 @@ class SafeEditTool(BranchMutatingTool):
                 async with file_lock:
                     # Read original content
                     original_result = self._read_original(params)
-                    if isinstance(original_result, ToolResult):
+                    if isinstance(original_result, SafeEditOutput):
                         return original_result  # Error
                     original_content = original_result
 
                     # Generate new content based on edit mode
                     new_result = self._generate_new_content(params, original_content)
-                    if isinstance(new_result, ToolResult):
+                    if isinstance(new_result, SafeEditOutput):
                         return new_result  # Error
                     new_content = new_result
 
-                    # Generate diff if requested
-                    diff_output = ""
                     # Diff preview is no longer part of the public agent-facing contract.
                     diff_output = ""
                     passed, issues_text = await self._validate(params.path, new_content)
 
-                    # Build response object
-                    response = EditResponse(passed=passed, issues=issues_text, diff=diff_output)
-
-                    # Handle verify_only mode
+                    # Build response DTO
                     if params.mode == "verify_only":
-                        return self._build_verify_response(response)
+                        return SafeEditOutput(
+                            success=True,
+                            path=params.path,
+                            passed=passed,
+                            issues=issues_text,
+                            mode=params.mode,
+                            written=False,
+                            diff=diff_output,
+                            has_diff=False,
+                        )
 
                     # Handle strict mode with validation failure
                     if params.mode == "strict" and not passed:
-                        return self._build_rejection_response(response)
+                        return SafeEditOutput(
+                            success=False,
+                            error_message=(
+                                f"Edit rejected due to validation errors "
+                                f"(Mode: strict):{issues_text}\n"
+                                "Use mode='interactive' to force save "
+                                "if necessary, or fix the content."
+                            ),
+                            path=params.path,
+                            passed=passed,
+                            issues=issues_text,
+                            mode=params.mode,
+                            written=False,
+                            diff=diff_output,
+                            has_diff=False,
+                        )
 
-                    # Write file (strict+passed or interactive)
-                    return self._write_and_respond(params.path, new_content, response)
+                    # Write file
+                    try:
+                        file_path = Path(params.path)
+                        file_path.parent.mkdir(parents=True, exist_ok=True)
+                        file_path.write_text(new_content, encoding="utf-8")
+                    except OSError as e:
+                        return SafeEditOutput(
+                            success=False,
+                            error_message=f"Failed to write file: {e}",
+                            path=params.path,
+                            passed=passed,
+                            issues=issues_text,
+                            mode=params.mode,
+                            written=False,
+                            diff=diff_output,
+                            has_diff=False,
+                        )
+
+                    return SafeEditOutput(
+                        success=True,
+                        path=params.path,
+                        passed=passed,
+                        issues=issues_text,
+                        mode=params.mode,
+                        written=True,
+                        diff=diff_output,
+                        has_diff=False,
+                    )
         except TimeoutError:
-            return ToolResult.error(
-                f"❌ File '{params.path}' is already being edited. "
-                "Please wait or bundle multiple edits in one call using line_edits list."
+            return SafeEditOutput(
+                success=False,
+                error_message=(
+                    f"File '{params.path}' is already being edited. "
+                    "Please wait or bundle multiple edits in one call using line_edits list."
+                ),
+                path=params.path,
+                passed=False,
+                mode=params.mode,
+                written=False,
             )
 
-    def _read_original(self, params: SafeEditInput) -> str | ToolResult:
+    def _read_original(self, params: SafeEditInput) -> str | SafeEditOutput:
         """Read original file content or return error for new files with incompatible modes."""
         try:
             return Path(params.path).read_text(encoding="utf-8")
         except FileNotFoundError:
             # New file - check if edit mode is compatible
             if params.line_edits:
-                return ToolResult.error(
-                    "Cannot apply line edits to non-existent file. "
-                    "Use content mode to create the file first."
+                return SafeEditOutput(
+                    success=False,
+                    error_message=(
+                        "Cannot apply line edits to non-existent file. "
+                        "Use content mode to create the file first."
+                    ),
+                    path=params.path,
+                    passed=False,
+                    mode=params.mode,
+                    written=False,
                 )
             if params.insert_lines:
-                return ToolResult.error(
-                    "Cannot insert lines into non-existent file. "
-                    "Use content mode to create the file first."
+                return SafeEditOutput(
+                    success=False,
+                    error_message=(
+                        "Cannot insert lines into non-existent file. "
+                        "Use content mode to create the file first."
+                    ),
+                    path=params.path,
+                    passed=False,
+                    mode=params.mode,
+                    written=False,
                 )
             if params.search is not None:
-                return ToolResult.error(
-                    "Cannot apply search/replace to non-existent file. "
-                    "Use content mode to create the file first."
+                return SafeEditOutput(
+                    success=False,
+                    error_message=(
+                        "Cannot apply search/replace to non-existent file. "
+                        "Use content mode to create the file first."
+                    ),
+                    path=params.path,
+                    passed=False,
+                    mode=params.mode,
+                    written=False,
                 )
             return ""  # Empty file for content mode
         except (UnicodeDecodeError, PermissionError) as e:
-            return ToolResult.error(f"Failed to read file: {e}")
+            return SafeEditOutput(
+                success=False,
+                error_message=f"Failed to read file: {e}",
+                path=params.path,
+                passed=False,
+                mode=params.mode,
+                written=False,
+            )
 
-    def _generate_new_content(self, params: SafeEditInput, original: str) -> str | ToolResult:
+    def _generate_new_content(self, params: SafeEditInput, original: str) -> str | SafeEditOutput:
         """Generate new content based on edit mode."""
         if params.content is not None:
             return params.content
         if params.line_edits is not None:
-            return self._handle_line_edits(original, params.line_edits)
+            return self._handle_line_edits(params.path, original, params.line_edits, params.mode)
         if params.insert_lines is not None:
-            return self._handle_insert_lines(original, params.insert_lines)
+            return self._handle_insert_lines(
+                params.path, original, params.insert_lines, params.mode
+            )
         if params.search is not None and params.replace is not None:
             return self._handle_search_replace(params, original)
-        return ToolResult.error(
-            "Must provide 'content', 'line_edits', 'insert_lines', or 'search' + 'replace'"
+        return SafeEditOutput(
+            success=False,
+            error_message=(
+                "Must provide 'content', 'line_edits', 'insert_lines', or 'search' + 'replace'"
+            ),
+            path=params.path,
+            passed=False,
+            mode=params.mode,
+            written=False,
         )
 
-    def _handle_line_edits(self, original: str, line_edits: list[LineEdit]) -> str | ToolResult:
+    def _handle_line_edits(
+        self, path: str, original: str, line_edits: list[LineEdit], mode: str
+    ) -> str | SafeEditOutput:
         """Handle line_edits mode."""
         try:
             return self._apply_line_edits(original, line_edits)
         except ValueError as e:
-            return ToolResult.error(f"Line edit failed: {e}")
+            return SafeEditOutput(
+                success=False,
+                error_message=f"Line edit failed: {e}",
+                path=path,
+                passed=False,
+                mode=mode,
+                written=False,
+            )
 
     def _handle_insert_lines(
-        self, original: str, insert_lines: list[InsertLine]
-    ) -> str | ToolResult:
+        self, path: str, original: str, insert_lines: list[InsertLine], mode: str
+    ) -> str | SafeEditOutput:
         """Handle insert_lines mode."""
         try:
             return self._apply_insert_lines(original, insert_lines)
         except ValueError as e:
-            return ToolResult.error(f"Insert lines failed: {e}")
+            return SafeEditOutput(
+                success=False,
+                error_message=f"Insert lines failed: {e}",
+                path=path,
+                passed=False,
+                mode=mode,
+                written=False,
+            )
 
-    def _handle_search_replace(self, params: SafeEditInput, original: str) -> str | ToolResult:
+    def _handle_search_replace(self, params: SafeEditInput, original: str) -> str | SafeEditOutput:
         """Handle search/replace mode."""
         try:
             new_content, count = self._apply_search_replace(params, original)
             if params.mode == "strict" and not count:
-                error_msg = f"❌ Pattern '{params.search}' not found in file\n\n"
+                error_msg = f"Pattern '{params.search}' not found in file\n\n"
                 error_msg += self._build_file_context_preview(original)
-                return ToolResult.error(error_msg)
+                return SafeEditOutput(
+                    success=False,
+                    error_message=error_msg,
+                    path=params.path,
+                    passed=False,
+                    mode=params.mode,
+                    written=False,
+                )
             return new_content
         except (ValueError, re.error) as e:
-            return ToolResult.error(f"Search/replace failed: {e}")
+            return SafeEditOutput(
+                success=False,
+                error_message=f"Search/replace failed: {e}",
+                path=params.path,
+                passed=False,
+                mode=params.mode,
+                written=False,
+            )
 
     def _apply_search_replace(self, params: SafeEditInput, content: str) -> tuple[str, int]:
         """Apply search/replace with params."""
@@ -358,46 +481,6 @@ class SafeEditTool(BranchMutatingTool):
             flags=params.search_flags,
         )
         return self._apply_search_replace_flat(content, srp)
-
-    def _build_verify_response(self, response: EditResponse) -> ToolResult:
-        """Build response for verify_only mode."""
-        status = "✅ Validation Passed" if response.passed else "❌ Validation Failed"
-        text = f"{status}{response.issues}"
-        if response.diff:
-            text = f"**Diff Preview:**\n```diff\n{response.diff}\n```\n\n{text}"
-        return ToolResult.text(text)
-
-    def _build_rejection_response(self, response: EditResponse) -> ToolResult:
-        """Build response for strict mode rejection."""
-        text = (
-            f"❌ Edit rejected due to validation errors (Mode: strict):{response.issues}\n"
-            "Use mode='interactive' to force save if necessary, or fix the content."
-        )
-        if response.diff:
-            text = f"**Diff Preview:**\n```diff\n{response.diff}\n```\n\n{text}"
-        return ToolResult.text(text)
-
-    def _write_and_respond(self, path: str, content: str, response: EditResponse) -> ToolResult:
-        """Write file and build success response."""
-        try:
-            file_path = Path(path)
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.write_text(content, encoding="utf-8")
-
-            status = "✅ File saved successfully."
-            if not response.passed:
-                status += (
-                    f"\n⚠️ Saved with validation warnings (Mode: interactive):{response.issues}"
-                )
-            elif response.issues:
-                status += f"\nℹ️ Saved with non-blocking issues:{response.issues}"
-
-            if response.diff:
-                status = f"**Diff Preview:**\n```diff\n{response.diff}\n```\n\n{status}"
-
-            return ToolResult.text(status)
-        except OSError as e:
-            return ToolResult.error(f"❌ Failed to write file: {e}")
 
     def _apply_line_edits(self, content: str, edits: list[LineEdit]) -> str:
         """Apply line-based edits to content."""

@@ -25,7 +25,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_server.core.operation_notes import NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
@@ -93,8 +93,9 @@ class TestTransitionPhaseToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Lock timeout on branch 'feature/42'" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Lock timeout on branch 'feature/42'" in result.error_message
 
     @pytest.mark.asyncio
     async def test_transition_phase_emits_recovery_note_on_conflict(
@@ -106,9 +107,9 @@ class TestTransitionPhaseToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "Retry after the current operation" in notes[0].message
+        assert "Retry after the current operation" in notes[0].params.get("recovery_steps", "")
 
 
 # ---------------------------------------------------------------------------
@@ -151,8 +152,9 @@ class TestForcePhaseTransitionToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Mutation conflict on 'feature/42'" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Mutation conflict on 'feature/42'" in result.error_message
 
     @pytest.mark.asyncio
     async def test_force_transition_emits_recovery_note_on_conflict(
@@ -169,9 +171,9 @@ class TestForcePhaseTransitionToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "mutation callback" in notes[0].message
+        assert "mutation callback" in notes[0].params.get("recovery_steps", "")
 
 
 # ---------------------------------------------------------------------------
@@ -222,8 +224,9 @@ class TestTransitionCycleToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Lock timeout" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Lock timeout" in result.error_message
 
     @pytest.mark.asyncio
     async def test_transition_cycle_emits_recovery_note_on_conflict(
@@ -237,9 +240,9 @@ class TestTransitionCycleToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "lock" in notes[0].message.lower()
+        assert "lock" in notes[0].params.get("recovery_steps", "").lower()
 
 
 # ---------------------------------------------------------------------------
@@ -293,8 +296,9 @@ class TestForceCycleTransitionToolConflict:
 
         result = await conflict_tool.execute(params, context)
 
-        assert result.is_error
-        assert "Lock timeout" in result.content[0]["text"]
+        assert not result.success
+        assert result.error_message is not None
+        assert "Lock timeout" in result.error_message
 
     @pytest.mark.asyncio
     async def test_force_cycle_transition_emits_recovery_note_on_conflict(
@@ -312,6 +316,6 @@ class TestForceCycleTransitionToolConflict:
 
         await conflict_tool.execute(params, context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
         assert len(notes) == 1
-        assert "Retry" in notes[0].message
+        assert "Retry" in notes[0].params.get("recovery_steps", "")

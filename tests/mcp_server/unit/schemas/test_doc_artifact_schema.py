@@ -164,6 +164,8 @@ class TestDesignSchema:
         "requirements_nonfunctional": ["Consistent with existing BaseContext pattern"],
         "decision": "Implement XxxContext + XxxRenderContext for each doc type",
         "rationale": "Uniform pipeline coverage for all concrete templates",
+        "options": [{"name": "Opt A", "description": "Desc A"}],
+        "key_decisions": [{"name": "Decision A", "description": "Rationale A"}],
     }
 
     def test_design_context_validates_minimal(self) -> None:

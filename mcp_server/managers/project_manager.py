@@ -37,9 +37,7 @@ if TYPE_CHECKING:
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 
 # Per-phase keys recognised in planning_deliverables (C8/GAP-15)
-_known_phase_keys: frozenset[str] = frozenset(
-    {"cycles", "design", "validation", "documentation", "validates"}
-)
+# _known_phase_keys is removed (obsolete)
 
 
 @dataclass
@@ -110,6 +108,11 @@ class ProjectManager:
         self._workflow_status_resolver = workflow_status_resolver
         self.deliverables_file = server_root / "deliverables.json"
         self.atomic_json_writer = AtomicJsonWriter()
+
+    @property
+    def workphases_config(self) -> WorkphasesConfig | None:
+        """Return the workphases configuration."""
+        return self._workphases_config
 
     def initialize_project(
         self,

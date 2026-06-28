@@ -27,6 +27,7 @@ gates:
     description: "Code formatting (ruff format --check)"
     execution:
       command: ["python", "-m", "ruff", "format", "--check", "--diff", "--isolated", "--line-length=100"]
+      fix_command: ["python", "-m", "ruff", "format", "--isolated", "--line-length=100"]
       timeout_seconds: 60
       working_dir: null
     success:
@@ -58,13 +59,27 @@ gates:
           "check",
           "--isolated",
           "--output-format=json",
-          "--select=E,W,F,I,N,UP,ANN,B,C4,DTZ,T10,ISC,RET,SIM,ARG,PLC",
+          "--select=E,W,F,I,N,UP,ANN,B,C4,DTZ,T10,T20,ISC,RET,SIM,ARG,PLC",
           "--ignore=E501,PLC0415",
+          "--per-file-ignores=tests/**/*.py:ANN,ARG",
           "--line-length=100",
           "--target-version=py311"
         ]
       timeout_seconds: 60
       working_dir: null
+      fix_command: [
+        "python",
+        "-m",
+        "ruff",
+        "check",
+        "--isolated",
+        "--fix",
+        "--select=E,W,F,I,N,UP,ANN,B,C4,DTZ,T10,T20,ISC,RET,SIM,ARG,PLC",
+        "--ignore=E501,PLC0415",
+        "--per-file-ignores=tests/**/*.py:ANN,ARG",
+        "--line-length=100",
+        "--target-version=py311"
+      ]
     success:
       exit_codes_ok: [0]
     capabilities:

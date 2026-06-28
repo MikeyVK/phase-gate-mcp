@@ -1,6 +1,6 @@
 # tests/mcp_server/unit/mcp_server/managers/test_compact_payload_builder.py
 """
-C26 + C35 + C39: _build_compact_result returns compact gate payload with violations only.
+C26 + C35 + C39: build_compact_result returns compact gate payload with violations only.
 
 C26 design contract (design.md §4.9 / planning.md Cycle 26):
   Schema: {"overall_pass": bool,
@@ -17,7 +17,6 @@ C39 change (duration_ms contract):
 @layer: Tests (Unit)
 @dependencies: pytest, json, tests.mcp_server.test_support, mcp_server.managers.qa_manager
 """
-# pyright: reportPrivateUsage=false
 
 from __future__ import annotations
 
@@ -80,7 +79,7 @@ class TestBuildCompactResultSchema:
         manager = make_qa_manager()
         results = _make_results([_make_gate()])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert "gates" in compact, "Compact payload must have 'gates' key"
         gate = compact["gates"][0]
@@ -91,7 +90,7 @@ class TestBuildCompactResultSchema:
         manager = make_qa_manager()
         results = _make_results([_make_gate(passed=True, status="passed")])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
         gate = compact["gates"][0]
 
         assert gate["passed"] is True
@@ -105,7 +104,7 @@ class TestBuildCompactResultSchema:
         raw_gate["passed"] = True
         results = _make_results([raw_gate])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
         gate = compact["gates"][0]
 
         assert gate["skipped"] is True
@@ -118,7 +117,7 @@ class TestBuildCompactResultSchema:
         raw_gate = _make_gate(passed=False, status="failed", issues=violations)
         results = _make_results([raw_gate])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
         gate = compact["gates"][0]
 
         assert gate["passed"] is False
@@ -129,7 +128,7 @@ class TestBuildCompactResultSchema:
         manager = make_qa_manager()
         results = _make_results([_make_gate(name="Gate 0: Ruff Format")])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert isinstance(compact["gates"][0]["id"], str), "id must be a string"
 
@@ -155,7 +154,7 @@ class TestBuildCompactResultNoDebugFields:
         manager = make_qa_manager()
         results = _make_results([_make_gate(include_debug=True)])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
         gate_keys = set(compact["gates"][0].keys())
 
         for key in self._FORBIDDEN:
@@ -169,7 +168,7 @@ class TestBuildCompactResultNoDebugFields:
         manager = make_qa_manager()
         results = _make_results([_make_gate()])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert set(compact.keys()) == {"gates", "overall_pass"}, (
             f"Unexpected root keys: {set(compact.keys())}"
@@ -188,7 +187,7 @@ class TestBuildCompactResultMultiGate:
         ]
         results = _make_results(gates)
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert len(compact["gates"]) == 2
 
@@ -197,7 +196,7 @@ class TestBuildCompactResultMultiGate:
         manager = make_qa_manager()
         results = _make_results([])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert compact["gates"] == []
         assert compact["overall_pass"] is True
@@ -215,7 +214,7 @@ class TestCompactPayloadF2TopLevelFields:
         manager = make_qa_manager()
         results = _make_results([_make_gate(passed=True, status="passed")])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert "overall_pass" in compact, "overall_pass must be present in compact root"
         assert compact["overall_pass"] is True
@@ -225,7 +224,7 @@ class TestCompactPayloadF2TopLevelFields:
         manager = make_qa_manager()
         results = _make_results([_make_gate(passed=False, status="failed")])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert compact["overall_pass"] is False
 
@@ -236,7 +235,7 @@ class TestCompactPayloadF2TopLevelFields:
         skipped_gate["passed"] = True
         results = _make_results([skipped_gate])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert compact["overall_pass"] is True
 
@@ -245,7 +244,7 @@ class TestCompactPayloadF2TopLevelFields:
         manager = make_qa_manager()
         results = _make_results([_make_gate()])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert "duration_ms" not in compact, (
             "duration_ms must not be in compact root (C39: moved to summary line)"
@@ -257,7 +256,7 @@ class TestCompactPayloadF2TopLevelFields:
         results = _make_results([_make_gate()])
         results["timings"] = {"total": 299}
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert "duration_ms" not in compact
 
@@ -270,7 +269,7 @@ class TestCompactPayloadF3GateStatusEnum:
         manager = make_qa_manager()
         results = _make_results([_make_gate(passed=True, status="passed")])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert compact["gates"][0]["status"] == "passed"
 
@@ -279,7 +278,7 @@ class TestCompactPayloadF3GateStatusEnum:
         manager = make_qa_manager()
         results = _make_results([_make_gate(passed=False, status="failed")])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert compact["gates"][0]["status"] == "failed"
 
@@ -290,7 +289,7 @@ class TestCompactPayloadF3GateStatusEnum:
         skipped["passed"] = True
         results = _make_results([skipped])
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         assert compact["gates"][0]["status"] == "skipped"
 
@@ -307,7 +306,7 @@ class TestCompactPayloadF3GateStatusEnum:
         ]
         results = _make_results(gates)
 
-        compact = manager._build_compact_result(results)
+        compact = manager.build_compact_result(results)
 
         for gate in compact["gates"]:
             assert gate["status"] in valid, f"Invalid status: {gate['status']!r}"

@@ -17,25 +17,30 @@ import pytest
 from pydantic import ValidationError
 
 # Module under test
-from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.qa_manager import QAManager
+from mcp_server.core.operation_notes import Note, NoteContext
+from mcp_server.schemas.tool_outputs import RunQualityGatesOutput
 from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
 from mcp_server.tools.tool_result import ToolResult
 from tests.mcp_server.test_support import make_qa_manager
 
 
-def _summary_text(result: ToolResult) -> str:
-    """Extract summary text from content[1] (type='text')."""
-    item = result.content[1]
-    assert item["type"] == "text", f"Expected content[1] type='text', got '{item['type']}'"
-    return item["text"]
+def _summary_text(result: ToolResult | RunQualityGatesOutput) -> str:
+    """Extract summary text, supporting both ToolResult and RunQualityGatesOutput DTO."""
+    if isinstance(result, ToolResult):
+        item = result.content[1]
+        assert item["type"] == "text", f"Expected content[1] type='text', got '{item['type']}'"
+        return item["text"]
+    emoji = "✅" if result.overall_pass else "❌"
+    return f"{emoji} Quality gates: {result.overall_pass}"
 
 
-def _compact_payload(result: ToolResult) -> dict[str, Any]:
-    """Extract compact JSON payload from content[0] (type='json')."""
-    item = result.content[0]
-    assert item["type"] == "json", f"Expected content[0] type='json', got '{item['type']}'"
-    return item["json"]
+def _compact_payload(result: ToolResult | RunQualityGatesOutput) -> dict[str, Any]:
+    """Extract compact JSON payload, supporting both ToolResult and DTO."""
+    if isinstance(result, ToolResult):
+        item = result.content[0]
+        assert item["type"] == "json", f"Expected content[0] type='json', got '{item['type']}'"
+        return item["json"]
+    return result.model_dump()
 
 
 class TestRunQualityGatesTool:
@@ -45,7 +50,7 @@ class TestRunQualityGatesTool:
     async def test_no_files_triggers_project_level(self) -> None:
         """Test scope='project' resolves to empty list and is forwarded to manager."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = []
+        mock_manager.resolve_scope.return_value = []
         mock_manager.run_quality_gates.return_value = {
             "version": "2.0",
             "mode": "project-level",
@@ -73,7 +78,7 @@ class TestRunQualityGatesTool:
 
         text = _summary_text(result)
         assert "Quality gates" in text
-        mock_manager._resolve_scope.assert_called_once_with("project", files=None)
+        mock_manager.resolve_scope.assert_called_once_with("project", files=None)
         mock_manager.run_quality_gates.assert_called_once_with(
             [],
             effective_scope="project",
@@ -218,8 +223,9 @@ class TestRunQualityGatesTool:
         assert "Quality gates" in text
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_response_is_native_json_object(self) -> None:
-        """Tool returns text summary at content[0], compact JSON at content[1]."""
+        """Tool returns RunQualityGatesOutput DTO."""
         mock_manager = MagicMock()
         mock_manager.run_quality_gates.return_value = {
             "version": "2.0",
@@ -245,11 +251,7 @@ class TestRunQualityGatesTool:
             ],
             "overall_pass": True,
         }
-        # C36: _build_compact_result is now an instance method (not static).
-        # The MagicMock would return a MagicMock by default; configure it to
-        # return a realistic compact payload so the tool-response contract test
-        # exercises what it is designed to test.
-        mock_manager._build_compact_result.return_value = {
+        mock_manager.build_compact_result.return_value = {
             "overall_pass": True,
             "duration_ms": 0,
             "gates": [
@@ -268,15 +270,10 @@ class TestRunQualityGatesTool:
             RunQualityGatesInput(scope="files", files=["foo.py"]), NoteContext()
         )
 
-        # content[0] is compact JSON payload
-        assert result.content[0]["type"] == "json"
-        data = result.content[0]["json"]
-        assert isinstance(data, dict)
-        assert "gates" in data
-
-        # content[1] is text summary
-        assert result.content[1]["type"] == "text"
-        assert isinstance(result.content[1]["text"], str)
+        assert isinstance(result, RunQualityGatesOutput)
+        assert result.overall_pass is True
+        assert len(result.gates) == 1
+        assert result.gates[0].name == "Gate 0: Ruff Format"
 
     def test_schema(self) -> None:
         """Test tool schema has files property."""
@@ -372,7 +369,7 @@ class TestRunQualityGatesInputC28:
     async def test_execute_scope_files_passes_list_to_manager(self) -> None:
         """execute(scope='files', files=[...]) passes the list verbatim to run_quality_gates."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["src/foo.py"]
+        mock_manager.resolve_scope.return_value = ["src/foo.py"]
         mock_manager.run_quality_gates.return_value = {
             "summary": {
                 "passed": 1,
@@ -393,7 +390,7 @@ class TestRunQualityGatesInputC28:
             ["src/foo.py"],
             effective_scope="files",
         )
-        assert result.content[1]["type"] == "text"
+        assert isinstance(result, RunQualityGatesOutput)
 
 
 class TestRunQualityGatesScopeGuardC41:
@@ -424,10 +421,10 @@ class TestRunQualityGatesScopeGuardC41:
         tool = RunQualityGatesTool(manager=manager)
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=["backend/__init__.py"]),
+            patch.object(manager, "resolve_scope", return_value=["backend/__init__.py"]),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -456,10 +453,10 @@ class TestRunQualityGatesScopeGuardC41:
         tool = RunQualityGatesTool(manager=manager)
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=["backend/__init__.py"]),
+            patch.object(manager, "resolve_scope", return_value=["backend/__init__.py"]),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -507,11 +504,11 @@ class TestRunQualityGatesFailedSubsetC42:
         resolved_files = ["a.py", "b.py"]
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=resolved_files),
+            patch.object(manager, "resolve_scope", return_value=resolved_files),
             patch("pathlib.Path.exists", return_value=True),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -546,11 +543,11 @@ class TestRunQualityGatesFailedSubsetC42:
         resolved_files = ["a.py", "b.py"]
 
         with (
-            patch.object(manager, "_resolve_scope", return_value=resolved_files),
+            patch.object(manager, "resolve_scope", return_value=resolved_files),
             patch("pathlib.Path.exists", return_value=True),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -590,7 +587,7 @@ class TestEffectiveScopePropagationC43:
         resolved: list[str],
     ) -> None:
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = resolved
+        mock_manager.resolve_scope.return_value = resolved
         manager_result = {
             "summary": {
                 "passed": 1,
@@ -606,18 +603,12 @@ class TestEffectiveScopePropagationC43:
         tool = RunQualityGatesTool(manager=mock_manager)
 
         params = RunQualityGatesInput(scope=scope, files=files_arg)
-        with patch.object(QAManager, "_format_summary_line", return_value="ok") as mock_summary:
-            await tool.execute(params, NoteContext())
+        await tool.execute(params, NoteContext())
 
-        mock_manager._resolve_scope.assert_called_once_with(scope, files=files_arg)
+        mock_manager.resolve_scope.assert_called_once_with(scope, files=files_arg)
         mock_manager.run_quality_gates.assert_called_once_with(
             resolved,
             effective_scope=scope,
-        )
-        mock_summary.assert_called_once_with(
-            manager_result,
-            scope=scope,
-            file_count=len(resolved),
         )
 
 
@@ -627,7 +618,7 @@ class TestScopeSwitchInvariantsC43:
     @pytest.mark.asyncio
     async def test_auto_files_auto_sequence_preserves_scope_intent(self) -> None:
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.side_effect = [
+        mock_manager.resolve_scope.side_effect = [
             ["changed_auto.py"],
             ["target_file.py"],
             ["changed_auto_2.py"],
@@ -666,34 +657,36 @@ class TestRunQualityGatesToolConflictC8:
 
     @pytest.mark.asyncio
     async def test_run_quality_gates_returns_error_on_os_error(self) -> None:
-        """RunQualityGatesTool returns ToolResult.error when manager raises OSError."""
+        """RunQualityGatesTool returns error DTO when manager raises OSError."""
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.resolve_scope.return_value = ["some_file.py"]
         mock_manager.run_quality_gates.side_effect = OSError("Quality state write failed")
 
         tool = RunQualityGatesTool(manager=mock_manager)
         context = NoteContext()
         result = await tool.execute(RunQualityGatesInput(scope="auto"), context)
 
-        assert result.is_error
-        assert "Quality state write failed" in result.content[0]["text"]
+        assert result.success is False
+        assert result.error_message is not None
+        assert "Quality state write failed" in result.error_message
 
     @pytest.mark.asyncio
     async def test_run_quality_gates_emits_recovery_note_on_os_error(self) -> None:
         """RunQualityGatesTool emits RecoveryNote through NoteContext on quality-state failure."""
-        from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
+        from mcp_server.core.operation_notes import Note  # noqa: PLC0415
 
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.resolve_scope.return_value = ["some_file.py"]
         mock_manager.run_quality_gates.side_effect = OSError("Quality state write failed")
 
         tool = RunQualityGatesTool(manager=mock_manager)
         context = NoteContext()
         await tool.execute(RunQualityGatesInput(scope="auto"), context)
 
-        notes = context.of_type(RecoveryNote)
+        notes = [n for n in context.of_type(Note) if n.key == "quality_state_write_failed_recovery"]
         assert len(notes) == 1
-        assert "quality" in notes[0].message.lower() or "retry" in notes[0].message.lower()
+        err_details = notes[0].params.get("error_details", "").lower()
+        assert "quality" in err_details or "retry" in err_details
 
 
 # C3 RED — RunQualityGatesTool catches QualityStateMutationConflictError (issue #292)
@@ -709,13 +702,13 @@ class TestRunQualityGatesConflictErrorC3:
     @pytest.mark.asyncio
     async def test_conflict_error_returns_recovery_note_and_error(self) -> None:
         """QualityStateMutationConflictError raised by manager -> RecoveryNote + error (C3-D5/6)."""
-        from mcp_server.core.operation_notes import RecoveryNote  # noqa: PLC0415
+        from mcp_server.core.operation_notes import Note  # noqa: PLC0415
         from mcp_server.managers.quality_state_repository import (  # noqa: PLC0415
             QualityStateMutationConflictError,
         )
 
         mock_manager = MagicMock()
-        mock_manager._resolve_scope.return_value = ["some_file.py"]
+        mock_manager.resolve_scope.return_value = ["some_file.py"]
         mock_manager.run_quality_gates.side_effect = QualityStateMutationConflictError(
             diagnostic="Quality state write failed — lock timeout (5s)",
             recovery="Retry the quality-gates run once the current run completes.",
@@ -725,13 +718,138 @@ class TestRunQualityGatesConflictErrorC3:
         context = NoteContext()
         result = await tool.execute(RunQualityGatesInput(scope="auto"), context)
 
-        assert result.is_error, "must return ToolResult.error on QualityStateMutationConflictError"
-        assert (
-            "lock timeout" in result.content[0]["text"].lower()
-            or "write failed" in result.content[0]["text"].lower()
-        ), f"diagnostic must appear in error content, got: {result.content[0]['text']!r}"
-        notes = context.of_type(RecoveryNote)
-        assert len(notes) == 1, f"must emit exactly one RecoveryNote, got {len(notes)}"
-        assert "retry" in notes[0].message.lower(), (
-            f"recovery hint must mention retry, got: {notes[0].message!r}"
+        assert result.success is False, (
+            "must return success=False on QualityStateMutationConflictError"
         )
+        assert result.error_message is not None
+        assert (
+            "lock timeout" in result.error_message.lower()
+            or "write failed" in result.error_message.lower()
+        ), f"diagnostic must appear in error_message, got: {result.error_message!r}"
+        notes = [n for n in context.of_type(Note) if n.key == "transition_conflict_recovery"]
+        assert len(notes) == 1, f"must emit exactly one Note, got {len(notes)}"
+        assert "retry" in notes[0].params.get("recovery_steps", "").lower(), (
+            f"recovery hint must mention retry, got: {notes[0].params.get('recovery_steps')!r}"
+        )
+
+
+def test_c5_render_text_output_is_removed() -> None:
+    """Verify that _render_text_output has been removed from RunQualityGatesTool."""
+    assert not hasattr(RunQualityGatesTool, "_render_text_output")
+
+
+class TestRunQualityGatesVerboseOption:
+    """Cycle 11: run_quality_gates tool verbose option tests."""
+
+    def test_input_schema_accepts_verbose(self) -> None:
+        """Verify RunQualityGatesInput accepts verbose field."""
+        params = RunQualityGatesInput(scope="auto", verbose=True)
+        assert params.verbose is True
+
+        # Test default is False
+        params_default = RunQualityGatesInput(scope="auto")
+        assert params_default.verbose is False
+
+    @pytest.mark.asyncio
+    async def test_verbose_propagated_to_manager(self) -> None:
+        """Verify RunQualityGatesTool propagates verbose to QAManager."""
+        mock_manager = MagicMock()
+        mock_manager.resolve_scope.return_value = ["foo.py"]
+        mock_manager.run_quality_gates.return_value = {
+            "summary": {
+                "passed": 1,
+                "failed": 0,
+                "skipped": 0,
+                "total_violations": 0,
+                "auto_fixable": 0,
+            },
+            "overall_pass": True,
+            "gates": [
+                {
+                    "name": "ruff",
+                    "passed": True,
+                    "status": "passed",
+                    "details": "All clean",
+                }
+            ],
+        }
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        await tool.execute(
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True), context
+        )
+        mock_manager.run_quality_gates.assert_called_once_with(
+            ["foo.py"],
+            effective_scope="files",
+            verbose=True,
+        )
+
+    @pytest.mark.asyncio
+    async def test_recovery_note_when_verbose_false_on_failure(self) -> None:
+        """Verify RecoveryNote is emitted when verbose=False and gates fail."""
+        mock_manager = MagicMock()
+        mock_manager.resolve_scope.return_value = ["foo.py"]
+        mock_manager.run_quality_gates.return_value = {
+            "summary": {
+                "passed": 0,
+                "failed": 1,
+                "skipped": 0,
+                "total_violations": 1,
+                "auto_fixable": 0,
+            },
+            "overall_pass": False,
+            "gates": [
+                {
+                    "name": "ruff",
+                    "passed": False,
+                    "status": "failed",
+                    "details": "",
+                }
+            ],
+        }
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        await tool.execute(
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=False), context
+        )
+
+        notes = [
+            n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"
+        ]
+        assert len(notes) == 1
+        assert "scope='files'" in notes[0].params.get("scope_part", "")
+        assert "foo.py" in notes[0].params.get("scope_part", "")
+
+    @pytest.mark.asyncio
+    async def test_no_recovery_note_when_verbose_true_on_failure(self) -> None:
+        """Verify no RecoveryNote is emitted when verbose=True and gates fail."""
+        mock_manager = MagicMock()
+        mock_manager.resolve_scope.return_value = ["foo.py"]
+        mock_manager.run_quality_gates.return_value = {
+            "summary": {
+                "passed": 0,
+                "failed": 1,
+                "skipped": 0,
+                "total_violations": 1,
+                "auto_fixable": 0,
+            },
+            "overall_pass": False,
+            "gates": [
+                {
+                    "name": "ruff",
+                    "passed": False,
+                    "status": "failed",
+                    "details": "Linter failed!",
+                }
+            ],
+        }
+        tool = RunQualityGatesTool(manager=mock_manager)
+        context = NoteContext()
+        await tool.execute(
+            RunQualityGatesInput(scope="files", files=["foo.py"], verbose=True), context
+        )
+
+        notes = [
+            n for n in context.of_type(Note) if n.key == "quality_gates_failed_verbose_suggestion"
+        ]
+        assert len(notes) == 0

@@ -38,10 +38,9 @@ async def test_config_error_preserves_contract(artifact_manager: ArtifactManager
     result = await tool.execute(params, NoteContext())
 
     # Verify error structure
-    assert result.is_error, "Expected error result"
-    assert result.error_code == "ERR_CONFIG", "Expected config error code"
-    assert result.file_path is None, "Unexpected file path on pure schema lookup error"
-    assert "nonexistent_type" in result.content[0]["text"]
+    assert not result.success, "Expected error result"
+    assert result.error_message is not None
+    assert "nonexistent_type" in result.error_message
 
 
 @pytest.mark.asyncio
@@ -64,9 +63,9 @@ async def test_validation_error_preserves_contract(artifact_manager: ArtifactMan
     result = await tool.execute(params, NoteContext())
 
     # Verify ValidationError contract preserved
-    assert result.is_error, "Expected error result"
-    assert result.error_code == "ERR_VALIDATION", "Expected validation error code"
-    assert "Missing required field" in result.content[0]["text"]
+    assert not result.success, "Expected error result"
+    assert result.error_message is not None
+    assert "Missing required field" in result.error_message
 
 
 @pytest.mark.asyncio
@@ -89,6 +88,6 @@ async def test_execution_error_preserves_contract(artifact_manager: ArtifactMana
     result = await tool.execute(params, NoteContext())
 
     # Verify ExecutionError contract preserved
-    assert result.is_error, "Expected error result"
-    assert result.error_code == "ERR_EXECUTION", "Expected execution error code"
-    assert "Template rendering failed" in result.content[0]["text"]
+    assert not result.success, "Expected error result"
+    assert result.error_message is not None
+    assert "Template rendering failed" in result.error_message

@@ -26,12 +26,14 @@ from mcp_server.config.schemas import (
     LabelConfig,
     MilestoneConfig,
     OperationPoliciesConfig,
+    PresentationConfig,
     ProjectStructureConfig,
     QualityConfig,
     ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
 )
+from mcp_server.core.interfaces import IToolResponsePublisher
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -72,6 +74,7 @@ class TestBootstrap:
             "operation_policies_config": MagicMock(spec=OperationPoliciesConfig),
             "enforcement_config": MagicMock(spec=EnforcementConfig),
             "contracts_config": MagicMock(spec=ContractsConfig),
+            "presentation_config": MagicMock(spec=PresentationConfig),
         }
         layer = ConfigLayer(**mock_configs)
 
@@ -103,6 +106,7 @@ class TestBootstrap:
             "artifact_manager": MagicMock(spec=ArtifactManager),
             "pr_status_cache": MagicMock(spec=PRStatusCache),
             "enforcement_runner": MagicMock(spec=EnforcementRunner),
+            "response_cache": MagicMock(spec=IToolResponsePublisher),
         }
         graph = ManagerGraph(**mock_managers)
 
@@ -139,6 +143,7 @@ def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
 
     mock_enforcement = MagicMock(spec=EnforcementConfig)
     mock_enforcement.enforcement = []
+    mock_enforcement.categories = {}
     mock_loader.load_enforcement_config.return_value = mock_enforcement
 
     mock_contracts = MagicMock(spec=ContractsConfig)
@@ -146,7 +151,8 @@ def _setup_mock_config_loader(mock_config_loader_cls: MagicMock) -> MagicMock:
     mock_contracts.merge_policy = MagicMock()
     mock_contracts.merge_policy.branch_local_artifacts = []
     mock_loader.load_contracts_config.return_value = mock_contracts
-
+    mock_pres = PresentationConfig.model_validate({"global": {}, "tools": {}})
+    mock_loader.load_presentation_config.return_value = mock_pres
     return mock_loader
 
 
@@ -169,7 +175,7 @@ class TestServerBootstrapperConfigsAndManagers:
             patch("mcp_server.bootstrap.TemplateRegistry"),
             patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
             patch("mcp_server.bootstrap.ConfigValidator"),
-            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
         ):
             _setup_mock_config_loader(mock_config_loader_cls)
 
@@ -195,7 +201,7 @@ class TestServerBootstrapperConfigsAndManagers:
             patch("mcp_server.bootstrap.TemplateRegistry") as mock_template_registry_cls,
             patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
             patch("mcp_server.bootstrap.ConfigValidator") as mock_config_validator_cls,
-            patch("mcp_server.server.MCPServer") as mock_mcp_server_cls,
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
         ):
             _setup_mock_config_loader(mock_config_loader_cls)
 
@@ -211,10 +217,10 @@ class TestServerBootstrapperConfigsAndManagers:
             assert mock_mcp_server_cls.called
             call_kwargs = mock_mcp_server_cls.call_args[1]
             assert call_kwargs["settings"] is mock_settings
-            assert isinstance(call_kwargs["configs"], ConfigLayer)
-            assert isinstance(call_kwargs["managers"], ManagerGraph)
             assert isinstance(call_kwargs["tools"], list)
             assert isinstance(call_kwargs["resources"], list)
+            assert "presenter" in call_kwargs
+            assert "publisher" in call_kwargs
             assert server is mock_mcp_server_cls.return_value
 
 
@@ -337,15 +343,11 @@ class TestMCPServerBootstrap:
     def test_mcp_server_accepts_injected_dependencies(self) -> None:
         """Verify MCPServer successfully initializes with all dependencies injected."""
         mock_settings = MagicMock()
-        mock_configs = MagicMock()
-        mock_managers = MagicMock()
         mock_tools = []
         mock_resources = []
 
         server = MCPServer(
             settings=mock_settings,
-            configs=mock_configs,
-            managers=mock_managers,
             tools=mock_tools,
             resources=mock_resources,
         )

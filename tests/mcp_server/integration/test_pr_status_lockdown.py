@@ -1,18 +1,16 @@
 # tests/mcp_server/integration/test_pr_status_lockdown.py
 # template=unit_test version=cycle6-red created=2026-04-23T00:00Z updated=
 """
-Integration tests for PR-status lockdown via BranchMutatingTool (issue #283 C6).
+Integration tests for PR-status lockdown via dynamic category enforcement (issue #283 C6).
 
 Verifies that:
-  1. Every branch-mutating tool is a subclass of BranchMutatingTool.
-  2. Every branch-mutating tool carries tool_category == "branch_mutating".
+  1. Every branch-mutating tool is configured under categories.branch_mutating in enforcement.yaml.
   3. EnforcementRunner blocks all 17 tools when PRStatus.OPEN.
   4. EnforcementRunner allows all 17 tools when PRStatus.ABSENT.
-  5. MergePRTool is explicitly NOT a BranchMutatingTool (escape hatch).
+  5. MergePRTool is explicitly NOT configured under branch_mutating (escape hatch).
 
 @layer: Tests (Integration)
 @dependencies: [pytest, unittest.mock,
-    mcp_server.tools.base,
     mcp_server.tools.git_tools,
     mcp_server.tools.git_pull_tool,
     mcp_server.tools.safe_edit_tool,
@@ -25,9 +23,8 @@ Verifies that:
     mcp_server.managers.enforcement_runner,
     mcp_server.core.interfaces]
 @responsibilities:
-    - Verify BranchMutatingTool inheritance for all 17 branch-mutating tools
-    - Verify tool_category attribute on all 17 tools
-    - Verify EnforcementRunner dispatches check_pr_status for all 17 via category
+    - Verify config category mapping for all 17 branch-mutating tools
+    - Verify EnforcementRunner dispatches check_pr_status for all 17 via dynamic category
     - Verify MergePRTool escape hatch is preserved
 """
 
@@ -36,7 +33,7 @@ from __future__ import annotations
 # Standard library
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from unittest.mock import MagicMock
 
 # Third-party
@@ -49,7 +46,7 @@ from mcp_server.core.interfaces import IPRStatusReader, PRStatus
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementContext, EnforcementRunner
 from mcp_server.managers.state_repository import FileStateRepository
-from mcp_server.tools.base import BaseTool, BranchMutatingTool
+from mcp_server.core.interfaces import ICoreTool
 from mcp_server.tools.cycle_tools import ForceCycleTransitionTool, TransitionCycleTool
 from mcp_server.tools.git_pull_tool import GitPullTool
 from mcp_server.tools.git_tools import (
@@ -78,7 +75,7 @@ _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 # ---------------------------------------------------------------------------
 # Parametrize: the complete list of 17 branch-mutating tools
 # ---------------------------------------------------------------------------
-BRANCH_MUTATING_TOOLS: list[type[BaseTool]] = [
+BRANCH_MUTATING_TOOLS: list[type[Any]] = [
     # git_tools
     CreateBranchTool,
     GitCommitTool,
@@ -144,20 +141,19 @@ def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
 # ---------------------------------------------------------------------------
 
 
-class TestBranchMutatingToolInheritance:
-    """Each branch-mutating tool must inherit BranchMutatingTool."""
+class TestBranchMutatingToolRegistration:
+    """Each branch-mutating tool must be configured in enforcement.yaml categories."""
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_inherits_branch_mutating_tool(self, tool_cls: type[BaseTool]) -> None:
-        assert issubclass(tool_cls, BranchMutatingTool), (
-            f"{tool_cls.__name__} must inherit BranchMutatingTool"
-        )
-
-    @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_tool_category_is_branch_mutating(self, tool_cls: type[BaseTool]) -> None:
-        assert tool_cls.tool_category == "branch_mutating", (
-            f"{tool_cls.__name__}.tool_category must be 'branch_mutating', "
-            f"got {tool_cls.tool_category!r}"
+    def test_is_registered_in_categories(self, tool_cls: type[ICoreTool[Any, Any]]) -> None:
+        assert tool_cls.name.fget is not None
+        tool_name = tool_cls.name.fget(None)
+        loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+        enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
+        config = loader.load_enforcement_config(config_path=enforcement_yaml)
+        assert tool_name in config.categories.get("branch_mutating", []), (
+            f"Tool '{tool_name}' ({tool_cls.__name__}) must be configured under "
+            f"categories.branch_mutating in enforcement.yaml"
         )
 
 
@@ -167,11 +163,15 @@ class TestBranchMutatingToolInheritance:
 
 
 class TestMergePREscapeHatch:
-    """MergePRTool is the escape hatch — it must NOT inherit BranchMutatingTool."""
+    """MergePRTool is the escape hatch — it must NOT be a branch-mutating tool."""
 
     def test_merge_pr_tool_is_not_branch_mutating(self) -> None:
-        assert not issubclass(MergePRTool, BranchMutatingTool), (
-            "MergePRTool must NOT inherit BranchMutatingTool; "
+        loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+        config = loader.load_enforcement_config()
+        assert MergePRTool.name.fget is not None
+        tool_name = MergePRTool.name.fget(None)
+        assert tool_name not in config.categories.get("branch_mutating", []), (
+            f"MergePRTool ({tool_name}) must NOT be configured under branch_mutating; "
             "it is the escape hatch that clears PRStatus.OPEN"
         )
 
@@ -185,22 +185,25 @@ class TestBranchMutatingToolBlockedWhenPROpen:
     """EnforcementRunner must block every branch-mutating tool when PRStatus.OPEN."""
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_blocked_when_pr_open(self, tool_cls: type[BaseTool], tmp_path: Path) -> None:
+    def test_blocked_when_pr_open(
+        self, tool_cls: type[ICoreTool[Any, Any]], tmp_path: Path
+    ) -> None:
         runner = _make_runner(PRStatus.OPEN, tmp_path)
+        assert tool_cls.name.fget is not None
+        tool_name = tool_cls.name.fget(None)
         ctx = EnforcementContext(
             workspace_root=tmp_path,
-            tool_name=tool_cls.name,
+            tool_name=tool_name,
             params=SimpleNamespace(),
         )
         note_context = NoteContext()
 
         with pytest.raises(ValidationError, match="open PR"):
             runner.run(
-                event=tool_cls.name,
+                event=tool_name,
                 timing="pre",
                 enforcement_ctx=ctx,
                 note_context=note_context,
-                tool_category=tool_cls.tool_category,
             )
 
 
@@ -213,11 +216,15 @@ class TestBranchMutatingToolAllowedWhenPRAbsent:
     """EnforcementRunner must NOT block branch-mutating tools when PRStatus.ABSENT."""
 
     @pytest.mark.parametrize("tool_cls", BRANCH_MUTATING_TOOLS, ids=_TOOL_IDS)
-    def test_allowed_when_pr_absent(self, tool_cls: type[BaseTool], tmp_path: Path) -> None:
+    def test_allowed_when_pr_absent(
+        self, tool_cls: type[ICoreTool[Any, Any]], tmp_path: Path
+    ) -> None:
         runner = _make_runner(PRStatus.ABSENT, tmp_path)
+        assert tool_cls.name.fget is not None
+        tool_name = tool_cls.name.fget(None)
         ctx = EnforcementContext(
             workspace_root=tmp_path,
-            tool_name=tool_cls.name,
+            tool_name=tool_name,
             params=SimpleNamespace(),
         )
         note_context = NoteContext()
@@ -225,11 +232,10 @@ class TestBranchMutatingToolAllowedWhenPRAbsent:
         # Must not raise ValidationError from check_pr_status (other rules may still fire)
         try:
             runner.run(
-                event=tool_cls.name,
+                event=tool_name,
                 timing="pre",
                 enforcement_ctx=ctx,
                 note_context=note_context,
-                tool_category=tool_cls.tool_category,
             )
         except ValidationError as exc:
             assert "open PR" not in str(exc), (

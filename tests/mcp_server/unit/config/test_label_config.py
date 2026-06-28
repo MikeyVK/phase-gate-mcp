@@ -419,7 +419,7 @@ labels:
         config = _load_label_config(yaml_file)
         valid, error = config.validate_label_name("InvalidLabel")
         assert not valid
-        assert "does not match required pattern" in error
+        assert "does not match any configured static label" in error
 
     def test_validate_label_name_freeform_exception(self, tmp_path: Path) -> None:
         """Accept freeform label in exceptions list."""

@@ -3,8 +3,8 @@
 # MCP Tools Reference — Navigation Index
 
 **Status:** DEFINITIVE  
-**Version:** 2.2  
-**Last Updated:** 2026-05-23  
+**Version:** 3.0  
+**Last Updated:** 2026-06-15  
 
 **Source:** [mcp_server/server.py](../../../../mcp_server/server.py)  
 **Tests:** [tests/mcp_server/](../../../../tests/mcp_server/)  
@@ -159,7 +159,7 @@ Automated quality gates, test execution, and architectural validation.
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
 | `run_quality_gates` | Run config-driven quality gates | `scope` (`auto`/`branch`/`project`/`files`), `files` (required only with `scope="files"`) |
-| `run_tests` | Run pytest — structured output: per-failure lines in `content[0]` text + full JSON payload in `content[1]` | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage` |
+| `run_tests` | Run pytest — outputs presented human-readable text pointing to the DTO cached in the MCP Resource cache | `path` (space-sep), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage`, `verbose`, `collect_only` |
 | `validate_template` | Validate file structure vs template | `path`, `template_type` |
 
 **📖 See:** [quality.md](quality.md) for quality gate configuration, test markers, and validation rule details.
@@ -231,10 +231,9 @@ Documentation search, work context aggregation, and server administration.
 
 Each tool has one clear purpose. Complex workflows compose multiple tools rather than creating monolithic tools.
 
-### 1. Structured JSON Transport (MCP structuredContent)
+### 1. Unified DTO & MCP Resource Caching Architecture
 
-JSON-producing tools (such as issue retrieval, work context, and deliverables tools) inherit from the `StructuredTool` base class. Instead of double-serializing JSON payloads into a text block, the server natively extracts the structured dictionary and returns it via the MCP `structuredContent` field. This prevents client-side chat truncation and ensures clean JSON deserialization for callers.
-
+All registered tools implement the `ITool` interface and return a pure, frozen Pydantic DTO (completely decoupled from protocol-level concerns). A resource caching decorator generates a unique `run_id` and persists the DTO output as an MCP Resource (`pgmcp://cache/runs/{run_id}`). The server responds exclusively with a single `TextContent` block (formatted using `presentation.yaml` templates) that links to the resource URI. This completely eliminates double serialization, avoids client-side chat truncation, and keeps the LLM context window clean.
 ### 2. Fail-Fast Validation
 
 Tools validate inputs before execution. Invalid parameters return structured errors, not partial operations.
@@ -286,7 +285,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 ## Version History
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.0 | 2026-06-15 | Agent | Document ITool DTO and MCP Resource Caching migration (#402) |
 | 2.3 | 2026-06-11 | Agent | Document Structured JSON Transport (MCP structuredContent) design principle |
 | 2.2 | 2026-05-23 | Agent | Update discovery/index guidance for the delivered `get_work_context` contract and startup flow |
 | 2.1 | 2026-04-10 | Agent | Fix tool counts (50 total, Project/Phase 8, GitHub-Dependent 16); fix stale params and merge_method |
-| 2.0 | 2026-02-08 | Agent | Complete navigation index for 46 tools across 8 categories |

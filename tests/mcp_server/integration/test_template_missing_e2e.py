@@ -97,15 +97,11 @@ async def test_template_missing_error_propagates_through_call_chain(
     )
 
     # Assert: Error contract preserved through entire call chain
-    assert result.is_error is True, "Expected error result"
-    assert result.error_code == "ERR_EXECUTION", (
-        f"Expected ERR_EXECUTION (template resolution failure), got {result.error_code}"
-    )
+    assert result.success is False, "Expected error result"
 
     # Verify message contains template path information
-    assert result.content is not None
-    assert len(result.content) > 0
-    message = result.content[0]["text"]
+    message = result.error_message
+    assert message is not None
     assert "does_not_exist.py.jinja2" in message, (
         f"Expected missing template path in message, got: {message}"
     )

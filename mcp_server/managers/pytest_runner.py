@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, Literal
 
-from mcp_server.core.operation_notes import RecoveryNote, SuggestionNote
+from mcp_server.core.operation_notes import Note
 
 if TYPE_CHECKING:
     from mcp_server.core.operation_notes import NoteEntry
@@ -35,6 +35,7 @@ class FailureDetail:
     location: str
     short_reason: str
     traceback: str
+    is_collection_error: bool = False
 
 
 @dataclass(frozen=True)
@@ -79,33 +80,44 @@ _EXIT_CODE_POLICY: dict[int, ExitCodePolicy] = {
     PytestExitCode.TESTS_FAILED: ExitCodePolicy("ok", None, ""),
     PytestExitCode.INTERRUPTED: ExitCodePolicy(
         "error",
-        lambda _: RecoveryNote("Pytest was interrupted; check for hung tests or external SIGINT."),
+        lambda _: Note(
+            key="pytest_interrupted_recovery",
+            params={},
+        ),
         "pytest interrupted (exit 2)",
     ),
     PytestExitCode.INTERNAL_ERROR: ExitCodePolicy(
         "error",
-        lambda _: RecoveryNote(
-            "Pytest reported an internal error; inspect stderr and pytest plugins."
+        lambda _: Note(
+            key="pytest_internal_error_recovery",
+            params={},
         ),
         "pytest internal error (exit 3)",
     ),
     PytestExitCode.USAGE_ERROR: ExitCodePolicy(
         "error",
-        lambda _: RecoveryNote(
-            "Pytest could not start. Verify the path exists and the CLI options are valid."
+        lambda _: Note(
+            key="pytest_usage_error_recovery",
+            params={},
         ),
         "pytest usage error (exit 4)",
     ),
     PytestExitCode.NO_TESTS_COLLECTED: ExitCodePolicy(
         "ok",
-        lambda _: SuggestionNote("No tests matched the filter. Check markers and path."),
+        lambda _: Note(
+            key="pytest_no_tests_collected_suggestion",
+            params={},
+        ),
         "no tests collected",
     ),
 }
 
 _UNKNOWN_CODE_POLICY = ExitCodePolicy(
     "raise",
-    lambda c: RecoveryNote(f"Pytest exited with unexpected code {c}; inspect stderr."),
+    lambda c: Note(
+        key="pytest_unexpected_code_recovery",
+        params={"exit_code": c},
+    ),
     "pytest exited with unexpected code",
 )
 
@@ -115,13 +127,21 @@ _COVERAGE_RE = re.compile(r"^TOTAL\b(?:\s+\d+)+\s+(\d+(?:\.\d+)?)%$", re.MULTILI
 _LF_EMPTY_RE = re.compile(r"no previously failed tests,\s*not deselecting", re.IGNORECASE)
 
 
+MAX_FAILURES_DETAILED: int = 3
+
+
 class PytestRunner:
     """Domain manager: command execution, output parsing, exit-code classification."""
 
-    def run(self, cmd: list[str], cwd: str, timeout: int) -> PytestResult:
+    def run(self, cmd: list[str], cwd: str, timeout: int, *, verbose: bool = False) -> PytestResult:
         """Execute pytest, parse output, classify exit code, return typed result."""
         execution = self._execute(cmd, cwd, timeout)
-        return self._parse_output(execution.stdout, execution.stderr, execution.returncode)
+        return self._parse_output(
+            execution.stdout,
+            execution.stderr,
+            execution.returncode,
+            verbose=verbose,
+        )
 
     def _execute(self, cmd: list[str], cwd: str, timeout: int) -> _PytestExecution:
         """Run pytest with safe subprocess defaults for the MCP server environment."""
@@ -145,18 +165,32 @@ class PytestRunner:
             text=True,
             timeout=timeout,
         )
+        try:
+            with open("c:/temp/pgmcp/pytest_stdout.txt", "w", encoding="utf-8") as f:
+                f.write(proc.stdout or "")
+        except Exception as e:
+            # Let's write to stderr if we fail, so we can see it in result
+            proc.stderr += f"\nDEBUG WRITE ERROR: {str(e)}"
         return _PytestExecution(
             stdout=proc.stdout or "",
             stderr=proc.stderr or "",
             returncode=proc.returncode,
         )
 
-    def _parse_output(self, stdout: str, stderr: str, returncode: int) -> PytestResult:
+    def _parse_output(
+        self,
+        stdout: str,
+        stderr: str,
+        returncode: int,
+        *,
+        verbose: bool = False,
+    ) -> PytestResult:
         """Parse raw pytest stdout and return a fully typed PytestResult."""
+        policy = _EXIT_CODE_POLICY.get(returncode, _UNKNOWN_CODE_POLICY)
         policy = _EXIT_CODE_POLICY.get(returncode, _UNKNOWN_CODE_POLICY)
 
         passed, failed, skipped, errors = self._parse_counts(stdout)
-        failures = self._parse_failures(stdout)
+        failures = self._parse_failures(stdout, verbose=verbose)
         coverage_pct = self._parse_coverage(stdout)
         lf_cache_was_empty = bool(_LF_EMPTY_RE.search(stdout))
         summary_line = self._parse_summary_line(stdout, returncode, policy)
@@ -186,25 +220,59 @@ class PytestRunner:
 
         return _count("passed"), _count("failed"), _count("skipped"), _count("error")
 
-    def _parse_failures(self, stdout: str) -> tuple[FailureDetail, ...]:
-        """Extract FailureDetail entries from FAILED lines in short summary."""
+    def _parse_failures(self, stdout: str, *, verbose: bool = False) -> tuple[FailureDetail, ...]:
+        """Extract FailureDetail entries from FAILED lines and ERROR collecting lines."""
         details: list[FailureDetail] = []
-        for match in _FAILED_LINE_RE.finditer(stdout):
+        for i, match in enumerate(_FAILED_LINE_RE.finditer(stdout)):
             test_id = match.group(1).strip()
-            traceback = self._extract_traceback(stdout, test_id)
+            raw_traceback = self._extract_traceback(stdout, test_id)
             inline_reason = match.group(2)
-            short_reason = (
-                inline_reason.strip() if inline_reason else self._extract_short_reason(traceback)
-            )
+            if inline_reason:
+                short_reason = inline_reason.strip()
+            else:
+                short_reason = self._extract_short_reason(raw_traceback)
             location, _, _ = test_id.partition("::")
+
+            traceback = ""
+            if verbose and i < MAX_FAILURES_DETAILED:
+                traceback = raw_traceback
+
             details.append(
                 FailureDetail(
                     test_id=test_id,
                     location=location,
                     short_reason=short_reason,
                     traceback=traceback,
+                    is_collection_error=False,
                 )
             )
+
+        collect_matches = list(
+            re.finditer(
+                r"_+\s*ERROR collecting\s+(.+?)(?:\s+_+)?$",
+                stdout,
+                re.MULTILINE,
+            )
+        )
+        for j, match in enumerate(collect_matches):
+            target_name = match.group(1).strip()
+            raw_traceback = self._extract_traceback(stdout, target_name)
+            short_reason = self._extract_short_reason(raw_traceback)
+
+            traceback = ""
+            if verbose and (len(details) + j) < MAX_FAILURES_DETAILED:
+                traceback = raw_traceback
+
+            details.append(
+                FailureDetail(
+                    test_id=target_name,
+                    location=target_name,
+                    short_reason=short_reason,
+                    traceback=traceback,
+                    is_collection_error=True,
+                )
+            )
+
         return tuple(details)
 
     def _extract_short_reason(self, traceback: str) -> str:
@@ -215,20 +283,34 @@ class PytestRunner:
         """
         lines = _TRACEBACK_ERROR_RE.findall(traceback)
         if not lines:
-            return ""
+            tb_lines = [ln.strip() for ln in traceback.splitlines() if ln.strip()]
+            if tb_lines:
+                return tb_lines[-1][:300]
+            return "Collection Error"
         reason = "\n".join(line.strip() for line in lines)
         return reason[:300]
 
     def _extract_traceback(self, stdout: str, test_id: str) -> str:
-        """Extract the traceback block for a given test_id from the FAILURES section."""
-        _, _, test_name = test_id.rpartition("::")
+        """Extract the traceback block for a given test_id from the FAILURES or ERRORS section."""
+        parts = test_id.split("::")
+        target_name = ".".join(parts[1:]) if len(parts) > 1 else parts[0]
         pattern = re.compile(
-            r"(?:\[gw\d+\]\s+)?_{3,}\s+"
-            + re.escape(test_name)
-            + r"\s+_{3,}\n(.*?)(?=\n_{3,}|\n={3,}|\Z)",
+            r"(?:\[gw\d+\]\s+)?_*\s*"
+            + re.escape(target_name)
+            + r"\s*_*\r?\n(.*?)(?=\r?\n(?:\[gw\d+\]\s+)?_+|\r?\n=+|\Z)",
             re.DOTALL,
         )
         match = pattern.search(stdout)
+        if match:
+            return match.group(1).strip()
+
+        collect_pattern = re.compile(
+            r"_*\s*ERROR collecting\s+"
+            + re.escape(target_name)
+            + r"(?:\s+_*)?\r?\n(.*?)(?=\r?\n(?:\[gw\d+\]\s+)?_+|\r?\n=+|\Z)",
+            re.DOTALL,
+        )
+        match = collect_pattern.search(stdout)
         return match.group(1).strip() if match else ""
 
     def _parse_coverage(self, stdout: str) -> float | None:

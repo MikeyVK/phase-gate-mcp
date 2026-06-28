@@ -18,10 +18,16 @@ from typing import Any
 class MCPError(Exception):
     """Base class for all MCP server exceptions."""
 
-    def __init__(self, message: str, code: str = "ERR_INTERNAL") -> None:
+    def __init__(
+        self,
+        message: str,
+        code: str = "ERR_INTERNAL",
+        params: dict[str, Any] | None = None,
+    ) -> None:
         """Initialize the MCP error."""
         self.message = message
         self.code = code
+        self.params = params or {}
         super().__init__(message)
 
 
@@ -50,14 +56,18 @@ class ValidationError(MCPError):
         self,
         message: str,
         schema: Any = None,  # noqa: ANN401  # Core layer; TemplateSchema would violate layer deps
+        error_code: str | None = None,
+        params: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the validation error.
 
         Args:
             message: Error message describing the validation failure
             schema: Optional TemplateSchema with required/optional fields
+            error_code: Optional custom error code
+            params: Optional dictionary of error parameters
         """
-        super().__init__(message, code="ERR_VALIDATION")
+        super().__init__(message, code=error_code or "ERR_VALIDATION", params=params)
         self.schema = schema
         self.missing: list[str] = []
         self.provided: list[str] = []
@@ -112,9 +122,18 @@ class MetadataParseError(ValidationError):
 class PreflightError(MCPError):
     """Raised when pre-flight checks fail."""
 
-    def __init__(self, message: str) -> None:
+    def __init__(
+        self,
+        message: str,
+        error_code: str | None = None,
+        params: dict[str, Any] | None = None,
+    ) -> None:
         """Initialize the preflight error."""
-        super().__init__(message, code="ERR_PREFLIGHT")
+        super().__init__(
+            message,
+            code=error_code or "ERR_PREFLIGHT",
+            params=params,
+        )
 
 
 class ExecutionError(MCPError):

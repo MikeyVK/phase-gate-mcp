@@ -165,7 +165,7 @@ class TestBaselineAdvanceOnAllPass:
             patch.object(manager, "_accumulate_failed_files_on_failure") as mock_acc,
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -282,7 +282,7 @@ class TestScopeLifecycleGuard:
             patch.object(manager, "_accumulate_failed_files_on_failure") as mock_acc,
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 return_value={
                     "gate_number": 1,
                     "name": "Gate 1: Stub",
@@ -401,7 +401,7 @@ class TestScopeSwitchInvariantsC44:
             patch.object(manager, "_get_head_sha", return_value="baseline_new"),
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 side_effect=[
                     {
                         "gate_number": 1,
@@ -480,7 +480,7 @@ class TestScopeSwitchInvariantsC44:
             patch.object(manager, "_accumulate_failed_files_on_failure") as mock_acc,
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 side_effect=[
                     {
                         "gate_number": 1,
@@ -539,7 +539,7 @@ class TestScopeSwitchInvariantsC44:
         with (
             patch.object(
                 manager,
-                "_execute_gate",
+                "execute_gate",
                 side_effect=[
                     {
                         "gate_number": 1,

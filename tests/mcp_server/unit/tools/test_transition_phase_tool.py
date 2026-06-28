@@ -13,9 +13,10 @@ from pathlib import Path
 
 import pytest
 
-from mcp_server.core.operation_notes import InfoNote, NoteContext
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
+from mcp_server.schemas.tool_outputs import PhaseTransitionOutput
 from mcp_server.tools.phase_tools import (
     TransitionPhaseInput,
     TransitionPhaseTool,
@@ -91,9 +92,11 @@ class TestTransitionPhaseTool:
         result = await tool.execute(params, NoteContext())
 
         # Assert
-        assert "✅" in result.content[0]["text"]
-        assert f"{feature_phases[0]} → {feature_phases[1]}" in result.content[0]["text"]
-        assert initialized_branch in result.content[0]["text"]
+        assert isinstance(result, PhaseTransitionOutput)
+        assert result.success is True
+        assert result.branch == initialized_branch
+        assert result.from_phase == feature_phases[0]
+        assert result.to_phase == feature_phases[1]
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_emits_advisory_info_note_after_success(
@@ -107,17 +110,10 @@ class TestTransitionPhaseTool:
 
         result = await tool.execute(params, context)
 
-        notes = context.of_type(InfoNote)
-        assert len(notes) == 1
-        assert notes[0].message == (
-            "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call "
-            "to load the current phase context for this branch."
-        )
+        assert isinstance(result, PhaseTransitionOutput)
+        assert result.success is True
 
-        rendered = context.render_to_response(result)
-        assert len(rendered.content) == 2
-        assert rendered.content[0]["text"] == result.content[0]["text"]
-        assert rendered.content[1]["text"] == notes[0].message
+        assert len(context.entries) == 0
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_validates_sequence(
@@ -133,8 +129,10 @@ class TestTransitionPhaseTool:
         result = await tool.execute(params, NoteContext())
 
         # Assert
-        assert "❌" in result.content[0]["text"]
-        assert "Invalid transition" in result.content[0]["text"]
+        assert isinstance(result, PhaseTransitionOutput)
+        assert result.success is False
+        assert result.error_message is not None
+        assert "Invalid transition" in result.error_message
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_unknown_branch(
@@ -152,7 +150,8 @@ class TestTransitionPhaseTool:
         result = await tool.execute(params, NoteContext())
 
         # Assert
-        assert "❌" in result.content[0]["text"]
+        assert isinstance(result, PhaseTransitionOutput)
+        assert result.success is False
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_invalid_target_phase(
@@ -168,7 +167,8 @@ class TestTransitionPhaseTool:
         result = await tool.execute(params, NoteContext())
 
         # Assert
-        assert "❌" in result.content[0]["text"]
+        assert isinstance(result, PhaseTransitionOutput)
+        assert result.success is False
 
     @pytest.mark.asyncio
     async def test_transition_phase_tool_with_human_approval(
@@ -189,17 +189,15 @@ class TestTransitionPhaseTool:
         result = await tool.execute(params, NoteContext())
 
         # Assert - Verify transition succeeded
-        assert "✅" in result.content[0]["text"]
+        assert isinstance(result, PhaseTransitionOutput)
+        assert result.success is True
 
         # Verify human approval recorded in state
         state = phase_engine.get_state(initialized_branch)
         transition = state.transitions[0]
         assert transition["human_approval"] == approval_message
 
-    @pytest.mark.asyncio
-    async def test_transition_phase_tool_input_model_validation(
-        self, feature_phases: list[str]
-    ) -> None:
+    def test_transition_phase_tool_input_model_validation(self, feature_phases: list[str]) -> None:
         """Test that TransitionPhaseInput model validates correctly."""
         # Test valid input
         valid_input = TransitionPhaseInput(branch="feature/42-test", to_phase=feature_phases[1])

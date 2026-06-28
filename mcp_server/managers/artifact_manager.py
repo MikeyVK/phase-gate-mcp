@@ -28,7 +28,7 @@ from typing import Any, cast
 from mcp_server.adapters.filesystem import FilesystemAdapter
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
-from mcp_server.core.operation_notes import BlockerNote, NoteContext, RecoveryNote
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
@@ -39,32 +39,7 @@ from mcp_server.validation.validation_service import ValidationService
 
 logger = logging.getLogger(__name__)
 
-# V2 pipeline: Mapping from artifact_type to Pydantic Context class name in mcp_server.schemas
-_v2_context_registry: dict[str, str] = {
-    "dto": "DTOContext",
-    "worker": "WorkerContext",
-    "adapter": "AdapterContext",
-    "tool": "ToolContext",
-    "resource": "ResourceContext",
-    "schema": "SchemaContext",
-    "interface": "InterfaceContext",
-    "service": "ServiceContext",
-    "generic": "GenericContext",
-    "generic_doc": "GenericDocContext",
-    "unit_test": "UnitTestContext",
-    "integration_test": "IntegrationTestContext",
-    # Document artifact types
-    "research": "ResearchContext",
-    "planning": "PlanningContext",
-    "design": "DesignContext",
-    "architecture": "ArchitectureContext",
-    "reference": "ReferenceContext",
-    "validation_report": "ValidationReportContext",
-    # Tracking artifact types
-    "commit": "CommitContext",
-    "pr": "PRContext",
-    "issue": "IssueContext",
-}
+# Schema pipeline contexts are loaded dynamically from ArtifactDefinition in artifacts.yaml
 
 
 @dataclass
@@ -274,10 +249,10 @@ class ArtifactManager:
 
         return enriched
 
-    def _enrich_context_v2(
+    def _enrich_schema_context(
         self, context: BaseContext, artifact_type: str, provided_output_path: str | None = None
     ) -> BaseRenderContext:
-        """Enrich template context with schema validation (v2 pipeline).
+        """Enrich template context with schema validation.
 
         Uses Naming Convention + globals() lookup to find RenderContext class:
         - DTOContext → DTORenderContext
@@ -303,6 +278,8 @@ class ArtifactManager:
         if not context_class_name.endswith("Context"):
             raise ValidationError(
                 f"Invalid Context class name: {context_class_name} (must end with 'Context')",
+                error_code="invalid_context_class",
+                params={"class_name": context_class_name},
             )
 
         render_context_class_name = context_class_name.replace("Context", "RenderContext")
@@ -319,6 +296,8 @@ class ArtifactManager:
         if render_context_class is None:
             raise ValidationError(
                 f"RenderContext class not found: {render_context_class_name}",
+                error_code="render_context_not_found",
+                params={"class_name": render_context_class_name},
             )
 
         # Generate ISO 8601 UTC timestamp with Z suffix
@@ -536,6 +515,8 @@ class ArtifactManager:
             if "output_path" not in enriched_context:
                 raise ValidationError(
                     "Generic artifacts require explicit output_path in context",
+                    error_code="generic_output_path_required",
+                    params={},
                 )
             return str(enriched_context["output_path"])
 
@@ -563,6 +544,8 @@ class ArtifactManager:
             if artifact.type == "code":
                 raise ValidationError(
                     f"Generated {artifact_type} artifact failed validation:\n{issues}",
+                    error_code="artifact_validation_failed",
+                    params={"artifact_type": artifact_type, "issues": issues},
                 )
 
             logger.warning(
@@ -629,6 +612,8 @@ class ArtifactManager:
         if getattr(artifact, "output_type", None) == "file" and not output_path:
             raise ValidationError(
                 f"Missing output_path for file artifact '{artifact_type}'",
+                error_code="missing_output_path",
+                params={"artifact_type": artifact_type},
             )
 
         # QA-2: Fail-fast if template_path is null (not yet implemented)
@@ -641,35 +626,32 @@ class ArtifactManager:
         # Task 1.1c: Prepare metadata (version_hash, tier_chain)
         version_hash, tier_chain = self._prepare_scaffold_metadata(artifact_type, template_file)
 
-        # FEATURE FLAG: Check if Pydantic v2 pipeline is enabled
-        use_v2_pipeline = os.environ.get("PYDANTIC_SCAFFOLDING_ENABLED", "true").lower() == "true"
+        # FEATURE FLAG: Check if Pydantic schema-typed pipeline is enabled
+        use_schema_pipeline = (
+            os.environ.get("PYDANTIC_SCAFFOLDING_ENABLED", "true").lower() == "true"
+        )
 
-        # V2 artefact support mapping — derived from module-level registry to avoid duplication
-        v2_supported_artifacts = set(_v2_context_registry.keys())
-
-        # Route to v1 or v2 pipeline
+        # Route to v1 or schema-typed pipeline
         enriched_context: dict[str, Any] = {}
-        if use_v2_pipeline and artifact_type in v2_supported_artifacts:
-            # V2 PIPELINE (schema-typed with Pydantic validation)
+        schema_pipeline_active = use_schema_pipeline and artifact.context_class is not None
+        if schema_pipeline_active:
+            # Schema-typed pipeline (with Pydantic validation)
 
-            # Dynamic Context schema lookup via registry (Issue #135 Cycle 5)
-            # All 8 code artifact types now have Context schemas in mcp_server.schemas
+            # Dynamic Context schema lookup via registry
             import sys  # noqa: PLC0415
 
             schemas_module = sys.modules.get("mcp_server.schemas")
             if schemas_module is None:
                 import mcp_server.schemas as schemas_module  # noqa: PLC0415
 
-            # Naming convention: artifact_type → XxxContext (snake_case → PascalCase + "Context")
-            # Examples: dto → DTOContext, worker → WorkerContext, unit_test → UnitTestContext
-            context_class_name = _v2_context_registry.get(artifact_type)
+            context_class_name = artifact.context_class
             context_class = (
                 getattr(schemas_module, context_class_name, None) if context_class_name else None
             )
 
             if context_class is None:
                 raise ConfigError(
-                    f"V2 pipeline: no Context schema found for artifact type "
+                    f"Schema pipeline: no Context schema found for artifact type "
                     f"'{artifact_type}' in mcp_server.schemas "
                     f"(expected '{context_class_name}'). "
                     f"See issue #325 for gap documentation."
@@ -691,13 +673,15 @@ class ArtifactManager:
                 context_schema = context_class.model_validate(v2_user_context)
             except Exception as e:
                 raise ValidationError(
-                    f"V2 pipeline: Failed to validate {artifact_type} context "
+                    f"Schema pipeline: Failed to validate {artifact_type} context "
                     f"via {context_class.__name__}",
                     schema=self.get_context_schema(artifact_type),
+                    error_code="context_validation_failed",
+                    params={"artifact_type": artifact_type, "error_details": str(e)},
                 ) from e
 
             # 2. Enrich to RenderContext (adds lifecycle fields)
-            render_context = self._enrich_context_v2(
+            render_context = self._enrich_schema_context(
                 context_schema, artifact_type, provided_output_path=output_path
             )
 
@@ -719,10 +703,10 @@ class ArtifactManager:
 
             if v2_template_exists:
                 template_file = v2_template_file
-                logger.info("V2 pipeline: Using v2 template %s", v2_template_file)
+                logger.info("Schema pipeline: Using template %s", v2_template_file)
             else:
                 logger.info(
-                    "V2 pipeline: v2 template not found (%s), using v1 template %s",
+                    "Schema pipeline: template not found (%s), using template %s",
                     v2_template_file,
                     template_file,
                 )
@@ -735,11 +719,11 @@ class ArtifactManager:
             if "name" in context and "name" not in enriched_context:
                 enriched_context["name"] = context["name"]
 
-            # 6. Add template override for v2 template (if exists)
+            # 6. Add template override for template (if exists)
             if v2_template_exists:
                 enriched_context["template_name"] = v2_template_file
 
-        if not (use_v2_pipeline and artifact_type in v2_supported_artifacts):
+        if not schema_pipeline_active:
             # V1 PIPELINE (dict-based, backward compatible) - UNCHANGED
             # Inject SCAFFOLD metadata into context for v1 enrichment
             context = {
@@ -750,23 +734,25 @@ class ArtifactManager:
             enriched_context = self._enrich_context(artifact_type, context)
 
         # 2. Scaffold artifact with enriched context
-        # V2 pipeline: Pydantic already validated — skip introspection-based validate().
+        # Schema pipeline: Pydantic already validated — skip introspection-based validate().
         # V1 pipeline: introspection validate() runs inside scaffold().
         scaffold_kwargs = {k: v for k, v in enriched_context.items() if k != "artifact_type"}
-        v2_active = use_v2_pipeline and artifact_type in v2_supported_artifacts
         try:
             result = self.scaffolder.scaffold(
                 artifact_type,
-                skip_validation=v2_active,
+                skip_validation=schema_pipeline_active,
                 note_context=note_context,
                 **scaffold_kwargs,
             )
         except ValidationError as exc:
             if note_context is not None:
-                note_context.produce(BlockerNote(message=str(exc)))
                 note_context.produce(
-                    RecoveryNote(
-                        message=f"Provide all required fields for artifact type '{artifact_type}'"
+                    Note(key="scaffold_validation_failed", params={"error_details": str(exc)})
+                )
+                note_context.produce(
+                    Note(
+                        key="scaffold_fields_recovery",
+                        params={"artifact_type": artifact_type},
                     )
                 )
             raise
@@ -846,7 +832,7 @@ class ArtifactManager:
         return self.workspace_root / base_dir / file_name
 
     def get_context_schema(self, artifact_type: str) -> dict[str, Any]:
-        """Return JSON Schema dict for the context parameter of a V2 artifact type.
+        """Return JSON Schema dict for the context parameter of a schema-typed artifact type.
 
         Args:
             artifact_type: Artifact type id (e.g. 'research', 'dto')
@@ -855,18 +841,16 @@ class ArtifactManager:
             JSON Schema dict (Draft 7, $refs inlined via resolve_schema_refs)
 
         Raises:
-            ConfigError: If artifact_type has no V2 Context class registered
+            ConfigError: If artifact_type has no Context class registered
         """
         import sys  # noqa: PLC0415
 
         from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
 
-        context_class_name = _v2_context_registry.get(artifact_type)
+        artifact = self.registry.get_artifact(artifact_type)
+        context_class_name = artifact.context_class
         if context_class_name is None:
-            raise ConfigError(
-                f"No V2 Context schema for artifact type '{artifact_type}'. "
-                "Register a matching Context schema in _v2_context_registry first."
-            )
+            raise ConfigError(f"No Context schema for artifact type '{artifact_type}'.")
 
         schemas_module = sys.modules.get("mcp_server.schemas")
         if schemas_module is None:
@@ -875,7 +859,7 @@ class ArtifactManager:
         context_class = getattr(schemas_module, context_class_name, None)
         if context_class is None:
             raise ConfigError(
-                f"V2 Context class '{context_class_name}' not found in mcp_server.schemas."
+                f"Context class '{context_class_name}' not found in mcp_server.schemas."
             )
 
         return resolve_schema_refs(context_class.model_json_schema())

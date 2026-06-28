@@ -11,14 +11,14 @@
 ## Purpose
 
 Show the enforcement layer: how tool events trigger configured actions, which handlers are
-registered, how the `BranchMutatingTool` category dispatches rules to all branch-mutating
+registered, how the `branch_mutating` category dispatches rules to all branch-mutating
 tools via a single `enforcement.yaml` entry, and how `SubmitPRTool` performs the atomic
 PR creation flow as a self-contained operation.
 
 ## Scope
 
 **In Scope:** `EnforcementRunner`, `EnforcementRegistry`, `enforcement.yaml`,
-`BranchMutatingTool`, `IPRStatusReader/Writer`, `PhaseStateEngine` instantiation routes
+`branch_mutating` category configuration, `IPRStatusReader/Writer`, `PhaseStateEngine` instantiation routes
 
 **Out of Scope:** Phase contract checks (see 02), git operation detail
 
@@ -63,15 +63,15 @@ Three rules exist in `.phase-gate/config/enforcement.yaml`.
 
 ---
 
-## 3. BranchMutatingTool Category
+## 3. Dynamic Branch Mutating Categories
 
-`BranchMutatingTool` is a zero-method ABC in `mcp_server/tools/base.py` that sets
-`tool_category = "branch_mutating"`. Every tool that can mutate the branch inherits from it,
-so rule #2 applies to all of them via a single `enforcement.yaml` entry.
+The `branch_mutating` tool category is defined dynamically in `.phase-gate/config/enforcement.yaml` under `categories: branch_mutating: [list of tools]`.
+This decouples tools from policy logic and allows rules to be dispatched to a set of tools without class inheritance.
 
 ```mermaid
 graph TD
-    BMT["BranchMutatingTool<br/>tool_category = 'branch_mutating'<br/>(base.py)"]
+    YAML[".phase-gate/config/enforcement.yaml"]
+    Cat["Category: branch_mutating"]
 
     CreateBranch["CreateBranchTool"]
     GitCommit["GitCommitTool"]
@@ -86,31 +86,31 @@ graph TD
     InitProject["InitializeProjectTool"]
     SaveDeliverables["SavePlanningDeliverablesTool"]
     UpdateDeliverables["UpdatePlanningDeliverablesTool"]
-    BaseTransition["_BaseTransitionTool<br/>(TransitionPhase / Force / Cycle / ForceCycle)"]
+    BaseTransition["_BaseTransitionTool / _BaseIToolTransition"]
 
-    BMT --> CreateBranch
-    BMT --> GitCommit
-    BMT --> GitRestore
-    BMT --> GitPush
-    BMT --> GitMerge
-    BMT --> GitDelete
-    BMT --> GitPull
-    BMT --> SafeEdit
-    BMT --> SubmitPR
-    BMT --> ScaffoldArtifact
-    BMT --> InitProject
-    BMT --> SaveDeliverables
-    BMT --> UpdateDeliverables
-    BMT --> BaseTransition
+    YAML -->|"defines list"| Cat
+    Cat --> CreateBranch
+    Cat --> GitCommit
+    Cat --> GitRestore
+    Cat --> GitPush
+    Cat --> GitMerge
+    Cat --> GitDelete
+    Cat --> GitPull
+    Cat --> SafeEdit
+    Cat --> SubmitPR
+    Cat --> ScaffoldArtifact
+    Cat --> InitProject
+    Cat --> SaveDeliverables
+    Cat --> UpdateDeliverables
+    Cat --> BaseTransition
 
-    MergePR["MergePRTool<br/>⚠️ NOT branch_mutating<br/>(escape hatch)"]
+    MergePR["MergePRTool<br/>⚠️ NOT in branch_mutating list<br/>(escape hatch)"]
     style MergePR fill:#ffe,color:#000
 ```
 
-**`MergePRTool` is intentionally excluded.** It is the escape hatch that clears
-`PRStatus.OPEN`. If it inherited `BranchMutatingTool`, rule #2 would block it while an open
+**`MergePRTool` is intentionally excluded from the configuration list.** It is the escape hatch that clears
+`PRStatus.OPEN`. If it were listed under the `branch_mutating` category list, rule #2 would block it while an open
 PR exists — creating a deadlock where the PR can never be merged.
-
 ---
 
 ## 4. PR Status Lifecycle
@@ -159,7 +159,7 @@ Three action handlers are registered in `EnforcementRunner._build_default_regist
 
 Reads `action.rules[branch_type]` from `enforcement.yaml` → list of allowed base-branch
 patterns (glob). Raises `ValidationError` if the requested `base_branch` does not match
-any pattern. Produces `SuggestionNote` with the allowed bases.
+any pattern. Produces a `suggestion` note with the allowed bases.
 
 ### `check_pr_status`
 
@@ -168,14 +168,14 @@ Reads `IPRStatusReader.get_pr_status(branch)`. Branch is resolved from:
 2. `_get_current_git_branch(workspace_root)` (git rev-parse)
 3. `context.tool_name` (last resort)
 
-Raises `ValidationError` when `PRStatus.OPEN`. Produces `SuggestionNote` to call `merge_pr`.
+Raises `ValidationError` when `PRStatus.OPEN`. Produces a `suggestion` note to call `merge_pr`.
 Raises `ConfigError` at startup if no `pr_status_reader` is injected.
 
 ### `check_phase_readiness`
 
 Reads `action.policy` as the required phase name. Reads `current_phase` from
 `.phase-gate/state.json` at call time (no caching). Raises `ValidationError` on mismatch or absent
-state file. Produces `SuggestionNote` with `transition_phase(to_phase="<policy>")`.
+state file. Produces a `suggestion` note with `transition_phase(to_phase="<policy>")`.
 
 ---
 
@@ -216,9 +216,9 @@ is now handled directly by the transition tools.
 |----------|-----------|----------------------|
 | YAML configuration for enforcement | Declarative; hot-reloadable without code changes | Hardcoded in Python (requires redeployment per rule change) |
 | Registry validation at startup | Fail-fast on unknown action types; prevents silent runtime failures | Lazy validation per event (errors only surface during use) |
-| `BranchMutatingTool` category for bulk rule dispatch | One `enforcement.yaml` entry covers all 18 branch-mutating tools | Individual tool entries (18× more config, easy to miss new tools) |
-| `SubmitPRTool` owns artifact neutralization | Self-contained atomic flow; enforcement runner stays stateless | Enforcement runner pre-populates `ExclusionNote` list (removed in C6 GREEN) |
-| `MergePRTool` excluded from `BranchMutatingTool` | Avoids `check_pr_status` deadlock — MergePR is the escape hatch | Including it → blocked while OPEN, so the PR could never be merged (deadlock) |
+| YAML config categories for bulk rule dispatch | One `enforcement.yaml` entry covers all 18 branch-mutating tools dynamically | Individual tool entries (18× more config, easy to miss new tools) |
+| `SubmitPRTool` owns artifact neutralization | Self-contained atomic flow; enforcement runner stays stateless | Enforcement runner pre-populates exclusions list (removed in C6 GREEN) |
+| `MergePRTool` excluded from `branch_mutating` list | Avoids `check_pr_status` deadlock — MergePR is the escape hatch | Including it → blocked while OPEN, so the PR could never be merged (deadlock) |
 | `check_phase_readiness` reads state.json at call time | Always reflects live phase without session coupling | Cache with invalidation (over-engineered for a single file read) |
 
 ---

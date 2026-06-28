@@ -1,0 +1,1 @@
+"""ResourcePublishingDecorator module (empty, retired)."""

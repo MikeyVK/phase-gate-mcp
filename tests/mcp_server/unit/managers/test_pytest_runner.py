@@ -12,7 +12,7 @@ import subprocess
 import pytest
 
 import mcp_server.managers.pytest_runner as pytest_runner_module
-from mcp_server.core.operation_notes import SuggestionNote
+from mcp_server.core.operation_notes import Note
 from mcp_server.managers.pytest_runner import FailureDetail, PytestResult, PytestRunner
 
 # ---------------------------------------------------------------------------
@@ -114,6 +114,7 @@ def _run(
     returncode: int,
     *,
     stderr: str = "",
+    verbose: bool = False,
 ) -> PytestResult:
     """Helper to exercise PytestRunner.run() through a controlled subprocess seam."""
     completed: subprocess.CompletedProcess[str] = subprocess.CompletedProcess(
@@ -147,7 +148,7 @@ def _run(
         return completed
 
     monkeypatch.setattr(pytest_runner_module.subprocess, "run", fake_run)
-    return PytestRunner().run(["pytest"], cwd=".", timeout=30)
+    return PytestRunner().run(["pytest"], cwd=".", timeout=30, verbose=verbose)
 
 
 # ---------------------------------------------------------------------------
@@ -194,9 +195,28 @@ class TestPytestRunnerRun:
 
     def test_errors_during_collection(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Scenario 4: errors-during-collection stdout ÔåÆ errors=N."""
-        result = _run(monkeypatch, _ERRORS_STDOUT, returncode=2)
+        result = _run(monkeypatch, _ERRORS_STDOUT, returncode=2, verbose=True)
 
         assert result.errors >= 1
+        assert len(result.failures) == 1
+        failure = result.failures[0]
+        assert failure.test_id == "tests/test_bad_import.py"
+        assert failure.location == "tests/test_bad_import.py"
+        assert failure.short_reason == "ImportError: cannot import name 'missing'"
+        assert "cannot import name 'missing'" in failure.traceback
+        assert failure.is_collection_error is True
+
+    def test_errors_during_collection_non_verbose(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        result = _run(monkeypatch, _ERRORS_STDOUT, returncode=2, verbose=False)
+
+        assert result.errors >= 1
+        assert len(result.failures) == 1
+        failure = result.failures[0]
+        assert failure.test_id == "tests/test_bad_import.py"
+        assert failure.location == "tests/test_bad_import.py"
+        assert failure.short_reason == "ImportError: cannot import name 'missing'"
+        assert failure.traceback == ""
+        assert failure.is_collection_error is True
 
     def test_coverage_pct_parsed(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Scenario 5: coverage report line present ÔåÆ coverage_pct parsed as float."""
@@ -226,7 +246,28 @@ class TestPytestRunnerRun:
 
         assert result.summary_line == "no tests collected"
         assert result.should_raise is False
-        assert isinstance(result.note, SuggestionNote)
+        assert isinstance(result.note, Note)
+
+    def test_c1_pytest_runner_run_accepts_verbose_kwarg(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """PytestRunner.run accepts verbose keyword-only argument."""
+        completed = subprocess.CompletedProcess(
+            args=["pytest"],
+            returncode=0,
+            stdout=_PASSED_STDOUT,
+            stderr="",
+        )
+        monkeypatch.setattr(
+            pytest_runner_module.subprocess,
+            "run",
+            lambda *_args, **_kwargs: completed,
+        )
+        result_verbose = PytestRunner().run(["pytest"], cwd=".", timeout=30, verbose=True)
+        assert result_verbose.exit_code == 0
+        result_non_verbose = PytestRunner().run(["pytest"], cwd=".", timeout=30, verbose=False)
+        assert result_non_verbose.exit_code == 0
 
 
 # ---------------------------------------------------------------------------
@@ -376,7 +417,7 @@ class TestC4XdistTracebackExtraction:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """xdist stdout with [gw0] prefix on FAILURES header ÔåÆ traceback non-empty."""
-        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW0, returncode=1)
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW0, returncode=1, verbose=True)
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
@@ -385,7 +426,7 @@ class TestC4XdistTracebackExtraction:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """xdist stdout with double-digit [gw12] prefix ÔåÆ traceback non-empty."""
-        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW12, returncode=1)
+        result = _run(monkeypatch, _XDIST_FAILED_STDOUT_GW12, returncode=1, verbose=True)
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
@@ -394,10 +435,31 @@ class TestC4XdistTracebackExtraction:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Standard (non-xdist) FAILURES header ÔåÆ traceback still extracted (regression guard)."""
-        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
+        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1, verbose=True)
 
         assert len(result.failures) == 1
         assert result.failures[0].traceback != ""
+
+    def test_extract_traceback_windows_crlf_and_dots(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Verify traceback extraction on Windows with CRLF and class-method dot separator."""
+        crlf_stdout = (
+            "============================= FAILURES =============================\r\n"
+            "________________ TestClass.test_method ________________\r\n"
+            "\r\n"
+            "    def test_method():\r\n"
+            ">       assert False\r\n"
+            "E       AssertionError: assert False\r\n"
+            "\r\n"
+            "tests/test_foo.py:10: AssertionError\r\n"
+            "=========================== short test summary info ===========================\r\n"
+            "FAILED tests/test_foo.py::TestClass::test_method - AssertionError: assert False\r\n"
+        )
+        result = _run(monkeypatch, crlf_stdout, returncode=1, verbose=True)
+        assert len(result.failures) == 1
+        failure = result.failures[0]
+        assert failure.test_id == "tests/test_foo.py::TestClass::test_method"
+        assert "AssertionError: assert False" in failure.traceback
+        assert failure.short_reason == "AssertionError: assert False"
 
 
 # ---------------------------------------------------------------------------
@@ -629,3 +691,80 @@ class TestC5MultilineEBlock:
 
         assert len(result.failures) == 1
         assert result.failures[0].short_reason != ""
+
+
+_FIVE_FAILURES_STDOUT = """\\
+============================= test session starts ==============================
+collected 5 items
+
+tests/test_foo.py::test_1 FAILED
+tests/test_foo.py::test_2 FAILED
+tests/test_foo.py::test_3 FAILED
+tests/test_foo.py::test_4 FAILED
+tests/test_foo.py::test_5 FAILED
+
+================================= FAILURES =================================
+________________________________ test_1 __________________________________
+    def test_1():
+>       assert 1 == 0
+E       AssertionError: 1
+________________________________ test_2 __________________________________
+    def test_2():
+>       assert 2 == 0
+E       AssertionError: 2
+________________________________ test_3 __________________________________
+    def test_3():
+>       assert 3 == 0
+E       AssertionError: 3
+________________________________ test_4 __________________________________
+    def test_4():
+>       assert 4 == 0
+E       AssertionError: 4
+________________________________ test_5 __________________________________
+    def test_5():
+>       assert 5 == 0
+E       AssertionError: 5
+=========================== short test summary info ===========================
+FAILED tests/test_foo.py::test_1
+FAILED tests/test_foo.py::test_2
+FAILED tests/test_foo.py::test_3
+FAILED tests/test_foo.py::test_4
+FAILED tests/test_foo.py::test_5
+========================= 5 failed in 0.23s =========================
+"""
+
+
+class TestC3VerboseTracebackAndCapping:
+    """C3: tests for verbose traceback extraction and capping to MAX_FAILURES_DETAILED."""
+
+    def test_verbose_false_tracebacks_are_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """When verbose=False, all traceback strings must be empty."""
+        result = _run(monkeypatch, _FAILED_STDOUT, returncode=1)
+        assert len(result.failures) == 1
+        assert result.failures[0].traceback == ""
+
+    def test_verbose_true_tracebacks_are_extracted_and_capped(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """When verbose=True, extract tracebacks but cap at MAX_FAILURES_DETAILED = 3."""
+        completed = subprocess.CompletedProcess(
+            args=["pytest"],
+            returncode=1,
+            stdout=_FIVE_FAILURES_STDOUT,
+            stderr="",
+        )
+        monkeypatch.setattr(
+            pytest_runner_module.subprocess,
+            "run",
+            lambda *_args, **_kwargs: completed,
+        )
+
+        result = PytestRunner().run(["pytest"], cwd=".", timeout=30, verbose=True)
+
+        assert len(result.failures) == 5
+        assert "AssertionError: 1" in result.failures[0].traceback
+        assert "AssertionError: 2" in result.failures[1].traceback
+        assert "AssertionError: 3" in result.failures[2].traceback
+        assert result.failures[3].traceback == ""
+        assert result.failures[4].traceback == ""

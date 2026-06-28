@@ -13,7 +13,7 @@ from mcp_server.schemas import (
     MilestoneConfig,
     ScopeConfig,
 )
-from mcp_server.state.github_read_models import IssueReadModel, MilestoneReadModel, PRReadModel
+from mcp_server.schemas.github_models import IssueReadModel, MilestoneReadModel, PRReadModel
 
 if TYPE_CHECKING:
     from github.Issue import Issue
@@ -275,6 +275,7 @@ class GitHubManager:
             merged_at=pr.merged_at.isoformat() if pr.merged_at is not None else None,
             merge_sha=pr.merge_commit_sha,
             body=pr.body if pr.body is not None else "",
+            html_url=pr.html_url,
         )
 
     def get_pr_status(self, branch: str) -> PRStatus:

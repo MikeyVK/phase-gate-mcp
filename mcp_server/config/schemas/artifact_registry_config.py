@@ -83,6 +83,7 @@ class ArtifactDefinition(BaseModel):
     generate_test: bool = Field(False, description="Generate test file")
     required_fields: list[str] = Field(default_factory=list, description="Required context fields")
     optional_fields: list[str] = Field(default_factory=list, description="Optional context fields")
+    context_class: str | None = Field(None, description="Pydantic context schema class name")
     state_machine: StateMachine = Field(..., description="Lifecycle state machine")
 
     def validate_artifact_fields(self, provided: dict[str, Any]) -> None:

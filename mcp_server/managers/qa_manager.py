@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import platform
-import re
 import shutil
 import subprocess
 import sys
@@ -17,15 +16,14 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
+    from mcp_server.schemas.tool_outputs import AutoFixOutput
 from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.schemas import (
-    JsonViolationsParsing,
     QualityConfig,
     QualityGate,
-    TextViolationsParsing,
-    ViolationDTO,
 )
 from mcp_server.utils.path_resolver import resolve_input_paths
+from mcp_server.utils.violation_parser import ViolationParser
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +53,11 @@ class QAManager:
     """Manager for quality assurance and gates."""
 
     _quality_config: QualityConfig | None
+
+    @property
+    def quality_config(self) -> QualityConfig | None:
+        """Return the injected quality configuration."""
+        return self._quality_config
 
     # Default configuration (UPPERCASE constants for test mocking compatibility)
     QA_LOG_DIR = Path("temp/qa_logs")
@@ -95,6 +98,7 @@ class QAManager:
         self,
         files: list[str],
         effective_scope: str = "auto",
+        verbose: bool = False,
     ) -> dict[str, Any]:
         """Run configured quality gates on specified files.
 
@@ -187,7 +191,7 @@ class QAManager:
                 )
                 continue
 
-            gate_files = self._files_for_gate(gate, python_files)
+            gate_files = self.files_for_gate(gate, python_files)
             skip_reason = "Skipped (no matching files)" if not gate_files else None
             if skip_reason is not None:
                 self._update_summary_and_append_gate(
@@ -204,7 +208,12 @@ class QAManager:
                     },
                 )
                 continue
-            gate_result = self._execute_gate(gate, gate_files, gate_number=idx, gate_id=gate_id)
+            if verbose:
+                gate_result = self.execute_gate(
+                    gate, gate_files, gate_number=idx, gate_id=gate_id, verbose=True
+                )
+            else:
+                gate_result = self.execute_gate(gate, gate_files, gate_number=idx, gate_id=gate_id)
             self._update_summary_and_append_gate(results, gate_result)
 
         # Build top-level timing breakdown (Improvement E)
@@ -340,7 +349,7 @@ class QAManager:
     # Scope resolution
     # ------------------------------------------------------------------
 
-    def _resolve_scope(self, scope: str, files: list[str] | None = None) -> list[str]:
+    def resolve_scope(self, scope: str, files: list[str] | None = None) -> list[str]:
         """Resolve scope keyword to a sorted, deduplicated list of relative file paths.
 
         Args:
@@ -464,8 +473,9 @@ class QAManager:
     # Output formatting
     # ------------------------------------------------------------------
 
+    # TODO: [Phase 2] Summary formatting logic will be refactored to align with text presenter
     @staticmethod
-    def _format_summary_line(
+    def format_summary_line(
         results: dict[str, Any],
         scope: str | None = None,
         file_count: int | None = None,
@@ -534,7 +544,7 @@ class QAManager:
             f" ({total_violations} violations){scope_part}{duration_part}"
         )
 
-    def _normalize_file_path(self, path: str | None) -> str | None:
+    def normalize_file_path(self, path: str | None) -> str | None:
         """Normalize a violation file path to workspace-relative POSIX form (C36 / F-15).
 
         Rules:
@@ -564,7 +574,7 @@ class QAManager:
         # Relative path: just normalize OS separators to POSIX forward slashes.
         return str(path).replace("\\", "/")
 
-    def _build_compact_result(self, results: dict[str, Any]) -> dict[str, Any]:
+    def build_compact_result(self, results: dict[str, Any]) -> dict[str, Any]:
         """Return a compact gate payload with violations only — no debug fields.
 
         Design contract (design.md §4.9 / C26 + C35 + C39):
@@ -597,7 +607,7 @@ class QAManager:
             gate_status: str = gate.get("status") or ("passed" if gate.get("passed") else "failed")
             raw_violations: list[dict[str, Any]] = gate.get("issues", [])
             normalized_violations = [
-                {**v, "file": self._normalize_file_path(v.get("file"))} if "file" in v else v
+                {**v, "file": self.normalize_file_path(v.get("file"))} if "file" in v else v
                 for v in raw_violations
             ]
             compact_gates.append(
@@ -649,9 +659,24 @@ class QAManager:
         if cmd and cmd[0] in {"pyright", "pyright.exe"}:
             cmd[0] = _venv_script_path(_pyright_script_name())
 
-        return [*cmd, *files]
+        # Convert file paths to workspace-relative POSIX format so that glob matching
+        # (like ruff's --per-file-ignores) works correctly on all platforms (including Windows).
+        rel_files = []
+        for f in files:
+            p = Path(f)
+            if self.workspace_root is not None and p.is_absolute():
+                try:
+                    rel_files.append(p.relative_to(self.workspace_root).as_posix())
+                except ValueError:
+                    rel_files.append(p.as_posix())
+            elif p.is_absolute():
+                rel_files.append(p.as_posix())
+            else:
+                rel_files.append(str(f).replace("\\", "/"))
 
-    def _files_for_gate(self, gate: QualityGate, python_files: list[str]) -> list[str]:
+        return [*cmd, *rel_files]
+
+    def files_for_gate(self, gate: QualityGate, python_files: list[str]) -> list[str]:
         """Determine which files should be passed to a gate based on file_types capability."""
         eligible = [
             f
@@ -757,7 +782,7 @@ class QAManager:
             "details": details,
         }
 
-    def _collect_environment_metadata(self, cmd: list[str]) -> dict[str, str]:
+    def collect_environment_metadata(self, cmd: list[str]) -> dict[str, str]:
         """Collect environment metadata for command reproducibility.
 
         Returns a dict with python_version, tool_path, platform, and
@@ -856,8 +881,13 @@ class QAManager:
         except OSError:
             return None
 
-    def _execute_gate(
-        self, gate: QualityGate, files: list[str], gate_number: int, gate_id: str | None = None
+    def execute_gate(
+        self,
+        gate: QualityGate,
+        files: list[str],
+        gate_number: int,
+        gate_id: str | None = None,
+        verbose: bool = False,
     ) -> dict[str, Any]:
         """Execute a single gate using its configured parsing strategy."""
 
@@ -888,12 +918,21 @@ class QAManager:
             duration_ms = round((time.monotonic() - start_time) * 1000)
 
             result["duration_ms"] = duration_ms
+            if verbose:
+                details_parts = [f"Exit code: {proc.returncode}"]
+                if proc.stdout:
+                    details_parts.append(f"STDOUT:\n{proc.stdout}")
+                if proc.stderr:
+                    details_parts.append(f"STDERR:\n{proc.stderr}")
+                result["details"] = "\n\n".join(details_parts)
+            else:
+                result["details"] = ""
             result["command"] = {
                 "executable": cmd[0] if cmd else "",
                 "args": cmd[1:] if len(cmd) > 1 else [],
                 "cwd": gate.execution.working_dir,
                 "exit_code": proc.returncode,
-                "environment": self._collect_environment_metadata(cmd),
+                "environment": self.collect_environment_metadata(cmd),
             }
 
             if gate.capabilities.parsing_strategy == "json_violations":
@@ -901,8 +940,10 @@ class QAManager:
                     "json_violations capabilities required when parsing_strategy='json_violations'"
                 )
                 raw: list[dict[str, Any]] | dict[str, Any] = json.loads(proc.stdout or "[]")
-                violations = self._parse_json_violations(
-                    self._extract_violations_array(raw, gate.capabilities.json_violations),
+                violations = ViolationParser.parse_json_violations(
+                    ViolationParser.extract_violations_array(
+                        raw, gate.capabilities.json_violations
+                    ),
                     gate.capabilities.json_violations,
                 )
                 result["issues"] = [
@@ -926,7 +967,7 @@ class QAManager:
                 assert gate.capabilities.text_violations is not None, (
                     "text_violations capabilities required when parsing_strategy='text_violations'"
                 )
-                text_violations = self._parse_text_violations(
+                text_violations = ViolationParser.parse_text_violations(
                     proc.stdout or "",
                     gate.capabilities.text_violations,
                     gate.capabilities.supports_autofix,
@@ -972,10 +1013,14 @@ class QAManager:
             result["passed"] = False
             result["score"] = "Timeout"
             result["issues"] = [{"message": f"{gate.name} timed out"}]
+            result["details"] = (
+                f"Timeout (after {gate.execution.timeout_seconds}s)" if verbose else ""
+            )
         except FileNotFoundError as e:
             result["passed"] = False
             result["score"] = "Not Found"
             result["issues"] = [{"message": f"Tool not found: {e}"}]
+            result["details"] = f"Tool not found: {e}" if verbose else ""
 
         if not result["passed"]:
             result["status"] = "failed"
@@ -992,230 +1037,94 @@ class QAManager:
 
         return result
 
-    def _resolve_json_pointer(self, data: dict[str, object], pointer: str) -> object:
-        """Resolve a JSON Pointer (RFC 6901) against parsed JSON data.
-
-        Args:
-            data: Parsed JSON data structure.
-            pointer: JSON Pointer string (e.g., '/generalDiagnostics').
-
-        Returns:
-            The value at the pointer path, or None if not found.
-        """
-        if pointer == "/":
-            return data
-
-        segments = pointer.lstrip("/").split("/")
-        current: object = data
-        for segment in segments:
-            if isinstance(current, dict):
-                current = current.get(segment)
-            elif isinstance(current, list):
-                try:
-                    current = current[int(segment)]
-                except (ValueError, IndexError):
-                    return None
-            else:
-                return None
-        return current
-
-    def _parse_text_violations(
+    # Parsing methods extracted to ViolationParser
+    def run_auto_fix(
         self,
-        output: str,
-        parsing: TextViolationsParsing,
-        supports_autofix: bool = False,
-    ) -> list[ViolationDTO]:
-        """Parse line-based tool output into ViolationDTOs using a named-group regex.
+        scope: str = "auto",
+        files: list[str] | None = None,
+    ) -> AutoFixOutput:
+        """Run all autofix-capable quality gates on files resolved for scope.
 
-        Each line of *output* is matched against ``parsing.pattern``.  Lines
-        that do not match are silently skipped.  Named groups in the pattern
-        map directly to ViolationDTO fields:
-        ``file``, ``line``, ``col``, ``rule``, ``message``, ``severity``.
-
-        ``line`` and ``col`` groups are converted to ``int`` when present.
-        The ``severity`` group falls back to ``parsing.severity_default`` when
-        absent from the pattern or not captured on a given line.
-
-        When a group is absent or None, ``parsing.defaults`` is consulted.
-        Default values may contain ``{placeholder}`` references to other
-        captured group names; those are resolved via ``str.format_map``.
-
-        ``parsing.fixable_when == "gate"`` propagates the gate-level
-        ``supports_autofix`` flag into every violation. Without this field
-        (or when *supports_autofix* is False), violations are not fixable.
-
-        Args:
-            output: Raw stdout/stderr from a quality gate tool.
-            parsing: Pattern and defaults for text-based parsing.
-            supports_autofix: Whether the gate supports automatic fixing.
-
-        Returns:
-            List of ViolationDTO instances, one per matching line.
+        Returns an AutoFixOutput DTO.
         """
-        pattern = re.compile(parsing.pattern)
-        gate_fixable = parsing.fixable_when == "gate" and supports_autofix
-        result: list[ViolationDTO] = []
-        for raw_line in output.splitlines():
-            m = pattern.search(raw_line)
-            if m is None:
+        from mcp_server.schemas.tool_outputs import AutoFixOutput  # noqa: PLC0415
+
+        # 1. Retrieve quality config and gates
+        quality_config = self._require_quality_config()
+
+        # 2. Filter gates where supports_autofix is True
+        autofix_gates = {
+            gate_id: gate
+            for gate_id, gate in quality_config.gates.items()
+            if gate.capabilities.supports_autofix
+        }
+
+        # 3. Resolve target files using _resolve_scope
+        resolved_files = self.resolve_scope(scope, files)
+
+        # 4. Track executed gates and before/after git status
+        gates_executed: list[str] = []
+
+        status_before = self._git_context_reader.get_status()
+        before_dirty = set(status_before.get("modified_files", [])) | set(
+            status_before.get("untracked_files", [])
+        )
+        # 5. Run fixers
+        success = True
+        error_message: str | None = None
+
+        for gate in autofix_gates.values():
+            # Filter files for the gate
+            gate_files = self.files_for_gate(gate, resolved_files)
+            if not gate_files:
                 continue
-            groups = m.groupdict()
-            # Safe mapping for interpolation: replace None with "" so format_map works
-            safe_groups = {k: (v or "") for k, v in groups.items()}
 
-            raw_line_num = self._resolve_text_field("line", groups, safe_groups, parsing.defaults)
-            raw_col_num = self._resolve_text_field("col", groups, safe_groups, parsing.defaults)
-            result.append(
-                ViolationDTO(
-                    file=(
-                        self._resolve_text_field("file", groups, safe_groups, parsing.defaults)
-                        or ""
-                    ),
-                    message=self._resolve_text_field(
-                        "message", groups, safe_groups, parsing.defaults
-                    )
-                    or "",
-                    line=int(raw_line_num) if raw_line_num is not None else None,
-                    col=int(raw_col_num) if raw_col_num is not None else None,
-                    rule=self._resolve_text_field("rule", groups, safe_groups, parsing.defaults),
-                    fixable=gate_fixable,
-                    severity=self._resolve_text_field(
-                        "severity", groups, safe_groups, parsing.defaults
-                    )
-                    or parsing.severity_default,
+            gates_executed.append(gate.name)
+
+            # Resolve command and execute
+            cmd = self._resolve_command(gate.execution.fix_command or [], gate_files)
+            try:
+                proc = subprocess.run(
+                    cmd,
+                    stdin=subprocess.DEVNULL,
+                    capture_output=True,
+                    text=True,
+                    timeout=gate.execution.timeout_seconds,
+                    check=False,
+                    cwd=gate.execution.working_dir,
                 )
-            )
-        return result
+                if proc.returncode not in gate.success.exit_codes_ok:
+                    success = False
+                    if not error_message:
+                        error_message = (
+                            f"Gate '{gate.name}' failed with exit code {proc.returncode}"
+                        )
+            except subprocess.TimeoutExpired:
+                success = False
+                if not error_message:
+                    error_message = f"Gate '{gate.name}' timed out"
+            except Exception as e:
+                success = False
+                if not error_message:
+                    error_message = f"Gate '{gate.name}' failed: {e}"
 
-    @staticmethod
-    def _resolve_text_field(
-        field: str,
-        groups: dict[str, str | None],
-        safe_groups: dict[str, str],
-        defaults: dict[str, str],
-    ) -> str | None:
-        """Return captured group value or an interpolated default for *field*.
+        # 6. Detect modified/dirty files
+        status_after = self._git_context_reader.get_status()
+        after_dirty = set(status_after.get("modified_files", [])) | set(
+            status_after.get("untracked_files", [])
+        )
 
-        Priority: captured group value (non-None) → defaults[field] with
-        {placeholder} interpolation via safe_groups → None.
-        """
-        val = groups.get(field)
-        if val is not None:
-            return val
-        template = defaults.get(field)
-        if template is None:
-            return None
-        try:
-            return template.format_map(safe_groups) or None
-        except KeyError:
-            return None
+        # Include any file that became dirty, and any file that was dirty and target of resolving
+        modified_files = sorted((after_dirty - before_dirty) | (after_dirty & set(resolved_files)))
 
-    def _extract_violations_array(
-        self,
-        payload: list[dict[str, Any]] | dict[str, Any],
-        parsing: JsonViolationsParsing,
-    ) -> list[dict[str, Any]]:
-        """Extract the violations array from *payload* using ``parsing.violations_path``.
-
-        When ``violations_path`` is ``None`` the payload itself must be a list
-        and is returned as-is.  When the path is given it is treated as a
-        dot-separated key sequence that is used to descend into the dict.
-        Returns an empty list when any step in the path is missing or the
-        resolved value is not a list.
-
-        Args:
-            payload: Root JSON value – either a list (root-array tools) or a
-                dict (tools that wrap diagnostics under a key).
-            parsing: Provides ``violations_path``.
-
-        Returns:
-            The extracted list of violation dicts, or ``[]`` on any miss.
-        """
-        if parsing.violations_path is None:
-            return payload if isinstance(payload, list) else []
-
-        current: Any = payload
-        for segment in parsing.violations_path.split("."):
-            if not isinstance(current, dict):
-                return []
-            current = current.get(segment)
-            if current is None:
-                return []
-
-        return current if isinstance(current, list) else []
-
-    @staticmethod
-    def _resolve_field_path(item: dict[str, Any], path: str) -> Any:  # noqa: ANN401
-        """Resolve a field value from *item* using a flat or nested *path*.
-
-        A path without ``/`` is a flat key lookup: ``item.get(path)``.
-        A path with ``/`` is a nested lookup: each segment descends one level
-        into the dict.  Returns ``None`` if any intermediate key is absent or
-        the value is not a dict.
-
-        Args:
-            item: The JSON object to extract from.
-            path: Dot-free path where ``/`` separates nesting levels.
-
-        Returns:
-            The resolved value, or ``None`` if the path cannot be traversed.
-        """
-        if "/" not in path:
-            return item.get(path)
-        current: Any = item
-        for segment in path.split("/"):
-            if not isinstance(current, dict):
-                return None
-            current = current.get(segment)
-        return current
-
-    def _parse_json_violations(
-        self,
-        payload: list[dict[str, Any]],
-        parsing: JsonViolationsParsing,
-    ) -> list[ViolationDTO]:
-        """Map a root-array JSON payload to a list of ViolationDTOs.
-
-        Each item in *payload* is a flat dict or nested object.
-        The ``parsing.field_map`` maps ViolationDTO field names to the
-        corresponding key path in the item.  A path containing ``/`` is
-        resolved as a nested lookup; plain keys use flat ``dict.get`` access.
-        Missing keys result in ``None`` for optional fields.
-
-        ``parsing.line_offset`` is added to the extracted line number (useful
-        for tools that report 0-based lines).
-
-        ``parsing.fixable_when`` overrides ``field_map["fixable"]``: when set,
-        the named source key is used for the truthy fixable check.
-
-        Args:
-            payload: List of parsed JSON objects (root-array format).
-            parsing: Describes how to extract fields from each item.
-
-        Returns:
-            List of ViolationDTO instances.
-        """
-        result: list[ViolationDTO] = []
-        resolve = self._resolve_field_path
-        fixable_key = parsing.fixable_when or parsing.field_map.get("fixable")
-        for item in payload:
-            fmap = parsing.field_map
-            raw_line = resolve(item, fmap["line"]) if "line" in fmap else None
-            line = (raw_line + parsing.line_offset) if isinstance(raw_line, int) else raw_line
-            fixable_val = resolve(item, fixable_key) if fixable_key else None
-            raw_msg = resolve(item, fmap["message"]) if "message" in fmap else None
-            # F-18: sanitize Pyright-style multi-line messages (\\n, \\u00a0) to single line
-            if isinstance(raw_msg, str):
-                raw_msg = raw_msg.replace("\u00a0", " ").replace("\n", " — ").strip()
-            result.append(
-                ViolationDTO(
-                    file=(resolve(item, fmap["file"]) or "") if "file" in fmap else "",
-                    message=raw_msg or "",
-                    line=line,
-                    col=resolve(item, fmap["col"]) if "col" in fmap else None,
-                    rule=resolve(item, fmap["rule"]) if "rule" in fmap else None,
-                    fixable=bool(fixable_val),
-                    severity=(resolve(item, fmap["severity"]) if "severity" in fmap else None),
-                )
-            )
-        return result
+        return AutoFixOutput(
+            success=success,
+            error_message=error_message,
+            modified_files=modified_files,
+            modified_files_count=len(modified_files),
+            formatted_modified_files=(
+                "\n".join(f"- {f}" for f in modified_files) if modified_files else ""
+            ),
+            gates_executed=gates_executed,
+            gates_executed_count=len(gates_executed),
+        )

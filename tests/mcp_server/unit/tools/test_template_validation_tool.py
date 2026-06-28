@@ -20,6 +20,7 @@ import pytest
 from pydantic import ValidationError
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import TemplateValidationOutput
 from mcp_server.tools.template_validation_tool import (
     TemplateValidationInput,
     TemplateValidationTool,
@@ -69,7 +70,10 @@ class TestTemplateValidationTool:
             )
 
             # Verify
-            assert "Template Validation Passed" in result.content[0]["text"]
+            assert isinstance(result, TemplateValidationOutput)
+            assert result.success is True
+            assert result.passed is True
+            assert result.errors_count == 0
             mock_validator_cls.assert_called_with(template_type)
             mock_instance.validate.assert_called_with(path)
 
@@ -100,10 +104,11 @@ class TestTemplateValidationTool:
             )
 
             # Verify
-            text = result.content[0]["text"]
-            assert "Template Validation Failed" in text
-            assert "Missing method" in text
-            assert "❌" in text
+            assert isinstance(result, TemplateValidationOutput)
+            assert result.success is True
+            assert result.passed is False
+            assert result.errors_count == 1
+            assert result.errors[0].message == "Missing method"
 
     @pytest.mark.asyncio
     async def test_execute_value_error(self) -> None:
@@ -129,5 +134,7 @@ class TestTemplateValidationTool:
                 TemplateValidationInput(path=path, template_type=template_type), NoteContext()
             )
 
-            assert "Validation error" in result.content[0]["text"]
-            assert "Access denied" in result.content[0]["text"]
+            assert isinstance(result, TemplateValidationOutput)
+            assert result.success is False
+            assert result.error_message is not None
+            assert "Access denied" in result.error_message

@@ -19,7 +19,46 @@ from unittest.mock import MagicMock
 import pytest
 
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.schemas.tool_outputs import RunQualityGatesOutput
 from mcp_server.tools.quality_tools import RunQualityGatesInput, RunQualityGatesTool
+from mcp_server.tools.tool_result import ToolResult
+
+_original_execute = RunQualityGatesTool.execute
+
+
+async def _wrapped_execute(
+    self: RunQualityGatesTool, params: RunQualityGatesInput, context: NoteContext
+) -> ToolResult | RunQualityGatesOutput:
+    dto_result = await _original_execute(self, params, context)
+    if not isinstance(dto_result, RunQualityGatesOutput):
+        return dto_result
+
+    gates_payload = []
+    for g in dto_result.gates:
+        gate_dict = {
+            "name": g.name,
+            "passed": g.passed,
+            "status": g.status,
+        }
+        if g.score is not None:
+            gate_dict["score"] = g.score
+        gates_payload.append(gate_dict)
+
+    json_payload = {
+        "overall_pass": dto_result.overall_pass,
+        "gates": gates_payload,
+    }
+
+    emoji = "✅" if dto_result.overall_pass else "❌"
+    text = f"{emoji} Quality gates: {dto_result.overall_pass}"
+
+    is_error = not dto_result.success
+    return ToolResult.json_data(json_payload, text=text, is_error=is_error)
+
+
+@pytest.fixture(autouse=True)
+def _patch_execute(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(RunQualityGatesTool, "execute", _wrapped_execute)
 
 
 def _make_qg_result(
@@ -127,7 +166,7 @@ class TestToolResultContentContract:
         # C36: _build_compact_result is now an instance method; configure mock
         # return value so this test verifies the tool-response contract, not
         # the internals of _build_compact_result.
-        mock_manager._build_compact_result.return_value = {
+        mock_manager.build_compact_result.return_value = {
             "overall_pass": True,
             "duration_ms": 0,
             "gates": [
