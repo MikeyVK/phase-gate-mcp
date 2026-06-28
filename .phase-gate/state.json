@@ -1,5 +1,5 @@
 {
-  "branch": "epic/289-installable-wheel-standalone-mcp-server",
+  "branch": "epic/289-mcp-server-structural-refactoring-dto-exception-segregation",
   "issue_number": 289,
   "workflow_name": "epic",
   "current_phase": "research",

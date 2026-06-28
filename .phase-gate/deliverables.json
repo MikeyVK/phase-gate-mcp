@@ -1,6 +1,6 @@
 {
   "289": {
-    "issue_title": "Epic: Installable Wheel / Standalone MCP Server (phase-gate-mcp)",
+    "issue_title": "Epic: MCP Server Structural Refactoring & DTO/Exception Segregation",
     "workflow_name": "epic",
     "execution_mode": "interactive",
     "required_phases": [
