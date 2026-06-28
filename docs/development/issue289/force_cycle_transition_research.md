@@ -1,4 +1,4 @@
-<!-- docs\development\issue413\force_cycle_transition_research.md -->
+<!-- docs\development\issue289\force_cycle_transition_research.md -->
 <!-- template=research version=8b7bb3ab created=2026-06-28T07:10Z updated= -->
 # Research: Relaxing Force Cycle Transition Validation
 
@@ -57,8 +57,8 @@ The `force_cycle_transition` tool currently rejects target cycles outside the pl
 ---
 
 ## Related Documentation
-- **[docs/development/issue413/implementation_plan.md](file:///c:/temp/pgmcp/docs/development/issue413/implementation_plan.md)**
-- **[docs/development/issue413/presentation_error_codes_design.md](file:///c:/temp/pgmcp/docs/development/issue413/presentation_error_codes_design.md)**
+- **[docs/development/issue289/implementation_plan.md](file:///c:/temp/pgmcp/docs/development/issue289/implementation_plan.md)**
+- **[docs/development/issue289/presentation_error_codes_design.md](file:///c:/temp/pgmcp/docs/development/issue289/presentation_error_codes_design.md)**
 
 ---
 

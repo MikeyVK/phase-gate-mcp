@@ -1,4 +1,4 @@
-<!-- docs\development\issue413\design.md -->
+<!-- docs\development\issue289\design.md -->
 <!-- template=design version=5827e841 created=2026-06-27T11:36Z updated= -->
 # Error Taxonomy Refactoring & DTO Segregation Design
 
@@ -208,7 +208,7 @@ To guarantee complete scoping, we classify every tool currently returning `succe
 ## Related Documentation
 - docs/coding_standards/ARCHITECTURE_PRINCIPLES.md
 - docs/coding_standards/DOCUMENTATION_STANDARD.md
-- docs/development/issue413/research.md
+- docs/development/issue289/research.md
 ---
 
 ## Version History

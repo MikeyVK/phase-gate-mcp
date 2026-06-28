@@ -1,4 +1,4 @@
-<!-- docs\development\issue413\tools_error_mapping_research.md -->
+<!-- docs\development\issue289\tools_error_mapping_research.md -->
 <!-- template=research version=8b7bb3ab created=2026-06-27T20:04Z updated= -->
 # Tools Error Mapping and Exception Segregation Research
 
@@ -22,7 +22,7 @@ Expected tool execution failures (such as invalid parameter values or lock timeo
 
 ## Background
 
-During the refactoring of Issue #413, local try-except blocks were removed from core tools to let exceptions bubble up. However, this caused predictable value errors (e.g. invalid regex patterns, line numbers out of bounds) and lock timeouts to bubble up as unhandled exceptions, resulting in system-level ExecutionErrorOutput with tracebacks rather than structured ValidationErrorOutput or EnforcementErrorOutput.
+During the refactoring of Issue #289, local try-except blocks were removed from core tools to let exceptions bubble up. However, this caused predictable value errors (e.g. invalid regex patterns, line numbers out of bounds) and lock timeouts to bubble up as unhandled exceptions, resulting in system-level ExecutionErrorOutput with tracebacks rather than structured ValidationErrorOutput or EnforcementErrorOutput.
 
 ---
 

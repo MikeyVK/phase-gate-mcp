@@ -1,4 +1,4 @@
-<!-- docs\development\issue413\implementation_plan.md -->
+<!-- docs\development\issue289\implementation_plan.md -->
 <!-- template=planning version=130ac5ea created=2026-06-28T06:01Z updated= -->
 # Implementation Plan - Redesign Error DTOs & Exception Segregation
 
@@ -9,8 +9,8 @@
 ## Prerequisites
 
 Read these first:
-1. [Approved research document](file:///c:/temp/pgmcp/docs/development/issue413/tools_error_mapping_research.md)
-2. [Approved design document](file:///c:/temp/pgmcp/docs/development/issue413/presentation_error_codes_design.md)
+1. [Approved research document](file:///c:/temp/pgmcp/docs/development/issue289/tools_error_mapping_research.md)
+2. [Approved design document](file:///c:/temp/pgmcp/docs/development/issue289/presentation_error_codes_design.md)
 
 ---
 
@@ -124,13 +124,13 @@ We will eliminate the side-channel `NoteContext` class entirely. Instead, notes 
 ---
 
 ## Related Documentation
-- **[docs/development/issue413/tools_error_mapping_research.md][related-1]**
-- **[docs/development/issue413/presentation_error_codes_design.md][related-2]**
+- **[docs/development/issue289/tools_error_mapping_research.md][related-1]**
+- **[docs/development/issue289/presentation_error_codes_design.md][related-2]**
 
 <!-- Link definitions -->
 
-[related-1]: docs/development/issue413/tools_error_mapping_research.md
-[related-2]: docs/development/issue413/presentation_error_codes_design.md
+[related-1]: docs/development/issue289/tools_error_mapping_research.md
+[related-2]: docs/development/issue289/presentation_error_codes_design.md
 
 ---
 

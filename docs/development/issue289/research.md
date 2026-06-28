@@ -1,4 +1,4 @@
-<!-- docs/development/issue413/research.md -->
+<!-- docs/development/issue289/research.md -->
 <!-- template=research version=8b7bb3ab created=2026-06-26T08:48Z updated=2026-06-27T05:40Z -->
 # Error Taxonomy Refactoring & DTO Segregation Research
 

@@ -1,4 +1,4 @@
-<!-- c:\temp\pgmcp\docs\development\issue413\validation.md -->
+<!-- c:\temp\pgmcp\docs\development\issue289\validation.md -->
 <!-- template=validation_report version=fe38a66d created=2026-06-28T15:31Z updated= -->
 # Validation Report - Redesign Error DTOs & Exception Segregation (Cycles 1-5)
 
@@ -6,16 +6,16 @@
 **Version:** 1.0.0  
 **Last Updated:** 2026-06-28  
 **Validation Outcome:** FAIL  
-**Issue:** #413  
+**Issue:** #289  
 
 ---
 
 ## Scope & Prerequisites
 
-- **Validation Scope**: Branch-wide validation of Cycles 1-5 implementation on branch `refactor/413-redesign-error-dtos-segregate-base-tool-output`.
+- **Validation Scope**: Branch-wide validation of Cycles 1-5 implementation on branch `epic/289-mcp-server-structural-refactoring-dto-exception-segregation`.
 - **Prerequisites**:
-  - [Approved Research Document](file:///c:/temp/pgmcp/docs/development/issue413/research.md)
-  - [Approved Strategy / Design](file:///c:/temp/pgmcp/docs/development/issue413/presentation_error_codes_design.md)
+  - [Approved Research Document](file:///c:/temp/pgmcp/docs/development/issue289/research.md)
+  - [Approved Strategy / Design](file:///c:/temp/pgmcp/docs/development/issue289/presentation_error_codes_design.md)
   - [ARCHITECTURE_PRINCIPLES.md](file:///c:/temp/pgmcp/docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)
 
 ---

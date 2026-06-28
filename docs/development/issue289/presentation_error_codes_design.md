@@ -1,4 +1,4 @@
-<!-- docs\development\issue413\presentation_error_codes_design.md -->
+<!-- docs\development\issue289\presentation_error_codes_design.md -->
 <!-- template=design version=5827e841 created=2026-06-27T20:16s updated= -->
 # Presentation Error Codes and Templates Contract
 
@@ -10,7 +10,7 @@
 
 ## Purpose
 
-Define the presentation error codes and templates contract for Issue #413.
+Define the presentation error codes and templates contract for Issue #289.
 
 ---
 
@@ -143,7 +143,7 @@ We update the failures registry in `presentation.yaml` to include actionable rec
 ---
 
 ## Related Documentation
-- **[docs/development/issue413/tools_error_mapping_research.md](file:///C:/temp/pgmcp/docs/development/issue413/tools_error_mapping_research.md)**
+- **[docs/development/issue289/tools_error_mapping_research.md](file:///C:/temp/pgmcp/docs/development/issue289/tools_error_mapping_research.md)**
 
 ---
 

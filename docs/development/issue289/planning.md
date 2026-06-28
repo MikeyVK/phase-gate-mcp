@@ -1,4 +1,4 @@
-<!-- docs\development\issue413\planning.md -->
+<!-- docs\development\issue289\planning.md -->
 <!-- template=planning version=130ac5ea created=2026-06-27T12:20Z updated= -->
 # Error Taxonomy Refactoring & DTO Segregation Planning
 
