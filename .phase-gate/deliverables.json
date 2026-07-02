@@ -14,5 +14,22 @@
     "skip_reason": null,
     "parent_branch": "main",
     "created_at": "2026-06-28T17:18:36.083709+00:00"
+  },
+  "385": {
+    "issue_title": "Package Identity & Rename PGMCP Entry Point",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
+    "created_at": "2026-07-02T08:25:50.912617+00:00"
   }
 }
