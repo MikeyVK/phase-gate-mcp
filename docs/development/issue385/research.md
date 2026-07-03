@@ -25,7 +25,7 @@ The package requires a `pgmcp` entry point in `pyproject.toml`, a first-run boot
 - **Missing Entry Point:** `pyproject.toml` currently lacks `[project.scripts]` `pgmcp`. Easy fix.
 - **Server Version Logic:** `settings.py` correctly uses `packages_distributions()`, which handles the rename to `phase-gate-mcp` automatically.
 - **Default Root & Configuration Bootstrap:** Currently, the server crashes via `ConfigLoader` if `.phase-gate/` is missing. The agreed strategy requires renaming this root to `.pgmcp/` and using a bundled package resources folder (`mcp_server/assets/`) which gets copied to the workspace *only* when the user runs `pgmcp --init`.
-- **Blast Radius (Tests):** Changing the default server root to `.pgmcp/` breaks over 50 test files that hardcode `.phase-gate` strings. A project-wide string replacement in the `tests/` directory is mandatory.
+- **Blast Radius (Tests & Technical Debt):** Over 50 test files currently hardcode `.phase-gate` strings, violating Dependency Injection principles (a leftover from PR #329). This technical debt must be resolved: tests must be refactored to dynamically inject `ServerSettings.server_root_dir` (or equivalent fixtures) rather than using another lazy search-and-replace to `.pgmcp`.
 - **Blast Radius (Docs/Rules):** The internal agent instructions (like `AGENTS.md`, `imp.agent.md`) still reference `.phase-gate` and must be updated.
 
 ---
@@ -45,7 +45,7 @@ The package requires a `pgmcp` entry point in `pyproject.toml`, a first-run boot
 3. Server default root is `.pgmcp/`.
 4. `cli.py` handles `--init` flag to provision `.pgmcp/` from bundled assets.
 5. `cli.py` fails fast with an explicit error asking the user to run `pgmcp --init` if `.pgmcp/` is missing and `--init` is not provided.
-6. All `tests/` references to `.phase-gate` are replaced with `.pgmcp`.
+6. Test suite technical debt is resolved: all hardcoded `.phase-gate` path strings in `tests/` are removed and replaced with proper Dependency Injection using `ServerSettings` or dynamic fixtures.
 
 ## Related Documentation
 None
