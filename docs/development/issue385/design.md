@@ -77,6 +77,8 @@ Keep `template_config.py` and `loader.py` fallbacks, patch them to check `.pgmcp
 ```python
 class ServerSettings(BaseModel):
     # existing fields...
+    server_root_dir: str = ".pgmcp"  # CHANGED: Explicitly set new default root
+
     @computed_field
     @property
     def resolved_server_root(self) -> Path:
@@ -96,8 +98,12 @@ class ServerSettings(BaseModel):
 **CLI Initialization (`mcp_server/cli.py`):**
 ```python
 def main(settings: Settings | None = None) -> None:
+    _settings = settings or Settings.from_env()
     # After arg parsing:
     # if args.init:
+    #     if _settings.server.resolved_server_root.exists():
+    #         print("Error: Directory already exists. Aborting to prevent overwrite.")
+    #         sys.exit(1)
     #     copy mcp_server/assets/* to _settings.server.resolved_server_root
     #     sys.exit(0)
     # if not _settings.server.resolved_server_root.exists():
@@ -107,15 +113,18 @@ def main(settings: Settings | None = None) -> None:
 
 ### 3.3. Test Suite Dependency Injection Strategy
 
-To resolve the 50+ files hardcoding `.phase-gate`, we will expose the default setting in test support and update fixtures:
+To resolve the 50+ files hardcoding `.phase-gate` without introducing import-time side effects (which violates ARCHITECTURE_PRINCIPLES.md), we will expose the default setting dynamically via a function in test support and update fixtures:
 ```python
 # tests/mcp_server/test_support.py
 from mcp_server.config.settings import Settings
-SERVER_ROOT_DIR = Settings().server.server_root_dir
+
+def get_default_server_root() -> str:
+    """Resolve default dynamically to prevent import-time locking."""
+    return Settings().server.server_root_dir
 
 # tests/mcp_server/fixtures/workflow_fixtures.py
 def _make_loader() -> ConfigLoader:
-    return ConfigLoader(Path(Settings().server.server_root_dir) / "config")
+    return ConfigLoader(Path(get_default_server_root()) / "config")
 ```
 This strategy removes string replacements entirely; the test suite dynamically adopts whatever default `server_root_dir` is configured in `Settings` (which will become `.pgmcp`).
 
