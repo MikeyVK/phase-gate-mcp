@@ -116,11 +116,10 @@ def test_server_settings_rejects_version_kwarg() -> None:
         ServerSettings(version="injected")
 
 
-def test_state_dir_default_is_phase_gate() -> None:
-    """C5 RED: ServerSettings server_root_dir default must be '.phase-gate'."""
+def test_state_dir_default_is_pgmcp() -> None:
+    """C5 RED: ServerSettings server_root_dir default must be '.pgmcp'."""
     s = ServerSettings()
-    assert s.server_root_dir == ".phase-gate"
-
+    assert s.server_root_dir == ".pgmcp"
 
 def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """C3 RED: MCP_SERVER_PROJECT_DIR env var must override server_root_dir."""
@@ -139,11 +138,10 @@ def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_server_root_dir_default_is_phase_gate() -> None:
+def test_server_root_dir_default_is_pgmcp() -> None:
     """C6 RED: ServerSettings must expose server_root_dir (not state_dir)."""
     s = ServerSettings()
-    assert s.server_root_dir == ".phase-gate"
-
+    assert s.server_root_dir == ".pgmcp"
 
 def test_server_root_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """C6 RED: MCP_SERVER_PROJECT_DIR env var must populate server_root_dir field."""
@@ -211,9 +209,29 @@ def test_get_default_server_root_resolves_dynamically(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that get_default_server_root resolves dynamically."""
-    # By default, it should be ".phase-gate"
-    assert get_default_server_root() == ".phase-gate"
+    # By default, it should be ".pgmcp"
+    assert get_default_server_root() == ".pgmcp"
 
     # If overridden in the environment, it should dynamically change
     monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".custom-test-root")
     assert get_default_server_root() == ".custom-test-root"
+
+
+def test_resolved_paths_properties() -> None:
+    s = ServerSettings(workspace_root="C:/project", server_root_dir=".pgmcp", config_root="")
+    assert s.resolved_server_root == Path("C:/project/.pgmcp")
+    assert s.resolved_config_root == Path("C:/project/.pgmcp/config")
+    assert s.resolved_template_root == Path("C:/project/.pgmcp/templates")
+
+    # With explicit config_root
+    s2 = ServerSettings(workspace_root="C:/project", server_root_dir=".pgmcp", config_root="C:/custom_config")
+    assert s2.resolved_server_root == Path("C:/project/.pgmcp")
+    assert s2.resolved_config_root == Path("C:/custom_config")
+    assert s2.resolved_template_root == Path("C:/project/.pgmcp/templates")
+
+
+def test_assets_directories_exist() -> None:
+    # Verifies assets exist and contain files
+    assets_dir = Path(__file__).resolve().parents[4] / "mcp_server" / "assets"
+    assert (assets_dir / "config" / "artifacts.yaml").exists()
+    assert (assets_dir / "templates" / "concrete" / "generic.md").exists()
