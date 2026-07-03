@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
 """Integration Step 1: Schema-validated scaffolding smoke test for all 21 artifact types.
 
@@ -51,10 +52,10 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     monkeypatch.setenv("TEMPLATE_ROOT", str(template_root))
 
     # Hermetic workspace: copy production artifacts.yaml so registry loads correctly
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True)
     artifacts_path = config_dir / "artifacts.yaml"
-    shutil.copy(_PROJECT_ROOT / ".phase-gate" / "config" / "artifacts.yaml", artifacts_path)
+    shutil.copy(_PROJECT_ROOT / get_default_server_root() / "config" / "artifacts.yaml", artifacts_path)
 
     # CWD → tmp_path: registry loads from tmp_path/.phase-gate/config/artifacts.yaml,
     # ephemeral writes go to tmp_path/.phase-gate/temp/ (not project root)
@@ -64,7 +65,7 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
         config_path=artifacts_path
     )
     return ArtifactManager(
-        workspace_root=str(tmp_path), registry=registry, server_root=tmp_path / ".phase-gate"
+        workspace_root=str(tmp_path), registry=registry, server_root=tmp_path / get_default_server_root()
     )
 
 

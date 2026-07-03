@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # SCAFFOLD: template=test_provenance_e2e version=1.0
 # created=2026-01-25 path=tests/integration/test_provenance_e2e.py
 """

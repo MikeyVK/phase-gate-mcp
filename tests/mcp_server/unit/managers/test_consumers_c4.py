@@ -19,6 +19,8 @@ signature verification and key behavioral delegation via ContractsConfig.
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import inspect
 import json
@@ -107,7 +109,7 @@ class TestPhaseStateEngineTransitionC4:
             workflow_gate_runner=workflow_gate_runner,
             state_reconstructor=state_reconstructor,
             workflow_state_mutator=workflow_state_mutator,
-            server_root=tmp_path / ".phase-gate",
+            server_root=tmp_path / get_default_server_root(),
         )
 
     def test_validate_transition_value_error_propagates(self, tmp_path: Path) -> None:
@@ -158,7 +160,7 @@ class TestProjectManagerPhaseDelegationC4:
             workspace_root=tmp_path,
             contracts_config=contracts,
             workflow_status_resolver=MagicMock(),
-            server_root=tmp_path / ".phase-gate",
+            server_root=tmp_path / get_default_server_root(),
         )
 
     def test_get_first_phase_returns_research_for_feature(self, tmp_path: Path) -> None:
@@ -175,14 +177,14 @@ class TestProjectManagerPhaseDelegationC4:
         self, tmp_path: Path
     ) -> None:
         """initialize_project must persist required_phases from contracts_config.get_phases."""
-        (tmp_path / ".phase-gate").mkdir(parents=True)
+        (tmp_path / get_default_server_root()).mkdir(parents=True)
         pm = self._build_pm(tmp_path, _minimal_contracts())
         pm.initialize_project(
             issue_number=1,
             issue_title="Test Issue",
             workflow_name="feature",
         )
-        deliverables_file = tmp_path / ".phase-gate" / "deliverables.json"
+        deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
         assert deliverables_file.exists()
         data = json.loads(deliverables_file.read_text(encoding="utf-8"))
         assert data["1"]["required_phases"] == ["research", "design", "ready"]

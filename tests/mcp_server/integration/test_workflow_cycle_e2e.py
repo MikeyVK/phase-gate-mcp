@@ -7,6 +7,9 @@ Tests complete workflow cycle: research -> planning -> design -> implementation 
 @dependencies: [pytest, subprocess, mcp_server.managers.git_manager]
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import subprocess
 from pathlib import Path
 
@@ -40,7 +43,7 @@ def git_repo(tmp_path: Path) -> Path:
     )
 
     # Create .phase-gate directory structure
-    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir = tmp_path / get_default_server_root()
     config_dir = phase_gate_dir / "config"
     config_dir.mkdir(parents=True)
 
@@ -179,11 +182,11 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
 
     # Initialize GitManager with tmp_path and ScopeDecoder
     git_adapter = GitAdapter(repo_path=str(git_repo))
-    git_config = ConfigLoader(git_repo / ".phase-gate" / "config").load_git_config(
-        config_path=git_repo / ".phase-gate" / "config" / "git.yaml"
+    git_config = ConfigLoader(git_repo / get_default_server_root() / "config").load_git_config(
+        config_path=git_repo / get_default_server_root() / "config" / "git.yaml"
     )
-    _workphases_config = ConfigLoader(git_repo / ".phase-gate" / "config").load_workphases_config(
-        config_path=git_repo / ".phase-gate" / "config" / "workphases.yaml"
+    _workphases_config = ConfigLoader(git_repo / get_default_server_root() / "config").load_workphases_config(
+        config_path=git_repo / get_default_server_root() / "config" / "workphases.yaml"
     )
     git_manager = GitManager(
         git_config=git_config,

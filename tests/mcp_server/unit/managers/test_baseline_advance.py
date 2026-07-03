@@ -9,6 +9,8 @@ C20: Union newly failed files with persisted failed_files set.
 # pyright: reportPrivateUsage=false
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import json
 from pathlib import Path
@@ -26,7 +28,7 @@ def _make_quality_repo(
     failed_files: list[str] | None = None,
 ) -> FileQualityStateRepository:
     """Create a FileQualityStateRepository backed by quality_state.json in tmp_path."""
-    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir = tmp_path / get_default_server_root()
     phase_gate_dir.mkdir(exist_ok=True)
     backing_file = phase_gate_dir / "quality_state.json"
     repo = FileQualityStateRepository(backing_file=backing_file)
@@ -45,7 +47,7 @@ def _state_with_quality_gates(
     failed_files: list[str] | None = None,
 ) -> Path:
     """Write a .phase-gate/state.json with quality_gates section; returns state file path."""
-    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir = tmp_path / get_default_server_root()
     phase_gate_dir.mkdir(exist_ok=True)
     state_file = phase_gate_dir / "state.json"
     state_file.write_text(
@@ -135,7 +137,7 @@ class TestBaselineAdvanceOnAllPass:
 
     def test_advance_baseline_creates_state_file_if_absent(self, tmp_path: Path) -> None:
         """When quality_state.json is absent, _advance_baseline_on_all_pass creates it."""
-        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir = tmp_path / get_default_server_root()
         phase_gate_dir.mkdir()
         quality_state_file = phase_gate_dir / "quality_state.json"
         assert not quality_state_file.exists()  # precondition

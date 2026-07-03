@@ -10,6 +10,9 @@ Issue #50: Tests migrated from PHASE_TEMPLATES to workflows.yaml.
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.project_manager
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -99,7 +102,7 @@ class TestProjectManagerWorkflows:
         assert len(result["required_phases"]) == 7
 
         # Check deliverables.json structure
-        projects_file = workspace_root / ".phase-gate" / "deliverables.json"
+        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
         assert projects_file.exists()
 
         projects = json.loads(projects_file.read_text())
@@ -126,7 +129,7 @@ class TestProjectManagerWorkflows:
         assert len(result["required_phases"]) == 4
 
         # Check deliverables.json
-        projects_file = workspace_root / ".phase-gate" / "deliverables.json"
+        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
         projects = json.loads(projects_file.read_text())
         assert projects["99"]["execution_mode"] == "interactive"
 
@@ -144,7 +147,7 @@ class TestProjectManagerWorkflows:
         assert result["execution_mode"] == "autonomous"
 
         # Check deliverables.json
-        projects_file = workspace_root / ".phase-gate" / "deliverables.json"
+        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
         projects = json.loads(projects_file.read_text())
         assert projects["77"]["execution_mode"] == "autonomous"
 
@@ -176,7 +179,7 @@ class TestProjectManagerWorkflows:
         assert result["skip_reason"] == "Adding design phase for complex refactor"
 
         # Check deliverables.json
-        projects_file = workspace_root / ".phase-gate" / "deliverables.json"
+        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
         projects = json.loads(projects_file.read_text())
         project = projects["50"]
         assert tuple(project["required_phases"]) == custom_phases
@@ -286,7 +289,7 @@ class TestProjectManagerPhaseDetection:
     @pytest.fixture
     def workspace_root(self, tmp_path: Path) -> Path:
         """Create temporary workspace with .phase-gate directory."""
-        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir = tmp_path / get_default_server_root()
         phase_gate_dir.mkdir()
 
         # Create workphases.yaml

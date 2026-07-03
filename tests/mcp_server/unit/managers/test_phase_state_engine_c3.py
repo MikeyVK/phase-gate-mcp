@@ -9,6 +9,9 @@ C3 Deliverables:
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.phase_state_engine
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import json
 import logging
 from pathlib import Path
@@ -83,7 +86,7 @@ def workspace_root(tmp_path: Path) -> Path:
     """Workspace root with .phase-gate/config/workphases.yaml
     containing exit_requires + entry_expects.
     """
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(
         """
@@ -113,7 +116,7 @@ phases:
 @pytest.fixture
 def workspace_root_no_gates(tmp_path: Path) -> Path:
     """Workspace root with .phase-gate/config/workphases.yaml where phases have no gates."""
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(
         """

@@ -11,6 +11,8 @@ GitHubManager.get_pr_status() real implementation, MergePRTool pr_status_writer.
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import asyncio
 import inspect
@@ -28,7 +30,7 @@ from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.schemas import GitConfig
 from mcp_server.tools.pr_tools import MergePRInput, MergePRTool
 
-_ENFORCEMENT_YAML = Path(__file__).parents[3] / ".phase-gate" / "config" / "enforcement.yaml"
+_ENFORCEMENT_YAML = Path(__file__).parents[3] / get_default_server_root() / "config" / "enforcement.yaml"
 
 
 class TestCreatePRToolRemoval:

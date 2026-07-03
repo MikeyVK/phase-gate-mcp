@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/unit/adapters/test_git_adapter_skip_paths.py
 """Tests for GitAdapter commit() skip_paths postcondition.
 
@@ -43,7 +44,7 @@ class TestGitAdapterSkipPathsIntegration:
             cw.set_value("user", "email", "test@example.com")
 
         normal = repo_dir / "normal.py"
-        state_dir = repo_dir / ".phase-gate"
+        state_dir = repo_dir / get_default_server_root()
         state_dir.mkdir()
         state_file = state_dir / "state.json"
         normal.write_text("# v1\n", encoding="utf-8")
@@ -62,7 +63,7 @@ class TestGitAdapterSkipPathsIntegration:
         """
         repo = self._init_repo_with_initial_commit(tmp_path)
         (tmp_path / "normal.py").write_text("# v2\n", encoding="utf-8")
-        (tmp_path / ".phase-gate" / "state.json").write_text('{"cycle": 2}', encoding="utf-8")
+        (tmp_path / get_default_server_root() / "state.json").write_text('{"cycle": 2}', encoding="utf-8")
 
         adapter = GitAdapter(str(tmp_path))
         sha = adapter.commit(
@@ -89,7 +90,7 @@ class TestGitAdapterSkipPathsIntegration:
         """
         repo = self._init_repo_with_initial_commit(tmp_path)
         (tmp_path / "normal.py").write_text("# v2\n", encoding="utf-8")
-        (tmp_path / ".phase-gate" / "state.json").write_text('{"cycle": 2}', encoding="utf-8")
+        (tmp_path / get_default_server_root() / "state.json").write_text('{"cycle": 2}', encoding="utf-8")
 
         adapter = GitAdapter(str(tmp_path))
         sha = adapter.commit(

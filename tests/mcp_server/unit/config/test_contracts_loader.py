@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests\mcp_server\unit\config\test_contracts_loader.py
 # template=unit_test version=3d15d309 created=2026-05-02T18:00Z updated=
 """
@@ -51,7 +52,7 @@ _STUB_INSTRUCTIONS = PhaseInstructionsSpec(
 @pytest.fixture()
 def config_dir(tmp_path: Path) -> Path:
     """Return a tmp .phase-gate/config directory."""
-    d = tmp_path / ".phase-gate" / "config"
+    d = tmp_path / get_default_server_root() / "config"
     d.mkdir(parents=True)
     return d
 
@@ -142,7 +143,7 @@ class TestLoadContractsConfig:
 
     def test_feature_workflow_research_first_ready_last(self) -> None:
         """Real contracts.yaml: feature workflow has research first and ready last."""
-        real = Path(__file__).parents[4] / ".phase-gate" / "config" / "contracts.yaml"
+        real = Path(__file__).parents[4] / get_default_server_root() / "config" / "contracts.yaml"
         if not real.exists():
             pytest.skip("contracts.yaml not yet created — passes after C2 GREEN")
         result = ConfigLoader(real.parent).load_contracts_config()
@@ -453,7 +454,7 @@ class TestContractsConfigRoundtrip:
 
     def test_real_epic_workflow_uses_coordination_scoped_sub_roles(self) -> None:
         """Real contracts.yaml: epic workflow uses @co-scoped sub-role names."""
-        real = Path(__file__).parents[4] / ".phase-gate" / "config" / "contracts.yaml"
+        real = Path(__file__).parents[4] / get_default_server_root() / "config" / "contracts.yaml"
         if not real.exists():
             pytest.skip("contracts.yaml not yet created — passes after C2 GREEN")
 

@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # artifact: type=unit_test, version=1.0, created=2026-01-21T21:59:47Z
 """
 Unit tests for TemplateScaffolder introspection integration.

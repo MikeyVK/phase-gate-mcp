@@ -22,6 +22,7 @@ from mcp_server.config.settings import (
     Settings,
     _default_server_version,  # pyright: ignore[reportPrivateUsage]
 )
+from tests.mcp_server.test_support import get_default_server_root
 
 
 @pytest.fixture(autouse=True)
@@ -206,14 +207,13 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     assert settings.logging.level == "ERROR"
 
 
-def test_get_default_server_root_resolves_dynamically(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that get_default_server_root resolves dynamically based on settings and environment overrides."""
-    from tests.mcp_server.test_support import get_default_server_root
-
+def test_get_default_server_root_resolves_dynamically(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that get_default_server_root resolves dynamically."""
     # By default, it should be ".phase-gate"
     assert get_default_server_root() == ".phase-gate"
 
     # If overridden in the environment, it should dynamically change
     monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".custom-test-root")
     assert get_default_server_root() == ".custom-test-root"
-

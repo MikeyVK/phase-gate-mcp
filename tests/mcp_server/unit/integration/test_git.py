@@ -6,6 +6,9 @@
     mcp_server.managers.git_manager
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 from unittest.mock import Mock
 

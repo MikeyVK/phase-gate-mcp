@@ -13,6 +13,9 @@ This validates that the dual-mode system works end-to-end across machines.
 @dependencies: [pytest, subprocess, tests.mcp_server.test_support]
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import json
 import subprocess
 from pathlib import Path
@@ -103,8 +106,8 @@ class TestIssue39CrossMachine:
         )
 
         # Verify deliverables register and branch state were created
-        deliverables_file = workspace_root / ".phase-gate" / "deliverables.json"
-        state_file = workspace_root / ".phase-gate" / "state.json"
+        deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
+        state_file = workspace_root / get_default_server_root() / "state.json"
 
         assert deliverables_file.exists()
         assert state_file.exists()
@@ -243,7 +246,7 @@ class TestIssue39CrossMachine:
         )
 
         # Delete state.json
-        state_file = workspace_root / ".phase-gate" / "state.json"
+        state_file = workspace_root / get_default_server_root() / "state.json"
         if state_file.exists():
             state_file.unlink()
 
@@ -324,7 +327,7 @@ class TestIssue39CrossMachine:
         )
 
         # Delete state.json
-        state_file = workspace_root / ".phase-gate" / "state.json"
+        state_file = workspace_root / get_default_server_root() / "state.json"
         if state_file.exists():
             state_file.unlink()
 

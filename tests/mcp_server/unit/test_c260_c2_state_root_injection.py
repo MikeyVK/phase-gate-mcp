@@ -1,12 +1,15 @@
 """RED tests for Cycle 2 of issue #260: state_root injection.
 
 These tests verify that all production code accepts an injected state_root
-and does NOT compute workspace_root / '.phase-gate' internally.
+and does NOT compute workspace_root / get_default_server_root() internally.
 
 TDD: These tests FAIL before the GREEN implementation.
 """
 
+
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import inspect
 import json
@@ -44,14 +47,14 @@ class TestNormalizeConfigRootPhaseGate:
 
     def test_accepts_phase_gate_config_dir(self, tmp_path: Path) -> None:
         """normalize_config_root('/ws/.phase-gate/config') → same path."""
-        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir = tmp_path / get_default_server_root() / "config"
         config_dir.mkdir(parents=True)
         result = normalize_config_root(config_dir)
         assert result == config_dir.resolve()
 
     def test_accepts_phase_gate_state_root(self, tmp_path: Path) -> None:
         """normalize_config_root is a pure resolver after C3 — returns resolved path as-is."""
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         config_dir = state_root / "config"
         config_dir.mkdir(parents=True)
         result = normalize_config_root(state_root)
@@ -66,7 +69,7 @@ class TestNormalizeConfigRootPhaseGate:
 
     def test_state_root_parent_gives_back_state_root(self, tmp_path: Path) -> None:
         """config_root.parent == state_root for any hidden dir name."""
-        for state_dir_name in (".legacy", ".phase-gate", ".myapp"):
+        for state_dir_name in (".legacy", get_default_server_root(), ".myapp"):
             state_root = tmp_path / state_dir_name
             config_dir = state_root / "config"
             config_dir.mkdir(parents=True)
@@ -102,7 +105,7 @@ class TestPhaseStateEngineStateRoot:
 
     def test_state_file_uses_injected_state_root(self, tmp_path: Path) -> None:
         """When state_root is provided, state_path = state_root / 'state.json'."""
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         workspace_root = tmp_path / "workspace"
 
         engine = self._make_engine(state_root, workspace_root)
@@ -110,17 +113,17 @@ class TestPhaseStateEngineStateRoot:
         assert engine.state_path == state_root / "state.json"
 
     def test_state_file_is_not_workspace_root_phase_gate(self, tmp_path: Path) -> None:
-        """state_path must NOT be derived from workspace_root / '.phase-gate'."""
+        """state_path must NOT be derived from workspace_root / get_default_server_root()."""
         state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
 
         engine = self._make_engine(state_root, workspace_root)
 
-        assert ".phase-gate" not in str(engine.state_path)
+        assert get_default_server_root() not in str(engine.state_path)
 
     def test_state_path_uses_injected_state_root(self, tmp_path: Path) -> None:
         """C6 RED: state_path (not state_file) must equal state_root / 'state.json'."""
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         workspace_root = tmp_path / "workspace"
 
         engine = self._make_engine(state_root, workspace_root)
@@ -128,13 +131,13 @@ class TestPhaseStateEngineStateRoot:
         assert engine.state_path == state_root / "state.json"
 
     def test_state_path_is_not_workspace_root_phase_gate(self, tmp_path: Path) -> None:
-        """C6 RED: state_path must NOT be derived from workspace_root / '.phase-gate'."""
+        """C6 RED: state_path must NOT be derived from workspace_root / get_default_server_root()."""
         state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
 
         engine = self._make_engine(state_root, workspace_root)
 
-        assert ".phase-gate" not in str(engine.state_path)
+        assert get_default_server_root() not in str(engine.state_path)
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +157,7 @@ class TestProjectManagerStateRoot:
         )
 
     def test_deliverables_file_uses_injected_state_root(self, tmp_path: Path) -> None:
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         workspace_root = tmp_path / "workspace"
 
         manager = self._make_manager(state_root, workspace_root)
@@ -167,7 +170,7 @@ class TestProjectManagerStateRoot:
 
         manager = self._make_manager(state_root, workspace_root)
 
-        assert ".phase-gate" not in str(manager.deliverables_file)
+        assert get_default_server_root() not in str(manager.deliverables_file)
 
 
 # ---------------------------------------------------------------------------
@@ -180,7 +183,7 @@ class TestEnforcementRunnerStateRoot:
 
     def test_enforcement_runner_init_accepts_state_root(self, tmp_path: Path) -> None:
         """EnforcementRunner must accept server_root kwarg (was state_root)."""
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         runner = EnforcementRunner(
             workspace_root=tmp_path,
             server_root=state_root,
@@ -254,7 +257,7 @@ class TestCycleToolsStateRoot:
 
     def test_transition_cycle_tool_reads_state_from_state_root(self, tmp_path: Path) -> None:
         """TransitionCycleTool._get_current_branch falls back to state_root/state.json."""
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         state_root.mkdir()
         state_file = state_root / "state.json"
         state_file.write_text(json.dumps({"branch": "feature/99-test"}), encoding="utf-8")
@@ -277,7 +280,7 @@ class TestCycleToolsStateRoot:
         # No state.json in state_root
 
         # Put misleading state.json in workspace/.phase-gate
-        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir = tmp_path / get_default_server_root()
         phase_gate_dir.mkdir()
         (phase_gate_dir / "state.json").write_text(
             json.dumps({"branch": "feature/wrong-branch"}), encoding="utf-8"
@@ -303,24 +306,24 @@ class TestAdminToolsRestartMarker:
 
     def test_uses_injected_server_root(self, tmp_path: Path) -> None:
         """Marker path must come from constructor-injected server_root, not env vars."""
-        server_root = tmp_path / ".phase-gate"
+        server_root = tmp_path / get_default_server_root()
         tool = RestartServerTool(server_root=server_root)
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
         assert str(server_root) in str(result)
         assert ".restart_marker" in result.name
 
     def test_does_not_use_cwd_dot_phase_gate(self, tmp_path: Path) -> None:
-        """Marker path must not contain CWD-relative '.phase-gate'."""
+        """Marker path must not contain CWD-relative get_default_server_root()."""
         server_root = tmp_path / ".custom-state"
         tool = RestartServerTool(server_root=server_root)
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
-        assert ".phase-gate" not in str(result)
+        assert get_default_server_root() not in str(result)
 
     def test_env_var_does_not_override_injected_server_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Even with MCP_WORKSPACE_ROOT set, injected server_root wins."""
-        server_root = tmp_path / ".phase-gate"
+        server_root = tmp_path / get_default_server_root()
         tool = RestartServerTool(server_root=server_root)
         monkeypatch.setenv("MCP_WORKSPACE_ROOT", str(tmp_path / "other"))
         monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
@@ -338,7 +341,7 @@ class TestArtifactManagerEphemeralTemp:
 
     def test_ephemeral_temp_uses_workspace_root(self, tmp_path: Path) -> None:
         """Path('.phase-gate/temp') must be replaced with self.server_root / 'temp'."""
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         state_root.mkdir()
         (state_root / "template_registry.json").touch()
 
@@ -353,7 +356,7 @@ class TestArtifactManagerEphemeralTemp:
 
     def test_template_registry_path_not_cwd_relative(self, tmp_path: Path) -> None:
         """template_registry path must be based on server_root, not CWD."""
-        state_root = tmp_path / ".phase-gate"
+        state_root = tmp_path / get_default_server_root()
         state_root.mkdir()
         registry_path = state_root / "template_registry.json"
 
@@ -378,7 +381,7 @@ class TestTemplateConfigNoCwdPhaseGate:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Even if .phase-gate/templates exists in CWD, it must not be used."""
-        phase_gate_templates = tmp_path / ".phase-gate" / "templates"
+        phase_gate_templates = tmp_path / get_default_server_root() / "templates"
         phase_gate_templates.mkdir(parents=True)
         monkeypatch.chdir(tmp_path)
 
@@ -432,7 +435,7 @@ class TestPhaseStateEngineNoFallback:
         """Constructing without server_root must raise — no silent .phase-gate fallback.
 
         RED: constructor currently has state_root: Path|None=None with
-        effective_state_root = state_root or workspace_path / '.phase-gate'.
+        effective_state_root = state_root or workspace_path / get_default_server_root().
         It succeeds silently instead of raising.
         """
         with pytest.raises((ValueError, TypeError)):
@@ -462,7 +465,7 @@ class TestProjectManagerNoFallback:
         """Constructing without server_root must raise — no silent .phase-gate fallback.
 
         RED: constructor currently has state_root: Path|None=None with
-        effective_state_root = state_root or workspace_root / '.phase-gate'.
+        effective_state_root = state_root or workspace_root / get_default_server_root().
         It succeeds silently instead of raising.
         """
         with pytest.raises((ValueError, TypeError)):
@@ -486,7 +489,7 @@ class TestEnforcementRunnerNoFallback:
         """Constructing without server_root must raise — no silent .phase-gate fallback.
 
         RED: constructor currently has state_root: Path|None=None with
-        self.state_root = state_root or workspace_root / '.phase-gate'.
+        self.state_root = state_root or workspace_root / get_default_server_root().
         It succeeds silently instead of raising.
         """
         with pytest.raises((ValueError, TypeError)):
@@ -510,7 +513,7 @@ class TestBaseTransitionToolNoFallback:
         """TransitionCycleTool without server_root must raise.
 
         RED: _BaseTransitionTool has state_root: Path|None=None with
-        self.state_root = state_root or workspace_root / '.phase-gate'.
+        self.state_root = state_root or workspace_root / get_default_server_root().
         Constructor succeeds silently.
         """
         with pytest.raises((ValueError, TypeError)):
@@ -534,7 +537,7 @@ class TestAdminToolsServerRootInjection:
         RED: RestartServerTool has no __init__ accepting server_root.
         Constructing with server_root= raises TypeError (unexpected kwarg).
         """
-        server_root = tmp_path / ".phase-gate"
+        server_root = tmp_path / get_default_server_root()
         tool = RestartServerTool(server_root=server_root)
 
         expected = server_root / ".restart_marker"
@@ -548,7 +551,7 @@ class TestAdminToolsServerRootInjection:
 
         RED: marker path currently comes from env-var lookup, not constructor injection.
         """
-        server_root = tmp_path / ".phase-gate"
+        server_root = tmp_path / get_default_server_root()
         tool = RestartServerTool(server_root=server_root)
 
         monkeypatch.setenv("MCP_WORKSPACE_ROOT", "/some/other/workspace")
@@ -578,8 +581,8 @@ class TestNormalizeConfigRootNoPhaseGateFallback:
         try:
             result = normalize_config_root(tmp_path)
             # If no exception: result must not contain .phase-gate
-            assert ".phase-gate" not in str(result), (
-                f"normalize_config_root final fallback still hardcodes '.phase-gate': {result}"
+            assert get_default_server_root() not in str(result), (
+                f"normalize_config_root final fallback still hardcodes get_default_server_root(): {result}"
             )
         except (FileNotFoundError, ValueError):
             # Raising is preferred — no .phase-gate path was produced
@@ -599,7 +602,7 @@ class TestTemplateRegistryNoPhaseGateFallback:
 
         RED: current __init__ body sets
             self.registry_path = Path('.phase-gate/template_registry.json')
-        when registry_path is None. The instance attribute silently contains '.phase-gate'.
+        when registry_path is None. The instance attribute silently contains get_default_server_root().
         """
         with pytest.raises((ValueError, TypeError)):
             # Must raise when no explicit registry_path is provided

@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests\mcp_server\unit\server\test_bootstrap.py
 # template=unit_test version=3d15d309 created=2026-06-09T09:48Z updated=
 """Unit tests for mcp_server.bootstrap.
@@ -166,7 +167,7 @@ class TestServerBootstrapperConfigsAndManagers:
         mock_settings.github.token = None
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.server_root_dir = get_default_server_root()
         mock_settings.server.logs_dir = "logs"
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
@@ -191,7 +192,7 @@ class TestServerBootstrapperConfigsAndManagers:
         mock_settings.github.token = None
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.server_root_dir = get_default_server_root()
         mock_settings.server.logs_dir = "logs"
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
@@ -233,7 +234,7 @@ class TestServerBootstrapperToolsAndResources:
         mock_settings.github.token = None
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.server_root_dir = get_default_server_root()
         mock_settings.server.logs_dir = "logs"
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
@@ -259,7 +260,7 @@ class TestServerBootstrapperToolsAndResources:
         mock_settings.github.token = "token"
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.server_root_dir = get_default_server_root()
         mock_settings.server.logs_dir = "logs"
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
@@ -284,7 +285,7 @@ class TestServerBootstrapperToolsAndResources:
         mock_settings.github.token = None
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.server_root_dir = get_default_server_root()
         mock_settings.server.logs_dir = "logs"
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"
@@ -309,7 +310,7 @@ class TestServerBootstrapperToolsAndResources:
         mock_settings.github.token = "token"
         mock_settings.server.name = "test-server"
         mock_settings.server.workspace_root = "/fake/root"
-        mock_settings.server.server_root_dir = ".phase-gate"
+        mock_settings.server.server_root_dir = get_default_server_root()
         mock_settings.server.logs_dir = "logs"
         mock_settings.logging.level = "WARNING"
         mock_settings.logging.audit_log = "/fake/root/.phase-gate/logs/mcp_audit.log"

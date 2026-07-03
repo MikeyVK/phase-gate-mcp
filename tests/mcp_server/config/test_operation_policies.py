@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/config/test_operation_policies.py
 """Unit tests for OperationPoliciesConfig model.
 

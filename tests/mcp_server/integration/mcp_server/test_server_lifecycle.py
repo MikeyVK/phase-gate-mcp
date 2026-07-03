@@ -4,6 +4,9 @@
 @dependencies: [pytest, pathlib, mcp_server.server]
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -21,7 +24,7 @@ def _make_test_settings(audit_log: Path) -> Settings:
         server=ServerSettings(
             name="test-server",
             workspace_root=str(workspace_root),
-            config_root=str(workspace_root / ".phase-gate" / "config"),
+            config_root=str(workspace_root / get_default_server_root() / "config"),
         ),
         logging=LogSettings(level="INFO", audit_log=str(audit_log)),
         github=GitHubSettings(owner="test", repo="repo", token=None),

@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/unit/scaffolders/test_template_scaffolder.py
 """
 Unit tests for TemplateScaffolder.

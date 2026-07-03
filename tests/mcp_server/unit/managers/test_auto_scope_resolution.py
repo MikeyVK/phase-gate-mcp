@@ -11,6 +11,8 @@ C24: Resolve scope=auto edge cases — no baseline fallback and empty union.
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import json
 import subprocess
@@ -31,7 +33,7 @@ def _write_state(tmp_path: Path, baseline_sha: str, failed_files: list[str]) -> 
             "failed_files": failed_files,
         },
     }
-    state_path = tmp_path / ".phase-gate" / "state.json"
+    state_path = tmp_path / get_default_server_root() / "state.json"
     state_path.parent.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state), encoding="utf-8")
 
@@ -42,7 +44,7 @@ def _make_quality_repo(
     failed_files: list[str] | None = None,
 ) -> FileQualityStateRepository:
     """Create a FileQualityStateRepository seeded with the given state."""
-    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir = tmp_path / get_default_server_root()
     phase_gate_dir.mkdir(exist_ok=True)
     repo = FileQualityStateRepository(backing_file=phase_gate_dir / "quality_state.json")
     repo.apply(
@@ -131,7 +133,7 @@ class TestAutoScopeHappyPath:
         """Git diff uses baseline_sha..HEAD, not workflow.parent_branch..HEAD."""
         repo = _make_quality_repo(tmp_path, baseline_sha="deadbeef", failed_files=[])
         # Also write a workflow.parent_branch to ensure it is NOT used
-        state_path = tmp_path / ".phase-gate" / "state.json"
+        state_path = tmp_path / get_default_server_root() / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state = {"branch": "feature/test", "workflow": {"parent_branch": "main"}}
         state_path.write_text(json.dumps(state), encoding="utf-8")
@@ -179,7 +181,7 @@ class TestAutoScopeEdgeCases:
         """When quality_gates has no baseline_sha, scope=auto delegates to project scope."""
         # State exists but quality_gates key is absent — no baseline recorded yet.
         state = {"branch": "refactor/251", "workflow": {"parent_branch": "main"}}
-        state_path = tmp_path / ".phase-gate" / "state.json"
+        state_path = tmp_path / get_default_server_root() / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(json.dumps(state), encoding="utf-8")
 
@@ -215,7 +217,7 @@ class TestAutoScopeEdgeCases:
             "branch": "refactor/251",
             "quality_gates": {"baseline_sha": "", "failed_files": []},
         }
-        state_path = tmp_path / ".phase-gate" / "state.json"
+        state_path = tmp_path / get_default_server_root() / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(json.dumps(state), encoding="utf-8")
 
@@ -293,7 +295,7 @@ class TestAutoScopeSplitState:
         from mcp_server.state.quality_state import QualityState  # noqa: PLC0415
         from tests.mcp_server.test_support import make_qa_manager  # noqa: PLC0415
 
-        state_path = tmp_path / ".phase-gate" / "state.json"
+        state_path = tmp_path / get_default_server_root() / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(
             '{"quality_gates": {"baseline_sha": "stale_sha", "failed_files": ["stale.py"]}}',

@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/unit/tools/test_discovery_tools.py
 # pyright: reportPrivateUsage=false
 """

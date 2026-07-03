@@ -6,6 +6,9 @@
                    validate_assignee() permissive when list empty, strict when populated.
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import tempfile
 from pathlib import Path
 
@@ -16,7 +19,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ContributorConfig
 from mcp_server.core.exceptions import ConfigError
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 _EMPTY_CONTRIBUTORS_YAML = {"version": "1.0", "contributors": []}
 

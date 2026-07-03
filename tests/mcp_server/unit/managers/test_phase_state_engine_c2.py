@@ -15,6 +15,8 @@ prove runtime ownership through observable outcomes, not private seam inspection
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 
@@ -94,7 +96,7 @@ class InspectingGateRunner:
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Temporary workspace with hermetic workflow and phase-contract config."""
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workflows.yaml").write_text(
         """
@@ -277,7 +279,7 @@ def test_transition_phase_enforces_contracts_from_phase_contracts_yaml(
         issue_title="Cycle 2 live resolver test",
         workflow_name="feature",
     )
-    loader = ConfigLoader(workspace_root / ".phase-gate" / "config")
+    loader = ConfigLoader(workspace_root / get_default_server_root() / "config")
     resolver = PhaseContractResolver(
         PhaseConfigContext(
             workphases=loader.load_workphases_config(),

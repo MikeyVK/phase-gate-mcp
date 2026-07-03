@@ -15,6 +15,9 @@ Issue #229 Cycle 8: update_planning_deliverables per-phase merge + exit_criteria
 @dependencies: [pytest, pathlib, mcp_server.tools.project_tools]
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
 from unittest.mock import patch
@@ -669,7 +672,7 @@ class TestPlanningDeliverablesPhaseSchema:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
+        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
             str(issue_number)
         ]
         assert "design" in data["planning_deliverables"]
@@ -744,7 +747,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
+        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
             str(issue_number)
         ]
         design_ids = [d["id"] for d in data["planning_deliverables"]["design"]["deliverables"]]
@@ -795,7 +798,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[
+        data = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())[
             str(issue_number)
         ]
         val_ids = [d["id"] for d in data["planning_deliverables"]["validation"]["deliverables"]]
@@ -844,7 +847,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((tmp_path / ".phase-gate" / "deliverables.json").read_text())[
+        data = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())[
             str(issue_number)
         ]
         doc_ids = [d["id"] for d in data["planning_deliverables"]["documentation"]["deliverables"]]
@@ -878,7 +881,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
+        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
             str(issue_number)
         ]
         deliverables = data["planning_deliverables"]["design"]["deliverables"]
@@ -916,7 +919,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
+        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
             str(issue_number)
         ]
         cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
@@ -953,7 +956,7 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / ".phase-gate" / "deliverables.json").read_text())[
+        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
             str(issue_number)
         ]
         cycles = data["planning_deliverables"]["cycles"]["cycles"]

@@ -12,6 +12,9 @@ This approach tests behavior, not implementation details, making tests:
 @layer: Tests (Unit - Behavioral)
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 from unittest.mock import Mock
 

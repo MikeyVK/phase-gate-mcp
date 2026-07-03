@@ -13,6 +13,9 @@ using only message, error_code, and file_path. No hints field exists on ToolResu
     - Verify exception constructors reject legacy kwargs
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 # Third-party
 import pytest
 

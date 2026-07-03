@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 import pytest
 from unittest.mock import MagicMock
 from pathlib import Path

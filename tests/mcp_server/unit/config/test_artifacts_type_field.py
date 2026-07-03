@@ -9,6 +9,9 @@ Validates:
 @dependencies: pytest, mcp_server.config.schemas.artifact_registry_config
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest
@@ -23,12 +26,12 @@ def artifacts_config() -> ArtifactRegistryConfig:
     # Find project root (.phase-gate directory exists there)
     current_dir = Path(__file__).resolve()
     project_root = current_dir
-    while not (project_root / ".phase-gate").exists():
+    while not (project_root / get_default_server_root()).exists():
         project_root = project_root.parent
         if project_root == project_root.parent:
             raise FileNotFoundError("Could not find .phase-gate directory")
 
-    artifacts_yaml = project_root / ".phase-gate" / "config" / "artifacts.yaml"
+    artifacts_yaml = project_root / get_default_server_root() / "config" / "artifacts.yaml"
     return ConfigLoader(artifacts_yaml.parent).load_artifact_registry_config(
         config_path=artifacts_yaml
     )

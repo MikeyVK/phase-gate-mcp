@@ -1,6 +1,9 @@
 """Tests for WorkflowStatusResolver (C3: C_RESOLVER_CORE RED phase)."""
 
+
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 from typing import Any
@@ -117,7 +120,7 @@ class TestCommitPhaseDetector:
         assert result["source"] == "commit-scope"
 
     def test_detector_never_reads_state_json(self, tmp_path: Path) -> None:
-        state_dir = tmp_path / ".phase-gate"
+        state_dir = tmp_path / get_default_server_root()
         state_dir.mkdir()
         (state_dir / "state.json").write_text(
             '{"branch": "main", "current_phase": "research", "workflow_name": "feature"}'

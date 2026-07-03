@@ -6,7 +6,10 @@ reflect the new git_delete_branch mode enum and branch-local state wording.
 @layer: Tests (Documentation)
 """
 
+
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
+
 
 REPO_ROOT = Path(__file__).parents[2]
 
@@ -116,7 +119,7 @@ def test_co_agent_md_branch_local_wording() -> None:
 
 def test_contracts_yaml_feature_first_push_present() -> None:
     """contracts.yaml feature workflow: git_push(set_upstream=True) at first commit."""
-    content = (REPO_ROOT / ".phase-gate" / "config" / "contracts.yaml").read_text(encoding="utf-8")
+    content = (REPO_ROOT / get_default_server_root() / "config" / "contracts.yaml").read_text(encoding="utf-8")
     # find 'feature:' workflow section — must contain set_upstream
     feature_idx = content.index("\n  feature:\n")
     bug_idx = content.index("\n  bug:\n")
@@ -126,7 +129,7 @@ def test_contracts_yaml_feature_first_push_present() -> None:
 
 def test_contracts_yaml_bug_first_push_present() -> None:
     """contracts.yaml bug workflow: git_push(set_upstream=True) at first commit."""
-    content = (REPO_ROOT / ".phase-gate" / "config" / "contracts.yaml").read_text(encoding="utf-8")
+    content = (REPO_ROOT / get_default_server_root() / "config" / "contracts.yaml").read_text(encoding="utf-8")
     bug_idx = content.index("\n  bug:\n")
     refactor_idx = content.index("\n  refactor:\n")
     bug_section = content[bug_idx:refactor_idx]

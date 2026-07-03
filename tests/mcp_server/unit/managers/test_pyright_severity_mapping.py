@@ -12,7 +12,10 @@ instead of reading ``fmap["severity"]`` via ``_resolve_field_path``.
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.qa_manager
 """
 
+
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import pytest
 

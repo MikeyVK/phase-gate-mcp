@@ -15,6 +15,8 @@ Tests verify:
 # pyright: reportPrivateUsage=false
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import inspect
 from pathlib import Path
@@ -49,7 +51,7 @@ class TestIQualityStateRepositoryProtocol:
     def test_concrete_class_satisfies_protocol(self, tmp_path: Path) -> None:
         """FileQualityStateRepository satisfies IQualityStateRepository runtime check."""
         repo = FileQualityStateRepository(
-            backing_file=tmp_path / ".phase-gate" / "quality_state.json"
+            backing_file=tmp_path / get_default_server_root() / "quality_state.json"
         )
         assert isinstance(repo, IQualityStateRepository)
 
@@ -60,14 +62,14 @@ class TestFileQualityStateRepositoryLoad:
     def test_load_returns_empty_state_when_file_absent(self, tmp_path: Path) -> None:
         """load() returns QualityState() (all defaults) when backing file does not exist."""
         repo = FileQualityStateRepository(
-            backing_file=tmp_path / ".phase-gate" / "quality_state.json"
+            backing_file=tmp_path / get_default_server_root() / "quality_state.json"
         )
         state = repo.load()
         assert state == QualityState()
 
     def test_load_returns_persisted_baseline_sha(self, tmp_path: Path) -> None:
         """load() returns baseline_sha from persisted file."""
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
             '{"baseline_sha": "abc123", "failed_files": []}',
@@ -79,7 +81,7 @@ class TestFileQualityStateRepositoryLoad:
 
     def test_load_returns_persisted_failed_files(self, tmp_path: Path) -> None:
         """load() returns failed_files from persisted file."""
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
             '{"baseline_sha": null, "failed_files": ["x.py", "y.py"]}',
@@ -91,7 +93,7 @@ class TestFileQualityStateRepositoryLoad:
 
     def test_load_returns_default_when_file_malformed(self, tmp_path: Path) -> None:
         """load() returns QualityState() when backing file is malformed JSON."""
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text("not valid json", encoding="utf-8")
         repo = FileQualityStateRepository(backing_file=backing)
@@ -104,7 +106,7 @@ class TestFileQualityStateRepositoryApply:
 
     def test_apply_persists_mutation(self, tmp_path: Path) -> None:
         """apply() persists the mutated QualityState to backing file."""
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         repo = FileQualityStateRepository(backing_file=backing)
 
         repo.apply(lambda _s: QualityState(baseline_sha="new_sha", failed_files=[]))
@@ -115,7 +117,7 @@ class TestFileQualityStateRepositoryApply:
 
     def test_apply_receives_current_state(self, tmp_path: Path) -> None:
         """apply() passes current state to the mutate function."""
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
             '{"baseline_sha": "initial_sha", "failed_files": []}',
@@ -135,7 +137,7 @@ class TestFileQualityStateRepositoryApply:
 
     def test_apply_union_failed_files(self, tmp_path: Path) -> None:
         """apply() can accumulate failed_files via union in the mutate function."""
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
             '{"baseline_sha": "sha1", "failed_files": ["old.py"]}',
@@ -188,7 +190,7 @@ class TestFileQualityStateLockC3:
             QualityStateMutationConflictError,
         )
 
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         repo = FileQualityStateRepository(backing_file=backing)
 
         # Replace lock with a mock that simulates timeout (acquire returns False immediately).
@@ -211,7 +213,7 @@ class TestFileQualityStateLockC3:
             QualityStateMutationConflictError,
         )
 
-        backing = tmp_path / ".phase-gate" / "quality_state.json"
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text('{"baseline_sha": null, "failed_files": []}', encoding="utf-8")
         repo = FileQualityStateRepository(backing_file=backing)

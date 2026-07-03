@@ -25,6 +25,8 @@ Three scenarios (D5 test contract):
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import json
 from pathlib import Path
@@ -73,7 +75,7 @@ def _init_repo_scenario_a(repo_dir: Path) -> GitRepo:
     repo.git.checkout("-b", "feature/test")
 
     # Commit state.json on the feature branch (absent from main)
-    state_dir = repo_dir / ".phase-gate"
+    state_dir = repo_dir / get_default_server_root()
     state_dir.mkdir(parents=True, exist_ok=True)
     (state_dir / "state.json").write_text('{"cycle": 1}', encoding="utf-8")
     repo.index.add([_STATE_JSON])
@@ -100,7 +102,7 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
 
     repo.git.checkout("-b", "main")
 
-    state_dir = repo_dir / ".phase-gate"
+    state_dir = repo_dir / get_default_server_root()
     state_dir.mkdir(parents=True, exist_ok=True)
     (repo_dir / "normal.py").write_text("# v1\n", encoding="utf-8")
     (state_dir / "state.json").write_text('{"cycle": 1}', encoding="utf-8")
@@ -113,7 +115,7 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
 
 def _make_commit_tool(repo_dir: Path) -> GitCommitTool:
     """Build GitCommitTool operating on repo_dir."""
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+    loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
     git_config = loader.load_git_config()
     manager = GitManager(
         git_config=git_config,

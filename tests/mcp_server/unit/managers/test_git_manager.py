@@ -3,6 +3,9 @@
 @layer: Tests (Unit)
 @dependencies: pytest, mcp_server.managers.git_manager, mcp_server.config.schemas
 """
+
+
+from tests.mcp_server.test_support import get_default_server_root
 # pyright: reportCallIssue=false, reportAttributeAccessIssue=false, reportPrivateUsage=false
 # Suppress Pydantic false positives; reportPrivateUsage allows protected member access in test setup
 

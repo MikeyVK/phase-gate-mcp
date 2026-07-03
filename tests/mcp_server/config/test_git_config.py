@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/config/test_git_config.py
 """
 Tests for GitConfig (Issue #55).

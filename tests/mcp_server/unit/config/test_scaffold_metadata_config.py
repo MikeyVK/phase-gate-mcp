@@ -8,6 +8,9 @@ Following TDD: These tests are written BEFORE implementation (RED phase).
 @dependencies: pytest, pydantic, mcp_server.config.schemas
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest
@@ -17,7 +20,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import CommentPattern, MetadataField, ScaffoldMetadataConfig
 from mcp_server.core.exceptions import ConfigError
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 def _load_scaffold_metadata_config(config_file: Path) -> ScaffoldMetadataConfig:

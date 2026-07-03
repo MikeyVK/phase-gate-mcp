@@ -5,7 +5,10 @@ Cycle 1 goals covered here:
 - WorkflowGateRunner bridges resolved file_glob CheckSpec objects into DeliverableChecker.
 """
 
+
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 
@@ -70,7 +73,7 @@ class FakeGateRunner:
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Temporary workspace with minimal local config for gate-runner tests."""
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(
         """
@@ -134,7 +137,7 @@ def repo_loader() -> ConfigLoader:
 @pytest.fixture
 def workspace_loader(workspace_root: Path) -> ConfigLoader:
     """Workspace-local config loader for hermetic gate-runner tests."""
-    return ConfigLoader(workspace_root / ".phase-gate" / "config")
+    return ConfigLoader(workspace_root / get_default_server_root() / "config")
 
 
 @pytest.fixture

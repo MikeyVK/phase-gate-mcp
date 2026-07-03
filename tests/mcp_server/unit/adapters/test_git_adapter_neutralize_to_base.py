@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/unit/adapters/test_git_adapter_neutralize_to_base.py
 """Real-git unit tests for GitAdapter.neutralize_to_base().
 
@@ -76,7 +77,7 @@ class TestNeutralizeToBaseAbsentPath:
 
         repo.create_head("feature/test").checkout()
 
-        artifact = tmp_path / ".phase-gate" / "state.json"
+        artifact = tmp_path / get_default_server_root() / "state.json"
         artifact.parent.mkdir()
         artifact.write_text('{"cycle": 1}', encoding="utf-8")
         repo.index.add([".phase-gate/state.json"])
@@ -169,7 +170,7 @@ class TestNeutralizeToBasePresentPath:
         _configure_git_user(repo)
 
         base_content = '{"owner": "base"}'
-        artifact = tmp_path / ".phase-gate" / "state.json"
+        artifact = tmp_path / get_default_server_root() / "state.json"
         artifact.parent.mkdir()
         artifact.write_text(base_content, encoding="utf-8")
         (tmp_path / "normal.py").write_text("# initial\n", encoding="utf-8")

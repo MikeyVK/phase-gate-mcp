@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/unit/mcp_server/schemas/test_code_artifact_schemas.py
 # template=generic version=74378193 created=2026-02-17T00:00Z updated=
 """Tests for Cycle 5 code artifact context schemas.

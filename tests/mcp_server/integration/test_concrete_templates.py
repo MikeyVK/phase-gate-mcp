@@ -13,6 +13,9 @@ Documents requirement that 5 concrete templates must exist and scaffold successf
     mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest

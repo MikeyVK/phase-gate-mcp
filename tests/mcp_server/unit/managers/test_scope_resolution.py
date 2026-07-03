@@ -8,6 +8,8 @@ C22: Resolve scope=branch using git diff parent...HEAD (merge-base semantics).
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import subprocess
 from pathlib import Path

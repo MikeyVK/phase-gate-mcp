@@ -33,6 +33,8 @@ Verifies that:
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 from types import SimpleNamespace
@@ -72,7 +74,7 @@ def _make_pr_reader() -> IPRStatusReader:
 
 def _make_runner(cache: ContextLoadedCache, server_root: Path) -> EnforcementRunner:
     """Build an EnforcementRunner with the live enforcement.yaml and given cache."""
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+    loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
     config = loader.load_enforcement_config()
     return EnforcementRunner(
         workspace_root=_REPO_ROOT,
@@ -190,7 +192,7 @@ class TestContextLoadedGate:
             default_base_branch="main",
             issue_title_max_length=72,
         )
-        loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+        loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
         config = loader.load_enforcement_config()
         runner = EnforcementRunner(
             workspace_root=_REPO_ROOT,
@@ -291,7 +293,7 @@ class TestContextLoadedResets:
             "          phase_instructions: Ready phase.\n"
             "          handover_template: Imp to QA.\n"
         )
-        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir = tmp_path / get_default_server_root() / "config"
         config_dir.mkdir(parents=True)
         (config_dir / "contracts.yaml").write_text(contracts_yaml, encoding="utf-8")
 

@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/config/test_project_structure.py
 """Unit tests for ProjectStructureConfig model.
 
@@ -128,7 +129,7 @@ class TestProjectStructureConfig:
     def test_config_directories(self) -> None:
         """Test .phase-gate config directory policy."""
         config = _load_project_structure()
-        phase_gate = config.directories[".phase-gate"]
+        phase_gate = config.directories[get_default_server_root()]
         assert phase_gate.parent is None
         assert phase_gate.allowed_component_types == []
         assert ".yaml" in phase_gate.allowed_extensions

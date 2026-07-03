@@ -1,3 +1,4 @@
+from tests.mcp_server.test_support import get_default_server_root
 # SCAFFOLD: template=generic version=6f1837e9 created=2026-01-26T21:14:02Z
 """
 Tests for artifacts.yaml type field (TDD Cycle 1).
@@ -35,7 +36,7 @@ class TestArtifactsYamlTypeField:
     @pytest.fixture
     def artifacts_yaml_path(self) -> Path:
         """Path to artifacts.yaml."""
-        return Path(__file__).parent.parent.parent / ".phase-gate" / "config" / "artifacts.yaml"
+        return Path(__file__).parent.parent.parent / get_default_server_root() / "config" / "artifacts.yaml"
 
     @pytest.fixture
     def artifacts_data(self, artifacts_yaml_path: Path) -> ArtifactsYamlData:

@@ -30,6 +30,8 @@ Also verifies:
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import asyncio
 import inspect
@@ -265,7 +267,7 @@ class TestCompositionRootContracts:
         check_phase_readiness must still be present.
         """
         workspace_root = Path(__file__).parents[3]
-        config_path = workspace_root / ".phase-gate" / "config" / "enforcement.yaml"
+        config_path = workspace_root / get_default_server_root() / "config" / "enforcement.yaml"
         config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
 
         submit_pr_actions = [
@@ -297,7 +299,7 @@ class TestSubmitPRNeutralizesQualityState:
         import yaml as _yaml  # noqa: PLC0415
 
         workspace_root = Path(__file__).parents[3]
-        contracts_path = workspace_root / ".phase-gate" / "config" / "contracts.yaml"
+        contracts_path = workspace_root / get_default_server_root() / "config" / "contracts.yaml"
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
         artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
         assert ".phase-gate/quality_state.json" in artifact_paths, (
@@ -313,7 +315,7 @@ class TestSubmitPRNeutralizesQualityState:
         RED: will fail until C5 GREEN wires quality_state.json into server.py composition.
         """
         workspace_root = Path(__file__).parents[3]
-        contracts_path = workspace_root / ".phase-gate" / "config" / "contracts.yaml"
+        contracts_path = workspace_root / get_default_server_root() / "config" / "contracts.yaml"
         import yaml as _yaml  # noqa: PLC0415
 
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))

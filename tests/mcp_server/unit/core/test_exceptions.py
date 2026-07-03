@@ -8,6 +8,9 @@
   - Ensure ConfigError format includes file_path
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 # Third-party
 import pytest
 

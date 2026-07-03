@@ -10,6 +10,8 @@ No manager/tool consumer rewiring is validated here.
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import inspect
 from pathlib import Path
@@ -45,7 +47,7 @@ from mcp_server.managers import enforcement_runner, phase_contract_resolver
 def config_root(tmp_path: Path) -> Path:
     """Create a minimal config root covering all 15 migrated schemas."""
 
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
 
     def write_yaml(relative_path: str, data: dict[str, Any]) -> None:
         target = config_dir / relative_path

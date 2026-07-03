@@ -11,6 +11,9 @@ Cycle 2 — Verify .phase-gate/config/labels.yaml conventions:
 @dependencies: pytest, yaml, .phase-gate/config/labels.yaml
 """
 
+
+
+from tests.mcp_server.test_support import get_default_server_root
 import re
 from pathlib import Path
 
