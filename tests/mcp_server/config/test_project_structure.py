@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/config/test_project_structure.py
 """Unit tests for ProjectStructureConfig model.
 
@@ -24,17 +25,23 @@ from mcp_server.core.exceptions import ConfigError
 
 
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_artifact_registry_config(config_path=config_path)
 
 
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_operation_policies_config(config_path=config_path)
 
 
 def _load_project_structure(config_path: Path | None = None) -> ProjectStructureConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_project_structure_config(config_path=config_path)
 
 
@@ -77,7 +84,7 @@ class TestProjectStructureConfig:
     def test_missing_file(self) -> None:
         """Test ConfigError when file not found."""
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_project_structure(Path(".phase-gate/config/nonexistent.yaml"))
+            _load_project_structure(Path(f"{get_default_server_root()}/config/nonexistent.yaml"))
 
     def test_get_directory_exists(self) -> None:
         """Test get_directory with existing path."""

@@ -6,8 +6,6 @@
                    validate_assignee() permissive when list empty, strict when populated.
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import tempfile
 from pathlib import Path
@@ -86,7 +84,9 @@ class TestContributorConfigFromFile:
 
     def test_from_file_raises_on_missing_file(self) -> None:
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_contributor_config(Path(".phase-gate/nonexistent_contributors.yaml"))
+            _load_contributor_config(
+                Path(f"{get_default_server_root()}/nonexistent_contributors.yaml")
+            )
 
     def test_repeated_loads_are_equivalent(self, empty_contributors_path: Path) -> None:
         cfg1 = _load_contributor_config(empty_contributors_path)

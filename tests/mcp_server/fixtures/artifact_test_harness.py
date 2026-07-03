@@ -8,8 +8,8 @@
   - E2E test helpers
 """
 
-
 from tests.mcp_server.test_support import get_default_server_root
+
 # Standard library
 from collections.abc import Generator
 from dataclasses import dataclass, field

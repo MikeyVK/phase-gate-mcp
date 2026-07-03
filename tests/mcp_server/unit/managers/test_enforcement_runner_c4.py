@@ -53,7 +53,9 @@ def _make_runner_c4(
         git_config=_GIT_CONFIG,
         server_root=tmp_path / get_default_server_root(),
         context_loaded_reader=context_loaded_reader,
-        state_reader=FileStateRepository(state_file=tmp_path / get_default_server_root() / "state.json"),
+        state_reader=FileStateRepository(
+            state_file=tmp_path / get_default_server_root() / "state.json"
+        ),
     )
 
 
@@ -239,7 +241,8 @@ class TestCheckContextLoadedHandler:
         reader = MagicMock(spec=IContextLoadedReader)
         reader.is_context_loaded.return_value = False
         config = _make_check_context_loaded_config()
-        # server_root = tmp_path / get_default_server_root() per _make_runner_c4 — no state.json there
+        # server_root = tmp_path / get_default_server_root() per _make_runner_c4
+        # — no state.json there
         runner = _make_runner_c4(tmp_path, config, context_loaded_reader=reader)
 
         # Must not raise — bootstrap path returns silently

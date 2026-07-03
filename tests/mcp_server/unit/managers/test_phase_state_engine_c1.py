@@ -5,7 +5,6 @@ Cycle 1 goals covered here:
 - WorkflowGateRunner bridges resolved file_glob CheckSpec objects into DeliverableChecker.
 """
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -131,7 +130,7 @@ workflows:
 @pytest.fixture
 def repo_loader() -> ConfigLoader:
     """Repository config loader for shared workflow/git config."""
-    return ConfigLoader(Path(".phase-gate/config"))
+    return ConfigLoader(Path(f"{get_default_server_root()}/config"))
 
 
 @pytest.fixture

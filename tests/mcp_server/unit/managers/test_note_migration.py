@@ -13,7 +13,7 @@ from mcp_server.core.exceptions import PreflightError
 def git_config() -> GitConfig:
     from mcp_server.config.loader import ConfigLoader  # noqa: PLC0415
 
-    return ConfigLoader(Path(".phase-gate/config")).load_git_config()
+    return ConfigLoader(Path(f"{get_default_server_root()}/config")).load_git_config()
 
 
 def test_git_manager_produces_generic_note_when_dirty(git_config: GitConfig) -> None:

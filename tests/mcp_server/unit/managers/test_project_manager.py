@@ -10,8 +10,6 @@ Issue #50: Tests migrated from PHASE_TEMPLATES to workflows.yaml.
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.project_manager
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
@@ -743,7 +741,7 @@ class TestIssue257Cycle7Contracts:
         """D7.4: .phase-gate/state.json must not remain ignored."""
         gitignore = Path(".gitignore").read_text(encoding="utf-8")
 
-        assert ".phase-gate/state.json" not in gitignore
+        assert f"{get_default_server_root()}/state.json" not in gitignore
 
 
 class TestProjectManagerResolverAdoption:

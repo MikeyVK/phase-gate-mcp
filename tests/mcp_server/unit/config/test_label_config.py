@@ -7,9 +7,8 @@ Tests immutable label definition with color validation and YAML loading.
 @dependencies: [pytest, dataclasses, mcp_server.config.label_config]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
+
 # Standard library
 from dataclasses import FrozenInstanceError
 from pathlib import Path

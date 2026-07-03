@@ -9,8 +9,6 @@ C3 Deliverables:
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.phase_state_engine
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import json
 import logging

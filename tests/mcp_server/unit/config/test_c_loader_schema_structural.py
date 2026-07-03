@@ -386,7 +386,7 @@ def _assert_schema_package_has_no_hardcoded_config_paths() -> None:
     schema_dir = Path(inspect.getfile(scaffold_schema)).parent
     for schema_file in schema_dir.rglob("*.py"):
         source = schema_file.read_text(encoding="utf-8")
-        assert ".phase-gate/config/" not in source, (
+        assert f"{get_default_server_root()}/config/" not in source, (
             f"{schema_file.name} must not hardcode config-root paths in schema code"
         )
 

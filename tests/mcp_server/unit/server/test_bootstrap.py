@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests\mcp_server\unit\server\test_bootstrap.py
 # template=unit_test version=3d15d309 created=2026-06-09T09:48Z updated=
 """Unit tests for mcp_server.bootstrap.

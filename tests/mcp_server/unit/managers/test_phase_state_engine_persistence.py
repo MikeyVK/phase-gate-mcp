@@ -1,6 +1,5 @@
 """Tests for PhaseStateEngine state.json persistence."""
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 

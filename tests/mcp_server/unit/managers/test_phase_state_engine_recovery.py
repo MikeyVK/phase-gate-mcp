@@ -1,6 +1,5 @@
 """Tests for StateReconstructor after C_STATE_RECOVERY extraction."""
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 

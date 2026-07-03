@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/unit/config/test_loader.py
 # template=unit_test version= created=2026-04-09T00:00Z updated=
 """

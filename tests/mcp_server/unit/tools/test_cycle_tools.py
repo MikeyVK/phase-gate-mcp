@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # pyright: reportMissingImports=false
 # tests\mcp_server\unit\tools\test_cycle_tools.py
 # template=unit_test version=3d15d309 created=2026-03-13T11:30Z updated=
@@ -206,7 +207,9 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / get_default_server_root() / "config"
             )
-            mock_settings_cls.from_env.return_value.server.server_root_dir = get_default_server_root()
+            mock_settings_cls.from_env.return_value.server.server_root_dir = (
+                get_default_server_root()
+            )
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"
@@ -268,7 +271,9 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / get_default_server_root() / "config"
             )
-            mock_settings_cls.from_env.return_value.server.server_root_dir = get_default_server_root()
+            mock_settings_cls.from_env.return_value.server.server_root_dir = (
+                get_default_server_root()
+            )
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"
@@ -379,7 +384,9 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / get_default_server_root() / "config"
             )
-            mock_settings_cls.from_env.return_value.server.server_root_dir = get_default_server_root()
+            mock_settings_cls.from_env.return_value.server.server_root_dir = (
+                get_default_server_root()
+            )
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"
@@ -444,7 +451,9 @@ class TestCycleTools:
             mock_settings_cls.from_env.return_value.server.config_root = str(
                 tmp_path / get_default_server_root() / "config"
             )
-            mock_settings_cls.from_env.return_value.server.server_root_dir = get_default_server_root()
+            mock_settings_cls.from_env.return_value.server.server_root_dir = (
+                get_default_server_root()
+            )
             mock_settings_cls.from_env.return_value.github.token = None
             mock_settings_cls.from_env.return_value.github.owner = "test"
             mock_settings_cls.from_env.return_value.github.repo = "repo"

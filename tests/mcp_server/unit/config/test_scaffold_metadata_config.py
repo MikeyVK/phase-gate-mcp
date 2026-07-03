@@ -8,8 +8,6 @@ Following TDD: These tests are written BEFORE implementation (RED phase).
 @dependencies: pytest, pydantic, mcp_server.config.schemas
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 

@@ -7,8 +7,6 @@ Tests complete workflow cycle: research -> planning -> design -> implementation 
 @dependencies: [pytest, subprocess, mcp_server.managers.git_manager]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import subprocess
 from pathlib import Path
@@ -101,7 +99,7 @@ def git_repo(tmp_path: Path) -> Path:
     # Create workflows.yaml (feature workflow)
     workflows = {
         "version": "1.0",
-        "phase_source": ".phase-gate/workphases.yaml",
+        "phase_source": f"{get_default_server_root()}/workphases.yaml",
         "workflows": {
             "feature": {
                 "name": "feature",
@@ -185,7 +183,9 @@ def test_full_workflow_cycle_with_scope_detection(git_repo: Path) -> None:
     git_config = ConfigLoader(git_repo / get_default_server_root() / "config").load_git_config(
         config_path=git_repo / get_default_server_root() / "config" / "git.yaml"
     )
-    _workphases_config = ConfigLoader(git_repo / get_default_server_root() / "config").load_workphases_config(
+    _workphases_config = ConfigLoader(
+        git_repo / get_default_server_root() / "config"
+    ).load_workphases_config(
         config_path=git_repo / get_default_server_root() / "config" / "workphases.yaml"
     )
     git_manager = GitManager(

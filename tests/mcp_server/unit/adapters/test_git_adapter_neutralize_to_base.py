@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/unit/adapters/test_git_adapter_neutralize_to_base.py
 """Real-git unit tests for GitAdapter.neutralize_to_base().
 
@@ -80,7 +81,7 @@ class TestNeutralizeToBaseAbsentPath:
         artifact = tmp_path / get_default_server_root() / "state.json"
         artifact.parent.mkdir()
         artifact.write_text('{"cycle": 1}', encoding="utf-8")
-        repo.index.add([".phase-gate/state.json"])
+        repo.index.add([f"{get_default_server_root()}/state.json"])
         repo.index.commit("add artifact on feature branch")
 
         return repo, base_branch, artifact
@@ -94,7 +95,9 @@ class TestNeutralizeToBaseAbsentPath:
         _, base_branch, artifact = self._setup_branch_with_artifact(tmp_path)
 
         adapter = GitAdapter(str(tmp_path))
-        adapter.neutralize_to_base(frozenset({".phase-gate/state.json"}), base_branch)
+        adapter.neutralize_to_base(
+            frozenset({f"{get_default_server_root()}/state.json"}), base_branch
+        )
 
         assert not artifact.exists(), (
             "neutralize_to_base must remove path from worktree when absent from merge-base"
@@ -105,9 +108,11 @@ class TestNeutralizeToBaseAbsentPath:
         repo, base_branch, _ = self._setup_branch_with_artifact(tmp_path)
 
         adapter = GitAdapter(str(tmp_path))
-        adapter.neutralize_to_base(frozenset({".phase-gate/state.json"}), base_branch)
+        adapter.neutralize_to_base(
+            frozenset({f"{get_default_server_root()}/state.json"}), base_branch
+        )
 
-        ls_output = repo.git.ls_files(".phase-gate/state.json")
+        ls_output = repo.git.ls_files(f"{get_default_server_root()}/state.json")
         assert ls_output == "", (
             f"neutralize_to_base must remove path from index when absent from merge-base. "
             f"ls-files output: {ls_output!r}"
@@ -122,13 +127,18 @@ class TestNeutralizeToBaseAbsentPath:
         repo, base_branch, _ = self._setup_branch_with_artifact(tmp_path)
 
         adapter = GitAdapter(str(tmp_path))
-        adapter.neutralize_to_base(frozenset({".phase-gate/state.json"}), base_branch)
+        adapter.neutralize_to_base(
+            frozenset({f"{get_default_server_root()}/state.json"}), base_branch
+        )
         commit_msg = f"chore(P_READY): neutralize branch-local artifacts to '{base_branch}'"
         _commit_staged(repo, commit_msg)
 
         merge_base_sha = repo.git.merge_base("HEAD", base_branch)
         diff_output = repo.git.diff(
-            "--name-only", f"{merge_base_sha}..HEAD", "--", ".phase-gate/state.json"
+            "--name-only",
+            f"{merge_base_sha}..HEAD",
+            "--",
+            f"{get_default_server_root()}/state.json",
         )
         assert diff_output == "", (
             f"Model 1 invariant violated: .phase-gate/state.json still appears in diff. "
@@ -145,7 +155,9 @@ class TestNeutralizeToBaseAbsentPath:
         repo.index.commit("modify normal.py on feature")
 
         adapter = GitAdapter(str(tmp_path))
-        adapter.neutralize_to_base(frozenset({".phase-gate/state.json"}), base_branch)
+        adapter.neutralize_to_base(
+            frozenset({f"{get_default_server_root()}/state.json"}), base_branch
+        )
 
         # normal.py still has the modified content — neutralize did not touch it
         assert normal.read_text(encoding="utf-8") == "# modified\n", (
@@ -174,14 +186,14 @@ class TestNeutralizeToBasePresentPath:
         artifact.parent.mkdir()
         artifact.write_text(base_content, encoding="utf-8")
         (tmp_path / "normal.py").write_text("# initial\n", encoding="utf-8")
-        repo.index.add(["normal.py", ".phase-gate/state.json"])
+        repo.index.add(["normal.py", f"{get_default_server_root()}/state.json"])
         repo.index.commit("initial commit on base (epic parent)")
 
         base_branch = repo.active_branch.name
 
         repo.create_head("feature/child").checkout()
         artifact.write_text('{"owner": "child"}', encoding="utf-8")
-        repo.index.add([".phase-gate/state.json"])
+        repo.index.add([f"{get_default_server_root()}/state.json"])
         repo.index.commit("child branch overwrites state.json")
 
         return repo, base_branch, artifact, base_content
@@ -195,7 +207,9 @@ class TestNeutralizeToBasePresentPath:
         _, base_branch, artifact, base_content = self._setup_epic_parent_scenario(tmp_path)
 
         adapter = GitAdapter(str(tmp_path))
-        adapter.neutralize_to_base(frozenset({".phase-gate/state.json"}), base_branch)
+        adapter.neutralize_to_base(
+            frozenset({f"{get_default_server_root()}/state.json"}), base_branch
+        )
 
         actual = artifact.read_text(encoding="utf-8")
         assert actual == base_content, (
@@ -211,17 +225,23 @@ class TestNeutralizeToBasePresentPath:
         repo, base_branch, _artifact, _base_content = self._setup_epic_parent_scenario(tmp_path)
 
         adapter = GitAdapter(str(tmp_path))
-        adapter.neutralize_to_base(frozenset({".phase-gate/state.json"}), base_branch)
+        adapter.neutralize_to_base(
+            frozenset({f"{get_default_server_root()}/state.json"}), base_branch
+        )
         commit_msg = f"chore(P_READY): neutralize branch-local artifacts to '{base_branch}'"
         _commit_staged(repo, commit_msg)
 
         merge_base_sha = repo.git.merge_base("HEAD", base_branch)
         diff_output = repo.git.diff(
-            "--name-only", f"{merge_base_sha}..HEAD", "--", ".phase-gate/state.json"
+            "--name-only",
+            f"{merge_base_sha}..HEAD",
+            "--",
+            f"{get_default_server_root()}/state.json",
         )
         assert diff_output == "", (
             f"Model 1 invariant violated (epic-parent scenario): "
-            f".phase-gate/state.json still appears in diff. Diff output: {diff_output!r}"
+            f"{get_default_server_root()}/state.json still appears in diff. "
+            f"Diff output: {diff_output!r}"
         )
 
 
@@ -245,6 +265,6 @@ class TestNeutralizeToBaseErrorHandling:
         adapter = GitAdapter(str(tmp_path))
         with pytest.raises(ExecutionError):
             adapter.neutralize_to_base(
-                frozenset({".phase-gate/state.json"}),
+                frozenset({f"{get_default_server_root()}/state.json"}),
                 "nonexistent-branch",
             )

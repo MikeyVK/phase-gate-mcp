@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests\mcp_server\unit\managers\test_enforcement_runner_unit.py
 # template=unit_test version=3d15d309 created=2026-04-14T09:09Z updated=
 """
@@ -25,8 +26,8 @@ from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
 from mcp_server.tools.tool_result import ToolResult
 
-_STATE_JSON = ".phase-gate/state.json"
-_DELIVERABLES_JSON = ".phase-gate/deliverables.json"
+_STATE_JSON = f"{get_default_server_root()}/state.json"
+_DELIVERABLES_JSON = f"{get_default_server_root()}/deliverables.json"
 
 
 class TestGitCommitToolC3:

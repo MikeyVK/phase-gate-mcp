@@ -4,8 +4,6 @@
 @dependencies: pytest, yaml, mcp_server.config.schemas
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import tempfile
 from pathlib import Path
@@ -53,7 +51,7 @@ class TestScopeConfigFromFile:
 
     def test_from_file_raises_on_missing_file(self) -> None:
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_scope_config(Path(".phase-gate/nonexistent_scopes.yaml"))
+            _load_scope_config(Path(f"{get_default_server_root()}/nonexistent_scopes.yaml"))
 
     def test_repeated_loads_are_equivalent(self, scopes_yaml_path: Path) -> None:
         cfg1 = _load_scope_config(scopes_yaml_path)

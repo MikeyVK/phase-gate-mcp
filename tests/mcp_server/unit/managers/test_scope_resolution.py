@@ -94,7 +94,7 @@ class TestScopeResolutionBranch:
             result = manager.resolve_scope("branch")
 
         assert "docs/README.md" not in result
-        assert ".phase-gate/state.json" not in result
+        assert f"{get_default_server_root()}/state.json" not in result
         assert "mcp_server/logic.py" in result
 
     def test_branch_scope_git_error_returns_empty(self, tmp_path: Path) -> None:

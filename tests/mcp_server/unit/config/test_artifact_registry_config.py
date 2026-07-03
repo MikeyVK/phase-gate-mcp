@@ -10,8 +10,6 @@ Tests configuration loading from artifacts.yaml with:
 @dependencies: pytest, yaml, mcp_server.config.schemas.artifact_registry_config
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 from typing import Any

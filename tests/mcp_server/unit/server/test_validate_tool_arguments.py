@@ -3,8 +3,6 @@ Unit tests for _validate_tool_arguments failure path and schema://validation res
 Scope: Cycle 2, Change A — argument validation returns ToolResult on failure.
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path

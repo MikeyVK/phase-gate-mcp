@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/unit/config/test_c_loader_structural.py
 """
 Structural regression tests for config-path and legacy exception kwargs.
@@ -79,7 +80,11 @@ def test_no_raw_phase_gate_config_paths_in_production() -> None:
 
     for path in _iter_production_python_files():
         tree = _parse_python_file(path)
-        literals = [v for v in _path_constructor_strings(tree) if ".phase-gate/config/" in v]
+        literals = [
+            v
+            for v in _path_constructor_strings(tree)
+            if f"{get_default_server_root()}/config/" in v
+        ]
         if literals:
             offenders.append(f"{_relative_path(path)}: {literals[0]}")
 

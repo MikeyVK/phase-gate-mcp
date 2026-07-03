@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/unit/managers/test_deliverable_checker.py
 """
 Tests for DeliverableChecker and WorkphasesConfig schema extension.
@@ -213,7 +214,7 @@ class TestDeliverableChecker:
             "D1.3",
             {
                 "type": "key_path",
-                "file": ".phase-gate/deliverables.json",
+                "file": f"{get_default_server_root()}/deliverables.json",
                 "path": "229.planning_deliverables",
             },
         )
@@ -234,7 +235,7 @@ class TestDeliverableChecker:
                 "D1.4",
                 {
                     "type": "key_path",
-                    "file": ".phase-gate/deliverables.json",
+                    "file": f"{get_default_server_root()}/deliverables.json",
                     "path": "229.planning_deliverables",
                 },
             )

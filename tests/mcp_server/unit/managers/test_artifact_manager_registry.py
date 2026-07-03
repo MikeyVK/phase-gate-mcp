@@ -12,9 +12,6 @@ RED phase: Tests that scaffold_artifact() integrates with TemplateRegistry:
     mcp_server.scaffolding.template_registry
 """
 
-
-
-from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 

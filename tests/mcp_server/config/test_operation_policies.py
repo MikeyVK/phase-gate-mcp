@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/config/test_operation_policies.py
 """Unit tests for OperationPoliciesConfig model.
 
@@ -19,7 +20,9 @@ from mcp_server.core.exceptions import ConfigError
 
 
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_operation_policies_config(config_path=config_path)
 
 
@@ -59,7 +62,7 @@ class TestOperationPoliciesConfig:
     def test_missing_file(self) -> None:
         """Test ConfigError when file not found."""
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_operation_policies(Path(".phase-gate/config/nonexistent.yaml"))
+            _load_operation_policies(Path(f"{get_default_server_root()}/config/nonexistent.yaml"))
 
     def test_get_operation_policy_valid(self) -> None:
         """Test get_operation_policy with valid operation."""

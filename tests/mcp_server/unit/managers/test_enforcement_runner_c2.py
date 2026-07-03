@@ -55,7 +55,9 @@ def _make_runner(
         git_config=MagicMock(),
         pr_status_reader=pr_status_reader,
         server_root=tmp_path / get_default_server_root(),
-        state_reader=FileStateRepository(state_file=tmp_path / get_default_server_root() / "state.json"),
+        state_reader=FileStateRepository(
+            state_file=tmp_path / get_default_server_root() / "state.json"
+        ),
     )
 
 

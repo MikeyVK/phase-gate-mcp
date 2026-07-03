@@ -6,7 +6,6 @@ Issue #146 Cycle 4: implementation phase lifecycle hooks.
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.phase_state_engine
 """
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 

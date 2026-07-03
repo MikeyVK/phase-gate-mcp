@@ -4,8 +4,6 @@
 @dependencies: pytest, mcp_server.tools.label_tools, mcp_server.config.schemas
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 from collections.abc import Generator
 from pathlib import Path

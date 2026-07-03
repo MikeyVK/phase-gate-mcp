@@ -8,7 +8,6 @@
   - workflows.yaml fixtures retained for backward compat with WorkflowConfig tests
 """
 
-
 from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
@@ -17,8 +16,6 @@ import pytest
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import WorkflowConfig
 from mcp_server.config.schemas.contracts_config import ContractsConfig
-
-
 
 
 def _make_loader() -> ConfigLoader:

@@ -53,7 +53,9 @@ def _minimal_contracts(first_phase: str = "research") -> ContractsConfig:
         merge_policy=MergePolicy(
             pr_allowed_phase="ready",
             branch_local_artifacts=[
-                BranchLocalArtifact(path=".phase-gate/state.json", reason="branch-local")
+                BranchLocalArtifact(
+                    path=f"{get_default_server_root()}/state.json", reason="branch-local"
+                )
             ],
         ),
         workflows={

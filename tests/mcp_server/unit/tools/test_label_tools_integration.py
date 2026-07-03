@@ -7,9 +7,8 @@ Tests validation hooks in CreateLabelTool, AddLabelsTool, and DetectLabelDriftTo
 @dependencies: [pytest, mcp_server.tools.label_tools, mcp_server.config.label_config]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
+
 # Standard library
 from pathlib import Path
 from unittest.mock import Mock

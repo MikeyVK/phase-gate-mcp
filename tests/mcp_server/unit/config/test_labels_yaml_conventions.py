@@ -11,8 +11,6 @@ Cycle 2 — Verify .phase-gate/config/labels.yaml conventions:
 @dependencies: pytest, yaml, .phase-gate/config/labels.yaml
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import re
 from pathlib import Path
@@ -20,7 +18,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-LABELS_PATH = Path(".phase-gate/config/labels.yaml")
+LABELS_PATH = Path(f"{get_default_server_root()}/config/labels.yaml")
 
 
 @pytest.fixture(name="labels_data")

@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/unit/adapters/test_git_adapter_skip_paths.py
 """Tests for GitAdapter commit() skip_paths postcondition.
 
@@ -50,7 +51,7 @@ class TestGitAdapterSkipPathsIntegration:
         normal.write_text("# v1\n", encoding="utf-8")
         state_file.write_text('{"cycle": 1}', encoding="utf-8")
 
-        repo.index.add(["normal.py", ".phase-gate/state.json"])
+        repo.index.add(["normal.py", f"{get_default_server_root()}/state.json"])
         repo.index.commit("initial commit")
         return repo
 
@@ -63,17 +64,19 @@ class TestGitAdapterSkipPathsIntegration:
         """
         repo = self._init_repo_with_initial_commit(tmp_path)
         (tmp_path / "normal.py").write_text("# v2\n", encoding="utf-8")
-        (tmp_path / get_default_server_root() / "state.json").write_text('{"cycle": 2}', encoding="utf-8")
+        (tmp_path / get_default_server_root() / "state.json").write_text(
+            '{"cycle": 2}', encoding="utf-8"
+        )
 
         adapter = GitAdapter(str(tmp_path))
         sha = adapter.commit(
             message="feature commit",
-            skip_paths=frozenset({".phase-gate/state.json"}),
+            skip_paths=frozenset({f"{get_default_server_root()}/state.json"}),
         )
 
         commit = repo.commit(sha)
         diff_paths = {d.a_path for d in commit.diff(commit.parents[0])}
-        assert ".phase-gate/state.json" not in diff_paths, (
+        assert f"{get_default_server_root()}/state.json" not in diff_paths, (
             f"skip_path appeared in commit diff — zero-delta violated. "
             f"Changed paths: {sorted(diff_paths)}"
         )
@@ -90,18 +93,20 @@ class TestGitAdapterSkipPathsIntegration:
         """
         repo = self._init_repo_with_initial_commit(tmp_path)
         (tmp_path / "normal.py").write_text("# v2\n", encoding="utf-8")
-        (tmp_path / get_default_server_root() / "state.json").write_text('{"cycle": 2}', encoding="utf-8")
+        (tmp_path / get_default_server_root() / "state.json").write_text(
+            '{"cycle": 2}', encoding="utf-8"
+        )
 
         adapter = GitAdapter(str(tmp_path))
         sha = adapter.commit(
             message="feature commit",
-            files=["normal.py", ".phase-gate/state.json"],
-            skip_paths=frozenset({".phase-gate/state.json"}),
+            files=["normal.py", f"{get_default_server_root()}/state.json"],
+            skip_paths=frozenset({f"{get_default_server_root()}/state.json"}),
         )
 
         commit = repo.commit(sha)
         diff_paths = {d.a_path for d in commit.diff(commit.parents[0])}
-        assert ".phase-gate/state.json" not in diff_paths, (
+        assert f"{get_default_server_root()}/state.json" not in diff_paths, (
             f"skip_path appeared in commit diff — zero-delta violated. "
             f"Changed paths: {sorted(diff_paths)}"
         )

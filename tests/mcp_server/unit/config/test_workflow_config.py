@@ -15,8 +15,6 @@ Quality Requirements:
 @dependencies: pytest, yaml, pydantic, mcp_server.config.schemas
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
@@ -104,7 +102,10 @@ class TestWorkflowConfigLoading:
             ConfigLoader(config_dir).load_workflow_config()
 
         error_msg = str(exc_info.value)
-        assert ".phase-gate/config/workflows.yaml" in error_msg or "workflows.yaml" in error_msg
+        assert (
+            f"{get_default_server_root()}/config/workflows.yaml" in error_msg
+            or "workflows.yaml" in error_msg
+        )
 
     def test_load_invalid_yaml(self, invalid_yaml: Path) -> None:
         """Test loading malformed YAML file."""

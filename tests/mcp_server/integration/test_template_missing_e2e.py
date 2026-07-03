@@ -14,8 +14,6 @@ This test uses NO MOCKS - real template loading against temp workspace.
 @dependencies: [pytest, pathlib, mcp_server.tools.scaffold_artifact]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 

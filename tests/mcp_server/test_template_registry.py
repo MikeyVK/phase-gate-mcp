@@ -8,7 +8,6 @@ current version tracking, JSON persistence, and YAML->JSON migration.
 @dependencies: pytest, yaml, mcp_server.scaffolding.template_registry
 """
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 

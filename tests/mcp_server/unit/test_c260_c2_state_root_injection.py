@@ -6,7 +6,6 @@ and does NOT compute workspace_root / get_default_server_root() internally.
 TDD: These tests FAIL before the GREEN implementation.
 """
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -131,7 +130,8 @@ class TestPhaseStateEngineStateRoot:
         assert engine.state_path == state_root / "state.json"
 
     def test_state_path_is_not_workspace_root_phase_gate(self, tmp_path: Path) -> None:
-        """C6 RED: state_path must NOT be derived from workspace_root / get_default_server_root()."""
+        """C6 RED: state_path must NOT be derived from workspace_root /
+        get_default_server_root()."""
         state_root = tmp_path / ".custom-state"
         workspace_root = tmp_path / "workspace"
 
@@ -340,7 +340,8 @@ class TestArtifactManagerEphemeralTemp:
     """ArtifactManager ephemeral temp dir must be workspace_root-relative."""
 
     def test_ephemeral_temp_uses_workspace_root(self, tmp_path: Path) -> None:
-        """Path('.phase-gate/temp') must be replaced with self.server_root / 'temp'."""
+        """Path(f"{get_default_server_root()}/temp") must be replaced
+        with self.server_root / 'temp'."""
         state_root = tmp_path / get_default_server_root()
         state_root.mkdir()
         (state_root / "template_registry.json").touch()
@@ -406,22 +407,19 @@ class TestTemplateRegistryDefaultArg:
     """TemplateRegistry default registry_path must not hardcode .phase-gate."""
 
     def test_default_registry_path_is_not_cwd_dot_phase_gate(self) -> None:
-        """TemplateRegistry() without args must not default to Path('.phase-gate/...')."""
+        """TemplateRegistry() without args: no hardcoded default path."""
         sig = inspect.signature(TemplateRegistry.__init__)
         default = sig.parameters["registry_path"].default
 
         # Default should be None (not a .phase-gate Path)
-        assert default is None or str(default) != ".phase-gate/template_registry.json", (
-            "Default registry_path should not be '.phase-gate/template_registry.json',"
-            f" got: {default}"
+        expected_path = f"{get_default_server_root()}/template_registry.json"
+        assert default is None or str(default) != expected_path, (
+            f"Registry path should not be {expected_path}, got: {default}"
         )
 
 
 # ===========================================================================
 # C2 RED — TDD Cycle 2: no-fallback enforcement
-# These tests FAIL before GREEN (constructors still have silent .phase-gate fallbacks).
-# ===========================================================================
-
 
 # ---------------------------------------------------------------------------
 # PhaseStateEngine — must raise when server_root absent
@@ -582,7 +580,8 @@ class TestNormalizeConfigRootNoPhaseGateFallback:
             result = normalize_config_root(tmp_path)
             # If no exception: result must not contain .phase-gate
             assert get_default_server_root() not in str(result), (
-                f"normalize_config_root final fallback still hardcodes get_default_server_root(): {result}"
+                f"normalize_config_root final fallback still hardcodes "
+                f"get_default_server_root(): {result}"
             )
         except (FileNotFoundError, ValueError):
             # Raising is preferred — no .phase-gate path was produced
@@ -601,8 +600,9 @@ class TestTemplateRegistryNoPhaseGateFallback:
         """TemplateRegistry() without args: registry_path must not resolve to .phase-gate.
 
         RED: current __init__ body sets
-            self.registry_path = Path('.phase-gate/template_registry.json')
-        when registry_path is None. The instance attribute silently contains get_default_server_root().
+            self.registry_path = Path(f"{get_default_server_root()}/template_registry.json")
+        when registry_path is None. The instance attribute silently contains
+        get_default_server_root().
         """
         with pytest.raises((ValueError, TypeError)):
             # Must raise when no explicit registry_path is provided

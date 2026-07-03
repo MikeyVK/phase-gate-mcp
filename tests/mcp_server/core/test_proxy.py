@@ -11,9 +11,6 @@ Tests:
 @dependencies: pytest, mcp_server.core.proxy
 """
 
-
-
-from tests.mcp_server.test_support import get_default_server_root
 import os
 import sys
 

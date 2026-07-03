@@ -4,8 +4,6 @@
 @dependencies: [pytest, pathlib, mcp_server.tools.git_tools]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 from unittest.mock import ANY, MagicMock
@@ -540,7 +538,7 @@ async def test_git_commit_integration_workflow_phases() -> None:
     mock_adapter = MagicMock()
     mock_adapter.commit.return_value = "integration123"
 
-    loader = ConfigLoader(config_root=Path(".phase-gate/config"))
+    loader = ConfigLoader(config_root=Path(f"{get_default_server_root()}/config"))
     git_config = loader.load_git_config()
     workphases_config = loader.load_workphases_config()
     manager = GitManager(

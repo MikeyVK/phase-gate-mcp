@@ -4,8 +4,6 @@
 @dependencies: [pytest, pathlib, mcp_server.tools.pr_tools]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import asyncio
 from pathlib import Path

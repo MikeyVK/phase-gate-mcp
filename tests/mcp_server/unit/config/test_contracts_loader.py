@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests\mcp_server\unit\config\test_contracts_loader.py
 # template=unit_test version=3d15d309 created=2026-05-02T18:00Z updated=
 """
@@ -99,7 +100,7 @@ def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) 
             "merge_policy": {
                 "pr_allowed_phase": "ready",
                 "branch_local_artifacts": [
-                    {"path": ".phase-gate/state.json", "reason": "branch-local"},
+                    {"path": f"{get_default_server_root()}/state.json", "reason": "branch-local"},
                 ],
             },
             "workflows": enriched,
@@ -115,7 +116,9 @@ def _policy() -> MergePolicy:
     return MergePolicy(
         pr_allowed_phase="ready",
         branch_local_artifacts=[
-            BranchLocalArtifact(path=".phase-gate/state.json", reason="branch-local")
+            BranchLocalArtifact(
+                path=f"{get_default_server_root()}/state.json", reason="branch-local"
+            )
         ],
     )
 

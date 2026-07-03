@@ -10,7 +10,6 @@ Issue #257 Cycle 2 RED:
 @dependencies: pytest, pydantic, json, pathlib, mcp_server.managers.state_repository
 """
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 
@@ -195,7 +194,9 @@ class TestStateRepositoryProtocols:
         self, tmp_path: Path
     ) -> None:
         """FileStateRepository should satisfy both read-only and read-write protocols."""
-        repository = FileStateRepository(state_file=tmp_path / get_default_server_root() / "state.json")
+        repository = FileStateRepository(
+            state_file=tmp_path / get_default_server_root() / "state.json"
+        )
 
         reader = cast(IStateReader, repository)
         writable = cast(IStateRepository, repository)

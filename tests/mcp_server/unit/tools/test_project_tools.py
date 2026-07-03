@@ -15,8 +15,6 @@ Issue #229 Cycle 8: update_planning_deliverables per-phase merge + exit_criteria
 @dependencies: [pytest, pathlib, mcp_server.tools.project_tools]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
@@ -672,9 +670,9 @@ class TestPlanningDeliverablesPhaseSchema:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
-            str(issue_number)
-        ]
+        data = json.loads(
+            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
+        )[str(issue_number)]
         assert "design" in data["planning_deliverables"]
 
     @pytest.mark.asyncio()
@@ -747,9 +745,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
-            str(issue_number)
-        ]
+        data = json.loads(
+            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
+        )[str(issue_number)]
         design_ids = [d["id"] for d in data["planning_deliverables"]["design"]["deliverables"]]
         assert "Des1" in design_ids  # original preserved
         assert "Des2" in design_ids  # new one appended (D8.1)
@@ -881,9 +879,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
-            str(issue_number)
-        ]
+        data = json.loads(
+            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
+        )[str(issue_number)]
         deliverables = data["planning_deliverables"]["design"]["deliverables"]
         by_id = {d["id"]: d for d in deliverables}
         assert by_id["Des1"]["description"] == "updated description"  # overwritten (D8.2)
@@ -919,9 +917,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
-            str(issue_number)
-        ]
+        data = json.loads(
+            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
+        )[str(issue_number)]
         cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
         assert cycle1["exit_criteria"] == "Updated exit criteria"  # (D8.3)
 
@@ -956,9 +954,9 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((workspace_root / get_default_server_root() / "deliverables.json").read_text())[
-            str(issue_number)
-        ]
+        data = json.loads(
+            (workspace_root / get_default_server_root() / "deliverables.json").read_text()
+        )[str(issue_number)]
         cycles = data["planning_deliverables"]["cycles"]["cycles"]
         assert len(cycles) == 2  # original C1 + new C2 appended
         assert cycles[0]["cycle_number"] == 1  # original C1 untouched

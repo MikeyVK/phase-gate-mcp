@@ -4,8 +4,6 @@
 @dependencies: pytest, mcp_server.config.loader, mcp_server.config.schemas
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import time
 from pathlib import Path

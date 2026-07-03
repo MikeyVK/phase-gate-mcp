@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/unit/scaffolders/test_template_scaffolder.py
 """
 Unit tests for TemplateScaffolder.
@@ -31,7 +32,7 @@ from mcp_server.utils.template_config import get_template_root
 @pytest.fixture(name="registry")
 def artifact_registry() -> ArtifactRegistryConfig:
     """Provide artifact registry configuration."""
-    return ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
+    return ConfigLoader(Path(f"{get_default_server_root()}/config")).load_artifact_registry_config()
 
 
 @pytest.fixture(name="real_renderer")

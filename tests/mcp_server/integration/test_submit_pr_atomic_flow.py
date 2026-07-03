@@ -54,11 +54,11 @@ from mcp_server.tools import git_tools
 from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
 
 _STATE_ARTIFACT = BranchLocalArtifact(
-    path=".phase-gate/state.json",
+    path=f"{get_default_server_root()}/state.json",
     reason="branch-local workflow state",
 )
 _DELIVERABLES_ARTIFACT = BranchLocalArtifact(
-    path=".phase-gate/deliverables.json",
+    path=f"{get_default_server_root()}/deliverables.json",
     reason="branch-local deliverables",
 )
 
@@ -302,7 +302,7 @@ class TestSubmitPRNeutralizesQualityState:
         contracts_path = workspace_root / get_default_server_root() / "config" / "contracts.yaml"
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
         artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
-        assert ".phase-gate/quality_state.json" in artifact_paths, (
+        assert f"{get_default_server_root()}/quality_state.json" in artifact_paths, (
             "contracts.yaml must register .phase-gate/quality_state.json as a "
             "branch-local artifact so SubmitPRTool neutralizes it before pushing."
         )
@@ -320,7 +320,7 @@ class TestSubmitPRNeutralizesQualityState:
 
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
         artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
-        assert ".phase-gate/quality_state.json" in artifact_paths, (
+        assert f"{get_default_server_root()}/quality_state.json" in artifact_paths, (
             "quality_state.json must appear in contracts.yaml so server.py wires "
             "it into MergeReadinessContext and SubmitPRTool neutralizes it."
         )
@@ -467,7 +467,10 @@ class TestSubmitPRAtomicRefactored:
         call_args = git_manager.prepare_submission.call_args
         artifact_paths_arg = call_args[0][0] if call_args[0] else call_args[1]["artifact_paths"]
         assert artifact_paths_arg == frozenset(
-            {".phase-gate/state.json", ".phase-gate/deliverables.json"}
+            {
+                f"{get_default_server_root()}/state.json",
+                f"{get_default_server_root()}/deliverables.json",
+            }
         )
 
 

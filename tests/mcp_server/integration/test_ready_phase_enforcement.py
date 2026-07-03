@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/integration/test_ready_phase_enforcement.py
 # template=unit_test version= created=2026-04-09T00:00Z updated=
 """
@@ -48,7 +49,7 @@ from mcp_server.tools.pr_tools import SubmitPRTool
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
-_STATE_JSON = ".phase-gate/state.json"
+_STATE_JSON = f"{get_default_server_root()}/state.json"
 
 
 def _write_state(tmp_path: Path, current_phase: str) -> None:
@@ -85,7 +86,9 @@ def _make_runner(tmp_path: Path) -> EnforcementRunner:
         pr_status_reader=pr_reader,
         context_loaded_reader=context_reader,
         server_root=tmp_path / get_default_server_root(),
-        state_reader=FileStateRepository(state_file=tmp_path / get_default_server_root() / "state.json"),
+        state_reader=FileStateRepository(
+            state_file=tmp_path / get_default_server_root() / "state.json"
+        ),
     )
 
 

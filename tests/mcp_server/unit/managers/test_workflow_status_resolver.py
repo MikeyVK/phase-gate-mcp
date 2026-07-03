@@ -1,6 +1,5 @@
 """Tests for WorkflowStatusResolver (C3: C_RESOLVER_CORE RED phase)."""
 
-
 from __future__ import annotations
 from tests.mcp_server.test_support import get_default_server_root
 

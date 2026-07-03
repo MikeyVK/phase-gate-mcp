@@ -42,8 +42,8 @@ from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
-_STATE_JSON = ".phase-gate/state.json"
-_DELIVERABLES_JSON = ".phase-gate/deliverables.json"
+_STATE_JSON = f"{get_default_server_root()}/state.json"
+_DELIVERABLES_JSON = f"{get_default_server_root()}/deliverables.json"
 
 
 # ---------------------------------------------------------------------------

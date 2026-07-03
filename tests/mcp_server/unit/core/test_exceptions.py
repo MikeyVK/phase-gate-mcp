@@ -8,9 +8,8 @@
   - Ensure ConfigError format includes file_path
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
+
 # Third-party
 import pytest
 
@@ -45,13 +44,13 @@ def test_config_error_with_file_path() -> None:
     """ConfigError formats message with file path."""
     error = ConfigError(
         "Invalid YAML syntax",
-        file_path=".phase-gate/artifacts.yaml",
+        file_path=f"{get_default_server_root()}/artifacts.yaml",
     )
 
     assert "Invalid YAML syntax" in str(error)
-    assert ".phase-gate/artifacts.yaml" in str(error)
+    assert f"{get_default_server_root()}/artifacts.yaml" in str(error)
     assert error.code == "ERR_CONFIG"
-    assert error.file_path == ".phase-gate/artifacts.yaml"
+    assert error.file_path == f"{get_default_server_root()}/artifacts.yaml"
 
 
 def test_config_error_without_file_path() -> None:

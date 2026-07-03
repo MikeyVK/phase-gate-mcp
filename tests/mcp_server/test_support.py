@@ -4,7 +4,6 @@
 @dependencies: shared test helpers, mcp_server managers, scaffolders, and policy components
 """
 
-
 from __future__ import annotations
 
 
@@ -59,8 +58,10 @@ if TYPE_CHECKING:
 def get_default_server_root() -> str:
     """Get the default server root directory name from Settings."""
     from unittest.mock import Mock  # noqa: PLC0415
+
     try:
         from mcp_server.config.settings import Settings  # noqa: PLC0415
+
         settings = Settings.from_env()
         if isinstance(settings, Mock) or isinstance(getattr(settings, "server", None), Mock):
             return ".phase-gate"
@@ -70,6 +71,7 @@ def get_default_server_root() -> str:
         return str(val)
     except Exception:
         return ".phase-gate"
+
 
 class _NopGateRunner:
     """No-op gate runner for unit tests: all gates pass, correct cycle-based detection.

@@ -4,8 +4,6 @@
 @dependencies: [pytest, pathlib, mcp_server.server]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path

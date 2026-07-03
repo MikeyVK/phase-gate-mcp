@@ -13,9 +13,8 @@ using only message, error_code, and file_path. No hints field exists on ToolResu
     - Verify exception constructors reject legacy kwargs
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
+
 # Third-party
 import pytest
 
@@ -85,13 +84,15 @@ class TestToolErrorHandlerC4:
 
         @tool_error_handler
         async def failing_tool() -> ToolResult:
-            raise ConfigError("Invalid YAML", file_path=".phase-gate/config/git.yaml")
+            raise ConfigError(
+                "Invalid YAML", file_path=f"{get_default_server_root()}/config/git.yaml"
+            )
 
         result = await failing_tool()
 
         assert result.is_error
         assert result.error_code == "ERR_CONFIG"
-        assert result.file_path == ".phase-gate/config/git.yaml"
+        assert result.file_path == f"{get_default_server_root()}/config/git.yaml"
         assert "Invalid YAML" in result.content[0]["text"]
 
     @pytest.mark.asyncio

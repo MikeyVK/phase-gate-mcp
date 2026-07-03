@@ -13,8 +13,6 @@ This validates that the dual-mode system works end-to-end across machines.
 @dependencies: [pytest, subprocess, tests.mcp_server.test_support]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 import json
 import subprocess
@@ -125,7 +123,7 @@ class TestIssue39CrossMachine:
 
         # Commit deliverables.json to git (state.json NOT committed - in .gitignore)
         subprocess.run(
-            ["git", "add", ".phase-gate/deliverables.json"],
+            ["git", "add", f"{get_default_server_root()}/deliverables.json"],
             cwd=workspace_root,
             check=True,
             capture_output=True,

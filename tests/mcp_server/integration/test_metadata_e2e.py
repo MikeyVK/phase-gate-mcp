@@ -11,8 +11,6 @@ Using existing DTO template to verify metadata injection works.
 @dependencies: [pytest, pathlib, mcp_server.managers.artifact_manager]
 """
 
-
-
 from tests.mcp_server.test_support import get_default_server_root
 # pyright: basic
 
@@ -179,7 +177,9 @@ class TestMetadataEndToEnd:
 
         # Should return temp file path string
         assert isinstance(result, str)
-        assert result.startswith(get_default_server_root() + str(Path("/")) + "temp" + str(Path("/")))
+        assert result.startswith(
+            get_default_server_root() + str(Path("/")) + "temp" + str(Path("/"))
+        )
         assert "commit_message_" in result
         # Temp file should exist
         temp_file = Path(result)

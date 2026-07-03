@@ -1,4 +1,5 @@
 from tests.mcp_server.test_support import get_default_server_root
+
 # tests\mcp_server\unit\managers\test_phase_contract_resolver_c3.py
 # template=unit_test version=3d15d309 created=2026-05-02T18:35Z updated=
 """
@@ -12,7 +13,8 @@ Unit tests for PhaseConfigContext contracts field rename (issue #271 C3)
     - PhaseConfigContext accepts contracts: ContractsConfig (field renamed)
     - PhaseConfigContext.phase_contracts field no longer exists
     - PhaseContractResolver resolves via contracts field
-    - _PHASE_CONTRACTS_DISPLAY_PATH constant equals '.phase-gate/config/contracts.yaml'
+    - _PHASE_CONTRACTS_DISPLAY_PATH constant equals
+      f"{get_default_server_root()}/config/contracts.yaml"
 """
 
 # Standard library
@@ -42,7 +44,9 @@ def _minimal_contracts() -> ContractsConfig:
         merge_policy=MergePolicy(
             pr_allowed_phase="ready",
             branch_local_artifacts=[
-                BranchLocalArtifact(path=".phase-gate/state.json", reason="branch-local")
+                BranchLocalArtifact(
+                    path=f"{get_default_server_root()}/state.json", reason="branch-local"
+                )
             ],
         ),
         workflows={
