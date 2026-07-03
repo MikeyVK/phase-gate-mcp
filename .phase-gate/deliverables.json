@@ -33,7 +33,7 @@
     "created_at": "2026-07-02T08:25:50.912617+00:00",
     "planning_deliverables": {
       "cycles": {
-        "total": 4,
+        "total": 5,
         "cycles": [
           {
             "cycle_number": 1,
@@ -99,9 +99,28 @@
               {
                 "id": "D4.2",
                 "description": "pyproject.toml registers assets package data and pgmcp script"
+              },
+              {
+                "id": "D4.3",
+                "description": "CLI fails-fast with explicit error if .pgmcp is missing and --init is not provided"
               }
             ],
-            "exit_criteria": "pgmcp --init successfully populates the workspace."
+            "exit_criteria": "pgmcp --init successfully populates the workspace and gracefully handles absence of init."
+          },
+          {
+            "cycle_number": 5,
+            "name": "C_WORKSPACE_MIGRATION",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "Repository's .phase-gate directory renamed to .pgmcp"
+              },
+              {
+                "id": "D5.2",
+                "description": "CI/CD and VS Code configurations are updated for the new path"
+              }
+            ],
+            "exit_criteria": "Project workspace migration is fully complete."
           }
         ]
       }

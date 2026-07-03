@@ -76,7 +76,22 @@ Planning the implementation for Issue #385. The goal is to rename the config roo
 **Success Criteria:**
 - pgmcp --init command flat-copies assets to workspace_root / .pgmcp.
 - CLI gracefully aborts if .pgmcp already exists.
+- CLI fails-fast with an explicit error asking the user to run --init if .pgmcp is missing and --init is not provided.
 - pyproject.toml registers assets package data and pgmcp script.
+
+
+
+### Cycle 5: C_WORKSPACE_MIGRATION
+
+**Goal:** Migrate the project's own configuration folder to the new standard.
+
+**Tests:**
+- None
+
+**Success Criteria:**
+- The repository's .phase-gate/ directory is renamed to .pgmcp/.
+- The MCP server is restarted to pick up the new state directory.
+- CI/CD and local VS Code configurations are updated if they contain hardcoded references.
 
 
 ## Related Documentation
