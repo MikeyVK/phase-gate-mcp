@@ -24,8 +24,9 @@ The package requires a `pgmcp` entry point in `pyproject.toml`, a first-run boot
 
 - **Missing Entry Point:** `pyproject.toml` currently lacks `[project.scripts]` `pgmcp`. Easy fix.
 - **Server Version Logic:** `settings.py` correctly uses `packages_distributions()`, which handles the rename to `phase-gate-mcp` automatically.
-- **Default Root & Configuration Bootstrap:** Currently, the server crashes via `ConfigLoader` if `.phase-gate/` is missing. The agreed strategy requires renaming this root to `.pgmcp/` and using a bundled package resources folder (`mcp_server/assets/`) which gets copied to the workspace *only* when the user runs `pgmcp --init`.
-- **Blast Radius (Tests & Technical Debt):** Over 50 test files currently hardcode `.phase-gate` strings, violating Dependency Injection principles (a leftover from PR #329). This technical debt must be resolved: tests must be refactored to dynamically inject `ServerSettings.server_root_dir` (or equivalent fixtures) rather than using another lazy search-and-replace to `.pgmcp`.
+- **Default Root & Configuration Bootstrap:** Currently, the server crashes via `ConfigLoader` if `.phase-gate/` is missing. The agreed strategy requires renaming this root to `.pgmcp/` and using a bundled package resources folder (`mcp_server/assets/`) which gets copied to the workspace *only* when the user runs `pgmcp --init` as a flat-copy folder.
+- **Blast Radius (Path Coherence):** `mcp_server/utils/template_config.py` and `loader.py` currently bypass `Settings` for path resolution, using legacy probes and environment variables that ignore the workspace root. This breaks Dependency Injection and flat-folder loading. These decoupled probes must be removed; `Settings` must become the single source of truth for `resolved_config_root` and `resolved_template_root`.
+- **Blast Radius (Tests & Technical Debt):** Over 50 test files currently hardcode `.phase-gate` strings, violating Dependency Injection principles (a leftover from PR #329). This technical debt must be resolved: tests must be refactored to dynamically inject `Settings().server.server_root_dir` (or equivalent fixtures) rather than using another lazy search-and-replace to `.pgmcp`.
 - **Blast Radius (Docs/Rules):** The internal agent instructions (like `AGENTS.md`, `imp.agent.md`) still reference `.phase-gate` and must be updated.
 
 ---

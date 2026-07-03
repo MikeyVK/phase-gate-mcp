@@ -2,7 +2,7 @@
   "branch": "feature/385-package-identity-rename-pgmcp-entry-point",
   "issue_number": 385,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -36,6 +36,14 @@
       "human_approval": "true",
       "forced": true,
       "skip_reason": "User requested to investigate further"
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-03T18:44:25.997542+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
