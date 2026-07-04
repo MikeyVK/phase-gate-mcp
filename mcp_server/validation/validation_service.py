@@ -1,4 +1,5 @@
 # mcp_server/validation/validation_service.py
+from __future__ import annotations
 """
 Validation service for orchestrating file validation.
 
@@ -16,7 +17,6 @@ import re
 from pathlib import Path
 
 # Project imports
-from mcp_server.utils.template_config import get_template_root
 from mcp_server.validation.base import BaseValidator
 from mcp_server.validation.layered_template_validator import LayeredTemplateValidator
 from mcp_server.validation.markdown_validator import MarkdownValidator
@@ -40,9 +40,11 @@ class ValidationService:
     - Apply context-specific filtering (test files, fallbacks)
     """
 
-    def __init__(self) -> None:
+    def __init__(self, settings: Settings | None = None) -> None:
         """Initialize validation service and register validators."""
-        self.template_analyzer = TemplateAnalyzer(template_root=get_template_root())
+        from mcp_server.config.settings import Settings  # noqa: PLC0415
+        effective_settings = settings or Settings.from_env()
+        self.template_analyzer = TemplateAnalyzer(template_root=effective_settings.server.resolved_template_root)
         self.setup_validators()
 
     def setup_validators(self) -> None:

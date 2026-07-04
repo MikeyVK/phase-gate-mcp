@@ -54,8 +54,30 @@ class ServerSettings(BaseModel):
     name: str = "phase-gate-mcp"
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
-    server_root_dir: str = ".phase-gate"
+    server_root_dir: str = ".pgmcp"
     logs_dir: str = "logs"
+
+    @property
+    def resolved_server_root(self) -> Path:
+        return Path(self.workspace_root) / self.server_root_dir
+
+    @property
+    def resolved_config_root(self) -> Path:
+        if self.config_root:
+            return Path(self.config_root)
+        custom_root = self.resolved_server_root / "config"
+        if not custom_root.exists():
+            package_root = Path(__file__).resolve().parents[1]
+            return package_root / "assets" / "config"
+        return custom_root
+
+    @property
+    def resolved_template_root(self) -> Path:
+        custom_root = self.resolved_server_root / "templates"
+        if not custom_root.exists():
+            package_root = Path(__file__).resolve().parents[1]
+            return package_root / "assets" / "templates"
+        return custom_root
 
     @computed_field  # type: ignore[prop-decorator]
     @property

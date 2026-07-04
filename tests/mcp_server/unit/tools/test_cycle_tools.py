@@ -10,6 +10,7 @@ from tests.mcp_server.test_support import get_default_server_root
 """
 
 from collections.abc import Awaitable, Callable
+from typing import Any
 from pathlib import Path
 from shutil import copytree
 from unittest.mock import MagicMock, patch
@@ -41,12 +42,46 @@ from tests.mcp_server.test_support import (
 from mcp_server.core.tool_factory import ToolFactory
 
 
-def _get_test_bootstrap_context(settings: object) -> tuple[object, Path]:
-    bootstrapper = ServerBootstrapper(settings)  # type: ignore[arg-type]
+def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
+    workspace_root = Path(settings.server.workspace_root)
+    server_root_dir = getattr(settings.server, "server_root_dir", get_default_server_root())
+    resolved_server_root = workspace_root / server_root_dir
+
+    # Configure resolved paths on mock settings if needed
+    if not hasattr(settings.server, "resolved_server_root") or isinstance(
+        settings.server.resolved_server_root, MagicMock
+    ):
+        settings.server.resolved_server_root = resolved_server_root
+    if not hasattr(settings.server, "resolved_config_root") or isinstance(
+        settings.server.resolved_config_root, MagicMock
+    ):
+        config_dir = (
+            Path(settings.server.config_root)
+            if getattr(settings.server, "config_root", None)
+            else resolved_server_root / "config"
+        )
+        if not config_dir.exists():
+            package_root = Path(__file__).resolve().parents[3]
+            settings.server.resolved_config_root = package_root / "mcp_server" / "assets" / "config"
+        else:
+            settings.server.resolved_config_root = config_dir
+    if not hasattr(settings.server, "resolved_template_root") or isinstance(
+        settings.server.resolved_template_root, MagicMock
+    ):
+        template_dir = resolved_server_root / "templates"
+        if not template_dir.exists():
+            package_root = Path(__file__).resolve().parents[3]
+            settings.server.resolved_template_root = (
+                package_root / "mcp_server" / "assets" / "templates"
+            )
+        else:
+            settings.server.resolved_template_root = template_dir
+
+    bootstrapper = ServerBootstrapper(settings)
     configs = bootstrapper._build_config_layer()  # type: ignore[reportPrivateUsage]
-    workspace_root = Path(settings.server.workspace_root)  # type: ignore[attr-defined]
-    server_root = workspace_root / settings.server.server_root_dir  # type: ignore[attr-defined]
-    template_registry = TemplateRegistry(registry_path=server_root / "template_registry.json")
+    template_registry = TemplateRegistry(
+        registry_path=resolved_server_root / "template_registry.json"
+    )
     managers = bootstrapper._build_manager_graph(configs, template_registry)  # type: ignore[reportPrivateUsage]
     return managers, workspace_root
 
@@ -117,6 +152,10 @@ def _make_transition_advisory_execute(
 class TestCycleTools:
     """Cycle tool rename, injection, and enforcement tests."""
 
+    @pytest.fixture(autouse=True)
+    def _clean_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("MCP_SERVER_PROJECT_DIR", raising=False)
+
     def test_cycle_tools_require_workspace_root_and_define_enforcement_events(
         self,
         tmp_path: Path,
@@ -152,7 +191,7 @@ class TestCycleTools:
     ) -> None:
         """Dispatch post-hook should still run after a successful cycle transition."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
         project_manager = make_project_manager(tmp_path)
         project_manager.initialize_project(
@@ -263,7 +302,7 @@ class TestCycleTools:
     ) -> None:
         """Successful forced cycle transitions append the advisory note after post-hook success."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"
@@ -337,7 +376,7 @@ class TestCycleTools:
     ) -> None:
         """Post-hook errors must not leak the success-path advisory note for cycle transitions."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
         project_manager = make_project_manager(tmp_path)
         project_manager.initialize_project(
@@ -443,7 +482,7 @@ class TestCycleTools:
     ) -> None:
         """Force cycle transitions should fail when post-enforcement raises."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"

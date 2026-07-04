@@ -53,7 +53,7 @@ from tests.mcp_server.test_support import (
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
     shutil.copytree(
-        repo_root / get_default_server_root(),
+        repo_root / ".phase-gate",
         workspace_root / get_default_server_root(),
         dirs_exist_ok=True,
     )
@@ -66,11 +66,32 @@ def _patch_server_settings(
 ) -> None:
     """Configure a Settings class mock for server tests."""
     resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[3])
-    resolved_config_root = str(Path(resolved_workspace_root) / get_default_server_root())
+    server_root_dir = get_default_server_root()
+    resolved_server_root = Path(resolved_workspace_root) / server_root_dir
+
+    # Resolve config root: if local exists, use it, else use package assets
+    config_dir = resolved_server_root / "config"
+    if not config_dir.exists():
+        package_root = Path(__file__).resolve().parents[3]
+        resolved_config_root = package_root / "mcp_server" / "assets" / "config"
+    else:
+        resolved_config_root = config_dir
+
+    # Resolve template root: if local exists, use it, else use package assets
+    template_dir = resolved_server_root / "templates"
+    if not template_dir.exists():
+        package_root = Path(__file__).resolve().parents[3]
+        resolved_template_root = package_root / "mcp_server" / "assets" / "templates"
+    else:
+        resolved_template_root = template_dir
+
     mock.from_env.return_value.server.name = "test-server"
     mock.from_env.return_value.server.workspace_root = resolved_workspace_root
-    mock.from_env.return_value.server.config_root = resolved_config_root
-    mock.from_env.return_value.server.server_root_dir = get_default_server_root()
+    mock.from_env.return_value.server.config_root = None
+    mock.from_env.return_value.server.server_root_dir = server_root_dir
+    mock.from_env.return_value.server.resolved_server_root = resolved_server_root
+    mock.from_env.return_value.server.resolved_config_root = resolved_config_root
+    mock.from_env.return_value.server.resolved_template_root = resolved_template_root
     mock.from_env.return_value.github.token = token
     mock.from_env.return_value.github.owner = "test"
     mock.from_env.return_value.github.repo = "repo"
@@ -339,12 +360,20 @@ class TestServerToolRegistration:
     async def test_call_tool_pre_enforcement_blocks_submit_pr_outside_ready_phase(
         self,
         tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Dispatch pre-hook should return a phase error and never reach GitHub PR creation."""
+        monkeypatch.delenv("MCP_SERVER_PROJECT_DIR", raising=False)
         _bootstrap_workspace_configs(tmp_path)
         _write_phase_state(tmp_path, "documentation")
 
-        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        with (
+            patch("mcp_server.config.settings.Settings") as mock_settings_cls,
+            patch(
+                "mcp_server.managers.enforcement_runner._get_current_git_branch",
+                return_value="refactor/283-ready-phase-enforcement",
+            ),
+        ):
             _patch_server_settings(
                 mock_settings_cls,
                 workspace_root=str(tmp_path),

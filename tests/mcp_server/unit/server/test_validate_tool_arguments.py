@@ -26,12 +26,33 @@ from tests.mcp_server.test_support import make_test_server
 
 
 def _patch_server_settings(mock: MagicMock, workspace_root: str | None = None) -> None:
-    resolved = workspace_root or str(Path(__file__).resolve().parents[4])
-    resolved_cfg = str(Path(resolved) / get_default_server_root())
+    resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[4])
+    server_root_dir = get_default_server_root()
+    resolved_server_root = Path(resolved_workspace_root) / server_root_dir
+
+    # Resolve config root: if local exists, use it, else use package assets
+    config_dir = resolved_server_root / "config"
+    if not config_dir.exists():
+        package_root = Path(__file__).resolve().parents[4]
+        resolved_config_root = package_root / "mcp_server" / "assets" / "config"
+    else:
+        resolved_config_root = config_dir
+
+    # Resolve template root: if local exists, use it, else use package assets
+    template_dir = resolved_server_root / "templates"
+    if not template_dir.exists():
+        package_root = Path(__file__).resolve().parents[4]
+        resolved_template_root = package_root / "mcp_server" / "assets" / "templates"
+    else:
+        resolved_template_root = template_dir
+
     mock.from_env.return_value.server.name = "test-server"
-    mock.from_env.return_value.server.workspace_root = resolved
-    mock.from_env.return_value.server.config_root = resolved_cfg
-    mock.from_env.return_value.server.server_root_dir = get_default_server_root()
+    mock.from_env.return_value.server.workspace_root = resolved_workspace_root
+    mock.from_env.return_value.server.config_root = None
+    mock.from_env.return_value.server.server_root_dir = server_root_dir
+    mock.from_env.return_value.server.resolved_server_root = resolved_server_root
+    mock.from_env.return_value.server.resolved_config_root = resolved_config_root
+    mock.from_env.return_value.server.resolved_template_root = resolved_template_root
     mock.from_env.return_value.github.token = None
     mock.from_env.return_value.github.owner = "test"
     mock.from_env.return_value.github.repo = "test-repo"

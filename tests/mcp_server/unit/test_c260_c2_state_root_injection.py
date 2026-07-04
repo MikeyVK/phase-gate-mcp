@@ -34,7 +34,6 @@ from mcp_server.tools.admin_tools import (
 )
 from mcp_server.tools.cycle_tools import TransitionCycleTool
 from mcp_server.tools.git_tools import build_phase_guard
-from mcp_server.utils import template_config
 
 # ---------------------------------------------------------------------------
 # F1 / normalize_config_root — dir-name-agnostic
@@ -368,34 +367,6 @@ class TestArtifactManagerEphemeralTemp:
             template_registry=TemplateRegistry(registry_path=registry_path),
         )
         assert str(tmp_path) in str(manager.template_registry.registry_path)
-
-
-# ---------------------------------------------------------------------------
-# template_config — no CWD-relative .phase-gate fallback
-# ---------------------------------------------------------------------------
-
-
-class TestTemplateConfigNoCwdPhaseGate:
-    """get_template_root() must not check CWD-relative .phase-gate/templates."""
-
-    def test_does_not_fall_through_to_cwd_dot_phase_gate(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Even if .phase-gate/templates exists in CWD, it must not be used."""
-        phase_gate_templates = tmp_path / get_default_server_root() / "templates"
-        phase_gate_templates.mkdir(parents=True)
-        monkeypatch.chdir(tmp_path)
-
-        # Patch package root to not exist so we can test isolation
-        # Actually: package templates ALWAYS exist, so the function should return those
-        # not the .phase-gate/templates fallback. We verify package templates are returned.
-        with patch.dict(os.environ, {}, clear=False):
-            if "TEMPLATE_ROOT" in os.environ:
-                del os.environ["TEMPLATE_ROOT"]
-            result = template_config.get_template_root()
-
-        # Must return package templates, not .phase-gate/templates
-        assert "scaffolding" in str(result), f"Expected scaffolding path, got: {result}"
 
 
 # ---------------------------------------------------------------------------

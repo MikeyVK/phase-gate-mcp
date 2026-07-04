@@ -17,8 +17,7 @@ class StandardsResource(BaseResource):
     async def read(self, uri: str) -> str:  # noqa: ARG002
         """Read coding standards from the canonical quality config."""
         settings = Settings.from_env()
-        server_root = Path(settings.server.workspace_root) / settings.server.server_root_dir
-        config_root = server_root / "config"
+        config_root = settings.server.resolved_config_root
         quality_config = ConfigLoader(config_root).load_quality_config()
 
         standards = {

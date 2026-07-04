@@ -12,7 +12,7 @@ This approach tests behavior, not implementation details, making tests:
 @layer: Tests (Unit - Behavioral)
 """
 
-from tests.mcp_server.test_support import get_default_server_root
+from tests.mcp_server.test_support import get_default_server_root, get_template_root
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -22,7 +22,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ArtifactDefinition, ArtifactRegistryConfig
 from mcp_server.core.exceptions import ValidationError
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
-from mcp_server.utils.template_config import get_template_root
+from mcp_server.scaffolding.renderer import JinjaRenderer
 
 
 class TestServiceTemplateResolution:
@@ -34,7 +34,8 @@ class TestServiceTemplateResolution:
         registry = ConfigLoader(
             Path(f"{get_default_server_root()}/config")
         ).load_artifact_registry_config()
-        scaffolder = TemplateScaffolder(registry=registry)
+        renderer = JinjaRenderer(template_dir=get_template_root())
+        scaffolder = TemplateScaffolder(registry=registry, renderer=renderer)
         # Act: Scaffold service (should use artifacts.yaml template)
         result = scaffolder.scaffold(
             artifact_type="service",
@@ -67,7 +68,8 @@ class TestGenericTemplateResolution:
         registry = ConfigLoader(
             Path(f"{get_default_server_root()}/config")
         ).load_artifact_registry_config()
-        scaffolder = TemplateScaffolder(registry=registry)
+        renderer = JinjaRenderer(template_dir=get_template_root())
+        scaffolder = TemplateScaffolder(registry=registry, renderer=renderer)
         # Act: Scaffold generic WITHOUT template_name (use default)
         result = scaffolder.scaffold(
             artifact_type="generic",
@@ -87,9 +89,10 @@ class TestGenericTemplateResolution:
         registry = ConfigLoader(
             Path(f"{get_default_server_root()}/config")
         ).load_artifact_registry_config()
-        scaffolder = TemplateScaffolder(registry=registry)
+        renderer = JinjaRenderer(template_dir=get_template_root())
+        scaffolder = TemplateScaffolder(registry=registry, renderer=renderer)
         # Get template root and create custom template
-        template_root = Path(get_template_root())
+        template_root = get_template_root()
         custom_dir = template_root / "test_custom"
         custom_dir.mkdir(exist_ok=True)
         custom_template = custom_dir / "special_component.py.jinja2"

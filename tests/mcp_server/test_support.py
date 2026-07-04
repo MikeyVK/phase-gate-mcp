@@ -59,18 +59,33 @@ def get_default_server_root() -> str:
     """Get the default server root directory name from Settings."""
     from unittest.mock import Mock  # noqa: PLC0415
 
+    project_root = Path(__file__).resolve().parents[2]
+    fallback_dir = ".phase-gate" if (project_root / ".phase-gate").exists() else ".pgmcp"
+
     try:
         from mcp_server.config.settings import Settings  # noqa: PLC0415
 
         settings = Settings.from_env()
         if isinstance(settings, Mock) or isinstance(getattr(settings, "server", None), Mock):
-            return ".phase-gate"
+            return fallback_dir
         val = settings.server.server_root_dir
         if isinstance(val, Mock):
+            return fallback_dir
+
+        # If the value returned is the default ".pgmcp", but physical ".phase-gate" exists,
+        # return ".phase-gate" to bridge the gap during testing.
+        if str(val) == ".pgmcp" and fallback_dir == ".phase-gate":
             return ".phase-gate"
+
         return str(val)
     except Exception:
-        return ".phase-gate"
+        return fallback_dir
+
+
+def get_template_root() -> Path:
+    """Get the template root directory for testing packaged templates."""
+    project_root = Path(__file__).resolve().parents[2]
+    return project_root / "mcp_server" / "assets" / "templates"
 
 
 class _NopGateRunner:
