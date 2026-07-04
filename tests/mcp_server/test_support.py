@@ -60,7 +60,7 @@ def get_default_server_root() -> str:
     from unittest.mock import Mock  # noqa: PLC0415
 
     project_root = Path(__file__).resolve().parents[2]
-    fallback_dir = ".phase-gate" if (project_root / ".phase-gate").exists() else ".pgmcp"
+    fallback_dir = ".phase-gate" if (project_root / ".phase-gate" / "config").exists() else ".pgmcp"
 
     try:
         from mcp_server.config.settings import Settings  # noqa: PLC0415

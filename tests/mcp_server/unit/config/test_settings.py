@@ -124,14 +124,14 @@ def test_state_dir_default_is_pgmcp() -> None:
 
 def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """C3 RED: MCP_SERVER_PROJECT_DIR env var must override server_root_dir."""
-    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".phase-gate")
+    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".custom-gate")
     monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
     monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
     monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
 
     s = Settings.from_env()
-    assert s.server.server_root_dir == ".phase-gate"
+    assert s.server.server_root_dir == ".custom-gate"
 
 
 # ---------------------------------------------------------------------------

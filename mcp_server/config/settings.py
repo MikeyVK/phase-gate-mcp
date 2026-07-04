@@ -123,7 +123,16 @@ class Settings(BaseModel):
         if env_workspace_root := os.environ.get("MCP_WORKSPACE_ROOT"):
             server_data["workspace_root"] = env_workspace_root
         if env_project_dir := os.environ.get("MCP_SERVER_PROJECT_DIR"):
-            server_data["server_root_dir"] = env_project_dir
+            workspace_root = server_data.get("workspace_root", os.getcwd())
+            project_root = Path(workspace_root)
+            if (
+                env_project_dir == ".phase-gate"
+                and not (project_root / ".phase-gate" / "state.json").exists()
+                and (project_root / ".pgmcp" / "state.json").exists()
+            ):
+                server_data["server_root_dir"] = ".pgmcp"
+            else:
+                server_data["server_root_dir"] = env_project_dir
         if env_logs_dir := os.environ.get("MCP_LOGS_DIR"):
             server_data["logs_dir"] = env_logs_dir
         if env_config_root := os.environ.get("MCP_CONFIG_ROOT"):

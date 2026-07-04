@@ -53,7 +53,7 @@ from tests.mcp_server.test_support import (
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
     shutil.copytree(
-        repo_root / ".phase-gate",
+        repo_root / get_default_server_root(),
         workspace_root / get_default_server_root(),
         dirs_exist_ok=True,
     )

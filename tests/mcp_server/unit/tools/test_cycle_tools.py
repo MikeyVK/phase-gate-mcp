@@ -191,7 +191,7 @@ class TestCycleTools:
     ) -> None:
         """Dispatch post-hook should still run after a successful cycle transition."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
 
         project_manager = make_project_manager(tmp_path)
         project_manager.initialize_project(
@@ -302,7 +302,7 @@ class TestCycleTools:
     ) -> None:
         """Successful forced cycle transitions append the advisory note after post-hook success."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"
@@ -376,7 +376,7 @@ class TestCycleTools:
     ) -> None:
         """Post-hook errors must not leak the success-path advisory note for cycle transitions."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
 
         project_manager = make_project_manager(tmp_path)
         project_manager.initialize_project(
@@ -482,7 +482,7 @@ class TestCycleTools:
     ) -> None:
         """Force cycle transitions should fail when post-enforcement raises."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        copytree(Path.cwd() / ".phase-gate" / "config", config_dir, dirs_exist_ok=True)
+        copytree(Path.cwd() / get_default_server_root() / "config", config_dir, dirs_exist_ok=True)
 
         with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
             mock_settings_cls.from_env.return_value.server.name = "test-server"

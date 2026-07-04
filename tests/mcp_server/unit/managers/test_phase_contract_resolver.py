@@ -212,7 +212,7 @@ class TestPhaseConfigContext:
 
         assert exc_info.value.file_path is not None
         assert exc_info.value.file_path.replace("\\", "/").endswith(
-            "/.phase-gate/config/contracts.yaml"
+            f"/{get_default_server_root()}/config/contracts.yaml"
         )
 
     def test_loader_applies_defaults_for_optional_phase_fields(self, tmp_path: Path) -> None:

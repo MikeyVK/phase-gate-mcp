@@ -178,7 +178,7 @@ directories:
     allowed_artifact_types:
       - reference
 
-  .phase-gate:
+  .pgmcp:
     parent: null
     description: "Platform configuration"
     allowed_artifact_types: []
