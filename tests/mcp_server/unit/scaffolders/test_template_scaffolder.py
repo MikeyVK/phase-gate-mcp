@@ -181,6 +181,7 @@ class TestValidate:
 
         assert result is True
 
+
 class TestScaffold:
     """Test scaffold method."""
 
