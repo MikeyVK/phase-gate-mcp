@@ -181,7 +181,7 @@ def resolve_config_root(
     with the legacy .phase-gate layout, so we fall through to that candidate before
     giving up and using the canonical project config.
     """
-    _project_config = Path(__file__).resolve().parents[2] / get_default_server_root() / "config"
+    _project_config = Path(__file__).resolve().parents[2] / "mcp_server" / "assets" / "config"
     if workspace_root is None:
         return _project_config
     try:
