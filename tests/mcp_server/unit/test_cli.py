@@ -51,3 +51,85 @@ def test_cli_run() -> None:
         main()
         mock_bootstrapper_instance.bootstrap.assert_called_once()
         mock_asyncio_run.assert_called_once_with(mock_server.run())
+
+
+def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that --init copies assets to resolved_server_root."""
+    from pathlib import Path
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    
+    from mcp_server.config.settings import Settings
+    settings = Settings(
+        workspace_root=str(workspace),
+        server_root_dir=".pgmcp",
+    )
+    
+    with (
+        patch("sys.argv", ["mcp-server", "--init"]),
+        patch("sys.exit") as mock_exit,
+    ):
+        mock_exit.side_effect = SystemExit(0)
+        with contextlib.suppress(SystemExit):
+            main(settings)
+            
+        mock_exit.assert_called_with(0)
+        
+    server_root = workspace / ".pgmcp"
+    assert (server_root / "config").exists()
+    assert (server_root / "templates").exists()
+    assert (server_root / "config" / "workflows.yaml").exists()
+
+
+def test_cli_fails_fast_when_state_dir_missing(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that CLI exits with error if .pgmcp directory is missing."""
+    from pathlib import Path
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    
+    from mcp_server.config.settings import Settings
+    settings = Settings(
+        workspace_root=str(workspace),
+        server_root_dir=".pgmcp",
+    )
+    
+    with (
+        patch("sys.argv", ["mcp-server"]),
+        patch("sys.exit") as mock_exit,
+    ):
+        mock_exit.side_effect = SystemExit(1)
+        with contextlib.suppress(SystemExit):
+            main(settings)
+            
+        mock_exit.assert_called_with(1)
+        
+    captured = capsys.readouterr()
+    assert "Please run with --init to initialize" in captured.err or "Please run with --init to initialize" in captured.out
+
+
+def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that --init gracefully aborts if .pgmcp already exists."""
+    from pathlib import Path
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    server_root = workspace / ".pgmcp"
+    server_root.mkdir()
+    
+    from mcp_server.config.settings import Settings
+    settings = Settings(
+        workspace_root=str(workspace),
+        server_root_dir=".pgmcp",
+    )
+    
+    with (
+        patch("sys.argv", ["mcp-server", "--init"]),
+        patch("sys.exit") as mock_exit,
+    ):
+        mock_exit.side_effect = SystemExit(1)
+        with contextlib.suppress(SystemExit):
+            main(settings)
+            
+        mock_exit.assert_called_with(1)
+        
+    captured = capsys.readouterr()
+    assert "already exists" in captured.err or "already exists" in captured.out
