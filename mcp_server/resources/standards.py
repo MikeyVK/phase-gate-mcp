@@ -1,7 +1,6 @@
 """Resource for coding standards."""
 
 import json
-from pathlib import Path
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.settings import Settings

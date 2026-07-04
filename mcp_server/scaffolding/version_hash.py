@@ -10,7 +10,6 @@ import re
 from pathlib import Path
 
 
-
 def extract_template_version(template_path: Path) -> str:
     """
     Extract version from template TEMPLATE_METADATA.
@@ -92,6 +91,7 @@ def compute_version_hash(
     # Get template root for version extraction
     if template_root is None:
         from mcp_server.config.settings import Settings  # noqa: PLC0415
+
         template_root = Settings.from_env().server.resolved_template_root
     # Build full chain (parents + concrete)
     full_chain = list(tier_chain)  # Copy to avoid mutation

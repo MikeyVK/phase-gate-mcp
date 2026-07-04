@@ -1,5 +1,6 @@
 # mcp_server/scaffolders/template_scaffolder.py
 from __future__ import annotations
+
 """
 TemplateScaffolder - Unified template-based artifact scaffolding.
 
@@ -35,7 +36,7 @@ from mcp_server.schemas import ArtifactRegistryConfig
 
 # Project modules
 if TYPE_CHECKING:
-    pass  # TYPE_CHECKING block for future type-only imports
+    from mcp_server.config.settings import Settings
 
 
 class TemplateScaffolder(BaseScaffolder):
@@ -54,10 +55,12 @@ class TemplateScaffolder(BaseScaffolder):
         # Initialize renderer with configurable template root (fail-fast)
         if renderer is None:
             from mcp_server.config.settings import Settings  # noqa: PLC0415
+
             effective_settings = settings or Settings.from_env()
             template_dir = effective_settings.server.resolved_template_root
             renderer = JinjaRenderer(template_dir=template_dir)
         self._renderer = renderer
+
     @property
     def renderer(self) -> JinjaRenderer:
         """Get the template renderer."""

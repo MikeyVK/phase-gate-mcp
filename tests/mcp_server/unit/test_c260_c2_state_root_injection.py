@@ -12,7 +12,6 @@ from tests.mcp_server.test_support import get_default_server_root
 
 import inspect
 import json
-import os
 import shutil
 from pathlib import Path
 from unittest.mock import MagicMock, patch
