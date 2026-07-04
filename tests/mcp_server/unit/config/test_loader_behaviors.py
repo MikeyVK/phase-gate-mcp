@@ -79,13 +79,13 @@ def test_resolve_config_root_uses_preferred_workspace_root(tmp_path: Path) -> No
     config_root = workspace_root / get_default_server_root() / "config"
     _write_yaml(config_root / "git.yaml", "branch_types: []\n")
 
-    assert (
+    # Since C3 strips _probe_candidates,resolve_config_root will not look in .phase-gate/config/
+    # and should raise FileNotFoundError.
+    with pytest.raises(FileNotFoundError, match="Could not locate canonical phase-gate config"):
         resolve_config_root(
             preferred_root=workspace_root,
             required_files=("git.yaml",),
         )
-        == config_root.resolve()
-    )
 
 
 def test_resolve_config_root_returns_explicit_root_when_required_files_exist(

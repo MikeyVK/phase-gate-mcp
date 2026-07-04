@@ -3,14 +3,20 @@
   "issue_number": 385,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 2,
-  "last_cycle": 1,
+  "current_cycle": 3,
+  "last_cycle": 2,
   "cycle_history": [
     {
       "cycle_number": 2,
       "name": "C_ARCH_FOUNDATION",
       "forced": false,
       "entered": "2026-07-03T21:09:17.727087+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "C_LOADER_PROBES",
+      "forced": false,
+      "entered": "2026-07-04T06:34:07.935519+00:00"
     }
   ],
   "required_phases": [
@@ -70,5 +76,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
