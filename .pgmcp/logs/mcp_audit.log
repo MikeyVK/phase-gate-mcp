@@ -2549,3 +2549,375 @@
 {"timestamp": "2026-07-04 08:36:01,471", "level": "WARNING", "logger": "mcp_server.tools.git", "message": "Phase state sync failed after checkout", "branch": "feature/456-test", "error": "State sync failed"}
 {"timestamp": "2026-07-04 08:36:01,471", "level": "WARNING", "logger": "mcp_server.tools.git", "message": "Phase state sync failed after checkout", "branch": "feature/456-test", "error": "State sync failed"}
 {"timestamp": "2026-07-04 08:36:01,471", "level": "WARNING", "logger": "mcp_server.tools.git", "message": "Phase state sync failed after checkout", "branch": "feature/456-test", "error": "State sync failed"}
+{"timestamp": "2026-07-04 08:37:43,775", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:37:43,776", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:37:43,777", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:37:44,239", "level": "INFO", "logger": "mcp_server.server", "message": "Starting MCP server: phase-gate-mcp"}
+{"timestamp": "2026-07-04 08:37:44,239", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server running"}
+{"timestamp": "2026-07-04 08:37:44,250", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server shutting down"}
+{"timestamp": "2026-07-04 08:37:58,750", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:37:58,751", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:37:58,751", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:37:59,262", "level": "INFO", "logger": "mcp_server.server", "message": "Starting MCP server: phase-gate-mcp"}
+{"timestamp": "2026-07-04 08:37:59,262", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server running"}
+{"timestamp": "2026-07-04 08:37:59,267", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server shutting down"}
+{"timestamp": "2026-07-04 08:38:09,751", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:38:09,752", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:38:09,752", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:38:10,194", "level": "INFO", "logger": "mcp_server.server", "message": "Starting MCP server: phase-gate-mcp"}
+{"timestamp": "2026-07-04 08:38:10,194", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server running"}
+{"timestamp": "2026-07-04 08:38:10,199", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server shutting down"}
+{"timestamp": "2026-07-04 08:38:19,992", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:38:19,993", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:38:19,993", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:38:20,294", "level": "INFO", "logger": "mcp_server.server", "message": "Starting MCP server: phase-gate-mcp"}
+{"timestamp": "2026-07-04 08:38:20,294", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server running"}
+{"timestamp": "2026-07-04 08:38:20,299", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server shutting down"}
+{"timestamp": "2026-07-04 08:42:19,734", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:19,735", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:19,735", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:20,197", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:20,197", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:20,197", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:20,197", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:20,198", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:20,198", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:20,760", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:20,760", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:20,760", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:20,761", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:20,761", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:20,761", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: c:\\temp\\pgmcp\\.pgmcp\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:20,761", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:20,761", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:20,761", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:21,264", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:21,264", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:21,264", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:21,271", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:21,271", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:21,271", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:21,786", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:21,786", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:21,786", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:21,787", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:21,787", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:21,787", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:22,231", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:22,231", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:22,231", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:22,232", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:22,232", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:22,232", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:22,724", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:22,724", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:22,724", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:22,725", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:22,725", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:22,725", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:23,182", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:23,182", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:23,182", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:23,183", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:23,183", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:23,183", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:23,629", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:23,629", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:23,629", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:23,630", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:23,630", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:23,630", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:24,119", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:24,119", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:24,119", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:24,121", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:24,121", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:24,121", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:28,493", "level": "WARNING", "logger": "mcp_server.tools.git_pull", "message": "Phase state sync failed after pull", "error": "PhaseStateEngine must be injected for git_pull"}
+{"timestamp": "2026-07-04 08:42:28,493", "level": "WARNING", "logger": "mcp_server.tools.git_pull", "message": "Phase state sync failed after pull", "error": "PhaseStateEngine must be injected for git_pull"}
+{"timestamp": "2026-07-04 08:42:28,493", "level": "WARNING", "logger": "mcp_server.tools.git_pull", "message": "Phase state sync failed after pull", "error": "PhaseStateEngine must be injected for git_pull"}
+{"timestamp": "2026-07-04 08:42:28,553", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/268-phase-reset-test'..."}
+{"timestamp": "2026-07-04 08:42:28,553", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/268-phase-reset-test'..."}
+{"timestamp": "2026-07-04 08:42:28,553", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/268-phase-reset-test'..."}
+{"timestamp": "2026-07-04 08:42:28,821", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:28,821", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:28,821", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:28,822", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:28,822", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:28,822", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:28,823", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=268, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:28,823", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=268, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:28,823", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=268, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:30,300", "level": "WARNING", "logger": "mcp_server.managers.quality_state_repository", "message": "quality_state.json malformed; returning default state"}
+{"timestamp": "2026-07-04 08:42:30,300", "level": "WARNING", "logger": "mcp_server.managers.quality_state_repository", "message": "quality_state.json malformed; returning default state"}
+{"timestamp": "2026-07-04 08:42:30,300", "level": "WARNING", "logger": "mcp_server.managers.quality_state_repository", "message": "quality_state.json malformed; returning default state"}
+{"timestamp": "2026-07-04 08:42:31,580", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/257-reorder-workflow-phases'..."}
+{"timestamp": "2026-07-04 08:42:31,580", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/257-reorder-workflow-phases'..."}
+{"timestamp": "2026-07-04 08:42:31,580", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/257-reorder-workflow-phases'..."}
+{"timestamp": "2026-07-04 08:42:31,699", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:31,699", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:31,699", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:31,699", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:31,699", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:31,699", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:31,700", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=257, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:31,700", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=257, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:31,700", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=257, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:32,111", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,111", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,111", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,451", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,451", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,451", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,765", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,765", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:32,765", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:33,087", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:33,087", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:33,087", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/worker_v2.py.jinja2), using template concrete/worker.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:33,605", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/tool_v2.py.jinja2), using template concrete/tool.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:33,605", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/tool_v2.py.jinja2), using template concrete/tool.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:33,605", "level": "INFO", "logger": "mcp_server.managers.artifact_manager", "message": "Schema pipeline: template not found (concrete/tool_v2.py.jinja2), using template concrete/tool.py.jinja2"}
+{"timestamp": "2026-07-04 08:42:45,073", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:45,073", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:45,073", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:45,552", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:45,552", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:45,552", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:45,553", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_post_enforcemen0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:45,553", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_post_enforcemen0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:45,553", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_post_enforcemen0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:45,555", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:45,555", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:45,555", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:47,052", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:47,052", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:47,052", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:47,055", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_post_enforcemen1\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:47,055", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_post_enforcemen1\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:47,055", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_post_enforcemen1\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:47,057", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:47,057", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:47,057", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:48,043", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/257-reorder-workflow-phases'..."}
+{"timestamp": "2026-07-04 08:42:48,043", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/257-reorder-workflow-phases'..."}
+{"timestamp": "2026-07-04 08:42:48,043", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/257-reorder-workflow-phases'..."}
+{"timestamp": "2026-07-04 08:42:48,184", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:48,184", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:48,184", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:48,185", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:48,185", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:48,185", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: research"}
+{"timestamp": "2026-07-04 08:42:48,186", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=257, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:48,186", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=257, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:48,186", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=257, phase=research, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:48,870", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:48,870", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:48,870", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:48,873", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_transition_cycl0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:48,873", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_transition_cycl0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:48,873", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_transition_cycl0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:48,875", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:48,875", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:48,875", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:49,941", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:49,941", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:49,941", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "MCP server starting via bootstrapper"}
+{"timestamp": "2026-07-04 08:42:49,942", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_force_cycle_pos0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:49,942", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_force_cycle_pos0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:49,942", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Bootstrapping template registry: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4724\\popen-gw1\\test_call_tool_force_cycle_pos0\\.phase-gate\\template_registry.json"}
+{"timestamp": "2026-07-04 08:42:49,944", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:49,944", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:49,944", "level": "INFO", "logger": "mcp_server.server_lifecycle", "message": "Template registry initialized"}
+{"timestamp": "2026-07-04 08:42:50,691", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:50,691", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:50,691", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:50,799", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:50,799", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:50,799", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:50,801", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:50,801", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:50,801", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:50,802", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:50,802", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:50,802", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,030", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,030", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,030", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,150", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,150", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,150", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,151", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,151", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,151", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,152", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,152", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,152", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,456", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,456", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,456", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,616", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,616", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,616", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,618", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,618", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,618", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,619", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,619", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,619", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,809", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,809", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,809", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:51,992", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,992", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,992", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:51,993", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,993", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,993", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:51,994", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,994", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:51,994", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:52,979", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:52,979", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:52,979", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:53,102", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:53,102", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:53,102", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:53,103", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:53,103", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:53,103", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:53,104", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:53,104", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:53,104", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:54,187", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:54,187", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:54,187", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:54,330", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:54,330", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:54,330", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:54,331", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:54,331", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:54,331", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:54,332", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:54,332", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:54,332", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:55,622", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:55,622", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:55,622", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:55,764", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:55,764", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:55,764", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:55,766", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:55,766", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:55,766", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:55,767", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:55,767", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:55,767", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:55,949", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:55,949", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:55,949", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:56,050", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:56,050", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:56,050", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:56,051", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:56,051", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:56,051", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:56,052", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:56,052", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:56,052", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:56,746", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:56,746", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:56,746", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:56,886", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:56,886", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:56,886", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:56,888", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:56,888", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:56,888", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:56,889", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:56,889", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:56,889", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:57,906", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:57,906", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:57,906", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:58,030", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:58,030", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:58,030", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:58,032", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:58,032", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:58,032", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:58,033", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:58,033", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:58,033", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:59,473", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:59,473", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:59,473", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:42:59,579", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:59,579", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:59,579", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:42:59,581", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:59,581", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:59,581", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:42:59,581", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:59,581", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:42:59,581", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:00,727", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:00,727", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:00,727", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:00,844", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:00,844", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:00,844", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:00,845", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:00,845", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:00,845", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:00,846", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:00,846", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:00,846", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:01,783", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:01,783", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:01,783", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:01,869", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:01,869", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:01,869", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:01,871", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:01,871", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:01,871", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:01,872", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:01,872", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:01,872", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:02,589", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,589", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,589", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,658", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:02,658", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:02,658", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:02,659", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:02,659", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:02,659", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:02,660", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:02,660", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:02,660", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:02,777", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,777", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,777", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,844", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:02,844", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:02,844", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:02,845", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:02,845", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:02,845", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:02,846", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:02,846", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:02,846", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:02,960", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,960", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:02,960", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructing state for branch 'feature/146-tdd-cycle-tracking'..."}
+{"timestamp": "2026-07-04 08:43:03,030", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:03,030", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:03,030", "level": "WARNING", "logger": "mcp_server.managers.state_reconstructor", "message": "Git command failed during phase detection: Git log failed: fatal: not a git repository (or any of the parent directories): .git\n"}
+{"timestamp": "2026-07-04 08:43:03,031", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:03,031", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:03,031", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "No valid phase detected, using fallback: implementation"}
+{"timestamp": "2026-07-04 08:43:03,032", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:03,032", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}
+{"timestamp": "2026-07-04 08:43:03,032", "level": "INFO", "logger": "mcp_server.managers.state_reconstructor", "message": "Reconstructed state: issue=146, phase=implementation, workflow=feature, parent=None"}

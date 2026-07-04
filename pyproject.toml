@@ -14,6 +14,9 @@ dependencies = [
     "PyGithub>=2.0.0",
 ]
 
+[project.scripts]
+pgmcp = "mcp_server.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
@@ -34,7 +37,7 @@ where = ["."]
 include = ["mcp_server*"]
 
 [tool.setuptools.package-data]
-mcp_server = ["scaffolding/templates/**/*"]
+mcp_server = ["assets/**/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
