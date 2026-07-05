@@ -396,7 +396,7 @@ cache update in a single operation.
 | `title` | `str` | **Yes** | PR title (Unicode-safe) |
 | `body` | `str` | No | PR description (supports Markdown and Unicode) |
 | `head` | `str` | **Yes** | Source branch (e.g., `"feature/123-my-feature"`) |
-| `base` | `str` | No | Target branch. Resolution chain when omitted: (1) detected parent branch from `.phase-gate/state.json`, (2) `git_config.default_base_branch` (typically `"main"`). Pass explicitly to override. |
+| `base` | `str` | No | Target branch. Resolution chain when omitted: (1) detected parent branch from `.pgmcp/state.json`, (2) `git_config.default_base_branch` (typically `"main"`). Pass explicitly to override. |
 | `draft` | `bool` | No | Create as draft PR (default: `False`) |
 
 
@@ -404,7 +404,7 @@ cache update in a single operation.
 
 When `base` is omitted, `submit_pr` resolves the target branch in this order:
 
-1. **Parent branch detection:** Look up the parent branch for the source branch from `.phase-gate/state.json` via `IBranchParentReader`.
+1. **Parent branch detection:** Look up the parent branch for the source branch from `.pgmcp/state.json` via `IBranchParentReader`.
 2. **Fallback:** Use `git_config.default_base_branch` (typically `"main"`).
 
 This allows epic child branches (e.g., `bug/357-...` branched from `epic/320-...`) to automatically target their epic parent rather than `main`. Pass `base` explicitly to override the entire chain.
@@ -449,16 +449,16 @@ never reach `main`:
 
 | Artifact | Path | Reason |
 |----------|------|--------|
-| Workflow state | `.phase-gate/state.json` | Branch-local TDD phase tracking |
-| Deliverables | `.phase-gate/deliverables.json` | Branch-local planning deliverables |
+| Workflow state | `.pgmcp/state.json` | Branch-local TDD phase tracking |
+| Deliverables | `.pgmcp/deliverables.json` | Branch-local planning deliverables |
 
-Configured in `.phase-gate/config/contracts.yaml` → `branch_local_artifacts`.
+Configured in `.pgmcp/config/contracts.yaml` → `branch_local_artifacts`.
 
 #### Enforcement Guards
 
 `submit_pr` is subject to enforcement checks and internal preflights:
 
-**Enforcement runner** (`.phase-gate/config/enforcement.yaml`, runs before execution):
+**Enforcement runner** (`.pgmcp/config/enforcement.yaml`, runs before execution):
 1. **`check_phase_readiness`** — blocks unless `state.json` shows `current_phase == "ready"`.
    Produces a `suggestion` note with `transition_phase(to_phase="ready")`.
 2. **`check_pr_status`** (via dynamic `branch_mutating` category configuration) — blocks if the branch already has
@@ -787,7 +787,7 @@ Create a new label in the repository. Validates against `LabelConfig` patterns.
 
 #### Behavior Notes
 
-- **LabelConfig Validation:** Validates name against patterns in [.phase-gate/labels.yaml](../../../../.phase-gate/labels.yaml)
+- **LabelConfig Validation:** Validates name against patterns in [.pgmcp/labels.yaml](../../../../.pgmcp/labels.yaml)
 - **Duplicate Check:** Returns error if label already exists
 - **Color Format:** Must be 6-character hex WITHOUT `#` (validated by Pydantic)
 
@@ -1133,12 +1133,12 @@ All GitHub tools fully support Unicode content including emojis, non-ASCII chara
 
 ## Configuration
 
-### .phase-gate/labels.yaml
+### .pgmcp/labels.yaml
 
-Labels created via `create_label` are validated against patterns in [.phase-gate/labels.yaml](../../../../.phase-gate/labels.yaml):
+Labels created via `create_label` are validated against patterns in [.pgmcp/labels.yaml](../../../../.pgmcp/labels.yaml):
 
 ```yaml
-# Labels are defined in .phase-gate/config/labels.yaml
+# Labels are defined in .pgmcp/config/labels.yaml
 # See the file for the full list — key categories:
 #
 # labels:              # Named labels (type:*, priority:*, scope:*)
@@ -1155,7 +1155,7 @@ Labels matching `freeform-*` pattern bypass pattern validation.
 
 - [README.md](README.md) — MCP Tools navigation index
 - [project.md](project.md) — Project initialization and phase management
-- [.phase-gate/labels.yaml](../../../../.phase-gate/labels.yaml) — Label configuration
+- [.pgmcp/labels.yaml](../../../../.pgmcp/labels.yaml) — Label configuration
 - [docs/development/issue19/research.md](../../../development/issue19/research.md) — Tool inventory research (Section 1.4-1.7: GitHub tools)
 
 ---

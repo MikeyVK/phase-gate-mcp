@@ -24,7 +24,7 @@ configuration.
 
 ```
 MCP_WORKSPACE_ROOT          (default: cwd)
-└── MCP_SERVER_PROJECT_DIR  (default: .phase-gate)    → server_root
+└── MCP_SERVER_PROJECT_DIR  (default: .pgmcp)         → server_root
     ├── config/                                        → config_root  (always server_root/config)
     └── MCP_LOGS_DIR        (default: logs)            → logs_dir
         ├── mcp_audit.log                              → audit log    (LOG_LEVEL controls verbosity)
@@ -34,7 +34,7 @@ MCP_WORKSPACE_ROOT          (default: cwd)
 | Path segment | Environment variable | Default |
 |---|---|---|
 | `workspace_root` | `MCP_WORKSPACE_ROOT` | `os.getcwd()` |
-| `server_root` | `MCP_SERVER_PROJECT_DIR` | `.phase-gate` |
+| `server_root` | `MCP_SERVER_PROJECT_DIR` | `.pgmcp` |
 | `logs_dir` | `MCP_LOGS_DIR` | `logs` |
 
 ---
@@ -46,7 +46,7 @@ MCP_WORKSPACE_ROOT          (default: cwd)
 | Variable | Model field | Default | Description |
 |---|---|---|---|
 | `MCP_WORKSPACE_ROOT` | `server.workspace_root` | `os.getcwd()` | Repository root. All relative paths resolve from here. |
-| `MCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.phase-gate` | Sub-directory under workspace_root for all server data. |
+| `MCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.pgmcp` | Sub-directory under workspace_root for all server data. |
 | `MCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
 | `MCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
 
@@ -85,7 +85,7 @@ settings: Settings = Settings.from_env()
 |---|---|---|---|
 | `name` | `str` | `MCP_SERVER_NAME` | `"phase-gate-mcp"` |
 | `workspace_root` | `str` | `MCP_WORKSPACE_ROOT` | `os.getcwd()` |
-| `server_root_dir` | `str` | `MCP_SERVER_PROJECT_DIR` | `".phase-gate"` |
+| `server_root_dir` | `str` | `MCP_SERVER_PROJECT_DIR` | `\".pgmcp\"` |
 | `logs_dir` | `str` | `MCP_LOGS_DIR` | `"logs"` |
 | `config_root` | `str \| None` | `MCP_CONFIG_ROOT` | `None` — **dead field; not used by `server.py`.** Kept in `settings.py` for backward compat only. |
 
@@ -115,7 +115,7 @@ Set to an empty string `""` to disable audit logging entirely.
 Set `MCP_CONFIG_PATH` to the path of a YAML file to override any settings field:
 
 ```yaml
-# .phase-gate/config/server.yaml  (example)
+# .pgmcp/config/server.yaml  (example)
 server:
   name: "my-workflow"
   logs_dir: "output/logs"
@@ -141,9 +141,9 @@ The QA manager writes artifact logs **only on gate failure**.  Location:
 logs_dir / "qa_logs" / <timestamp>_<gate_name>.log
 ```
 
-By default this resolves to `.phase-gate/logs/qa_logs/`.
+By default this resolves to `.pgmcp/logs/qa_logs/`.
 
-To override, add `output_dir` to `.phase-gate/config/quality.yaml`:
+To override, add `output_dir` to `.pgmcp/config/quality.yaml`:
 
 ```yaml
 artifact_logging:
@@ -170,7 +170,7 @@ Resulting paths:
 
 ```
 /repos/myproject/
-└── .phase-gate/
+└── .pgmcp/
     ├── config/        (config_root)
     └── logs/
         ├── mcp_audit.log

@@ -21,7 +21,7 @@ no component re-reads YAML at runtime.
 ```mermaid
 flowchart TD
     ENV["Environment Variables<br/>Settings.from_env"] --> S[Settings]
-    S --> SR["server_root = workspace_root / server_root_dir<br/>(e.g. .phase-gate/)"] 
+    S --> SR["server_root = workspace_root / server_root_dir<br/>(e.g. .pgmcp/)"] 
     SR --> CR["config_root = server_root / 'config'"]
     CR --> CL[ConfigLoader]
     CL --> |"load_*_config() × 14"| VO["Typed Value Objects<br/>Pydantic BaseModel"]
@@ -206,7 +206,7 @@ classDiagram
 |----------------------|---------|---------|
 | `GITHUB_TOKEN` | `settings.github.token` | `None` — GitHub tools disabled |
 | `MCP_WORKSPACE_ROOT` | `settings.server.workspace_root` | `os.getcwd()` |
-| `MCP_SERVER_PROJECT_DIR` | `settings.server.server_root_dir` | `".phase-gate"` |
+| `MCP_SERVER_PROJECT_DIR` | `settings.server.server_root_dir` | `\".pgmcp\"` |
 | `MCP_LOGS_DIR` | `settings.server.logs_dir` | `"logs"` |
 | `MCP_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
 | `MCP_SERVER_NAME` | `settings.server.name` | `"phase-gate-mcp"` |
@@ -250,7 +250,7 @@ Called as **second step** after `LabelConfig.validate_label_name()` (format chec
 # ServerBootstrapper._build_config_layer() — mcp_server/bootstrap.py
 
 # 1. Derive server_root and config_root
-server_root = workspace_root / settings.server.server_root_dir  # e.g. .phase-gate/
+server_root = workspace_root / settings.server.server_root_dir  # e.g. .pgmcp/
 config_root = server_root / "config"  # always derived; resolve_config_root() NOT called
 
 # 2. Load all configs (immutable from this point) — returns ConfigLayer dataclass

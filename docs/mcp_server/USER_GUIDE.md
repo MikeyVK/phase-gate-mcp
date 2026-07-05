@@ -15,10 +15,10 @@ The MCP server is part of the repository. You can install it in editable mode:
 
 ```bash
 # From the root of the repository
-pip install -e "./mcp_server"
+pip install -e .
 
 # To include development dependencies (for running tests)
-pip install -e "./mcp_server[dev]"
+pip install -e ".[dev]"
 ```
 
 ## 3. Configuration
@@ -30,7 +30,7 @@ The server is configured via a YAML file (`mcp_config.yaml`) or environment vari
 |----------|-------------|-------|
 | `GITHUB_TOKEN` | GitHub Personal Access Token (required for GitHub integration) | None |
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
-| `MCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.phase-gate` |
+| `MCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.pgmcp` |
 | `MCP_LOGS_DIR` | Sub-directory under server_root for log files | `logs` |
 | `MCP_CONFIG_PATH` | Path to configuration file | `mcp_config.yaml` |
 ### 3.2 Configuration File (`mcp_config.yaml`)
@@ -45,7 +45,7 @@ server:
 logging:
   level: "INFO"
   # audit_log is auto-derived as <server_root>/<logs_dir>/mcp_audit.log
-  # (default: .phase-gate/logs/mcp_audit.log)
+  # (default: .pgmcp/logs/mcp_audit.log)
 
 github:
   owner: "MikeyVK"

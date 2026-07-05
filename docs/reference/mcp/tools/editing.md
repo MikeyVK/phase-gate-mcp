@@ -537,7 +537,7 @@ safe_edit_file(path="file.py", line_edits=[edit1, edit2])
 
 ## Configuration
 
-No environment variables or configuration files required. Quality gate behavior is configured via [.phase-gate/config/quality.yaml](../../../../.phase-gate/config/quality.yaml):
+No environment variables or configuration files required. Quality gate behavior is configured via [.pgmcp/config/quality.yaml](../../../../.pgmcp/config/quality.yaml):
 
 ```yaml
 quality_gates:

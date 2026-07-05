@@ -27,7 +27,7 @@ Each workflow defines an ordered sequence of phases (e.g. `research → design �
 
 ## Core Capabilities
 
-- **Phase & cycle state management** — tracks active phase and TDD cycle via `.phase-gate/state.json`; blocks progression until contracts are met
+- **Phase & cycle state management** — tracks active phase and TDD cycle via `.pgmcp/state.json`; blocks progression until contracts are met
 - **Intelligent scaffolding** — generates code, documents, and test files from a centralised template registry with schema validation
 - **Quality gates** — runs Ruff (format + lint), Pyright, import checks, and line-length checks before allowing commits or PRs
 - **Repository orchestration** — native Git and GitHub integrations for branching, committing, PR creation, issue tracking, and label management
@@ -49,7 +49,7 @@ mcp_server/
 └── schemas/       # Pydantic schemas for all internal contracts
 ```
 
-Configuration lives in `.phase-gate/config/` (per-project, not in this repo):
+Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 
 | File | Purpose |
 |---|---|
@@ -66,7 +66,7 @@ Configuration lives in `.phase-gate/config/` (per-project, not in this repo):
 | Variable | Required | Description |
 |---|---|---|
 | `MCP_WORKSPACE_ROOT` | Yes | Absolute path to the repository root |
-| `MCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.phase-gate`) |
+| `MCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.pgmcp`) |
 | `GITHUB_TOKEN` | Yes | Personal access token with `repo` and `workflow` scopes |
 | `GITHUB_OWNER` | Yes | GitHub account or org name |
 | `GITHUB_REPO` | Yes | Repository name |

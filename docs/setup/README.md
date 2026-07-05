@@ -49,6 +49,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 pip install -e .
+
+# Initialize local workspace configuration and templates
+pgmcp --init
 ```
 
 ---
@@ -109,11 +112,10 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
    ```
    *Note: Use forward slashes (`/`) even on Windows to prevent JSON escaping issues.*
 
-2. **Alternative: Global Configuration:**
-   If you prefer a global installation instead of a workspace-local one, you can place the exact same JSON configuration under your system-wide `mcp_config.json` file:
+2. **Alternative: Global Configuration (Not Recommended):**
+   If you prefer a global installation instead of the recommended workspace-local one, you can place the exact same JSON configuration under your system-wide `mcp_config.json` file. Note that workspace-local is the standard method:
    * **Windows:** `C:\Users\<username>\.gemini\config\mcp_config.json` (or `...\.gemini\antigravity\mcp_config.json`)
    * **Linux / macOS:** `~/.gemini/config/mcp_config.json`
-
 3. **Agent Configuration & Rule Loading:**
    Unlike VS Code, Google Antigravity natively detects and registers agent rules, workflows, and prompts from the workspace root directory without requiring any manual configurations in a settings file. When you open the cloned repository as a workspace, Antigravity automatically detects:
    * `AGENTS.md` (Global project rules and priority matrix)
@@ -155,6 +157,6 @@ Verify that the MCP server is active by running the following command in the cha
 | File | Description | Action |
 |---|---|---|
 | `.vscode/mcp.json` | VS Code MCP server config | Copy from `docs/setup/mcp.json` (VS Code only) |
-| `~/.gemini/config/mcp_config.json` | Antigravity MCP server config | Modify system config (Antigravity only) |
+| `.agents/mcp_config.json` | Antigravity local MCP config | Create under `.agents/` directory (Antigravity only) |
 | `GITHUB_TOKEN` | GitHub API token | Set as User environment variable |
 | `.venv/` | Python virtual environment | Recreate via `requirements.txt` |

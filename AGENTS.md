@@ -82,10 +82,10 @@ This document is a **binding contract**. Code that violates these principles is 
 ### Project & Phase Management
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Initialize project | `initialize_project(issue_number, issue_title, workflow_name)` | Manual .phase-gate/ file creation |
-| Get project plan | `get_project_plan(issue_number)` | Manual .phase-gate/ file reading |
-| Transition phase | `transition_phase(branch, to_phase)` | Manual .phase-gate/state.json edit |
-| Force phase transition | `force_phase_transition(branch, to_phase, skip_reason, human_approval)` | Manual .phase-gate/state.json edit |
+| Initialize project | `initialize_project(issue_number, issue_title, workflow_name)` | Manual .pgmcp/ file creation |
+| Get project plan | `get_project_plan(issue_number)` | Manual .pgmcp/ file reading |
+| Transition phase | `transition_phase(branch, to_phase)` | Manual .pgmcp/state.json edit |
+| Force phase transition | `force_phase_transition(branch, to_phase, skip_reason, human_approval)` | Manual .pgmcp/state.json edit |
 
 ### Discovery & Admin
 | Action | ✅ USE THIS | ❌ NEVER USE |
@@ -177,7 +177,7 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 | `docs` | planning, documentation, ready | Documentation-only changes |
 | `refactor` | research, planning, implementation, validation, documentation, ready | Code refactoring |
 | `hotfix` | implementation, validation, documentation, ready | Emergency fixes |
-| `epic` | See `.phase-gate/config/contracts.yaml` (SSOT for epic phase order) | Large multi-issue features |
+| `epic` | See `.pgmcp/config/contracts.yaml` (SSOT for epic phase order) | Large multi-issue features |
 | `custom` | (user-defined) | Custom workflows |
 
 **Workflow Selection:** Use `initialize_project(issue_number, issue_title, workflow_name="feature|bug|docs|...")` to start.
@@ -199,7 +199,7 @@ Compatibility, migration, and breakage strategy is decided at the end of Researc
 
 These are representative examples, not the complete registry. Current first-class types also include `adapter`, `resource`, `interface`, `service`, `schema`, `generic`, `unit_test`, `integration_test`, `architecture`, `planning`, `validation_report`, `generic_doc`, `commit`, `pr`, and `issue`.
 
-**Registry:** `.phase-gate/config/artifacts.yaml` defines the authoritative complete set of artifact types and their templates.
+**Registry:** `.pgmcp/config/artifacts.yaml` defines the authoritative complete set of artifact types and their templates.
 
 **Schema discovery:** Before calling `scaffold_artifact` with an artifact type whose context fields are not already in your working context, call `scaffold_schema(artifact_type=...)` first. It returns the full JSON Schema for the `context` parameter — required and optional fields — enabling first-time-right scaffolding without a failed call. If you call `scaffold_artifact` with wrong or missing context fields, the error response contains the same schema; use it to correct the call immediately.
 

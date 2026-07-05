@@ -15,7 +15,7 @@
 
 Complete reference documentation for project lifecycle and phase management tools. These 4 tools provide workflow initialization, phase plan inspection, sequential phase transitions, and emergency phase skipping with human approval.
 
-Phase state persists in [.phase-gate/state.json](../../../../.phase-gate/state.json) and workflow definitions / planning deliverables persist in [.phase-gate/deliverables.json](../../../../.phase-gate/deliverables.json). Both files are branch-local artifacts synchronized with git branch operations and neutralized before PR submission.
+Phase state persists in [.pgmcp/state.json](../../../../.pgmcp/state.json) and workflow definitions / planning deliverables persist in [.pgmcp/deliverables.json](../../../../.pgmcp/deliverables.json). Both files are branch-local artifacts synchronized with git branch operations and neutralized before PR submission.
 
 ---
 
@@ -32,9 +32,9 @@ The MCP server provides **4 project/phase tools**:
 
 All tools interact with:
 - **PhaseStateEngine:** Phase state tracking and validation
-- **[.phase-gate/config/workflows.yaml](../../../../.phase-gate/config/workflows.yaml):** Workflow definitions (feature, bug, docs, refactor, hotfix, epic, custom)
-- **[.phase-gate/state.json](../../../../.phase-gate/state.json):** Current branch state (branch-local artifact, committed with branch history; neutralized by `submit_pr`)
-- **[.phase-gate/deliverables.json](../../../../.phase-gate/deliverables.json):** Workflow definition and planning deliverables (branch-local artifact)
+- **[.pgmcp/config/workflows.yaml](../../../../.pgmcp/config/workflows.yaml):** Workflow definitions (feature, bug, docs, refactor, hotfix, epic, custom)
+- **[.pgmcp/state.json](../../../../.pgmcp/state.json):** Current branch state (branch-local artifact, committed with branch history; neutralized by `submit_pr`)
+- **[.pgmcp/deliverables.json](../../../../.pgmcp/deliverables.json):** Workflow definition and planning deliverables (branch-local artifact)
 
 ---
 
@@ -112,7 +112,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 
 #### Behavior Notes
 
-- **State Persistence:** Creates `.phase-gate/deliverables.json` (workflow definition) and `.phase-gate/state.json` (branch state) atomically
+- **State Persistence:** Creates `.pgmcp/deliverables.json` (workflow definition) and `.pgmcp/state.json` (branch state) atomically
 - **Parent Branch Auto-Detection:** If `parent_branch` not provided, attempts detection via `git reflog`
 - **Branch Validation:** Current branch must match pattern `<type>/<issue_number>-*`
 - **Idempotency:** Re-running on same branch returns error (project already initialized)
@@ -121,7 +121,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 
 `initialize_project` **must be called by `@co` (coordination role)** as part of the start-issue lifecycle, always after `create_branch` and `git_checkout`.
 
-`@imp` (implementation role) always inherits a branch where `initialize_project` has already completed. If `@imp` reaches a branch without `.phase-gate/state.json`, this is a process violation — `@imp` must **not** call `initialize_project` as recovery; it must stop and report the blocker so `@co` can correct the lifecycle.
+`@imp` (implementation role) always inherits a branch where `initialize_project` has already completed. If `@imp` reaches a branch without `.pgmcp/state.json`, this is a process violation — `@imp` must **not** call `initialize_project` as recovery; it must stop and report the blocker so `@co` can correct the lifecycle.
 
 
 ---
@@ -169,7 +169,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 #### Behavior Notes
 
 - **Read-Only:** Does not modify state
-- **Plan Access:** Reads workflow definition from `.phase-gate/deliverables.json`; current phase is read from `.phase-gate/state.json` via `WorkflowStatusResolver`. Returns plan without phase fields when state is absent or branch-mismatched.
+- **Plan Access:** Reads workflow definition from `.pgmcp/deliverables.json`; current phase is read from `.pgmcp/state.json` via `WorkflowStatusResolver`. Returns plan without phase fields when state is absent or branch-mismatched.
 - **Not Found:** Returns error if project not initialized
 
 ---
@@ -227,8 +227,8 @@ Transition branch to next phase (strict sequential validation).
 #### Behavior Notes
 
 - **Sequential Validation:** Target phase must be the **next** phase in workflow (no skipping)
-- **State Update:** Updates `.phase-gate/state.json` atomically
-- **Branch-Local State:** Updates `.phase-gate/state.json` for the active branch only
+- **State Update:** Updates `.pgmcp/state.json` atomically
+- **Branch-Local State:** Updates `.pgmcp/state.json` for the active branch only
 - **Required Next Step:** On success, the response appends `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
 - **Not Initialized:** Returns error if project not initialized
 
@@ -301,7 +301,7 @@ Force non-sequential phase transition (skip/jump with reason and human approval)
 #### Behavior Notes
 
 - **No Validation:** Bypasses sequential phase validation
-- **Branch-Local State:** Updates `.phase-gate/state.json` for the active branch; forced-transition metadata stays in that branch-local state
+- **Branch-Local State:** Updates `.pgmcp/state.json` for the active branch; forced-transition metadata stays in that branch-local state
 - **Required Next Step:** On success, the response appends `🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch.`
 - **Use Sparingly:** Intended for emergency situations only
 - **Required Fields:** Both `skip_reason` and `human_approval` are REQUIRED (not optional)
@@ -374,7 +374,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 ---
 
 
-### .phase-gate/state.json
+### .pgmcp/state.json
 
 Current branch state (runtime, branch-local, neutralized before PR submission):
 
@@ -412,7 +412,7 @@ Current branch state (runtime, branch-local, neutralized before PR submission):
 
 ---
 
-### .phase-gate/deliverables.json
+### .pgmcp/deliverables.json
 
 Workflow definition and planning deliverables (branch-local artifact):
 
@@ -453,14 +453,14 @@ Workflow definition and planning deliverables (branch-local artifact):
 
 ## Workflow Definitions
 
-### .phase-gate/workflows.yaml
+### .pgmcp/workflows.yaml
 
-> **Note (Issue #271):** Phase membership and ordering are no longer defined in `workflows.yaml`. The file now contains only workflow metadata (name, description, execution mode). Phase sequences are exclusively defined in `.phase-gate/config/contracts.yaml`.
+> **Note (Issue #271):** Phase membership and ordering are no longer defined in `workflows.yaml`. The file now contains only workflow metadata (name, description, execution mode). Phase sequences are exclusively defined in `.pgmcp/config/contracts.yaml`.
 
 ```yaml
-# .phase-gate/config/workflows.yaml
+# .pgmcp/config/workflows.yaml
 version: "1.0"
-phase_source: ".phase-gate/config/workphases.yaml"
+phase_source: ".pgmcp/config/workphases.yaml"
 
 workflows:
   feature:
@@ -496,7 +496,7 @@ workflows:
 ```
 
 
-For the phase sequences per workflow, see `.phase-gate/config/contracts.yaml`.
+For the phase sequences per workflow, see `.pgmcp/config/contracts.yaml`.
 
 ---
 
@@ -506,9 +506,9 @@ Phase state is **synchronized** with git branch operations:
 
 | Git Operation | Phase State Behavior |
 |---------------|---------------------|
-| `git_checkout` | Loads phase state from `.phase-gate/state.json` after switching branches |
+| `git_checkout` | Loads phase state from `.pgmcp/state.json` after switching branches |
 | `create_branch` | No phase state (must run `initialize_project` after) |
-| `git_delete_branch` | Removes phase state from `.phase-gate/state.json` |
+| `git_delete_branch` | Removes phase state from `.pgmcp/state.json` |
 
 ---
 
@@ -554,9 +554,9 @@ Phase state is **synchronized** with git branch operations:
 
 - [README.md](README.md) — MCP Tools navigation index
 - [git.md](git.md) — Git workflow tools (branch, checkout, commit)
-- [.phase-gate/config/workflows.yaml](../../../../.phase-gate/config/workflows.yaml) — Workflow definitions
-- [.phase-gate/state.json](../../../../.phase-gate/state.json) — Current branch state
-- [.phase-gate/deliverables.json](../../../../.phase-gate/deliverables.json) — Workflow definition and planning deliverables
+- [.pgmcp/config/workflows.yaml](../../../../.pgmcp/config/workflows.yaml) — Workflow definitions
+- [.pgmcp/state.json](../../../../.pgmcp/state.json) — Current branch state
+- [.pgmcp/deliverables.json](../../../../.pgmcp/deliverables.json) — Workflow definition and planning deliverables
 - [docs/development/issue268/validation.md](../../../development/issue268/validation.md) — Validation evidence for the delivered phase-state and `get_work_context` contract
 
 ---

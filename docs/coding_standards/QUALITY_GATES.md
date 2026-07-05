@@ -462,6 +462,5 @@ Add to `.vscode/settings.json`:
 
 ## Related Documentation
 
-- [TDD_WORKFLOW.md](TDD_WORKFLOW.md) - Test-driven development cycle
-- [GIT_WORKFLOW.md](GIT_WORKFLOW.md) - Branching and commit conventions
+- [AGENTS.md](../../AGENTS.md) - Test-driven development and Git/Commit conventions
 - [CODE_STYLE.md](CODE_STYLE.md) - Code formatting standards

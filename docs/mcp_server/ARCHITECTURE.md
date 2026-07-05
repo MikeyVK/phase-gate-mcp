@@ -34,7 +34,7 @@ quality gates, Git conventions, and GitHub integration.
 | Principle | Application |
 |-----------|-------------|
 | **Constructor Injection** | All dependencies wired in `__init__`, never instantiated inside methods |
-| **Configuration-Driven** | Behavior controlled via 15 YAML files under `.phase-gate/config/`, not hardcoded |
+| **Configuration-Driven** | Behavior controlled via 15 YAML files under `.pgmcp/config/`, not hardcoded |
 | **Immutable State** | All value objects and config layers use `frozen=True` |
 | **Interface Segregation** | Narrow `Protocol` interfaces (e.g., `IStateReader` vs `IStateRepository`) |
 | **CQS** | Methods either query state or mutate it, never both |
@@ -401,7 +401,7 @@ sequenceDiagram
 
 ### 5.3 ConfigLayer (Frozen Dataclass)
 
-15 immutable config objects loaded from `.phase-gate/config/` YAML files:
+15 immutable config objects loaded from `.pgmcp/config/` YAML files:
 
 | Config | Source YAML | Purpose |
 |--------|-------------|--------|
@@ -604,7 +604,7 @@ class BaseResource(ABC):
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `MCP_WORKSPACE_ROOT` | ❌ | cwd | Workspace root directory |
-| `MCP_SERVER_PROJECT_DIR` | ❌ | `.phase-gate` | Server root directory name |
+| `MCP_SERVER_PROJECT_DIR` | ❌ | `.pgmcp` | Server root directory name |
 | `MCP_SERVER_NAME` | ❌ | `phase-gate-mcp` | Server display name |
 | `GITHUB_TOKEN` | ❌ | — | GitHub PAT (enables GitHub tools) |
 | `GITHUB_OWNER` | ❌ | — | GitHub repository owner |
@@ -614,7 +614,7 @@ class BaseResource(ABC):
 
 ### 8.2 YAML Configuration Files
 
-All config files reside in `.phase-gate/config/`. See §5.3 for the full mapping.
+All config files reside in `.pgmcp/config/`. See §5.3 for the full mapping.
 
 > **Detailed config-loading architecture:** See
 > [config-loading-architecture.md](../reference/mcp/config-loading-architecture.md).
@@ -635,9 +635,9 @@ All config files reside in `.phase-gate/config/`. See §5.3 for the full mapping
 
 | File | Model | Contents |
 |------|-------|----------|
-| `.phase-gate/state.json` | `BranchState` | Branch, issue number, workflow, current phase, cycle, transitions, parent branch |
-| `.phase-gate/quality_state.json` | `QualityState` | Baseline commit SHA, failed files list |
-| `.phase-gate/template_registry.json` | — | Template version tracking |
+| `.pgmcp/state.json` | `BranchState` | Branch, issue number, workflow, current phase, cycle, transitions, parent branch |
+| `.pgmcp/quality_state.json` | `QualityState` | Baseline commit SHA, failed files list |
+| `.pgmcp/template_registry.json` | — | Template version tracking |
 
 ### 9.2 State Repository Pattern
 
@@ -774,7 +774,7 @@ class MyNewTool(ICoreTool[MyToolInput, MyToolOutput]):
 ### 13.3 Adding a New Scaffold Template
 
 1. Create a Jinja2 template in `mcp_server/scaffolding/templates/concrete/`
-2. Register the artifact type in `.phase-gate/config/artifacts.yaml`
+2. Register the artifact type in `.pgmcp/config/artifacts.yaml`
 3. Create a context schema in `mcp_server/schemas/contexts/`
 4. Use via `scaffold_artifact(artifact_type="...", name="...", context={...})`
 

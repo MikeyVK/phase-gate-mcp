@@ -13,12 +13,12 @@
 
 ## Purpose
 
-Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same artifact registry defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
+Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same artifact registry defined in [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml).
 
 The scaffolding system provides:
 - **Unified tool** for code and documentation generation (replaces separate tools)
 - **Template composition** via Jinja2 includes and inheritance
-- **Automatic directory resolution** from [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml)
+- **Automatic directory resolution** from [.pgmcp/config/project_structure.yaml](../../../../.pgmcp/config/project_structure.yaml)
 - **SCAFFOLD header injection** for template provenance tracking
 - **Context-driven customization** via template variables
 - **Proactive schema exposure** via `scaffold_schema` — inspect context requirements before scaffolding
@@ -59,7 +59,7 @@ Generate any artifact type (code or document) from unified registry.
 |-----------|------|----------|-------------|
 | `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `"dto"`, `"design"`, `"worker"`). The available enum values are populated at runtime from `artifacts.yaml` via the registry. |
 | `name` | `str` | **Yes** | Artifact name — PascalCase for code, kebab-case for docs |
-| `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.phase-gate/temp/`. |
+| `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.pgmcp/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |
 
 #### Returns (via MCP Resource Cache)
@@ -178,14 +178,14 @@ This eliminates trial-and-error context validation failures.
 ## Artifact Registry
 
 
-The unified artifact registry is defined in [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml).
+The unified artifact registry is defined in [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml).
 
 
 ### Registry Structure
 
-The registry is defined in `.phase-gate/config/artifacts.yaml`. Each entry has at minimum: `type_id`, `display_name`, `category`, `template`, and (for enabled types) the template path.
+The registry is defined in `.pgmcp/config/artifacts.yaml`. Each entry has at minimum: `type_id`, `display_name`, `category`, `template`, and (for enabled types) the template path.
 
-**See:** [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) for the full registry.
+**See:** [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml) for the full registry.
 
 ### Supported Artifact Types
 
@@ -365,35 +365,35 @@ Tier information is stored in `artifacts.yaml` and `template_registry.json`.
 
 ## Configuration
 
-### .phase-gate/config/artifacts.yaml
+### .pgmcp/config/artifacts.yaml
 
 Complete artifact registry with template mappings, context schemas, and tier information.
 
-**See:** [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) for full registry.
+**See:** [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml) for full registry.
 
 ---
 
-### .phase-gate/config/project_structure.yaml
+### .pgmcp/config/project_structure.yaml
 
 Directory resolution rules for artifact types.
 
-**See:** [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml) for full structure.
+**See:** [.pgmcp/config/project_structure.yaml](../../../../.pgmcp/config/project_structure.yaml) for full structure.
 
 ---
 
-### .phase-gate/config/scaffold_metadata.yaml
+### .pgmcp/config/scaffold_metadata.yaml
 
 SCAFFOLD header format specification (comment patterns for different file types).
 
-**See:** [.phase-gate/config/scaffold_metadata.yaml](../../../../.phase-gate/config/scaffold_metadata.yaml) for header specs.
+**See:** [.pgmcp/config/scaffold_metadata.yaml](../../../../.pgmcp/config/scaffold_metadata.yaml) for header specs.
 
 ---
 
-### .phase-gate/template_registry.json
+### .pgmcp/template_registry.json
 
 Template provenance tracking (version hashes → tier chains).
 
-**See:** [.phase-gate/template_registry.json](../../../../.phase-gate/template_registry.json) for version history.
+**See:** [.pgmcp/template_registry.json](../../../../.pgmcp/template_registry.json) for version history.
 
 ---
 
@@ -490,9 +490,9 @@ When templates are updated:
 - [README.md](README.md) — MCP Tools navigation index
 - [editing.md](editing.md) — safe_edit_file for manual edits
 - [quality.md](quality.md) — validate_template for conformance checking
-- [.phase-gate/config/artifacts.yaml](../../../../.phase-gate/config/artifacts.yaml) — Complete artifact registry
-- [.phase-gate/config/project_structure.yaml](../../../../.phase-gate/config/project_structure.yaml) — Directory resolution
-- [.phase-gate/config/scaffold_metadata.yaml](../../../../.phase-gate/config/scaffold_metadata.yaml) — SCAFFOLD header specs
+- [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml) — Complete artifact registry
+- [.pgmcp/config/project_structure.yaml](../../../../.pgmcp/config/project_structure.yaml) — Directory resolution
+- [.pgmcp/config/scaffold_metadata.yaml](../../../../.pgmcp/config/scaffold_metadata.yaml) — SCAFFOLD header specs
 - [mcp_server/scaffolding/templates/](../../../../mcp_server/scaffolding/templates/) — Template library
 - [docs/architecture/TEMPLATE_LIBRARY.md](../../../../docs/architecture/TEMPLATE_LIBRARY.md) — Three-layer architecture reference
 

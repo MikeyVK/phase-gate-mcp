@@ -87,7 +87,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 # IDE baseline configuration - balanced strictness for developer productivity
-# CI/CD overrides in .st3/quality.yaml for 10/10 enforcement
+# CI/CD overrides in .pgmcp/config/quality.yaml for 10/10 enforcement
 select = [
     "E",   # pycodestyle errors - includes E501 (line-too-long)
     "W",   # pycodestyle warnings - includes W291/W292/W293 (whitespace)

@@ -34,7 +34,7 @@ This directory links the MCP server architecture and operational guidance around
 
 ## Standardized Development
 
-Use `scaffold_artifact` to generate code and documentation artifacts from the artifact registry in `.phase-gate/config/artifacts.yaml`.
+Use `scaffold_artifact` to generate code and documentation artifacts from the artifact registry in `.pgmcp/config/artifacts.yaml`.
 
 | Artifact Type | Example Usage |
 | :--- | :--- |
@@ -52,7 +52,7 @@ For template and registry details, see [docs/reference/mcp/tools/scaffolding.md]
 
 | Resource URI | Description |
 |--------------|-------------|
-| `pgmcp://rules/coding_standards` | Active coding standards derived from `.phase-gate/config/quality.yaml` |
+| `pgmcp://rules/coding_standards` | Active coding standards derived from `.pgmcp/config/quality.yaml` |
 | `pgmcp://status/phase` | Current phase and git status |
 | `pgmcp://github/issues` | Active GitHub issues resource |
 
