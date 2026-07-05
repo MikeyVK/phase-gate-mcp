@@ -3,7 +3,7 @@ from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/config/test_project_structure.py
 """Unit tests for ProjectStructureConfig model.
 
-Tests Phase 2: .phase-gate/config/project_structure.yaml + ProjectStructureConfig
+Tests Phase 2: .pgmcp/config/project_structure.yaml + ProjectStructureConfig
 Cross-validates allowed_component_types against artifacts.yaml.
 
 @layer: Tests (Unit)
@@ -134,7 +134,7 @@ class TestProjectStructureConfig:
         assert poc.allowed_extensions == []
 
     def test_config_directories(self) -> None:
-        """Test .phase-gate config directory policy."""
+        """Test .pgmcp config directory policy."""
         config = _load_project_structure()
         phase_gate = config.directories[get_default_server_root()]
         assert phase_gate.parent is None

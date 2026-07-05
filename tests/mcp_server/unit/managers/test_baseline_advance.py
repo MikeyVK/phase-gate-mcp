@@ -46,7 +46,7 @@ def _state_with_quality_gates(
     baseline_sha: str = "old_sha",
     failed_files: list[str] | None = None,
 ) -> Path:
-    """Write a .phase-gate/state.json with quality_gates section; returns state file path."""
+    """Write a .pgmcp/state.json with quality_gates section; returns state file path."""
     phase_gate_dir = tmp_path / get_default_server_root()
     phase_gate_dir.mkdir(exist_ok=True)
     state_file = phase_gate_dir / "state.json"

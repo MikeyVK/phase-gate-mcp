@@ -82,7 +82,7 @@ class TestScopeResolutionBranch:
         """Non-Python files are excluded from the result."""
         manager = make_qa_manager(tmp_path)
 
-        diff_output = "mcp_server/logic.py\ndocs/README.md\n.phase-gate/state.json\n"
+        diff_output = "mcp_server/logic.py\ndocs/README.md\n.pgmcp/state.json\n"
 
         def fake_git_diff(_cmd: list[str], **_kw: object) -> MagicMock:
             result = MagicMock(spec=subprocess.CompletedProcess)

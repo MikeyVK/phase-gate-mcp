@@ -25,7 +25,7 @@ from tests.mcp_server.test_support import make_qa_manager
 
 
 def _write_state(tmp_path: Path, baseline_sha: str, failed_files: list[str]) -> None:
-    """Write a .phase-gate/state.json with quality_gates section."""
+    """Write a .pgmcp/state.json with quality_gates section."""
     state = {
         "branch": "refactor/251-refactor-run-quality-gates",
         "quality_gates": {
@@ -164,7 +164,7 @@ class TestAutoScopeHappyPath:
 
         raw_result = MagicMock(spec=subprocess.CompletedProcess)
         raw_result.returncode = 0
-        raw_result.stdout = "mcp_server/logic.py\ndocs/README.md\n.phase-gate/state.json\n"
+        raw_result.stdout = "mcp_server/logic.py\ndocs/README.md\n.pgmcp/state.json\n"
 
         with patch("subprocess.run", return_value=raw_result):
             result = manager.resolve_scope("auto")

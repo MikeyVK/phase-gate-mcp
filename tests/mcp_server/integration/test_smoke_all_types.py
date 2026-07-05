@@ -40,7 +40,7 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     Uses production registry + templates.
 
     Setup:
-    - Copies production .phase-gate/artifacts.yaml into hermetic tmp workspace
+    - Copies production .pgmcp/artifacts.yaml into hermetic tmp workspace
     - Sets TEMPLATE_ROOT → production mcp_server/scaffolding/templates/
     - Changes CWD → tmp_path (so registry + ephemeral writes resolve there)
     - Enables PYDANTIC_SCAFFOLDING_ENABLED=true
@@ -60,8 +60,8 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
         _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts.yaml", artifacts_path
     )
 
-    # CWD → tmp_path: registry loads from tmp_path/.phase-gate/config/artifacts.yaml,
-    # ephemeral writes go to tmp_path/.phase-gate/temp/ (not project root)
+    # CWD → tmp_path: registry loads from tmp_path/.pgmcp/config/artifacts.yaml,
+    # ephemeral writes go to tmp_path/.pgmcp/temp/ (not project root)
     monkeypatch.chdir(tmp_path)
 
     registry = ConfigLoader(artifacts_path.parent).load_artifact_registry_config(
@@ -79,7 +79,7 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
 # ---------------------------------------------------------------------------
 # Format: (artifact_type, context_kwargs, is_ephemeral, file_extension)
 # output_path is always provided — for ephemeral types _validate_and_write ignores it
-# and writes to .phase-gate/temp/ instead (but it avoids DirectoryPolicyResolver call).
+# and writes to .pgmcp/temp/ instead (but it avoids DirectoryPolicyResolver call).
 
 _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
     # --- Code artifacts ---
@@ -265,7 +265,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         False,
         ".md",
     ),
-    # --- Tracking artifacts (ephemeral: write to .phase-gate/temp/, not via fs_adapter) ---
+    # --- Tracking artifacts (ephemeral: write to .pgmcp/temp/, not via fs_adapter) ---
     (
         "commit",
         {"type": "feat", "message": "add V2 smoke test coverage"},
@@ -312,7 +312,7 @@ async def test_v2_smoke_produces_nonempty_output(
     Passing criteria:
     - result is a non-empty str
     - For file artifacts: output path exists on disk
-    - For ephemeral: output path exists in .phase-gate/temp/ (CWD-relative tmp_path)
+    - For ephemeral: output path exists in .pgmcp/temp/ (CWD-relative tmp_path)
     """
     # Provide explicit output_path for all types to bypass DirectoryPolicyResolver
     # (ephemeral types ignore this value in _validate_and_write, but it avoids resolver errors)

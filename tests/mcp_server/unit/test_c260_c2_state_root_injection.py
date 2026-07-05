@@ -40,10 +40,10 @@ from mcp_server.tools.git_tools import build_phase_guard
 
 
 class TestNormalizeConfigRootPhaseGate:
-    """normalize_config_root must accept .phase-gate/ as well as .phase-gate/."""
+    """normalize_config_root must accept .pgmcp/ as well as .pgmcp/."""
 
     def test_accepts_phase_gate_config_dir(self, tmp_path: Path) -> None:
-        """normalize_config_root('/ws/.phase-gate/config') → same path."""
+        """normalize_config_root('/ws/.pgmcp/config') → same path."""
         config_dir = tmp_path / get_default_server_root() / "config"
         config_dir.mkdir(parents=True)
         result = normalize_config_root(config_dir)
@@ -251,7 +251,7 @@ class TestBuildPhaseGuard:
 
 
 class TestCycleToolsStateRoot:
-    """Cycle tools must read state.json from state_root, not workspace_root/.phase-gate."""
+    """Cycle tools must read state.json from state_root, not workspace_root/.pgmcp."""
 
     def test_transition_cycle_tool_reads_state_from_state_root(self, tmp_path: Path) -> None:
         """TransitionCycleTool._get_current_branch falls back to state_root/state.json."""
@@ -277,7 +277,7 @@ class TestCycleToolsStateRoot:
         state_root.mkdir()
         # No state.json in state_root
 
-        # Put misleading state.json in workspace/.phase-gate
+        # Put misleading state.json in workspace/.pgmcp
         phase_gate_dir = tmp_path / get_default_server_root()
         phase_gate_dir.mkdir()
         (phase_gate_dir / "state.json").write_text(
@@ -369,19 +369,19 @@ class TestArtifactManagerEphemeralTemp:
 
 
 # ---------------------------------------------------------------------------
-# template_registry — default arg not .phase-gate-based
+# template_registry — default arg not .pgmcp-based
 # ---------------------------------------------------------------------------
 
 
 class TestTemplateRegistryDefaultArg:
-    """TemplateRegistry default registry_path must not hardcode .phase-gate."""
+    """TemplateRegistry default registry_path must not hardcode .pgmcp."""
 
     def test_default_registry_path_is_not_cwd_dot_phase_gate(self) -> None:
         """TemplateRegistry() without args: no hardcoded default path."""
         sig = inspect.signature(TemplateRegistry.__init__)
         default = sig.parameters["registry_path"].default
 
-        # Default should be None (not a .phase-gate Path)
+        # Default should be None (not a .pgmcp Path)
         expected_path = f"{get_default_server_root()}/template_registry.json"
         assert default is None or str(default) != expected_path, (
             f"Registry path should not be {expected_path}, got: {default}"
@@ -400,7 +400,7 @@ class TestPhaseStateEngineNoFallback:
     """PhaseStateEngine must raise when server_root is not provided."""
 
     def test_raises_when_server_root_is_none(self) -> None:
-        """Constructing without server_root must raise — no silent .phase-gate fallback.
+        """Constructing without server_root must raise — no silent .pgmcp fallback.
 
         RED: constructor currently has state_root: Path|None=None with
         effective_state_root = state_root or workspace_path / get_default_server_root().
@@ -417,7 +417,7 @@ class TestPhaseStateEngineNoFallback:
                 workflow_gate_runner=MagicMock(),
                 state_reconstructor=MagicMock(),
                 workflow_state_mutator=MagicMock(),
-                # server_root omitted — must raise, not default to workspace/.phase-gate
+                # server_root omitted — must raise, not default to workspace/.pgmcp
             )
 
 
@@ -430,7 +430,7 @@ class TestProjectManagerNoFallback:
     """ProjectManager must raise when server_root is not provided."""
 
     def test_raises_when_server_root_is_none(self) -> None:
-        """Constructing without server_root must raise — no silent .phase-gate fallback.
+        """Constructing without server_root must raise — no silent .pgmcp fallback.
 
         RED: constructor currently has state_root: Path|None=None with
         effective_state_root = state_root or workspace_root / get_default_server_root().
@@ -441,7 +441,7 @@ class TestProjectManagerNoFallback:
                 workspace_root=Path("/some/workspace"),
                 contracts_config=MagicMock(),
                 workflow_status_resolver=MagicMock(),
-                # server_root omitted — must raise, not default to workspace/.phase-gate
+                # server_root omitted — must raise, not default to workspace/.pgmcp
             )
 
 
@@ -454,7 +454,7 @@ class TestEnforcementRunnerNoFallback:
     """EnforcementRunner must raise when server_root is not provided."""
 
     def test_raises_when_server_root_is_none(self) -> None:
-        """Constructing without server_root must raise — no silent .phase-gate fallback.
+        """Constructing without server_root must raise — no silent .pgmcp fallback.
 
         RED: constructor currently has state_root: Path|None=None with
         self.state_root = state_root or workspace_root / get_default_server_root().
@@ -465,7 +465,7 @@ class TestEnforcementRunnerNoFallback:
                 workspace_root=Path("/some/workspace"),
                 config=EnforcementConfig(enforcement=[]),
                 git_config=MagicMock(),
-                # server_root omitted — must raise, not default to workspace/.phase-gate
+                # server_root omitted — must raise, not default to workspace/.pgmcp
             )
 
 
@@ -487,7 +487,7 @@ class TestBaseTransitionToolNoFallback:
         with pytest.raises((ValueError, TypeError)):
             TransitionCycleTool(
                 workspace_root=Path("/some/workspace"),
-                # server_root omitted — must raise, not default to workspace/.phase-gate
+                # server_root omitted — must raise, not default to workspace/.pgmcp
             )
 
 
@@ -531,43 +531,43 @@ class TestAdminToolsServerRootInjection:
 
 
 # ---------------------------------------------------------------------------
-# normalize_config_root — final fallback must not produce .phase-gate path
+# normalize_config_root — final fallback must not produce .pgmcp path
 # ---------------------------------------------------------------------------
 
 
 class TestNormalizeConfigRootNoPhaseGateFallback:
-    """normalize_config_root must not hardcode .phase-gate in the final fallback branch."""
+    """normalize_config_root must not hardcode .pgmcp in the final fallback branch."""
 
     def test_workspace_root_fallback_does_not_produce_phase_gate_path(self, tmp_path: Path) -> None:
-        """When given a plain directory (not hidden, no config/ child), must not return .phase-gate.
+        """When given a plain directory (not hidden, no config/ child), must not return .pgmcp.
 
-        GREEN: raises FileNotFoundError (no silent .phase-gate fallback).
-        Either raising or returning a non-.phase-gate path satisfies the contract.
+        GREEN: raises FileNotFoundError (no silent .pgmcp fallback).
+        Either raising or returning a non-.pgmcp path satisfies the contract.
         """
         # tmp_path is a plain directory (no leading '.', no config/ subdirectory)
         # This hits the final fallback branch of normalize_config_root
         try:
             result = normalize_config_root(tmp_path)
-            # If no exception: result must not contain .phase-gate
+            # If no exception: result must not contain .pgmcp
             assert get_default_server_root() not in str(result), (
                 f"normalize_config_root final fallback still hardcodes "
                 f"get_default_server_root(): {result}"
             )
         except (FileNotFoundError, ValueError):
-            # Raising is preferred — no .phase-gate path was produced
+            # Raising is preferred — no .pgmcp path was produced
             pass
 
 
 # ---------------------------------------------------------------------------
-# TemplateRegistry — constructing with None must not silently use .phase-gate
+# TemplateRegistry — constructing with None must not silently use .pgmcp
 # ---------------------------------------------------------------------------
 
 
 class TestTemplateRegistryNoPhaseGateFallback:
-    """TemplateRegistry with registry_path=None must raise, not silently use .phase-gate."""
+    """TemplateRegistry with registry_path=None must raise, not silently use .pgmcp."""
 
     def test_none_registry_path_raises_or_no_phase_gate(self) -> None:
-        """TemplateRegistry() without args: registry_path must not resolve to .phase-gate.
+        """TemplateRegistry() without args: registry_path must not resolve to .pgmcp.
 
         RED: current __init__ body sets
             self.registry_path = Path(f"{get_default_server_root()}/template_registry.json")

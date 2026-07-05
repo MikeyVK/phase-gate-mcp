@@ -40,7 +40,7 @@ def git_repo(tmp_path: Path) -> Path:
         capture_output=True,
     )
 
-    # Create .phase-gate directory structure
+    # Create .pgmcp directory structure
     phase_gate_dir = tmp_path / get_default_server_root()
     config_dir = phase_gate_dir / "config"
     config_dir.mkdir(parents=True)

@@ -141,7 +141,7 @@ class TestNeutralizeToBaseAbsentPath:
             f"{get_default_server_root()}/state.json",
         )
         assert diff_output == "", (
-            f"Model 1 invariant violated: .phase-gate/state.json still appears in diff. "
+            f"Model 1 invariant violated: .pgmcp/state.json still appears in diff. "
             f"Diff output: {diff_output!r}"
         )
 

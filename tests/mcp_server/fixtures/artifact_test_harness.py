@@ -115,7 +115,7 @@ def _artifacts_yaml_file_phase_gate(
     """
     Write artifacts.yaml to temp workspace.
 
-    Returns path to .phase-gate/config/artifacts.yaml
+    Returns path to .pgmcp/config/artifacts.yaml
     """
     config_dir = temp_workspace / get_default_server_root() / "config"
     config_dir.mkdir(parents=True, exist_ok=True)

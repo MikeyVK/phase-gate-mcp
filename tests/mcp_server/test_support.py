@@ -168,8 +168,8 @@ def resolve_config_root(
 ) -> Path:
     """Resolve the best config root for one workspace under test.
 
-    Production probe only tries .phase-gate.  Tests may still create workspaces
-    with the legacy .phase-gate layout, so we fall through to that candidate before
+    Production probe only tries .pgmcp.  Tests may still create workspaces
+    with the default .pgmcp layout, so we fall through to that candidate before
     giving up and using the canonical project config.
     """
     _project_config = Path(__file__).resolve().parents[2] / "mcp_server" / "assets" / "config"
@@ -181,8 +181,8 @@ def resolve_config_root(
             required_files=required_paths,
         )
     except FileNotFoundError:
-        # Production probe only tries .phase-gate; try legacy .phase-gate next (test
-        # workspaces often use the old layout) but only if all required files exist.
+        # Production probe only tries .pgmcp; try default .pgmcp next (test
+        # workspaces often use the default layout) but only if all required files exist.
         legacy = Path(workspace_root) / get_default_server_root() / "config"
         if legacy.exists() and all((legacy / f).exists() for f in required_paths):
             return legacy

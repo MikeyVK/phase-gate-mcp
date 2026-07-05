@@ -4,7 +4,7 @@ Issue #50: Tests migrated from PHASE_TEMPLATES to workflows.yaml.
 - Workflow selection from workflows.yaml
 - Execution mode handling (interactive/autonomous)
 - Custom phases with skip_reason
-- Project plan storage in .phase-gate/deliverables.json
+- Project plan storage in .pgmcp/deliverables.json
 
 @layer: Tests (Unit)
 @dependencies: pytest, tests.mcp_server.test_support, mcp_server.managers.project_manager
@@ -286,7 +286,7 @@ class TestProjectManagerPhaseDetection:
 
     @pytest.fixture
     def workspace_root(self, tmp_path: Path) -> Path:
-        """Create temporary workspace with .phase-gate directory."""
+        """Create temporary workspace with .pgmcp directory."""
         phase_gate_dir = tmp_path / get_default_server_root()
         phase_gate_dir.mkdir()
 
@@ -738,7 +738,7 @@ class TestIssue257Cycle7Contracts:
         assert "AtomicJsonWriter" in source
 
     def test_gitignore_does_not_ignore_state_json(self) -> None:
-        """D7.4: .phase-gate/state.json must not remain ignored."""
+        """D7.4: .pgmcp/state.json must not remain ignored."""
         gitignore = Path(".gitignore").read_text(encoding="utf-8")
 
         assert f"{get_default_server_root()}/state.json" not in gitignore

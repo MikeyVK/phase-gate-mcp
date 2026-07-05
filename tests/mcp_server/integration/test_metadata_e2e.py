@@ -167,7 +167,7 @@ class TestMetadataEndToEnd:
     @pytest.mark.skip(reason="commit_message template in wrong location (separate issue)")
     @pytest.mark.asyncio
     async def test_scaffold_ephemeral_returns_temp_path(self, manager: ArtifactManager) -> None:
-        """E2E: Scaffold ephemeral artifact → writes to .phase-gate/temp/ and returns path."""
+        """E2E: Scaffold ephemeral artifact → writes to .pgmcp/temp/ and returns path."""
         result = await manager.scaffold_artifact(
             "commit_message",
             type="feat",

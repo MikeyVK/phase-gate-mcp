@@ -1,14 +1,14 @@
 """
 tests/unit/config/test_labels_yaml_conventions.py
 ==================================================
-Cycle 2 — Verify .phase-gate/config/labels.yaml conventions:
+Cycle 2 — Verify .pgmcp/config/labels.yaml conventions:
 
 - No status:* labels should exist (removed in cycle 2)
 - Parent label pattern must be "^parent:\\d+$" (not "^parent:issue-\\d+$")
 - type:chore label must exist
 
 @layer: Tests (Unit)
-@dependencies: pytest, yaml, .phase-gate/config/labels.yaml
+@dependencies: pytest, yaml, .pgmcp/config/labels.yaml
 """
 
 from tests.mcp_server.test_support import get_default_server_root

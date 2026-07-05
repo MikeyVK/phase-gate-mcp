@@ -88,7 +88,7 @@ class TestGitAdapterSkipPathsIntegration:
         """REAL proof, explicit files=: skip_path absent from commit.diff(parent).
 
         Same zero-delta invariant via the explicit-files staging branch. Both
-        normal.py and .phase-gate/state.json are passed to files=; skip_paths removes
+        normal.py and .pgmcp/state.json are passed to files=; skip_paths removes
         state.json from the index before index.commit(), producing zero delta.
         """
         repo = self._init_repo_with_initial_commit(tmp_path)

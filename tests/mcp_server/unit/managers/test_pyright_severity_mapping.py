@@ -26,7 +26,7 @@ from tests.mcp_server.test_support import make_qa_manager
 # Fixtures / constants
 # ---------------------------------------------------------------------------
 
-# Mirrors the field_map as configured in .phase-gate/quality.yaml gate4_pyright
+# Mirrors the field_map as configured in .pgmcp/quality.yaml gate4_pyright
 _PYRIGHT_FIELD_MAP: dict[str, str] = {
     "file": "file",
     "line": "range/start/line",

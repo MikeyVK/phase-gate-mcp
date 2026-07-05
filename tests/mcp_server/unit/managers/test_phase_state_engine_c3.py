@@ -81,7 +81,7 @@ class _StaticGateRunner:
 
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
-    """Workspace root with .phase-gate/config/workphases.yaml
+    """Workspace root with .pgmcp/config/workphases.yaml
     containing exit_requires + entry_expects.
     """
     config_dir = tmp_path / get_default_server_root() / "config"
@@ -113,7 +113,7 @@ phases:
 
 @pytest.fixture
 def workspace_root_no_gates(tmp_path: Path) -> Path:
-    """Workspace root with .phase-gate/config/workphases.yaml where phases have no gates."""
+    """Workspace root with .pgmcp/config/workphases.yaml where phases have no gates."""
     config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(

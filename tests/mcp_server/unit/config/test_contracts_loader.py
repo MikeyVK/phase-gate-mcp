@@ -52,7 +52,7 @@ _STUB_INSTRUCTIONS = PhaseInstructionsSpec(
 
 @pytest.fixture()
 def config_dir(tmp_path: Path) -> Path:
-    """Return a tmp .phase-gate/config directory."""
+    """Return a tmp .pgmcp/config directory."""
     d = tmp_path / get_default_server_root() / "config"
     d.mkdir(parents=True)
     return d

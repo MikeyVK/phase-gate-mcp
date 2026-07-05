@@ -1,7 +1,7 @@
 """
 Unit tests for scaffold metadata configuration models.
 
-Tests the Pydantic models that load and validate .phase-gate/scaffold_metadata.yaml.
+Tests the Pydantic models that load and validate .pgmcp/scaffold_metadata.yaml.
 Following TDD: These tests are written BEFORE implementation (RED phase).
 
 @layer: Tests (Unit)

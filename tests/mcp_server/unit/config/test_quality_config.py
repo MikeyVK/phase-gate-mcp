@@ -525,7 +525,7 @@ class TestArtifactLoggingConfig:
 class TestActiveGatesContract:
     """Config-contract tests for active_gates list (Issue #251 C0).
 
-    These tests enforce that the active gates list in .phase-gate/config/quality.yaml
+    These tests enforce that the active gates list in .pgmcp/config/quality.yaml
     does not contain pytest/coverage gates that would invoke the test-runner
     as a quality gate — a broken pattern identified in F1/F10.
     """

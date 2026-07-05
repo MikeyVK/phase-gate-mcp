@@ -10,7 +10,7 @@ and legacy hint/blocker/recovery kwargs in production code.
 @layer: Tests (Unit)
 @dependencies: [ast, pathlib]
 @responsibilities:
-    - Detect raw .phase-gate/config path literals in Path() calls
+    - Detect raw .pgmcp/config path literals in Path() calls
     - Detect legacy hints= kwargs in production calls
     - Detect legacy blockers=/recovery= kwargs in production calls
 """
@@ -75,7 +75,7 @@ def _keyword_matches(tree: ast.AST, *names: str) -> list[str]:
 
 
 def test_no_raw_phase_gate_config_paths_in_production() -> None:
-    """No production Python module may hardcode .phase-gate/config paths in Path() calls."""
+    """No production Python module may hardcode .pgmcp/config paths in Path() calls."""
     offenders: list[str] = []
 
     for path in _iter_production_python_files():
@@ -89,7 +89,7 @@ def test_no_raw_phase_gate_config_paths_in_production() -> None:
             offenders.append(f"{_relative_path(path)}: {literals[0]}")
 
     assert not offenders, (
-        "Raw .phase-gate/config/ path literals in Path() calls remain in production code:\n"
+        "Raw .pgmcp/config/ path literals in Path() calls remain in production code:\n"
         + "\n".join(offenders)
     )
 

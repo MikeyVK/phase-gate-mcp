@@ -3,7 +3,7 @@ from tests.mcp_server.test_support import get_default_server_root
 # tests/mcp_server/config/test_operation_policies.py
 """Unit tests for OperationPoliciesConfig model.
 
-Tests Phase 1B: .phase-gate/config/policies.yaml + OperationPoliciesConfig
+Tests Phase 1B: .pgmcp/config/policies.yaml + OperationPoliciesConfig
 Cross-validates allowed_phases against workflows.yaml.
 
 @layer: Tests (Unit)

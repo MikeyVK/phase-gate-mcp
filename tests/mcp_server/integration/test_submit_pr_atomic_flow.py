@@ -292,7 +292,7 @@ class TestSubmitPRNeutralizesQualityState:
     def test_quality_state_json_in_phase_contracts_branch_local_artifacts(
         self,
     ) -> None:
-        """contracts.yaml must include .phase-gate/quality_state.json as branch-local artifact.
+        """contracts.yaml must include .pgmcp/quality_state.json as branch-local artifact.
 
         RED: will fail until C5 GREEN adds quality_state.json to contracts.yaml.
         """
@@ -303,7 +303,7 @@ class TestSubmitPRNeutralizesQualityState:
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
         artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
         assert f"{get_default_server_root()}/quality_state.json" in artifact_paths, (
-            "contracts.yaml must register .phase-gate/quality_state.json as a "
+            "contracts.yaml must register .pgmcp/quality_state.json as a "
             "branch-local artifact so SubmitPRTool neutralizes it before pushing."
         )
 
