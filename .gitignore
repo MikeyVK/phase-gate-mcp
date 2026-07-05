@@ -94,5 +94,4 @@ temp/qa_logs/
 .pgmcp/.state_*.tmp
 .pgmcp/pyright_test.json
 
-# Local-only agent configurations
-.agents/mcp_config.json
+
