@@ -247,19 +247,15 @@ def test_resolved_paths_properties(tmp_path: Path) -> None:
     assert s.resolved_config_root == config_dir.resolve()
     assert s.resolved_template_root == templates_dir.resolve()
 
-    # 2. When folders DO NOT exist under workspace_root (should fall back to packaged assets)
+    # 2. When folders DO NOT exist under workspace_root (should resolve strictly without fallback)
     non_existent_workspace = tmp_path / "non_existent"
     s_fallback = ServerSettings(
         workspace_root=str(non_existent_workspace), server_root_dir=".pgmcp", config_root=""
     )
-    package_root = Path(__file__).resolve().parents[4]
-    expected_config_fallback = (package_root / "mcp_server" / "assets" / "config").resolve()
-    expected_template_fallback = (package_root / "mcp_server" / "assets" / "templates").resolve()
 
     assert s_fallback.resolved_server_root == (non_existent_workspace / ".pgmcp").resolve()
-    assert s_fallback.resolved_config_root == expected_config_fallback
-    assert s_fallback.resolved_template_root == expected_template_fallback
-
+    assert s_fallback.resolved_config_root == (non_existent_workspace / ".pgmcp" / "config").resolve()
+    assert s_fallback.resolved_template_root == (non_existent_workspace / ".pgmcp" / "templates").resolve()
     # 3. With explicit config_root
     s_explicit = ServerSettings(
         workspace_root=str(workspace),
