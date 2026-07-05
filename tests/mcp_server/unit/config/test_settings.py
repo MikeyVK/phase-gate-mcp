@@ -254,8 +254,13 @@ def test_resolved_paths_properties(tmp_path: Path) -> None:
     )
 
     assert s_fallback.resolved_server_root == (non_existent_workspace / ".pgmcp").resolve()
-    assert s_fallback.resolved_config_root == (non_existent_workspace / ".pgmcp" / "config").resolve()
-    assert s_fallback.resolved_template_root == (non_existent_workspace / ".pgmcp" / "templates").resolve()
+    assert (
+        s_fallback.resolved_config_root == (non_existent_workspace / ".pgmcp" / "config").resolve()
+    )
+    assert (
+        s_fallback.resolved_template_root
+        == (non_existent_workspace / ".pgmcp" / "templates").resolve()
+    )
     # 3. With explicit config_root
     s_explicit = ServerSettings(
         workspace_root=str(workspace),

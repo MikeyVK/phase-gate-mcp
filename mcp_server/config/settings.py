@@ -54,6 +54,7 @@ class ServerSettings(BaseModel):
     name: str = "phase-gate-mcp"
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
+    template_root: str | None = None
     server_root_dir: str = ".pgmcp"
     logs_dir: str = "logs"
 
@@ -65,19 +66,13 @@ class ServerSettings(BaseModel):
     def resolved_config_root(self) -> Path:
         if self.config_root:
             return Path(self.config_root)
-        custom_root = self.resolved_server_root / "config"
-        if not custom_root.exists():
-            package_root = Path(__file__).resolve().parents[1]
-            return package_root / "assets" / "config"
-        return custom_root
+        return self.resolved_server_root / "config"
 
     @property
     def resolved_template_root(self) -> Path:
-        custom_root = self.resolved_server_root / "templates"
-        if not custom_root.exists():
-            package_root = Path(__file__).resolve().parents[1]
-            return package_root / "assets" / "templates"
-        return custom_root
+        if self.template_root:
+            return Path(self.template_root)
+        return self.resolved_server_root / "templates"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -123,20 +118,13 @@ class Settings(BaseModel):
         if env_workspace_root := os.environ.get("MCP_WORKSPACE_ROOT"):
             server_data["workspace_root"] = env_workspace_root
         if env_project_dir := os.environ.get("MCP_SERVER_PROJECT_DIR"):
-            workspace_root = server_data.get("workspace_root", os.getcwd())
-            project_root = Path(workspace_root)
-            if (
-                env_project_dir == ".phase-gate"
-                and not (project_root / ".phase-gate" / "state.json").exists()
-                and (project_root / ".pgmcp" / "state.json").exists()
-            ):
-                server_data["server_root_dir"] = ".pgmcp"
-            else:
-                server_data["server_root_dir"] = env_project_dir
+            server_data["server_root_dir"] = env_project_dir
         if env_logs_dir := os.environ.get("MCP_LOGS_DIR"):
             server_data["logs_dir"] = env_logs_dir
         if env_config_root := os.environ.get("MCP_CONFIG_ROOT"):
             server_data["config_root"] = env_config_root
+        if env_template_root := os.environ.get("MCP_TEMPLATE_ROOT"):
+            server_data["template_root"] = env_template_root
 
         if env_owner := os.environ.get("GITHUB_OWNER"):
             github_data["owner"] = env_owner
