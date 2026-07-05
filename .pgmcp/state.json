@@ -1,0 +1,154 @@
+{
+  "branch": "feature/385-package-identity-rename-pgmcp-entry-point",
+  "issue_number": 385,
+  "workflow_name": "feature",
+  "current_phase": "documentation",
+  "current_cycle": 6,
+  "last_cycle": 6,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "C_ARCH_FOUNDATION",
+      "forced": false,
+      "entered": "2026-07-03T21:09:17.727087+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "C_LOADER_PROBES",
+      "forced": false,
+      "entered": "2026-07-04T06:34:07.935519+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "C_CLI_INIT",
+      "forced": false,
+      "entered": "2026-07-04T06:36:46.250250+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "C_WORKSPACE_MIGRATION",
+      "forced": false,
+      "entered": "2026-07-04T06:43:08.684438+00:00"
+    },
+    {
+      "cycle_number": 6,
+      "name": "C_DEBT_ELIMINATION",
+      "forced": false,
+      "entered": "2026-07-05T12:31:19.992874+00:00"
+    }
+  ],
+  "required_phases": [
+    "research",
+    "design",
+    "planning",
+    "implementation",
+    "validation",
+    "documentation",
+    "ready"
+  ],
+  "execution_mode": "interactive",
+  "skip_reason": "QA NOGO: Documentation phase incomplete",
+  "issue_title": "Package Identity & Rename PGMCP Entry Point",
+  "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
+  "created_at": "2026-07-02T08:25:50.999680+00:00",
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-02T09:07:50.917618+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-07-03T18:15:09.171872+00:00",
+      "human_approval": "true",
+      "forced": true,
+      "skip_reason": "User requested to investigate further"
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-03T18:44:25.997542+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-07-03T19:25:17.364593+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-07-03T19:59:41.386388+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-07-05T12:16:02.376462+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-07-05T12:29:58.703306+00:00",
+      "human_approval": "Approved by user MikeyVK in chat session",
+      "forced": true,
+      "skip_reason": "Add Cycle 6: C_DEBT_ELIMINATION to resolve transitional compatibility debt within the planning phase."
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-07-05T12:31:13.560188+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-07-05T13:15:51.826027+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "documentation",
+      "timestamp": "2026-07-05T13:15:56.958899+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-07-05T13:29:44.475512+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "documentation",
+      "timestamp": "2026-07-05T13:51:58.860637+00:00",
+      "human_approval": "User approved revert to documentation phase",
+      "forced": true,
+      "skip_reason": "QA NOGO: Documentation phase incomplete"
+    }
+  ],
+  "reconstructed": false,
+  "current_sub_phase": null
+}

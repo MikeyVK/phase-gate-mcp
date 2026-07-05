@@ -77,6 +77,9 @@ Kraken_Trading_History/
 # Ephemeral artifacts temp files
 .phase-gate/temp/
 .pgmcp/temp/
+# Local templates copy
+.phase-gate/templates/
+.pgmcp/templates/
 
 # QA artifact logs (legacy CWD-relative location, superseded by .phase-gate/logs/qa_logs/)
 temp/qa_logs/

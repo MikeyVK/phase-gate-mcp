@@ -77,7 +77,7 @@ The mixin defines 4 fields that are **never user-provided**. They are injected b
 | `template_id` | `str` | Template identifier e.g. `"dto"`, `"design"` |
 | `version_hash` | `str` | 8-char lowercase hex from tier-chain hash |
 
-The `version_hash` validator enforces `len == 8` and `[0-9a-f]` only. It connects to `.phase-gate/template_registry.yaml` for provenance tracking.
+The `version_hash` validator enforces `len == 8` and `[0-9a-f]` only. It connects to `.pgmcp/template_registry.json` for provenance tracking.
 
 `BaseRenderContext` inherits both `LifecycleMixin` and `BaseContext`, so every `XxxRenderContext` automatically has all 4 lifecycle fields plus the artifact-specific fields.
 
@@ -114,7 +114,7 @@ sequenceDiagram
 
 ### Artifacts Configuration: Type Mapping
 
-Located: `.phase-gate/config/artifacts.yaml`
+Located: `.pgmcp/config/artifacts.yaml`
 
 This YAML file drives scaffolding routing. Every entry maps an `artifact_type` string to a `context_class` name resolved from `mcp_server.schemas`.
 
@@ -204,7 +204,7 @@ from mcp_server.schemas.render_contexts.new_type import NewTypeRenderContext
 ```
 Mandatory: `_enrich_context()` discovers `NewTypeRenderContext` via `getattr(schemas_module, 'NewTypeRenderContext')`. If not exported, the schema pipeline falls back to dict-based logic.
 
-**4. Register in `.phase-gate/artifacts.yaml`**
+**4. Register in `.pgmcp/config/artifacts.yaml`**
 Add the new `type_id` and map the Pydantic context class using the `context_class` attribute:
 ```yaml
 artifacts:

@@ -154,14 +154,14 @@ Generate new artifacts from templates (unified system).
 | **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
 | **ScaffoldSchemaTool** | Return JSON Schema for artifact type context | `artifact_type` | JSON Schema for the context parameter |
 
-**Artifact Types (from .phase-gate/config/artifacts.yaml):**
+**Artifact Types (from .pgmcp/config/artifacts.yaml):**
 - `dto` - Data Transfer Object with Pydantic
 - `worker` - Background job/processor
 - `design` - Design document
 - `adapter` - External API integration
 - `tool` - MCP tool
 
-See `.phase-gate/config/artifacts.yaml` for complete list and required fields per type.
+See `.pgmcp/config/artifacts.yaml` for complete list and required fields per type.
 
 ### 6. Quality & Validation (3 tools)
 
@@ -173,7 +173,7 @@ Run quality gates, tests, and template validation.
 | **RunTestsTool** | Run pytest | `path` (space-sep, mutually exclusive with `scope`), `scope` (`"full"`), `markers`, `last_failed_only`, `timeout`, `coverage`, `verbose` | Single text block with summary + resource cache link to `RunTestsOutput` DTO |
 | **TemplateValidationTool** | Validate file structure against template | `path`, `template_type` | Pass/fail with violation details |
 
-**Quality Gates Standard (`.phase-gate/quality.yaml`):**
+**Quality Gates Standard (`.pgmcp/quality.yaml`):**
 - **Gates 0–3:** Ruff format, strict lint, imports, line length
 - **Gate 4:** Mypy-based type gate
 - **Gate 4b:** Pyright type gate
@@ -337,7 +337,7 @@ File: `.vscode/mcp.json`
 ```
 
 Labels are assembled automatically from the required and optional fields. Do not pass a `labels` list — the tool enforces label policy from
-`.phase-gate/config/issues.yaml` and `.phase-gate/config/labels.yaml`. `body` accepts pre-rendered markdown (string); generate it with `scaffold_artifact(artifact_type='issue')` before calling `create_issue`. Use the `/create-issue` slash prompt to automate the two-step scaffold → submit flow.
+`.pgmcp/config/issues.yaml` and `.pgmcp/config/labels.yaml`. `body` accepts pre-rendered markdown (string); generate it with `scaffold_artifact(artifact_type='issue')` before calling `create_issue`. Use the `/create-issue` slash prompt to automate the two-step scaffold → submit flow.
 
 ### Release Milestone Workflow
 
