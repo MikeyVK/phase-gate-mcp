@@ -9,6 +9,8 @@ Tests exercise the public runner.run() API exclusively; no private-method access
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -49,9 +51,11 @@ def _make_runner_c4(
         workspace_root=tmp_path,
         config=config,
         git_config=_GIT_CONFIG,
-        server_root=tmp_path / ".phase-gate",
+        server_root=tmp_path / get_default_server_root(),
         context_loaded_reader=context_loaded_reader,
-        state_reader=FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json"),
+        state_reader=FileStateRepository(
+            state_file=tmp_path / get_default_server_root() / "state.json"
+        ),
     )
 
 
@@ -73,7 +77,7 @@ def _make_note_context() -> NoteContext:
 
 def _write_state_json(tmp_path: Path) -> None:
     """Create a minimal state.json so the bootstrap predicate does not trigger."""
-    server_root = tmp_path / ".phase-gate"
+    server_root = tmp_path / get_default_server_root()
     server_root.mkdir(parents=True, exist_ok=True)
     (server_root / "state.json").write_text(
         '{"branch": "feature/42-test", "current_phase": "implementation",'
@@ -237,7 +241,8 @@ class TestCheckContextLoadedHandler:
         reader = MagicMock(spec=IContextLoadedReader)
         reader.is_context_loaded.return_value = False
         config = _make_check_context_loaded_config()
-        # server_root = tmp_path / ".phase-gate" per _make_runner_c4 — no state.json there
+        # server_root = tmp_path / get_default_server_root() per _make_runner_c4
+        # — no state.json there
         runner = _make_runner_c4(tmp_path, config, context_loaded_reader=reader)
 
         # Must not raise — bootstrap path returns silently

@@ -1,0 +1,55 @@
+categories:
+  branch_mutating:
+    - create_branch
+    - git_add_or_commit
+    - git_restore
+    - git_checkout
+    - git_push
+    - git_merge
+    - git_delete_branch
+    - git_stash
+    - git_pull
+    - transition_phase
+    - force_phase_transition
+    - submit_pr
+    - initialize_project
+    - save_planning_deliverables
+    - update_planning_deliverables
+    - safe_edit_file
+    - scaffold_artifact
+    - transition_cycle
+    - force_cycle_transition
+enforcement:
+  - event_source: tool
+    tool: create_branch
+    timing: pre
+    actions:
+      - type: check_branch_policy
+        policy: base_restriction
+        rules:
+          hotfix: [main]
+          epic: [main]
+          feature: [main, "epic/*", "refactor/*"]
+          bug: [main, "epic/*"]
+          fix: [main, "epic/*"]
+          refactor: [main, "epic/*"]
+          docs: [main, "epic/*"]
+  - event_source: tool
+    tool_category: branch_mutating
+    timing: pre
+    actions:
+      - type: check_pr_status
+  - event_source: tool
+    tool: submit_pr
+    timing: pre
+    actions:
+      - type: check_phase_readiness
+        policy: ready
+  - event_source: tool
+    tool_category: branch_mutating
+    timing: pre
+    actions:
+      - type: check_context_loaded
+        exempt_tools:
+          - force_phase_transition
+          - force_cycle_transition

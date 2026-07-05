@@ -163,7 +163,7 @@ All six steps are required. Steps 1–4 require Python source code changes.
 | 2 | `mcp_server/schemas/render_contexts/<type>.py` | Create RenderContext schema: extends appropriate render base; adds lifecycle fields |
 | 3 | `mcp_server/schemas/__init__.py` | Export `TypeContext` and `TypeRenderContext` |
 | 4 | `mcp_server/managers/artifact_manager.py` | Add the new type to the artifact-to-Context registry |
-| 5 | `.phase-gate/config/artifacts.yaml` | Enable the artifact type entry |
+| 5 | `.pgmcp/config/artifacts.yaml` | Enable the artifact type entry |
 | 6 | `mcp_server/scaffolding/templates/concrete/<type>.<ext>.jinja2` | Create Jinja2 template with `TEMPLATE_METADATA` block including `introspection.variables` |
 
 ### Context schema conventions

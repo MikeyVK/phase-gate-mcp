@@ -27,12 +27,14 @@ dist/
 # IDE / Editor
 .idea/
 .vscode/
+.agents/mcp_config.json
 *.swp
 *.swo
 *~
 
 # Logs - runtime output under server_root/logs/ (new location)
 .phase-gate/logs/
+.pgmcp/logs/
 # Legacy CWD-relative log locations (kept for backward compat with old installs)
 mcp_server/logs/
 .logs/
@@ -71,16 +73,26 @@ Kraken_Trading_History/
 
 # Phase-Gate Workflow - Runtime state (partially version controlled)
 .phase-gate/.restart_marker
+.pgmcp/.restart_marker
 # Ephemeral artifacts temp files
 .phase-gate/temp/
+.pgmcp/temp/
+# Local templates copy
+.phase-gate/templates/
+.pgmcp/templates/
 
 # QA artifact logs (legacy CWD-relative location, superseded by .phase-gate/logs/qa_logs/)
 temp/qa_logs/
 
 # Phase-Gate Workflow - Local debug artifacts
 .phase-gate/popen_called.txt
+.pgmcp/popen_called.txt
 .phase-gate/sync_debug.log
+.pgmcp/sync_debug.log
 .phase-gate/test_sync.py
+.pgmcp/test_sync.py
 .phase-gate/.state_*.tmp
+.pgmcp/.state_*.tmp
 # Test output
 .phase-gate/pyright_test.json
+.pgmcp/pyright_test.json

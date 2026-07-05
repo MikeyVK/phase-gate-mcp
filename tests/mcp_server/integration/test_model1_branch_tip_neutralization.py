@@ -25,6 +25,8 @@ Three scenarios (D5 test contract):
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import json
 from pathlib import Path
@@ -40,8 +42,8 @@ from mcp_server.tools.git_tools import GitCommitInput, GitCommitTool
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
-_STATE_JSON = ".phase-gate/state.json"
-_DELIVERABLES_JSON = ".phase-gate/deliverables.json"
+_STATE_JSON = f"{get_default_server_root()}/state.json"
+_DELIVERABLES_JSON = f"{get_default_server_root()}/deliverables.json"
 
 
 # ---------------------------------------------------------------------------
@@ -54,9 +56,9 @@ def _init_repo_scenario_a(repo_dir: Path) -> GitRepo:
 
     Branch layout after setup:
         main   (commit M: normal.py only)
-        └─ feature/test (commit F: + .phase-gate/state.json added)
+        └─ feature/test (commit F: + .pgmcp/state.json added)
 
-    The excluded path (.phase-gate/state.json) exists on feature/test but NOT on main.
+    The excluded path (.pgmcp/state.json) exists on feature/test but NOT on main.
     Simulates: developer created a branch-local artifact that was never on BASE.
     After neutralize_to_base the artifact must be absent from HEAD tree.
     """
@@ -73,7 +75,7 @@ def _init_repo_scenario_a(repo_dir: Path) -> GitRepo:
     repo.git.checkout("-b", "feature/test")
 
     # Commit state.json on the feature branch (absent from main)
-    state_dir = repo_dir / ".phase-gate"
+    state_dir = repo_dir / get_default_server_root()
     state_dir.mkdir(parents=True, exist_ok=True)
     (state_dir / "state.json").write_text('{"cycle": 1}', encoding="utf-8")
     repo.index.add([_STATE_JSON])
@@ -86,10 +88,10 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
     """Create a repo where BASE (main) already has the excluded path at v1.
 
     Branch layout after setup:
-        main   (commit M: normal.py + .phase-gate/state.json at v1)
+        main   (commit M: normal.py + .pgmcp/state.json at v1)
         └─ feature/test (forked from M, inherits v1)
 
-    The test must modify .phase-gate/state.json to v2 on the feature branch. After
+    The test must modify .pgmcp/state.json to v2 on the feature branch. After
     neutralize_to_base the file must be restored to the BASE (v1) version.
     Covers the epic-parent scenario where main itself carries the artifact.
     """
@@ -100,7 +102,7 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
 
     repo.git.checkout("-b", "main")
 
-    state_dir = repo_dir / ".phase-gate"
+    state_dir = repo_dir / get_default_server_root()
     state_dir.mkdir(parents=True, exist_ok=True)
     (repo_dir / "normal.py").write_text("# v1\n", encoding="utf-8")
     (state_dir / "state.json").write_text('{"cycle": 1}', encoding="utf-8")
@@ -113,7 +115,7 @@ def _init_repo_scenario_b(repo_dir: Path) -> GitRepo:
 
 def _make_commit_tool(repo_dir: Path) -> GitCommitTool:
     """Build GitCommitTool operating on repo_dir."""
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+    loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
     git_config = loader.load_git_config()
     manager = GitManager(
         git_config=git_config,
@@ -162,7 +164,7 @@ class TestModel1BranchTipNeutralization:
         """Scenario C: without ExclusionNotes, all changed files appear in the commit diff.
 
         Regression guard: the neutralize route must NOT fire on a normal commit.
-        All modified files including .phase-gate/state.json must appear in the net-diff
+        All modified files including .pgmcp/state.json must appear in the net-diff
         when no ExclusionNotes are present.
         """
         repo = _init_repo_scenario_b(tmp_path)  # base has state.json — convenient setup

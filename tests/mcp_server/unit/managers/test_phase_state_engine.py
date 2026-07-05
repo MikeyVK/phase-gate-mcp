@@ -7,6 +7,8 @@ Issue #146 Cycle 4: implementation phase lifecycle hooks.
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -256,7 +258,7 @@ class TestTransitionHooksWiring:
         """Create project with planning deliverables."""
         workspace_root = tmp_path
         issue_number = 999
-        config_dir = workspace_root / ".phase-gate" / "config"
+        config_dir = workspace_root / get_default_server_root() / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "contracts.yaml").write_text(
             (
@@ -760,7 +762,7 @@ class TestContextLoadedWriterReset:
     @pytest.fixture()
     def project(self, tmp_path: Path) -> tuple[Path, int]:
         """Set up project with two TDD cycles for reset-writer tests."""
-        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir = tmp_path / get_default_server_root() / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "contracts.yaml").write_text(self._CONTRACTS_YAML, encoding="utf-8")
 
@@ -950,7 +952,7 @@ class TestPhaseStateFreshSLambdaC1:
     @pytest.fixture()
     def cycle_project(self, tmp_path: Path) -> tuple[Path, int]:
         """Workspace with a cycle-based implementation phase and 2 planned cycles."""
-        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir = tmp_path / get_default_server_root() / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "contracts.yaml").write_text(
             (

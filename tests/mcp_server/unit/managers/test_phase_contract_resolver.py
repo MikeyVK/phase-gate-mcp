@@ -7,6 +7,8 @@
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import json
 from pathlib import Path
@@ -23,7 +25,7 @@ from tests.mcp_server.test_support import make_phase_config_context
 @pytest.fixture
 def workspace_root(tmp_path: Path) -> Path:
     """Create a minimal workspace with workphases, phase contracts, and deliverables."""
-    phase_gate_dir = tmp_path / ".phase-gate"
+    phase_gate_dir = tmp_path / get_default_server_root()
     config_dir = phase_gate_dir / "config"
     config_dir.mkdir(parents=True)
 
@@ -171,7 +173,7 @@ class TestPhaseConfigContext:
 
     def test_invalid_cycle_based_phase_raises_config_error(self, tmp_path: Path) -> None:
         """cycle_based phases must declare a non-empty commit_type_map."""
-        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir = tmp_path / get_default_server_root()
         config_dir = phase_gate_dir / "config"
         config_dir.mkdir(parents=True)
 
@@ -210,12 +212,12 @@ class TestPhaseConfigContext:
 
         assert exc_info.value.file_path is not None
         assert exc_info.value.file_path.replace("\\", "/").endswith(
-            "/.phase-gate/config/contracts.yaml"
+            f"/{get_default_server_root()}/config/contracts.yaml"
         )
 
     def test_loader_applies_defaults_for_optional_phase_fields(self, tmp_path: Path) -> None:
         """Missing optional fields should resolve to empty collections and false."""
-        phase_gate_dir = tmp_path / ".phase-gate"
+        phase_gate_dir = tmp_path / get_default_server_root()
         config_dir = phase_gate_dir / "config"
         config_dir.mkdir(parents=True)
 

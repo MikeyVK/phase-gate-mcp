@@ -136,7 +136,7 @@ class TestProxyIntegration:
     python tests/manual/test_proxy_restart_manual.py
 
     # Terminal 3: Monitor restart events
-    tail -f .phase-gate/audit/restart.log
+    tail -f .pgmcp/audit/restart.log
     ```
 
     **CI Integration:**
@@ -154,7 +154,7 @@ class TestProxyIntegration:
     **Expected Environment:**
     - Python 3.11+ installed
     - MCP server package installed (pip install -e .)
-    - Write access to .phase-gate/audit/ directory
+    - Write access to .pgmcp/audit/ directory
     - No other MCP server instances running (port conflicts)
 
     **Manual Verification Checklist:**
@@ -191,7 +191,7 @@ class TestProxyIntegration:
         Environment Requirements:
         - RUN_MANUAL_TESTS=1 environment variable
         - MCP server runnable as subprocess
-        - Clean .phase-gate/audit/ directory
+        - Clean .pgmcp/audit/ directory
 
         Raises:
             pytest.skip: If RUN_MANUAL_TESTS not set (default behavior)

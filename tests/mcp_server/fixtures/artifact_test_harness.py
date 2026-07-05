@@ -8,6 +8,8 @@
   - E2E test helpers
 """
 
+from tests.mcp_server.test_support import get_default_server_root
+
 # Standard library
 from collections.abc import Generator
 from dataclasses import dataclass, field
@@ -113,11 +115,10 @@ def _artifacts_yaml_file_phase_gate(
     """
     Write artifacts.yaml to temp workspace.
 
-    Returns path to .phase-gate/config/artifacts.yaml
+    Returns path to .pgmcp/config/artifacts.yaml
     """
-    config_dir = temp_workspace / ".phase-gate" / "config"
-    config_dir.mkdir(parents=True)
-
+    config_dir = temp_workspace / get_default_server_root() / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
     artifacts_file = config_dir / "artifacts.yaml"
     artifacts_file.write_text(artifacts_yaml_content, encoding="utf-8")
 
@@ -205,7 +206,7 @@ def _artifact_manager(
         scaffolder=template_scaffolder,
         validation_service=validation_service,
         fs_adapter=fs_adapter,
-        server_root=temp_workspace / ".phase-gate",
+        server_root=temp_workspace / get_default_server_root(),
     )
 
 

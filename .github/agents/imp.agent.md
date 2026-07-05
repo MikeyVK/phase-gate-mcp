@@ -72,8 +72,7 @@ Follow these sources in this order:
 **Precondition: branch must be pre-initialized by `@co`.**
 `@imp` always starts on a branch where `create_branch`, `git_checkout`, and `initialize_project` have already been called by `@co`.
 An uninitialized branch reaching `@imp` is a process violation — do not call `initialize_project` as recovery.
-If the branch has no `.phase-gate/state.json`, stop and report the blocker; do not attempt to initialize.
-
+If the branch has no `.pgmcp/state.json`, stop and report the blocker; do not attempt to initialize.
 Do not rely on stale memory.
 
 1. Call `get_work_context` — this is your first and most authoritative action.
@@ -88,7 +87,7 @@ Do not rely on stale memory.
 5. Call `get_project_plan` for the active issue if phase-specific exit criteria are relevant.
 6. Inspect the worktree for existing changes before editing anything.
 7. Inspect the latest QA verdict if one exists, so you do not re-open a previously rejected path by accident.
-8. When reading `.phase-gate/state.json`: it is a branch-local artifact committed with the branch.
+8. When reading `.pgmcp/state.json`: it is a branch-local artifact committed with the branch.
    Do not treat it as runtime-only or ephemeral — it carries the authoritative phase audit trail
    until `submit_pr` neutralizes it.
 

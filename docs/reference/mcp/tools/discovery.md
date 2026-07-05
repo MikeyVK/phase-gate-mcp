@@ -182,8 +182,8 @@ TODO discipline: create or refresh your TODO list now; keep exactly one item in 
 
 #### Behavior Notes
 
-- **State Source:** Reads workflow, phase, issue number, parent branch, cycle, and sub-phase from branch-local `.phase-gate/state.json` when available.
-- **Phase Script Delivery:** Reads `sub_role_hint`, `phase_instructions`, and optional `handover_template` from `.phase-gate/config/contracts.yaml` for the active workflow and phase.
+- **State Source:** Reads workflow, phase, issue number, parent branch, cycle, and sub-phase from branch-local `.pgmcp/state.json` when available.
+- **Phase Script Delivery:** Reads `sub_role_hint`, `phase_instructions`, and optional `handover_template` from `.pgmcp/config/contracts.yaml` for the active workflow and phase.
 - **Dominant Instructions Block:** Renders `### 🎯 Phase Instructions` as the first major section after the orientation header.
 - **No Legacy Work Queue Payload:** Does not return `open_issues`, `recent_closed`, `suggestions`, `active_issue`, `recent_commits`, or `tdd_cycle_info`.
 - **Bootstrap Degradation:** If branch state is unavailable, the tool still returns a branch-oriented response with an explicit `No instructions defined` fallback instead of failing.
@@ -409,7 +409,7 @@ Proxy behavior configured in [mcp_server/core/proxy.py](../../../../mcp_server/c
 
 ### get_work_context
 
-- **State Reads:** Current branch plus local `.phase-gate/state.json` and `.phase-gate/config/contracts.yaml`
+- **State Reads:** Current branch plus local `.pgmcp/state.json` and `.pgmcp/config/contracts.yaml`
 - **Execution Time:** Local-only path with no GitHub network dependency
 - **Side Effect:** Sets the in-memory `context_loaded` flag for the active branch when the writer is configured
 

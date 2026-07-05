@@ -35,7 +35,7 @@ After reading this document you will understand:
 **Out of Scope:**
 - MCP tool API details \u2014 see [tools/README.md][tools-ref]
 - Phase-gate enforcement internals (EnforcementRunner, contracts.yaml) \u2014 see [mcp_vision_reference.md][vision-ref]
-- Git workflow mechanics \u2014 see [GIT_WORKFLOW.md][git-workflow]
+- Git workflow mechanics — see [AGENTS.md][agents-md]
 
 ## Prerequisites
 
@@ -192,9 +192,8 @@ still routes `@imp` \u2192 `@qa`.
 ### 4.1 `get_work_context` \u2014 the runtime context bridge
 
 The `get_work_context` MCP tool is the bridge between the static instruction files and the
-dynamic workflow state. It reads the active branch, branch-local `.phase-gate/state.json`,
-and `.phase-gate/config/contracts.yaml`, then returns a formatted orientation response that
-agents can act on immediately.
+dynamic workflow state. It reads the active branch, branch-local `.pgmcp/state.json`,
+and `.pgmcp/config/contracts.yaml`, then returns a formatted orientation response that
 
 **Key fields returned or rendered:**
 
@@ -217,10 +216,9 @@ block instead of failing hard.
 ### 4.2 `phase_instructions` \u2014 dynamic operational script
 
 `phase_instructions` is a multi-line string that contains the operational TODO list for the
-current `(workflow, phase)` contract. `GetWorkContextTool` resolves the active workflow and
+GetWorkContextTool resolves the active workflow and
 phase from branch state, then reads the matching instruction block from
-`.phase-gate/config/contracts.yaml`.
-
+`.pgmcp/config/contracts.yaml`.
 **Example output for `(bug, implementation)` phase:**
 
 ```
@@ -310,7 +308,7 @@ On @imp invocation:
 Startup sequence (per imp.agent.md):
   Precondition: branch must be pre-initialized by @co
   └─ create_branch + git_checkout + initialize_project already done
-  └─ if .phase-gate/state.json absent → stop and report; do NOT call initialize_project
+  └─ if .pgmcp/state.json absent → stop and report; do NOT call initialize_project
   1. get_work_context
      └─ if phase_instructions present → follow it as operational script
      └─ if absent → read AGENTS.md, then proceed
@@ -390,7 +388,7 @@ The repo supports two practical operating variants for agents. This is a **confi
 Use this mode when the branch should actively steer the agent through workflow state.
 
 **Setup actions:**
-1. Keep `check_context_loaded` enabled in `.phase-gate/config/enforcement.yaml` for `branch_mutating` tools.
+1. Keep `check_context_loaded` enabled in `.pgmcp/config/enforcement.yaml` for `branch_mutating` tools.
 2. Keep `.github/agents/*.agent.md` and lifecycle prompts explicit that `get_work_context()` is the required first in-phase read.
 3. Keep phase `instructions` present and directive enough to drive session behavior.
 4. Preserve lifecycle-boundary exceptions (issue #268 — open-issue and end-issue are explicit lifecycle boundaries that run before the normal `get_work_context`-first session).
@@ -455,7 +453,7 @@ longer exists in the project.
 
 Three reasons:
 1. **Dynamic**: phase instructions change as workflow contracts evolve without requiring
-   agent-file changes. The active workflow-phase entry in `.phase-gate/config/contracts.yaml`
+   agent-file changes. The active workflow-phase entry in `.pgmcp/config/contracts.yaml`
    is the source of truth.
 2. **Per-workflow**: different workflows can attach different instructions and sub-role
    hints to the same phase name. A static file cannot express this cleanly without
@@ -484,7 +482,7 @@ by the `.agent.md` body instructions and by QA review \u2014 not by tool restric
 
 If a workflow gains a new phase, update the contract layer that `get_work_context` reads:
 
-1. Add or adjust the workflow-phase entry in `.phase-gate/config/contracts.yaml`, including
+1. Add or adjust the workflow-phase entry in `.pgmcp/config/contracts.yaml`, including
    `sub_role`, `phase_instructions`, and any `handover_template` text.
 2. If the change also alters global workflow metadata or role ownership semantics, align the
    corresponding reference docs and startup instructions.
@@ -505,7 +503,7 @@ the new phase changes a global role boundary, ownership model, or lifecycle exce
 - **[.github/agents/qa.agent.md][qa-agent]** \u2014 QA agent full spec
 - **[.github/agents/co.agent.md][co-agent]** \u2014 coordination agent full spec
 - **[ARCHITECTURE_PRINCIPLES.md][arch-principles]** \u2014 binding architecture contract
-- **[GIT_WORKFLOW.md][git-workflow]** \u2014 branch and commit conventions
+- **[AGENTS.md][agents-md]** — branch and commit conventions
 
 <!-- Link definitions -->
 [tools-ref]: tools/README.md
@@ -515,7 +513,6 @@ the new phase changes a global role boundary, ownership model, or lifecycle exce
 [qa-agent]: ../../../.github/agents/qa.agent.md
 [co-agent]: ../../../.github/agents/co.agent.md
 [arch-principles]: ../../coding_standards/ARCHITECTURE_PRINCIPLES.md
-[git-workflow]: ../../coding_standards/GIT_WORKFLOW.md
 
 ---
 

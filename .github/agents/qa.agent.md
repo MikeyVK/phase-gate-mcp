@@ -156,7 +156,7 @@ Treat these as architecture findings, not stylistic preferences.
 
 ## ⚠️ Suppression Audit (CRITICAL — run before every GO)
 
-`gate1_formatting` in `.phase-gate/config/quality.yaml` runs ruff **without** `--ignore-noqa`. **File-level `# ruff: noqa:` headers** bypass the gate entirely — entire categories suppressed with no visibility.
+`gate1_formatting` in `.pgmcp/config/quality.yaml` runs ruff **without** `--ignore-noqa`. **File-level `# ruff: noqa:` headers** bypass the gate entirely — entire categories suppressed with no visibility.
 
 **QA must always grep for file-level headers before accepting a Gate 1 pass:**
 

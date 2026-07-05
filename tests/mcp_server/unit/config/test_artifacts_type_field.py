@@ -1,7 +1,7 @@
 """Unit tests for artifacts.yaml type field.
 
 Validates:
-- ALL artifacts in .phase-gate/config/artifacts.yaml have type field (code|doc|config)
+- ALL artifacts in .pgmcp/config/artifacts.yaml have type field (code|doc|config)
 - Code artifacts (dto, worker, adapter, tool, resource, etc.) have type: code
 - Document artifacts (research, planning, design, etc.) have type: doc
 
@@ -9,6 +9,7 @@ Validates:
 @dependencies: pytest, mcp_server.config.schemas.artifact_registry_config
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest
@@ -19,16 +20,16 @@ from mcp_server.config.schemas import ArtifactRegistryConfig, ArtifactType
 
 @pytest.fixture
 def artifacts_config() -> ArtifactRegistryConfig:
-    """Load config from actual .phase-gate/config/artifacts.yaml."""
-    # Find project root (.phase-gate directory exists there)
+    """Load config from actual .pgmcp/config/artifacts.yaml."""
+    # Find project root (.pgmcp directory exists there)
     current_dir = Path(__file__).resolve()
     project_root = current_dir
-    while not (project_root / ".phase-gate").exists():
+    while not (project_root / get_default_server_root()).exists():
         project_root = project_root.parent
         if project_root == project_root.parent:
-            raise FileNotFoundError("Could not find .phase-gate directory")
+            raise FileNotFoundError("Could not find .pgmcp directory")
 
-    artifacts_yaml = project_root / ".phase-gate" / "config" / "artifacts.yaml"
+    artifacts_yaml = project_root / get_default_server_root() / "config" / "artifacts.yaml"
     return ConfigLoader(artifacts_yaml.parent).load_artifact_registry_config(
         config_path=artifacts_yaml
     )

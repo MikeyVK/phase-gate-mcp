@@ -7,6 +7,8 @@ Tests immutable label definition with color validation and YAML loading.
 @dependencies: [pytest, dataclasses, mcp_server.config.label_config]
 """
 
+from tests.mcp_server.test_support import get_default_server_root
+
 # Standard library
 from dataclasses import FrozenInstanceError
 from pathlib import Path
@@ -21,7 +23,7 @@ from mcp_server.config.schemas import LabelConfig
 from mcp_server.config.schemas.label_config import Label
 from mcp_server.core.exceptions import ConfigError
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 def _load_label_config(config_path: Path) -> LabelConfig:

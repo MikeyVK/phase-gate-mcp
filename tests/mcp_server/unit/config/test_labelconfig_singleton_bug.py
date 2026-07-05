@@ -4,13 +4,14 @@
 @dependencies: pytest, mcp_server.config.loader, mcp_server.config.schemas
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 import time
 from pathlib import Path
 
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import LabelConfig
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 def _load_label_config(config_path: Path) -> LabelConfig:

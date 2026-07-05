@@ -21,7 +21,7 @@ Quick-lookup inventory of all registered artifact types, their required context 
 
 Use `scaffold_schema(artifact_type="<type>")` to get the full JSON Schema for any type's context.
 
-Registry: `.phase-gate/config/artifacts.yaml`
+Registry: `.pgmcp/config/artifacts.yaml`
 
 ### Code Artifacts
 

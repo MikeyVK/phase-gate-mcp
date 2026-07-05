@@ -30,6 +30,8 @@ Also verifies:
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import asyncio
 import inspect
@@ -52,11 +54,11 @@ from mcp_server.tools import git_tools
 from mcp_server.tools.pr_tools import SubmitPRInput, SubmitPRTool
 
 _STATE_ARTIFACT = BranchLocalArtifact(
-    path=".phase-gate/state.json",
+    path=f"{get_default_server_root()}/state.json",
     reason="branch-local workflow state",
 )
 _DELIVERABLES_ARTIFACT = BranchLocalArtifact(
-    path=".phase-gate/deliverables.json",
+    path=f"{get_default_server_root()}/deliverables.json",
     reason="branch-local deliverables",
 )
 
@@ -265,7 +267,7 @@ class TestCompositionRootContracts:
         check_phase_readiness must still be present.
         """
         workspace_root = Path(__file__).parents[3]
-        config_path = workspace_root / ".phase-gate" / "config" / "enforcement.yaml"
+        config_path = workspace_root / get_default_server_root() / "config" / "enforcement.yaml"
         config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
 
         submit_pr_actions = [
@@ -290,18 +292,18 @@ class TestSubmitPRNeutralizesQualityState:
     def test_quality_state_json_in_phase_contracts_branch_local_artifacts(
         self,
     ) -> None:
-        """contracts.yaml must include .phase-gate/quality_state.json as branch-local artifact.
+        """contracts.yaml must include .pgmcp/quality_state.json as branch-local artifact.
 
         RED: will fail until C5 GREEN adds quality_state.json to contracts.yaml.
         """
         import yaml as _yaml  # noqa: PLC0415
 
         workspace_root = Path(__file__).parents[3]
-        contracts_path = workspace_root / ".phase-gate" / "config" / "contracts.yaml"
+        contracts_path = workspace_root / get_default_server_root() / "config" / "contracts.yaml"
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
         artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
-        assert ".phase-gate/quality_state.json" in artifact_paths, (
-            "contracts.yaml must register .phase-gate/quality_state.json as a "
+        assert f"{get_default_server_root()}/quality_state.json" in artifact_paths, (
+            "contracts.yaml must register .pgmcp/quality_state.json as a "
             "branch-local artifact so SubmitPRTool neutralizes it before pushing."
         )
 
@@ -313,12 +315,12 @@ class TestSubmitPRNeutralizesQualityState:
         RED: will fail until C5 GREEN wires quality_state.json into server.py composition.
         """
         workspace_root = Path(__file__).parents[3]
-        contracts_path = workspace_root / ".phase-gate" / "config" / "contracts.yaml"
+        contracts_path = workspace_root / get_default_server_root() / "config" / "contracts.yaml"
         import yaml as _yaml  # noqa: PLC0415
 
         contracts = _yaml.safe_load(contracts_path.read_text(encoding="utf-8"))
         artifact_paths = [a["path"] for a in contracts["merge_policy"]["branch_local_artifacts"]]
-        assert ".phase-gate/quality_state.json" in artifact_paths, (
+        assert f"{get_default_server_root()}/quality_state.json" in artifact_paths, (
             "quality_state.json must appear in contracts.yaml so server.py wires "
             "it into MergeReadinessContext and SubmitPRTool neutralizes it."
         )
@@ -465,7 +467,10 @@ class TestSubmitPRAtomicRefactored:
         call_args = git_manager.prepare_submission.call_args
         artifact_paths_arg = call_args[0][0] if call_args[0] else call_args[1]["artifact_paths"]
         assert artifact_paths_arg == frozenset(
-            {".phase-gate/state.json", ".phase-gate/deliverables.json"}
+            {
+                f"{get_default_server_root()}/state.json",
+                f"{get_default_server_root()}/deliverables.json",
+            }
         )
 
 

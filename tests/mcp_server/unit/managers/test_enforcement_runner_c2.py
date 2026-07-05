@@ -9,6 +9,8 @@ Tests exercise the public runner.run() API exclusively; no private-method access
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -52,8 +54,10 @@ def _make_runner(
         config=config,
         git_config=MagicMock(),
         pr_status_reader=pr_status_reader,
-        server_root=tmp_path / ".phase-gate",
-        state_reader=FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json"),
+        server_root=tmp_path / get_default_server_root(),
+        state_reader=FileStateRepository(
+            state_file=tmp_path / get_default_server_root() / "state.json"
+        ),
     )
 
 
@@ -324,7 +328,7 @@ class TestCheckPhaseReadinessHandler:
     """check_phase_readiness action via runner.run() public API."""
 
     def _make_state(self, tmp_path: Path, phase: str) -> None:
-        state_dir = tmp_path / ".phase-gate"
+        state_dir = tmp_path / get_default_server_root()
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text(
             f'{{"branch": "feature/1-test", "current_phase": "{phase}",'

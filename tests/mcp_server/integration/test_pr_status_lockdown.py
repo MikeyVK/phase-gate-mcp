@@ -29,6 +29,8 @@ Verifies that:
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 # Standard library
 from pathlib import Path
@@ -123,8 +125,8 @@ def _make_pr_reader(status: PRStatus) -> IPRStatusReader:
 
 def _make_runner(pr_status: PRStatus, tmp_path: Path) -> EnforcementRunner:
     """Build an EnforcementRunner with the live enforcement.yaml and a mocked PR reader."""
-    enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+    enforcement_yaml = _REPO_ROOT / get_default_server_root() / "config" / "enforcement.yaml"
+    loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
     config = loader.load_enforcement_config(config_path=enforcement_yaml)
     return EnforcementRunner(
         workspace_root=tmp_path,
@@ -148,8 +150,8 @@ class TestBranchMutatingToolRegistration:
     def test_is_registered_in_categories(self, tool_cls: type[ICoreTool[Any, Any]]) -> None:
         assert tool_cls.name.fget is not None
         tool_name = tool_cls.name.fget(None)
-        loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
-        enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
+        loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
+        enforcement_yaml = _REPO_ROOT / get_default_server_root() / "config" / "enforcement.yaml"
         config = loader.load_enforcement_config(config_path=enforcement_yaml)
         assert tool_name in config.categories.get("branch_mutating", []), (
             f"Tool '{tool_name}' ({tool_cls.__name__}) must be configured under "
@@ -166,7 +168,7 @@ class TestMergePREscapeHatch:
     """MergePRTool is the escape hatch — it must NOT be a branch-mutating tool."""
 
     def test_merge_pr_tool_is_not_branch_mutating(self) -> None:
-        loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+        loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
         config = loader.load_enforcement_config()
         assert MergePRTool.name.fget is not None
         tool_name = MergePRTool.name.fget(None)

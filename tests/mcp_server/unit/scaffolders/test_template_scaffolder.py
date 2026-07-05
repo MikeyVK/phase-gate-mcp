@@ -1,3 +1,5 @@
+from tests.mcp_server.test_support import get_default_server_root, get_template_root
+
 # tests/unit/scaffolders/test_template_scaffolder.py
 """
 Unit tests for TemplateScaffolder.
@@ -24,13 +26,12 @@ from mcp_server.config.schemas import ArtifactRegistryConfig
 from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.renderer import JinjaRenderer
-from mcp_server.utils.template_config import get_template_root
 
 
 @pytest.fixture(name="registry")
 def artifact_registry() -> ArtifactRegistryConfig:
     """Provide artifact registry configuration."""
-    return ConfigLoader(Path(".phase-gate/config")).load_artifact_registry_config()
+    return ConfigLoader(Path(f"{get_default_server_root()}/config")).load_artifact_registry_config()
 
 
 @pytest.fixture(name="real_renderer")
@@ -129,11 +130,9 @@ class TestValidate:
     """Test validate method."""
 
     def test_validate_success_with_all_required_fields(
-        self, registry: ArtifactRegistryConfig
+        self, scaffolder: TemplateScaffolder
     ) -> None:
         """Validate passes when all required fields present."""
-        scaffolder = TemplateScaffolder(registry=registry)
-
         result = scaffolder.validate(
             artifact_type="dto",
             name="TestDTO",
@@ -149,11 +148,9 @@ class TestValidate:
         assert result is True
 
     def test_validate_fails_when_required_field_missing(
-        self, registry: ArtifactRegistryConfig
+        self, scaffolder: TemplateScaffolder
     ) -> None:
         """Validate raises ValidationError when required field missing."""
-        scaffolder = TemplateScaffolder(registry=registry)
-
         with pytest.raises(ValidationError) as exc_info:
             scaffolder.validate(
                 artifact_type="dto",
@@ -166,11 +163,9 @@ class TestValidate:
         assert "name" in error_msg
 
     def test_validate_allows_optional_fields_to_be_missing(
-        self, registry: ArtifactRegistryConfig
+        self, scaffolder: TemplateScaffolder
     ) -> None:
         """Validate passes when optional fields missing."""
-        scaffolder = TemplateScaffolder(registry=registry)
-
         result = scaffolder.validate(
             artifact_type="dto",
             name="TestDTO",

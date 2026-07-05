@@ -10,6 +10,7 @@ Tests configuration loading from artifacts.yaml with:
 @dependencies: pytest, yaml, mcp_server.config.schemas.artifact_registry_config
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 from typing import Any
 
@@ -26,10 +27,10 @@ from mcp_server.config.schemas import (
 from mcp_server.core.exceptions import ConfigError
 
 # config_path is always passed explicitly to load_*; config_root is only used as
-# a required constructor argument. We point it at the real .phase-gate/config directory
+# a required constructor argument. We point it at the real .pgmcp/config directory
 # (named "config", so normalize_config_root accepts it) to avoid coupling the
 # loader constructor to arbitrary temp directories.
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 def _load_artifact_registry(config_path: Path) -> ArtifactRegistryConfig:

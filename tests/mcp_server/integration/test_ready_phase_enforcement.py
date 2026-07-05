@@ -1,3 +1,5 @@
+from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/integration/test_ready_phase_enforcement.py
 # template=unit_test version= created=2026-04-09T00:00Z updated=
 """
@@ -47,11 +49,11 @@ from mcp_server.tools.pr_tools import SubmitPRTool
 
 _REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
-_STATE_JSON = ".phase-gate/state.json"
+_STATE_JSON = f"{get_default_server_root()}/state.json"
 
 
 def _write_state(tmp_path: Path, current_phase: str) -> None:
-    state_dir = tmp_path / ".phase-gate"
+    state_dir = tmp_path / get_default_server_root()
     state_dir.mkdir(parents=True, exist_ok=True)
     (state_dir / "state.json").write_text(
         json.dumps(
@@ -67,8 +69,8 @@ def _write_state(tmp_path: Path, current_phase: str) -> None:
 
 def _make_runner(tmp_path: Path) -> EnforcementRunner:
     """Build EnforcementRunner backed by the live enforcement.yaml."""
-    enforcement_yaml = _REPO_ROOT / ".phase-gate" / "config" / "enforcement.yaml"
-    loader = ConfigLoader(config_root=_REPO_ROOT / ".phase-gate" / "config")
+    enforcement_yaml = _REPO_ROOT / get_default_server_root() / "config" / "enforcement.yaml"
+    loader = ConfigLoader(config_root=_REPO_ROOT / get_default_server_root() / "config")
     config = loader.load_enforcement_config(config_path=enforcement_yaml)
 
     pr_reader = MagicMock(spec=IPRStatusReader)
@@ -83,8 +85,10 @@ def _make_runner(tmp_path: Path) -> EnforcementRunner:
         git_config=loader.load_git_config(),
         pr_status_reader=pr_reader,
         context_loaded_reader=context_reader,
-        server_root=tmp_path / ".phase-gate",
-        state_reader=FileStateRepository(state_file=tmp_path / ".phase-gate" / "state.json"),
+        server_root=tmp_path / get_default_server_root(),
+        state_reader=FileStateRepository(
+            state_file=tmp_path / get_default_server_root() / "state.json"
+        ),
     )
 
 

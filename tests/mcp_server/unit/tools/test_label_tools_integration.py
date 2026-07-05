@@ -7,6 +7,8 @@ Tests validation hooks in CreateLabelTool, AddLabelsTool, and DetectLabelDriftTo
 @dependencies: [pytest, mcp_server.tools.label_tools, mcp_server.config.label_config]
 """
 
+from tests.mcp_server.test_support import get_default_server_root
+
 # Standard library
 from pathlib import Path
 from unittest.mock import Mock
@@ -42,7 +44,7 @@ class _MockLabel:  # pylint: disable=too-few-public-methods
         self.description = description
 
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 def _load_label_config(tmp_path: Path, yaml_content: str) -> LabelConfig:

@@ -5,11 +5,16 @@
       "artifact_type": "dto",
       "created": "2026-05-10T14:30:29.110985+00:00",
       "hash_algorithm": "SHA256"
+    },
+    "4022cb12": {
+      "artifact_type": "dto",
+      "created": "2026-07-04T06:09:15.499018+00:00",
+      "hash_algorithm": "SHA256"
     }
   },
   "current_versions": {
-    "dto": "406c2d11"
+    "dto": "4022cb12"
   },
   "templates": {},
-  "last_updated": "2026-05-10T14:30:29.111000+00:00"
+  "last_updated": "2026-07-04T06:09:15.499030+00:00"
 }

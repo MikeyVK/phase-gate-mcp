@@ -6,6 +6,7 @@
                    -> type:bug mapping), and optional_label_inputs.
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 import tempfile
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import IssueConfig
 from mcp_server.core.exceptions import ConfigError
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 _MINIMAL_ISSUES_YAML = {
     "version": "1.0",
@@ -66,7 +67,7 @@ class TestIssueConfigFromFile:
 
     def test_from_file_raises_on_missing_file(self) -> None:
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_issue_config(Path(".phase-gate/nonexistent_issues.yaml"))
+            _load_issue_config(Path(f"{get_default_server_root()}/nonexistent_issues.yaml"))
 
     def test_repeated_loads_are_equivalent(self, issues_yaml_path: Path) -> None:
         cfg1 = _load_issue_config(issues_yaml_path)

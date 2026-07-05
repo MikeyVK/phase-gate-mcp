@@ -14,6 +14,7 @@ instead of reading ``fmap["severity"]`` via ``_resolve_field_path``.
 
 from __future__ import annotations
 
+
 import pytest
 
 from mcp_server.config.schemas.quality_config import JsonViolationsParsing
@@ -25,7 +26,7 @@ from tests.mcp_server.test_support import make_qa_manager
 # Fixtures / constants
 # ---------------------------------------------------------------------------
 
-# Mirrors the field_map as configured in .phase-gate/quality.yaml gate4_pyright
+# Mirrors the field_map as configured in .pgmcp/quality.yaml gate4_pyright
 _PYRIGHT_FIELD_MAP: dict[str, str] = {
     "file": "file",
     "line": "range/start/line",

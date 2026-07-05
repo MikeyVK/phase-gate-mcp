@@ -240,7 +240,7 @@ docs/
 
 **Result**: Docs that deviate from templates generate **WARNINGS**, not failures
 
-### 3. Configuration Management (.phase-gate/) - SCHEMA VALIDATION
+### 3. Configuration Management (.pgmcp/) - SCHEMA VALIDATION
 
 **Purpose**: Centralize all workflow/policy configuration
 
@@ -260,7 +260,7 @@ docs/
 
 **Configuration Files**:
 ```yaml
-.phase-gate/
+.pgmcp/
 ├── workflows.yaml           # Workflow metadata: name, description, execution_mode (no phases — see contracts.yaml)
 ├── contracts.yaml           # SSOT for workflow-phase membership, ordering, and exit gates (Issue #271)
 ├── workphases.yaml          # Phase/sub-phase definitions for commits
@@ -328,7 +328,7 @@ milestones: []   # { number: int, title: str, state: "open"|"closed" }
 
 ### The Critical Architectural Distinction
 
-| Aspect | CODE (backend/) | DOCUMENTS (docs/) | CONFIG (.phase-gate/) |
+| Aspect | CODE (backend/) | DOCUMENTS (docs/) | CONFIG (.pgmcp/) |
 |--------|----------------|-------------------|----------------|
 | **Enforcement** | HARD (blocks) | SOFT (warns) | SCHEMA (validates) |
 | **Flexibility** | Low | High | Medium |
@@ -627,7 +627,7 @@ class WorkflowConfig:
 
 **Implication**: Config changes require client restart
 
-**Known server-side limitation (Issue #271 — F-271-B)**: All `.phase-gate/config/` files are loaded **once at server startup** and cached in memory. Any change to `contracts.yaml`, `workflows.yaml`, or any other config file has **no effect until the server is restarted**. Use `restart_server()` after editing config files. This applies to phase order, exit gates, enforcement rules, and all other config-driven behaviour.
+**Known server-side limitation (Issue #271 — F-271-B)**: All `.pgmcp/config/` files are loaded **once at server startup** and cached in memory. Any change to `contracts.yaml`, `workflows.yaml`, or any other config file has **no effect until the server is restarted**. Use `restart_server()` after editing config files. This applies to phase order, exit gates, enforcement rules, and all other config-driven behaviour.
 
 ---
 

@@ -21,7 +21,7 @@ This directory contains the comprehensive coding standards for the project. All 
 🧩 **Type checking:** [TYPE_CHECKING_PLAYBOOK.md](TYPE_CHECKING_PLAYBOOK.md) — Standardized approach for typing issues
 ## Documentation Structure
 
-### 1. [TDD_WORKFLOW.md](TDD_WORKFLOW.md)
+### 1. [AGENTS.md](../../AGENTS.md)
 
 **Test-Driven Development (TDD) Workflow**
 
@@ -67,7 +67,7 @@ The 7 mandatory quality gates that all code must pass.
 - Understanding VS Code warnings
 - Setting up new workspace
 
-### 3. [GIT_WORKFLOW.md](GIT_WORKFLOW.md)
+### 3. [AGENTS.md](../../AGENTS.md)
 
 **Git Workflow - Branching & Commit Conventions**
 
@@ -118,7 +118,7 @@ Comprehensive style guide for Python code in PhaseGate MCP.
 
 ### Starting a New DTO
 
-1. **Read:** [TDD_WORKFLOW.md](TDD_WORKFLOW.md) - Understand the cycle
+1. **Read:** [AGENTS.md](../../AGENTS.md) - Understand the TDD cycle
 2. **Create feature branch:**
    ```powershell
    git checkout -b feature/my-dto
@@ -127,7 +127,7 @@ Comprehensive style guide for Python code in PhaseGate MCP.
 4. **GREEN phase:** Minimal implementation, commit
 5. **REFACTOR phase:** Quality improvements, commit
 6. **Check:** [QUALITY_GATES.md](QUALITY_GATES.md) - Run all 7 gates
-7. **Merge:** [GIT_WORKFLOW.md](GIT_WORKFLOW.md) - Merge to main
+7. **Merge:** [AGENTS.md](../../AGENTS.md) - Merge conventions
 
 ### Fixing Quality Gate Failures
 
@@ -142,7 +142,7 @@ Comprehensive style guide for Python code in PhaseGate MCP.
 
 ### Writing Good Commit Messages
 
-1. **Read:** [GIT_WORKFLOW.md](GIT_WORKFLOW.md) - Commit conventions
+1. **Read:** [AGENTS.md](../../AGENTS.md) - Commit conventions
 2. **Use prefixes:** `test:`, `feat:`, `refactor:`, `docs:`, `fix:`, `chore:`
 3. **Structure:** Short summary + optional body + optional footer
 4. **Include status:** `Status: RED|GREEN`, `Quality gates: 10/10`
@@ -170,7 +170,7 @@ All code must meet these standards before merge:
 
 **Configuration Doctrine:**
 - **`pyproject.toml`** = IDE baseline (pragmatic, for VS Code/PyCharm)
-- **`.phase-gate/quality.yaml`** = CI authority (strict, gates use `--isolated`)
+- **`.pgmcp/quality.yaml`** = CI authority (strict, gates use `--isolated`)
 - See [QUALITY_GATES.md](QUALITY_GATES.md) for complete details and exact commands
 
 ## Key Principles
@@ -195,8 +195,8 @@ All code must meet these standards before merge:
 | **❌ NEVER** | `tests/*.py` root or `tests/unit/` |
 
 **Enforcement:**
-- `base_path` in `.phase-gate/artifacts.yaml` for `unit_test` → `tests/mcp_server/unit/`
-- `base_path` in `.phase-gate/artifacts.yaml` for `integration_test` → `tests/mcp_server/integration/`
+- `base_path` in `.pgmcp/artifacts.yaml` for `unit_test` → `tests/mcp_server/unit/`
+- `base_path` in `.pgmcp/artifacts.yaml` for `integration_test` → `tests/mcp_server/integration/`
 - For backend code, override via `output_path="tests/backend/..."` in `scaffold_artifact`
 - `pytest` zonder args = enkel `tests/mcp_server/` (via `testpaths` in `pyproject.toml`)
 - `pytest tests/backend/` = explicit backend run
@@ -226,9 +226,8 @@ scaffold_artifact(
 
 ## Related Documentation
 
-- **Architecture:** [../architecture/README.md](../architecture/README.md) - System design principles
-- **Implementation:** [../implementation/IMPLEMENTATION_STATUS.md](../implementation/IMPLEMENTATION_STATUS.md) - Current progress
-- **Reference:** [../reference/README.md](../reference/README.md) - Templates and examples
+- **Architecture:** [docs/mcp_server/ARCHITECTURE.md](../mcp_server/ARCHITECTURE.md) - System design principles
+- **Reference:** [docs/mcp_server/README.md](../mcp_server/README.md) - Templates and examples
 
 ## Support
 

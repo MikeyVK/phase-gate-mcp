@@ -54,8 +54,25 @@ class ServerSettings(BaseModel):
     name: str = "phase-gate-mcp"
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
-    server_root_dir: str = ".phase-gate"
+    template_root: str | None = None
+    server_root_dir: str = ".pgmcp"
     logs_dir: str = "logs"
+
+    @property
+    def resolved_server_root(self) -> Path:
+        return Path(self.workspace_root) / self.server_root_dir
+
+    @property
+    def resolved_config_root(self) -> Path:
+        if self.config_root:
+            return Path(self.config_root)
+        return self.resolved_server_root / "config"
+
+    @property
+    def resolved_template_root(self) -> Path:
+        if self.template_root:
+            return Path(self.template_root)
+        return self.resolved_server_root / "templates"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -106,6 +123,8 @@ class Settings(BaseModel):
             server_data["logs_dir"] = env_logs_dir
         if env_config_root := os.environ.get("MCP_CONFIG_ROOT"):
             server_data["config_root"] = env_config_root
+        if env_template_root := os.environ.get("MCP_TEMPLATE_ROOT"):
+            server_data["template_root"] = env_template_root
 
         if env_owner := os.environ.get("GITHUB_OWNER"):
             github_data["owner"] = env_owner

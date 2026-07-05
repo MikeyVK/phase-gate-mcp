@@ -4,6 +4,7 @@
 @dependencies: pytest, mcp_server.tools.label_tools, mcp_server.config.schemas
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -32,7 +33,7 @@ from mcp_server.tools.label_tools import (
     RemoveLabelsTool,
 )
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 @pytest.fixture

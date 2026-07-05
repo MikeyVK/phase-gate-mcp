@@ -45,8 +45,8 @@ This page is optimized for agents: exact input contracts, copy/paste call patter
 | Scope | Target resolution |
 |------|--------------------|
 | `auto` | `git diff baseline_sha..HEAD` union persisted `failed_files`; if no baseline → project scope fallback |
-| `branch` | `git diff parent_branch..HEAD` (`parent_branch` from `.phase-gate/state.json`, fallback `main`) |
-| `project` | `.phase-gate/quality.yaml` `project_scope.include_globs` |
+| `branch` | `git diff parent_branch..HEAD` (`parent_branch` from `.pgmcp/state.json`, fallback `main`) |
+| `project` | `.pgmcp/quality.yaml` `project_scope.include_globs` |
 | `files` | Explicit user list; directories expanded to `.py` files |
 
 ### Output contract

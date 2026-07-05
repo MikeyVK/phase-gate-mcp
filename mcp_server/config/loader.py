@@ -70,21 +70,10 @@ def resolve_config_root(
 
     candidates: list[Path] = []
 
-    def _probe_candidates(root: Path) -> list[Path]:
-        """Return candidate config paths for a given root.
-
-        After C3, callers supply the explicit config path directly.
-        For legacy uses of resolve_config_root with a bare workspace root,
-        we probe the conventional hidden state-dir sub-paths explicitly.
-        """
-        # If the path itself looks like a config dir (or any explicit path), keep it.
-        # Also probe the canonical hidden state directory names as fallback.
-        return [root, root / ".phase-gate" / "config"]
-
     if preferred_root is not None:
-        candidates.extend(_probe_candidates(Path(preferred_root).resolve()))
-    candidates.extend(_probe_candidates(Path.cwd().resolve()))
-    candidates.extend(_probe_candidates(Path(__file__).resolve().parents[2]))
+        candidates.append(Path(preferred_root).resolve())
+    candidates.append(Path.cwd().resolve())
+    candidates.append(Path(__file__).resolve().parents[2])
 
     unique_candidates: list[Path] = []
     seen: set[Path] = set()
