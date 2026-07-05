@@ -2,7 +2,7 @@
   "branch": "feature/385-package-identity-rename-pgmcp-entry-point",
   "issue_number": 385,
   "workflow_name": "feature",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": 6,
   "last_cycle": 6,
   "cycle_history": [
@@ -147,6 +147,14 @@
       "human_approval": "User approved revert to documentation phase",
       "forced": true,
       "skip_reason": "QA NOGO: Documentation phase incomplete"
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-07-05T20:50:29.373655+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
