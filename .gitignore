@@ -27,7 +27,6 @@ dist/
 # IDE / Editor
 .idea/
 .vscode/
-.agents/mcp_config.json
 *.swp
 *.swo
 *~
@@ -77,22 +76,23 @@ Kraken_Trading_History/
 # Ephemeral artifacts temp files
 .phase-gate/temp/
 .pgmcp/temp/
-# Local templates copy
-.phase-gate/templates/
-.pgmcp/templates/
 
 # QA artifact logs (legacy CWD-relative location, superseded by .phase-gate/logs/qa_logs/)
 temp/qa_logs/
 
 # Phase-Gate Workflow - Local debug artifacts
 .phase-gate/popen_called.txt
-.pgmcp/popen_called.txt
 .phase-gate/sync_debug.log
-.pgmcp/sync_debug.log
 .phase-gate/test_sync.py
-.pgmcp/test_sync.py
 .phase-gate/.state_*.tmp
-.pgmcp/.state_*.tmp
 # Test output
 .phase-gate/pyright_test.json
+
+.pgmcp/popen_called.txt
+.pgmcp/sync_debug.log
+.pgmcp/test_sync.py
+.pgmcp/.state_*.tmp
 .pgmcp/pyright_test.json
+
+# Local-only agent configurations
+.agents/mcp_config.json
