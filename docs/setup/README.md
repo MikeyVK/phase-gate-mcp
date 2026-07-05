@@ -82,20 +82,15 @@ VS Code registers MCP servers at the workspace level, resolving variables dynami
 
 ### Option B: Google Antigravity Setup
 
-Google Antigravity manages MCP servers globally using a system-wide configuration file. Dynamic environment variables and workspace variables (like `${workspaceFolder}`) are not supported; therefore, you must configure absolute paths.
+Google Antigravity manages MCP servers either globally or via a **workspace-local configuration file**. Using a workspace-local configuration is the recommended method. Note that dynamic workspace variables (like `${workspaceFolder}`) are not supported in Antigravity; therefore, you must configure absolute paths.
 
-1. **Locate the configuration file:**
-   Open the global `mcp_config.json` file on your machine:
-   * **Windows:** `C:\Users\<username>\.gemini\config\mcp_config.json` (or `...\.gemini\antigravity\mcp_config.json`)
-   * **Linux / macOS:** `~/.gemini/config/mcp_config.json`
-
-2. **Add the MCP server definition:**
-   Add the `phase-gate-mcp` entry under the `mcpServers` object. Replace path placeholders with the absolute path to your cloned repository, ensure `command` points to the virtual environment's Python executable, and completely omit the `GITHUB_TOKEN` environment variable (Antigravity on Windows will automatically retrieve this from your user environment variables):
+1. **Create the workspace-local configuration file:**
+   Create a file named `mcp_config.json` under the `.agents/` directory (which is gitignored):
    ```json
    {
      "mcpServers": {
        "phase-gate-mcp": {
-         "command": "C:/path/to/phase-gate-mcp/.venv/Scripts/python",
+         "command": "C:/path/to/phase-gate-mcp/.venv/Scripts/python.exe",
          "args": ["-m", "mcp_server.core.proxy"],
          "cwd": "C:/path/to/phase-gate-mcp",
          "env": {
@@ -103,7 +98,7 @@ Google Antigravity manages MCP servers globally using a system-wide configuratio
            "LOG_LEVEL": "INFO",
            "MCP_SERVER_NAME": "phase-gate-mcp",
            "MCP_WORKSPACE_ROOT": "C:/path/to/phase-gate-mcp",
-            "MCP_SERVER_PROJECT_DIR": ".pgmcp",
+           "MCP_SERVER_PROJECT_DIR": ".pgmcp",
            "GITHUB_OWNER": "MikeyVK",
            "GITHUB_REPO": "phase-gate-mcp",
            "GITHUB_PROJECT_NUMBER": "1"
@@ -114,15 +109,19 @@ Google Antigravity manages MCP servers globally using a system-wide configuratio
    ```
    *Note: Use forward slashes (`/`) even on Windows to prevent JSON escaping issues.*
 
+2. **Alternative: Global Configuration:**
+   If you prefer a global installation instead of a workspace-local one, you can place the exact same JSON configuration under your system-wide `mcp_config.json` file:
+   * **Windows:** `C:\Users\<username>\.gemini\config\mcp_config.json` (or `...\.gemini\antigravity\mcp_config.json`)
+   * **Linux / macOS:** `~/.gemini/config/mcp_config.json`
+
 3. **Agent Configuration & Rule Loading:**
    Unlike VS Code, Google Antigravity natively detects and registers agent rules, workflows, and prompts from the workspace root directory without requiring any manual configurations in a settings file. When you open the cloned repository as a workspace, Antigravity automatically detects:
    * `AGENTS.md` (Global project rules and priority matrix)
    * `.agents/workflows/` (Custom slash commands like `/start-issue`, `/end-issue`, and `/go`)
    * `.agents/rules/` (Specialized agent role prompts for Antigravity: `co.agent.md`, `imp.agent.md`, `qa.agent.md`)
+
 4. **Restart Antigravity:**
    Fully restart the Google Antigravity application or reload your workspace session to apply the changes and start the MCP server.
-
----
 
 ## 4. Agent Files & Git Availability
 
