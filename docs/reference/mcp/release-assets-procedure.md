@@ -120,8 +120,8 @@ The CLI `pgmcp --init` performs a strict flat copy of `mcp_server/assets/` to `.
 
 ## 5. Deferred Implementation
 
-This procedure is deferred to **Issue #419: Package build pipeline automation and release assets synchronization**.
-Work on this implementation will be conducted under Epic #416.
+This procedure is deferred as a follow-up task for package build pipeline automation and release assets synchronization.
+Triage, tracking, and issue creation are deferred to the coordination role (@co) under Epic #416.
 
 ## Related Documentation
 - **[docs/mcp_server/USER_GUIDE.md][related-1]**
