@@ -1,0 +1,96 @@
+{
+  "385": {
+    "issue_title": "Package Identity and Init Bootstrap",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
+    "created_at": "2026-07-03T18:56:00Z",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 6,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C_TEST_DECOUPLE",
+            "deliverables": [
+              {
+                "id": "decouple_test_helpers",
+                "description": "Decouple test helpers from hardcoded .phase-gate paths"
+              }
+            ],
+            "exit_criteria": "All tests use get_default_server_root() instead of hardcoded .phase-gate path and pass."
+          },
+          {
+            "cycle_number": 2,
+            "name": "C_ARCH_FOUNDATION",
+            "deliverables": [
+              {
+                "id": "settings_path_properties",
+                "description": "Implement settings resolved path properties"
+              },
+              {
+                "id": "package_assets",
+                "description": "Populate package assets under mcp_server/assets/"
+              }
+            ],
+            "exit_criteria": "resolved_server_root, resolved_config_root, resolved_template_root properties exist in Settings. mcp_server/assets is populated. template_config.py is deleted."
+          },
+          {
+            "cycle_number": 3,
+            "name": "C_LOADER_PROBES",
+            "deliverables": [
+              {
+                "id": "di_config_loading",
+                "description": "Enforce strict dependency injection configuration loading"
+              }
+            ],
+            "exit_criteria": "Probing candidates removed from loader.py and DI is enforced."
+          },
+          {
+            "cycle_number": 4,
+            "name": "C_CLI_INIT",
+            "deliverables": [
+              {
+                "id": "cli_init_command",
+                "description": "Implement CLI init command and entry point"
+              }
+            ],
+            "exit_criteria": "pgmcp --init flat-copies assets, fails-fast if missing, pyproject.toml registers script."
+          },
+          {
+            "cycle_number": 5,
+            "name": "C_WORKSPACE_MIGRATION",
+            "deliverables": [
+              {
+                "id": "workspace_migration",
+                "description": "Migrate repository state directory to .pgmcp"
+              }
+            ],
+            "exit_criteria": "The repository's .phase-gate/ is renamed to .pgmcp/. Setup configs updated."
+          },
+          {
+            "cycle_number": 6,
+            "name": "C_DEBT_ELIMINATION",
+            "deliverables": [
+              {
+                "id": "debt_elimination",
+                "description": "Remove transitional compatibility bridges and support fallbacks"
+              }
+            ],
+            "exit_criteria": "Transitional compatibility bridges and settings/support fallbacks are fully removed."
+          }
+        ]
+      }
+    }
+  }
+}

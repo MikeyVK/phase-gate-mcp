@@ -2,7 +2,7 @@
   "branch": "feature/385-package-identity-rename-pgmcp-entry-point",
   "issue_number": 385,
   "workflow_name": "feature",
-  "current_phase": "validation",
+  "current_phase": "planning",
   "current_cycle": 5,
   "last_cycle": 5,
   "cycle_history": [
@@ -41,7 +41,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "User requested to investigate further",
+  "skip_reason": "Add Cycle 6: C_DEBT_ELIMINATION to resolve transitional compatibility debt within the planning phase.",
   "issue_title": "Package Identity & Rename PGMCP Entry Point",
   "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
   "created_at": "2026-07-02T08:25:50.999680+00:00",
@@ -93,6 +93,14 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "planning",
+      "timestamp": "2026-07-05T12:29:58.703306+00:00",
+      "human_approval": "Approved by user MikeyVK in chat session",
+      "forced": true,
+      "skip_reason": "Add Cycle 6: C_DEBT_ELIMINATION to resolve transitional compatibility debt within the planning phase."
     }
   ],
   "reconstructed": false,

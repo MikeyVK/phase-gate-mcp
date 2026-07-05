@@ -94,6 +94,20 @@ Planning the implementation for Issue #385. The goal is to rename the config roo
 - CI/CD and local VS Code configurations are updated if they contain hardcoded references.
 
 
+
+### Cycle 6: C_DEBT_ELIMINATION
+
+**Goal:** Eliminate all transitional compatibility debt, settings fallbacks, and proxy/test support migration bridges.
+
+**Tests:**
+- tests/mcp_server/unit/config/test_settings.py
+- tests/mcp_server/test_support.py
+
+**Success Criteria:**
+- The implicit disk-probing fallback to package assets is removed from `resolved_config_root` and `resolved_template_root` properties in `settings.py`.
+- The transitional fallback bridge in `settings.py` and `proxy.py` (auto-redirecting `.phase-gate` to `.pgmcp`) is removed.
+- The legacy fallback logic in `test_support.py` (`get_default_server_root()`) is removed; it strictly returns `.pgmcp` (or environment overrides).
+- All 2,870+ tests remain green.
 ## Related Documentation
 None
 ---
@@ -103,3 +117,4 @@ None
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-07-03 | Agent | Initial draft |
+| 1.1 | 2026-07-05 | Agent | Add Cycle 6 for debt elimination |
