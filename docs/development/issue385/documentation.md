@@ -46,7 +46,21 @@ Renamed the default package configuration and state directory from .phase-gate t
 - **[docs/reference/mcp/copilot-agent-instructions-model.md][related-8]**
 - **[docs/coding_standards/README.md][related-9]**
 - **[docs/coding_standards/QUALITY_GATES.md][related-10]**
+- **[docs/reference/mcp/release-assets-procedure.md][related-11]**
 
+<!-- Link definitions -->
+
+[related-1]: docs/setup/README.md
+[related-2]: docs/mcp_server/README.md
+[related-3]: docs/mcp_server/USER_GUIDE.md
+[related-4]: docs/mcp_server/ARCHITECTURE.md
+[related-5]: docs/reference/mcp/server-configuration.md
+[related-6]: docs/reference/mcp/config-loading-architecture.md
+[related-7]: docs/reference/mcp/mcp_vision_reference.md
+[related-8]: docs/reference/mcp/copilot-agent-instructions-model.md
+[related-9]: docs/coding_standards/README.md
+[related-10]: docs/coding_standards/QUALITY_GATES.md
+[related-11]: docs/reference/mcp/release-assets-procedure.md
 <!-- Link definitions -->
 
 [related-1]: docs/setup/README.md
