@@ -40,6 +40,7 @@ mcp_server/logs/
 
 # Local configuration (machine-specific paths)
 mcp_config.yaml
+.agents/mcp_config.json
 
 # Run results
 
