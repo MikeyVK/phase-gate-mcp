@@ -16,11 +16,28 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Need to correct research strategy before proceeding to design.",
   "issue_title": "Implement Deferred Release Assets and Template Bootstrap",
   "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
   "created_at": "2026-07-06T05:17:15.398891+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-06T05:52:29.248177+00:00",
+      "human_approval": "User approved the research nucleus and strategy in chat.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-07-06T18:51:28.077246+00:00",
+      "human_approval": "Reopening research phase to align strategy.",
+      "forced": true,
+      "skip_reason": "Need to correct research strategy before proceeding to design."
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }

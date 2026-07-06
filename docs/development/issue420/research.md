@@ -1,9 +1,9 @@
 <!-- docs\development\issue420\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-07-06T05:52Z updated= -->
+<!-- template=research version=8b7bb3ab created=2026-07-06T05:52Z updated=2026-07-06T20:53Z -->
 # Research: Deferred Release Assets and Template Bootstrap
 
 **Status:** APPROVED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-07-06
 
 ## Prerequisites
@@ -17,39 +17,53 @@ Read these first:
 
 ## Problem Statement
 
-Clean repository checkouts contain the tracked .pgmcp/config folder but miss the untracked .pgmcp/templates directory. The current workspace initialization (pgmcp --init) crashes if .pgmcp exists, preventing template bootstrap. Additionally, the release packaging automation and manifest synchronization specified in release-assets-procedure.md are deferred, requiring automated sync from the docs/agents/ Single Source of Truth to mcp_server/assets/ during wheel compilation.
+1. **Workspace templates initialization blocker:** Clean repository checkouts of the development repository contain the tracked `.pgmcp/config` folder but miss the untracked `.pgmcp/templates` directory. The current `pgmcp --init` command checks if `.pgmcp` exists and aborts immediately. This prevents developers from bootstrapping templates in the development workspace.
+2. **CLI `--init` incomplete copy behavior:** The current implementation of `pgmcp --init` in `mcp_server/cli.py` is hardcoded to only copy the `config` and `templates` subdirectories from package assets via `shutil.copytree`. It does not perform a recursive flat copy of the entire `mcp_server/assets/` directory, causing other packaged assets (like `template_registry.json`) to be completely missed.
+3. **Deferred packaging build automation:** The release packaging automation and manifest synchronization specified in `release-assets-procedure.md` (distributing files from the `docs/agents/` Single Source of Truth to `mcp_server/assets/` using a `release_manifest.yaml` mapping) are deferred.
 
 ## Research Goals
 
-- Support template initialization via pgmcp --init when .pgmcp exists but .pgmcp/templates is missing.
-- Eliminate templates directory triplication by removing mcp_server/scaffolding/templates and updating the test suite to use resolved settings.
-- Implement automated build-time copy/sync of release-bound assets to mcp_server/assets/ on release builds using release_manifest.yaml.
-- Establish a secure development isolation setup where the active running server instance operates from a packaged wheel, separated from the active development codebase.
+- Support clean workspace initialization in target environments without changing product runtime CLI checks.
+- Update `pgmcp --init` to perform a flat recursive copy of the entire `mcp_server/assets/` directory (including `template_registry.json` and any other assets) instead of only copying hardcoded subdirectories.
+- Eliminate templates directory triplication by removing `mcp_server/scaffolding/templates` and updating the test suite to use resolved settings.
+- Implement automated build-time copy/sync of release-bound assets to `mcp_server/assets/` on release builds using `release_manifest.yaml` and a pre-build script.
+- Establish a secure development isolation setup where the active running server instance operates from a packaged wheel in a stable virtual environment, fully separated from the active development codebase.
 
 ---
 
 ## Approved Strategy
 
-Boundary: Default Configuration Root & Workspace Initialization.
-Policy: Adapt pgmcp --init to check for missing .pgmcp/templates instead of aborting when the .pgmcp directory exists. Use shutil.copytree(..., dirs_exist_ok=True) to populate missing assets.
+### Boundary: Default Configuration Root & Workspace Initialization (`pgmcp --init`) & Dev Setup
+- **Policy:** Keep the production CLI's `pgmcp --init` implementation clean and strict: it must abort if the `.pgmcp/` directory already exists (idempotency guard). Do not add dev-specific runtime bypasses in the CLI code.
+- **Policy:** To resolve the chicken-and-egg problem in the development workspace, fully track `.pgmcp/templates/` under version control in Git. This ensures a clean clone of the development repository immediately contains all templates.
+- **Policy:** Update `pgmcp --init` in `mcp_server/cli.py` to copy the entire contents of the packaged `assets/` folder recursively (using `shutil.copytree(assets_dir, resolved_server_root, dirs_exist_ok=True)`) rather than hardcoding individual subfolders. This ensures `template_registry.json` and other assets are correctly bootstrapped.
 
-Boundary: Templates Source of Truth.
-Policy: Remove the duplicate mcp_server/scaffolding/templates directory. All unit and integration tests must load templates from Settings-resolved paths or test-isolated temporary paths, keeping .pgmcp/templates as the active dev environment SSOT.
+### Boundary: Templates Source of Truth
+- **Policy:** Remove the duplicate `mcp_server/scaffolding/templates` directory.
+- **Policy:** All unit and integration tests must load templates from Settings-resolved paths or test-isolated temporary paths, keeping `.pgmcp/templates` as the active dev environment SSOT.
 
-Boundary: Release Packaging & Automation.
-Policy: Implement a build script/pre-build step that parses release_manifest.yaml and copies the specified assets to mcp_server/assets/ prior to wheel building. Exclude dev-specific sync mechanisms from production runtime code.
+### Boundary: Release Packaging & Automation
+- **Policy:** Add `mcp_server/assets/` to `.gitignore` so that packaged assets are not checked into Git. The only checked-in config and template files will be in `.pgmcp/`.
+- **Policy:** Implement a build-time pre-build sync script (e.g. `scripts/build_package.py`) that parses `release_manifest.yaml`, clears `mcp_server/assets/`, copies the designated source files (from `.pgmcp/config`, `.pgmcp/templates`, and other locations), and then triggers the package build backend (`python -m build`).
+- **Policy:** Active development of agent instructions/workflows only modifies files under `docs/agents/`. Provide a developer-only sync script (`scripts/sync_agents.py`) that copies rules/workflows to their active runtime locations and `mcp_server/assets/` to support local testing.
+
+### Boundary: Development Isolation
+- **Policy:** Isolate the active running MCP server instance (used by IDE chats) from the active development code by installing a stable package build (wheel) into a separate, dedicated virtual Python environment (e.g., `pgmcp_stable_venv`).
+- **Policy:** The IDE runs the `pgmcp` executable from this stable venv, which points its working directory to the development repository root. This allows the stable server to read active configs and templates from the workspace's `.pgmcp/` while running stable, isolated python engine logic.
 
 ---
 
 ## Expected Results
 
-1. Clean checkouts of the repository can be initialized via pgmcp --init to restore templates under .pgmcp/templates.
-2. mcp_server/scaffolding/templates is deleted and all tests pass using the settings-based template paths.
-3. Bundled package assets (mcp_server/assets/) are populated automatically during package packaging by a build-time pre-build sync script.
-4. The running instance of the MCP server can be installed and run from a packaged wheel independently of the active development repository.
+1. Clean checkouts of target repositories can be initialized via `pgmcp --init` to recursively copy all packaged assets (including `template_registry.json`, `config/`, and `templates/`) under `.pgmcp/`.
+2. `mcp_server/scaffolding/templates` is deleted and all tests pass using the settings-based template paths.
+3. Bundled package assets (`mcp_server/assets/`) are ignored in Git and populated automatically during package packaging by a build-time pre-build sync script.
+4. The running instance of the MCP server can be installed and run from a packaged wheel in a stable venv, operating independently of the active development repository's python source files.
 
 ## Related Documentation
-None
+- **[docs/reference/mcp/release-assets-procedure.md](docs/reference/mcp/release-assets-procedure.md)**
+- **[docs/reference/mcp/server-configuration.md](docs/reference/mcp/server-configuration.md)**
+- **[docs/development/issue385/documentation.md](docs/development/issue385/documentation.md)**
 ---
 
 ## Version History
@@ -57,3 +71,4 @@ None
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-07-06 | Agent | Initial draft |
+| 1.1 | 2026-07-06 | Agent | Refine strategy to preserve strict CLI initialization check, track templates in dev git, ignore assets folder, and implement flat copy |
