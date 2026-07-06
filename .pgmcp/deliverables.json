@@ -14,5 +14,22 @@
     "skip_reason": null,
     "parent_branch": "feature/385-package-identity-rename-pgmcp-entry-point",
     "created_at": "2026-07-05T21:41:25.046609+00:00"
+  },
+  "420": {
+    "issue_title": "Implement Deferred Release Assets and Template Bootstrap",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
+    "created_at": "2026-07-06T05:17:15.298304+00:00"
   }
 }
