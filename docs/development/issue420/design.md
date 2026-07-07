@@ -2,7 +2,7 @@
 <!-- template=design version=5827e841 created=2026-07-07T09:58Z updated= -->
 # Release Assets Sync and Config Validation Design
 
-**Status:** DRAFT  
+**Status:** APPROVED  
 **Version:** 1.0  
 **Last Updated:** 2026-07-07
 
@@ -167,7 +167,7 @@ def _validate_schema(
     # Validate version field (clean-break)
     config_version = data.get("version")
     expected_version = "1.0.0"
-    if config_version is not None and config_version != expected_version:
+    if config_version != expected_version:
         raise ConfigError(
             f"Config version mismatch in {resolved_path.name}: "
             f"expected version '{expected_version}', found '{config_version}'. "

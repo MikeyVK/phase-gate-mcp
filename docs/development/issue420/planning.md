@@ -2,7 +2,7 @@
 <!-- template=planning version=130ac5ea created=2026-07-07T10:47Z updated= -->
 # Release Assets Sync and Config Validation Planning
 
-**Status:** DRAFT  
+**Status:** APPROVED  
 **Version:** 1.0  
 **Last Updated:** 2026-07-07
 
@@ -50,7 +50,7 @@ Plan the sequential execution cycles, verification strategies, and deliverables 
 - `tests/mcp_server/unit/config/test_config_version.py` (new unittests verifying success and error cases)
 
 **Success Criteria:**
-- `ConfigLoader._validate_schema` rejects config versions other than `"1.0.0"` with `ConfigError`
+- `ConfigLoader._validate_schema` rejects config versions other than `"1.0.0"` (including missing version fields) with `ConfigError`
 - All 16 config files under `.pgmcp/config/` load successfully with version `"1.0.0"`
 - Type checking (MyPy and Pyright) passes flawlessly for all modified files
 - Quality gates (`run_quality_gates` / Ruff / Pylint 10.0/10) pass for all modified files
@@ -169,6 +169,8 @@ Plan the sequential execution cycles, verification strategies, and deliverables 
   - **Mitigation:** Update `tests/conftest.py` to check if `mcp_server/assets/` is empty/missing, and fail fast with a clear message instructing the developer to run `scripts/build_package.py`. This avoids duplicating copying code in `conftest.py`.
 - **Risk:** Version validation checks breaking tests immediately upon activation.
   - **Mitigation:** Add `version: str` to Pydantic schemas and update all 16 configuration files in `.pgmcp/config/` to version `"1.0.0"` in the same commit.
+- **Risk:** Deleting active agent files (`.agents/`, `.github/agents/`) mid-implementation breaks active IDE agent sessions.
+  - **Mitigation:** Copy agent instructions to `docs/agents/` during Cycle 5, but do not delete the old `.agents/` and `.github/agents/` directories from the active workspace until the very end of the implementation phase (during Cycle 7 or cleanup). This ensures zero disruption to active agent sessions during development.
 
 ---
 
