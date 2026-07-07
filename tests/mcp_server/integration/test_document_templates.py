@@ -19,13 +19,13 @@ from jinja2 import Environment, FileSystemLoader, Template
 
 _DOC_HEADER = {
     "status": "DRAFT",
-    "version": "1.0",
+    "version": "1.0.0",
     "last_updated": "2026-01-27",
 }
 
 _REFERENCE_HEADER = {
     "status": "DEFINITIVE",
-    "version": "1.0",
+    "version": "1.0.0",
     "last_updated": "2026-01-27",
 }
 

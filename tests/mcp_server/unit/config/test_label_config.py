@@ -121,7 +121,7 @@ class TestLabelConfigLoading:
 
     def test_load_valid_yaml(self, tmp_path: Path) -> None:
         """Load simple valid YAML configuration."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:test"
     color: "ff0000"
@@ -133,14 +133,14 @@ labels:
         # Clear singleton before test
 
         config = _load_label_config(yaml_file)
-        assert config.version == "1.0"
+        assert config.version == "1.0.0"
         assert len(config.labels) == 1
         assert config.labels[0].name == "type:test"
         assert config.labels[0].color == "ff0000"
 
     def test_load_multiple_labels(self, tmp_path: Path) -> None:
         """Load YAML with multiple labels."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -157,7 +157,7 @@ labels:
 
     def test_load_with_freeform_exceptions(self, tmp_path: Path) -> None:
         """Load YAML with freeform_exceptions list."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 freeform_exceptions:
   - "good first issue"
   - "help wanted"
@@ -181,7 +181,7 @@ labels:
 
     def test_load_invalid_yaml_syntax(self, tmp_path: Path) -> None:
         """Raise ValueError for invalid YAML syntax."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:test
     invalid yaml [[[
@@ -201,12 +201,12 @@ labels:
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
-        with pytest.raises(ConfigError, match="Config validation failed"):
+        with pytest.raises(ConfigError, match="Configuration version is missing|Config validation failed"):
             _load_label_config(yaml_file)
 
     def test_load_missing_labels_field(self, tmp_path: Path) -> None:
         """Raise ValueError for missing labels field."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 """
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
@@ -216,7 +216,7 @@ labels:
 
     def test_load_invalid_color_in_yaml(self, tmp_path: Path) -> None:
         """Raise ValueError for invalid color in YAML."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:test"
     color: "#ff0000"
@@ -229,7 +229,7 @@ labels:
 
     def test_load_duplicate_label_names(self, tmp_path: Path) -> None:
         """Raise ValidationError for duplicate label names."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:test"
     color: "ff0000"
@@ -244,7 +244,7 @@ labels:
 
     def test_load_singleton_pattern(self, tmp_path: Path) -> None:
         """Verify singleton pattern returns same instance."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:test"
     color: "ff0000"
@@ -258,7 +258,7 @@ labels:
 
     def test_load_empty_labels_list(self, tmp_path: Path) -> None:
         """Load YAML with empty labels list."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels: []
 """
         yaml_file = tmp_path / "labels.yaml"
@@ -269,7 +269,7 @@ labels: []
 
     def test_load_builds_caches(self, tmp_path: Path) -> None:
         """Verify _labels_by_name cache is populated."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -290,7 +290,7 @@ class TestLabelValidation:
 
     def test_validate_label_name_type_valid(self, tmp_path: Path) -> None:
         """Accept valid type: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -305,7 +305,7 @@ labels:
 
     def test_validate_label_name_priority_valid(self, tmp_path: Path) -> None:
         """Accept valid priority: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "priority:high"
     color: "D93F0B"
@@ -320,7 +320,7 @@ labels:
 
     def test_validate_label_name_status_valid(self, tmp_path: Path) -> None:
         """Accept valid status: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "status:in-progress"
     color: "FFA500"
@@ -335,7 +335,7 @@ labels:
 
     def test_validate_label_name_phase_valid(self, tmp_path: Path) -> None:
         """Accept valid phase: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "phase:design"
     color: "0E8A16"
@@ -350,7 +350,7 @@ labels:
 
     def test_validate_label_name_scope_valid(self, tmp_path: Path) -> None:
         """Accept valid scope: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "scope:backend"
     color: "5319E7"
@@ -365,7 +365,7 @@ labels:
 
     def test_validate_label_name_component_valid(self, tmp_path: Path) -> None:
         """Accept valid component: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "component:api"
     color: "D4C5F9"
@@ -380,7 +380,7 @@ labels:
 
     def test_validate_label_name_effort_valid(self, tmp_path: Path) -> None:
         """Accept valid effort: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "effort:small"
     color: "C2E0C6"
@@ -395,7 +395,7 @@ labels:
 
     def test_validate_label_name_parent_valid(self, tmp_path: Path) -> None:
         """Accept valid parent: label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "parent:epic-42"
     color: "B60205"
@@ -410,7 +410,7 @@ labels:
 
     def test_validate_label_name_invalid_pattern(self, tmp_path: Path) -> None:
         """Reject label that doesn't match pattern."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -425,7 +425,7 @@ labels:
 
     def test_validate_label_name_freeform_exception(self, tmp_path: Path) -> None:
         """Accept freeform label in exceptions list."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 freeform_exceptions:
   - "good first issue"
 labels:
@@ -442,7 +442,7 @@ labels:
 
     def test_label_exists_true(self, tmp_path: Path) -> None:
         """Return True for defined label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -455,7 +455,7 @@ labels:
 
     def test_label_exists_false(self, tmp_path: Path) -> None:
         """Return False for undefined label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -472,7 +472,7 @@ class TestLabelQueries:
 
     def test_get_label_found(self, tmp_path: Path) -> None:
         """Return label when found by name."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -489,7 +489,7 @@ labels:
 
     def test_get_label_not_found(self, tmp_path: Path) -> None:
         """Return None when label not found."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -503,7 +503,7 @@ labels:
 
     def test_get_label_case_sensitive(self, tmp_path: Path) -> None:
         """Label lookup is case-sensitive."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -517,7 +517,7 @@ labels:
 
     def test_get_labels_by_category_type(self, tmp_path: Path) -> None:
         """Return all type: labels."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -537,7 +537,7 @@ labels:
 
     def test_get_labels_by_category_priority(self, tmp_path: Path) -> None:
         """Return all priority: labels."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "priority:high"
     color: "D93F0B"
@@ -557,7 +557,7 @@ labels:
 
     def test_get_labels_by_category_empty(self, tmp_path: Path) -> None:
         """Return empty list for unknown category."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -571,7 +571,7 @@ labels:
 
     def test_get_labels_by_category_cache_correct(self, tmp_path: Path) -> None:
         """Verify category grouping is correct."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -593,7 +593,7 @@ labels:
 
     def test_cache_build_on_load(self, tmp_path: Path) -> None:
         """Caches are populated at load time."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -616,7 +616,7 @@ class TestGitHubSync:
     def test_sync_create_new_labels(self, tmp_path: Path) -> None:
         """Create labels that don't exist in GitHub."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -644,7 +644,7 @@ labels:
     def test_sync_update_changed_color(self, tmp_path: Path) -> None:
         """Update label when color differs."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "FF0000"
@@ -669,7 +669,7 @@ labels:
     def test_sync_update_changed_description(self, tmp_path: Path) -> None:
         """Update label when description differs."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -693,7 +693,7 @@ labels:
     def test_sync_skip_unchanged(self, tmp_path: Path) -> None:
         """Skip label when no changes needed."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -718,7 +718,7 @@ labels:
     def test_sync_dry_run_no_changes(self, tmp_path: Path) -> None:
         """Dry run mode doesn't call GitHub API."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -739,7 +739,7 @@ labels:
     def test_sync_dry_run_reports_changes(self, tmp_path: Path) -> None:
         """Dry run shows what would change."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:new"
     color: "FF0000"
@@ -766,7 +766,7 @@ labels:
     def test_sync_github_api_error(self, tmp_path: Path) -> None:
         """Handle GitHub API errors gracefully."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -787,7 +787,7 @@ labels:
     def test_sync_partial_success(self, tmp_path: Path) -> None:
         """Some labels succeed, some fail."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -812,7 +812,7 @@ labels:
     def test_sync_empty_labels_list(self, tmp_path: Path) -> None:
         """Handle empty labels.yaml gracefully."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels: []
 """
         yaml_file = tmp_path / "labels.yaml"
@@ -833,7 +833,7 @@ labels: []
     def test_sync_result_format(self, tmp_path: Path) -> None:
         """Result has correct dict structure."""
 
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -856,7 +856,7 @@ labels:
 
     def test_needs_update_color_differs(self, tmp_path: Path) -> None:
         """Helper detects color change."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "FF0000"
@@ -873,7 +873,7 @@ labels:
 
     def test_needs_update_description_differs(self, tmp_path: Path) -> None:
         """Helper detects description change."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"

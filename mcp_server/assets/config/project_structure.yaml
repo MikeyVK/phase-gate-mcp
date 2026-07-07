@@ -1,3 +1,4 @@
+version: "1.0.0"
 # Project Structure Configuration
 # Purpose: Define directory structure and file policies
 # Used by: DirectoryPolicyResolver for path validation

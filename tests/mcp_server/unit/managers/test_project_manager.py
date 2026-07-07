@@ -294,7 +294,7 @@ class TestProjectManagerPhaseDetection:
         workphases_path = phase_gate_dir / "workphases.yaml"
         workphases_path.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 phases:
   research:
     display_name: "Research"

@@ -50,7 +50,7 @@ def _load_quality_config(config_path: Path) -> QualityConfig:
 def fixture_quality_yaml_path(tmp_path: Path) -> Path:
     """Create a valid quality.yaml fixture with exit_code gates only."""
     config_data = {
-        "version": "1.0",
+        "version": "1.0.0",
         "artifact_logging": dict(MINIMAL_ARTIFACT_LOGGING),
         "gates": {
             "linter": {
@@ -106,7 +106,7 @@ class TestQualityConfigLoading:
         """Loads YAML and returns a QualityConfig."""
         config = _load_quality_config(quality_yaml_path)
         assert isinstance(config, QualityConfig)
-        assert config.version == "1.0"
+        assert config.version == "1.0.0"
         assert set(config.gates) == {"linter", "formatter"}
 
     def test_load_missing_file(self, tmp_path: Path) -> None:
@@ -128,7 +128,7 @@ class TestQualityConfigValidation:
     def test_gates_must_be_non_empty(self) -> None:
         """Reject empty gates map."""
         with pytest.raises(ValidationError):
-            QualityConfig(version="1.0", gates={})
+            QualityConfig(version="1.0.0", gates={})
 
     def test_forbid_extra_fields_on_gate(self) -> None:
         """Reject enforcement-like fields (extra keys) on QualityGate."""
@@ -160,7 +160,7 @@ class TestQualityConfigValidation:
             QualityConfig.model_validate(
                 with_artifact_logging(
                     {
-                        "version": "1.0",
+                        "version": "1.0.0",
                         "gates": {
                             "ruff": {
                                 "name": "Ruff",
@@ -190,7 +190,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {
                         "ruff": {
                             "name": "Ruff",
@@ -217,7 +217,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "active_gates": ["gate1", "gate2"],
                     "gates": {
                         "gate1": {
@@ -259,7 +259,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "active_gates": [],
                     "gates": {
                         "ruff": {
@@ -287,7 +287,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "active_gates": ["gate1"],
                     "gates": {
                         "gate1": {
@@ -328,7 +328,7 @@ class TestActiveGatesField:
     def test_active_gates_loads_from_yaml(self, tmp_path: Path) -> None:
         """active_gates field loads correctly from YAML file."""
         yaml_data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_logging": dict(MINIMAL_ARTIFACT_LOGGING),
             "active_gates": ["ruff"],
             "gates": {
@@ -369,7 +369,7 @@ class TestArtifactLoggingConfig:
         yaml_path.write_text(
             yaml.dump(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {
                         "ruff": {
                             "name": "Ruff",
@@ -397,7 +397,7 @@ class TestArtifactLoggingConfig:
     def test_artifact_logging_custom_values(self) -> None:
         config = QualityConfig.model_validate(
             {
-                "version": "1.0",
+                "version": "1.0.0",
                 "artifact_logging": {
                     "enabled": False,
                     "output_dir": "temp/custom_artifacts",
@@ -431,7 +431,7 @@ class TestArtifactLoggingConfig:
         yaml_path.write_text(
             yaml.dump(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "artifact_logging": {
                         "enabled": True,
                         "max_files": 200,
@@ -637,7 +637,7 @@ class TestProjectScopeField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {"ruff": self._MINIMAL_GATE},
                     "project_scope": {
                         "include_globs": ["mcp_server/**/*.py", "tests/mcp_server/**/*.py"],
@@ -651,7 +651,7 @@ class TestProjectScopeField:
     def test_project_scope_defaults_to_none(self) -> None:
         """QualityConfig.project_scope is None when not specified."""
         config = QualityConfig.model_validate(
-            with_artifact_logging({"version": "1.0", "gates": {"ruff": self._MINIMAL_GATE}})
+            with_artifact_logging({"version": "1.0.0", "gates": {"ruff": self._MINIMAL_GATE}})
         )
         assert config.project_scope is None
 
@@ -660,7 +660,7 @@ class TestProjectScopeField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {"ruff": self._MINIMAL_GATE},
                     "project_scope": {"include_globs": ["backend/**/*.py"]},
                 }

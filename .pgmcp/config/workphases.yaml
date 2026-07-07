@@ -4,7 +4,7 @@
 # Used by: ScopeDecoder, ScopeEncoder, workflows.yaml
 # Documentation: docs/development/issue138/design.md
 
-version: "1.0"
+version: "1.0.0"
 
 phases:
   research:

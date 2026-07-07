@@ -19,7 +19,7 @@ from mcp_server.config.loader import ConfigLoader
 def _workflow_yaml_without_phases() -> str:
     """Minimal valid workflows.yaml fixture (C6+: no phases field)."""
     return (
-        "version: '1.0'\n"
+        "version: '1.0.0'\n"
         "workflows:\n"
         "  feature:\n"
         "    name: feature\n"

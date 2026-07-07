@@ -14,7 +14,7 @@ Defines typed label and pattern metadata loaded by the configuration layer.
 
 import re
 from dataclasses import FrozenInstanceError
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from mcp_server.config.schemas.workphases import WorkphasesConfig
@@ -64,7 +64,7 @@ class LabelPattern(BaseModel):
 class LabelConfig(BaseModel):
     """Label configuration value object."""
 
-    version: str = Field(..., description="Schema version")
+    version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
     labels: list[Label] = Field(..., description="Label definitions")
     freeform_exceptions: list[str] = Field(default_factory=list)
     label_patterns: list[LabelPattern] = Field(default_factory=list)

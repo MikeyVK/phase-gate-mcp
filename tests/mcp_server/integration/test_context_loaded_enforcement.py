@@ -271,6 +271,7 @@ class TestContextLoadedResets:
         as context_loaded_writer into PhaseStateEngine is cleared on transition().
         """
         contracts_yaml = (
+            "version: \"1.0.0\"\n"
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"

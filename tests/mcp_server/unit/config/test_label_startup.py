@@ -57,7 +57,7 @@ class TestConfigValidator:
     @pytest.fixture
     def workflow_config(self) -> WorkflowConfig:
         return WorkflowConfig(
-            version="1.0",
+            version="1.0.0",
             workflows={
                 "feature": {
                     "name": "feature",
@@ -85,7 +85,7 @@ class TestConfigValidator:
     @pytest.fixture
     def artifact_registry(self) -> ArtifactRegistryConfig:
         return ArtifactRegistryConfig(
-            version="1.0",
+            version="1.0.0",
             artifact_types=[
                 {
                     "type": "code",
@@ -107,7 +107,7 @@ class TestConfigValidator:
     @pytest.fixture
     def workphases_config(self) -> WorkphasesConfig:
         return WorkphasesConfig(
-            version="1.0",
+            version="1.0.0",
             phases={
                 "research": {"display_name": "Research"},
                 "planning": {"display_name": "Planning"},
@@ -247,7 +247,7 @@ class TestConfigValidator:
         artifact_registry: ArtifactRegistryConfig,
     ) -> None:
         workflow_config = WorkflowConfig(
-            version="1.0",
+            version="1.0.0",
             workflows={
                 "feature": {
                     "name": "feature",
@@ -275,7 +275,7 @@ class TestConfigValidator:
             }
         )
         workphases_config = WorkphasesConfig(
-            version="1.0",
+            version="1.0.0",
             phases={
                 "research": {"display_name": "Research"},
                 "ready": {"display_name": "Ready", "terminal": True},

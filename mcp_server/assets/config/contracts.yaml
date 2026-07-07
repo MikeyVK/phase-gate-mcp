@@ -1,3 +1,4 @@
+version: "1.0.0"
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts:

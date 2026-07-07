@@ -16,7 +16,7 @@ configuration layer.
 from __future__ import annotations
 
 import re
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -24,6 +24,10 @@ from pydantic import BaseModel, Field, model_validator
 class GitConfig(BaseModel):
     """Git conventions configuration value object."""
 
+    version: Literal["1.0.0"] = Field(
+        "1.0.0",
+        description="Version of the git configuration schema",
+    )
     branch_types: list[str] = Field(
         ...,
         description="Allowed branch types for create_branch()",

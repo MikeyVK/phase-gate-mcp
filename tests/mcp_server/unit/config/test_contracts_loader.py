@@ -63,6 +63,7 @@ def _write_contracts(config_dir: Path, content: str) -> None:
 
 
 _MINIMAL_YAML = """\
+version: "1.0.0"
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts: []
@@ -97,6 +98,7 @@ def _make_loader_with_workflows(config_dir: Path, workflows: dict[str, object]) 
         enriched[wf_name] = wf_data
     content = yaml.dump(
         {
+            "version": "1.0.0",
             "merge_policy": {
                 "pr_allowed_phase": "ready",
                 "branch_local_artifacts": [

@@ -83,7 +83,7 @@ class TestResearchSchema:
     _MINIMAL = {
         "title": "Research: Template Introspection",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-18",
         "problem_statement": "Investigate template introspection limitations",
         "goals": ["Understand block override impact", "Map required vs optional fields"],
@@ -117,7 +117,7 @@ class TestPlanningSchema:
     _MINIMAL = {
         "title": "Planning: Doc Schemas",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-18",
         "summary": "Implement Pydantic context schemas for doc artifact types",
         "cycles": [
@@ -154,7 +154,7 @@ class TestDesignSchema:
     _MINIMAL = {
         "title": "Design: Document Context Schemas",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-18",
         "problem_statement": "No Pydantic schemas exist for document artifact types",
         "requirements_functional": [
@@ -196,7 +196,7 @@ class TestArchitectureSchema:
     _MINIMAL = {
         "title": "Architecture: Schema Infrastructure",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-18",
         "concepts": [
             "BaseContext: user-facing artifact fields",
@@ -232,7 +232,7 @@ class TestReferenceSchema:
     _MINIMAL = {
         "title": "Reference: ResearchContext",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-18",
         "source_file": "mcp_server/schemas/contexts/research.py",
         "test_file": "tests/mcp_server/unit/schemas/test_doc_artifact_schema.py",
@@ -269,7 +269,7 @@ class TestValidationReportSchema:
     _MINIMAL = {
         "title": "Cycle Validation",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-18",
         "issue_number": 286,
         "cycle": "C_286.4",
@@ -305,7 +305,7 @@ class TestGenericDocSchema:
     _MINIMAL = {
         "title": "Migration Guide",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-18",
         "purpose": "Guide users through the migration.",
         "summary": "Summarizes the operational changes for the new workflow.",

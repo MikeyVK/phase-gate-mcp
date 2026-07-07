@@ -166,7 +166,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Research",
             "status": "DRAFT",
-            "version": "1.0",
+            "version": "1.0.0",
             "last_updated": "2026-06-05",
             "problem_statement": "What needs investigating?",
             "goals": ["Validate pipeline for research type"],
@@ -179,7 +179,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Planning",
             "status": "DRAFT",
-            "version": "1.0",
+            "version": "1.0.0",
             "last_updated": "2026-06-05",
             "summary": "Validate pipeline for planning type",
             "cycles": [
@@ -196,7 +196,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Design",
             "status": "DRAFT",
-            "version": "1.0",
+            "version": "1.0.0",
             "last_updated": "2026-06-05",
             "problem_statement": "Validate pipeline for design type",
             "requirements_functional": ["Must produce non-empty output"],
@@ -214,7 +214,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Architecture",
             "status": "DRAFT",
-            "version": "1.0",
+            "version": "1.0.0",
             "last_updated": "2026-06-05",
             "concepts": ["V2 context schema validation", "Pydantic render contexts"],
         },
@@ -226,7 +226,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Reference",
             "status": "DRAFT",
-            "version": "1.0",
+            "version": "1.0.0",
             "last_updated": "2026-06-05",
             "source_file": "mcp_server/schemas/contexts/dto.py",
             "test_file": "tests/unit/schemas/contexts/test_dto_context.py",
@@ -242,7 +242,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Validation Report",
             "status": "DRAFT",
-            "version": "1.0",
+            "version": "1.0.0",
             "last_updated": "2026-06-05",
             "issue_number": 286,
             "cycle": "C_286.4",
@@ -257,7 +257,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         {
             "title": "Smoke Generic Doc",
             "status": "DRAFT",
-            "version": "1.0",
+            "version": "1.0.0",
             "last_updated": "2026-06-05",
             "purpose": "Exercise the structured generic_doc pipeline.",
             "summary": "Minimal behavior-based smoke coverage.",

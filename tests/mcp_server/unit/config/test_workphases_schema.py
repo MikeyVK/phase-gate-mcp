@@ -25,6 +25,7 @@ from mcp_server.config.schemas.workphases import PhaseDefinition, WorkphasesConf
 
 def _minimal_workphases(**extra: PhaseDefinition) -> WorkphasesConfig:
     """Minimal valid WorkphasesConfig with exactly one terminal phase."""
+    version: "1.0.0"
     phases: dict[str, PhaseDefinition] = {
         "planning": PhaseDefinition(display_name="Planning"),
         "ready": PhaseDefinition(display_name="Ready", terminal=True),

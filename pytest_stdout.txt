@@ -6,90 +6,101 @@ configfile: pyproject.toml
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [5 items]
+8 workers [46 items]
 
 scheduling tests via LoadScheduling
 
-tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_invalid_version_raises_config_error 
-tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_missing_version_raises_config_error 
-tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_success 
-tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_missing_version_raises_config_error 
-tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_invalid_version_raises_config_error 
-[gw0] [ 20%] PASSED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_success 
-[gw4] [ 40%] PASSED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_invalid_version_raises_config_error 
-[gw1] [ 60%] PASSED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_missing_version_raises_config_error 
-[gw2] [ 80%] FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_invalid_version_raises_config_error 
-[gw3] [100%] FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_missing_version_raises_config_error 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_record_sub_phase_none_clears_state 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_enter_implementation_phase_initializes_cycle_1 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineCleanBreak::test_get_state_raises_mismatch_error_not_file_not_found 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_transition_routes_through_mutator 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTransitionHooksWiring::test_transition_from_tdd_calls_exit_hook 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_on_exit_implementation_phase_routes_through_mutator 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_exit_implementation_phase_preserves_last_cycle 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_phase_state_engine_accepts_workflow_state_mutator_kwarg 
+[gw3] [  2%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTransitionHooksWiring::test_transition_from_tdd_calls_exit_hook 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTransitionHooksWiring::test_force_reentry_to_implementation_preserves_active_cycle 
+[gw6] [  4%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_on_exit_implementation_phase_routes_through_mutator 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_record_sub_phase_writes_to_state 
+[gw4] [  6%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_phase_state_engine_accepts_workflow_state_mutator_kwarg 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_initialize_branch_routes_through_mutator 
+[gw7] [  8%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_record_sub_phase_none_clears_state 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_transition_clears_sub_phase 
+[gw2] [ 10%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineCleanBreak::test_get_state_raises_mismatch_error_not_file_not_found 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTransitionHooksWiring::test_transition_to_tdd_calls_enter_hook 
+[gw5] [ 13%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_transition_routes_through_mutator 
+[gw3] [ 15%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTransitionHooksWiring::test_force_reentry_to_implementation_preserves_active_cycle 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_on_enter_implementation_phase_routes_through_mutator 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_force_transition_clears_sub_phase 
+[gw2] [ 17%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTransitionHooksWiring::test_transition_to_tdd_calls_enter_hook 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_force_transition 
+[gw0] [ 19%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_enter_implementation_phase_initializes_cycle_1 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_enter_implementation_phase_does_not_block_without_planning_deliverables 
+[gw6] [ 21%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_record_sub_phase_writes_to_state 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_transition_cycle_clears_sub_phase 
+[gw1] [ 23%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_exit_implementation_phase_preserves_last_cycle 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_exit_implementation_phase_validates_completion 
+[gw3] [ 26%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_force_transition_clears_sub_phase 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_no_reset_when_writer_none 
+[gw4] [ 28%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_initialize_branch_routes_through_mutator 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_on_exit_cycle_based_phase_does_not_touch_sub_phase 
+[gw2] [ 30%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_force_transition 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_force_cycle_transition 
+[gw5] [ 32%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineMutatorRoutingC6::test_on_enter_implementation_phase_routes_through_mutator 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_enter_cycle 
+[gw2] [ 34%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_force_cycle_transition 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_to_next_cycle_succeeds 
+[gw5] [ 36%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_enter_cycle 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_blocks_backward_transition 
+[gw3] [ 39%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_no_reset_when_writer_none 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_force_cycle_transition_lambda_uses_s_cycle_history 
+[gw7] [ 41%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_transition_clears_sub_phase 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_transition 
+[gw3] [ 43%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_force_cycle_transition_lambda_uses_s_cycle_history 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_backward_transition_succeeds 
+[gw6] [ 45%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_transition_cycle_clears_sub_phase 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_force_transition_lambda_uses_s_transitions 
+[gw4] [ 47%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateEngineRecordSubPhase::test_on_exit_cycle_based_phase_does_not_touch_sub_phase 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestSaveStateMethodRemoved::test_save_state_method_deleted 
+[gw4] [ 50%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestSaveStateMethodRemoved::test_save_state_method_deleted 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleAuditSchema::test_force_audit_entry_has_cycle_number_not_from_to 
+[gw0] [ 52%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_enter_implementation_phase_does_not_block_without_planning_deliverables 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_transition_lambda_uses_s_transitions 
+[gw2] [ 54%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_to_next_cycle_succeeds 
+[gw5] [ 56%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_blocks_backward_transition 
+[gw7] [ 58%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestContextLoadedWriterReset::test_phase_state_engine_resets_flag_on_transition 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_skip_transition_succeeds 
+[gw3] [ 60%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_backward_transition_succeeds 
+[gw4] [ 63%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleAuditSchema::test_force_audit_entry_has_cycle_number_not_from_to 
+[gw6] [ 65%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_force_transition_lambda_uses_s_transitions 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_blocks_without_human_approval 
+[gw1] [ 67%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestTDDPhaseHooks::test_on_exit_implementation_phase_validates_completion 
+tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_transition_cycle_lambda_uses_s_cycle_history 
+[gw0] [ 69%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_transition_lambda_uses_s_transitions 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleAuditSchema::test_force_audit_entry_has_skipped_cycles 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_blocks_non_sequential_jump 
+[gw1] [ 71%] PASSED tests/mcp_server/unit/managers/test_phase_state_engine.py::TestPhaseStateFreshSLambdaC1::test_transition_cycle_lambda_uses_s_cycle_history 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleExitCriteria::test_transition_blocked_when_current_cycle_has_empty_exit_criteria 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_blocks_outside_cycle_based_phase 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_blocks_without_skip_reason 
+[gw7] [ 73%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_skip_transition_succeeds 
+[gw6] [ 76%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_blocks_without_human_approval 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleHistory::test_multiple_transitions_accumulate_history 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleAuditSchema::test_force_audit_entry_has_forced_true 
+[gw2] [ 78%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_blocks_non_sequential_jump 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleExitCriteria::test_transition_succeeds_when_exit_criteria_present 
+[gw0] [ 80%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleAuditSchema::test_force_audit_entry_has_skipped_cycles 
+[gw1] [ 82%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleExitCriteria::test_transition_blocked_when_current_cycle_has_empty_exit_criteria 
+tests/mcp_server/unit/tools/test_dev_tools.py::test_run_tests_tool 
+[gw1] [ 84%] PASSED tests/mcp_server/unit/tools/test_dev_tools.py::test_run_tests_tool 
+[gw5] [ 86%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleTool::test_transition_blocks_outside_cycle_based_phase 
+[gw3] [ 89%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleTransitionTool::test_force_blocks_without_skip_reason 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleHistory::test_normal_transition_writes_history_entry 
+[gw4] [ 91%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestForceCycleAuditSchema::test_force_audit_entry_has_forced_true 
+[gw2] [ 93%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleExitCriteria::test_transition_succeeds_when_exit_criteria_present 
+[gw6] [ 95%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleHistory::test_multiple_transitions_accumulate_history 
+tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleExitCriteria::test_transition_blocked_when_current_cycle_missing_exit_criteria 
+[gw7] [ 97%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleHistory::test_normal_transition_writes_history_entry 
+[gw0] [100%] PASSED tests/mcp_server/unit/tools/test_cycle_tools_business_logic.py::TestTransitionCycleExitCriteria::test_transition_blocked_when_current_cycle_missing_exit_criteria 
 
-================================== FAILURES ===================================
-_ TestConfigVersionValidation.test_load_workflow_config_invalid_version_raises_config_error _
-[gw2] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
-tests\mcp_server\unit\config\test_config_version.py:57: in test_load_workflow_config_invalid_version_raises_config_error
-    with pytest.raises(ConfigError, match="version"):
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   Failed: DID NOT RAISE <class 'mcp_server.core.exceptions.ConfigError'>
-_ TestConfigVersionValidation.test_load_git_config_missing_version_raises_config_error _
-[gw3] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
-mcp_server\config\loader.py:342: in _validate_schema
-    return schema_cls.model_validate(data)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   pydantic_core._pydantic_core.ValidationError: 6 validation errors for GitConfig
-E   branch_types
-E     List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]
-E       For further information visit https://errors.pydantic.dev/2.12/v/too_short
-E   protected_branches
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   branch_name_pattern
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   commit_types
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   default_base_branch
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   issue_title_max_length
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-
-The above exception was the direct cause of the following exception:
-tests\mcp_server\unit\config\test_config_version.py:69: in test_load_git_config_missing_version_raises_config_error
-    loader.load_git_config()
-mcp_server\config\loader.py:101: in load_git_config
-    return self._validate_schema(GitConfig, data, resolved_path)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-mcp_server\config\loader.py:344: in _validate_schema
-    raise ConfigError(
-E   mcp_server.core.exceptions.ConfigError: Config validation failed for git.yaml: 6 validation errors for GitConfig
-E   branch_types
-E     List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]
-E       For further information visit https://errors.pydantic.dev/2.12/v/too_short
-E   protected_branches
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   branch_name_pattern
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   commit_types
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   default_base_branch
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   issue_title_max_length
-E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
-E       For further information visit https://errors.pydantic.dev/2.12/v/missing
-E   File: C:\Users\miche\AppData\Local\Temp\pytest-of-1Voudig\pytest-4768\popen-gw3\test_load_git_config_missing_v0\.pgmcp\config\git.yaml
-
-During handling of the above exception, another exception occurred:
-tests\mcp_server\unit\config\test_config_version.py:68: in test_load_git_config_missing_version_raises_config_error
-    with pytest.raises(ConfigError, match="version"):
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   AssertionError: Regex pattern did not match.
-E     Expected regex: 'version'
-E     Actual message: "Config validation failed for git.yaml: 6 validation errors for GitConfig\nbranch_types\n  List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/too_short\nprotected_branches\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nbranch_name_pattern\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\ncommit_types\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\ndefault_base_branch\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nissue_title_max_length\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nFile: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4768\\popen-gw3\\test_load_git_config_missing_v0\\.pgmcp\\config\\git.yaml"
-=========================== short test summary info ===========================
-FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_invalid_version_raises_config_error
-FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_missing_version_raises_config_error
-========================= 2 failed, 3 passed in 6.35s =========================
+============================= 46 passed in 7.49s ==============================

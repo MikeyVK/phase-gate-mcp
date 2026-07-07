@@ -27,7 +27,7 @@ def _render_full_design_doc() -> str:
         format="markdown",
         # structural doc fields (now required in DocArtifactContext)
         status="DRAFT",
-        version="1.0",
+        version="1.0.0",
         last_updated="2026-01-26",
         # tier1 variables (universal document structure)
         title="Template Hierarchy Design",

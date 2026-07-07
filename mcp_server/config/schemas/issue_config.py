@@ -15,7 +15,7 @@ requirements loaded by the config layer.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, PrivateAttr
 
@@ -31,7 +31,7 @@ class IssueTypeEntry(BaseModel):
 class IssueConfig(BaseModel):
     """Issue conventions configuration value object."""
 
-    version: str
+    version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
     issue_types: list[IssueTypeEntry]
     required_label_categories: list[str] = Field(default_factory=list)
     optional_label_inputs: dict[str, Any] = Field(default_factory=dict)

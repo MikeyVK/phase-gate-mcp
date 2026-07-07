@@ -57,6 +57,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "git.yaml",
         {
+            "version": "1.0.0",
             "branch_types": ["feature", "bug"],
             "protected_branches": ["main"],
             "branch_name_pattern": "^[a-z0-9-]+$",
@@ -68,7 +69,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "labels.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "labels": [
                 {
                     "name": "type:feature",
@@ -80,11 +81,11 @@ def config_root(tmp_path: Path) -> Path:
             "label_patterns": [],
         },
     )
-    write_yaml("scopes.yaml", {"version": "1.0", "scopes": ["architecture", "workflow"]})
+    write_yaml("scopes.yaml", {"version": "1.0.0", "scopes": ["architecture", "workflow"]})
     write_yaml(
         "workflows.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "workflows": {
                 "feature": {
                     "name": "feature",
@@ -97,7 +98,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "workphases.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "phases": {
                 "implementation": {
                     "display_name": "Implementation",
@@ -117,7 +118,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "artifacts.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "code",
@@ -139,14 +140,14 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "contributors.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "contributors": [{"login": "alice", "name": "Alice Doe"}],
         },
     )
     write_yaml(
         "issues.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "issue_types": [{"name": "feature", "workflow": "feature", "label": "type:feature"}],
             "required_label_categories": ["type", "priority", "scope"],
             "optional_label_inputs": {},
@@ -155,13 +156,14 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "milestones.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "milestones": [{"number": 1, "title": "v1.0", "state": "open"}],
         },
     )
     write_yaml(
         "policies.yaml",
         {
+            "version": "1.0.0",
             "operations": {
                 "create_file": {
                     "description": "Create file",
@@ -177,6 +179,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "project_structure.yaml",
         {
+            "version": "1.0.0",
             "directories": {
                 "src": {
                     "parent": None,
@@ -191,7 +194,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "quality.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_logging": {
                 "enabled": True,
                 "output_dir": "temp/qa_logs",
@@ -219,7 +222,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "scaffold_metadata.yaml",
         {
-            "version": "2.0",
+            "version": "1.0.0",
             "comment_patterns": [
                 {
                     "syntax": "hash",
@@ -238,10 +241,11 @@ def config_root(tmp_path: Path) -> Path:
             ],
         },
     )
-    write_yaml("enforcement.yaml", {"enforcement": []})
+    write_yaml("enforcement.yaml", {"version": "1.0.0", "enforcement": []})
     write_yaml(
         "contracts.yaml",
         {
+            "version": "1.0.0",
             "merge_policy": {
                 "pr_allowed_phase": "ready",
                 "branch_local_artifacts": [],

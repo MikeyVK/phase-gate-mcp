@@ -1,3 +1,4 @@
+version: "1.0.0"
 # Operation Phase Policies
 # Purpose: Define when scaffold/create_file/commit operations are allowed
 # Used by: PolicyEngine for operation decisions

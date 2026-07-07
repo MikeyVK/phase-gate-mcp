@@ -13,7 +13,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 
 _STRUCTURAL = {
     "status": "DRAFT",
-    "version": "1.0",
+    "version": "1.0.0",
     "last_updated": "2026-01-26",
 }
 

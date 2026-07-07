@@ -170,7 +170,7 @@ class TestProvenanceE2E:
                 {
                     "title": f"Test {artifact_type.title()} Document",
                     "status": "DRAFT",
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "last_updated": "2026-01-27",
                     "problem_statement": "Test problem",
                     "requirements_functional": ["Req 1"],
@@ -296,7 +296,7 @@ class TestProvenanceE2E:
             name="TestDesign",
             title="Test Design Document",
             status="DRAFT",
-            version="1.0",
+            version="1.0.0",
             last_updated="2026-01-27",
             problem_statement="Define architecture",
             decision="Use layered architecture",

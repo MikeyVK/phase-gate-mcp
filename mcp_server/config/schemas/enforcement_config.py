@@ -15,6 +15,7 @@ loaded by the config layer.
 
 from __future__ import annotations
 
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -69,5 +70,6 @@ class EnforcementConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    version: Literal["1.0.0"] = Field("1.0.0", description="Config schema version")
     categories: dict[str, list[str]] = Field(default_factory=dict)
     enforcement: list[EnforcementRule] = Field(default_factory=list)

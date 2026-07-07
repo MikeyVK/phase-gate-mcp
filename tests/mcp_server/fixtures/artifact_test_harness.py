@@ -55,7 +55,7 @@ def _temp_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generato
 @pytest.fixture(name="artifacts_yaml_content")
 def _artifacts_yaml_content() -> str:
     """Minimal artifacts.yaml for testing."""
-    return """version: "1.0"
+    return """version: "1.0.0"
 
 artifact_types:
   - type: doc

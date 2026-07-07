@@ -155,6 +155,7 @@ class TestProjectStructureConfig:
     def test_manual_project_structure_accessors(self) -> None:
         """Accessor helpers should work on manually constructed configs."""
         config = ProjectStructureConfig(
+            version="1.0.0",
             directories={
                 "backend": DirectoryPolicy(path="backend", description="Backend code"),
                 "backend/dtos": DirectoryPolicy(

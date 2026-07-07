@@ -46,7 +46,7 @@ class TestInitializeCapture:
             "method": "initialize",
             "params": {
                 "protocolVersion": "2025-11-25",
-                "clientInfo": {"name": "Visual Studio Code", "version": "1.0"},
+                "clientInfo": {"name": "Visual Studio Code", "version": "1.0.0"},
             },
         }
 

@@ -25,7 +25,7 @@ class TestLabelConfigReloadBehavior:
         config_file = tmp_path / "labels.yaml"
         config_file.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -40,7 +40,7 @@ freeform_exceptions: []
         time.sleep(0.01)
         config_file.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -60,7 +60,7 @@ freeform_exceptions: []
         config_file = tmp_path / "labels.yaml"
         config_file.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -75,7 +75,7 @@ freeform_exceptions: []
         time.sleep(0.01)
         config_file.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -99,7 +99,7 @@ label_patterns:
         config_file = tmp_path / "labels.yaml"
         config_file.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -119,7 +119,7 @@ freeform_exceptions: []
 
         config1_file.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -129,7 +129,7 @@ freeform_exceptions: []
         )
         config2_file.write_text(
             """
-version: "1.0"
+version: "1.0.0"
 labels:
   - name: "type:bug"
     color: "D73A4A"

@@ -42,7 +42,7 @@ def minimal_context(base_system_context: dict[str, Any]) -> dict[str, Any]:
         **base_system_context,
         "title": "Migration Guide: v1.x to v2.0",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-16",
         "purpose": "Guide the transition to workflow-first commit scopes.",
         "summary": "This migration updates commit scope conventions and tool parameters.",

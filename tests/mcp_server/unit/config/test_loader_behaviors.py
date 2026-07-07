@@ -29,7 +29,7 @@ def _write_yaml(path: Path, content: str) -> Path:
 
 def _minimal_workflow_config() -> WorkflowConfig:
     return WorkflowConfig(
-        version="1.0",
+        version="1.0.0",
         workflows={
             "feature": {
                 "name": "feature",
@@ -42,7 +42,7 @@ def _minimal_workflow_config() -> WorkflowConfig:
 
 def _minimal_artifact_registry() -> ArtifactRegistryConfig:
     return ArtifactRegistryConfig(
-        version="1.0",
+        version="1.0.0",
         artifact_types=[
             {
                 "type": "code",
@@ -92,7 +92,7 @@ def test_resolve_config_root_returns_explicit_root_when_required_files_exist(
     tmp_path: Path,
 ) -> None:
     config_root = tmp_path / get_default_server_root() / "config"
-    _write_yaml(config_root / "workflows.yaml", "version: '1.0'\nworkflows: {}\n")
+    _write_yaml(config_root / "workflows.yaml", "version: '1.0.0'\nworkflows: {}\n")
 
     assert (
         resolve_config_root(
@@ -152,7 +152,7 @@ def test_load_operation_policies_uses_workflow_loader_fallback(tmp_path: Path) -
     _write_yaml(
         config_root / "workflows.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 workflows:
   feature:
     name: "feature"
@@ -164,6 +164,7 @@ workflows:
     policies_path = _write_yaml(
         config_root / "policies.yaml",
         """
+version: "1.0.0"
 operations:
   commit:
     description: "Commit changes"
@@ -185,7 +186,7 @@ operations:
 
 def test_load_operation_policies_requires_operations_key(tmp_path: Path) -> None:
     config_root = tmp_path / get_default_server_root() / "config"
-    policies_path = _write_yaml(config_root / "policies.yaml", "version: '1.0'\n")
+    policies_path = _write_yaml(config_root / "policies.yaml", "version: '1.0.0'\n")
     loader = ConfigLoader(config_root)
 
     with pytest.raises(ConfigError, match="Missing 'operations' key"):
@@ -197,7 +198,7 @@ def test_load_project_structure_uses_registry_loader_fallback(tmp_path: Path) ->
     _write_yaml(
         config_root / "artifacts.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 artifact_types:
   - type: code
     type_id: dto
@@ -217,7 +218,7 @@ artifact_types:
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 directories:
   backend:
     description: Backend code
@@ -237,7 +238,7 @@ directories:
 
 def test_load_project_structure_requires_directories_key(tmp_path: Path) -> None:
     config_root = tmp_path / get_default_server_root() / "config"
-    structure_path = _write_yaml(config_root / "project_structure.yaml", "version: '1.0'\n")
+    structure_path = _write_yaml(config_root / "project_structure.yaml", "version: '1.0.0'\n")
     loader = ConfigLoader(config_root)
 
     with pytest.raises(ConfigError, match="Missing 'directories' key"):
@@ -249,7 +250,7 @@ def test_load_project_structure_rejects_unknown_artifact_type(tmp_path: Path) ->
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 directories:
   backend:
     description: Backend code
@@ -273,7 +274,7 @@ def test_load_project_structure_rejects_unknown_parent_reference(tmp_path: Path)
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 directories:
   backend:
     description: Backend code

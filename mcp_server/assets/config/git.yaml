@@ -1,3 +1,4 @@
+version: "1.0.0"
 # Git Conventions Configuration (Issue #55)
 # All git-related validations and defaults centralized here
 

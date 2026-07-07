@@ -70,7 +70,7 @@ def _make_qg_result(
     """Build a minimal run_quality_gates result dict."""
     status = "failed" if failed > 0 else ("skipped" if skipped > 0 else "passed")
     return {
-        "version": "2.0",
+        "version": "1.0.0",
         "mode": "file-specific",
         "files": ["foo.py"],
         "summary": {

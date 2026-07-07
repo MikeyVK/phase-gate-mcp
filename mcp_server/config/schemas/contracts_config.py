@@ -17,8 +17,8 @@ ordering via WorkflowEntry + WorkflowPhaseEntry (issue #271).
 
 from __future__ import annotations
 
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 
 class BranchLocalArtifact(BaseModel):
     """Single branch-local artifact definition from merge_policy."""
@@ -122,6 +122,7 @@ class ContractsConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+    version: Literal["1.0.0"] = Field("1.0.0", description="Config schema version")
     merge_policy: MergePolicy
     workflows: dict[str, WorkflowEntry] = Field(default_factory=dict)
 

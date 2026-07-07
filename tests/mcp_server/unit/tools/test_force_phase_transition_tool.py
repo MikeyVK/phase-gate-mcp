@@ -298,6 +298,7 @@ class TestForcePhaseTransitionToolSkippedGatesResponse:
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -320,6 +321,7 @@ phases:
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -423,6 +425,7 @@ class TestForceTransitionResponseFormat:
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -524,6 +527,7 @@ phases:
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"

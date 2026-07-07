@@ -105,9 +105,8 @@ class ArtifactDefinition(BaseModel):
 class ArtifactRegistryConfig(BaseModel):
     """Artifact registry configuration value object."""
 
-    version: str = Field(..., description="Schema version")
+    version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
     artifact_types: list[ArtifactDefinition] = Field(..., description="All artifact definitions")
-
     def get_artifact(self, type_id: str) -> ArtifactDefinition:
         for artifact in self.artifact_types:
             if artifact.type_id == type_id:

@@ -177,7 +177,7 @@ class ArtifactLoggingConfig(BaseModel):
 class QualityConfig(BaseModel):
     """Root quality gates configuration value object."""
 
-    version: str = Field(..., min_length=1)
+    version: Literal["1.0.0"] = Field("1.0.0", min_length=1)
     active_gates: list[str] = Field(default_factory=list)
     artifact_logging: ArtifactLoggingConfig = Field(...)
     project_scope: GateScope | None = Field(default=None)
