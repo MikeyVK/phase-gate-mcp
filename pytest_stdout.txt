@@ -6,47 +6,90 @@ configfile: pyproject.toml
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [9 items]
+8 workers [5 items]
 
 scheduling tests via LoadScheduling
 
-tests/documentation/test_c4_doc_alignment.py::test_mcp_tools_md_delete_branch_mode_param_present 
-tests/documentation/test_c4_doc_alignment.py::test_git_md_delete_branch_mode_param_present 
-tests/documentation/test_c4_doc_alignment.py::test_project_md_state_json_not_runtime_not_committed 
-tests/documentation/test_c4_doc_alignment.py::test_imp_agent_md_branch_local_wording 
-tests/documentation/test_c4_doc_alignment.py::test_git_md_delete_branch_migration_note_present 
-tests/documentation/test_c4_doc_alignment.py::test_contracts_yaml_feature_first_push_present 
-tests/documentation/test_c4_doc_alignment.py::test_co_agent_md_branch_local_wording 
-tests/documentation/test_c4_doc_alignment.py::test_project_md_state_json_branch_local_wording 
-[gw3] [ 11%] PASSED tests/documentation/test_c4_doc_alignment.py::test_project_md_state_json_not_runtime_not_committed 
-[gw5] [ 22%] PASSED tests/documentation/test_c4_doc_alignment.py::test_imp_agent_md_branch_local_wording 
-[gw6] [ 33%] PASSED tests/documentation/test_c4_doc_alignment.py::test_co_agent_md_branch_local_wording 
-[gw2] [ 44%] PASSED tests/documentation/test_c4_doc_alignment.py::test_mcp_tools_md_delete_branch_mode_param_present 
-[gw1] [ 55%] PASSED tests/documentation/test_c4_doc_alignment.py::test_git_md_delete_branch_migration_note_present 
-[gw7] [ 66%] PASSED tests/documentation/test_c4_doc_alignment.py::test_contracts_yaml_feature_first_push_present 
-[gw0] [ 77%] PASSED tests/documentation/test_c4_doc_alignment.py::test_git_md_delete_branch_mode_param_present 
-tests/documentation/test_c4_doc_alignment.py::test_contracts_yaml_bug_first_push_present 
-[gw0] [ 88%] PASSED tests/documentation/test_c4_doc_alignment.py::test_contracts_yaml_bug_first_push_present 
-[gw4] [100%] FAILED tests/documentation/test_c4_doc_alignment.py::test_project_md_state_json_branch_local_wording 
+tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_invalid_version_raises_config_error 
+tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_missing_version_raises_config_error 
+tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_success 
+tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_missing_version_raises_config_error 
+tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_invalid_version_raises_config_error 
+[gw0] [ 20%] PASSED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_success 
+[gw4] [ 40%] PASSED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_invalid_version_raises_config_error 
+[gw1] [ 60%] PASSED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_missing_version_raises_config_error 
+[gw2] [ 80%] FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_invalid_version_raises_config_error 
+[gw3] [100%] FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_missing_version_raises_config_error 
 
 ================================== FAILURES ===================================
-_______________ test_project_md_state_json_branch_local_wording _______________
-[gw4] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
+_ TestConfigVersionValidation.test_load_workflow_config_invalid_version_raises_config_error _
+[gw2] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
+tests\mcp_server\unit\config\test_config_version.py:57: in test_load_workflow_config_invalid_version_raises_config_error
+    with pytest.raises(ConfigError, match="version"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE <class 'mcp_server.core.exceptions.ConfigError'>
+_ TestConfigVersionValidation.test_load_git_config_missing_version_raises_config_error _
+[gw3] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
+mcp_server\config\loader.py:342: in _validate_schema
+    return schema_cls.model_validate(data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic_core._pydantic_core.ValidationError: 6 validation errors for GitConfig
+E   branch_types
+E     List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]
+E       For further information visit https://errors.pydantic.dev/2.12/v/too_short
+E   protected_branches
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   branch_name_pattern
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   commit_types
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   default_base_branch
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   issue_title_max_length
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
 
-    def test_project_md_state_json_branch_local_wording() -> None:
-        """project.md describes state.json as branch-local and committed."""
-        content = (REPO_ROOT / "docs" / "reference" / "mcp" / "tools" / "project.md").read_text(
-            encoding="utf-8"
-        )
-        # state.json line must now say branch-local, not runtime/not-committed
-        # find the state.json line specifically
-        lines = content.splitlines()
-        state_json_lines = [ln for ln in lines if "state.json" in ln and "phase-gate" in ln]
->       assert state_json_lines, "state.json reference line not found"
-E       AssertionError: state.json reference line not found
-E       assert []
+The above exception was the direct cause of the following exception:
+tests\mcp_server\unit\config\test_config_version.py:69: in test_load_git_config_missing_version_raises_config_error
+    loader.load_git_config()
+mcp_server\config\loader.py:101: in load_git_config
+    return self._validate_schema(GitConfig, data, resolved_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+mcp_server\config\loader.py:344: in _validate_schema
+    raise ConfigError(
+E   mcp_server.core.exceptions.ConfigError: Config validation failed for git.yaml: 6 validation errors for GitConfig
+E   branch_types
+E     List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]
+E       For further information visit https://errors.pydantic.dev/2.12/v/too_short
+E   protected_branches
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   branch_name_pattern
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   commit_types
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   default_base_branch
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   issue_title_max_length
+E     Field required [type=missing, input_value={'branch_types': []}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.12/v/missing
+E   File: C:\Users\miche\AppData\Local\Temp\pytest-of-1Voudig\pytest-4768\popen-gw3\test_load_git_config_missing_v0\.pgmcp\config\git.yaml
 
-tests\documentation\test_c4_doc_alignment.py:87: AssertionError
+During handling of the above exception, another exception occurred:
+tests\mcp_server\unit\config\test_config_version.py:68: in test_load_git_config_missing_version_raises_config_error
+    with pytest.raises(ConfigError, match="version"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'version'
+E     Actual message: "Config validation failed for git.yaml: 6 validation errors for GitConfig\nbranch_types\n  List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.12/v/too_short\nprotected_branches\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nbranch_name_pattern\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\ncommit_types\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\ndefault_base_branch\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nissue_title_max_length\n  Field required [type=missing, input_value={'branch_types': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nFile: C:\\Users\\miche\\AppData\\Local\\Temp\\pytest-of-1Voudig\\pytest-4768\\popen-gw3\\test_load_git_config_missing_v0\\.pgmcp\\config\\git.yaml"
 =========================== short test summary info ===========================
-FAILED tests/documentation/test_c4_doc_alignment.py::test_project_md_state_json_branch_local_wording
-========================= 1 failed, 8 passed in 4.96s =========================
+FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_workflow_config_invalid_version_raises_config_error
+FAILED tests/mcp_server/unit/config/test_config_version.py::TestConfigVersionValidation::test_load_git_config_missing_version_raises_config_error
+========================= 2 failed, 3 passed in 6.35s =========================
