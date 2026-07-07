@@ -7,22 +7,14 @@ Unit tests for dynamic template path resolution.
 
 @layer: Tests (Unit)
 @dependencies: [pytest, mcp_server.config.settings, unittest.mock]
-@responsibilities:
-    - Test TestTemplatePathResolution functionality
-    - Verify None
-    - None
 """
 
 # Standard library
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
-from typing import Any
-
-# Third-party
-import pytest
+import os
 from pathlib import Path
 
 # Project modules
-from mcp_server.config.settings import Settings
+from tests.mcp_server.test_support import get_template_root
 
 
 class TestTemplatePathResolution:
@@ -30,9 +22,6 @@ class TestTemplatePathResolution:
 
     def test_get_template_root_respects_env_override(self) -> None:
         """get_template_root() dynamically respects MCP_TEMPLATE_ROOT env var."""
-        import os
-        from tests.mcp_server.test_support import get_template_root
-
         old_val = os.environ.get("MCP_TEMPLATE_ROOT")
         mock_path = "/tmp/mock_template_path_override"
         os.environ["MCP_TEMPLATE_ROOT"] = mock_path
