@@ -112,7 +112,7 @@ Plan the sequential execution cycles, verification strategies, and deliverables 
 - Type checking (MyPy and Pyright) passes for all modified files
 - Quality gates (`run_quality_gates`) pass for all modified files
 
-**Dependencies:** C_SCAFFOLD_CLEAN.1: Scaffolding Duplicates Deletion
+**Dependencies:** C_SCAFFOLD_CLEAN.1: Scaffolding Duplicates Deletion & Git Tracking
 
 
 ### Cycle 5: C_IDE_PARTITION.1: IDE Agent Instructions Partitioning
