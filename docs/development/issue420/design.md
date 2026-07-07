@@ -155,7 +155,7 @@ shutil.copytree(assets_dir, resolved_server_root, dirs_exist_ok=True)
 ```
 
 #### Centralized Version Validation Check (mcp_server/config/loader.py)
-In `mcp_server/config/loader.py`, we delegate version checking to Pydantic by defining `version: Literal["1.0.0"]` on the schema classes. The loader intercepts Pydantic `ValidationError` events on the `version` field to raise a friendly, clean-break `ConfigError`:
+In `mcp_server/config/loader.py`, we delegate version checking to Pydantic by defining `version: Literal["1.0.0"]` on the schema classes. The loader intercepts Pydantic `ValidationError` events on the `version` field to raise a friendly, clean-break `ConfigError` without hardcoding the expected version string:
 ```python
 # In mcp_server/config/loader.py:
 def _validate_schema(
@@ -171,13 +171,22 @@ def _validate_schema(
         errors = exc.errors()
         for err in errors:
             if "version" in err.get("loc", ()):
-                input_val = err.get("input")
-                raise ConfigError(
-                    f"Config version mismatch in {resolved_path.name}: "
-                    f"expected version '1.0.0', found '{input_val}'. "
-                    f"Please update your configuration to match the current server version.",
-                    file_path=str(resolved_path),
-                ) from exc
+                err_type = err.get("type")
+                if err_type == "missing":
+                    raise ConfigError(
+                        f"Config version mismatch in {resolved_path.name}: "
+                        f"version field is missing.",
+                        file_path=str(resolved_path),
+                    ) from exc
+                else:
+                    input_val = err.get("input")
+                    expected_val = err.get("ctx", {}).get("expected", "unknown")
+                    raise ConfigError(
+                        f"Config version mismatch in {resolved_path.name}: "
+                        f"expected version '{expected_val}', found '{input_val}'. "
+                        f"Please update your configuration to match the current server version.",
+                        file_path=str(resolved_path),
+                    ) from exc
         raise ConfigError(
             f"Config validation failed for {resolved_path.name}: {exc}",
             file_path=str(resolved_path),
@@ -199,23 +208,25 @@ def load_artifact_registry_config(
 ```
 
 #### Dynamic Env Var Override for Tests (tests/conftest.py)
-Configure the test environment globally to resolve templates dynamically from Settings and point to the dev repository's templates:
+Configure the test environment dynamically inside a pytest session startup hook to resolve templates from Settings and point to the dev repository's templates without import-time side effects:
 ```python
 # In tests/conftest.py:
 import os
 from pathlib import Path
-from mcp_server.config.settings import Settings
+import pytest
 
-_project_root = Path(__file__).resolve().parent.parent
-
-# Read default server root directory dynamically from Settings class
-default_settings = Settings()
-dev_server_root = default_settings.server.server_root_dir  # Dynamically resolved to ".pgmcp"
-
-# Configure default templates root for settings path resolution in tests
-os.environ["MCP_TEMPLATE_ROOT"] = str(
-    (_project_root / dev_server_root / "templates").resolve()
-)
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Set MCP_TEMPLATE_ROOT dynamically before running tests."""
+    from mcp_server.config.settings import Settings
+    
+    _project_root = Path(session.config.rootdir)
+    default_settings = Settings()
+    dev_server_root = default_settings.server.server_root_dir  # Dynamically resolved to ".pgmcp"
+    
+    # Configure default templates root for settings path resolution in tests
+    os.environ["MCP_TEMPLATE_ROOT"] = str(
+        (_project_root / dev_server_root / "templates").resolve()
+    )
 ```
 
 #### DRY Template Root Access in Tests (tests/mcp_server/test_support.py)

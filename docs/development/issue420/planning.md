@@ -117,14 +117,14 @@ Plan the sequential execution cycles, verification strategies, and deliverables 
 
 ### Cycle 5: C_IDE_PARTITION.1: IDE Agent Instructions Partitioning
 
-**Goal:** Partition agent instructions under `docs/agents/` for VS Code and Antigravity, and remove old `.agents/` rules.
+**Goal:** Copy and organize agent instructions under `docs/agents/` partitioned by target environment (VS Code and Antigravity 2.0) to serve as a stable inventory for packaging, while keeping active configuration directories (`.agents/`, `.github/agents/`) fully intact.
 
 **Tests:**
 - Verify correct layout of `docs/agents/` in workspace.
 
 **Success Criteria:**
 - `docs/agents/vscode/` and `docs/agents/antigravity/` directories are created and populated
-- Old rule/agent files are deleted from `.agents/` and `.github/agents/` (manual copies distributed under developer supervision)
+- Active rule/agent instruction files in `.agents/` and `.github/agents/` are fully retained in place to ensure ongoing IDE functionality
 - Quality gates (`run_quality_gates` for documentation files) pass
 
 **Dependencies:** C_CLI_INIT.1: CLI Flat Copy Initialization
@@ -169,8 +169,8 @@ Plan the sequential execution cycles, verification strategies, and deliverables 
   - **Mitigation:** Update `tests/conftest.py` to check if `mcp_server/assets/` is empty/missing, and fail fast with a clear message instructing the developer to run `scripts/build_package.py`. This avoids duplicating copying code in `conftest.py`.
 - **Risk:** Version validation checks breaking tests immediately upon activation.
   - **Mitigation:** Add `version: Literal["1.0.0"]` to Pydantic schemas and update all 16 configuration files in `.pgmcp/config/` to version `"1.0.0"` in the same commit.
-- **Risk:** Deleting active agent files (`.agents/`, `.github/agents/`) mid-implementation breaks active IDE agent sessions.
-  - **Mitigation:** Copy agent instructions to `docs/agents/` during Cycle 5, but do not delete the old `.agents/` and `.github/agents/` directories from the active workspace until the very end of the implementation phase (during Cycle 7 or cleanup). This ensures zero disruption to active agent sessions during development.
+- **Risk:** Modifying or deleting active agent directories (`.agents/`, `.github/agents/`) causing active agent sessions to fail or lose configuration.
+  - **Mitigation:** Copy the instructions to `docs/agents/` to serve as the stable inventory for packaging. Do not move or delete any active configuration files from `.agents/` or `.github/agents/` in the workspace; they must remain fully intact.
 
 ---
 
