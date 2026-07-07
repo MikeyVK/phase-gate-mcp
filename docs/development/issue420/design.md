@@ -234,58 +234,27 @@ assets:
 The pre-build automation script:
 ```python
 # In scripts/build_package.py:
-import shutil
-import subprocess
-import yaml
 from pathlib import Path
 
 def clean_assets(assets_dir: Path) -> None:
-    """Clean the package assets directory."""
-    if assets_dir.exists():
-        shutil.rmtree(assets_dir)
-    assets_dir.mkdir(parents=True, exist_ok=True)
+    """Clean the package assets directory prior to copying."""
+    ...
 
 def read_manifest(manifest_path: Path) -> dict:
-    """Read and return manifest data, failing fast if missing."""
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Build manifest missing: {manifest_path}")
-    with manifest_path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    """Read and return manifest mappings, failing fast if the manifest is missing."""
+    ...
 
 def copy_assets(project_root: Path, assets_dir: Path, manifest: dict) -> None:
-    """Copy assets declared in manifest, validating existence (Fail-Fast)."""
-    for mapping in manifest.get("assets", []):
-        source = project_root / mapping["source"]
-        target = assets_dir / mapping["target"]
-        
-        if not source.exists():
-            raise FileNotFoundError(
-                f"Release asset source path does not exist: {source}. "
-                "Aborting package build."
-            )
-            
-        if source.is_dir():
-            shutil.copytree(source, target, dirs_exist_ok=True)
-        else:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
+    """Copy assets declared in the manifest, validating existence (Fail-Fast)."""
+    ...
 
 def build_package() -> None:
-    """Main build orchestration logic (Composition Root)."""
-    project_root = Path(__file__).resolve().parent.parent
-    manifest_path = project_root / ".pgmcp" / "config" / "release_manifest.yaml"
-    assets_dir = project_root / "mcp_server" / "assets"
+    """Main build orchestration logic (Composition Root).
     
-    # Executing steps in accordance with Single Responsibility Principle
-    clean_assets(assets_dir)
-    manifest = read_manifest(manifest_path)
-    copy_assets(project_root, assets_dir, manifest)
-    
-    # Trigger python package build
-    subprocess.run(["python", "-m", "build"], cwd=project_root, check=True)
-
-if __name__ == "__main__":
-    build_package()
+    Cleans target assets, reads build manifest, copies files, and
+    triggers python package build ('python -m build').
+    """
+    ...
 ```
 
 ### 3.5. Architectural Principles Compliance
