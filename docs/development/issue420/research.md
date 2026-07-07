@@ -1,9 +1,9 @@
 <!-- docs\development\issue420\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-07-06T05:52Z updated=2026-07-07T08:30Z -->
+<!-- template=research version=8b7bb3ab created=2026-07-06T05:52Z updated=2026-07-07T09:38Z -->
 # Research: Deferred Release Assets and Template Bootstrap
 
 **Status:** APPROVED  
-**Version:** 1.4  
+**Version:** 1.5  
 **Last Updated:** 2026-07-07
 
 ## Prerequisites
@@ -28,21 +28,36 @@ Read these first:
 - Update `pgmcp --init` to perform a flat recursive copy of the entire `mcp_server/assets/` directory (including `template_registry.json` and any other assets) instead of only copying hardcoded subdirectories.
 - Eliminate templates directory triplication by removing `mcp_server/scaffolding/templates` and updating the test suite to use resolved settings.
 - Research a simplified config-only versioning strategy to fail fast with clear error messages on incompatibility, avoiding complex upgrade or compatibility matrices.
+- Research path resolution in the test suite to establish a DRY template path resolution strategy using environment variables.
 - Implement automated build-time copy/sync of release-bound assets to `mcp_server/assets/` on release builds using `.pgmcp/config/release_manifest.yaml` and a pre-build script.
 - Establish a secure development isolation setup where the active running server instance operates from a packaged wheel in a stable virtual environment, fully separated from the active development codebase.
 
 ---
 
-## Detailed Versioning Analysis
+## Detailed Findings & Analysis
 
-### 1. The Versioning Scope
+### 1. The Configuration Versioning Scope
 * **Templates:** Frozen. Out of scope for versioning. Templates will eventually be decoupled from the server entirely under the Template Workspace Initiative (#349). No template version checks or upgrades are required.
 * **Template Registry (`template_registry.json`):** Classified as a log file (provenance logging), not an active production enforcement component. It does not block startup or enforce active versioning.
 * **Configurations (`.pgmcp/config/`):** The only asset subject to version verification.
+* **Standardized Version:** All configuration files (including `git.yaml`, `contracts.yaml`, `policies.yaml`, `project_structure.yaml`, and `enforcement.yaml`) must standardize on version `"1.0.0"`.
+* **Clean-Break Validation:** To keep the codebase clean, we avoid complex migrations. The `ConfigLoader` will validate this version field at startup. If a configuration schema or version mismatch is found, it will fail fast and raise a friendly `ConfigError` with the file path.
 
-### 2. Constraints & Gaps in Current Codebase
-* **Cryptic Validation Errors:** If a config file (like `contracts.yaml`) is incompatible with a newly upgraded server, `ConfigLoader` crashes with a raw `ValidationError` stacktrace.
-* **Clean-Break Strategy:** To keep the codebase clean, we should avoid complex migrations, schema conversions, or automated merge utilities. Instead, we need a "clean break" strategy: when a configuration version or schema mismatch is detected, the server must fail fast with a clear, friendly error message explaining what is wrong and how the user can fix it.
+### 2. Template Path Resolution in the Test Suite
+* **Current Fragmentation:** 7 test suites reference the duplicate path `"mcp_server/scaffolding/templates"` directly. If this folder is deleted, they will fail:
+  1. `tests/mcp_server/integration/test_document_templates.py`
+  2. `tests/mcp_server/integration/test_smoke_all_types.py`
+  3. `tests/mcp_server/scaffolding/test_tier3_pattern_python_pytest.py`
+  4. `tests/mcp_server/test_design_e2e.py`
+  5. `tests/mcp_server/test_design_template.py`
+  6. `tests/mcp_server/test_validation_enforcement.py`
+  7. `tests/mcp_server/unit/services/test_template_engine.py`
+* **Single Point of Fallback:** Production code resolves templates using `Settings.from_env().server.resolved_template_root` (which looks at the `MCP_TEMPLATE_ROOT` environment variable and falls back to `.pgmcp/templates`).
+* **Richting 1 (Dynamic Environment Override):** To keep the test suite DRY and avoid file-copying overhead:
+  1. `tests/conftest.py` will resolve the project root and dynamically set `os.environ["MCP_TEMPLATE_ROOT"]` to `project_root / Settings().server.server_root_dir / "templates"`.
+  2. `get_template_root()` in `tests/mcp_server/test_support.py` will be refactored to dynamically return `Settings.from_env().server.resolved_template_root`.
+  3. The 7 fragmented test files will be refactored to call `get_template_root()`.
+  4. This eliminates hardcoded paths and uses a single point of fallback.
 
 ---
 
@@ -55,11 +70,11 @@ Read these first:
 
 ### Boundary: Templates Source of Truth
 - **Policy:** Remove the duplicate `mcp_server/scaffolding/templates` directory.
-- **Policy:** All unit and integration tests must load templates from Settings-resolved paths or test-isolated temporary paths, keeping `.pgmcp/templates` as the active dev environment SSOT.
+- **Policy:** The test suite must resolve templates dynamically through `get_template_root()` pointing to the settings-resolved root. `tests/conftest.py` will set `os.environ["MCP_TEMPLATE_ROOT"]` dynamically based on `Settings().server.server_root_dir`, ensuring a single point of fallback and avoiding copying templates.
 
 ### Boundary: Configuration Versioning & Upgrades
 - **Policy:** Limit version checking strictly to configuration files in `.pgmcp/config/`.
-- **Policy:** Implement a "clean break" upgrade strategy. If a configuration schema mismatch or version mismatch is detected at startup, the server must fail fast with an explicit, human-friendly `ConfigError` explaining the incompatibility, rather than executing complex migration logic.
+- **Policy:** Implement a "clean break" upgrade strategy. If a configuration schema mismatch or version mismatch (expected: `"1.0.0"`) is detected at startup, the server must fail fast with an explicit, human-friendly `ConfigError` explaining the incompatibility, rather than executing complex migration logic.
 
 ### Boundary: Release Packaging & Automation (Build Pipeline)
 - **Policy:** Add `mcp_server/assets/` to `.gitignore` so that packaged assets are not checked into Git. The only checked-in config and template files will be in `.pgmcp/`.
@@ -76,7 +91,7 @@ Read these first:
 
 1. Clean checkouts of target repositories can be initialized via `pgmcp --init` to recursively copy all packaged assets (including `template_registry.json`, `config/`, and `templates/`) under `.pgmcp/`.
 2. `mcp_server/scaffolding/templates` is deleted and all tests pass using the settings-based template paths.
-3. The server validates configuration compatibility at startup, failing fast with clear, human-readable error messages on schema/version mismatch.
+3. The server validates configuration compatibility at startup, failing fast with clear, human-readable error messages on schema/version mismatch (expected: `"1.0.0"`).
 4. Bundled package assets (`mcp_server/assets/`) are ignored in Git and populated automatically during package packaging by a build-time pre-build sync script using the rules defined in `.pgmcp/config/release_manifest.yaml`.
 5. The running instance of the MCP server can be installed and run from a packaged wheel in a stable venv, operating independently of the active development repository's python source files.
 
@@ -95,3 +110,4 @@ Read these first:
 | 1.2 | 2026-07-06 | Agent | Move release manifest to `.pgmcp/config/release_manifest.yaml`, define dev-isolation as a developer best practice, and untrack `.agents/mcp_config.json`. |
 | 1.3 | 2026-07-07 | Agent | Deepen versioning analysis: identify versioning problem space, boundaries, gaps, options, and non-destructive upgrade policy. |
 | 1.4 | 2026-07-07 | Agent | Simplify versioning: exclude templates, classify registry as log, restrict to config versioning with clean-break error reporting. |
+| 1.5 | 2026-07-07 | Agent | Document test template path resolution strategy (Richtung 1) and configuration version standardization to `"1.0.0"`. |
