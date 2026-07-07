@@ -72,10 +72,11 @@ Define a schema version for the workspace, perform fail-fast validation, and imp
 | Decision | Rationale |
 |----------|-----------|
 | Templates tracked in Git | Ensures clean clones are immediately usable without executing CLI bootstrap commands. |
-| CLI --init flat copy | Ensures all release-bound files, including template_registry.json, are copied to .pgmcp. |
+| CLI --init flat copy | Performs a flat recursive copy of packaged assets, excluding transient log files like `template_registry.json`. |
 | Clean-break config version validation | Maintains code simplicity while providing clear developer feedback on mismatch. |
 | Build-time manifest copying | Automates packaging of release assets dynamically without checking generated files into Git. |
 | Dynamic environment override for tests (Richtung 1) | Resolves the test templates path dynamically using Settings defaults in conftest.py, keeping tests DRY and avoiding template file copying. |
+| IDE-Specific Agent Layout | Gathers instructions, roles, and rules under `docs/agents/` separated by IDE (VS Code and Antigravity 2.0). Bypasses brittle automated sync scripts in favor of manual/agent-guided deployment. |
 
 ### 3.2. Component Architecture
 
@@ -86,6 +87,7 @@ graph TD
         SourceTemplates[".pgmcp/templates/* (Git-tracked)"]
         SourceConfig[".pgmcp/config/*.yaml (Git-tracked)"]
         Manifest[".pgmcp/config/release_manifest.yaml (Git-tracked)"]
+        AgentDocs["docs/agents/ (IDE-specific subfolders)"]
         BuildScript["scripts/build_package.py (Pre-build)"]
         GeneratedAssets["mcp_server/assets/ (Git-ignored)"]
         DevVenv["pgmcp_stable_venv/ (Stable Engine Executable)"]
@@ -99,8 +101,10 @@ graph TD
     BuildScript -->|1. Reads| Manifest
     BuildScript -->|2. Clears & Copies| SourceTemplates
     BuildScript -->|2. Clears & Copies| SourceConfig
+    BuildScript -->|2. Clears & Copies| AgentDocs
     SourceTemplates --> GeneratedAssets
     SourceConfig --> GeneratedAssets
+    AgentDocs --> GeneratedAssets
     BuildScript -->|3. Invokes 'build'| Wheel["dist/*.whl"]
     GeneratedAssets -->|4. Bundled inside| Wheel
 
@@ -114,7 +118,32 @@ graph TD
     TargetInit -->|Copies all assets recursively| TargetPgmcp
 ```
 
-### 3.3. Illustrative Code Design
+### 3.3. IDE-Specific Agent Instructions Layout (SSOT)
+
+To avoid dependency on fluid and changing IDE instruction path structures, the repository gathers all instructions under `docs/agents/` partitioned by target environment. No automated sync scripts are implemented. Copying files to active runtime paths is a developer-driven or agent-guided manual bootstrap step.
+
+```
+docs/agents/
+├── vscode/
+│   ├── AGENTS.md                  # VS Code global rules
+│   └── .github/agents/            # VS Code agent personas
+│       ├── co.agent.md
+│       ├── imp.agent.md
+│       └── qa.agent.md
+└── antigravity/
+    ├── AGENTS.md                  # Antigravity/Gemini global rules
+    ├── rules/                     # Antigravity agent personas
+    │   ├── co.agent.md
+    │   ├── imp.agent.md
+    │   └── qa.agent.md
+    └── workflows/                 # Antigravity slash commands
+        ├── create-issue.md
+        ├── end-issue.md
+        ├── go.md
+        └── start-issue.md
+```
+
+### 3.4. Illustrative Code Design
 
 #### CLI Flat Copy (mcp_server/cli.py)
 In `mcp_server/cli.py`, replace individual directory copies with a single flat recursive copy:
@@ -185,7 +214,7 @@ def get_template_root() -> Path:
 ```
 
 #### Build Manifest Structure (.pgmcp/config/release_manifest.yaml)
-The build manifest defines mappings of files to package assets:
+The build manifest defines mappings of files to package assets, excluding `template_registry.json`:
 ```yaml
 # .pgmcp/config/release_manifest.yaml
 version: "1.0.0"
@@ -195,8 +224,10 @@ assets:
     target: "config"
   - source: ".pgmcp/templates"
     target: "templates"
-  - source: ".pgmcp/template_registry.json"
-    target: "template_registry.json"
+  - source: "docs/agents/vscode"
+    target: "agents/vscode"
+  - source: "docs/agents/antigravity"
+    target: "agents/antigravity"
 ```
 
 #### Build Package Sync Pipeline (scripts/build_package.py)
@@ -208,40 +239,79 @@ import subprocess
 import yaml
 from pathlib import Path
 
-def build_package():
-    project_root = Path(__file__).resolve().parent.parent
-    manifest_path = project_root / ".pgmcp" / "config" / "release_manifest.yaml"
-    assets_dir = project_root / "mcp_server" / "assets"
-    
-    # 1. Clean previous build assets
+def clean_assets(assets_dir: Path) -> None:
+    """Clean the package assets directory."""
     if assets_dir.exists():
         shutil.rmtree(assets_dir)
     assets_dir.mkdir(parents=True, exist_ok=True)
-    
-    # 2. Read manifest
+
+def read_manifest(manifest_path: Path) -> dict:
+    """Read and return manifest data, failing fast if missing."""
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Build manifest missing: {manifest_path}")
     with manifest_path.open(encoding="utf-8") as f:
-        manifest = yaml.safe_load(f)
-        
-    # 3. Copy files based on manifest mappings
+        return yaml.safe_load(f) or {}
+
+def copy_assets(project_root: Path, assets_dir: Path, manifest: dict) -> None:
+    """Copy assets declared in manifest, validating existence (Fail-Fast)."""
     for mapping in manifest.get("assets", []):
         source = project_root / mapping["source"]
         target = assets_dir / mapping["target"]
         
+        if not source.exists():
+            raise FileNotFoundError(
+                f"Release asset source path does not exist: {source}. "
+                "Aborting package build."
+            )
+            
         if source.is_dir():
             shutil.copytree(source, target, dirs_exist_ok=True)
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
-            
-    # 4. Stamp version on all copied configuration YAML files
-    # ... logic to stamp version: "1.0.0" on copied YAML config files ...
+
+def stamp_version(assets_dir: Path, version: str) -> None:
+    """Stamp the target version on all copied configuration YAML files."""
+    config_dir = assets_dir / "config"
+    if not config_dir.exists():
+        return
+    for path in config_dir.glob("*.yaml"):
+        with path.open(encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        data["version"] = version
+        with path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, sort_keys=False)
+
+def build_package() -> None:
+    """Main build orchestration logic (Composition Root)."""
+    project_root = Path(__file__).resolve().parent.parent
+    manifest_path = project_root / ".pgmcp" / "config" / "release_manifest.yaml"
+    assets_dir = project_root / "mcp_server" / "assets"
     
-    # 5. Trigger python package build
+    # Executing steps in accordance with Single Responsibility Principle
+    clean_assets(assets_dir)
+    manifest = read_manifest(manifest_path)
+    copy_assets(project_root, assets_dir, manifest)
+    stamp_version(assets_dir, version="1.0.0")
+    
+    # Trigger python package build
     subprocess.run(["python", "-m", "build"], cwd=project_root, check=True)
 
 if __name__ == "__main__":
     build_package()
 ```
+
+### 3.5. Architectural Principles Compliance
+
+The script `scripts/build_package.py` adheres to the binding `ARCHITECTURE_PRINCIPLES.md` contract as follows:
+* **SRP (Single Responsibility Principle):** The script separates build steps into distinct, cohesive functions (`clean_assets`, `read_manifest`, `copy_assets`, `stamp_version`). The `build_package()` orchestrator acts as the sole coordinator.
+* **Fail-Fast:** The script aborts immediately and raises `FileNotFoundError` if:
+  - The `release_manifest.yaml` file is missing.
+  - Any source file or directory declared in the manifest does not exist.
+  This prevents building incomplete wheels.
+* **DRY (Don't Repeat Yourself):** Source paths are not hardcoded in the Python script; the manifest file `.pgmcp/config/release_manifest.yaml` is the Single Source of Truth (SSOT).
+* **No Import-Time Side Effects:** The script encapsulates all execution logic inside functions and guards execution with `if __name__ == "__main__":`, allowing the module to be safely imported.
+* **Presentation Boundary:** The script outputs clean logs without hardcoded decoration or emojis.
 
 ## Related Documentation
 - [docs/reference/mcp/release-assets-procedure.md](file:///c:/temp/pgmcp/docs/reference/mcp/release-assets-procedure.md)
