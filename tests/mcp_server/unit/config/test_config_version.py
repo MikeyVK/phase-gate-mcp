@@ -27,10 +27,7 @@ class TestConfigVersionValidation:
     def test_load_workflow_config_success(self, tmp_path: Path) -> None:
         """Valid version '1.0.0' loads successfully."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        _write_yaml(
-            config_dir / "workflows.yaml",
-            "version: '1.0.0'\nworkflows: {}\n"
-        )
+        _write_yaml(config_dir / "workflows.yaml", "version: '1.0.0'\nworkflows: {}\n")
         loader = ConfigLoader(config_dir)
         result = loader.load_workflow_config()
         assert result.version == "1.0.0"
@@ -38,10 +35,7 @@ class TestConfigVersionValidation:
     def test_load_workflow_config_missing_version_raises_config_error(self, tmp_path: Path) -> None:
         """Missing version field raises ConfigError."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        _write_yaml(
-            config_dir / "workflows.yaml",
-            "workflows: {}\n"
-        )
+        _write_yaml(config_dir / "workflows.yaml", "workflows: {}\n")
         loader = ConfigLoader(config_dir)
         with pytest.raises(ConfigError, match="version"):
             loader.load_workflow_config()
@@ -49,10 +43,7 @@ class TestConfigVersionValidation:
     def test_load_workflow_config_invalid_version_raises_config_error(self, tmp_path: Path) -> None:
         """Version other than '1.0.0' raises ConfigError."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        _write_yaml(
-            config_dir / "workflows.yaml",
-            "version: '2.0.0'\nworkflows: {}\n"
-        )
+        _write_yaml(config_dir / "workflows.yaml", "version: '2.0.0'\nworkflows: {}\n")
         loader = ConfigLoader(config_dir)
         with pytest.raises(ConfigError, match="version"):
             loader.load_workflow_config()
@@ -60,10 +51,7 @@ class TestConfigVersionValidation:
     def test_load_git_config_missing_version_raises_config_error(self, tmp_path: Path) -> None:
         """GitConfig lacking version raises ConfigError."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        _write_yaml(
-            config_dir / "git.yaml",
-            "branch_types: []\n"
-        )
+        _write_yaml(config_dir / "git.yaml", "branch_types: []\n")
         loader = ConfigLoader(config_dir)
         with pytest.raises(ConfigError, match="version"):
             loader.load_git_config()
@@ -71,10 +59,7 @@ class TestConfigVersionValidation:
     def test_load_git_config_invalid_version_raises_config_error(self, tmp_path: Path) -> None:
         """GitConfig with invalid version raises ConfigError."""
         config_dir = tmp_path / get_default_server_root() / "config"
-        _write_yaml(
-            config_dir / "git.yaml",
-            "version: '1.1.0'\nbranch_types: []\n"
-        )
+        _write_yaml(config_dir / "git.yaml", "version: '1.1.0'\nbranch_types: []\n")
         loader = ConfigLoader(config_dir)
         with pytest.raises(ConfigError, match="version"):
             loader.load_git_config()
