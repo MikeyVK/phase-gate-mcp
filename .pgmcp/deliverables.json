@@ -30,6 +30,182 @@
     ],
     "skip_reason": null,
     "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
-    "created_at": "2026-07-06T05:17:15.298304+00:00"
+    "created_at": "2026-07-06T05:17:15.298304+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 7,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "Config Version Validation",
+            "deliverables": [
+              {
+                "id": "D1.1",
+                "description": "loader.py validates config version",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "mcp_server/config/loader.py",
+                  "text": "expected_version = \"1.0.0\""
+                }
+              },
+              {
+                "id": "D1.2",
+                "description": "All 16 config files updated to 1.0.0",
+                "validates": {
+                  "type": "contains_text",
+                  "file": ".pgmcp/config/workflows.yaml",
+                  "text": "version: \"1.0.0\""
+                }
+              },
+              {
+                "id": "D1.3",
+                "description": "test_config_version.py tests loader checks",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "tests/mcp_server/unit/config/test_config_version.py"
+                }
+              }
+            ],
+            "exit_criteria": "Loader validates version 1.0.0 and rejects others, and all 16 config files updated to 1.0.0."
+          },
+          {
+            "cycle_number": 2,
+            "name": "Test Suite Path Resolution",
+            "deliverables": [
+              {
+                "id": "D2.1",
+                "description": "conftest.py sets template root override",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "tests/conftest.py",
+                  "text": "os.environ[\"MCP_TEMPLATE_ROOT\"]"
+                }
+              },
+              {
+                "id": "D2.2",
+                "description": "test_support.py reads template root from settings",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "tests/mcp_server/test_support.py",
+                  "text": "resolved_template_root"
+                }
+              }
+            ],
+            "exit_criteria": "conftest.py and test_support.py resolved to dynamically look up template paths via Settings."
+          },
+          {
+            "cycle_number": 3,
+            "name": "Scaffolding Duplicates Deletion",
+            "deliverables": [
+              {
+                "id": "D3.1",
+                "description": "Scaffolding duplicate templates deleted from test support references",
+                "validates": {
+                  "type": "absent_text",
+                  "file": "tests/mcp_server/test_support.py",
+                  "text": "scaffolding\" / \"templates"
+                }
+              }
+            ],
+            "exit_criteria": "Scaffolding duplicate templates folder deleted, and templates tracked in Git."
+          },
+          {
+            "cycle_number": 4,
+            "name": "CLI Flat Copy Initialization",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "cli.py copies entire assets directory",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "mcp_server/cli.py",
+                  "text": "shutil.copytree(assets_dir"
+                }
+              }
+            ],
+            "exit_criteria": "CLI performs flat copy of assets to .pgmcp/."
+          },
+          {
+            "cycle_number": 5,
+            "name": "Build-Time Packaging & IDE Partitioning",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "docs/agents/vscode directory exists",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/agents/vscode/AGENTS.md"
+                }
+              },
+              {
+                "id": "D5.2",
+                "description": "docs/agents/antigravity directory exists",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/agents/antigravity/AGENTS.md"
+                }
+              },
+              {
+                "id": "D5.3",
+                "description": "tests/conftest.py checks if assets directory is empty or missing.",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "tests/conftest.py",
+                  "text": "assets_dir.exists()"
+                }
+              }
+            ],
+            "exit_criteria": "Agent instructions partitioned under docs/agents/."
+          },
+          {
+            "cycle_number": 6,
+            "name": "Build-Time Packaging Automation",
+            "deliverables": [
+              {
+                "id": "D6.1",
+                "description": "Build manifest release_manifest.yaml exists",
+                "validates": {
+                  "type": "file_exists",
+                  "file": ".pgmcp/config/release_manifest.yaml"
+                }
+              },
+              {
+                "id": "D6.2",
+                "description": "scripts/build_package.py build script exists",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "scripts/build_package.py"
+                }
+              },
+              {
+                "id": "D6.3",
+                "description": "conftest.py checks if assets is empty/missing",
+                "validates": {
+                  "type": "contains_text",
+                  "file": "tests/conftest.py",
+                  "text": "assets_dir.exists()"
+                }
+              }
+            ],
+            "exit_criteria": "release_manifest.yaml created, scripts/build_package.py built, and conftest check active."
+          },
+          {
+            "cycle_number": 7,
+            "name": "Developer Isolation Documentation",
+            "deliverables": [
+              {
+                "id": "D7.1",
+                "description": "docs/setup/dev-isolation.md document exists",
+                "validates": {
+                  "type": "file_exists",
+                  "file": "docs/setup/dev-isolation.md"
+                }
+              }
+            ],
+            "exit_criteria": "Developer isolation guide created."
+          }
+        ]
+      }
+    }
   }
 }
