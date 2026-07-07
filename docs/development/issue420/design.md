@@ -270,18 +270,6 @@ def copy_assets(project_root: Path, assets_dir: Path, manifest: dict) -> None:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
 
-def stamp_version(assets_dir: Path, version: str) -> None:
-    """Stamp the target version on all copied configuration YAML files."""
-    config_dir = assets_dir / "config"
-    if not config_dir.exists():
-        return
-    for path in config_dir.glob("*.yaml"):
-        with path.open(encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-        data["version"] = version
-        with path.open("w", encoding="utf-8") as f:
-            yaml.safe_dump(data, f, sort_keys=False)
-
 def build_package() -> None:
     """Main build orchestration logic (Composition Root)."""
     project_root = Path(__file__).resolve().parent.parent
@@ -292,7 +280,6 @@ def build_package() -> None:
     clean_assets(assets_dir)
     manifest = read_manifest(manifest_path)
     copy_assets(project_root, assets_dir, manifest)
-    stamp_version(assets_dir, version="1.0.0")
     
     # Trigger python package build
     subprocess.run(["python", "-m", "build"], cwd=project_root, check=True)
@@ -304,7 +291,7 @@ if __name__ == "__main__":
 ### 3.5. Architectural Principles Compliance
 
 The script `scripts/build_package.py` adheres to the binding `ARCHITECTURE_PRINCIPLES.md` contract as follows:
-* **SRP (Single Responsibility Principle):** The script separates build steps into distinct, cohesive functions (`clean_assets`, `read_manifest`, `copy_assets`, `stamp_version`). The `build_package()` orchestrator acts as the sole coordinator.
+* **SRP (Single Responsibility Principle):** The script separates build steps into distinct, cohesive functions (`clean_assets`, `read_manifest`, `copy_assets`). The `build_package()` orchestrator acts as the sole coordinator.
 * **Fail-Fast:** The script aborts immediately and raises `FileNotFoundError` if:
   - The `release_manifest.yaml` file is missing.
   - Any source file or directory declared in the manifest does not exist.
@@ -312,6 +299,14 @@ The script `scripts/build_package.py` adheres to the binding `ARCHITECTURE_PRINC
 * **DRY (Don't Repeat Yourself):** Source paths are not hardcoded in the Python script; the manifest file `.pgmcp/config/release_manifest.yaml` is the Single Source of Truth (SSOT).
 * **No Import-Time Side Effects:** The script encapsulates all execution logic inside functions and guards execution with `if __name__ == "__main__":`, allowing the module to be safely imported.
 * **Presentation Boundary:** The script outputs clean logs without hardcoded decoration or emojis.
+
+### 3.6. Execution of the Build Pipeline
+
+The build pipeline is executed manually by the developer or via CI/CD workflows using a standard terminal command:
+```bash
+python scripts/build_package.py
+```
+This command performs the pre-build asset synchronization (clean and copy from workspace to `mcp_server/assets/`), and then triggers the standard Python package build process (`python -m build`), resulting in the generated wheel file inside the `dist/` directory.
 
 ## Related Documentation
 - [docs/reference/mcp/release-assets-procedure.md](file:///c:/temp/pgmcp/docs/reference/mcp/release-assets-procedure.md)
