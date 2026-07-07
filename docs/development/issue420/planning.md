@@ -15,7 +15,7 @@ Define sequential cycle decomposition, test-suite impact, and validation criteri
 ## Scope
 
 **In Scope:**
-Adding version: str to schemas, validating version '1.0.0' in loader.py, CLI --init flat recursive copy, removing mcp_server/scaffolding/templates, build sync script scripts/build_package.py, release_manifest.yaml, docs/agents/ IDE partitioning, test conftest/test_support refactoring, and fail-fast check in conftest.py.
+Adding version: Literal['1.0.0'] to schemas, intercepting version validation errors in loader.py, CLI --init flat recursive copy, removing mcp_server/scaffolding/templates, build sync script scripts/build_package.py, release_manifest.yaml, docs/agents/ IDE partitioning, test conftest/test_support refactoring, and fail-fast check in conftest.py.
 
 **Out of Scope:**
 Automatic rule synchronization script, template registry versioning, automatic config upgrade tool, and changes to release flow outside scripts/build_package.py.
@@ -50,7 +50,7 @@ Plan the sequential execution cycles, verification strategies, and deliverables 
 - `tests/mcp_server/unit/config/test_config_version.py` (new unittests verifying success and error cases)
 
 **Success Criteria:**
-- `ConfigLoader._validate_schema` rejects config versions other than `"1.0.0"` (including missing version fields) with `ConfigError`
+- `ConfigLoader` public load methods (such as `load_git_config`) reject config versions other than `"1.0.0"` (including missing version fields) with `ConfigError`
 - All 16 config files under `.pgmcp/config/` load successfully with version `"1.0.0"`
 - Type checking (MyPy and Pyright) passes flawlessly for all modified files
 - Quality gates (`run_quality_gates` / Ruff / Pylint 10.0/10) pass for all modified files
@@ -168,7 +168,7 @@ Plan the sequential execution cycles, verification strategies, and deliverables 
 - **Risk:** Missing `mcp_server/assets` directory on fresh checkout causing tests to fail.
   - **Mitigation:** Update `tests/conftest.py` to check if `mcp_server/assets/` is empty/missing, and fail fast with a clear message instructing the developer to run `scripts/build_package.py`. This avoids duplicating copying code in `conftest.py`.
 - **Risk:** Version validation checks breaking tests immediately upon activation.
-  - **Mitigation:** Add `version: str` to Pydantic schemas and update all 16 configuration files in `.pgmcp/config/` to version `"1.0.0"` in the same commit.
+  - **Mitigation:** Add `version: Literal["1.0.0"]` to Pydantic schemas and update all 16 configuration files in `.pgmcp/config/` to version `"1.0.0"` in the same commit.
 - **Risk:** Deleting active agent files (`.agents/`, `.github/agents/`) mid-implementation breaks active IDE agent sessions.
   - **Mitigation:** Copy agent instructions to `docs/agents/` during Cycle 5, but do not delete the old `.agents/` and `.github/agents/` directories from the active workspace until the very end of the implementation phase (during Cycle 7 or cleanup). This ensures zero disruption to active agent sessions during development.
 
