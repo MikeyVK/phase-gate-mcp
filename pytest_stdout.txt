@@ -6,11 +6,24 @@ configfile: pyproject.toml
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [1 item]
+8 workers [2 items]
 
 scheduling tests via LoadScheduling
 
 tests/mcp_server/unit/config/test_template_path_resolution.py::TestTemplatePathResolution::test_get_template_root_respects_env_override 
-[gw0] [100%] PASSED tests/mcp_server/unit/config/test_template_path_resolution.py::TestTemplatePathResolution::test_get_template_root_respects_env_override 
+tests/mcp_server/unit/config/test_template_path_resolution.py::TestTemplatePathResolution::test_scaffolding_templates_directory_deleted 
+[gw0] [ 50%] PASSED tests/mcp_server/unit/config/test_template_path_resolution.py::TestTemplatePathResolution::test_get_template_root_respects_env_override 
+[gw1] [100%] FAILED tests/mcp_server/unit/config/test_template_path_resolution.py::TestTemplatePathResolution::test_scaffolding_templates_directory_deleted 
 
-============================== 1 passed in 4.57s ==============================
+================================== FAILURES ===================================
+___ TestTemplatePathResolution.test_scaffolding_templates_directory_deleted ___
+[gw1] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
+tests\mcp_server\unit\config\test_template_path_resolution.py:41: in test_scaffolding_templates_directory_deleted
+    assert not dup_dir.exists(), "Duplicate scaffolding templates folder must be deleted."
+E   AssertionError: Duplicate scaffolding templates folder must be deleted.
+E   assert not True
+E    +  where True = exists()
+E    +    where exists = WindowsPath('C:/temp/pgmcp/mcp_server/scaffolding/templates').exists
+=========================== short test summary info ===========================
+FAILED tests/mcp_server/unit/config/test_template_path_resolution.py::TestTemplatePathResolution::test_scaffolding_templates_directory_deleted
+========================= 1 failed, 1 passed in 4.21s =========================

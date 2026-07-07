@@ -3,14 +3,20 @@
   "issue_number": 420,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 2,
-  "last_cycle": 1,
+  "current_cycle": 3,
+  "last_cycle": 2,
   "cycle_history": [
     {
       "cycle_number": 2,
       "name": "Test Suite Path Resolution",
       "forced": false,
       "entered": "2026-07-07T22:04:39.109562+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Scaffolding Duplicates Deletion & Git Tracking",
+      "forced": false,
+      "entered": "2026-07-07T22:25:28.162529+00:00"
     }
   ],
   "required_phases": [
@@ -134,5 +140,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }

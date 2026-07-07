@@ -33,3 +33,9 @@ class TestTemplatePathResolution:
                 os.environ["MCP_TEMPLATE_ROOT"] = old_val
             else:
                 os.environ.pop("MCP_TEMPLATE_ROOT", None)
+
+    def test_scaffolding_templates_directory_deleted(self) -> None:
+        """Verify duplicate scaffolding templates directory has been deleted."""
+        project_root = Path(__file__).resolve().parents[4]
+        dup_dir = project_root / "mcp_server" / "scaffolding" / "templates"
+        assert not dup_dir.exists(), "Duplicate scaffolding templates folder must be deleted."
