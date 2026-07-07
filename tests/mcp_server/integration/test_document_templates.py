@@ -12,7 +12,7 @@ Tests verify:
 @dependencies: [pytest, pathlib, jinja2]
 """
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 import pytest
 from jinja2 import Environment, FileSystemLoader, Template
@@ -36,7 +36,7 @@ class TestResearchTemplate:
     @pytest.fixture
     def template(self) -> Template:
         """Load research template."""
-        template_dir = Path("mcp_server/scaffolding/templates")
+        template_dir = get_template_root()
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/research.md.jinja2")
 
@@ -149,7 +149,7 @@ class TestPlanningTemplate:
     @pytest.fixture
     def template(self) -> Template:
         """Load planning template."""
-        template_dir = Path("mcp_server/scaffolding/templates")
+        template_dir = get_template_root()
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/planning.md.jinja2")
 
@@ -233,7 +233,7 @@ class TestArchitectureTemplate:
     @pytest.fixture
     def template(self) -> Template:
         """Load architecture template."""
-        template_dir = Path("mcp_server/scaffolding/templates")
+        template_dir = get_template_root()
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/architecture.md.jinja2")
 
@@ -291,7 +291,7 @@ class TestReferenceTemplate:
     @pytest.fixture
     def template(self) -> Template:
         """Load reference template."""
-        template_dir = Path("mcp_server/scaffolding/templates")
+        template_dir = get_template_root()
         env = Environment(loader=FileSystemLoader(template_dir))
         return env.get_template("concrete/reference.md.jinja2")
 

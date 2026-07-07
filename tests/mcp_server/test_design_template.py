@@ -7,7 +7,7 @@ options comparison, and key decisions table.
 @dependencies: pytest, jinja2, mcp_server.scaffolding.templates
 """
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 from jinja2 import Environment, FileSystemLoader, Template
 
@@ -19,7 +19,7 @@ _STRUCTURAL = {
 
 
 def _make_template() -> Template:
-    template_dir = Path("mcp_server/scaffolding/templates")
+    template_dir = get_template_root()
     env = Environment(loader=FileSystemLoader(template_dir))
     return env.get_template("concrete/design.md.jinja2")
 
@@ -230,7 +230,7 @@ class TestDesignTemplateStructure:
 
     def test_uses_guideline_enforcement_level(self) -> None:
         """Design template should use GUIDELINE enforcement (not STRICT)."""
-        template_path = Path("mcp_server/scaffolding/templates/concrete/design.md.jinja2")
+        template_path = get_template_root() / "concrete" / "design.md.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         assert "enforcement: GUIDELINE" in content

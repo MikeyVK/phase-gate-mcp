@@ -74,9 +74,10 @@ def get_default_server_root() -> str:
 
 
 def get_template_root() -> Path:
-    """Get the template root directory for testing packaged templates."""
-    project_root = Path(__file__).resolve().parents[2]
-    return project_root / "mcp_server" / "assets" / "templates"
+    """Get the template root directory from settings."""
+    from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+    return Settings.from_env().server.resolved_template_root
 
 
 class _NopGateRunner:

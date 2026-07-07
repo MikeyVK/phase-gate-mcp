@@ -7,14 +7,14 @@ Validates SCAFFOLD metadata, link definitions, Version History, and section cont
 @dependencies: pytest, jinja2
 """
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 from jinja2 import Environment, FileSystemLoader
 
 
 def _render_full_design_doc() -> str:
     """Helper: Render complete design document with current contract-shaped context."""
-    template_dir = Path("mcp_server/scaffolding/templates")
+    template_dir = get_template_root()
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template("concrete/design.md.jinja2")
 

@@ -49,7 +49,9 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "true")
 
     # Point template discovery to actual production templates
-    template_root = _PROJECT_ROOT / "mcp_server" / "scaffolding" / "templates"
+    from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
+
+    template_root = get_template_root()
     monkeypatch.setenv("TEMPLATE_ROOT", str(template_root))
 
     # Hermetic workspace: copy production artifacts.yaml so registry loads correctly
