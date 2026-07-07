@@ -1,9 +1,9 @@
 <!-- docs\development\issue420\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-07-06T05:52Z updated=2026-07-07T08:02Z -->
+<!-- template=research version=8b7bb3ab created=2026-07-06T05:52Z updated=2026-07-07T08:30Z -->
 # Research: Deferred Release Assets and Template Bootstrap
 
 **Status:** APPROVED  
-**Version:** 1.3  
+**Version:** 1.4  
 **Last Updated:** 2026-07-07
 
 ## Prerequisites
@@ -20,14 +20,14 @@ Read these first:
 1. **Workspace templates initialization blocker:** Clean repository checkouts of the development repository contain the tracked `.pgmcp/config` folder but miss the untracked `.pgmcp/templates` directory. The current `pgmcp --init` command checks if `.pgmcp` exists and aborts immediately. This prevents developers from bootstrapping templates in the development workspace.
 2. **CLI `--init` incomplete copy behavior:** The current implementation of `pgmcp --init` in `mcp_server/cli.py` is hardcoded to only copy the `config` and `templates` subdirectories from package assets via `shutil.copytree`. It does not perform a recursive flat copy of the entire `mcp_server/assets/` directory, causing other packaged assets (like `template_registry.json`) to be completely missed.
 3. **Deferred packaging build automation:** The release packaging automation and manifest synchronization specified in `release-assets-procedure.md` (distributing files from the `docs/agents/` Single Source of Truth to `mcp_server/assets/` using a manifest file mapping) are deferred.
-4. **Lack of Asset and Configuration Versioning:** The server lacks a structured mechanism to verify that a target workspace's local `.pgmcp/` assets (configs, schemas, and templates) are compatible with the running server version. Without this, package upgrades can cause silent compatibility failures or obscure validation errors instead of a clean, gecontrolleerde upgrade path.
+4. **Lack of Configuration Version Verification:** The server lacks a fail-fast mechanism to detect when a target workspace's local configurations (`.pgmcp/config/`) are incompatible with the running server. Upgrades currently rely on cryptic Pydantic validation errors instead of a clean break with a human-readable error message.
 
 ## Research Goals
 
 - Support clean workspace initialization in target environments without changing product runtime CLI checks.
 - Update `pgmcp --init` to perform a flat recursive copy of the entire `mcp_server/assets/` directory (including `template_registry.json` and any other assets) instead of only copying hardcoded subdirectories.
 - Eliminate templates directory triplication by removing `mcp_server/scaffolding/templates` and updating the test suite to use resolved settings.
-- Research and establish a robust versioning strategy for `.pgmcp` assets to detect incompatibilities at startup and support safe upgrade paths.
+- Research a simplified config-only versioning strategy to fail fast with clear error messages on incompatibility, avoiding complex upgrade or compatibility matrices.
 - Implement automated build-time copy/sync of release-bound assets to `mcp_server/assets/` on release builds using `.pgmcp/config/release_manifest.yaml` and a pre-build script.
 - Establish a secure development isolation setup where the active running server instance operates from a packaged wheel in a stable virtual environment, fully separated from the active development codebase.
 
@@ -35,31 +35,14 @@ Read these first:
 
 ## Detailed Versioning Analysis
 
-### 1. The Versioning Problem Space
-The server package version and the workspace configuration assets (`.pgmcp/`) are decoupled:
-* **The Package Version (SemVer):** Tracks changes to the Python code and server core. It is defined in `pyproject.toml` and resolved dynamically.
-* **The Configuration Schemas Version:** YAML configuration files in `.pgmcp/config/` (such as `contracts.yaml`, `artifacts.yaml`, `workflows.yaml`, etc.) contain a `version` field.
-* **The Template Registry Version:** `template_registry.json` tracks specific template file version hashes to detect changes during scaffolding.
+### 1. The Versioning Scope
+* **Templates:** Frozen. Out of scope for versioning. Templates will eventually be decoupled from the server entirely under the Template Workspace Initiative (#349). No template version checks or upgrades are required.
+* **Template Registry (`template_registry.json`):** Classified as a log file (provenance logging), not an active production enforcement component. It does not block startup or enforce active versioning.
+* **Configurations (`.pgmcp/config/`):** The only asset subject to version verification.
 
 ### 2. Constraints & Gaps in Current Codebase
-* **No Version Verification at Startup:** While configuration schemas require a `version` field (validated as a string by Pydantic), the `ConfigLoader` does not check if this version is compatible with the running server.
-* **Schema Upgrade Risk:** If the package is upgraded and introduces breaking changes to the configuration schema (e.g., new required fields, changed key names), old configurations in existing workspaces will fail with generic, hard-to-debug Pydantic validation errors rather than a version mismatch warning.
-* **Outdated Templates:** When the server package is upgraded, the user's workspace `.pgmcp/templates/` directory is not updated. Because `.pgmcp` already exists, `pgmcp --init` cannot be run, locking the workspace into outdated templates.
-
-### 3. Versioning Mismatch Options & Policies
-To resolve version compatibility, the following policy choices must be evaluated:
-* **Option A: Loose SemVer Validation:** The server checks if the major/minor versions match. If they differ, it warns the user but attempts to run (potential runtime validation errors).
-* **Option B: Strict Version Matching (Recommended):** The server checks a centralized workspace asset version against its expected version. If a major/minor mismatch is detected, it fails fast at startup and demands an upgrade.
-* **Option C: Backward-Compatible Schema Bridges:** The config loader maintains compatibility mappings for older schema versions, filling missing keys with defaults.
-
-### 4. Upgrade Strategy (Non-Destructive Migration)
-Upgrading a workspace configuration requires a clear, safe procedure:
-* **Templates & Registry (Product Assets):** Can be overwritten safely during upgrade since users do not customize them.
-* **Configurations & Contracts (User Assets):** Cannot be overwritten because they contain project-specific logic. The upgrade script must perform a non-destructive merge:
-  1. Copy new configuration files that are missing.
-  2. Append missing required schema fields to existing files.
-  3. Validate the final configuration against the new package schemas.
-  4. Perform an automatic backup of `.pgmcp` before executing any modifications.
+* **Cryptic Validation Errors:** If a config file (like `contracts.yaml`) is incompatible with a newly upgraded server, `ConfigLoader` crashes with a raw `ValidationError` stacktrace.
+* **Clean-Break Strategy:** To keep the codebase clean, we should avoid complex migrations, schema conversions, or automated merge utilities. Instead, we need a "clean break" strategy: when a configuration version or schema mismatch is detected, the server must fail fast with a clear, friendly error message explaining what is wrong and how the user can fix it.
 
 ---
 
@@ -74,15 +57,14 @@ Upgrading a workspace configuration requires a clear, safe procedure:
 - **Policy:** Remove the duplicate `mcp_server/scaffolding/templates` directory.
 - **Policy:** All unit and integration tests must load templates from Settings-resolved paths or test-isolated temporary paths, keeping `.pgmcp/templates` as the active dev environment SSOT.
 
-### Boundary: Asset & Workspace Versioning
-- **Policy:** Implement an explicit workspace asset version tracker (e.g. `.pgmcp/version.json`) to keep track of the workspace configuration version.
-- **Policy:** The server must perform a fail-fast version check at startup. If the workspace asset version is incompatible with the server's expected version, it must exit immediately with a clear upgrade instruction.
-- **Policy:** Provide an upgrade command (`pgmcp --upgrade`) that performs a backup of `.pgmcp/`, overwrites templates, non-destructively merges configuration changes, and updates the workspace version. This versioning logic must be implemented before finishing the packaging build pipeline.
+### Boundary: Configuration Versioning & Upgrades
+- **Policy:** Limit version checking strictly to configuration files in `.pgmcp/config/`.
+- **Policy:** Implement a "clean break" upgrade strategy. If a configuration schema mismatch or version mismatch is detected at startup, the server must fail fast with an explicit, human-friendly `ConfigError` explaining the incompatibility, rather than executing complex migration logic.
 
 ### Boundary: Release Packaging & Automation (Build Pipeline)
 - **Policy:** Add `mcp_server/assets/` to `.gitignore` so that packaged assets are not checked into Git. The only checked-in config and template files will be in `.pgmcp/`.
 - **Policy:** Place the build manifest file at `.pgmcp/config/release_manifest.yaml` to ensure all configurations are co-located in the config folder.
-- **Policy:** Implement a build-time pre-build sync script (e.g. `scripts/build_package.py`) that parses `.pgmcp/config/release_manifest.yaml`, clears `mcp_server/assets/`, copies the designated source files, and then triggers the package build backend (`python -m build`). During build, the sync script stamps the package version on the copied assets.
+- **Policy:** Implement a build-time pre-build sync script (e.g. `scripts/build_package.py`) that parses `.pgmcp/config/release_manifest.yaml`, clears `mcp_server/assets/`, copies the designated source files, and then triggers the package build backend (`python -m build`). This pipeline is built as part of this issue (#420).
 - **Policy:** Active development of agent instructions/workflows only modifies files under `docs/agents/`. Provide a developer-only sync script (`scripts/sync_agents.py`) that copies rules/workflows to their active runtime locations and `mcp_server/assets/` to support local testing.
 
 ### Boundary: Development Isolation
@@ -94,10 +76,9 @@ Upgrading a workspace configuration requires a clear, safe procedure:
 
 1. Clean checkouts of target repositories can be initialized via `pgmcp --init` to recursively copy all packaged assets (including `template_registry.json`, `config/`, and `templates/`) under `.pgmcp/`.
 2. `mcp_server/scaffolding/templates` is deleted and all tests pass using the settings-based template paths.
-3. The server checks the workspace version at startup, failing fast if an incompatible version is found.
-4. An upgrade utility (`pgmcp --upgrade`) successfully backs up `.pgmcp/` and upgrades templates and configurations safely.
-5. Bundled package assets (`mcp_server/assets/`) are ignored in Git and populated automatically during package packaging by a build-time pre-build sync script using the rules defined in `.pgmcp/config/release_manifest.yaml`.
-6. The running instance of the MCP server can be installed and run from a packaged wheel in a stable venv, operating independently of the active development repository's python source files.
+3. The server validates configuration compatibility at startup, failing fast with clear, human-readable error messages on schema/version mismatch.
+4. Bundled package assets (`mcp_server/assets/`) are ignored in Git and populated automatically during package packaging by a build-time pre-build sync script using the rules defined in `.pgmcp/config/release_manifest.yaml`.
+5. The running instance of the MCP server can be installed and run from a packaged wheel in a stable venv, operating independently of the active development repository's python source files.
 
 ## Related Documentation
 - **[docs/reference/mcp/release-assets-procedure.md](docs/reference/mcp/release-assets-procedure.md)**
@@ -113,3 +94,4 @@ Upgrading a workspace configuration requires a clear, safe procedure:
 | 1.1 | 2026-07-06 | Agent | Refine strategy to preserve strict CLI initialization check, track templates in dev git, ignore assets folder, and implement flat copy |
 | 1.2 | 2026-07-06 | Agent | Move release manifest to `.pgmcp/config/release_manifest.yaml`, define dev-isolation as a developer best practice, and untrack `.agents/mcp_config.json`. |
 | 1.3 | 2026-07-07 | Agent | Deepen versioning analysis: identify versioning problem space, boundaries, gaps, options, and non-destructive upgrade policy. |
+| 1.4 | 2026-07-07 | Agent | Simplify versioning: exclude templates, classify registry as log, restrict to config versioning with clean-break error reporting. |
