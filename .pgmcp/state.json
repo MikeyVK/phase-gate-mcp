@@ -2,7 +2,7 @@
   "branch": "feature/420-deferred-release-assets-templates",
   "issue_number": 420,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -100,6 +100,14 @@
       "human_approval": "Reopening research phase to record template path resolution and configuration version findings.",
       "forced": true,
       "skip_reason": "Documenting test path resolution and versioning findings in research.md."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-07T09:37:37.572413+00:00",
+      "human_approval": "User approved the finalized research strategy including test path resolution. Moving to design phase.",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
