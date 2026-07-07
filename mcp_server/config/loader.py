@@ -335,17 +335,17 @@ class ConfigLoader:
     ) -> SchemaT:
         if "version" not in data:
             raise ConfigError(
-                f"Configuration version is missing in {resolved_path.name}. Expected: '1.0.0'",
+                f"Configuration version is missing in {resolved_path.name}. "
+                "(expected version '1.0.0')",
                 file_path=str(resolved_path),
             )
         actual = data.get("version")
         if actual != "1.0.0":
             raise ConfigError(
                 f"Configuration version mismatch in {resolved_path.name}. "
-                f"Expected: '1.0.0', Got: '{actual}'",
+                f"(expected version '1.0.0', got '{actual}')",
                 file_path=str(resolved_path),
             )
-
         try:
             return schema_cls.model_validate(data)
         except ValidationError as exc:

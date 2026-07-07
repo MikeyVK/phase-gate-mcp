@@ -2946,4 +2946,4 @@ tests/mcp_server/unit/tools/test_initialize_project_tool.py: 11 warnings
     return await anyio.to_thread.run_sync(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-= 2878 passed, 4 skipped, 2 xfailed, 1 xpassed, 23 warnings in 162.43s (0:02:42) =
+= 2878 passed, 4 skipped, 2 xfailed, 1 xpassed, 23 warnings in 162.09s (0:02:42) =
