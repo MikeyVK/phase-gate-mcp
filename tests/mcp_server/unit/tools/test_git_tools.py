@@ -1321,6 +1321,37 @@ class TestGitCommitToolRecordSubPhase:
         assert calls[0][1] == ("feature/298-test", "refactor")
         assert calls[1][1] == ("feature/298-test", "green")
 
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_appends_state_json_to_files_list(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """GitCommitTool must dynamically resolve state.json's path and append it to files."""
+        mock_state_engine = MagicMock()
+        repo_path = "C:/temp/pgmcp"
+        state_path = "C:/temp/pgmcp/.pgmcp/state.json"
+
+        mock_state_engine.state_path = state_path
+        mock_git_manager.adapter.repo_path = repo_path
+        mock_git_manager.commit_with_scope.return_value = "aabbccdd"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(
+            workflow_phase="implementation",
+            cycle_number=1,
+            sub_phase="red",
+            message="add failing test",
+            files=["src/foo.py"],
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is True
+
+        mock_git_manager.commit_with_scope.assert_called_once()
+        called_kwargs = mock_git_manager.commit_with_scope.call_args[1]
+        assert called_kwargs["files"] == ["src/foo.py", ".pgmcp/state.json"]
+
 
 # C_228.2 RED — issue_number wiring in GitCommitTool (issue #228)
 # ---------------------------------------------------------------------------
