@@ -16,6 +16,7 @@ import logging
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 from typing import Any, Dict
 
 # Third-party
@@ -29,9 +30,12 @@ def clean_assets(assets_dir: Path) -> None:
     if assets_dir.exists():
         for item in assets_dir.iterdir():
             if item.is_dir():
-                shutil.rmtree(item)
+                shutil.rmtree(item, ignore_errors=True)
             else:
-                item.unlink()
+                try:
+                    item.unlink()
+                except Exception:
+                    pass
     else:
         assets_dir.mkdir(parents=True, exist_ok=True)
 
@@ -60,7 +64,7 @@ def copy_assets(project_root: Path, assets_dir: Path, manifest: Dict[str, Any]) 
         tgt_path = assets_dir / tgt_rel
         tgt_path.parent.mkdir(parents=True, exist_ok=True)
         if src_path.is_dir():
-            shutil.copytree(src_path, tgt_path)
+            shutil.copytree(src_path, tgt_path, dirs_exist_ok=True)
         else:
             shutil.copy2(src_path, tgt_path)
 
@@ -76,7 +80,7 @@ def build_package() -> None:
     copy_assets(project_root, assets_dir, manifest)
 
     logger.info("Assets compiled successfully. Running package build...")
-    subprocess.run(["python", "-m", "build"], cwd=str(project_root), check=True)
+    subprocess.run([sys.executable, "-m", "build"], cwd=str(project_root), check=True)
 
 
 if __name__ == "__main__":

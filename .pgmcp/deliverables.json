@@ -131,10 +131,10 @@
             "deliverables": [
               {
                 "id": "D5.1",
-                "description": "docs/agents/vscode directory exists",
+                "description": "docs/agents/copilot directory exists",
                 "validates": {
                   "type": "file_exists",
-                  "file": "docs/agents/vscode/AGENTS.md"
+                  "file": "docs/agents/copilot/AGENTS.md"
                 }
               },
               {

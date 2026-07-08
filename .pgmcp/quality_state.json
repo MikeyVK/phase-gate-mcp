@@ -481,6 +481,7 @@
     "tests/mcp_server/unit/state/test_response_cache.py",
     "tests/mcp_server/unit/templates/__init__.py",
     "tests/mcp_server/unit/templates/test_generic_doc_template.py",
+    "tests/mcp_server/unit/test_build_package.py",
     "tests/mcp_server/unit/test_c260_c2_state_root_injection.py",
     "tests/mcp_server/unit/test_cli.py",
     "tests/mcp_server/unit/test_dto_parity.py",
