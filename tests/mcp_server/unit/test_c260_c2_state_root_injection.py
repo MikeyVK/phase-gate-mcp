@@ -323,8 +323,8 @@ class TestAdminToolsRestartMarker:
         """Even with MCP_WORKSPACE_ROOT set, injected server_root wins."""
         server_root = tmp_path / get_default_server_root()
         tool = RestartServerTool(server_root=server_root)
-        monkeypatch.setenv("MCP_WORKSPACE_ROOT", str(tmp_path / "other"))
-        monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+        monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", str(tmp_path / "other"))
+        monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
         assert result == server_root / ".restart_marker"
 
@@ -522,8 +522,8 @@ class TestAdminToolsServerRootInjection:
         server_root = tmp_path / get_default_server_root()
         tool = RestartServerTool(server_root=server_root)
 
-        monkeypatch.setenv("MCP_WORKSPACE_ROOT", "/some/other/workspace")
-        monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+        monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", "/some/other/workspace")
+        monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
 
         result = tool._get_restart_marker_path()  # pyright: ignore[reportPrivateUsage]
         assert result == server_root / ".restart_marker"

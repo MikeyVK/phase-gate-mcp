@@ -16,7 +16,7 @@ pytest_plugins = [
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
-    """Set MCP_TEMPLATE_ROOT dynamically before running tests."""
+    """Set PGMCP_TEMPLATE_ROOT dynamically before running tests."""
     import os  # noqa: PLC0415
     from pathlib import Path  # noqa: PLC0415
     from mcp_server.config.settings import Settings  # noqa: PLC0415
@@ -26,5 +26,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     dev_server_root = default_settings.server.server_root_dir
 
     # Configure default templates and config roots for settings path resolution in tests
-    os.environ["MCP_TEMPLATE_ROOT"] = str((_project_root / dev_server_root / "templates").resolve())
-    os.environ["MCP_CONFIG_ROOT"] = str((_project_root / dev_server_root / "config").resolve())
+    os.environ["PGMCP_TEMPLATE_ROOT"] = str(
+        (_project_root / dev_server_root / "templates").resolve()
+    )
+    os.environ["PGMCP_CONFIG_ROOT"] = str((_project_root / dev_server_root / "config").resolve())
