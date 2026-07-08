@@ -75,9 +75,18 @@ Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 
 ---
 
-## Installation
+## Getting Started & Installation
 
 **Requirements:** Python 3.11+
+
+Depending on your use case, choose one of the following guides to get started:
+
+- 🚀 **[Manual Setup Guide](docs/setup/README.md)**: Detailed step-by-step instructions for manual installation and configuration in your IDE (VS Code or Google Antigravity).
+- 🤖 **[Agentic Bootstrap Guide](docs/setup/agentic-bootstrap.md)**: A step-by-step automated guide to help AI agents bootstrap `pgmcp` in a new workspace or integrate it into an existing repository without manual terminal commands.
+
+### Local Development Setup
+
+To clone and set up the repository for local development:
 
 ```bash
 git clone https://github.com/MikeyVK/phase-gate-mcp.git
