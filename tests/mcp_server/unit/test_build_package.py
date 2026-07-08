@@ -10,7 +10,9 @@
 """
 
 # Standard library
+import os
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Third-party
 import pytest
@@ -18,9 +20,10 @@ import pytest
 # Project modules
 from scripts.build_package import (
     clean_assets,
-    read_manifest,
     copy_assets,
+    read_manifest,
 )
+from tests.conftest import pytest_sessionstart
 
 
 class TestBuildPackage:
@@ -54,7 +57,7 @@ class TestBuildPackage:
         """read_manifest must parse release_manifest.yaml and return a dictionary."""
         manifest_file = tmp_path / "release_manifest.yaml"
         manifest_file.write_text(
-            "version: \"1.0.0\"\nassets:\n  - source: \"src_dir\"\n    target: \"tgt_dir\"\n",
+            'version: "1.0.0"\nassets:\n  - source: "src_dir"\n    target: "tgt_dir"\n',
             encoding="utf-8",
         )
         data = read_manifest(manifest_file)
@@ -71,12 +74,28 @@ class TestBuildPackage:
 
         manifest = {
             "version": "1.0.0",
-            "assets": [
-                {"source": "non_existent_source", "target": "target_dir"}
-            ]
+            "assets": [{"source": "non_existent_source", "target": "target_dir"}],
         }
 
         with pytest.raises(FileNotFoundError) as exc_info:
             copy_assets(project_root, assets_dir, manifest)
         assert "non_existent_source" in str(exc_info.value)
 
+    def test_pytest_sessionstart_exits_when_assets_missing(self) -> None:
+        """pytest_sessionstart must call pytest.exit on missing/empty assets."""
+        mock_session = MagicMock()
+        mock_session.config.rootdir = "/fake/root"
+
+        msg = (
+            "Error: Package assets directory 'mcp_server/assets' is empty or missing. "
+            "Please run 'python scripts/build_package.py' to compile package "
+            "assets before running tests."
+        )
+
+        with (
+            patch.dict(os.environ, {}),
+            patch("pathlib.Path.exists", return_value=False),
+            patch("pytest.exit") as mock_exit,
+        ):
+            pytest_sessionstart(mock_session)
+            mock_exit.assert_called_once_with(msg)
