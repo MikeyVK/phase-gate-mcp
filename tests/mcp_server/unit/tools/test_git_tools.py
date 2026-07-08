@@ -1255,6 +1255,73 @@ class TestGitCommitToolRecordSubPhase:
         assert result.success is True
 
 
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_calls_record_sub_phase_before_commit(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """GitCommitTool must record the sub_phase before creating the commit."""
+        mock_state_engine = MagicMock()
+        mock_git_manager.commit_with_scope.return_value = "aabbccdd"
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        # Track call sequence using a parent mock manager
+        parent = MagicMock()
+        parent.attach_mock(mock_state_engine.record_sub_phase, "record_sub_phase")
+        parent.attach_mock(mock_git_manager.commit_with_scope, "commit_with_scope")
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(
+            workflow_phase="implementation",
+            cycle_number=1,
+            sub_phase="red",
+            message="add failing test",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is True
+
+        # Verify record_sub_phase was called before commit_with_scope
+        calls = [c[0] for c in parent.mock_calls]
+        assert "record_sub_phase" in calls
+        assert "commit_with_scope" in calls
+        assert calls.index("record_sub_phase") < calls.index("commit_with_scope")
+
+    @pytest.mark.asyncio
+    async def test_git_commit_tool_rolls_back_sub_phase_on_commit_failure(
+        self, mock_git_manager: MagicMock
+    ) -> None:
+        """If the commit fails, GitCommitTool must roll back the sub_phase to its original value."""
+        mock_state_engine = MagicMock()
+        mock_state_engine.get_state.return_value.current_sub_phase = "green"
+        mock_git_manager.commit_with_scope.side_effect = Exception("Commit failed!")
+        mock_git_manager.adapter.get_current_branch.return_value = "feature/298-test"
+
+        tool = GitCommitTool(manager=mock_git_manager, state_engine=mock_state_engine)
+        params = GitCommitInput(
+            workflow_phase="implementation",
+            cycle_number=1,
+            sub_phase="refactor",
+            message="clean up code",
+        )
+        result = await tool.execute(params, NoteContext())
+
+        assert isinstance(result, GitCommitOutput)
+        assert result.success is False
+        assert "Commit failed!" in result.error_message
+
+        # Assert sequence:
+        # 1. get_state called to retrieve original subphase ("green")
+        # 2. record_sub_phase called with "refactor"
+        # 3. record_sub_phase called with "green" (rollback) after exception
+        mock_state_engine.get_state.assert_called_once_with("feature/298-test")
+        
+        # Verify both calls in order
+        calls = mock_state_engine.record_sub_phase.mock_calls
+        assert len(calls) == 2
+        assert calls[0][0] == ("feature/298-test", "refactor")
+        assert calls[1][0] == ("feature/298-test", "green")
+
 # C_228.2 RED — issue_number wiring in GitCommitTool (issue #228)
 # ---------------------------------------------------------------------------
 
