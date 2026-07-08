@@ -1,36 +1,57 @@
-# Reference Documentation
+<!-- docs/reference/mcp/README.md -->
+<!-- template=reference version=064954ea created=2026-06-04T00:00Z updated= -->
+# MCP Template/Scaffolding Reference
 
-## Overview
+**Status:** DEFINITIVE
+**Version:** 1.0
+**Last Updated:** 2026-06-04
 
-This directory contains templates, examples, and reference implementations for the Model Context Protocol (MCP) server. Use these as guides for configuring workflows, policies, templates, and tools.
+---
 
-## Key Reference Guides
+## Purpose
 
-### 📋 Model Context Protocol (MCP)
-- **[MCP Tools Reference](mcp/MCP_TOOLS.md)**: Inventory of public MCP tools exposed by the server.
-- **[Template Library Usage](mcp/TEMPLATE_LIBRARY_USAGE.md)**: Guidance on using `scaffold_artifact` and `scaffold_schema` to generate project files.
-- **[Template Library Quick Reference](mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md)**: Quick lookup of enabled artifact types, templates, and schemas.
-- **[Template Metadata Format](mcp/template_metadata_format.md)**: Specifications for writing metadata contracts inside Jinja2 templates.
-- **[Validation API](mcp/validation_api.md)**: Overview of the layered validation and template validation systems.
+Navigation index for the template/scaffolding documentation cluster. Start here to find the right document for your task.
 
-### ⚙️ Server Configuration & Architecture
-- **[Server Configuration](mcp/server-configuration.md)**: Configuration environment variables and YAML overlays.
-- **[Config Loading Architecture](mcp/config-loading-architecture.md)**: Details on settings resolution and the bootstrapper lifecycle.
-- **[MCP Vision Reference](mcp/mcp_vision_reference.md)**: Global design principles and architectural boundaries.
-- **[Copilot Agent Instructions Model](mcp/copilot-agent-instructions-model.md)**: Orientation instructions and runtime context mapping.
+---
 
-## Directory Structure
+## Document Map
 
-```
-docs/reference/
-├── README.md                           # This file
-└── mcp/
-    ├── README.md                       # Scaffolding cluster index
-    ├── MCP_TOOLS.md                    # Public tools catalog
-    ├── TEMPLATE_LIBRARY_USAGE.md       # How to use scaffolding
-    ├── TEMPLATE_LIBRARY_QUICK_REFERENCE.md # Artifact types list
-    ├── server-configuration.md         # Env vars and yaml configs
-    ├── config-loading-architecture.md  # Startup resolution
-    ├── mcp_vision_reference.md         # Philosophy and limitations
-    └── copilot-agent-instructions-model.md # Agent instruction mappings
-```
+| Document | Audience | Use when you want to… |
+|---|---|---|
+| [docs/architecture/TEMPLATE_LIBRARY.md](../../architecture/TEMPLATE_LIBRARY.md) | Architecture, contributors | Understand the three-layer pipeline model; learn how to add a new artifact type; understand Layer 3 tier hierarchy |
+| [TEMPLATE_LIBRARY_USAGE.md](TEMPLATE_LIBRARY_USAGE.md) | Agent users, contributors | Use `scaffold_artifact` and `scaffold_schema`; understand what context to provide; add a new artifact type step by step |
+| [TEMPLATE_LIBRARY_QUICK_REFERENCE.md](TEMPLATE_LIBRARY_QUICK_REFERENCE.md) | Agent users | Quick lookup: which artifact types exist, minimum required context, template paths |
+| [template_metadata_format.md](template_metadata_format.md) | Template editors | Understand the `TEMPLATE_METADATA` block format; write validation rules for new templates; understand enforcement levels |
+| [validation_api.md](validation_api.md) | Developers | `TemplateAnalyzer` and `LayeredTemplateValidator` API; programmatic template validation |
+| [tools/scaffolding.md](tools/scaffolding.md) | Agent users | Complete reference for `scaffold_artifact` and `scaffold_schema` MCP tool parameters, returns, errors, and examples |
+
+---
+
+## Three-Layer Architecture (quick summary)
+
+The scaffolding pipeline has three layers:
+
+| Layer | Location | Role |
+|---|---|---|
+| 1 — Context schema | `mcp_server/schemas/contexts/` | User-facing. Pydantic validation. You provide this. |
+| 2 — RenderContext schema | `mcp_server/schemas/render_contexts/` | System-internal. Adds lifecycle fields. |
+| 3 — Jinja2 template | `mcp_server/scaffolding/templates/concrete/` | Output rendering. `TEMPLATE_METADATA` is the variable contract SSOT. |
+
+**To add a new artifact type, all six steps are required:**
+
+1. Create Context schema in `mcp_server/schemas/contexts/<type>.py`
+2. Create RenderContext schema in `mcp_server/schemas/render_contexts/<type>.py`
+3. Export both from `mcp_server/schemas/__init__.py`
+4. Add the new type to the artifact-to-Context registry in `mcp_server/managers/artifact_manager.py`
+5. Enable the type in `.pgmcp/config/artifacts.yaml`
+6. Create the Jinja2 template in `mcp_server/scaffolding/templates/concrete/<type>.<ext>.jinja2`
+
+> Steps 1–4 require Python source code changes.
+
+---
+
+## Version History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-06-04 | Agent | Initial navigation surface for template/scaffolding cluster (#286) |

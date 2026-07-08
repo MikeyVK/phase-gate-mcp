@@ -98,5 +98,6 @@ temp/qa_logs/
 
 # Release assets (compiled from sources at build time)
 mcp_server/assets/agents/
+mcp_server/assets/docs/
 mcp_server/assets/config/release_manifest.yaml
 

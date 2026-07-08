@@ -21,7 +21,7 @@ class TestC5AgentPartitioning:
     def test_copilot_agents_partitioned(self) -> None:
         """Copilot agent instructions, prompts, and AGENTS.md must exist in partitioned path."""
         repo_root = Path(__file__).parent.parent.parent
-        copilot_agents_dir = repo_root / "docs" / "agents" / "copilot"
+        copilot_agents_dir = repo_root / "docs" / "agents" / "vscode" / "copilot"
 
         # Check global AGENTS.md
         copilot_agents_md = copilot_agents_dir / "AGENTS.md"
