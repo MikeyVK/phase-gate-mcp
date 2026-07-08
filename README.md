@@ -124,4 +124,4 @@ pytest tests/mcp_server/ --cov=mcp_server --cov-branch --cov-fail-under=90
 
 ## License
 
-*(Specify License Information Here)*
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
