@@ -14,7 +14,6 @@ All 8 patterns for markdown DOCUMENT templates.
 
 from __future__ import annotations
 
-from pathlib import Path
 from tests.mcp_server.test_support import get_template_root
 
 TEMPLATE_ROOT = get_template_root()

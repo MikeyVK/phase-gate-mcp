@@ -6,8 +6,6 @@ Tests tier1_base_tracking + tier2 text/markdown + concrete tracking templates.
 @dependencies: pytest, jinja2, pathlib, mcp_server.scaffolding.templates
 """
 
-from pathlib import Path
-
 import pytest
 from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader

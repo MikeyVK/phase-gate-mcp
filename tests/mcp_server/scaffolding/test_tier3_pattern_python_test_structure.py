@@ -17,7 +17,6 @@ AAA (Arrange-Act-Assert) pattern comments for test structure.
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest

@@ -8,8 +8,6 @@ Validates that all base templates have enforcement/level/validates structure.
 @dependencies: pytest, mcp_server.validation.template_analyzer
 """
 
-from pathlib import Path
-
 import pytest
 from tests.mcp_server.test_support import get_template_root
 

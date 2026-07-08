@@ -16,7 +16,6 @@ Validates that template provides a minimal macro library (assertions are typical
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest

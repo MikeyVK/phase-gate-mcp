@@ -5,8 +5,6 @@ Unit tests for tier3_pattern_python_async.jinja2 template.
 @dependencies: [pytest, jinja2, pathlib, mcp_server.scaffolding]
 """
 
-from pathlib import Path
-
 import pytest
 from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader

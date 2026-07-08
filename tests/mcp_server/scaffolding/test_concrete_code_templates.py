@@ -14,7 +14,6 @@ These tests intentionally inspect template SOURCE (not rendered output).
 
 from __future__ import annotations
 
-from pathlib import Path
 
 import pytest
 from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415

@@ -17,7 +17,6 @@ RED phase: output_path=None / '' → compact single-line HTML-comment.
 """
 
 # Standard library
-from pathlib import Path
 
 # Third-party
 import pytest

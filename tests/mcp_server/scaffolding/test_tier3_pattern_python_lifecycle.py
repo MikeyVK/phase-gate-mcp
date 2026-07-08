@@ -17,7 +17,6 @@ required macros exist and render expected method signatures.
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest

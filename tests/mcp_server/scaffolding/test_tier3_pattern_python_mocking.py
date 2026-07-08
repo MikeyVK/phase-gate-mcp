@@ -17,7 +17,6 @@ unittest.mock imports (Mock, MagicMock, AsyncMock, patch).
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest

@@ -30,7 +30,6 @@ Template path mapping:
 
 # Standard library
 import logging
-from pathlib import Path
 
 # Third-party
 import pytest

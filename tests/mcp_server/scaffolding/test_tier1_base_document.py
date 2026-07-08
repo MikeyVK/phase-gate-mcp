@@ -7,8 +7,6 @@ for tier3 pattern injection.
 @dependencies: pytest, pathlib, mcp_server.scaffolding.templates
 """
 
-from pathlib import Path
-
 import pytest
 from tests.mcp_server.test_support import get_template_root
 

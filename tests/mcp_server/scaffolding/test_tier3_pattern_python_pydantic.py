@@ -17,7 +17,6 @@ presence/rendering of required pydantic-related macros.
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest

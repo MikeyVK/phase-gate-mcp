@@ -13,7 +13,6 @@ Validates that concrete DOCUMENT templates:
 
 from __future__ import annotations
 
-from pathlib import Path
 from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
 
 TEMPLATE_ROOT = get_template_root() / "concrete"

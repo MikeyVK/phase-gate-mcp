@@ -15,7 +15,6 @@ Tests the Tier 3 LogEnricher pattern macro library.
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest

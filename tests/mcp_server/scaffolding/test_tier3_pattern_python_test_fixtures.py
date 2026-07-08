@@ -17,7 +17,6 @@ Validates that template provides pattern_fixture_decorator() macro for generatin
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest
