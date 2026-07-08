@@ -427,8 +427,19 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 params.sub_phase,
             )
 
+        old_sub_phase = None
+        if self._state_engine is not None:
+            try:
+                state_obj = auto_state or self._state_engine.get_state(current_branch)
+                old_sub_phase = state_obj.current_sub_phase
+            except Exception:
+                pass
+
         try:
             ctx = context
+            if self._state_engine is not None:
+                self._state_engine.record_sub_phase(current_branch, params.sub_phase)
+
             commit_hash = self.manager.commit_with_scope(
                 workflow_phase=workflow_phase,
                 message=params.message,
@@ -441,8 +452,6 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 issue_number=issue_number,
             )
             ctx.produce(Note(key="commit", params={"commit_hash": commit_hash}))
-            if self._state_engine is not None:
-                self._state_engine.record_sub_phase(current_branch, params.sub_phase)
 
             return GitCommitOutput(
                 success=True,
@@ -455,6 +464,11 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 files=params.files or [],
             )
         except Exception as e:
+            if self._state_engine is not None:
+                try:
+                    self._state_engine.record_sub_phase(current_branch, old_sub_phase)
+                except Exception as rollback_err:
+                    logger.error("Failed to rollback sub_phase mutation: %s", rollback_err)
             return GitCommitOutput(
                 success=False,
                 error_message=str(e),

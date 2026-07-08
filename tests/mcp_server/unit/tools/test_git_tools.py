@@ -1254,7 +1254,6 @@ class TestGitCommitToolRecordSubPhase:
         assert isinstance(result, GitCommitOutput)
         assert result.success is True
 
-
     @pytest.mark.asyncio
     async def test_git_commit_tool_calls_record_sub_phase_before_commit(
         self, mock_git_manager: MagicMock
@@ -1308,19 +1307,20 @@ class TestGitCommitToolRecordSubPhase:
 
         assert isinstance(result, GitCommitOutput)
         assert result.success is False
-        assert "Commit failed!" in result.error_message
+        assert result.error_message is not None and "Commit failed!" in result.error_message
 
         # Assert sequence:
         # 1. get_state called to retrieve original subphase ("green")
         # 2. record_sub_phase called with "refactor"
         # 3. record_sub_phase called with "green" (rollback) after exception
         mock_state_engine.get_state.assert_called_once_with("feature/298-test")
-        
+
         # Verify both calls in order
         calls = mock_state_engine.record_sub_phase.mock_calls
         assert len(calls) == 2
-        assert calls[0][0] == ("feature/298-test", "refactor")
-        assert calls[1][0] == ("feature/298-test", "green")
+        assert calls[0][1] == ("feature/298-test", "refactor")
+        assert calls[1][1] == ("feature/298-test", "green")
+
 
 # C_228.2 RED — issue_number wiring in GitCommitTool (issue #228)
 # ---------------------------------------------------------------------------
