@@ -267,7 +267,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 |----------|-------------|---------|-------------|
 | `GITHUB_TOKEN` | GitHub tools (14) | None | GitHub API personal access token |
 | `GITHUB_REPO` | GitHub tools (14) | Detected from git remote | Repository in `owner/repo` format |
-| `MCP_WORKSPACE_ROOT` | All tools | Detected | Absolute path to workspace root |
+| `PGMCP_WORKSPACE_ROOT` | All tools | Detected | Absolute path to workspace root |
 
 ---
 

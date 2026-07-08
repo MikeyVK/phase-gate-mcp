@@ -205,11 +205,11 @@ classDiagram
 | Environment variable | Maps to | Default |
 |----------------------|---------|---------|
 | `GITHUB_TOKEN` | `settings.github.token` | `None` — GitHub tools disabled |
-| `MCP_WORKSPACE_ROOT` | `settings.server.workspace_root` | `os.getcwd()` |
-| `MCP_SERVER_PROJECT_DIR` | `settings.server.server_root_dir` | `\".pgmcp\"` |
-| `MCP_LOGS_DIR` | `settings.server.logs_dir` | `"logs"` |
-| `MCP_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
-| `MCP_SERVER_NAME` | `settings.server.name` | `"phase-gate-mcp"` |
+| `PGMCP_WORKSPACE_ROOT` | `settings.server.workspace_root` | `os.getcwd()` |
+| `PGMCP_SERVER_PROJECT_DIR` | `settings.server.server_root_dir` | `\".pgmcp\"` |
+| `PGMCP_LOGS_DIR` | `settings.server.logs_dir` | `"logs"` |
+| `PGMCP_CONFIG_ROOT` | `settings.server.config_root` | `None` — auto-resolved |
+| `PGMCP_SERVER_NAME` | `settings.server.name` | `"phase-gate-mcp"` |
 | `LOG_LEVEL` | `settings.logging.level` | `"INFO"` |
 
 ---

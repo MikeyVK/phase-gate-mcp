@@ -99,9 +99,9 @@ Google Antigravity manages MCP servers either globally or via a **workspace-loca
          "env": {
            "PYTHONPATH": "C:/path/to/phase-gate-mcp",
            "LOG_LEVEL": "INFO",
-           "MCP_SERVER_NAME": "phase-gate-mcp",
-           "MCP_WORKSPACE_ROOT": "C:/path/to/phase-gate-mcp",
-           "MCP_SERVER_PROJECT_DIR": ".pgmcp",
+            "PGMCP_SERVER_NAME": "phase-gate-mcp",
+            "PGMCP_WORKSPACE_ROOT": "C:/path/to/phase-gate-mcp",
+            "PGMCP_SERVER_PROJECT_DIR": ".pgmcp",
            "GITHUB_OWNER": "MikeyVK",
            "GITHUB_REPO": "phase-gate-mcp",
            "GITHUB_PROJECT_NUMBER": "1"

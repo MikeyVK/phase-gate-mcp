@@ -598,14 +598,14 @@ class BaseResource(ABC):
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `MCP_WORKSPACE_ROOT` | ❌ | cwd | Workspace root directory |
-| `MCP_SERVER_PROJECT_DIR` | ❌ | `.pgmcp` | Server root directory name |
-| `MCP_SERVER_NAME` | ❌ | `phase-gate-mcp` | Server display name |
+| `PGMCP_WORKSPACE_ROOT` | ❌ | cwd | Workspace root directory |
+| `PGMCP_SERVER_PROJECT_DIR` | ❌ | `.pgmcp` | Server root directory name |
+| `PGMCP_SERVER_NAME` | ❌ | `phase-gate-mcp` | Server display name |
 | `GITHUB_TOKEN` | ❌ | — | GitHub PAT (enables GitHub tools) |
 | `GITHUB_OWNER` | ❌ | — | GitHub repository owner |
 | `GITHUB_REPO` | ❌ | — | GitHub repository name |
 | `LOG_LEVEL` | ❌ | `INFO` | Log level |
-| `MCP_CONFIG_PATH` | ❌ | — | Override config YAML path |
+| `PGMCP_CONFIG_PATH` | ❌ | — | Override config YAML path |
 
 ### 8.2 YAML Configuration Files
 

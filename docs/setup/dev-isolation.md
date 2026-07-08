@@ -50,7 +50,7 @@ graph TD
         PgmcpTemp[.pgmcp/templates/]
     end
 
-    StableVenv -->|CWD / MCP_WORKSPACE_ROOT| DevCode
+    StableVenv -->|CWD / PGMCP_WORKSPACE_ROOT| DevCode
     StableVenv -->|Reads/Writes| PgmcpState
     StableVenv -->|Loads Templates| PgmcpTemp
     DevVenv -->|Tests Source| DevCode
@@ -78,8 +78,8 @@ Follow these steps to configure isolation:
 
 | Variable | Value | Purpose |
 | --- | --- | --- |
-| `MCP_WORKSPACE_ROOT` | Path to dev workspace | Ensures the server acts on the codebase under development. |
-| `MCP_SERVER_PROJECT_DIR` | `.pgmcp` | Directs the server state directory within the workspace. |
+| `PGMCP_WORKSPACE_ROOT` | Path to dev workspace | Ensures the server acts on the codebase under development. |
+| `PGMCP_SERVER_PROJECT_DIR` | `.pgmcp` | Directs the server state directory within the workspace. |
 | `PYTHONPATH` | *Empty* / *Unset* | Prevents stable server from importing local un-packaged Python source files. |
 
 ## Development Workflow

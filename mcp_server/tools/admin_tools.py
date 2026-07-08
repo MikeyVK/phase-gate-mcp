@@ -301,12 +301,12 @@ def verify_server_restarted(
     if server_root is not None:
         marker_path = server_root / ".restart_marker"
     else:
-        config_root_env = os.environ.get("MCP_CONFIG_ROOT")
+        config_root_env = os.environ.get("PGMCP_CONFIG_ROOT")
         if config_root_env:
             marker_path = Path(config_root_env).resolve().parent / ".restart_marker"
         else:
             raise ValueError(
-                "verify_server_restarted requires server_root or MCP_CONFIG_ROOT env var"
+                "verify_server_restarted requires server_root or PGMCP_CONFIG_ROOT env var"
             )
 
     # Check if marker exists

@@ -21,18 +21,18 @@ class TestTemplatePathResolution:
     """Test suite for settings."""
 
     def test_get_template_root_respects_env_override(self) -> None:
-        """get_template_root() dynamically respects MCP_TEMPLATE_ROOT env var."""
-        old_val = os.environ.get("MCP_TEMPLATE_ROOT")
+        """get_template_root() dynamically respects PGMCP_TEMPLATE_ROOT env var."""
+        old_val = os.environ.get("PGMCP_TEMPLATE_ROOT")
         mock_path = "/tmp/mock_template_path_override"
-        os.environ["MCP_TEMPLATE_ROOT"] = mock_path
+        os.environ["PGMCP_TEMPLATE_ROOT"] = mock_path
         try:
             resolved = get_template_root()
             assert resolved == Path(mock_path)
         finally:
             if old_val is not None:
-                os.environ["MCP_TEMPLATE_ROOT"] = old_val
+                os.environ["PGMCP_TEMPLATE_ROOT"] = old_val
             else:
-                os.environ.pop("MCP_TEMPLATE_ROOT", None)
+                os.environ.pop("PGMCP_TEMPLATE_ROOT", None)
 
     def test_scaffolding_templates_directory_deleted(self) -> None:
         """Verify duplicate scaffolding templates directory has been deleted."""

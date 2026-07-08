@@ -14,7 +14,7 @@
 
 ## Overview
 
-The MCP server derives **all file-system paths** from a single root (`MCP_WORKSPACE_ROOT`).  
+The MCP server derives **all file-system paths** from a single root (`PGMCP_WORKSPACE_ROOT`).  
 Paths are composed at startup by `Settings.from_env()` — no hard-coded locations exist in the
 server code.  Override any segment via environment variable; use a YAML overlay for bulk
 configuration.
@@ -23,19 +23,19 @@ configuration.
 ## Path Derivation Chain
 
 ```
-MCP_WORKSPACE_ROOT          (default: cwd)
-└── MCP_SERVER_PROJECT_DIR  (default: .pgmcp)         → server_root
+PGMCP_WORKSPACE_ROOT          (default: cwd)
+└── PGMCP_SERVER_PROJECT_DIR  (default: .pgmcp)         → server_root
     ├── config/                                        → config_root  (always server_root/config)
-    └── MCP_LOGS_DIR        (default: logs)            → logs_dir
+    └── PGMCP_LOGS_DIR        (default: logs)            → logs_dir
         ├── mcp_audit.log                              → audit log    (LOG_LEVEL controls verbosity)
         └── qa_logs/                                   → QA artifact logs (gate failures only)
 ```
 
 | Path segment | Environment variable | Default |
 |---|---|---|
-| `workspace_root` | `MCP_WORKSPACE_ROOT` | `os.getcwd()` |
-| `server_root` | `MCP_SERVER_PROJECT_DIR` | `.pgmcp` |
-| `logs_dir` | `MCP_LOGS_DIR` | `logs` |
+| `workspace_root` | `PGMCP_WORKSPACE_ROOT` | `os.getcwd()` |
+| `server_root` | `PGMCP_SERVER_PROJECT_DIR` | `.pgmcp` |
+| `logs_dir` | `PGMCP_LOGS_DIR` | `logs` |
 
 ---
 
@@ -45,17 +45,17 @@ MCP_WORKSPACE_ROOT          (default: cwd)
 
 | Variable | Model field | Default | Description |
 |---|---|---|---|
-| `MCP_WORKSPACE_ROOT` | `server.workspace_root` | `os.getcwd()` | Repository root. All relative paths resolve from here. |
-| `MCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.pgmcp` | Sub-directory under workspace_root for all server data. |
-| `MCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
-| `MCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
+| `PGMCP_WORKSPACE_ROOT` | `server.workspace_root` | `os.getcwd()` | Repository root. All relative paths resolve from here. |
+| `PGMCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.pgmcp` | Sub-directory under workspace_root for all server data. |
+| `PGMCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
+| `PGMCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
 
 ### Logging
 
 | Variable | Model field | Default | Description |
 |---|---|---|---|
 | `LOG_LEVEL` | `logging.level` | `INFO` | Python log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
-| `MCP_AUDIT_LOG` | `logging.audit_log` | *(logs_dir/mcp_audit.log)* | Override audit log path. Set to empty string to disable. |
+| `PGMCP_AUDIT_LOG` | `logging.audit_log` | *(logs_dir/mcp_audit.log)* | Override audit log path. Set to empty string to disable. |
 
 ### GitHub Integration
 
@@ -83,18 +83,18 @@ settings: Settings = Settings.from_env()
 
 | Field | Type | Env var | Default |
 |---|---|---|---|
-| `name` | `str` | `MCP_SERVER_NAME` | `"phase-gate-mcp"` |
-| `workspace_root` | `str` | `MCP_WORKSPACE_ROOT` | `os.getcwd()` |
-| `server_root_dir` | `str` | `MCP_SERVER_PROJECT_DIR` | `\".pgmcp\"` |
-| `logs_dir` | `str` | `MCP_LOGS_DIR` | `"logs"` |
-| `config_root` | `str \| None` | `MCP_CONFIG_ROOT` | `None` — **dead field; not used by `server.py`.** Kept in `settings.py` for backward compat only. |
+| `name` | `str` | `PGMCP_SERVER_NAME` | `"phase-gate-mcp"` |
+| `workspace_root` | `str` | `PGMCP_WORKSPACE_ROOT` | `os.getcwd()` |
+| `server_root_dir` | `str` | `PGMCP_SERVER_PROJECT_DIR` | `\".pgmcp\"` |
+| `logs_dir` | `str` | `PGMCP_LOGS_DIR` | `"logs"` |
+| `config_root` | `str \| None` | `PGMCP_CONFIG_ROOT` | `None` — **dead field; not used by `server.py`.** Kept in `settings.py` for backward compat only. |
 
 ### `LogSettings`
 
 | Field | Type | Env var | Default |
 |---|---|---|-----------|
 | `level` | `str` | `LOG_LEVEL` | `"INFO"` |
-| `audit_log` | `str \| None` | `MCP_AUDIT_LOG` | `None` (auto-derived) |
+| `audit_log` | `str \| None` | `PGMCP_AUDIT_LOG` | `None` (auto-derived) |
 
 When `audit_log` is `None` the server writes to `logs_dir / "mcp_audit.log"`.
 Set to an empty string `""` to disable audit logging entirely.
@@ -112,7 +112,7 @@ Set to an empty string `""` to disable audit logging entirely.
 
 ## YAML Configuration Overlay
 
-Set `MCP_CONFIG_PATH` to the path of a YAML file to override any settings field:
+Set `PGMCP_CONFIG_PATH` to the path of a YAML file to override any settings field:
 
 ```yaml
 # .pgmcp/config/server.yaml  (example)
@@ -159,7 +159,7 @@ artifact_logging:
 ### Default setup (minimal)
 
 ```bash
-export MCP_WORKSPACE_ROOT=/repos/myproject
+export PGMCP_WORKSPACE_ROOT=/repos/myproject
 export GITHUB_TOKEN=ghp_...
 export GITHUB_OWNER=my-org
 export GITHUB_REPO=my-repo
@@ -180,9 +180,9 @@ Resulting paths:
 ### Custom server directory
 
 ```bash
-export MCP_WORKSPACE_ROOT=/repos/myproject
-export MCP_SERVER_PROJECT_DIR=.workflow
-export MCP_LOGS_DIR=output/logs
+export PGMCP_WORKSPACE_ROOT=/repos/myproject
+export PGMCP_SERVER_PROJECT_DIR=.workflow
+export PGMCP_LOGS_DIR=output/logs
 ```
 
 Resulting paths:
