@@ -12,3 +12,5 @@ assets:
     target: "docs/manuals"
   - source: "docs/reference"
     target: "docs/reference"
+  - source: "docs/setup"
+    target: "docs/setup"

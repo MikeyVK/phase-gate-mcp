@@ -18,7 +18,7 @@ class TestC7Docs:
     def test_dev_isolation_docs_exist_and_valid(self) -> None:
         """The developer isolation document must exist and contain key required sections."""
         project_root = Path(__file__).resolve().parents[2]
-        docs_file = project_root / "docs" / "manuals" / "developer-isolation.md"
+        docs_file = project_root / "docs" / "setup" / "dev-isolation.md"
 
         # Check existence
         assert docs_file.exists(), "dev-isolation.md missing"
