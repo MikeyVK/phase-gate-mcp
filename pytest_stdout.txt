@@ -6,25 +6,21 @@ configfile: pyproject.toml
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [1 item]
+8 workers [6 items]
 
 scheduling tests via LoadScheduling
 
+tests/mcp_server/unit/test_cli.py::test_cli_version 
+tests/mcp_server/unit/test_cli.py::test_cli_run 
 tests/mcp_server/unit/test_cli.py::test_cli_init_flat_copy 
-[gw0] [100%] FAILED tests/mcp_server/unit/test_cli.py::test_cli_init_flat_copy 
+tests/mcp_server/unit/test_cli.py::test_cli_init_success 
+tests/mcp_server/unit/test_cli.py::test_cli_fails_fast_when_state_dir_missing 
+tests/mcp_server/unit/test_cli.py::test_cli_init_already_exists 
+[gw1] [ 16%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_run 
+[gw5] [ 33%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_init_flat_copy 
+[gw4] [ 50%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_init_already_exists 
+[gw3] [ 66%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_fails_fast_when_state_dir_missing 
+[gw2] [ 83%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_init_success 
+[gw0] [100%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_version 
 
-================================== FAILURES ===================================
-___________________________ test_cli_init_flat_copy ___________________________
-[gw0] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
-tests\mcp_server\unit\test_cli.py:166: in test_cli_init_flat_copy
-    mock_copytree.assert_called_once()
-C:\Users\miche\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py:958: in assert_called_once
-    raise AssertionError(msg)
-E   AssertionError: Expected 'copytree' to have been called once. Called 2 times.
-E   Calls: [call(WindowsPath('C:/temp/pgmcp/mcp_server/assets/config'), WindowsPath('C:/Users/miche/AppData/Local/Temp/pytest-of-1Voudig/pytest-5078/popen-gw0/test_cli_init_flat_copy0/workspace/.pgmcp/config'), dirs_exist_ok=True),
-E    call(WindowsPath('C:/temp/pgmcp/mcp_server/assets/templates'), WindowsPath('C:/Users/miche/AppData/Local/Temp/pytest-of-1Voudig/pytest-5078/popen-gw0/test_cli_init_flat_copy0/workspace/.pgmcp/templates'), dirs_exist_ok=True)].
----------------------------- Captured stdout call -----------------------------
-Successfully initialized server root at 'C:\Users\miche\AppData\Local\Temp\pytest-of-1Voudig\pytest-5078\popen-gw0\test_cli_init_flat_copy0\workspace\.pgmcp'
-=========================== short test summary info ===========================
-FAILED tests/mcp_server/unit/test_cli.py::test_cli_init_flat_copy - Assertion...
-============================== 1 failed in 6.28s ==============================
+============================== 6 passed in 6.74s ==============================
