@@ -26,7 +26,25 @@ This guide provides a step-by-step automation procedure for an AI coding assista
 
 When a user requests to set up `pgmcp` in a new empty workspace, the AI assistant must perform the following steps autonomously:
 
-### 1. Initialize Virtual Environment & Install Package
+### 1. Initialize Git & Connect Remote
+Since the entire Phase-Gate workflow (branching, commits, quality gates, and PR submission) relies on Git and GitHub, the repository must be initialized and connected to a remote host first:
+```powershell
+# Initialize local repository with base branch 'main'
+git init -b main
+
+# Link to the remote GitHub repository
+git remote add origin https://github.com/Owner/Repo.git
+
+# Create an initial commit so that the base branch exists and can be compared against
+Set-Content .gitignore "# Git ignores`n.venv/`n.pgmcp/logs/`n.pgmcp/temp/`n.pgmcp/.restart_marker"
+git add .gitignore
+git commit -m "chore: initial commit"
+
+# Push main branch to remote
+git push -u origin main
+```
+
+### 2. Initialize Virtual Environment & Install Package
 Run the following commands in the terminal using the terminal execution tool:
 ```powershell
 # Create virtual environment
@@ -38,7 +56,7 @@ python -m venv .venv
 .\.venv\Scripts\python -m pip install phase-gate-mcp
 ```
 
-### 2. Initialize the Server Root
+### 3. Initialize the Server Root
 Run the bootstrapping CLI command to generate the configuration files and templates:
 ```powershell
 .\.venv\Scripts\pgmcp --init
@@ -49,7 +67,7 @@ This command automatically creates the `.pgmcp/` directory structure containing:
 * `agents/` (Prepackaged IDE configurations and rule files)
 * `docs/` (Workflow documentation templates)
 
-### 3. Deploy IDE-Specific Configurations & Rules
+### 4. Deploy IDE-Specific Configurations & Rules
 Based on the active IDE, copy and set up the workspace rules and configurations:
 
 #### For Google Antigravity
@@ -92,7 +110,7 @@ $settings = @{ "chat.useAgentsMdFile" = $true }
 $settings | ConvertTo-Json | Set-Content .vscode/settings.json
 ```
 
-### 4. Initialize Phase Gate State
+### 5. Initialize Phase Gate State
 Once the configuration is copied, the IDE will automatically start/restart the MCP server proxy in the background. The agent must then call:
 ```json
 initialize_project(issue_number=1, issue_title="Bootstrap project", workflow_name="feature")
