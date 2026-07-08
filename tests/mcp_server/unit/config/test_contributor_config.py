@@ -19,10 +19,10 @@ from mcp_server.core.exceptions import ConfigError
 
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
-_EMPTY_CONTRIBUTORS_YAML = {"version": "1.0", "contributors": []}
+_EMPTY_CONTRIBUTORS_YAML = {"version": "1.0.0", "contributors": []}
 
 _POPULATED_CONTRIBUTORS_YAML = {
-    "version": "1.0",
+    "version": "1.0.0",
     "contributors": [
         {"login": "alice", "name": "Alice Doe"},
         {"login": "bob"},

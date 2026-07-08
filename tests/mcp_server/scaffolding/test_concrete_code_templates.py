@@ -14,17 +14,11 @@ These tests intentionally inspect template SOURCE (not rendered output).
 
 from __future__ import annotations
 
-from pathlib import Path
 
 import pytest
+from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
 
-TEMPLATE_ROOT = (
-    Path(__file__).parent.parent.parent.parent
-    / "mcp_server"
-    / "scaffolding"
-    / "templates"
-    / "concrete"
-)
+TEMPLATE_ROOT = get_template_root() / "concrete"
 
 
 @pytest.mark.parametrize(

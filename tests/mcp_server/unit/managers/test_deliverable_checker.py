@@ -46,6 +46,7 @@ class TestWorkphasesConfigSchema:
         workphases_path = tmp_path / "workphases.yaml"
         workphases_path.write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -72,6 +73,7 @@ phases:
         workphases_path = tmp_path / "workphases.yaml"
         workphases_path.write_text(
             """
+version: "1.0.0"
 phases:
   implementation:
     display_name: "Implementation"
@@ -98,6 +100,7 @@ phases:
         workphases_path = tmp_path / "workphases.yaml"
         workphases_path.write_text(
             """
+version: "1.0.0"
 phases:
   research:
     display_name: "Research"

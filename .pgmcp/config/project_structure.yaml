@@ -1,3 +1,4 @@
+version: "1.0.0"
 # Project Structure Configuration
 # Purpose: Define directory structure and file policies
 # Used by: DirectoryPolicyResolver for path validation
@@ -159,13 +160,26 @@ directories:
       - architecture
       - generic
 
-  docs/reference/mcp:
+  docs/reference/tools:
     parent: docs/reference
-    description: "MCP server reference documentation"
+    description: "MCP server tools reference manuals"
     allowed_artifact_types:
       - generic
       - reference
 
+  docs/manuals:
+    parent: docs
+    description: "User and developer manuals"
+    allowed_artifact_types:
+      - generic
+      - reference
+
+  docs/setup:
+    parent: docs
+    description: "Installation and onboarding documentation"
+    allowed_artifact_types:
+      - generic
+      - reference
   docs/coding_standards:
     parent: docs
     description: "Coding standards and conventions"

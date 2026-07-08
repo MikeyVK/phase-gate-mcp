@@ -62,8 +62,8 @@ class MetadataField(BaseModel):
 class ScaffoldMetadataConfig(BaseModel):
     """Configuration value object for scaffold metadata."""
 
-    version: str = Field(
-        default="1.0",
+    version: Literal["1.0.0"] = Field(
+        "1.0.0",
         description="Config schema version for future migrations",
     )
     comment_patterns: list[CommentPattern] = Field(

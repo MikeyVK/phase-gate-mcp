@@ -41,7 +41,7 @@ class WorkflowConfig(BaseModel):
     Transition validation and phase ordering are delegated to ContractsConfig.
     """
 
-    version: str = Field(..., description="Config schema version")
+    version: Literal["1.0.0"] = Field("1.0.0", description="Config schema version")
     workflows: dict[str, WorkflowTemplate] = Field(..., description="Workflow definitions")
 
     def get_workflow(self, name: str) -> WorkflowTemplate:

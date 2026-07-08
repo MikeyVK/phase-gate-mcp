@@ -7,7 +7,7 @@
 # Line 1: filepath only
 # Line 2: metadata fields
 
-version: "2.0"
+version: "1.0.0"
 
 # Comment patterns for different file types
 comment_patterns:

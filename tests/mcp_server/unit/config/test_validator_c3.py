@@ -39,7 +39,7 @@ def _workphases(phases: list[str] = None, terminal: str = "ready") -> Workphases
     for p in phases or ["planning", "implementation"]:
         phase_dict[p] = PhaseDefinition(display_name=p.capitalize())
     phase_dict[terminal] = PhaseDefinition(display_name=terminal.capitalize(), terminal=True)
-    return WorkphasesConfig(version="1.0", phases=phase_dict)
+    return WorkphasesConfig(version="1.0.0", phases=phase_dict)
 
 
 def _contracts(pr_allowed_phase: str = "ready") -> ContractsConfig:
@@ -54,10 +54,10 @@ def _stub_validate_startup_args(
     workphases: WorkphasesConfig | None = None,
 ) -> dict[str, Any]:
     return {
-        "policies": OperationPoliciesConfig(version="1.0", operations={}),  # type: ignore[call-arg]
-        "workflow": WorkflowConfig(version="1.0", workflows={}),
-        "structure": ProjectStructureConfig(version="1.0", directories={}),  # type: ignore[call-arg]
-        "artifact": ArtifactRegistryConfig(version="1.0", artifact_types=[]),
+        "policies": OperationPoliciesConfig(version="1.0.0", operations={}),  # type: ignore[call-arg]
+        "workflow": WorkflowConfig(version="1.0.0", workflows={}),
+        "structure": ProjectStructureConfig(version="1.0.0", directories={}),  # type: ignore[call-arg]
+        "artifact": ArtifactRegistryConfig(version="1.0.0", artifact_types=[]),
         "contracts": _contracts(pr_allowed_phase),
         "workphases": workphases or _workphases(),
     }

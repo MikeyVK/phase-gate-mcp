@@ -13,15 +13,9 @@ Validates that concrete DOCUMENT templates:
 
 from __future__ import annotations
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
 
-TEMPLATE_ROOT = (
-    Path(__file__).parent.parent.parent.parent
-    / "mcp_server"
-    / "scaffolding"
-    / "templates"
-    / "concrete"
-)
+TEMPLATE_ROOT = get_template_root() / "concrete"
 
 
 def test_research_md_imports_seven_patterns() -> None:

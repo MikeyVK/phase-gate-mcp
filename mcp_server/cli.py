@@ -44,10 +44,10 @@ def main(settings: Settings | None = None) -> None:
 
             resolved_server_root.mkdir(parents=True, exist_ok=True)
             shutil.copytree(
-                assets_dir / "config", resolved_server_root / "config", dirs_exist_ok=True
-            )
-            shutil.copytree(
-                assets_dir / "templates", resolved_server_root / "templates", dirs_exist_ok=True
+                assets_dir,
+                resolved_server_root,
+                dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns("template_registry.json"),
             )
 
             print(

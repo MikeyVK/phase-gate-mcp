@@ -52,7 +52,7 @@ class TestRunQualityGatesTool:
         mock_manager = MagicMock()
         mock_manager.resolve_scope.return_value = []
         mock_manager.run_quality_gates.return_value = {
-            "version": "2.0",
+            "version": "1.0.0",
             "mode": "project-level",
             "files": [],
             "summary": {
@@ -228,7 +228,7 @@ class TestRunQualityGatesTool:
         """Tool returns RunQualityGatesOutput DTO."""
         mock_manager = MagicMock()
         mock_manager.run_quality_gates.return_value = {
-            "version": "2.0",
+            "version": "1.0.0",
             "mode": "file-specific",
             "files": ["foo.py"],
             "summary": {

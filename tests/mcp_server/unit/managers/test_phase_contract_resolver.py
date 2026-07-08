@@ -31,6 +31,7 @@ def workspace_root(tmp_path: Path) -> Path:
 
     (config_dir / "workphases.yaml").write_text(
         """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -48,6 +49,7 @@ phases:
 
     (config_dir / "contracts.yaml").write_text(
         """
+version: "1.0.0"
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts: []
@@ -178,6 +180,7 @@ class TestPhaseConfigContext:
         config_dir.mkdir(parents=True)
 
         (config_dir / "workphases.yaml").write_text(
+            'version: "1.0.0"\n'
             "phases:\n"
             "  implementation:\n"
             "    display_name: Implementation\n"
@@ -187,6 +190,7 @@ class TestPhaseConfigContext:
             encoding="utf-8",
         )
         (config_dir / "contracts.yaml").write_text(
+            'version: "1.0.0"\n'
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"
@@ -222,6 +226,7 @@ class TestPhaseConfigContext:
         config_dir.mkdir(parents=True)
 
         (config_dir / "workphases.yaml").write_text(
+            'version: "1.0.0"\n'
             "phases:\n"
             "  planning:\n"
             "    display_name: Planning\n"
@@ -231,6 +236,7 @@ class TestPhaseConfigContext:
             encoding="utf-8",
         )
         (config_dir / "contracts.yaml").write_text(
+            'version: "1.0.0"\n'
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"

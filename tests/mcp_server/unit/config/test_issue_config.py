@@ -20,7 +20,7 @@ from mcp_server.core.exceptions import ConfigError
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 _MINIMAL_ISSUES_YAML = {
-    "version": "1.0",
+    "version": "1.0.0",
     "issue_types": [
         {"name": "feature", "workflow": "feature", "label": "type:feature"},
         {"name": "bug", "workflow": "bug", "label": "type:bug"},

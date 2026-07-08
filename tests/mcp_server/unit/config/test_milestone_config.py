@@ -17,10 +17,10 @@ from mcp_server.core.exceptions import ConfigError
 
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
-_EMPTY_MILESTONES_YAML = {"version": "1.0", "milestones": []}
+_EMPTY_MILESTONES_YAML = {"version": "1.0.0", "milestones": []}
 
 _POPULATED_MILESTONES_YAML = {
-    "version": "1.0",
+    "version": "1.0.0",
     "milestones": [
         {"number": 1, "title": "v1.0", "state": "open"},
         {"number": 2, "title": "v2.0", "state": "closed"},

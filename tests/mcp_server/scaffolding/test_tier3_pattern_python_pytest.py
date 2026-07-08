@@ -14,7 +14,7 @@ This is a MACRO LIBRARY template (no {% extends %}), provides composable macros 
 """
 
 import re
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 import pytest
 from jinja2 import Environment, FileSystemLoader
@@ -23,7 +23,7 @@ from jinja2 import Environment, FileSystemLoader
 @pytest.fixture
 def jinja_env():
     """Create Jinja2 environment for template testing."""
-    template_dir = Path("mcp_server/scaffolding/templates")
+    template_dir = get_template_root()
     return Environment(loader=FileSystemLoader(template_dir))
 
 
@@ -38,7 +38,7 @@ class TestTier3PatternPythonPytest:
 
     def test_template_has_no_extends(self) -> None:
         """RED: Verify template is a MACRO LIBRARY (no {% extends %} statement)."""
-        template_path = Path("mcp_server/scaffolding/templates/tier3_pattern_python_pytest.jinja2")
+        template_path = get_template_root() / "tier3_pattern_python_pytest.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         # Macro library templates should NOT extend other templates
@@ -50,7 +50,7 @@ class TestTier3PatternPythonPytest:
 
     def test_template_has_metadata(self) -> None:
         """RED: Verify TEMPLATE_METADATA with ARCHITECTURAL enforcement."""
-        template_path = Path("mcp_server/scaffolding/templates/tier3_pattern_python_pytest.jinja2")
+        template_path = get_template_root() / "tier3_pattern_python_pytest.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         # Must have TEMPLATE_METADATA
@@ -61,7 +61,7 @@ class TestTier3PatternPythonPytest:
 
     def test_macro_pattern_pytest_imports_exists(self) -> None:
         """RED: Verify pattern_pytest_imports macro exists for pytest imports."""
-        template_path = Path("mcp_server/scaffolding/templates/tier3_pattern_python_pytest.jinja2")
+        template_path = get_template_root() / "tier3_pattern_python_pytest.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         # Must define pattern_pytest_imports macro
@@ -84,7 +84,7 @@ class TestTier3PatternPythonPytest:
 
     def test_pytest_imports_macro_renders_correctly(self, jinja_env) -> None:
         """RED: Verify pattern_pytest_imports macro generates correct imports."""
-        template_path = Path("mcp_server/scaffolding/templates/tier3_pattern_python_pytest.jinja2")
+        template_path = get_template_root() / "tier3_pattern_python_pytest.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         # Find the pattern_pytest_imports macro
@@ -103,7 +103,7 @@ class TestTier3PatternPythonPytest:
 
     def test_template_uses_macros_not_blocks(self) -> None:
         """RED: Verify template defines macros for composition."""
-        template_path = Path("mcp_server/scaffolding/templates/tier3_pattern_python_pytest.jinja2")
+        template_path = get_template_root() / "tier3_pattern_python_pytest.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         # Should have macros defined (flexible whitespace handling)

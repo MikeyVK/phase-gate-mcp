@@ -558,7 +558,7 @@ class TestConfigDrivenExecution:
     def mock_quality_config_with_active_gates(self, tmp_path: Path) -> Path:
         """Fixture for quality.yaml with active_gates defined."""
         config_data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "active_gates": ["gate1_formatting", "gate2_imports"],
             "gates": {
                 "gate1_formatting": {
@@ -1226,7 +1226,7 @@ class TestToolResultJsonData:
 
     def test_json_data_returns_dual_content(self) -> None:
         """Test json_data() returns list with json and text items."""
-        data = {"version": "2.0", "gates": []}
+        data = {"version": "1.0.0", "gates": []}
         result = ToolResult.json_data(data)
 
         assert len(result.content) == 2
@@ -1234,7 +1234,7 @@ class TestToolResultJsonData:
         assert result.content[0]["json"] is data  # same dict reference
         assert result.content[1]["type"] == "text"
         assert isinstance(result.content[1]["text"], str)
-        assert '"version": "2.0"' in result.content[1]["text"]
+        assert '"version": "1.0.0"' in result.content[1]["text"]
 
     def test_json_data_text_fallback_is_parseable(self) -> None:
         """Test text fallback is valid JSON matching the original dict."""

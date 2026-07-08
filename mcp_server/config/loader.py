@@ -158,14 +158,7 @@ class ConfigLoader:
                 file_path=str(resolved_path),
             )
 
-        try:
-            return ArtifactRegistryConfig.model_validate(raw_loaded)
-        except ValidationError as exc:
-            raise ConfigError(
-                "Failed to load artifact registry: "
-                f"{exc}. Fix: Check file permissions and YAML structure.",
-                file_path=str(resolved_path),
-            ) from exc
+        return self._validate_schema(ArtifactRegistryConfig, raw_loaded, resolved_path)
 
     def load_contributor_config(self, config_path: Path | None = None) -> ContributorConfig:
         data, resolved_path = self._load_yaml("contributors.yaml", config_path=config_path)
@@ -253,6 +246,8 @@ class ConfigLoader:
             config_path=config_path,
             allow_missing=True,
         )
+        if not resolved_path.exists():
+            return EnforcementConfig(version="1.0.0")
         return self._validate_schema(EnforcementConfig, data, resolved_path)
 
     def load_contracts_config(
@@ -338,9 +333,36 @@ class ConfigLoader:
         data: dict[str, Any],
         resolved_path: Path,
     ) -> SchemaT:
+        # Resolve expected version dynamically from schema type annotation
+        version_field = schema_cls.model_fields.get("version")
+        annotation = version_field.annotation if version_field else None
+        args = getattr(annotation, "__args__", None)
+        if args and isinstance(args, tuple) and len(args) > 0:
+            expected_val = str(args[0])
+        else:
+            expected_val = "1.0.0"
+
+        # Explicit check for version field existence before validation
+        if "version" not in data:
+            raise ConfigError(
+                f"Configuration version is missing in {resolved_path.name}. "
+                f"(expected version '{expected_val}')",
+                file_path=str(resolved_path),
+            )
+
         try:
             return schema_cls.model_validate(data)
         except ValidationError as exc:
+            errors = exc.errors()
+            for err in errors:
+                if "version" in err.get("loc", ()):
+                    input_val = err.get("input")
+                    raise ConfigError(
+                        f"Config version mismatch in {resolved_path.name}: "
+                        f"expected version '{expected_val}', found '{input_val}'. "
+                        f"Please update your configuration.",
+                        file_path=str(resolved_path),
+                    ) from exc
             raise ConfigError(
                 f"Config validation failed for {resolved_path.name}: {exc}",
                 file_path=str(resolved_path),

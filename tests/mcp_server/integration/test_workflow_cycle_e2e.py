@@ -47,7 +47,7 @@ def git_repo(tmp_path: Path) -> Path:
 
     # Create workphases.yaml
     workphases = {
-        "version": "1.0",
+        "version": "1.0.0",
         "phases": {
             "research": {
                 "display_name": "Research",
@@ -98,7 +98,7 @@ def git_repo(tmp_path: Path) -> Path:
 
     # Create workflows.yaml (feature workflow)
     workflows = {
-        "version": "1.0",
+        "version": "1.0.0",
         "phase_source": f"{get_default_server_root()}/workphases.yaml",
         "workflows": {
             "feature": {
@@ -120,6 +120,7 @@ def git_repo(tmp_path: Path) -> Path:
 
     # Create git.yaml (minimal config)
     git_config = {
+        "version": "1.0.0",
         "branch_types": ["feature"],
         "protected_branches": ["main"],
         "branch_name_pattern": "^[a-z0-9-]+$",

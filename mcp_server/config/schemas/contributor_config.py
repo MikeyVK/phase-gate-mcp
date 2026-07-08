@@ -13,6 +13,7 @@ milestone workflows.
     - Provide assignee lookup helpers for workflow consumers
 """
 
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -26,7 +27,7 @@ class ContributorEntry(BaseModel):
 class ContributorConfig(BaseModel):
     """Contributor validation configuration value object."""
 
-    version: str
+    version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
     contributors: list[ContributorEntry] = Field(default_factory=list)
 
     def validate_assignee(self, login: str) -> bool:

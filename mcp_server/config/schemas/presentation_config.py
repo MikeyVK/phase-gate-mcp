@@ -5,6 +5,7 @@
 @layer: Config
 """
 
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -67,5 +68,6 @@ class PresentationConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
+    version: Literal["1.0.0"] = Field("1.0.0", description="Config schema version")
     global_settings: GlobalPresentationConfig = Field(alias="global")
     tools: dict[str, ToolPresentationConfig] = Field(default_factory=dict)

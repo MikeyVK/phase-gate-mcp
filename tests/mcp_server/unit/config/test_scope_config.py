@@ -18,7 +18,7 @@ from mcp_server.core.exceptions import ConfigError
 _PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 _MINIMAL_SCOPES_YAML = {
-    "version": "1.0",
+    "version": "1.0.0",
     "scopes": ["architecture", "mcp-server", "platform", "tooling", "workflow", "documentation"],
 }
 

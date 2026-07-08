@@ -11,7 +11,7 @@ An MCP (Model Context Protocol) server that enforces structured software develop
 > Read **[AGENTS.md](AGENTS.md)** immediately to initialize your cooperation protocol.
 > It contains the binding tool priority matrix, TDD cycle protocol, three-agent model, and all operating constraints.
 >
-> For MCP server architecture details, see [docs/reference/mcp/mcp_vision_reference.md](docs/reference/mcp/mcp_vision_reference.md).
+For MCP server architecture details, see [docs/reference/mcp_vision_reference.md](docs/reference/mcp_vision_reference.md).
 
 ---
 
@@ -37,17 +37,16 @@ Each workflow defines an ordered sequence of phases (e.g. `research → design �
 
 ## Architecture
 
-```
 mcp_server/
 ├── core/          # Phase state engine, proxy, operation notes, error handling
 ├── managers/      # State persistence, git operations, pytest runner, QA manager
 ├── tools/         # MCP tool interfaces exposed to the agent
 ├── scaffolders/   # Jinja2 template engine and scaffold orchestration
-├── scaffolding/   # Templates, template registry, version hashing
+├── scaffolding/   # Scaffolding metadata and registry helpers
 ├── validation/    # File and artifact validators
 ├── config/        # Settings, schema loading, config contracts
-└── schemas/       # Pydantic schemas for all internal contracts
-```
+├── schemas/       # Pydantic schemas for all internal contracts
+└── assets/        # Packaged release assets (templates, configs, docs)
 
 Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 

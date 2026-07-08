@@ -8,9 +8,8 @@ Validates that all base templates have enforcement/level/validates structure.
 @dependencies: pytest, mcp_server.validation.template_analyzer
 """
 
-from pathlib import Path
-
 import pytest
+from tests.mcp_server.test_support import get_template_root
 
 from mcp_server.validation.template_analyzer import TemplateAnalyzer
 
@@ -21,7 +20,7 @@ class TestTier0ValidationMetadata:
     @staticmethod
     def get_templates_dir():
         """Get templates directory path."""
-        return Path(__file__).parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+        return get_template_root()
 
     def test_tier0_has_validation_metadata(self) -> None:
         """Tier 0 template should have validation TEMPLATE_METADATA."""
@@ -65,7 +64,7 @@ class TestTier1ValidationMetadata:
     @staticmethod
     def get_templates_dir():
         """Get templates directory path."""
-        return Path(__file__).parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+        return get_template_root()
 
     def test_tier1_code_has_validation_metadata(self) -> None:
         """Tier 1 CODE template should have validation metadata."""
@@ -169,7 +168,7 @@ class TestValidationMetadataStructure:
     @staticmethod
     def get_templates_dir():
         """Get templates directory path."""
-        return Path(__file__).parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+        return get_template_root()
 
     @pytest.mark.parametrize(
         "template_file",

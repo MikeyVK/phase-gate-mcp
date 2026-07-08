@@ -1,5 +1,6 @@
 # Local-only MCP config
 mcp_config.yaml
+.agents/mcp_config.json
 # Python
 __pycache__/
 *.pytest_cache
@@ -40,6 +41,7 @@ mcp_server/logs/
 
 # Local configuration (machine-specific paths)
 mcp_config.yaml
+.agents/mcp_config.json
 
 # Run results
 
@@ -94,4 +96,7 @@ temp/qa_logs/
 .pgmcp/.state_*.tmp
 .pgmcp/pyright_test.json
 
+# Release assets (compiled from sources at build time)
+mcp_server/assets/*
+!mcp_server/assets/.gitkeep
 

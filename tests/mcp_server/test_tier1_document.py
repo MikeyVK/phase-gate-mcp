@@ -14,16 +14,16 @@ Validates:
 @dependencies: pytest, jinja2, mcp_server.scaffolding.templates
 """
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 from jinja2 import Environment, FileSystemLoader
 
 # Template directory
-TEMPLATE_DIR = Path(__file__).parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+TEMPLATE_DIR = get_template_root()
 
 _DOC_HEADER = {
     "status": "DRAFT",
-    "version": "1.0",
+    "version": "1.0.0",
     "last_updated": "2026-01-26",
 }
 
@@ -44,7 +44,7 @@ class TestTier1DocumentUniversalStructure:
             format="markdown",
             title="Test Design",
             status="Draft",
-            version="1.0",
+            version="1.0.0",
             last_updated="2026-01-26",
             purpose="Test purpose",
             scope_in="Feature X",
@@ -52,7 +52,7 @@ class TestTier1DocumentUniversalStructure:
         )
 
         assert "**Status:** Draft" in result, "Status field missing"
-        assert "**Version:** 1.0" in result, "Version field missing"
+        assert "**Version:** 1.0.0" in result, "Version field missing"
         assert "**Last Updated:** 2026-01-26" in result, "Last Updated field missing"
 
     def test_renders_purpose_section(self) -> None:
@@ -185,6 +185,6 @@ class TestTier1DocumentUniversalStructure:
         assert "## Version History" in result
         # Updated column order per BASE_TEMPLATE: Version | Date | Author | Changes
         assert "| Version | Date | Author | Changes |" in result
-        assert "| 1.0 |" in result
+        assert "| 1.0.0 |" in result
         assert "| Agent |" in result  # Default author
         assert "| Initial draft |" in result  # Default changes

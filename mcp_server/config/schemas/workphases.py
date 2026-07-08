@@ -15,7 +15,7 @@ and exit requirements loaded by the configuration layer.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -35,7 +35,7 @@ class PhaseDefinition(BaseModel):
 class WorkphasesConfig(BaseModel):
     """Read-only phase metadata value object."""
 
-    version: str = ""
+    version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
     phases: dict[str, PhaseDefinition] = Field(default_factory=dict)
 
     @model_validator(mode="after")

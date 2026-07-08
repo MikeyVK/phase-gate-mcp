@@ -165,12 +165,6 @@ class PytestRunner:
             text=True,
             timeout=timeout,
         )
-        try:
-            with open("c:/temp/pgmcp/pytest_stdout.txt", "w", encoding="utf-8") as f:
-                f.write(proc.stdout or "")
-        except Exception as e:
-            # Let's write to stderr if we fail, so we can see it in result
-            proc.stderr += f"\nDEBUG WRITE ERROR: {str(e)}"
         return _PytestExecution(
             stdout=proc.stdout or "",
             stderr=proc.stderr or "",

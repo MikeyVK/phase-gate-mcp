@@ -8,12 +8,12 @@ with format-adaptive comment styles (2-line format).
 @dependencies: pytest, jinja2, mcp_server.scaffolding.templates
 """
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 from jinja2 import Environment, FileSystemLoader
 
 # Template directory
-TEMPLATE_DIR = Path(__file__).parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+TEMPLATE_DIR = get_template_root()
 
 
 class TestTier0BaseArtifactRendering:

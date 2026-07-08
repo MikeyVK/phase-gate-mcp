@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "phase-gate-mcp": {
+      "command": "<PATH_TO_VENV_PYTHON_EXE>",
+      "args": [
+        "-m",
+        "mcp_server.core.proxy"
+      ],
+      "cwd": "<PATH_TO_WORKSPACE_ROOT>",
+      "env": {
+        "PYTHONPATH": "<PATH_TO_WORKSPACE_ROOT>",
+        "LOG_LEVEL": "INFO",
+        "MCP_SERVER_NAME": "phase-gate-mcp",
+        "MCP_WORKSPACE_ROOT": "<PATH_TO_WORKSPACE_ROOT>",
+        "MCP_SERVER_PROJECT_DIR": ".pgmcp",
+        "GITHUB_OWNER": "<YOUR_GITHUB_OWNER>",
+        "GITHUB_REPO": "<YOUR_GITHUB_REPO>",
+        "GITHUB_PROJECT_NUMBER": "<YOUR_PROJECT_NUMBER>"
+      }
+    }
+  }
+}

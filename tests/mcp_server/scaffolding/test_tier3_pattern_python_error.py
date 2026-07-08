@@ -15,19 +15,17 @@ Tests the Tier 3 error-handling pattern macro library.
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest
+from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader
 
 
 @pytest.fixture
 def jinja_env():
     """Jinja2 environment rooted at the scaffolding templates directory."""
-    templates_dir = (
-        Path(__file__).parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
-    )
+    templates_dir = get_template_root()
     return Environment(loader=FileSystemLoader(str(templates_dir)))
 
 
@@ -41,13 +39,7 @@ class TestTier3PatternPythonError:
 
     def test_template_has_no_extends_or_blocks(self) -> None:
         """Template is a macro library: no extends/blocks (outside comments)."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_error.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_error.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         assert "{% extends" not in content
@@ -57,13 +49,7 @@ class TestTier3PatternPythonError:
 
     def test_template_has_metadata_and_macros(self) -> None:
         """Template includes metadata and required macro definitions."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_error.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_error.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         assert "TEMPLATE_METADATA" in content

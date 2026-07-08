@@ -4,7 +4,7 @@
 @dependencies: [pytest, pathlib, jinja2]
 """
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 from typing import Any
 
 import pytest
@@ -14,12 +14,7 @@ from jinja2 import Environment, FileSystemLoader
 @pytest.fixture
 def template_env() -> Environment:
     """Create Jinja2 environment rooted at scaffolding templates."""
-    template_dir = (
-        Path(__file__).parent.parent.parent.parent.parent
-        / "mcp_server"
-        / "scaffolding"
-        / "templates"
-    )
+    template_dir = get_template_root()
     return Environment(loader=FileSystemLoader(template_dir))
 
 
@@ -42,7 +37,7 @@ def minimal_context(base_system_context: dict[str, Any]) -> dict[str, Any]:
         **base_system_context,
         "title": "Migration Guide: v1.x to v2.0",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-16",
         "purpose": "Guide the transition to workflow-first commit scopes.",
         "summary": "This migration updates commit scope conventions and tool parameters.",
