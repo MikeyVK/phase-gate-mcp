@@ -18,7 +18,7 @@ Navigation index for the template/scaffolding documentation cluster. Start here 
 
 | Document | Audience | Use when you want to… |
 |---|---|---|
-| [docs/architecture/TEMPLATE_LIBRARY.md](../../architecture/TEMPLATE_LIBRARY.md) | Architecture, contributors | Understand the three-layer pipeline model; learn how to add a new artifact type; understand Layer 3 tier hierarchy |
+| [docs/manuals/architecture.md](../manuals/architecture.md) | Architecture, contributors | Understand the three-layer pipeline model; learn how to add a new artifact type; understand Layer 3 tier hierarchy |
 | [TEMPLATE_LIBRARY_USAGE.md](TEMPLATE_LIBRARY_USAGE.md) | Agent users, contributors | Use `scaffold_artifact` and `scaffold_schema`; understand what context to provide; add a new artifact type step by step |
 | [TEMPLATE_LIBRARY_QUICK_REFERENCE.md](TEMPLATE_LIBRARY_QUICK_REFERENCE.md) | Agent users | Quick lookup: which artifact types exist, minimum required context, template paths |
 | [template_metadata_format.md](template_metadata_format.md) | Template editors | Understand the `TEMPLATE_METADATA` block format; write validation rules for new templates; understand enforcement levels |
@@ -35,7 +35,7 @@ The scaffolding pipeline has three layers:
 |---|---|---|
 | 1 — Context schema | `mcp_server/schemas/contexts/` | User-facing. Pydantic validation. You provide this. |
 | 2 — RenderContext schema | `mcp_server/schemas/render_contexts/` | System-internal. Adds lifecycle fields. |
-| 3 — Jinja2 template | `mcp_server/scaffolding/templates/concrete/` | Output rendering. `TEMPLATE_METADATA` is the variable contract SSOT. |
+| 3 — Jinja2 template | `.pgmcp/templates/concrete/` | Output rendering. `TEMPLATE_METADATA` is the variable contract SSOT. |
 
 **To add a new artifact type, all six steps are required:**
 
@@ -44,7 +44,7 @@ The scaffolding pipeline has three layers:
 3. Export both from `mcp_server/schemas/__init__.py`
 4. Add the new type to the artifact-to-Context registry in `mcp_server/managers/artifact_manager.py`
 5. Enable the type in `.pgmcp/config/artifacts.yaml`
-6. Create the Jinja2 template in `mcp_server/scaffolding/templates/concrete/<type>.<ext>.jinja2`
+6. Create the Jinja2 template in `.pgmcp/templates/concrete/<type>.<ext>.jinja2`
 
 > Steps 1–4 require Python source code changes.
 

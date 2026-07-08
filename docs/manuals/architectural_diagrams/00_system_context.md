@@ -24,7 +24,7 @@ with it and through which channels. Two runtime variants exist — production an
 ## 1. Production Context
 
 In production, VS Code communicates directly with the MCP Server over stdio. The server reads
-and writes to the filesystem (`.phase-gate/` state files and workspace files) and calls GitHub via
+and writes to the filesystem (`.pgmcp/` state files and workspace files) and calls GitHub via
 the `gh` CLI. There is no HTTP layer — stdio is the only entry point into the server.
 
 ```mermaid
@@ -32,7 +32,7 @@ graph TD
     VSCode["VS Code<br/>(MCP Client)"]
     Server["MCP Server<br/>(FastMCP)"]
     Git["Git / GitHub"]
-    FS["Filesystem<br/>(.phase-gate/ + workspace)"]
+    FS["Filesystem<br/>(.pgmcp/ + workspace)"]
 
     VSCode -->|"stdio"| Server
     Server -->|"read/write"| FS
@@ -54,7 +54,7 @@ graph TD
     Proxy["MCP Proxy<br/>(dev only)"]
     Server["MCP Server<br/>(FastMCP)"]
     Git["Git / GitHub"]
-    FS["Filesystem<br/>(.phase-gate/ + workspace)"]
+    FS["Filesystem<br/>(.pgmcp/ + workspace)"]
 
     VSCode -->|"stdio (stable)"| Proxy
     Proxy -->|"stdio (restartable)"| Server
@@ -80,16 +80,15 @@ restart latency when `restart_server` is invoked.
 
 ## Related Documentation
 
-- **[docs/mcp_server/architectural_diagrams/01_module_decomposition.md][related-1]**
-- **[docs/reference/mcp/proxy_restart.md][related-2]**
+- **[01_module_decomposition.md][related-1]**
+- **[docs/reference/proxy_restart.md][related-2]**
 
-[related-1]: docs/mcp_server/architectural_diagrams/01_module_decomposition.md
-[related-2]: docs/reference/mcp/proxy_restart.md
+[related-1]: 01_module_decomposition.md
+[related-2]: ../../reference/proxy_restart.md
 
 ---
 
 ## Version History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 1.1 | 2026-07-08 | Agent | Reconcile `.phase-gate` with `.pgmcp` and fix relative links (#420) |
 | 1.0 | 2026-03-13 | Agent | Initial draft |

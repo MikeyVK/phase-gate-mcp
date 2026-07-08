@@ -3,8 +3,8 @@
 # Scaffolding Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.0  
-**Last Updated:** 2026-06-15  
+**Version:** 3.1  
+**Last Updated:** 2026-07-08  
 
 **Source:** [mcp_server/tools/scaffold_artifact.py](../../../../mcp_server/tools/scaffold_artifact.py) | [mcp_server/tools/scaffold_schema_tool.py](../../../../mcp_server/tools/scaffold_schema_tool.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_scaffold_schema_tool.py](../../../../tests/mcp_server/unit/tools/test_scaffold_schema_tool.py)
@@ -229,14 +229,14 @@ The registry is defined in `.pgmcp/config/artifacts.yaml`. Each entry has at min
 
 ## Template System
 
-Templates are organized in a tier hierarchy within `mcp_server/scaffolding/templates/`. See [docs/architecture/TEMPLATE_LIBRARY.md](../../../../docs/architecture/TEMPLATE_LIBRARY.md) for full architecture details.
+Templates are organized in a tier hierarchy within `.pgmcp/templates/`. See [docs/manuals/architecture.md](../../manuals/architecture.md) for full architecture details.
 
 ### Template Location
 
-Templates root: `mcp_server/scaffolding/templates/`
+Templates root: `.pgmcp/templates/`
 
 ```
-mcp_server/scaffolding/templates/
+.pgmcp/templates/
 ├── concrete/          ← artifact-specific output templates
 │   ├── dto.py.jinja2
 │   ├── worker.py.jinja2
@@ -493,14 +493,13 @@ When templates are updated:
 - [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml) — Complete artifact registry
 - [.pgmcp/config/project_structure.yaml](../../../../.pgmcp/config/project_structure.yaml) — Directory resolution
 - [.pgmcp/config/scaffold_metadata.yaml](../../../../.pgmcp/config/scaffold_metadata.yaml) — SCAFFOLD header specs
-- [mcp_server/scaffolding/templates/](../../../../mcp_server/scaffolding/templates/) — Template library
-- [docs/architecture/TEMPLATE_LIBRARY.md](../../../../docs/architecture/TEMPLATE_LIBRARY.md) — Three-layer architecture reference
+- [.pgmcp/templates/](../../../.pgmcp/templates/) — Template library
+- [docs/manuals/architecture.md](../../manuals/architecture.md) — Three-layer architecture reference
 
 ---
 
 ## Version History
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 3.1 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
 | 2.2 | 2026-06-04 | Agent | Remove legacy error example; fix artifact type tables (17 registered types); fix template paths; replaced fake context schema YAML with registry reference; removed stale links (#286) |
 | 2.1 | 2026-06-02 | Agent | Add scaffold_schema API Reference section; update tool counts (1→2); proactive schema exposure documented |
 | 2.0 | 2026-02-08 | Agent | Complete reference for scaffold_artifact: artifact registry, template system, directory resolution, SCAFFOLD headers, tier architecture |

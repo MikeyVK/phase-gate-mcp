@@ -637,7 +637,7 @@ This means the Jinja2 template (Layer 3) is the ground truth for what context a 
 
 ## Related Documentation
 
-- **[docs/architecture/TEMPLATE_LIBRARY.md](../../architecture/TEMPLATE_LIBRARY.md)** — Three-layer pipeline architecture
+- **[docs/manuals/architecture.md](../manuals/architecture.md)** — Three-layer pipeline architecture
 - **[docs/reference/mcp/README.md](README.md)** — Cluster navigation
 - **[docs/reference/mcp/validation_api.md](validation_api.md)** — TemplateAnalyzer and LayeredTemplateValidator API
 - **[mcp_server/validation/template_analyzer.py](../../../mcp_server/validation/template_analyzer.py)** — Metadata parsing implementation
@@ -647,7 +647,6 @@ This means the Jinja2 template (Layer 3) is the ground truth for what context a 
 
 ## Version History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 3.0 | 2026-07-08 | Agent | Correct broken architecture link (#420) |
 | 2.0 | 2026-06-04 | Agent | Fix template paths; add Layer 1/Layer 3 relationship section; update Related Documentation; remove legacy branding (#286) |
 | 1.0 | 2026-01-01 | Agent | Initial documentation |

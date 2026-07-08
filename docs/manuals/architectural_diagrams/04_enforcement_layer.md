@@ -34,7 +34,7 @@ configured rules and two dispatch paths: by tool name and by tool category.
 graph TD
     Tool["Tool<br/>execute()"]
     ER["EnforcementRunner<br/>run(event, timing, tool_category)"]
-    YAML[".phase-gate/config/enforcement.yaml"]
+    YAML[".pgmcp/config/enforcement.yaml"]
     CBP["check_branch_policy<br/>(handler ✅)"]
     CPS["check_pr_status<br/>(handler ✅)"]
     CPR["check_phase_readiness<br/>(handler ✅)"]
@@ -53,7 +53,7 @@ mutually exclusive per schema validator. A rule with neither field is skipped.
 
 ## 2. Currently Configured Rules
 
-Three rules exist in `.phase-gate/config/enforcement.yaml`.
+Three rules exist in `.pgmcp/config/enforcement.yaml`.
 
 | # | Event Source | Match | Timing | Action | Effect |
 |---|-------------|-------|--------|--------|--------|
@@ -65,12 +65,12 @@ Three rules exist in `.phase-gate/config/enforcement.yaml`.
 
 ## 3. Dynamic Branch Mutating Categories
 
-The `branch_mutating` tool category is defined dynamically in `.phase-gate/config/enforcement.yaml` under `categories: branch_mutating: [list of tools]`.
+The `branch_mutating` tool category is defined dynamically in `.pgmcp/config/enforcement.yaml` under `categories: branch_mutating: [list of tools]`.
 This decouples tools from policy logic and allows rules to be dispatched to a set of tools without class inheritance.
 
 ```mermaid
 graph TD
-    YAML[".phase-gate/config/enforcement.yaml"]
+    YAML[".pgmcp/config/enforcement.yaml"]
     Cat["Category: branch_mutating"]
 
     CreateBranch["CreateBranchTool"]
@@ -174,7 +174,7 @@ Raises `ConfigError` at startup if no `pr_status_reader` is injected.
 ### `check_phase_readiness`
 
 Reads `action.policy` as the required phase name. Reads `current_phase` from
-`.phase-gate/state.json` at call time (no caching). Raises `ValidationError` on mismatch or absent
+`.pgmcp/state.json` at call time (no caching). Raises `ValidationError` on mismatch or absent
 state file. Produces a `suggestion` note with `transition_phase(to_phase="<policy>")`.
 
 ---
@@ -232,12 +232,10 @@ is now handled directly by the transition tools.
 
 ---
 
-## Related Documentation
+- **[03_tool_layer.md][related-1]**
+- **[05_config_layer.md][related-2]**
+- **[docs/reference/tools/github.md][related-3]** — `submit_pr` tool reference
 
-- **[docs/mcp_server/architectural_diagrams/03_tool_layer.md][related-1]**
-- **[docs/mcp_server/architectural_diagrams/05_config_layer.md][related-2]**
-- **[docs/reference/mcp/tools/github.md][related-3]** — `submit_pr` tool reference
-
-[related-1]: docs/mcp_server/architectural_diagrams/03_tool_layer.md
-[related-2]: docs/mcp_server/architectural_diagrams/05_config_layer.md
-[related-3]: docs/reference/mcp/tools/github.md
+[related-1]: 03_tool_layer.md
+[related-2]: 05_config_layer.md
+[related-3]: ../../reference/tools/github.md

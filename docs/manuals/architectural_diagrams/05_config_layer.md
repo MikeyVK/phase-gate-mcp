@@ -15,7 +15,7 @@ load them.
 
 ## Scope
 
-**In Scope:** `mcp_server/config/` Python modules, `.phase-gate/` YAML files, load relationships
+**In Scope:** `mcp_server/config/` Python modules, `.pgmcp/` YAML files, load relationships
 
 **Out of Scope:** Pydantic schema detail, template system (`scaffolding/`)
 
@@ -37,7 +37,7 @@ graph TD
         SC --> SET["settings.py<br/>(server root)"]
     end
     subgraph YAML Config
-        PG[".phase-gate/"]
+        PG[".pgmcp/"]
         PG --> ENF["enforcement.yaml<br/>(enforcement rules)"]
         PG --> PC["phase_contracts.yaml<br/>(exit gates per phase)"]
         PG --> ART["artifacts.yaml<br/>(scaffold registry)"]
@@ -48,7 +48,7 @@ graph TD
     Managers -->|"runtime load"| PG
 ```
 
-Changes to `.phase-gate/` YAML files take effect without a server restart. Changes to
+Changes to `.pgmcp/` YAML files take effect without a server restart. Changes to
 `mcp_server/config/` require a restart (or `restart_server` in dev).
 
 ---
@@ -85,16 +85,14 @@ Changes to `.phase-gate/` YAML files take effect without a server restart. Chang
 
 ## Related Documentation
 
-- **[docs/mcp_server/architectural_diagrams/02_workflow_state_subsystem.md][related-1]**
-- **[docs/mcp_server/architectural_diagrams/04_enforcement_layer.md][related-2]**
+- **[02_workflow_state_subsystem.md][related-1]**
+- **[04_enforcement_layer.md][related-2]**
 
-[related-1]: docs/mcp_server/architectural_diagrams/02_workflow_state_subsystem.md
-[related-2]: docs/mcp_server/architectural_diagrams/04_enforcement_layer.md
-
+[related-1]: 02_workflow_state_subsystem.md
+[related-2]: 04_enforcement_layer.md
 ---
 
 ## Version History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 1.1 | 2026-07-08 | Agent | Reconcile `.phase-gate` with `.pgmcp` and fix relative links (#420) |
 | 1.0 | 2026-03-13 | Agent | Initial draft |

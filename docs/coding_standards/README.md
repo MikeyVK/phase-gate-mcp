@@ -226,8 +226,8 @@ scaffold_artifact(
 
 ## Related Documentation
 
-- **Architecture:** [docs/mcp_server/ARCHITECTURE.md](../mcp_server/ARCHITECTURE.md) - System design principles
-- **Reference:** [docs/mcp_server/README.md](../mcp_server/README.md) - Templates and examples
+- **Architecture:** [docs/manuals/architecture.md](../manuals/architecture.md) - System design principles
+- **Reference:** [docs/reference/README.md](../reference/README.md) - Templates and examples
 
 ## Support
 

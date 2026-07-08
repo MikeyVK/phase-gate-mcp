@@ -26,7 +26,7 @@ Practical guide for using the scaffolding pipeline: how to scaffold an artifact,
 
 **Out of Scope:**
 - Full TEMPLATE_METADATA format → See docs/reference/mcp/template_metadata_format.md
-- Architecture rationale → See docs/architecture/TEMPLATE_LIBRARY.md
+- Architecture rationale → See docs/manuals/architecture.md
 - Artifact type inventory → See docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md
 
 ---
@@ -39,7 +39,7 @@ When you call `scaffold_artifact(artifact_type, name, context)`, your call passe
 
 1. **Layer 1 — Context schema** (`mcp_server/schemas/contexts/`): your `context` dict is validated against a Pydantic schema. Required fields are enforced; unknown fields are rejected. This is the only layer you interact with directly.
 2. **Layer 2 — RenderContext schema** (`mcp_server/schemas/render_contexts/`): the system adds lifecycle fields (`output_path`, `template_id`, `scaffold_created`, `version_hash`). These are never user-facing.
-3. **Layer 3 — Jinja2 template** (`mcp_server/scaffolding/templates/concrete/`): the enriched context is rendered into the output artifact. The `TEMPLATE_METADATA` block is the Layer 3 variable contract SSOT.
+3. Layer 3 — Jinja2 template (`.pgmcp/templates/concrete/`): the enriched context is rendered into the output artifact. The `TEMPLATE_METADATA` block is the Layer 3 variable contract SSOT.
 
 **Practical implication:** always use `scaffold_schema` to discover required and optional context fields before calling `scaffold_artifact`.
 
@@ -164,7 +164,7 @@ All six steps are required. Steps 1–4 require Python source code changes.
 | 3 | `mcp_server/schemas/__init__.py` | Export `TypeContext` and `TypeRenderContext` |
 | 4 | `mcp_server/managers/artifact_manager.py` | Add the new type to the artifact-to-Context registry |
 | 5 | `.pgmcp/config/artifacts.yaml` | Enable the artifact type entry |
-| 6 | `mcp_server/scaffolding/templates/concrete/<type>.<ext>.jinja2` | Create Jinja2 template with `TEMPLATE_METADATA` block including `introspection.variables` |
+| 6 | `.pgmcp/templates/concrete/<type>.<ext>.jinja2` | Create Jinja2 template with `TEMPLATE_METADATA` block including `introspection.variables` |
 
 ### Context schema conventions
 
@@ -186,7 +186,7 @@ All six steps are required. Steps 1–4 require Python source code changes.
 ---
 
 ## Related Documentation
-- **[docs/architecture/TEMPLATE_LIBRARY.md][related-1]**
+- **[docs/manuals/architecture.md][related-1]**
 - **[docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md][related-2]**
 - **[docs/reference/mcp/template_metadata_format.md][related-3]**
 - **[docs/reference/mcp/tools/scaffolding.md][related-4]**
@@ -194,7 +194,7 @@ All six steps are required. Steps 1–4 require Python source code changes.
 <!-- Link definitions -->
 [source]: ../../mcp_server/tools/scaffold_artifact.py
 [tests]: ../../tests/mcp_server/integration/test_smoke_all_types.py
-[related-1]: ../../docs/architecture/TEMPLATE_LIBRARY.md
+[related-1]: ../manuals/architecture.md
 [related-2]: TEMPLATE_LIBRARY_QUICK_REFERENCE.md
 [related-3]: template_metadata_format.md
 [related-4]: tools/scaffolding.md
@@ -202,8 +202,7 @@ All six steps are required. Steps 1–4 require Python source code changes.
 ---
 
 ## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 3.0 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
+| 2.0 | 2026-06-04 | Agent | Full rewrite: three-layer model; real API and context examples; 6-step contributor guide; removed legacy paths and branding (#286) |
 | 2.0 | 2026-06-04 | Agent | Full rewrite: three-layer model; real API and context examples; 6-step contributor guide; removed legacy paths and branding (#286) |
 | 1.0 | 2026-02-07 | Agent | Initial draft |

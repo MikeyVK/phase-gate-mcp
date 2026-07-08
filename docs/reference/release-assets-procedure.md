@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-07-05T20:37Z updated= -->
 # Reference Guide: Release Assets Procedure and Manifest Specification
 
-**Status:** PRELIMINARY  
-**Version:** 0.1  
-**Last Updated:** 2026-07-05
+**Status:** ACTIVE  
+**Version:** 1.0.0  
+**Last Updated:** 2026-07-08
 
 ---
 
@@ -61,40 +61,25 @@ Target locations `./AGENTS.md`, `./.agents/` and `./.github/` (where they contai
 
 ## 2. Release Manifest Specification (`release_manifest.yaml`)
 
-A structured configuration file `release_manifest.yaml` in the workspace root defines which files are release-bound and packaged into the wheel assets:
+A structured configuration file `release_manifest.yaml` located under `.pgmcp/config/release_manifest.yaml` defines which files are release-bound and packaged into the wheel assets:
 
 ```yaml
-version: "1.0"
-package_assets:
-  # 1. MCP Runtime config & templates (resolved to .pgmcp/)
-  - source_path: ".pgmcp/config/"
-    target_path: "config/"
-  - source_path: ".pgmcp/templates/"
-    target_path: "templates/"
-  - source_path: ".pgmcp/template_registry.json"
-    target_path: "template_registry.json"
-
-  # 2. Release-bound documenten (setup & core guides only)
-  - source_path: "docs/setup/README.md"
-    target_path: "docs/setup/README.md"
-  - source_path: "docs/mcp_server/README.md"
-    target_path: "docs/mcp_server/README.md"
-  - source_path: "docs/mcp_server/USER_GUIDE.md"
-    target_path: "docs/mcp_server/USER_GUIDE.md"
-  - source_path: "docs/mcp_server/ARCHITECTURE.md"
-    target_path: "docs/mcp_server/ARCHITECTURE.md"
-  - source_path: "docs/reference/mcp/copilot-agent-instructions-model.md"
-    target_path: "docs/reference/mcp/copilot-agent-instructions-model.md"
-  - source_path: "docs/coding_standards/QUALITY_GATES.md"
-    target_path: "docs/coding_standards/QUALITY_GATES.md"
-  - source_path: "docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"
-    target_path: "docs/coding_standards/ARCHITECTURE_PRINCIPLES.md"
-
-  # 3. Agent instructions & Slash commands
-  - source_path: "docs/agents/rules/"
-    target_path: "agents/rules/"
-  - source_path: "docs/agents/workflows/"
-    target_path: "agents/workflows/"
+version: "1.0.0"
+assets:
+  - source: ".pgmcp/config"
+    target: "config"
+  - source: ".pgmcp/templates"
+    target: "templates"
+  - source: "docs/agents"
+    target: "agents"
+  - source: "docs/coding_standards"
+    target: "docs/coding_standards"
+  - source: "docs/manuals"
+    target: "docs/manuals"
+  - source: "docs/reference"
+    target: "docs/reference"
+  - source: "docs/setup"
+    target: "docs/setup"
 ```
 
 ---
@@ -118,22 +103,16 @@ The CLI `pgmcp --init` performs a strict flat copy of `mcp_server/assets/` to `.
 
 ---
 
-## 5. Deferred Implementation
-
-This procedure is deferred as a follow-up task for package build pipeline automation and release assets synchronization.
-Triage, tracking, and issue creation are deferred to the coordination role (@co) under Epic #416.
-
 ## Related Documentation
-- **[docs/mcp_server/USER_GUIDE.md][related-1]**
+- **[docs/manuals/user-guide.md][related-1]**
 
 <!-- Link definitions -->
 
-[related-1]: docs/mcp_server/USER_GUIDE.md
+[related-1]: docs/manuals/user-guide.md
 
 ---
-
-## Version History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 0.1 | 2026-07-05 | Agent | Initial draft |
+| 1.0.0 | 2026-07-08 | Agent | Document build automation, manifest paths, and schema matching implementation #420 |

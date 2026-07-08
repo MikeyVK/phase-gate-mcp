@@ -6,7 +6,7 @@
 **Version:** 2.1
 **Last Updated:** 2026-06-05
 
-**Source:** [mcp_server/scaffolding/templates/][source]
+**Source:** [.pgmcp/templates/][source]
 **Tests:** [tests/mcp_server/integration/test_smoke_all_types.py][tests]
 
 ---
@@ -65,7 +65,7 @@ Registry: `.pgmcp/config/artifacts.yaml`
 
 ## Template Location Reference
 
-Templates root: `mcp_server/scaffolding/templates/`
+Templates root: `.pgmcp/templates/`
 
 | Tier | Purpose | Examples |
 |---|---|---|
@@ -114,23 +114,22 @@ Templates root: `mcp_server/scaffolding/templates/`
 ## Related Documentation
 - **[docs/reference/mcp/README.md][related-1]**
 - **[docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md][related-2]**
-- **[docs/architecture/TEMPLATE_LIBRARY.md][related-3]**
+- **[docs/manuals/architecture.md][related-3]**
 - **[docs/reference/mcp/template_metadata_format.md][related-4]**
 
 <!-- Link definitions -->
-[source]: ../../mcp_server/scaffolding/templates/
+[source]: ../../.pgmcp/templates/
 [tests]: ../../tests/mcp_server/integration/test_smoke_all_types.py
 [related-1]: README.md
 [related-2]: TEMPLATE_LIBRARY_USAGE.md
-[related-3]: ../../docs/architecture/TEMPLATE_LIBRARY.md
+[related-3]: ../manuals/architecture.md
 [related-4]: template_metadata_format.md
 
 ---
 
 ## Version History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 3.0 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
 | 2.1 | 2026-06-05 | Agent | Reconciled artifact inventory with validated branch state: added adapter/resource/interface and validation_report; generic_doc minimum context updated to current schema-validated contract |
 | 2.0 | 2026-06-04 | Agent | Full rewrite: artifact inventory updated to all 17 registered types; correct template paths; three-layer model integrated; removed legacy paths and branding (#286) |
 | 1.0 | 2026-02-07 | Agent | Initial draft |

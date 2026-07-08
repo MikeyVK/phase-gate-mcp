@@ -194,6 +194,8 @@ mcp_server/
 ├── bootstrap.py                   # ServerBootstrapper + ConfigLayer + ManagerGraph (632 lines)
 ├── py.typed                       # PEP 561 marker
 │
+├── assets/                        # Packaged release assets (templates, configs, docs)
+│
 ├── adapters/                      # External system adapters (3 files)
 │   ├── filesystem.py              # File read/write operations
 │   ├── git_adapter.py             # GitPython wrapper
@@ -320,13 +322,7 @@ mcp_server/
 │   ├── template_introspector.py
 │   ├── version_hash.py
 │   ├── utils.py
-│   ├── components/                # 8 component files
-│   └── templates/                 # 4-tier template hierarchy
-│       ├── tier0_base_artifact.jinja2
-│       ├── tier1_*.jinja2          # Format bases
-│       ├── tier2_*.jinja2          # Language bases
-│       ├── tier3_*.jinja2          # Pattern fragments
-│       └── concrete/              # 22 final templates
+│   └── components/                # 8 component files
 │
 ├── services/                      # Application services
 │   ├── document_indexer.py
@@ -345,8 +341,7 @@ mcp_server/
 └── utils/                         # Shared utilities
     ├── atomic_json_writer.py      # Atomic file writes
     ├── path_resolver.py
-    ├── schema_utils.py
-    └── template_config.py
+    └── schema_utils.py
 ```
 
 ### Module Counts
@@ -773,7 +768,7 @@ class MyNewTool(ICoreTool[MyToolInput, MyToolOutput]):
 
 ### 13.3 Adding a New Scaffold Template
 
-1. Create a Jinja2 template in `mcp_server/scaffolding/templates/concrete/`
+1. Create a Jinja2 template in `.pgmcp/templates/concrete/`
 2. Register the artifact type in `.pgmcp/config/artifacts.yaml`
 3. Create a context schema in `mcp_server/schemas/contexts/`
 4. Use via `scaffold_artifact(artifact_type="...", name="...", context={...})`

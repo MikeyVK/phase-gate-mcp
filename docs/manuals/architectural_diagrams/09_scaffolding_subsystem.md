@@ -61,20 +61,15 @@ mcp_server/
     ├── metadata.py            ← ScaffoldMetadataParser
     ├── utils.py               ← Path helpers
     ├── version_hash.py        ← Deterministic version computation
-    ├── components/            ← 11 concrete ComponentScaffolder implementations
-    │   ├── adapter.py         worker.py
-    │   ├── doc.py             tool.py
-    │   ├── dto.py             test.py
-    │   ├── generic.py         service.py
-    │   ├── interface.py       schema.py
-    │   └── resource.py
-    └── templates/             ← 4-tier Jinja2 template hierarchy
-        ├── tier0_base_artifact.jinja2
-        ├── tier1_*.jinja2     (base_code, base_config, base_document, base_tracking)
-        ├── tier2_*.jinja2     (base_markdown, base_python, base_yaml, tracking_markdown)
-        ├── tier3_pattern_*.jinja2  (30+ macro files: python + markdown categories)
-        └── concrete/          ← 1 template per artifact type
-```
+    └── components/            ← 11 concrete ComponentScaffolder implementations
+        ├── adapter.py         worker.py
+        ├── doc.py             tool.py
+        ├── dto.py             test.py
+        ├── generic.py         service.py
+        ├── interface.py       schema.py
+        └── resource.py
+
+*Note: Template files are stored outside the package in the Git-tracked workspace root under `.pgmcp/templates/`.*
 
 ---
 
@@ -155,7 +150,7 @@ detect drift and preserve `created` timestamps.
 | ID | Severity | Description |
 |----|----------|-------------|
 | SC-1 | Medium | `ArtifactManager` instantiates the scaffolding classes directly rather than receiving them via DI, making unit testing harder |
-| SC-2 | Low | No public API for listing available artifact types; callers must read `.phase-gate/artifacts.yaml` directly |
+| SC-2 | Low | No public API for listing available artifact types; callers must read `.pgmcp/config/artifacts.yaml` directly |
 | SC-3 | Low | `generic.py` scaffolder acts as catch-all but has no strict schema — context errors surface only at render time |
 
 ---
@@ -184,6 +179,5 @@ detect drift and preserve `created` timestamps.
 
 ## Version History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 1.1 | 2026-07-08 | Agent | Update template paths to Git-tracked `.pgmcp/templates` outside python package (#420) |
 | 1.0 | 2026-03-13 | Agent | Initial draft — full scaffolding subsystem documentation |

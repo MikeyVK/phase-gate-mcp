@@ -35,7 +35,7 @@ graph LR
         TC["template_config<br/>template_config.py"]
     end
 
-    subgraph YAML["YAML Runtime Config (.phase-gate/)"]
+    subgraph YAML["YAML Runtime Config (.pgmcp/config/)"]
         WC["WorkflowConfig<br/>workflows.py"]
         WPC["WorkphasesConfig<br/>workphases_config.py"]
         ARC["ArtifactRegistryConfig<br/>artifact_registry_config.py"]
@@ -67,16 +67,16 @@ graph LR
 
 | Config Class | YAML File | Primary Consumer(s) |
 |-------------|-----------|---------------------|
-| `WorkflowConfig` | `.phase-gate/workflows.yaml` | `PhaseStateEngine`, `ProjectManager`, `project_tools`, `issue_tools` |
-| `WorkphasesConfig` | `.phase-gate/workphases.yaml` or similar | `PhaseStateEngine`, `PhaseContractResolver` |
-| `ArtifactRegistryConfig` | `.phase-gate/artifacts.yaml` | `ArtifactManager` |
-| `LabelConfig` | `.phase-gate/labels.yaml` | `label_tools`, `issue_tools` |
-| `IssueConfig` | `.phase-gate/issue_config.yaml` | `issue_tools` |
-| `MilestoneConfig` | `.phase-gate/milestone_config.yaml` | `issue_tools` |
-| `ScopeConfig` | `.phase-gate/scope_config.yaml` | `issue_tools` |
-| `ContributorConfig` | `.phase-gate/contributors.yaml` | `issue_tools` |
-| `ProjectStructureConfig` | `.phase-gate/project_structure.yaml` | `ProjectManager` |
-| `OperationPoliciesConfig` | `.phase-gate/operation_policies.yaml` | `QAManager` (indirect) |
+| `WorkflowConfig` | `.pgmcp/config/workflows.yaml` | `PhaseStateEngine`, `ProjectManager`, `project_tools`, `issue_tools` |
+| `WorkphasesConfig` | `.pgmcp/config/workphases.yaml` or similar | `PhaseStateEngine`, `PhaseContractResolver` |
+| `ArtifactRegistryConfig` | `.pgmcp/config/artifacts.yaml` | `ArtifactManager` |
+| `LabelConfig` | `.pgmcp/config/labels.yaml` | `label_tools`, `issue_tools` |
+| `IssueConfig` | `.pgmcp/config/issue_config.yaml` | `issue_tools` |
+| `MilestoneConfig` | `.pgmcp/config/milestone_config.yaml` | `issue_tools` |
+| `ScopeConfig` | `.pgmcp/config/scope_config.yaml` | `issue_tools` |
+| `ContributorConfig` | `.pgmcp/config/contributors.yaml` | `issue_tools` |
+| `ProjectStructureConfig` | `.pgmcp/config/project_structure.yaml` | `ProjectManager` |
+| `OperationPoliciesConfig` | `.pgmcp/config/operation_policies.yaml` | `QAManager` (indirect) |
 
 ---
 
@@ -143,18 +143,16 @@ Tools that bypass managers and import config directly.
 
 ## Related Documentation
 
-- **[docs/mcp_server/architectural_diagrams/01_module_decomposition.md][related-1]**
-- **[docs/mcp_server/architectural_diagrams/05_config_layer.md][related-2]**
-- **[docs/mcp_server/architectural_diagrams/09_scaffolding_subsystem.md][related-3]**
+- **[01_module_decomposition.md][related-1]**
+- **[05_config_layer.md][related-2]**
+- **[09_scaffolding_subsystem.md][related-3]**
 
-[related-1]: docs/mcp_server/architectural_diagrams/01_module_decomposition.md
-[related-2]: docs/mcp_server/architectural_diagrams/05_config_layer.md
-[related-3]: docs/mcp_server/architectural_diagrams/09_scaffolding_subsystem.md
-
+[related-1]: 01_module_decomposition.md
+[related-2]: 05_config_layer.md
+[related-3]: 09_scaffolding_subsystem.md
 ---
 
 ## Version History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
+| 1.1 | 2026-07-08 | Agent | Reconcile `.phase-gate` with `.pgmcp/config` and fix relative links (#420) |
 | 1.0 | 2026-03-13 | Agent | Initial draft — full config consumer cross-reference |
