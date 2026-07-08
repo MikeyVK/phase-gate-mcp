@@ -51,7 +51,7 @@ mcp_server/
 Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 
 | File | Purpose |
-|---|---|
+| :--- | :--- |
 | `workflows.yaml` / `workphases.yaml` | Phase sequences and lifecycle states |
 | `policies.yaml` / `enforcement.yaml` | Transition rules and strictness levels |
 | `artifacts.yaml` / `contracts.yaml` | Expected deliverables per phase |
@@ -63,7 +63,7 @@ Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 ## Environment Variables
 
 | Variable | Required | Description |
-|---|---|---|
+| :--- | :--- | :--- |
 | `PGMCP_WORKSPACE_ROOT` | Yes | Absolute path to the repository root |
 | `PGMCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.pgmcp`) |
 | `GITHUB_TOKEN` | Yes | Personal access token with `repo` and `workflow` scopes |
