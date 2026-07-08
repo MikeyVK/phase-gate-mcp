@@ -64,13 +64,13 @@ Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 
 | Variable | Required | Description |
 |---|---|---|
-| `MCP_WORKSPACE_ROOT` | Yes | Absolute path to the repository root |
-| `MCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.pgmcp`) |
+| `PGMCP_WORKSPACE_ROOT` | Yes | Absolute path to the repository root |
+| `PGMCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.pgmcp`) |
 | `GITHUB_TOKEN` | Yes | Personal access token with `repo` and `workflow` scopes |
 | `GITHUB_OWNER` | Yes | GitHub account or org name |
 | `GITHUB_REPO` | Yes | Repository name |
 | `GITHUB_PROJECT_NUMBER` | No | GitHub Projects number for issue tracking |
-| `MCP_SERVER_NAME` | No | Server name reported in MCP handshake (default: `phase-gate-mcp`) |
+| `PGMCP_SERVER_NAME` | No | Server name reported in MCP handshake (default: `phase-gate-mcp`) |
 | `LOG_LEVEL` | No | Logging verbosity (default: `INFO`) |
 
 ---

@@ -30,9 +30,9 @@ The server is configured via a YAML file (`mcp_config.yaml`) or environment vari
 |----------|-------------|-------|
 | `GITHUB_TOKEN` | GitHub Personal Access Token (required for GitHub integration) | None |
 | `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
-| `MCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.pgmcp` |
-| `MCP_LOGS_DIR` | Sub-directory under server_root for log files | `logs` |
-| `MCP_CONFIG_PATH` | Path to configuration file | `mcp_config.yaml` |
+| `PGMCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.pgmcp` |
+| `PGMCP_LOGS_DIR` | Sub-directory under server_root for log files | `logs` |
+| `PGMCP_CONFIG_PATH` | Path to configuration file | `mcp_config.yaml` |
 ### 3.2 Configuration File (`mcp_config.yaml`)
 
 Example configuration:
