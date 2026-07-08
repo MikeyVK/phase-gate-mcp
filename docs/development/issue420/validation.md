@@ -17,12 +17,14 @@
 ### Prerequisites
 - Config version standardized to `"1.0.0"`
 - Python 3.10+ virtual environments (`.venv` and `pgmcp_stable_venv`)
-- Mapped assets compiled using `scripts/build_package.py`
+- Mapped assets compiled using `scripts/build_package.py` (the entire `mcp_server/assets/` directory is completely Git-ignored)
 
 ### Summary Verdict
 **PASS**
 
-The entire test suite passes successfully and the core functionality behaves as planned. All quality gates (Ruff Format, Strict Linting, Imports, Line Length, Pyright) pass cleanly without warnings or errors.
+The entire test suite passes successfully and the core functionality behaves as planned. All quality gates (Ruff Format, Strict Linting, Imports, Line Length, Pyright) pass cleanly. The blockers regarding hardcoded versions in `loader.py` and partial assets gitignore have been fully resolved:
+1. Version requirements are now resolved dynamically from the Pydantic schemas' Literal definitions.
+2. The `mcp_server/assets/` directory is fully Git-ignored, and `tests/conftest.py` implements a fail-fast check to ensure developers are prompted to run the build script on fresh checkouts.
 
 ### Full-Suite Test Result
 **PASS**
