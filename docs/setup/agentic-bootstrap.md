@@ -117,6 +117,48 @@ initialize_project(issue_number=1, issue_title="Bootstrap project", workflow_nam
 ```
 This tool call generates `.pgmcp/state.json` and transitions the project to the initial `research` phase.
 
+---
+
+## Scenario B: Bootstrapping an Existing Cloned Project
+
+When a developer clones an existing repository that already has `pgmcp` integrated, the global rules (`AGENTS.md`), agent prompts, and custom workflows are already tracked in Git. The assistant only needs to bootstrap the **machine-specific, gitignored runtime files**:
+
+### 1. Recreate Virtual Environment & Install Dependencies
+Run the following commands to recreate the local virtual environment and install dependencies:
+```powershell
+# Create local virtual environment
+python -m venv .venv
+
+# Install all project dependencies (including phase-gate-mcp)
+.\.venv\Scripts\python -m pip install -r requirements.txt
+.\.venv\Scripts\python -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python -m pip install -e .
+```
+
+### 2. Deploy Local IDE Configuration
+Since the configuration templates are already tracked under `.pgmcp/agents/` in the repository, the agent does NOT run `pgmcp --init`. Instead, it simply copies the pre-configured templates to the local, gitignored config paths:
+
+* **For Google Antigravity**:
+  ```powershell
+  # Copy local mcp_config.json from templates
+  Copy-Item .pgmcp/agents/antigravity/mcp_config.json .agents/mcp_config.json
+  ```
+  *Note: The agent must edit `.agents/mcp_config.json` to replace the placeholder paths with the absolute paths of the newly cloned workspace.*
+
+* **For VS Code**:
+  ```powershell
+  # Copy VS Code MCP server configuration
+  Copy-Item .pgmcp/agents/vscode/copilot/mcp.json .vscode/mcp.json
+  ```
+
+### 3. Initialize Local State File
+The state file `.pgmcp/state.json` is machine-specific and gitignored. To recreate it on the active branch, the assistant must run:
+```json
+initialize_project(issue_number=<current_issue>, issue_title="<current_title>", workflow_name="<workflow_type>")
+```
+
+---
+
 ## Related Documentation
 - [docs/setup/README.md](file:///c:/temp/pgmcp/docs/setup/README.md)
 ---
