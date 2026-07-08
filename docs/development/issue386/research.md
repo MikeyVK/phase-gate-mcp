@@ -1,9 +1,9 @@
 <!-- docs\development\issue386\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-07-08T19:31Z updated=2026-07-08T21:32Z -->
+<!-- template=research version=8b7bb3ab created=2026-07-08T19:31Z updated=2026-07-08T21:46Z -->
 # Research on renaming env var prefix MCP to PGMCP
 
 **Status:** APPROVED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-07-08
 
 ---
@@ -55,9 +55,15 @@ The environment variables in scope for renaming from `MCP_*` to `PGMCP_*` are:
 
 ### 2.2. Test Code Usages
 *   **[tests/conftest.py](file:///c:/temp/pgmcp/tests/conftest.py):**
-    *   Sets `MCP_TEMPLATE_ROOT` and `MCP_CONFIG_ROOT` in `pytest_sessionstart` to isolate tests from host environment configurations.
+    *   Sets `MCP_TEMPLATE_ROOT` and `MCP_CONFIG_ROOT` in `pytest_sessionstart`.
+*   **[tests/mcp_server/unit/conftest.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/conftest.py):**
+    *   Mocks `MCP_SERVER_NAME` as `test-server`.
 *   **[tests/mcp_server/unit/config/test_settings.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/config/test_settings.py):**
     *   Mocks `MCP_CONFIG_PATH`, `MCP_SERVER_PROJECT_DIR`, `MCP_LOGS_DIR`, `MCP_SERVER_NAME`, `MCP_WORKSPACE_ROOT`, and `MCP_CONFIG_ROOT` via `monkeypatch`.
+*   **[tests/mcp_server/unit/test_c260_c2_state_root_injection.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/test_c260_c2_state_root_injection.py):**
+    *   Mocks `MCP_WORKSPACE_ROOT` and `MCP_CONFIG_ROOT` via `monkeypatch` to verify root directory injection logic.
+*   **[tests/mcp_server/integration/mcp_server/conftest.py](file:///c:/temp/pgmcp/tests/mcp_server/integration/mcp_server/conftest.py):**
+    *   Mentions `MCP_SERVER_NAME` in comments and docstrings regarding test isolation.
 *   **[tests/mcp_server/unit/config/test_c_settings_structural.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/config/test_c_settings_structural.py):**
     *   Will be updated with assertions verifying that no `MCP_*` prefixes are left in the source code of `settings.py`.
 
@@ -71,10 +77,11 @@ The following active documentation surfaces must be updated:
 6.  [docs/setup/dev-isolation.md](file:///c:/temp/pgmcp/docs/setup/dev-isolation.md) - Developer isolation diagram/guide.
 7.  [docs/setup/README.md](file:///c:/temp/pgmcp/docs/setup/README.md) - Getting started machine setup guide.
 
-### 2.4. Agent Configuration Usages
+### 2.4. Agent & Server Configuration Usages
 User-facing and editor configuration templates must be updated:
 *   [docs/agents/antigravity/mcp_config.json](file:///c:/temp/pgmcp/docs/agents/antigravity/mcp_config.json)
 *   [docs/agents/vscode/copilot/mcp.json](file:///c:/temp/pgmcp/docs/agents/vscode/copilot/mcp.json)
+*   [docs/setup/mcp.json](file:///c:/temp/pgmcp/docs/setup/mcp.json)
 
 ---
 
@@ -132,3 +139,4 @@ graph TD
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-07-08 | Agent | Initial research and approved clean break strategy |
+| 1.1 | 2026-07-08 | Agent | Expanded scope to include test files and setup/mcp.json based on QA feedback |

@@ -52,7 +52,7 @@
               },
               {
                 "id": "D1.4",
-                "description": "Update of pytest-monkeypatches in test_settings.py and tests/conftest.py."
+                "description": "Update of pytest-monkeypatches in test_settings.py, tests/conftest.py, tests/mcp_server/unit/conftest.py, and test_c260_c2_state_root_injection.py."
               },
               {
                 "id": "D1.5",
@@ -71,7 +71,7 @@
               },
               {
                 "id": "D2.2",
-                "description": "Updates in agent configurations (mcp_config.json and mcp.json)."
+                "description": "Updates in agent configurations (mcp_config.json, mcp.json, and docs/setup/mcp.json)."
               }
             ],
             "exit_criteria": "All modified documentation and JSON configs are validated, and quality gates pass."
