@@ -285,8 +285,8 @@ Use Co → Imp only for child technical delegation. Epic-owned branch review and
 
 ## 📚 Key Documentation
 
-- **[MCP Tools Reference](docs/reference/mcp/tools/README.md)** — All MCP tools with parameters and examples
-- **[Agent Instructions Model](docs/reference/mcp/copilot-agent-instructions-model.md)** — How instruction files cooperate with phase-gate-mcp
+- **[MCP Tools Reference](docs/reference/tools/README.md)** — All MCP tools with parameters and examples
+- **[Agent Instructions Model](docs/reference/copilot-agent-instructions-model.md)** — How instruction files cooperate with phase-gate-mcp
 - **[Quality Gates](docs/coding_standards/QUALITY_GATES.md)** — Validation standards
 - **[Architecture Principles](docs/coding_standards/ARCHITECTURE_PRINCIPLES.md)** — Binding architecture contract
 - **[Type Checking Playbook](docs/coding_standards/TYPE_CHECKING_PLAYBOOK.md)** — Typing issue resolution order

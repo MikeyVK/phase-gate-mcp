@@ -11,7 +11,7 @@ An MCP (Model Context Protocol) server that enforces structured software develop
 > Read **[AGENTS.md](AGENTS.md)** immediately to initialize your cooperation protocol.
 > It contains the binding tool priority matrix, TDD cycle protocol, three-agent model, and all operating constraints.
 >
-> For MCP server architecture details, see [docs/reference/mcp/mcp_vision_reference.md](docs/reference/mcp/mcp_vision_reference.md).
+For MCP server architecture details, see [docs/reference/mcp_vision_reference.md](docs/reference/mcp_vision_reference.md).
 
 ---
 
