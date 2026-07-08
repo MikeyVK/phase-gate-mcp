@@ -6,21 +6,33 @@ configfile: pyproject.toml
 plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [6 items]
+8 workers [3 items]
 
 scheduling tests via LoadScheduling
 
-tests/mcp_server/unit/test_cli.py::test_cli_version 
-tests/mcp_server/unit/test_cli.py::test_cli_run 
-tests/mcp_server/unit/test_cli.py::test_cli_init_flat_copy 
-tests/mcp_server/unit/test_cli.py::test_cli_init_success 
-tests/mcp_server/unit/test_cli.py::test_cli_fails_fast_when_state_dir_missing 
-tests/mcp_server/unit/test_cli.py::test_cli_init_already_exists 
-[gw1] [ 16%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_run 
-[gw5] [ 33%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_init_flat_copy 
-[gw4] [ 50%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_init_already_exists 
-[gw3] [ 66%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_fails_fast_when_state_dir_missing 
-[gw2] [ 83%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_init_success 
-[gw0] [100%] PASSED tests/mcp_server/unit/test_cli.py::test_cli_version 
+tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_vscode_agents_partitioned 
+tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_original_files_untouched 
+tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_antigravity_agents_partitioned 
+[gw2] [ 33%] PASSED tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_original_files_untouched 
+[gw0] [ 66%] FAILED tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_vscode_agents_partitioned 
+[gw1] [100%] FAILED tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_antigravity_agents_partitioned 
 
-============================== 6 passed in 6.74s ==============================
+================================== FAILURES ===================================
+___________ TestC5AgentPartitioning.test_vscode_agents_partitioned ____________
+[gw0] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
+tests\documentation\test_c5_agent_partitioning.py:38: in test_vscode_agents_partitioned
+    assert vscode_agents_md.exists()
+E   AssertionError: assert False
+E    +  where False = exists()
+E    +    where exists = WindowsPath('C:/temp/pgmcp/docs/agents/vscode/AGENTS.md').exists
+_________ TestC5AgentPartitioning.test_antigravity_agents_partitioned _________
+[gw1] win32 -- Python 3.13.7 C:\temp\pgmcp\.venv\Scripts\python.exe
+tests\documentation\test_c5_agent_partitioning.py:58: in test_antigravity_agents_partitioned
+    assert antigravity_agents_md.exists()
+E   AssertionError: assert False
+E    +  where False = exists()
+E    +    where exists = WindowsPath('C:/temp/pgmcp/docs/agents/antigravity/AGENTS.md').exists
+=========================== short test summary info ===========================
+FAILED tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_vscode_agents_partitioned
+FAILED tests/documentation/test_c5_agent_partitioning.py::TestC5AgentPartitioning::test_antigravity_agents_partitioned
+========================= 2 failed, 1 passed in 4.56s =========================

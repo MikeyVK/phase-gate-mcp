@@ -3,8 +3,8 @@
   "issue_number": 420,
   "workflow_name": "feature",
   "current_phase": "implementation",
-  "current_cycle": 4,
-  "last_cycle": 3,
+  "current_cycle": 5,
+  "last_cycle": 4,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -23,6 +23,12 @@
       "name": "CLI Flat Copy Initialization",
       "forced": false,
       "entered": "2026-07-08T05:07:59.358973+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "IDE Agent Instructions Partitioning",
+      "forced": false,
+      "entered": "2026-07-08T05:14:09.229121+00:00"
     }
   ],
   "required_phases": [
@@ -146,5 +152,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
