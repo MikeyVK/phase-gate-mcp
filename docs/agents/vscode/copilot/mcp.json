@@ -4,7 +4,9 @@
       "type": "stdio",
       "command": "python",
       "args": ["-m", "mcp_server.core.proxy"],
+      "cwd": "${workspaceFolder}",
       "env": {
+        "PYTHONPATH": "${workspaceFolder}",
         "LOG_LEVEL": "INFO",
         "MCP_SERVER_NAME": "phase-gate-mcp",
         "MCP_WORKSPACE_ROOT": "${workspaceFolder}",
