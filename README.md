@@ -37,6 +37,7 @@ Each workflow defines an ordered sequence of phases (e.g. `research → design �
 
 ## Architecture
 
+```
 mcp_server/
 ├── core/          # Phase state engine, proxy, operation notes, error handling
 ├── managers/      # State persistence, git operations, pytest runner, QA manager
@@ -47,6 +48,7 @@ mcp_server/
 ├── config/        # Settings, schema loading, config contracts
 ├── schemas/       # Pydantic schemas for all internal contracts
 └── assets/        # Packaged release assets (templates, configs, docs)
+```
 
 Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 
