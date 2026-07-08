@@ -52,7 +52,7 @@
               },
               {
                 "id": "D1.4",
-                "description": "Update of pytest-monkeypatches in test_settings.py, tests/conftest.py, tests/mcp_server/unit/conftest.py, and test_c260_c2_state_root_injection.py."
+                "description": "Update of pytest-monkeypatches in test_settings.py, tests/conftest.py, tests/mcp_server/unit/conftest.py, test_c260_c2_state_root_injection.py, test_server.py, and test_cycle_tools.py."
               },
               {
                 "id": "D1.5",

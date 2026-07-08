@@ -1,9 +1,9 @@
 <!-- docs\development\issue386\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-07-08T19:31Z updated=2026-07-08T21:46Z -->
+<!-- template=research version=8b7bb3ab created=2026-07-08T19:31Z updated=2026-07-08T22:02Z -->
 # Research on renaming env var prefix MCP to PGMCP
 
 **Status:** APPROVED  
-**Version:** 1.1  
+**Version:** 1.2  
 **Last Updated:** 2026-07-08
 
 ---
@@ -62,6 +62,10 @@ The environment variables in scope for renaming from `MCP_*` to `PGMCP_*` are:
     *   Mocks `MCP_CONFIG_PATH`, `MCP_SERVER_PROJECT_DIR`, `MCP_LOGS_DIR`, `MCP_SERVER_NAME`, `MCP_WORKSPACE_ROOT`, and `MCP_CONFIG_ROOT` via `monkeypatch`.
 *   **[tests/mcp_server/unit/test_c260_c2_state_root_injection.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/test_c260_c2_state_root_injection.py):**
     *   Mocks `MCP_WORKSPACE_ROOT` and `MCP_CONFIG_ROOT` via `monkeypatch` to verify root directory injection logic.
+*   **[tests/mcp_server/unit/test_server.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/test_server.py):**
+    *   Cleans up `MCP_SERVER_PROJECT_DIR` in test environment.
+*   **[tests/mcp_server/unit/tools/test_cycle_tools.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/tools/test_cycle_tools.py):**
+    *   Cleans up `MCP_SERVER_PROJECT_DIR` in test environment.
 *   **[tests/mcp_server/integration/mcp_server/conftest.py](file:///c:/temp/pgmcp/tests/mcp_server/integration/mcp_server/conftest.py):**
     *   Mentions `MCP_SERVER_NAME` in comments and docstrings regarding test isolation.
 *   **[tests/mcp_server/unit/config/test_c_settings_structural.py](file:///c:/temp/pgmcp/tests/mcp_server/unit/config/test_c_settings_structural.py):**
@@ -140,3 +144,4 @@ graph TD
 |---------|------|--------|---------|
 | 1.0 | 2026-07-08 | Agent | Initial research and approved clean break strategy |
 | 1.1 | 2026-07-08 | Agent | Expanded scope to include test files and setup/mcp.json based on QA feedback |
+| 1.2 | 2026-07-08 | Agent | Added tests/mcp_server/unit/test_server.py and tests/mcp_server/unit/tools/test_cycle_tools.py |

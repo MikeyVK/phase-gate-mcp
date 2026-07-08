@@ -154,7 +154,7 @@ class TestCycleTools:
 
     @pytest.fixture(autouse=True)
     def _clean_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("MCP_SERVER_PROJECT_DIR", raising=False)
+        monkeypatch.delenv("PGMCP_SERVER_PROJECT_DIR", raising=False)
 
     def test_cycle_tools_require_workspace_root_and_define_enforcement_events(
         self,

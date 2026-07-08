@@ -350,7 +350,7 @@ class TestServerToolRegistration:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Dispatch pre-hook should return a phase error and never reach GitHub PR creation."""
-        monkeypatch.delenv("MCP_SERVER_PROJECT_DIR", raising=False)
+        monkeypatch.delenv("PGMCP_SERVER_PROJECT_DIR", raising=False)
         _bootstrap_workspace_configs(tmp_path)
         _write_phase_state(tmp_path, "documentation")
 
