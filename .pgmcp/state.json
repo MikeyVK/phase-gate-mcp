@@ -2,7 +2,7 @@
   "branch": "epic/416-installable-wheel-standalone-mcp-server",
   "issue_number": 416,
   "workflow_name": "epic",
-  "current_phase": "research",
+  "current_phase": "validation",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -15,11 +15,20 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Forced transition to validation phase to scaffold and commit the validation report on the epic branch.",
   "issue_title": "Installable wheel and standalone MCP server",
   "parent_branch": "feature/385-package-identity-rename-pgmcp-entry-point",
   "created_at": "2026-07-05T21:41:25.131895+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "validation",
+      "timestamp": "2026-07-08T20:32:35.800710+00:00",
+      "human_approval": "MikeyVK",
+      "forced": true,
+      "skip_reason": "Forced transition to validation phase to scaffold and commit the validation report on the epic branch."
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
