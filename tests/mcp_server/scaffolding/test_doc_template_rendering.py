@@ -5,12 +5,11 @@ Tests that all templates render correctly with tier3 patterns after refactoring.
 @dependencies: pytest, jinja2, pathlib, mcp_server.scaffolding.templates
 """
 
-from pathlib import Path
-
 import pytest
+from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader
 
-TEMPLATES_DIR = Path(__file__).parents[3] / "mcp_server" / "scaffolding" / "templates"
+TEMPLATES_DIR = get_template_root()
 
 
 @pytest.fixture
@@ -27,7 +26,7 @@ def test_planning_md_renders_with_patterns(jinja_env: Environment) -> None:
         "name": "test-planning",
         "title": "Test Planning Document",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-05",
         "timestamp": "2026-02-05T10:00:00",
         "purpose": "This is the purpose of the planning document",
@@ -90,7 +89,7 @@ def test_research_md_renders_with_patterns(jinja_env: Environment) -> None:
         "name": "test-research",
         "title": "Test Research",
         "status": "DRAFT",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-05",
         "timestamp": "2026-02-05T10:00:00",
         "purpose": "Research purpose text",
@@ -151,7 +150,7 @@ def test_design_md_renders_with_extended_header(jinja_env: Environment) -> None:
         "name": "test-design",
         "title": "Test Design",
         "status": "APPROVED",
-        "version": "2.0",
+        "version": "1.0.0",
         "created": "2026-02-01",
         "last_updated": "2026-02-05",
         "implementation_phase": "design",
@@ -182,7 +181,7 @@ def test_design_md_renders_with_extended_header(jinja_env: Environment) -> None:
 
     # Verify basic header pattern works (created/implementation_phase removed per Issue #5)
     assert "**Status:** APPROVED" in output
-    assert "**Version:** 2.0" in output
+    assert "**Version:** 1.0.0" in output
     assert "**Last Updated:** 2026-02-05" in output
 
     # Verify all 5 tier1 pattern sections from Task 3.6.2
@@ -223,7 +222,7 @@ def test_architecture_md_renders_with_numbered_sections(jinja_env: Environment) 
         "name": "test-architecture",
         "title": "Test Architecture",
         "status": "DEFINITIVE",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-05",
         "timestamp": "2026-02-05T10:00:00",
         "purpose": "Architecture purpose text",
@@ -290,7 +289,7 @@ def test_reference_md_renders_with_custom_header(jinja_env: Environment) -> None
         "name": "test-reference",
         "title": "Test Reference",
         "status": "DEFINITIVE",
-        "version": "1.0",
+        "version": "1.0.0",
         "last_updated": "2026-02-05",
         "timestamp": "2026-02-05T10:00:00",
         "source_file": "src/module.py",

@@ -19,6 +19,7 @@ Following TDD: These tests are written BEFORE implementation (RED phase).
 # pyright: basic, reportPrivateUsage=false
 # Standard library
 from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 # Third-party
 import jinja2
@@ -170,12 +171,7 @@ class TestTemplateIntrospectorInheritance:
         """
         # Arrange
 
-        template_root = (
-            Path(__file__).parent.parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-        )
+        template_root = get_template_root()
         template_path = "concrete/worker.py.jinja2"
 
         # Act
@@ -199,12 +195,7 @@ class TestTemplateIntrospectorInheritance:
         """RED: Verify that variables from ALL tiers in chain are detected."""
         # Arrange
 
-        template_root = (
-            Path(__file__).parent.parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-        )
+        template_root = get_template_root()
         template_path = "concrete/worker.py.jinja2"
 
         # Act
@@ -235,12 +226,7 @@ class TestTemplateIntrospectorInheritance:
         """RED: Verify system fields from tier0 are still filtered out."""
         # Arrange
 
-        template_root = (
-            Path(__file__).parent.parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-        )
+        template_root = get_template_root()
         template_path = "concrete/worker.py.jinja2"
 
         # Act

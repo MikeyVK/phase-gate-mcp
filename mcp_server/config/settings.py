@@ -54,8 +54,25 @@ class ServerSettings(BaseModel):
     name: str = "phase-gate-mcp"
     workspace_root: str = Field(default_factory=os.getcwd)
     config_root: str | None = None
-    server_root_dir: str = ".phase-gate"
+    template_root: str | None = None
+    server_root_dir: str = ".pgmcp"
     logs_dir: str = "logs"
+
+    @property
+    def resolved_server_root(self) -> Path:
+        return Path(self.workspace_root) / self.server_root_dir
+
+    @property
+    def resolved_config_root(self) -> Path:
+        if self.config_root:
+            return Path(self.config_root)
+        return self.resolved_server_root / "config"
+
+    @property
+    def resolved_template_root(self) -> Path:
+        if self.template_root:
+            return Path(self.template_root)
+        return self.resolved_server_root / "templates"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -82,30 +99,31 @@ class Settings(BaseModel):
 
     @classmethod
     def from_env(cls) -> "Settings":
-        """Load settings from env vars with optional MCP_CONFIG_PATH overlay."""
+        """Load settings from env vars with optional PGMCP_CONFIG_PATH overlay."""
         config_data: dict[str, Any] = {}
 
-        path_value = os.environ.get("MCP_CONFIG_PATH")
+        path_value = os.environ.get("PGMCP_CONFIG_PATH")
         if path_value:
             path = Path(path_value)
             if path.exists():
                 with path.open(encoding="utf-8") as file_handle:
                     config_data = yaml.safe_load(file_handle) or {}
-
         server_data = config_data.setdefault("server", {})
         github_data = config_data.setdefault("github", {})
         logging_data = config_data.setdefault("logging", {})
 
-        if env_name := os.environ.get("MCP_SERVER_NAME"):
+        if env_name := os.environ.get("PGMCP_SERVER_NAME"):
             server_data["name"] = env_name
-        if env_workspace_root := os.environ.get("MCP_WORKSPACE_ROOT"):
+        if env_workspace_root := os.environ.get("PGMCP_WORKSPACE_ROOT"):
             server_data["workspace_root"] = env_workspace_root
-        if env_project_dir := os.environ.get("MCP_SERVER_PROJECT_DIR"):
+        if env_project_dir := os.environ.get("PGMCP_SERVER_PROJECT_DIR"):
             server_data["server_root_dir"] = env_project_dir
-        if env_logs_dir := os.environ.get("MCP_LOGS_DIR"):
+        if env_logs_dir := os.environ.get("PGMCP_LOGS_DIR"):
             server_data["logs_dir"] = env_logs_dir
-        if env_config_root := os.environ.get("MCP_CONFIG_ROOT"):
+        if env_config_root := os.environ.get("PGMCP_CONFIG_ROOT"):
             server_data["config_root"] = env_config_root
+        if env_template_root := os.environ.get("PGMCP_TEMPLATE_ROOT"):
+            server_data["template_root"] = env_template_root
 
         if env_owner := os.environ.get("GITHUB_OWNER"):
             github_data["owner"] = env_owner

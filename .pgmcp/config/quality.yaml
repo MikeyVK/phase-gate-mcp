@@ -1,0 +1,282 @@
+version: "1.0.0"
+
+# Quality gates configuration for Issue #251
+# Scope: static analysis gates only (0-4b)
+# Tests/coverage are executed via run_tests, not via run_quality_gates
+active_gates:
+  - gate0_ruff_format
+  - gate1_formatting
+  - gate2_imports
+  - gate3_line_length
+  - gate4_types
+  - gate4_pyright
+  - gate4_types_mcp
+
+artifact_logging:
+  enabled: true
+  max_files: 200
+
+project_scope:
+  include_globs:
+    - "mcp_server/**/*.py"
+    - "tests/mcp_server/**/*.py"
+
+gates:
+  gate0_ruff_format:
+    name: "Gate 0: Ruff Format"
+    description: "Code formatting (ruff format --check)"
+    execution:
+      command: ["python", "-m", "ruff", "format", "--check", "--diff", "--isolated", "--line-length=100"]
+      fix_command: ["python", "-m", "ruff", "format", "--isolated", "--line-length=100"]
+      timeout_seconds: 60
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: true
+      parsing_strategy: "text_violations"
+      text_violations:
+        pattern: "^--- (?P<file>.+)$"
+        severity_default: "error"
+        fixable_when: "gate"
+        defaults:
+          rule: "FORMAT"
+          message: "File requires formatting"
+    scope:
+      exclude_globs:
+        - "tests/mcp_server/validation_fixtures/**/*.py"
+
+  gate1_formatting:
+    name: "Gate 1: Ruff Strict Lint"
+    description: "Strict linting (stricter than VS Code/IDE baseline)"
+    execution:
+      command:
+        [
+          "python",
+          "-m",
+          "ruff",
+          "check",
+          "--isolated",
+          "--output-format=json",
+          "--select=E,W,F,I,N,UP,ANN,B,C4,DTZ,T10,T20,ISC,RET,SIM,ARG,PLC",
+          "--ignore=E501,PLC0415",
+          "--per-file-ignores=tests/**/*.py:ANN,ARG",
+          "--line-length=100",
+          "--target-version=py311"
+        ]
+      timeout_seconds: 60
+      working_dir: null
+      fix_command: [
+        "python",
+        "-m",
+        "ruff",
+        "check",
+        "--isolated",
+        "--fix",
+        "--select=E,W,F,I,N,UP,ANN,B,C4,DTZ,T10,T20,ISC,RET,SIM,ARG,PLC",
+        "--ignore=E501,PLC0415",
+        "--per-file-ignores=tests/**/*.py:ANN,ARG",
+        "--line-length=100",
+        "--target-version=py311"
+      ]
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: true
+      parsing_strategy: "json_violations"
+      json_violations:
+        violations_path: null
+        field_map:
+          file: "filename"
+          line: "location/row"
+          col: "location/column"
+          rule: "code"
+          message: "message"
+        fixable_when: "fix/applicability"
+    scope:
+      exclude_globs:
+        - "tests/mcp_server/validation_fixtures/**/*.py"
+        - "backend/dtos/validation_fixture_gate4.py"
+
+  gate2_imports:
+    name: "Gate 2: Imports"
+    description: "Import placement (no imports outside top-level)"
+    execution:
+      command:
+        [
+          "python",
+          "-m",
+          "ruff",
+          "check",
+          "--isolated",
+          "--output-format=json",
+          "--select=PLC0415",
+          "--target-version=py311"
+        ]
+      timeout_seconds: 60
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: false
+      parsing_strategy: "json_violations"
+      json_violations:
+        violations_path: null
+        field_map:
+          file: "filename"
+          line: "location/row"
+          col: "location/column"
+          rule: "code"
+          message: "message"
+        fixable_when: "fix/applicability"
+    scope:
+      exclude_globs:
+        - "tests/mcp_server/validation_fixtures/**/*.py"
+
+  gate3_line_length:
+    name: "Gate 3: Line Length"
+    description: "Line length (max 100 characters)"
+    execution:
+      command:
+        [
+          "python",
+          "-m",
+          "ruff",
+          "check",
+          "--isolated",
+          "--output-format=json",
+          "--select=E501",
+          "--line-length=100",
+          "--target-version=py311"
+        ]
+      timeout_seconds: 60
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: false
+      parsing_strategy: "json_violations"
+      json_violations:
+        violations_path: null
+        field_map:
+          file: "filename"
+          line: "location/row"
+          col: "location/column"
+          rule: "code"
+          message: "message"
+        fixable_when: "fix/applicability"
+    scope:
+      exclude_globs:
+        - "tests/mcp_server/validation_fixtures/**/*.py"
+
+  # Gate 4 (mypy) and Gate 4b (Pyright) are COMPLEMENTARY, not redundant.
+  # They run independently and may both fire on the same line; agents must NOT
+  # deduplicate violations across these two gates.  Each tool covers different
+  # edge cases: mypy excels at broad typing patterns, Pyright catches stricter
+  # narrowing / reportAssignment* rules.  Keep both active for full coverage.
+  gate4_types:
+    name: "Gate 4: Types"
+    description: "Type checking (strict mode for DTOs)"
+    execution:
+      command: ["python", "-m", "mypy", "--strict", "--no-error-summary"]
+      timeout_seconds: 60
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: false
+      parsing_strategy: "text_violations"
+      text_violations:
+        pattern: '^(?P<file>[^:]+):(?P<line>\d+): (?P<severity>error|warning|note): (?P<message>.+?)(?:\s+\[(?P<rule>[^\]]+)\])?$'
+        severity_default: "error"
+        defaults: {}
+    scope:
+      include_globs:
+        - "backend/dtos/**/*.py"
+      exclude_globs:
+        - "tests/**/*.py"
+        - "backend/dtos/validation_fixture_gate4.py"
+
+  gate4_pyright:
+    name: "Gate 4b: Pyright"
+    description: "Type checking (Pyright strict; warnings fail)"
+    execution:
+      command:
+        [
+          "python",
+          "-m",
+          "pyright",
+          "--project",
+          "pyrightconfig.json",
+          "--pythonversion",
+          "3.11",
+          "--pythonplatform",
+          "Windows",
+          "--level",
+          "warning",
+          "--warnings",
+          "--outputjson"
+        ]
+      timeout_seconds: 120
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: false
+      parsing_strategy: "json_violations"
+      json_violations:
+        violations_path: "generalDiagnostics"
+        field_map:
+          file: "file"
+          line: "range/start/line"
+          col: "range/start/character"
+          message: "message"
+          rule: "rule"
+          severity: "severity"
+        line_offset: 1
+    scope:
+      exclude_globs:
+        - "tests/mcp_server/validation_fixtures/**/*.py"
+        - "backend/dtos/validation_fixture_gate4.py"
+
+  # Gate 4c covers mcp_server/ with targeted strict flags.
+  # Uses --disallow-untyped-defs, --warn-return-any, --no-implicit-optional —
+  # a subset of --strict suitable for a non-DTO codebase that uses Any deliberately.
+  gate4_types_mcp:
+    name: "Gate 4c: Types (mcp_server)"
+    description: "Type checking (strict flags for mcp_server codebase)"
+    execution:
+      command:
+        [
+          "python",
+          "-m",
+          "mypy",
+          "--disallow-untyped-defs",
+          "--warn-return-any",
+          "--no-implicit-optional",
+          "--ignore-missing-imports",
+          "--no-error-summary"
+        ]
+      timeout_seconds: 120
+      working_dir: null
+    success:
+      exit_codes_ok: [0]
+    capabilities:
+      file_types: [".py"]
+      supports_autofix: false
+      parsing_strategy: "text_violations"
+      text_violations:
+        pattern: '^(?P<file>[^:]+):(?P<line>\d+): (?P<severity>error|warning|note): (?P<message>.+?)(?:\s+\[(?P<rule>[^\]]+)\])?$'
+        severity_default: "error"
+        defaults: {}
+    scope:
+      include_globs:
+        - "mcp_server/**/*.py"
+      exclude_globs:
+        - "tests/**/*.py"

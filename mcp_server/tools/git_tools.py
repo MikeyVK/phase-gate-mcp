@@ -1,6 +1,7 @@
 """Git tools."""
 
 import contextlib
+from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -427,8 +428,31 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 params.sub_phase,
             )
 
+        old_sub_phase = None
+        commit_files = params.files
+        if self._state_engine is not None:
+            try:
+                state_obj = auto_state or self._state_engine.get_state(current_branch)
+                old_sub_phase = state_obj.current_sub_phase
+            except Exception:
+                pass
+
         try:
             ctx = context
+            if self._state_engine is not None:
+                self._state_engine.record_sub_phase(current_branch, params.sub_phase)
+
+            if commit_files is not None and self._state_engine is not None:
+                try:
+                    repo_path = Path(self.manager.adapter.repo_path)
+                    state_path = Path(self._state_engine.state_path)
+                    state_rel_path = str(state_path.relative_to(repo_path)).replace("\\", "/")
+                    commit_files = list(commit_files)
+                    if state_rel_path not in commit_files:
+                        commit_files.append(state_rel_path)
+                except ValueError:
+                    pass
+
             commit_hash = self.manager.commit_with_scope(
                 workflow_phase=workflow_phase,
                 message=params.message,
@@ -436,13 +460,11 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 sub_phase=params.sub_phase,
                 cycle_number=params.cycle_number,
                 commit_type=commit_type,
-                files=params.files,
+                files=commit_files,
                 skip_paths=frozenset(),
                 issue_number=issue_number,
             )
             ctx.produce(Note(key="commit", params={"commit_hash": commit_hash}))
-            if self._state_engine is not None:
-                self._state_engine.record_sub_phase(current_branch, params.sub_phase)
 
             return GitCommitOutput(
                 success=True,
@@ -452,9 +474,14 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 sub_phase=params.sub_phase,
                 cycle_number=params.cycle_number,
                 commit_type=commit_type or "",
-                files=params.files or [],
+                files=commit_files or [],
             )
         except Exception as e:
+            if self._state_engine is not None:
+                try:
+                    self._state_engine.record_sub_phase(current_branch, old_sub_phase)
+                except Exception as rollback_err:
+                    logger.error("Failed to rollback sub_phase mutation: %s", rollback_err)
             return GitCommitOutput(
                 success=False,
                 error_message=str(e),
@@ -464,7 +491,7 @@ class GitCommitTool(ICoreTool[GitCommitInput, GitCommitOutput]):
                 sub_phase=params.sub_phase,
                 cycle_number=params.cycle_number,
                 commit_type=commit_type or "",
-                files=params.files or [],
+                files=commit_files or [],
             )
 
 

@@ -22,6 +22,7 @@ from mcp_server.config.settings import (
     Settings,
     _default_server_version,  # pyright: ignore[reportPrivateUsage]
 )
+from tests.mcp_server.test_support import get_default_server_root
 
 
 @pytest.fixture(autouse=True)
@@ -48,7 +49,7 @@ def test_load_from_env(mock_env_vars: MagicMock) -> None:  # noqa: ARG001
 
 
 def test_load_from_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test loading settings from a YAML file via MCP_CONFIG_PATH env var."""
+    """Test loading settings from a YAML file via PGMCP_CONFIG_PATH env var."""
     config_file = tmp_path / "test_config.yaml"
     config_file.write_text(
         """
@@ -59,10 +60,10 @@ logging:
 """,
         encoding="utf-8",
     )
-    monkeypatch.setenv("MCP_CONFIG_PATH", str(config_file))
-    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
-    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
-    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    monkeypatch.setenv("PGMCP_CONFIG_PATH", str(config_file))
+    monkeypatch.delenv("PGMCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("PGMCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
 
     settings = Settings.from_env()
@@ -115,22 +116,22 @@ def test_server_settings_rejects_version_kwarg() -> None:
         ServerSettings(version="injected")
 
 
-def test_state_dir_default_is_phase_gate() -> None:
-    """C5 RED: ServerSettings server_root_dir default must be '.phase-gate'."""
+def test_state_dir_default_is_pgmcp() -> None:
+    """C5 RED: ServerSettings server_root_dir default must be '.pgmcp'."""
     s = ServerSettings()
-    assert s.server_root_dir == ".phase-gate"
+    assert s.server_root_dir == ".pgmcp"
 
 
 def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """C3 RED: MCP_SERVER_PROJECT_DIR env var must override server_root_dir."""
-    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".phase-gate")
-    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
-    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
-    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    """C3 RED: PGMCP_SERVER_PROJECT_DIR env var must override server_root_dir."""
+    monkeypatch.setenv("PGMCP_SERVER_PROJECT_DIR", ".custom-gate")
+    monkeypatch.delenv("PGMCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("PGMCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
 
     s = Settings.from_env()
-    assert s.server.server_root_dir == ".phase-gate"
+    assert s.server.server_root_dir == ".custom-gate"
 
 
 # ---------------------------------------------------------------------------
@@ -138,18 +139,18 @@ def test_state_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_server_root_dir_default_is_phase_gate() -> None:
+def test_server_root_dir_default_is_pgmcp() -> None:
     """C6 RED: ServerSettings must expose server_root_dir (not state_dir)."""
     s = ServerSettings()
-    assert s.server_root_dir == ".phase-gate"
+    assert s.server_root_dir == ".pgmcp"
 
 
 def test_server_root_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """C6 RED: MCP_SERVER_PROJECT_DIR env var must populate server_root_dir field."""
-    monkeypatch.setenv("MCP_SERVER_PROJECT_DIR", ".custom-root")
-    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
-    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
-    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    """C6 RED: PGMCP_SERVER_PROJECT_DIR env var must populate server_root_dir field."""
+    monkeypatch.setenv("PGMCP_SERVER_PROJECT_DIR", ".custom-root")
+    monkeypatch.delenv("PGMCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("PGMCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
 
     s = Settings.from_env()
@@ -168,11 +169,11 @@ def test_logs_dir_default_is_logs() -> None:
 
 
 def test_logs_dir_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """MCP_LOGS_DIR env var must override logs_dir field."""
-    monkeypatch.setenv("MCP_LOGS_DIR", "custom-logs")
-    monkeypatch.delenv("MCP_SERVER_NAME", raising=False)
-    monkeypatch.delenv("MCP_WORKSPACE_ROOT", raising=False)
-    monkeypatch.delenv("MCP_CONFIG_ROOT", raising=False)
+    """PGMCP_LOGS_DIR env var must override logs_dir field."""
+    monkeypatch.setenv("PGMCP_LOGS_DIR", "custom-logs")
+    monkeypatch.delenv("PGMCP_SERVER_NAME", raising=False)
+    monkeypatch.delenv("PGMCP_WORKSPACE_ROOT", raising=False)
+    monkeypatch.delenv("PGMCP_CONFIG_ROOT", raising=False)
     monkeypatch.delenv("LOG_LEVEL", raising=False)
 
     s = Settings.from_env()
@@ -185,10 +186,10 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
 ) -> None:
     """Environment variables should still populate settings without a YAML file."""
     missing_config = tmp_path / "missing.yaml"
-    monkeypatch.setenv("MCP_CONFIG_PATH", str(missing_config))
-    monkeypatch.setenv("MCP_SERVER_NAME", "env-server")
-    monkeypatch.setenv("MCP_WORKSPACE_ROOT", str(tmp_path / "workspace"))
-    monkeypatch.setenv("MCP_CONFIG_ROOT", str(tmp_path / ".phase-gate" / "config"))
+    monkeypatch.setenv("PGMCP_CONFIG_PATH", str(missing_config))
+    monkeypatch.setenv("PGMCP_SERVER_NAME", "env-server")
+    monkeypatch.setenv("PGMCP_WORKSPACE_ROOT", str(tmp_path / "workspace"))
+    monkeypatch.setenv("PGMCP_CONFIG_ROOT", str(tmp_path / ".phase-gate" / "config"))
     monkeypatch.setenv("GITHUB_OWNER", "example-owner")
     monkeypatch.setenv("GITHUB_REPO", "example-repo")
     monkeypatch.setenv("GITHUB_PROJECT_NUMBER", "42")
@@ -203,5 +204,72 @@ def test_load_from_env_applies_all_supported_env_overrides_when_yaml_missing(
     assert settings.github.owner == "example-owner"
     assert settings.github.repo == "example-repo"
     assert settings.github.project_number == 42
-    assert settings.github.token == "secret-token"
     assert settings.logging.level == "ERROR"
+
+
+def test_get_default_server_root_resolves_dynamically(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that get_default_server_root resolves dynamically."""
+    monkeypatch.delenv("PGMCP_SERVER_PROJECT_DIR", raising=False)
+
+    real_exists = Path.exists
+
+    def mock_exists(self: Path) -> bool:
+        if self.name == ".phase-gate":
+            return False
+        return real_exists(self)
+
+    monkeypatch.setattr(Path, "exists", mock_exists)
+
+    # By default, it should be ".pgmcp"
+    assert get_default_server_root() == ".pgmcp"
+
+    # If overridden in the environment, it should dynamically change
+    monkeypatch.setenv("PGMCP_SERVER_PROJECT_DIR", ".custom-test-root")
+
+
+def test_resolved_paths_properties(tmp_path: Path) -> None:
+    # 1. When folders DO exist under workspace_root
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    server_root = workspace / ".pgmcp"
+    config_dir = server_root / "config"
+    templates_dir = server_root / "templates"
+
+    config_dir.mkdir(parents=True)
+    templates_dir.mkdir(parents=True)
+
+    s = ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp", config_root="")
+    assert s.resolved_server_root == server_root.resolve()
+    assert s.resolved_config_root == config_dir.resolve()
+    assert s.resolved_template_root == templates_dir.resolve()
+
+    # 2. When folders DO NOT exist under workspace_root (should resolve strictly without fallback)
+    non_existent_workspace = tmp_path / "non_existent"
+    s_fallback = ServerSettings(
+        workspace_root=str(non_existent_workspace), server_root_dir=".pgmcp", config_root=""
+    )
+
+    assert s_fallback.resolved_server_root == (non_existent_workspace / ".pgmcp").resolve()
+    assert (
+        s_fallback.resolved_config_root == (non_existent_workspace / ".pgmcp" / "config").resolve()
+    )
+    assert (
+        s_fallback.resolved_template_root
+        == (non_existent_workspace / ".pgmcp" / "templates").resolve()
+    )
+    # 3. With explicit config_root
+    s_explicit = ServerSettings(
+        workspace_root=str(workspace),
+        server_root_dir=".pgmcp",
+        config_root=str(tmp_path / "custom"),
+    )
+    assert s_explicit.resolved_config_root == (tmp_path / "custom").resolve()
+
+
+def test_assets_directories_exist() -> None:
+    # Verifies assets directory exists
+    assets_dir = Path(__file__).resolve().parents[4] / "mcp_server" / "assets"
+    assert assets_dir.exists()

@@ -10,6 +10,8 @@ filtering behavior for the quality gate configuration layer.
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 
@@ -27,7 +29,7 @@ from mcp_server.config.schemas.quality_config import (
 )
 from mcp_server.core.exceptions import ConfigError
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 MINIMAL_ARTIFACT_LOGGING = {
     "enabled": True,
@@ -48,7 +50,7 @@ def _load_quality_config(config_path: Path) -> QualityConfig:
 def fixture_quality_yaml_path(tmp_path: Path) -> Path:
     """Create a valid quality.yaml fixture with exit_code gates only."""
     config_data = {
-        "version": "1.0",
+        "version": "1.0.0",
         "artifact_logging": dict(MINIMAL_ARTIFACT_LOGGING),
         "gates": {
             "linter": {
@@ -104,7 +106,7 @@ class TestQualityConfigLoading:
         """Loads YAML and returns a QualityConfig."""
         config = _load_quality_config(quality_yaml_path)
         assert isinstance(config, QualityConfig)
-        assert config.version == "1.0"
+        assert config.version == "1.0.0"
         assert set(config.gates) == {"linter", "formatter"}
 
     def test_load_missing_file(self, tmp_path: Path) -> None:
@@ -126,7 +128,7 @@ class TestQualityConfigValidation:
     def test_gates_must_be_non_empty(self) -> None:
         """Reject empty gates map."""
         with pytest.raises(ValidationError):
-            QualityConfig(version="1.0", gates={})
+            QualityConfig(version="1.0.0", gates={})
 
     def test_forbid_extra_fields_on_gate(self) -> None:
         """Reject enforcement-like fields (extra keys) on QualityGate."""
@@ -158,7 +160,7 @@ class TestQualityConfigValidation:
             QualityConfig.model_validate(
                 with_artifact_logging(
                     {
-                        "version": "1.0",
+                        "version": "1.0.0",
                         "gates": {
                             "ruff": {
                                 "name": "Ruff",
@@ -188,7 +190,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {
                         "ruff": {
                             "name": "Ruff",
@@ -215,7 +217,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "active_gates": ["gate1", "gate2"],
                     "gates": {
                         "gate1": {
@@ -257,7 +259,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "active_gates": [],
                     "gates": {
                         "ruff": {
@@ -285,7 +287,7 @@ class TestActiveGatesField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "active_gates": ["gate1"],
                     "gates": {
                         "gate1": {
@@ -326,7 +328,7 @@ class TestActiveGatesField:
     def test_active_gates_loads_from_yaml(self, tmp_path: Path) -> None:
         """active_gates field loads correctly from YAML file."""
         yaml_data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_logging": dict(MINIMAL_ARTIFACT_LOGGING),
             "active_gates": ["ruff"],
             "gates": {
@@ -367,7 +369,7 @@ class TestArtifactLoggingConfig:
         yaml_path.write_text(
             yaml.dump(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {
                         "ruff": {
                             "name": "Ruff",
@@ -395,7 +397,7 @@ class TestArtifactLoggingConfig:
     def test_artifact_logging_custom_values(self) -> None:
         config = QualityConfig.model_validate(
             {
-                "version": "1.0",
+                "version": "1.0.0",
                 "artifact_logging": {
                     "enabled": False,
                     "output_dir": "temp/custom_artifacts",
@@ -429,7 +431,7 @@ class TestArtifactLoggingConfig:
         yaml_path.write_text(
             yaml.dump(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "artifact_logging": {
                         "enabled": True,
                         "max_files": 200,
@@ -461,7 +463,7 @@ class TestArtifactLoggingConfig:
     def test_gate1_formatting_loads_from_yaml(self) -> None:
         """gate1_formatting definition loads correctly from quality.yaml."""
         # Load from actual quality.yaml
-        quality_yaml = Path(".phase-gate/config/quality.yaml")
+        quality_yaml = Path(f"{get_default_server_root()}/config/quality.yaml")
         config = _load_quality_config(quality_yaml)
 
         assert "gate1_formatting" in config.gates
@@ -474,7 +476,7 @@ class TestArtifactLoggingConfig:
 
     def test_gate2_imports_loads_from_yaml(self) -> None:
         """gate2_imports definition loads correctly from quality.yaml."""
-        quality_yaml = Path(".phase-gate/config/quality.yaml")
+        quality_yaml = Path(f"{get_default_server_root()}/config/quality.yaml")
         config = _load_quality_config(quality_yaml)
 
         assert "gate2_imports" in config.gates
@@ -488,7 +490,7 @@ class TestArtifactLoggingConfig:
 
     def test_gate3_line_length_loads_from_yaml(self) -> None:
         """gate3_line_length definition loads correctly from quality.yaml."""
-        quality_yaml = Path(".phase-gate/config/quality.yaml")
+        quality_yaml = Path(f"{get_default_server_root()}/config/quality.yaml")
         config = _load_quality_config(quality_yaml)
 
         assert "gate3_line_length" in config.gates
@@ -503,7 +505,7 @@ class TestArtifactLoggingConfig:
 
     def test_active_gates_includes_ruff_gates(self) -> None:
         """active_gates list includes new Ruff-based gates."""
-        quality_yaml = Path(".phase-gate/config/quality.yaml")
+        quality_yaml = Path(f"{get_default_server_root()}/config/quality.yaml")
         config = _load_quality_config(quality_yaml)
 
         assert "gate1_formatting" in config.active_gates
@@ -512,7 +514,7 @@ class TestArtifactLoggingConfig:
 
     def test_ruff_gates_use_exit_code_strategy(self) -> None:
         """All Ruff gates pass/fail on exit code (no parsing_strategy declared)."""
-        quality_yaml = Path(".phase-gate/config/quality.yaml")
+        quality_yaml = Path(f"{get_default_server_root()}/config/quality.yaml")
         config = _load_quality_config(quality_yaml)
 
         for gate_name in ["gate1_formatting", "gate2_imports", "gate3_line_length"]:
@@ -523,24 +525,24 @@ class TestArtifactLoggingConfig:
 class TestActiveGatesContract:
     """Config-contract tests for active_gates list (Issue #251 C0).
 
-    These tests enforce that the active gates list in .phase-gate/config/quality.yaml
+    These tests enforce that the active gates list in .pgmcp/config/quality.yaml
     does not contain pytest/coverage gates that would invoke the test-runner
     as a quality gate — a broken pattern identified in F1/F10.
     """
 
     def test_gate5_tests_not_in_active_gates(self) -> None:
         """gate5_tests must not appear in active_gates (F1/F10 guard)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         assert "gate5_tests" not in config.active_gates
 
     def test_gate6_coverage_not_in_active_gates(self) -> None:
         """gate6_coverage must not appear in active_gates (F1/F10 guard)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         assert "gate6_coverage" not in config.active_gates
 
     def test_static_analysis_gates_remain_active(self) -> None:
         """Static analysis gates 0–4b must still be active after gate5/6 removal."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         expected = {
             "gate0_ruff_format",
             "gate1_formatting",
@@ -553,14 +555,14 @@ class TestActiveGatesContract:
 
     def test_gate5_tests_not_in_gates_catalog(self) -> None:
         """gate5_tests must be removed from gates catalog entirely (C30 cleanup)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         assert "gate5_tests" not in config.gates, (
             "gate5_tests gate must be fully removed from quality.yaml gates section"
         )
 
     def test_gate6_coverage_not_in_gates_catalog(self) -> None:
         """gate6_coverage must be removed from gates catalog entirely (C30 cleanup)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         assert "gate6_coverage" not in config.gates, (
             "gate6_coverage gate must be fully removed from quality.yaml gates section"
         )
@@ -635,7 +637,7 @@ class TestProjectScopeField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {"ruff": self._MINIMAL_GATE},
                     "project_scope": {
                         "include_globs": ["mcp_server/**/*.py", "tests/mcp_server/**/*.py"],
@@ -649,7 +651,7 @@ class TestProjectScopeField:
     def test_project_scope_defaults_to_none(self) -> None:
         """QualityConfig.project_scope is None when not specified."""
         config = QualityConfig.model_validate(
-            with_artifact_logging({"version": "1.0", "gates": {"ruff": self._MINIMAL_GATE}})
+            with_artifact_logging({"version": "1.0.0", "gates": {"ruff": self._MINIMAL_GATE}})
         )
         assert config.project_scope is None
 
@@ -658,7 +660,7 @@ class TestProjectScopeField:
         config = QualityConfig.model_validate(
             with_artifact_logging(
                 {
-                    "version": "1.0",
+                    "version": "1.0.0",
                     "gates": {"ruff": self._MINIMAL_GATE},
                     "project_scope": {"include_globs": ["backend/**/*.py"]},
                 }
@@ -704,7 +706,7 @@ class TestParsingStrategyMigration:
 
     def test_gate4_pyright_uses_json_violations_capability(self) -> None:
         """gate4_pyright must declare json_violations in capabilities (no legacy parsing shim)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         gate = config.gates["gate4_pyright"]
         assert gate.capabilities.parsing_strategy == "json_violations", (
             f"gate4_pyright should use capabilities.parsing_strategy='json_violations', "
@@ -714,7 +716,7 @@ class TestParsingStrategyMigration:
 
     def test_gate1_formatting_has_json_violations_capability(self) -> None:
         """gate1_formatting must declare json_violations strategy in capabilities."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         gate = config.gates["gate1_formatting"]
         assert gate.capabilities.parsing_strategy == "json_violations", (
             "gate1_formatting must declare parsing_strategy='json_violations' in capabilities"
@@ -724,7 +726,7 @@ class TestParsingStrategyMigration:
 
     def test_gate0_ruff_format_has_text_violations_capability(self) -> None:
         """gate0_ruff_format must declare text_violations strategy in capabilities (diff output)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         gate = config.gates["gate0_ruff_format"]
         assert gate.capabilities.parsing_strategy == "text_violations", (
             "gate0_ruff_format must declare parsing_strategy='text_violations' in capabilities"
@@ -734,7 +736,7 @@ class TestParsingStrategyMigration:
 
     def test_gate2_imports_has_json_violations_capability(self) -> None:
         """gate2_imports must declare json_violations in capabilities (F2: uniform coverage)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         gate = config.gates["gate2_imports"]
         assert gate.capabilities.parsing_strategy == "json_violations", (
             f"gate2_imports should use json_violations, got '{gate.capabilities.parsing_strategy}'"
@@ -744,7 +746,7 @@ class TestParsingStrategyMigration:
 
     def test_gate3_line_length_has_json_violations_capability(self) -> None:
         """gate3_line_length must declare json_violations in capabilities (F2: uniform coverage)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         gate = config.gates["gate3_line_length"]
         assert gate.capabilities.parsing_strategy == "json_violations", (
             f"gate3_line_length should use json_violations, "
@@ -754,7 +756,7 @@ class TestParsingStrategyMigration:
 
     def test_gate4_types_has_text_violations_capability(self) -> None:
         """gate4_types must declare text_violations in capabilities (mypy text output)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         gate = config.gates["gate4_types"]
         assert gate.capabilities.parsing_strategy == "text_violations", (
             f"gate4_types should use text_violations, got '{gate.capabilities.parsing_strategy}'"
@@ -764,7 +766,7 @@ class TestParsingStrategyMigration:
 
     def test_all_active_gates_have_parsing_strategy(self) -> None:
         """Every active gate must have a non-None parsing_strategy (F2: full coverage)."""
-        config = _load_quality_config(Path(".phase-gate/config/quality.yaml"))
+        config = _load_quality_config(Path(f"{get_default_server_root()}/config/quality.yaml"))
         for gate_id in config.active_gates:
             gate = config.gates[gate_id]
             assert gate.capabilities.parsing_strategy is not None, (

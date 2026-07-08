@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -15,9 +16,7 @@ from mcp_server.config.loader import (
     ConfigLoader,
     normalize_config_root,
 )
-from mcp_server.config.loader import (
-    resolve_config_root as resolve_runtime_config_root,
-)
+
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.interfaces import GateReport
 from mcp_server.core.phase_detection import ScopeDecoder
@@ -46,12 +45,38 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.tools.issue_tools import CreateIssueTool
+from mcp_server.config.settings import Settings as RealSettings
 
 if TYPE_CHECKING:
     from mcp_server.config.settings import Settings
     from mcp_server.core.interfaces import IGitContextReader, IQualityStateRepository, IStateReader
     from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
     from mcp_server.server import MCPServer
+
+
+def get_default_server_root() -> str:
+    """Get the default server root directory name from Settings."""
+    from unittest.mock import Mock  # noqa: PLC0415
+
+    try:
+        from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+        settings = Settings.from_env()
+        if isinstance(settings, Mock) or isinstance(getattr(settings, "server", None), Mock):
+            return ".pgmcp"
+        val = settings.server.server_root_dir
+        if isinstance(val, Mock):
+            return ".pgmcp"
+        return str(val)
+    except Exception:
+        return ".pgmcp"
+
+
+def get_template_root() -> Path:
+    """Get the template root directory from settings."""
+    from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+    return Settings.from_env().server.resolved_template_root
 
 
 class _NopGateRunner:
@@ -120,7 +145,7 @@ def _candidate_config_roots(workspace_root: Path | str | None = None) -> list[Pa
         except FileNotFoundError:
             # Plain workspace root — probe conventional hidden state directories.
             p = Path(root).resolve()
-            return [p / hidden / "config" for hidden in (".phase-gate",)]
+            return [p / hidden / "config" for hidden in (get_default_server_root(),)]
 
     if workspace_root is not None:
         candidates.extend(_probe(workspace_root))
@@ -141,27 +166,15 @@ def resolve_config_root(
     workspace_root: Path | str | None = None,
     required_paths: tuple[str | Path, ...] = (),
 ) -> Path:
-    """Resolve the best config root for one workspace under test.
-
-    Production probe only tries .phase-gate.  Tests may still create workspaces
-    with the legacy .phase-gate layout, so we fall through to that candidate before
-    giving up and using the canonical project config.
-    """
-    _project_config = Path(__file__).resolve().parents[2] / ".phase-gate" / "config"
-    if workspace_root is None:
-        return _project_config
-    try:
-        return resolve_runtime_config_root(
-            preferred_root=workspace_root,
-            required_files=required_paths,
-        )
-    except FileNotFoundError:
-        # Production probe only tries .phase-gate; try legacy .phase-gate next (test
-        # workspaces often use the old layout) but only if all required files exist.
-        legacy = Path(workspace_root) / ".phase-gate" / "config"
-        if legacy.exists() and all((legacy / f).exists() for f in required_paths):
-            return legacy
-        return _project_config
+    """Resolve the best config root for one workspace under test."""
+    settings = RealSettings.from_env()
+    if workspace_root is not None:
+        candidate = Path(workspace_root)
+        if candidate.name != "config":
+            candidate = candidate / settings.server.server_root_dir / "config"
+        if candidate.exists() and all((candidate / f).exists() for f in required_paths):
+            return candidate
+    return settings.server.resolved_config_root
 
 
 def make_config_loader(
@@ -265,7 +278,7 @@ def make_project_manager(
         workspace_path = Path(workspace_root)
         _git_reader = resolved_git_manager or make_git_manager(workspace_root)
         _state_reader = FileStateRepository(
-            state_file=workspace_path / ".phase-gate" / "state.json"
+            state_file=workspace_path / get_default_server_root() / "state.json"
         )
         _detector = CommitPhaseDetector(workphases_config=workphases_config)
         workflow_status_resolver = WorkflowStatusResolver(
@@ -279,7 +292,7 @@ def make_project_manager(
         git_manager=resolved_git_manager,
         workphases_config=workphases_config,
         workflow_status_resolver=workflow_status_resolver,
-        server_root=Path(workspace_root) / ".phase-gate",
+        server_root=Path(workspace_root) / get_default_server_root(),
     )
 
 
@@ -333,7 +346,7 @@ def make_phase_state_engine(
         _load_config(workspace_root, "contracts.yaml", "load_contracts_config"),
     )
     resolved_state_repository = state_repository or FileStateRepository(
-        state_file=workspace_path / ".phase-gate" / "state.json"
+        state_file=workspace_path / get_default_server_root() / "state.json"
     )
     resolved_scope_decoder = scope_decoder or ScopeDecoder(
         workphases_config=cast(WorkphasesConfig, workphases_config)
@@ -362,7 +375,7 @@ def make_phase_state_engine(
         workflow_gate_runner=resolved_workflow_gate_runner,
         state_reconstructor=resolved_state_reconstructor,
         workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
-        server_root=workspace_path / ".phase-gate",
+        server_root=workspace_path / get_default_server_root(),
         context_loaded_writer=context_loaded_writer,  # type: ignore[arg-type]
     )
 
@@ -374,7 +387,7 @@ def make_phase_config_context(
     """Build a PhaseConfigContext explicitly from config and optional deliverables."""
     planning_deliverables = None
     workspace_path = Path(workspace_root)
-    deliverables_path = workspace_path / ".phase-gate" / "deliverables.json"
+    deliverables_path = workspace_path / get_default_server_root() / "deliverables.json"
     if issue_number is not None and deliverables_path.exists():
         data = json.loads(deliverables_path.read_text(encoding="utf-8-sig"))
         issue_data = data.get(str(issue_number), {})
@@ -495,7 +508,7 @@ def make_qa_manager(
     resolved_workspace = Path(workspace_root) if workspace_root is not None else None
     resolved_quality_state_repo: IQualityStateRepository = quality_state_repository or (
         FileQualityStateRepository(
-            backing_file=resolved_workspace / ".phase-gate" / "quality_state.json"
+            backing_file=resolved_workspace / get_default_server_root() / "quality_state.json"
         )
         if resolved_workspace is not None
         else MagicMock()
@@ -539,7 +552,7 @@ def make_artifact_manager(workspace_root: Path | str) -> ArtifactManager:
         workspace_root=workspace_root,
         registry=registry,
         project_structure_config=project_structure,
-        server_root=Path(workspace_root) / ".phase-gate",
+        server_root=Path(workspace_root) / get_default_server_root(),
     )
 
 

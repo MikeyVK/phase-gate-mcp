@@ -1,5 +1,6 @@
 # Local-only MCP config
 mcp_config.yaml
+.agents/mcp_config.json
 # Python
 __pycache__/
 *.pytest_cache
@@ -33,12 +34,14 @@ dist/
 
 # Logs - runtime output under server_root/logs/ (new location)
 .phase-gate/logs/
+.pgmcp/logs/
 # Legacy CWD-relative log locations (kept for backward compat with old installs)
 mcp_server/logs/
 .logs/
 
 # Local configuration (machine-specific paths)
 mcp_config.yaml
+.agents/mcp_config.json
 
 # Run results
 
@@ -71,8 +74,10 @@ Kraken_Trading_History/
 
 # Phase-Gate Workflow - Runtime state (partially version controlled)
 .phase-gate/.restart_marker
+.pgmcp/.restart_marker
 # Ephemeral artifacts temp files
 .phase-gate/temp/
+.pgmcp/temp/
 
 # QA artifact logs (legacy CWD-relative location, superseded by .phase-gate/logs/qa_logs/)
 temp/qa_logs/
@@ -84,3 +89,14 @@ temp/qa_logs/
 .phase-gate/.state_*.tmp
 # Test output
 .phase-gate/pyright_test.json
+
+.pgmcp/popen_called.txt
+.pgmcp/sync_debug.log
+.pgmcp/test_sync.py
+.pgmcp/.state_*.tmp
+.pgmcp/pyright_test.json
+
+# Release assets (compiled from sources at build time)
+mcp_server/assets/*
+!mcp_server/assets/.gitkeep
+

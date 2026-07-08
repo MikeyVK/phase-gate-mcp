@@ -67,7 +67,7 @@ def test_switching_active_gates_changes_execution(tmp_path: Path) -> None:
     gates from active_gates list in quality.yaml.
     """
     custom_config = {
-        "version": "1.0",
+        "version": "1.0.0",
         "active_gates": ["gate1_formatting", "gate3_line_length"],
         "artifact_logging": {
             "enabled": False,

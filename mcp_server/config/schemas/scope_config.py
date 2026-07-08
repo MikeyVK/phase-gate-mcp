@@ -13,13 +13,14 @@ configuration layer.
     - Provide scope lookup helpers for issue tooling
 """
 
+from typing import Literal
 from pydantic import BaseModel
 
 
 class ScopeConfig(BaseModel):
     """Scope conventions configuration value object."""
 
-    version: str
+    version: Literal["1.0.0"] = "1.0.0"
     scopes: list[str]
 
     def has_scope(self, name: str) -> bool:

@@ -1,3 +1,5 @@
+from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/config/test_git_config.py
 """
 Tests for GitConfig (Issue #55).
@@ -20,12 +22,13 @@ from mcp_server.core.exceptions import ConfigError
 
 def _load_git_config(config_path: Path | None = None) -> GitConfig:
     if config_path is None:
-        return ConfigLoader(Path(".phase-gate/config")).load_git_config()
+        return ConfigLoader(Path(f"{get_default_server_root()}/config")).load_git_config()
     return ConfigLoader(config_path.parent).load_git_config(config_path=config_path)
 
 
 def _git_config_payload(**overrides: object) -> dict[str, object]:
     payload: dict[str, object] = {
+        "version": "1.0.0",
         "branch_types": ["feature", "bug", "fix", "refactor", "docs", "hotfix", "epic"],
         "protected_branches": ["main", "master", "develop"],
         "branch_name_pattern": r"^[a-z0-9-]+$",
@@ -72,14 +75,14 @@ class TestGitConfig:
     def test_git_yaml_not_found(self) -> None:
         """Test ConfigError when git.yaml doesn't exist."""
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_git_config(Path(".phase-gate/nonexistent.yaml"))
+            _load_git_config(Path(f"{get_default_server_root()}/nonexistent.yaml"))
 
     def test_git_config_domain_fields_have_no_defaults(self) -> None:
         """All GitConfig domain fields must be explicit, not Python-defaulted."""
         fields_with_defaults = [
             name
             for name, field in GitConfig.model_fields.items()
-            if not field.is_required() or field.default_factory is not None
+            if (not field.is_required() or field.default_factory is not None) and name != "version"
         ]
 
         assert fields_with_defaults == []

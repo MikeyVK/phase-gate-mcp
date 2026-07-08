@@ -1,7 +1,9 @@
+from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/config/test_project_structure.py
 """Unit tests for ProjectStructureConfig model.
 
-Tests Phase 2: .phase-gate/config/project_structure.yaml + ProjectStructureConfig
+Tests Phase 2: .pgmcp/config/project_structure.yaml + ProjectStructureConfig
 Cross-validates allowed_component_types against artifacts.yaml.
 
 @layer: Tests (Unit)
@@ -23,17 +25,23 @@ from mcp_server.core.exceptions import ConfigError
 
 
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_artifact_registry_config(config_path=config_path)
 
 
 def _load_operation_policies(config_path: Path | None = None) -> OperationPoliciesConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_operation_policies_config(config_path=config_path)
 
 
 def _load_project_structure(config_path: Path | None = None) -> ProjectStructureConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_project_structure_config(config_path=config_path)
 
 
@@ -76,7 +84,7 @@ class TestProjectStructureConfig:
     def test_missing_file(self) -> None:
         """Test ConfigError when file not found."""
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_project_structure(Path(".phase-gate/config/nonexistent.yaml"))
+            _load_project_structure(Path(f"{get_default_server_root()}/config/nonexistent.yaml"))
 
     def test_get_directory_exists(self) -> None:
         """Test get_directory with existing path."""
@@ -126,9 +134,9 @@ class TestProjectStructureConfig:
         assert poc.allowed_extensions == []
 
     def test_config_directories(self) -> None:
-        """Test .phase-gate config directory policy."""
+        """Test .pgmcp config directory policy."""
         config = _load_project_structure()
-        phase_gate = config.directories[".phase-gate"]
+        phase_gate = config.directories[get_default_server_root()]
         assert phase_gate.parent is None
         assert phase_gate.allowed_component_types == []
         assert ".yaml" in phase_gate.allowed_extensions
@@ -147,6 +155,7 @@ class TestProjectStructureConfig:
     def test_manual_project_structure_accessors(self) -> None:
         """Accessor helpers should work on manually constructed configs."""
         config = ProjectStructureConfig(
+            version="1.0.0",
             directories={
                 "backend": DirectoryPolicy(path="backend", description="Backend code"),
                 "backend/dtos": DirectoryPolicy(
@@ -154,7 +163,7 @@ class TestProjectStructureConfig:
                     parent="backend",
                     description="DTOs",
                 ),
-            }
+            },
         )
 
         assert config.get_directory("backend") is not None

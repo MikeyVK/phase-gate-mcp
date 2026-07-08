@@ -6,6 +6,8 @@
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 
@@ -197,11 +199,11 @@ def _create_cycle_engine(
 
 def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
     """Write a minimal workflow where implementation is cycle-based (config-driven)."""
-    config_dir = workspace_root / ".phase-gate" / "config"
+    config_dir = workspace_root / get_default_server_root() / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "workflows.yaml").write_text(
         (
-            "version: '1'\n"
+            "version: '1.0.0'\n"
             "workflows:\n"
             "  feature:\n"
             "    name: feature\n"
@@ -211,7 +213,7 @@ def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
     )
     (config_dir / "workphases.yaml").write_text(
         (
-            "version: '1'\n"
+            "version: '1.0.0'\n"
             "phases:\n"
             "  planning:\n"
             "    display_name: Planning\n"
@@ -228,6 +230,7 @@ def _write_cycle_based_tdd_configs(workspace_root: Path) -> None:
     )
     (config_dir / "contracts.yaml").write_text(
         (
+            "version: '1.0.0'\n"
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"

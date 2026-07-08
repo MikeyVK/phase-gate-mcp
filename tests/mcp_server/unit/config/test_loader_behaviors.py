@@ -1,3 +1,5 @@
+from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/unit/config/test_loader_behaviors.py
 # template=unit_test version=manual created=2026-03-26T00:00Z updated=
 """Focused behavioral tests for ConfigLoader helper branches.
@@ -27,7 +29,7 @@ def _write_yaml(path: Path, content: str) -> Path:
 
 def _minimal_workflow_config() -> WorkflowConfig:
     return WorkflowConfig(
-        version="1.0",
+        version="1.0.0",
         workflows={
             "feature": {
                 "name": "feature",
@@ -40,7 +42,7 @@ def _minimal_workflow_config() -> WorkflowConfig:
 
 def _minimal_artifact_registry() -> ArtifactRegistryConfig:
     return ArtifactRegistryConfig(
-        version="1.0",
+        version="1.0.0",
         artifact_types=[
             {
                 "type": "code",
@@ -60,37 +62,37 @@ def _minimal_artifact_registry() -> ArtifactRegistryConfig:
 
 def test_normalize_config_root_handles_workspace_and_phase_gate_paths(tmp_path: Path) -> None:
     workspace_root = tmp_path / "workspace"
-    config_root = workspace_root / ".phase-gate" / "config"
+    config_root = workspace_root / get_default_server_root() / "config"
 
     # C3: normalize_config_root is a simple resolver — it always returns Path(...).resolve().
     # Any path is accepted without disk probes or heuristics.
     assert normalize_config_root(workspace_root) == workspace_root.resolve()
     assert (
-        normalize_config_root(workspace_root / ".phase-gate")
-        == (workspace_root / ".phase-gate").resolve()
+        normalize_config_root(workspace_root / get_default_server_root())
+        == (workspace_root / get_default_server_root()).resolve()
     )
     assert normalize_config_root(config_root) == config_root.resolve()
 
 
 def test_resolve_config_root_uses_preferred_workspace_root(tmp_path: Path) -> None:
     workspace_root = tmp_path / "workspace"
-    config_root = workspace_root / ".phase-gate" / "config"
+    config_root = workspace_root / get_default_server_root() / "config"
     _write_yaml(config_root / "git.yaml", "branch_types: []\n")
 
-    assert (
+    # Since C3 strips _probe_candidates,resolve_config_root will not look in .pgmcp/config/
+    # and should raise FileNotFoundError.
+    with pytest.raises(FileNotFoundError, match="Could not locate canonical phase-gate config"):
         resolve_config_root(
             preferred_root=workspace_root,
             required_files=("git.yaml",),
         )
-        == config_root.resolve()
-    )
 
 
 def test_resolve_config_root_returns_explicit_root_when_required_files_exist(
     tmp_path: Path,
 ) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
-    _write_yaml(config_root / "workflows.yaml", "version: '1.0'\nworkflows: {}\n")
+    config_root = tmp_path / get_default_server_root() / "config"
+    _write_yaml(config_root / "workflows.yaml", "version: '1.0.0'\nworkflows: {}\n")
 
     assert (
         resolve_config_root(
@@ -104,7 +106,7 @@ def test_resolve_config_root_returns_explicit_root_when_required_files_exist(
 def test_resolve_config_root_raises_for_missing_required_file_in_explicit_root(
     tmp_path: Path,
 ) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
+    config_root = tmp_path / get_default_server_root() / "config"
     config_root.mkdir(parents=True)
 
     with pytest.raises(FileNotFoundError, match="missing required files"):
@@ -115,20 +117,20 @@ def test_resolve_config_root_raises_for_missing_required_file_in_explicit_root(
 
 
 def test_resolve_config_root_raises_for_nonexistent_explicit_root(tmp_path: Path) -> None:
-    missing_root = tmp_path / ".phase-gate" / "config"
+    missing_root = tmp_path / get_default_server_root() / "config"
 
     with pytest.raises(FileNotFoundError, match="does not exist"):
         resolve_config_root(explicit_root=missing_root)
 
 
 def test_load_enforcement_config_allows_missing_file(tmp_path: Path) -> None:
-    loader = ConfigLoader(tmp_path / ".phase-gate" / "config")
+    loader = ConfigLoader(tmp_path / get_default_server_root() / "config")
 
     assert loader.load_enforcement_config().enforcement == []
 
 
 def test_load_artifact_registry_rejects_empty_yaml(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
+    config_root = tmp_path / get_default_server_root() / "config"
     artifacts_path = _write_yaml(config_root / "artifacts.yaml", "")
     loader = ConfigLoader(config_root)
 
@@ -137,7 +139,7 @@ def test_load_artifact_registry_rejects_empty_yaml(tmp_path: Path) -> None:
 
 
 def test_load_artifact_registry_rejects_non_mapping_root(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
+    config_root = tmp_path / get_default_server_root() / "config"
     artifacts_path = _write_yaml(config_root / "artifacts.yaml", "- dto\n")
     loader = ConfigLoader(config_root)
 
@@ -146,11 +148,11 @@ def test_load_artifact_registry_rejects_non_mapping_root(tmp_path: Path) -> None
 
 
 def test_load_operation_policies_uses_workflow_loader_fallback(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
+    config_root = tmp_path / get_default_server_root() / "config"
     _write_yaml(
         config_root / "workflows.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 workflows:
   feature:
     name: "feature"
@@ -162,6 +164,7 @@ workflows:
     policies_path = _write_yaml(
         config_root / "policies.yaml",
         """
+version: "1.0.0"
 operations:
   commit:
     description: "Commit changes"
@@ -182,8 +185,8 @@ operations:
 
 
 def test_load_operation_policies_requires_operations_key(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
-    policies_path = _write_yaml(config_root / "policies.yaml", "version: '1.0'\n")
+    config_root = tmp_path / get_default_server_root() / "config"
+    policies_path = _write_yaml(config_root / "policies.yaml", "version: '1.0.0'\n")
     loader = ConfigLoader(config_root)
 
     with pytest.raises(ConfigError, match="Missing 'operations' key"):
@@ -191,11 +194,11 @@ def test_load_operation_policies_requires_operations_key(tmp_path: Path) -> None
 
 
 def test_load_project_structure_uses_registry_loader_fallback(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
+    config_root = tmp_path / get_default_server_root() / "config"
     _write_yaml(
         config_root / "artifacts.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 artifact_types:
   - type: code
     type_id: dto
@@ -215,7 +218,7 @@ artifact_types:
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 directories:
   backend:
     description: Backend code
@@ -234,8 +237,8 @@ directories:
 
 
 def test_load_project_structure_requires_directories_key(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
-    structure_path = _write_yaml(config_root / "project_structure.yaml", "version: '1.0'\n")
+    config_root = tmp_path / get_default_server_root() / "config"
+    structure_path = _write_yaml(config_root / "project_structure.yaml", "version: '1.0.0'\n")
     loader = ConfigLoader(config_root)
 
     with pytest.raises(ConfigError, match="Missing 'directories' key"):
@@ -243,11 +246,11 @@ def test_load_project_structure_requires_directories_key(tmp_path: Path) -> None
 
 
 def test_load_project_structure_rejects_unknown_artifact_type(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
+    config_root = tmp_path / get_default_server_root() / "config"
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 directories:
   backend:
     description: Backend code
@@ -267,11 +270,11 @@ directories:
 
 
 def test_load_project_structure_rejects_unknown_parent_reference(tmp_path: Path) -> None:
-    config_root = tmp_path / ".phase-gate" / "config"
+    config_root = tmp_path / get_default_server_root() / "config"
     structure_path = _write_yaml(
         config_root / "project_structure.yaml",
         """
-version: "1.0"
+version: "1.0.0"
 directories:
   backend:
     description: Backend code

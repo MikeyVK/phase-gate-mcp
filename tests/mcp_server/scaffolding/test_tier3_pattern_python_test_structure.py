@@ -17,19 +17,17 @@ AAA (Arrange-Act-Assert) pattern comments for test structure.
 
 # Standard library
 import re
-from pathlib import Path
 
 # Third-party
 import pytest
+from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader
 
 
 @pytest.fixture
 def jinja_env():
     """Create Jinja2 environment with template loader."""
-    templates_dir = (
-        Path(__file__).parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
-    )
+    templates_dir = get_template_root()
     return Environment(loader=FileSystemLoader(str(templates_dir)))
 
 
@@ -43,13 +41,7 @@ class TestTier3PatternPythonTestStructure:
 
     def test_template_has_no_extends(self) -> None:
         """Test that template follows macro library pattern (no extends, no blocks)."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_test_structure.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_test_structure.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "{% extends" not in content
 
@@ -59,13 +51,7 @@ class TestTier3PatternPythonTestStructure:
 
     def test_template_has_metadata(self) -> None:
         """Test that template contains TEMPLATE_METADATA."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_test_structure.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_test_structure.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "TEMPLATE_METADATA" in content
         assert "enforcement: ARCHITECTURAL" in content
@@ -73,13 +59,7 @@ class TestTier3PatternPythonTestStructure:
 
     def test_macro_pattern_aaa_comment_exists(self) -> None:
         """Test that pattern_aaa_comment macro is defined."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_test_structure.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_test_structure.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "{% macro pattern_aaa_comment(" in content
 
@@ -132,13 +112,7 @@ class TestTier3PatternPythonTestStructure:
 
     def test_template_has_changelog(self) -> None:
         """Test that template documents refactor from blocks to macros."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_test_structure.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_test_structure.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "changelog" in content
         assert "2.0.0" in content
@@ -146,13 +120,7 @@ class TestTier3PatternPythonTestStructure:
 
     def test_template_minimal_content(self) -> None:
         """Test that template has minimal content (1 macro, no example structure)."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_test_structure.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_test_structure.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         # Count macros in actual code (not comments)

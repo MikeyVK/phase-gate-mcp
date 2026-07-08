@@ -2,7 +2,7 @@
 # SCAFFOLD: test:manual | 2026-02-18T00:00:00Z
 """Schema and pipeline tests for tracking artifact types.
 
-Covers: commit, pr, issue (all ephemeral — write to .phase-gate/temp/)
+Covers: commit, pr, issue (all ephemeral — write to .pgmcp/temp/)
 
 2 tests per artifact type:
   1. context_validates_minimal  - schema instantiates with required fields
@@ -36,7 +36,7 @@ def _run_v2_tracking(manager: ArtifactManager, artifact_type: str, context: dict
     """Run V2 pipeline for tracking (ephemeral) artifacts, return rendered content.
 
     Unlike _run_v2 (which mocks fs_adapter.write_file), tracking artifacts bypass
-    fs_adapter and write to .phase-gate/temp/ via Path.write_text. We patch _validate_and_write
+    fs_adapter and write to .pgmcp/temp/ via Path.write_text. We patch _validate_and_write
     to capture content before the ephemeral write occurs.
     """
     output_captured: list[str] = []

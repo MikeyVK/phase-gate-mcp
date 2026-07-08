@@ -1,0 +1,116 @@
+# PhaseGate MCP Server - User Guide
+
+**Status:** v1.0 (Foundation)
+**Last Updated:** 2025-01-21
+
+---
+
+## 1. Introduction
+
+The PhaseGate MCP Server (`phase-gate-mcp`) is a Model Context Protocol server designed to assist with the development of the phase-gate-mcp project. It provides AI agents with context about the project's state, coding standards, and facilitates workflows like TDD and GitHub integration.
+
+## 2. Installation
+
+The MCP server is part of the repository. You can install it in editable mode:
+
+```bash
+# From the root of the repository
+pip install -e .
+
+# To include development dependencies (for running tests)
+pip install -e ".[dev]"
+```
+
+## 3. Configuration
+
+The server is configured via a YAML file (`mcp_config.yaml`) or environment variables.
+
+### 3.1 Environment Variables
+| Variable | Description | Default |
+|----------|-------------|-------|
+| `GITHUB_TOKEN` | GitHub Personal Access Token (required for GitHub integration) | None |
+| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | INFO |
+| `PGMCP_SERVER_PROJECT_DIR` | Sub-directory under workspace_root for all server data | `.pgmcp` |
+| `PGMCP_LOGS_DIR` | Sub-directory under server_root for log files | `logs` |
+| `PGMCP_CONFIG_PATH` | Path to configuration file | `mcp_config.yaml` |
+### 3.2 Configuration File (`mcp_config.yaml`)
+
+Example configuration:
+
+```yaml
+server:
+  name: "phase-gate-mcp"
+  workspace_root: "."
+
+logging:
+  level: "INFO"
+  # audit_log is auto-derived as <server_root>/<logs_dir>/mcp_audit.log
+  # (default: .pgmcp/logs/mcp_audit.log)
+
+github:
+  owner: "MikeyVK"
+  repo: "phase-gate-mcp"
+  project_number: 1
+```
+
+## 4. Running the Server
+
+To run the server using the `mcp` SDK's standard I/O transport:
+
+```bash
+python -m mcp_server
+```
+
+This command starts the server and listens on `stdin` for JSON-RPC messages, writing responses to `stdout`. Logs are written to `stderr` and the audit log file.
+
+## 5. Claude Desktop Integration
+
+To use this MCP server with Claude Desktop, add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "phase-gate-mcp": {
+      "command": "python",
+      "args": ["-m", "mcp_server"],
+      "cwd": "/absolute/path/to/phase-gate-mcp",
+      "env": {
+        "GITHUB_TOKEN": "your-github-token"
+      }
+    }
+  }
+}
+```
+
+Replace `/absolute/path/to/phase-gate-mcp` with the actual path to your repository.
+
+## 6. Available Resources
+
+Currently, the following resources are available:
+
+### `pgmcp://rules/coding_standards`
+
+Returns a JSON object containing the project's coding standards, including:
+- Python version and style guide (PEP 8)
+- Testing requirements
+- Tooling (ruff, pyright, pytest)
+
+**Usage:**
+read_resource("pgmcp://rules/coding_standards")
+
+## 7. Available Tools
+
+*Note: Concrete tools are currently under development. This section describes the foundation.*
+
+The server infrastructure supports tools that return text, images, or embedded resources.
+
+### Implemented Infrastructure
+- **ICoreTool:** Base interface protocol for all tools.
+- **ToolResult:** structured result object supporting text, image, and resource content.
+- **Error Handling:** Graceful error reporting to the agent.
+
+Future updates will include tools for:
+- Git operations (branching, committing)
+- GitHub integration (issues, PRs)
+- Code scaffolding
+- Quality checks

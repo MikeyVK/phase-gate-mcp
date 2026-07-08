@@ -13,6 +13,7 @@ Documents requirement that 5 concrete templates must exist and scaffold successf
     mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
 """
 
+from tests.mcp_server.test_support import get_default_server_root, get_template_root
 from pathlib import Path
 
 import pytest
@@ -21,11 +22,12 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ArtifactRegistryConfig
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.renderer import JinjaRenderer
-from mcp_server.utils.template_config import get_template_root
 
 
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(Path(".phase-gate/config") if config_path is None else config_path.parent)
+    loader = ConfigLoader(
+        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
+    )
     return loader.load_artifact_registry_config(config_path=config_path)
 
 

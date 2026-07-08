@@ -8,13 +8,14 @@ Tests for CLI.
 
 # Standard library
 import contextlib
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # Third-party
 import pytest
 
-# Project modules
 from mcp_server.cli import main
+from mcp_server.config.settings import ServerSettings, Settings
 
 
 def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -51,3 +52,129 @@ def test_cli_run() -> None:
         main()
         mock_bootstrapper_instance.bootstrap.assert_called_once()
         mock_asyncio_run.assert_called_once_with(mock_server.run())
+
+
+def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that --init copies assets to resolved_server_root."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(workspace),
+            server_root_dir=".pgmcp",
+        )
+    )
+
+    with (
+        patch("sys.argv", ["mcp-server", "--init"]),
+        patch("sys.exit") as mock_exit,
+    ):
+        mock_exit.side_effect = SystemExit(0)
+        with contextlib.suppress(SystemExit):
+            main(settings)
+
+        mock_exit.assert_called_with(0)
+
+    server_root = workspace / ".pgmcp"
+    assert (server_root / "config").exists()
+    assert (server_root / "templates").exists()
+    assert (server_root / "config" / "workflows.yaml").exists()
+
+
+def test_cli_fails_fast_when_state_dir_missing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test that CLI exits with error if .pgmcp directory is missing."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(workspace),
+            server_root_dir=".pgmcp",
+        )
+    )
+
+    with (
+        patch("sys.argv", ["mcp-server"]),
+        patch("sys.exit") as mock_exit,
+    ):
+        mock_exit.side_effect = SystemExit(1)
+        with contextlib.suppress(SystemExit):
+            main(settings)
+
+        mock_exit.assert_called_with(1)
+
+    captured = capsys.readouterr()
+    assert (
+        "Please run with --init to initialize" in captured.err
+        or "Please run with --init to initialize" in captured.out
+    )
+
+
+def test_cli_init_already_exists(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that --init gracefully aborts if .pgmcp already exists."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    server_root = workspace / ".pgmcp"
+    server_root.mkdir()
+
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(workspace),
+            server_root_dir=".pgmcp",
+        )
+    )
+
+    with (
+        patch("sys.argv", ["mcp-server", "--init"]),
+        patch("sys.exit") as mock_exit,
+    ):
+        mock_exit.side_effect = SystemExit(1)
+        with contextlib.suppress(SystemExit):
+            main(settings)
+
+        mock_exit.assert_called_with(1)
+
+    captured = capsys.readouterr()
+    assert "already exists" in captured.err or "already exists" in captured.out
+
+
+def test_cli_init_flat_copy(tmp_path: Path) -> None:
+    """Test that --init copies the entire assets directory and ignores template_registry.json."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(workspace),
+            server_root_dir=".pgmcp",
+        )
+    )
+
+    with (
+        patch("sys.argv", ["mcp-server", "--init"]),
+        patch("sys.exit") as mock_exit,
+        patch("shutil.copytree") as mock_copytree,
+    ):
+        mock_exit.side_effect = SystemExit(0)
+        with contextlib.suppress(SystemExit):
+            main(settings)
+
+        # Should be called once with assets_dir and resolved_server_root
+        mock_copytree.assert_called_once()
+        args, kwargs = mock_copytree.call_args
+
+        # Verify source and target paths
+        assert args[0].name == "assets"
+        assert args[1] == workspace / ".pgmcp"
+        assert kwargs.get("dirs_exist_ok") is True
+
+        # Verify ignore patterns ignore template_registry.json
+        ignore_func = kwargs.get("ignore")
+        assert ignore_func is not None
+        # ignore_func takes (directory_path, list_of_names) and returns a list of names to ignore
+        ignored = ignore_func(str(workspace), ["workflows.yaml", "template_registry.json"])
+        assert "template_registry.json" in ignored
+        assert "workflows.yaml" not in ignored

@@ -1,3 +1,5 @@
+from tests.mcp_server.test_support import get_default_server_root
+
 # pyright: reportMissingImports=false
 """Tests for MCP Server tool registration and dispatch hooks.
 
@@ -50,7 +52,11 @@ from tests.mcp_server.test_support import (
 
 def _bootstrap_workspace_configs(workspace_root: Path) -> None:
     repo_root = Path(__file__).resolve().parents[3]
-    shutil.copytree(repo_root / ".phase-gate", workspace_root / ".phase-gate", dirs_exist_ok=True)
+    shutil.copytree(
+        repo_root / get_default_server_root(),
+        workspace_root / get_default_server_root(),
+        dirs_exist_ok=True,
+    )
 
 
 def _patch_server_settings(
@@ -59,17 +65,24 @@ def _patch_server_settings(
     token: str | None = None,
 ) -> None:
     """Configure a Settings class mock for server tests."""
+    from tests.mcp_server.test_support import RealSettings  # noqa: PLC0415
+
     resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[3])
-    resolved_config_root = str(Path(resolved_workspace_root) / ".phase-gate")
-    mock.from_env.return_value.server.name = "test-server"
-    mock.from_env.return_value.server.workspace_root = resolved_workspace_root
-    mock.from_env.return_value.server.config_root = resolved_config_root
-    mock.from_env.return_value.server.server_root_dir = ".phase-gate"
-    mock.from_env.return_value.github.token = token
-    mock.from_env.return_value.github.owner = "test"
-    mock.from_env.return_value.github.repo = "repo"
-    mock.from_env.return_value.logging.level = "INFO"
-    mock.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
+    server_root_dir = get_default_server_root()
+
+    settings = RealSettings.from_env()
+    settings.server.name = "test-server"
+    settings.server.workspace_root = resolved_workspace_root
+    settings.server.config_root = None
+    settings.server.server_root_dir = server_root_dir
+    settings.github.token = token
+    settings.github.owner = "test"
+    settings.github.repo = "repo"
+    settings.logging.level = "INFO"
+    settings.logging.audit_log = ".logs/mcp_audit.log"
+
+    mock.return_value = settings
+    mock.from_env.return_value = settings
 
 
 def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
@@ -83,7 +96,7 @@ def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
 
 
 def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
-    state_file = workspace_root / ".phase-gate" / "state.json"
+    state_file = workspace_root / get_default_server_root() / "state.json"
     state_file.parent.mkdir(parents=True, exist_ok=True)
     state_file.write_text(
         json.dumps(
@@ -120,12 +133,17 @@ def _run_git(workspace_root: Path, *args: str) -> None:
 
 
 def _track_branch_local_artifacts(workspace_root: Path) -> None:
-    deliverables_file = workspace_root / ".phase-gate" / "deliverables.json"
+    deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
     if not deliverables_file.exists():
         deliverables_file.write_text("{}\n", encoding="utf-8")
 
     _run_git(workspace_root, "init")
-    _run_git(workspace_root, "add", ".phase-gate/state.json", ".phase-gate/deliverables.json")
+    _run_git(
+        workspace_root,
+        "add",
+        f"{get_default_server_root()}/state.json",
+        f"{get_default_server_root()}/deliverables.json",
+    )
 
 
 def _make_submit_pr_request() -> CallToolRequest:
@@ -278,10 +296,11 @@ class TestServerToolRegistration:
         tmp_path: Path,
     ) -> None:
         """Dispatch pre-hook should block invalid branch creation before tool execution."""
-        config_dir = tmp_path / ".phase-gate" / "config"
+        config_dir = tmp_path / get_default_server_root() / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "enforcement.yaml").write_text(
             """
+            version: "1.0.0"
             enforcement:
               - event_source: tool
                 tool: create_branch
@@ -328,12 +347,20 @@ class TestServerToolRegistration:
     async def test_call_tool_pre_enforcement_blocks_submit_pr_outside_ready_phase(
         self,
         tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Dispatch pre-hook should return a phase error and never reach GitHub PR creation."""
+        monkeypatch.delenv("PGMCP_SERVER_PROJECT_DIR", raising=False)
         _bootstrap_workspace_configs(tmp_path)
         _write_phase_state(tmp_path, "documentation")
 
-        with patch("mcp_server.config.settings.Settings") as mock_settings_cls:
+        with (
+            patch("mcp_server.config.settings.Settings") as mock_settings_cls,
+            patch(
+                "mcp_server.managers.enforcement_runner._get_current_git_branch",
+                return_value="refactor/283-ready-phase-enforcement",
+            ),
+        ):
             _patch_server_settings(
                 mock_settings_cls,
                 workspace_root=str(tmp_path),
@@ -399,7 +426,7 @@ class TestServerToolRegistration:
                         workspace_root=tmp_path,
                         project_manager=project_manager,
                         state_engine=state_engine,
-                        server_root=tmp_path / ".phase-gate",
+                        server_root=tmp_path / get_default_server_root(),
                         workphases_config=None,
                     )
                 )
@@ -456,7 +483,7 @@ class TestServerToolRegistration:
                         workspace_root=tmp_path,
                         project_manager=managers.project_manager,
                         state_engine=managers.phase_state_engine,
-                        server_root=tmp_path / ".phase-gate",
+                        server_root=tmp_path / get_default_server_root(),
                         workphases_config=None,
                     )
                 )
@@ -532,7 +559,7 @@ class TestServerToolRegistration:
                         workspace_root=tmp_path,
                         project_manager=project_manager,
                         state_engine=state_engine,
-                        server_root=tmp_path / ".phase-gate",
+                        server_root=tmp_path / get_default_server_root(),
                         workphases_config=None,
                     )
                 )
@@ -586,7 +613,7 @@ class TestServerToolRegistration:
                         workspace_root=tmp_path,
                         project_manager=managers.project_manager,
                         state_engine=managers.phase_state_engine,
-                        server_root=tmp_path / ".phase-gate",
+                        server_root=tmp_path / get_default_server_root(),
                         workphases_config=None,
                     )
                 )

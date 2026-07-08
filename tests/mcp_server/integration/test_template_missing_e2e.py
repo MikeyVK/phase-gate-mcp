@@ -14,6 +14,7 @@ This test uses NO MOCKS - real template loading against temp workspace.
 @dependencies: [pytest, pathlib, mcp_server.tools.scaffold_artifact]
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest
@@ -47,7 +48,7 @@ async def test_template_missing_error_propagates_through_call_chain(
     - message contains template path
     """
     # Arrange: Add artifact type with non-existent template to registry
-    artifacts_yaml = temp_workspace / ".phase-gate" / "config" / "artifacts.yaml"
+    artifacts_yaml = temp_workspace / get_default_server_root() / "config" / "artifacts.yaml"
     content = artifacts_yaml.read_text(encoding="utf-8")
 
     # Add dto_missing artifact type with non-existent template

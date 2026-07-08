@@ -8,6 +8,7 @@ Issue #229 Cycle 10: GAP-17 — blocking deliverables must appear BEFORE OK in r
 @dependencies: [pytest, pathlib, mcp_server.tools.cycle_tools]
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -31,10 +32,11 @@ from tests.mcp_server.test_support import (
 @pytest.fixture(autouse=True)
 def cycle_based_phase_contracts(tmp_path: Path) -> None:
     """Provide minimal phase contracts so implementation remains cycle_based in temp workspaces."""
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "contracts.yaml").write_text(
         (
+            "version: '1.0.0'\n"
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"
@@ -77,7 +79,7 @@ class TestTransitionCycleTool:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".phase-gate",
+            server_root=tmp_path / get_default_server_root(),
         )
 
     @pytest.fixture()
@@ -280,7 +282,7 @@ class TestForceCycleTransitionTool:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".phase-gate",
+            server_root=tmp_path / get_default_server_root(),
         )
 
     @pytest.fixture()
@@ -506,7 +508,7 @@ class TestForceCycleAuditSchema:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".phase-gate",
+            server_root=tmp_path / get_default_server_root(),
         )
 
     @pytest.fixture()
@@ -708,7 +710,7 @@ class TestTransitionCycleHistory:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".phase-gate",
+            server_root=tmp_path / get_default_server_root(),
         )
 
     @pytest.fixture()
@@ -857,7 +859,7 @@ class TestTransitionCycleExitCriteria:
             project_manager=project_manager,
             state_engine=make_phase_state_engine(tmp_path, project_manager=project_manager),
             git_manager=make_git_manager(tmp_path),
-            server_root=tmp_path / ".phase-gate",
+            server_root=tmp_path / get_default_server_root(),
         )
 
     def _make_project(
@@ -890,7 +892,7 @@ class TestTransitionCycleExitCriteria:
         if bypass_validation:
             # Write planning deliverables directly to bypass schema validation
             # Used to simulate corrupt/external state for testing robustness
-            projects_file = workspace_root / ".phase-gate" / "deliverables.json"
+            projects_file = workspace_root / get_default_server_root() / "deliverables.json"
             with projects_file.open() as f:
                 projects = json.load(f)
 

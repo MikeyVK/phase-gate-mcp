@@ -6,6 +6,7 @@
                    validate_assignee() permissive when list empty, strict when populated.
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 import tempfile
 from pathlib import Path
 
@@ -16,12 +17,12 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import ContributorConfig
 from mcp_server.core.exceptions import ConfigError
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
-_EMPTY_CONTRIBUTORS_YAML = {"version": "1.0", "contributors": []}
+_EMPTY_CONTRIBUTORS_YAML = {"version": "1.0.0", "contributors": []}
 
 _POPULATED_CONTRIBUTORS_YAML = {
-    "version": "1.0",
+    "version": "1.0.0",
     "contributors": [
         {"login": "alice", "name": "Alice Doe"},
         {"login": "bob"},
@@ -83,7 +84,9 @@ class TestContributorConfigFromFile:
 
     def test_from_file_raises_on_missing_file(self) -> None:
         with pytest.raises(ConfigError, match="Config file not found"):
-            _load_contributor_config(Path(".phase-gate/nonexistent_contributors.yaml"))
+            _load_contributor_config(
+                Path(f"{get_default_server_root()}/nonexistent_contributors.yaml")
+            )
 
     def test_repeated_loads_are_equivalent(self, empty_contributors_path: Path) -> None:
         cfg1 = _load_contributor_config(empty_contributors_path)

@@ -59,7 +59,7 @@ def _workphases(phases: list[str]) -> WorkphasesConfig:
             display_name=p.capitalize(),
             terminal=is_terminal,
         )
-    return WorkphasesConfig(version="1.0", phases=phase_dict)
+    return WorkphasesConfig(version="1.0.0", phases=phase_dict)
 
 
 def _contracts(workflow_phases: list[str], pr_allowed_phase: str = "ready") -> ContractsConfig:
@@ -73,7 +73,7 @@ def _contracts(workflow_phases: list[str], pr_allowed_phase: str = "ready") -> C
 def _minimal_workflow_config() -> WorkflowConfig:
     """WorkflowConfig without phases (post-C6 format)."""
     return WorkflowConfig(
-        version="1.0",
+        version="1.0.0",
         workflows={
             "feature": WorkflowTemplate(
                 name="feature",
@@ -89,10 +89,10 @@ def _stub_validate_startup_args(
     workphases: WorkphasesConfig,
 ) -> dict[str, Any]:
     return {
-        "policies": OperationPoliciesConfig(version="1.0", operations={}),  # type: ignore[call-arg]
+        "policies": OperationPoliciesConfig(version="1.0.0", operations={}),  # type: ignore[call-arg]
         "workflow": _minimal_workflow_config(),
-        "structure": ProjectStructureConfig(version="1.0", directories={}),  # type: ignore[call-arg]
-        "artifact": ArtifactRegistryConfig(version="1.0", artifact_types=[]),
+        "structure": ProjectStructureConfig(version="1.0.0", directories={}),  # type: ignore[call-arg]
+        "artifact": ArtifactRegistryConfig(version="1.0.0", artifact_types=[]),
         "contracts": contracts,
         "workphases": workphases,
     }

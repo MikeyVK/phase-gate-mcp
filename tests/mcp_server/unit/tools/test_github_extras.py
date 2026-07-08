@@ -4,6 +4,7 @@
 @dependencies: [pytest, pathlib, mcp_server.tools.pr_tools]
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 import asyncio
 from pathlib import Path
 from unittest.mock import MagicMock, Mock
@@ -23,7 +24,7 @@ from mcp_server.tools.pr_tools import (
     MergePRTool,
 )
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 @pytest.fixture
@@ -42,7 +43,7 @@ def mock_adapter() -> Mock:
 @pytest.fixture
 def test_label_config(tmp_path: Path) -> LabelConfig:
     """Create a temp label config with test labels."""
-    yaml_content = """version: "1.0"
+    yaml_content = """version: "1.0.0"
 labels:
   - name: "bug"
     color: "d73a4a"

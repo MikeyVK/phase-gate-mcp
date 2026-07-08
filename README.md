@@ -11,7 +11,7 @@ An MCP (Model Context Protocol) server that enforces structured software develop
 > Read **[AGENTS.md](AGENTS.md)** immediately to initialize your cooperation protocol.
 > It contains the binding tool priority matrix, TDD cycle protocol, three-agent model, and all operating constraints.
 >
-> For MCP server architecture details, see [docs/reference/mcp/mcp_vision_reference.md](docs/reference/mcp/mcp_vision_reference.md).
+For MCP server architecture details, see [docs/reference/mcp_vision_reference.md](docs/reference/mcp_vision_reference.md).
 
 ---
 
@@ -27,7 +27,7 @@ Each workflow defines an ordered sequence of phases (e.g. `research → design �
 
 ## Core Capabilities
 
-- **Phase & cycle state management** — tracks active phase and TDD cycle via `.phase-gate/state.json`; blocks progression until contracts are met
+- **Phase & cycle state management** — tracks active phase and TDD cycle via `.pgmcp/state.json`; blocks progression until contracts are met
 - **Intelligent scaffolding** — generates code, documents, and test files from a centralised template registry with schema validation
 - **Quality gates** — runs Ruff (format + lint), Pyright, import checks, and line-length checks before allowing commits or PRs
 - **Repository orchestration** — native Git and GitHub integrations for branching, committing, PR creation, issue tracking, and label management
@@ -43,16 +43,17 @@ mcp_server/
 ├── managers/      # State persistence, git operations, pytest runner, QA manager
 ├── tools/         # MCP tool interfaces exposed to the agent
 ├── scaffolders/   # Jinja2 template engine and scaffold orchestration
-├── scaffolding/   # Templates, template registry, version hashing
+├── scaffolding/   # Scaffolding metadata and registry helpers
 ├── validation/    # File and artifact validators
 ├── config/        # Settings, schema loading, config contracts
-└── schemas/       # Pydantic schemas for all internal contracts
+├── schemas/       # Pydantic schemas for all internal contracts
+└── assets/        # Packaged release assets (templates, configs, docs)
 ```
 
-Configuration lives in `.phase-gate/config/` (per-project, not in this repo):
+Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 
 | File | Purpose |
-|---|---|
+| :--- | :--- |
 | `workflows.yaml` / `workphases.yaml` | Phase sequences and lifecycle states |
 | `policies.yaml` / `enforcement.yaml` | Transition rules and strictness levels |
 | `artifacts.yaml` / `contracts.yaml` | Expected deliverables per phase |
@@ -64,21 +65,30 @@ Configuration lives in `.phase-gate/config/` (per-project, not in this repo):
 ## Environment Variables
 
 | Variable | Required | Description |
-|---|---|---|
-| `MCP_WORKSPACE_ROOT` | Yes | Absolute path to the repository root |
-| `MCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.phase-gate`) |
+| :--- | :--- | :--- |
+| `PGMCP_WORKSPACE_ROOT` | Yes | Absolute path to the repository root |
+| `PGMCP_SERVER_PROJECT_DIR` | No | Phase-gate config dir (default: `.pgmcp`) |
 | `GITHUB_TOKEN` | Yes | Personal access token with `repo` and `workflow` scopes |
 | `GITHUB_OWNER` | Yes | GitHub account or org name |
 | `GITHUB_REPO` | Yes | Repository name |
 | `GITHUB_PROJECT_NUMBER` | No | GitHub Projects number for issue tracking |
-| `MCP_SERVER_NAME` | No | Server name reported in MCP handshake (default: `phase-gate-mcp`) |
+| `PGMCP_SERVER_NAME` | No | Server name reported in MCP handshake (default: `phase-gate-mcp`) |
 | `LOG_LEVEL` | No | Logging verbosity (default: `INFO`) |
 
 ---
 
-## Installation
+## Getting Started & Installation
 
 **Requirements:** Python 3.11+
+
+Depending on your use case, choose one of the following guides to get started:
+
+- 🚀 **[Manual Setup Guide](docs/setup/README.md)**: Detailed step-by-step instructions for manual installation and configuration in your IDE (VS Code or Google Antigravity).
+- 🤖 **[Agentic Bootstrap Guide](docs/setup/agentic-bootstrap.md)**: A step-by-step automated guide to help AI agents bootstrap `pgmcp` in a new workspace or integrate it into an existing repository without manual terminal commands.
+
+### Local Development Setup
+
+To clone and set up the repository for local development:
 
 ```bash
 git clone https://github.com/MikeyVK/phase-gate-mcp.git
@@ -114,4 +124,4 @@ pytest tests/mcp_server/ --cov=mcp_server --cov-branch --cov-fail-under=90
 
 ## License
 
-*(Specify License Information Here)*
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -30,7 +30,7 @@ def _minimal_workphases(**extra: PhaseDefinition) -> WorkphasesConfig:
         "ready": PhaseDefinition(display_name="Ready", terminal=True),
     }
     phases.update(extra)
-    return WorkphasesConfig(phases=phases)
+    return WorkphasesConfig(version="1.0.0", phases=phases)
 
 
 class TestPhaseDefinitionTerminalField:

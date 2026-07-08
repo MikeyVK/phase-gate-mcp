@@ -4,6 +4,7 @@
 @dependencies: pytest, mcp_server.adapters.git_adapter, mcp_server.managers.git_manager
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -24,8 +25,12 @@ class TestGitManagerConfigIntegration:
         self.mock_adapter = MagicMock(spec=GitAdapter)
         self.mock_adapter.is_clean.return_value = True
         self.mock_adapter.get_current_branch.return_value = "main"
-        self.git_config = ConfigLoader(Path(".phase-gate/config")).load_git_config()
-        workphases_config = ConfigLoader(Path(".phase-gate/config")).load_workphases_config()
+        self.git_config = ConfigLoader(
+            Path(f"{get_default_server_root()}/config")
+        ).load_git_config()
+        workphases_config = ConfigLoader(
+            Path(f"{get_default_server_root()}/config")
+        ).load_workphases_config()
         self.manager = GitManager(
             git_config=self.git_config,
             adapter=self.mock_adapter,

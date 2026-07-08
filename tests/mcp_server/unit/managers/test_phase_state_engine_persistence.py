@@ -1,6 +1,8 @@
 """Tests for PhaseStateEngine state.json persistence."""
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import json
 from pathlib import Path
@@ -53,7 +55,7 @@ class TestPhaseStateEnginePersistence:
     ) -> None:
         state_engine.initialize_branch("feature/1-first-feature", 1, "research")
 
-        state_file = workspace_root / ".phase-gate" / "state.json"
+        state_file = workspace_root / get_default_server_root() / "state.json"
         assert state_file.exists()
 
         disk_state = json.loads(state_file.read_text(encoding="utf-8"))
@@ -69,7 +71,7 @@ class TestPhaseStateEnginePersistence:
         state_engine.initialize_branch("feature/1-first-feature", 1, "research")
         state_engine.initialize_branch("feature/2-second-feature", 2, "research")
 
-        state_file = workspace_root / ".phase-gate" / "state.json"
+        state_file = workspace_root / get_default_server_root() / "state.json"
         disk_state = json.loads(state_file.read_text(encoding="utf-8"))
         assert disk_state["branch"] == "feature/2-second-feature"
         assert disk_state["issue_number"] == 2
@@ -84,7 +86,7 @@ class TestPhaseStateEnginePersistence:
         state_engine.initialize_branch(branch, 1, "research")
 
         result = state_engine.transition(branch=branch, to_phase="design")
-        state_file = workspace_root / ".phase-gate" / "state.json"
+        state_file = workspace_root / get_default_server_root() / "state.json"
         disk_state = json.loads(state_file.read_text(encoding="utf-8"))
 
         assert result == {

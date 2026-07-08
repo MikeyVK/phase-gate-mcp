@@ -3,6 +3,7 @@ Unit tests for _validate_tool_arguments failure path and schema://validation res
 Scope: Cycle 2, Change A — argument validation returns ToolResult on failure.
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
 from typing import Any
@@ -25,18 +26,25 @@ from tests.mcp_server.test_support import make_test_server
 
 
 def _patch_server_settings(mock: MagicMock, workspace_root: str | None = None) -> None:
-    resolved = workspace_root or str(Path(__file__).resolve().parents[4])
-    resolved_cfg = str(Path(resolved) / ".phase-gate")
-    mock.from_env.return_value.server.name = "test-server"
-    mock.from_env.return_value.server.workspace_root = resolved
-    mock.from_env.return_value.server.config_root = resolved_cfg
-    mock.from_env.return_value.server.server_root_dir = ".phase-gate"
-    mock.from_env.return_value.github.token = None
-    mock.from_env.return_value.github.owner = "test"
-    mock.from_env.return_value.github.repo = "test-repo"
-    mock.from_env.return_value.logging.level = "WARNING"
-    mock.from_env.return_value.server.logs_dir = "logs"
-    mock.from_env.return_value.logging.audit_log = None
+    from tests.mcp_server.test_support import RealSettings  # noqa: PLC0415
+
+    resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[4])
+    server_root_dir = get_default_server_root()
+
+    settings = RealSettings.from_env()
+    settings.server.name = "test-server"
+    settings.server.workspace_root = resolved_workspace_root
+    settings.server.config_root = None
+    settings.server.server_root_dir = server_root_dir
+    settings.github.token = None
+    settings.github.owner = "test"
+    settings.github.repo = "test-repo"
+    settings.logging.level = "WARNING"
+    settings.server.logs_dir = "logs"
+    settings.logging.audit_log = None
+
+    mock.return_value = settings
+    mock.from_env.return_value = settings
 
 
 # ---------------------------------------------------------------------------

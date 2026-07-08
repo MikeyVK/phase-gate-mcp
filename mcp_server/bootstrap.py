@@ -206,7 +206,7 @@ class ServerBootstrapper:
         settings = self._settings
 
         # Configure logging
-        _server_root_early = Path(settings.server.workspace_root) / settings.server.server_root_dir
+        _server_root_early = settings.server.resolved_server_root
         _logs_dir_early = _server_root_early / settings.server.logs_dir
         _audit_log = settings.logging.audit_log or str(_logs_dir_early / "mcp_audit.log")
         setup_logging(settings.logging.level, _audit_log)
@@ -214,8 +214,7 @@ class ServerBootstrapper:
         lifecycle_logger.info("MCP server starting via bootstrapper")
 
         # Initialize template registry
-        workspace_root = Path(settings.server.workspace_root)
-        server_root = workspace_root / settings.server.server_root_dir
+        server_root = settings.server.resolved_server_root
         registry_path = server_root / "template_registry.json"
 
         if not registry_path.exists():
@@ -255,9 +254,7 @@ class ServerBootstrapper:
 
     def _build_config_layer(self) -> ConfigLayer:
         """Load and validate all configurations."""
-        workspace_root = Path(self._settings.server.workspace_root)
-        server_root = workspace_root / self._settings.server.server_root_dir
-        config_root = server_root / "config"
+        config_root = self._settings.server.resolved_config_root
 
         config_loader = ConfigLoader(config_root=config_root)
         git_config = config_loader.load_git_config()

@@ -1,3 +1,5 @@
+from tests.mcp_server.test_support import get_default_server_root
+
 # tests/mcp_server/unit/managers/test_git_manager_skip_paths.py
 """
 Tests for GitManager commit_with_scope() skip_paths forwarding.
@@ -22,7 +24,7 @@ def _make_manager() -> tuple[GitManager, MagicMock]:
     mock_adapter = MagicMock()
     mock_adapter.commit.return_value = "def5678"
 
-    loader = ConfigLoader(Path(".phase-gate/config"))
+    loader = ConfigLoader(Path(f"{get_default_server_root()}/config"))
     git_config = loader.load_git_config()
     workphases_config = loader.load_workphases_config()
     manager = GitManager(
@@ -38,7 +40,7 @@ class TestGitManagerSkipPaths:
         """commit_with_scope() forwards skip_paths to GitAdapter.commit()."""
         manager, mock_adapter = _make_manager()
 
-        skip = frozenset({".phase-gate/state.json"})
+        skip = frozenset({f"{get_default_server_root()}/state.json"})
 
         manager.commit_with_scope(
             workflow_phase="implementation",

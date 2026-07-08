@@ -1,13 +1,14 @@
 """
 Unit tests for scaffold metadata configuration models.
 
-Tests the Pydantic models that load and validate .phase-gate/scaffold_metadata.yaml.
+Tests the Pydantic models that load and validate .pgmcp/scaffold_metadata.yaml.
 Following TDD: These tests are written BEFORE implementation (RED phase).
 
 @layer: Tests (Unit)
 @dependencies: pytest, pydantic, mcp_server.config.schemas
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest
@@ -17,7 +18,7 @@ from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import CommentPattern, MetadataField, ScaffoldMetadataConfig
 from mcp_server.core.exceptions import ConfigError
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 def _load_scaffold_metadata_config(config_file: Path) -> ScaffoldMetadataConfig:
@@ -125,7 +126,7 @@ class TestScaffoldMetadataConfig:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
-version: "2.0"
+version: "1.0.0"
 
 comment_patterns:
   - syntax: hash
@@ -170,6 +171,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -195,6 +197,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -219,6 +222,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -249,6 +253,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -288,6 +293,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -305,6 +311,7 @@ comment_patterns:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns: []
 
 metadata_fields:

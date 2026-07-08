@@ -3,6 +3,8 @@
 @layer: Tests (Unit)
 @dependencies: pytest, mcp_server.managers.git_manager, mcp_server.config.schemas
 """
+
+from tests.mcp_server.test_support import get_default_server_root
 # pyright: reportCallIssue=false, reportAttributeAccessIssue=false, reportPrivateUsage=false
 # Suppress Pydantic false positives; reportPrivateUsage allows protected member access in test setup
 
@@ -42,7 +44,7 @@ _TEST_WORKPHASES = WorkphasesConfig(
 @pytest.fixture
 def git_config() -> GitConfig:
     """Fixture for project git config."""
-    return ConfigLoader(Path(".phase-gate/config")).load_git_config()
+    return ConfigLoader(Path(f"{get_default_server_root()}/config")).load_git_config()
 
 
 class TestGitManagerValidation:
@@ -62,7 +64,9 @@ class TestGitManagerValidation:
 
     def test_init_default(self) -> None:
         """Test initialization with default adapter."""
-        mgr = GitManager(git_config=ConfigLoader(Path(".phase-gate/config")).load_git_config())
+        mgr = GitManager(
+            git_config=ConfigLoader(Path(f"{get_default_server_root()}/config")).load_git_config()
+        )
         assert mgr.adapter is not None
 
     def test_get_status(self, manager: GitManager, mock_adapter: MagicMock) -> None:
@@ -217,15 +221,22 @@ class TestGitManagerOperations:
     ) -> None:
         """has_net_diff_for_path must delegate to adapter with identical arguments."""
         mock_adapter.has_net_diff_for_path.return_value = True
-        result = manager.has_net_diff_for_path(".phase-gate/state.json", "main")
+        result = manager.has_net_diff_for_path(f"{get_default_server_root()}/state.json", "main")
         assert result is True
-        mock_adapter.has_net_diff_for_path.assert_called_once_with(".phase-gate/state.json", "main")
+        mock_adapter.has_net_diff_for_path.assert_called_once_with(
+            f"{get_default_server_root()}/state.json", "main"
+        )
 
     def test_neutralize_to_base_delegates(
         self, manager: GitManager, mock_adapter: MagicMock
     ) -> None:
         """neutralize_to_base must delegate to adapter with identical arguments."""
-        paths = frozenset({".phase-gate/state.json", ".phase-gate/deliverables.json"})
+        paths = frozenset(
+            {
+                f"{get_default_server_root()}/state.json",
+                f"{get_default_server_root()}/deliverables.json",
+            }
+        )
         manager.neutralize_to_base(paths, "main")
         mock_adapter.neutralize_to_base.assert_called_once_with(paths, "main")
 
@@ -502,7 +513,9 @@ class TestGitManagerPrepareSubmission:
     @pytest.fixture
     def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
         """Fixture for GitManager with mocked adapter and real workphases config."""
-        workphases = ConfigLoader(Path(".phase-gate/config")).load_workphases_config()
+        workphases = ConfigLoader(
+            Path(f"{get_default_server_root()}/config")
+        ).load_workphases_config()
         return GitManager(
             git_config=git_config,
             adapter=mock_adapter,
@@ -520,7 +533,7 @@ class TestGitManagerPrepareSubmission:
 
         with pytest.raises(PreflightError, match="Working directory is not clean"):
             manager.prepare_submission(
-                artifact_paths=frozenset({".phase-gate/state.json"}),
+                artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
                 base="main",
                 note_context=context,
             )
@@ -542,7 +555,7 @@ class TestGitManagerPrepareSubmission:
 
         with pytest.raises(PreflightError, match="No upstream configured for current branch"):
             manager.prepare_submission(
-                artifact_paths=frozenset({".phase-gate/state.json"}),
+                artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
                 base="main",
                 note_context=context,
             )
@@ -561,18 +574,23 @@ class TestGitManagerPrepareSubmission:
         neutralize_to_base must be called with only the path that has a net diff.
         """
         mock_adapter.has_net_diff_for_path.side_effect = lambda path, _base: (
-            path == ".phase-gate/state.json"
+            path == f"{get_default_server_root()}/state.json"
         )
         context = NoteContext()
 
         manager.prepare_submission(
-            artifact_paths=frozenset({".phase-gate/state.json", ".phase-gate/deliverables.json"}),
+            artifact_paths=frozenset(
+                {
+                    f"{get_default_server_root()}/state.json",
+                    f"{get_default_server_root()}/deliverables.json",
+                }
+            ),
             base="main",
             note_context=context,
         )
 
         mock_adapter.neutralize_to_base.assert_called_once_with(
-            frozenset({".phase-gate/state.json"}), "main"
+            frozenset({f"{get_default_server_root()}/state.json"}), "main"
         )
 
     def test_prepare_submission_skips_neutralize_and_commit_when_no_diffs(
@@ -586,7 +604,12 @@ class TestGitManagerPrepareSubmission:
         context = NoteContext()
 
         result = manager.prepare_submission(
-            artifact_paths=frozenset({".phase-gate/state.json", ".phase-gate/deliverables.json"}),
+            artifact_paths=frozenset(
+                {
+                    f"{get_default_server_root()}/state.json",
+                    f"{get_default_server_root()}/deliverables.json",
+                }
+            ),
             base="main",
             note_context=context,
         )
@@ -608,7 +631,7 @@ class TestGitManagerPrepareSubmission:
 
         with pytest.raises(ExecutionError):
             manager.prepare_submission(
-                artifact_paths=frozenset({".phase-gate/state.json"}),
+                artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
                 base="main",
                 note_context=context,
             )
@@ -630,7 +653,7 @@ class TestGitManagerPrepareSubmission:
 
         with pytest.raises(ExecutionError):
             manager.prepare_submission(
-                artifact_paths=frozenset({".phase-gate/state.json"}),
+                artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
                 base="main",
                 note_context=context,
             )
@@ -652,7 +675,7 @@ class TestGitManagerPrepareSubmission:
 
         with pytest.raises(ExecutionError):
             manager.prepare_submission(
-                artifact_paths=frozenset({".phase-gate/state.json"}),
+                artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
                 base="main",
                 note_context=context,
             )
@@ -673,7 +696,7 @@ class TestGitManagerPrepareSubmission:
         context = NoteContext()
 
         result = manager.prepare_submission(
-            artifact_paths=frozenset({".phase-gate/state.json"}),
+            artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
             base="main",
             note_context=context,
         )
@@ -681,9 +704,11 @@ class TestGitManagerPrepareSubmission:
         assert result is True
         mock_adapter.is_clean.assert_called_once()
         mock_adapter.has_upstream.assert_called_once()
-        mock_adapter.has_net_diff_for_path.assert_called_once_with(".phase-gate/state.json", "main")
+        mock_adapter.has_net_diff_for_path.assert_called_once_with(
+            f"{get_default_server_root()}/state.json", "main"
+        )
         mock_adapter.neutralize_to_base.assert_called_once_with(
-            frozenset({".phase-gate/state.json"}), "main"
+            frozenset({f"{get_default_server_root()}/state.json"}), "main"
         )
         mock_adapter.commit.assert_called_once()
         mock_adapter.push.assert_called_once()
@@ -700,7 +725,7 @@ class TestGitManagerPrepareSubmission:
         context = NoteContext()
 
         manager.prepare_submission(
-            artifact_paths=frozenset({".phase-gate/state.json"}),
+            artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
             base="main",
             note_context=context,
         )
@@ -720,7 +745,7 @@ class TestGitManagerPrepareSubmission:
         context = NoteContext()
 
         manager.prepare_submission(
-            artifact_paths=frozenset({".phase-gate/state.json"}),
+            artifact_paths=frozenset({f"{get_default_server_root()}/state.json"}),
             base="main",
             note_context=context,
         )
@@ -743,7 +768,9 @@ class TestGitManagerRollbackPush:
 
     @pytest.fixture()
     def manager(self, mock_adapter: MagicMock, git_config: GitConfig) -> GitManager:
-        workphases = ConfigLoader(Path(".phase-gate/config")).load_workphases_config()
+        workphases = ConfigLoader(
+            Path(f"{get_default_server_root()}/config")
+        ).load_workphases_config()
         return GitManager(
             git_config=git_config,
             adapter=mock_adapter,

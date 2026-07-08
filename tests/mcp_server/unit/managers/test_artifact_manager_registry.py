@@ -5,7 +5,7 @@ RED phase: Tests that scaffold_artifact() integrates with TemplateRegistry:
 - Computes version_hash before rendering
 - Calls registry.save_version() with tier chain
 - Injects version_hash into template context
-- Creates .phase-gate/template_registry.yaml if not exists
+- Creates .pgmcp/template_registry.yaml if not exists
 
 @layer: Tests (Unit)
 @dependencies: pytest, mcp_server.managers.artifact_manager,
@@ -177,7 +177,7 @@ class TestArtifactManagerRegistryIntegration:
 
     @pytest.mark.asyncio
     async def test_registry_yaml_created_if_not_exists(self) -> None:
-        """Should create .phase-gate/template_registry.yaml on first scaffold operation.
+        """Should create .pgmcp/template_registry.yaml on first scaffold operation.
 
         REQUIREMENT: Registry file should be auto-created, not require manual setup.
         """
@@ -215,6 +215,6 @@ class TestArtifactManagerRegistryIntegration:
                 "dto", output_path="test_scaffold_output.py", name="Test", fields=[]
             )
 
-        # REQUIREMENT: .phase-gate/template_registry.yaml should exist after scaffolding
+        # REQUIREMENT: .pgmcp/template_registry.yaml should exist after scaffolding
         # Currently FAILS - registry not integrated
         # After Task 1.1c fix, verify file creation via TemplateRegistry._persist()

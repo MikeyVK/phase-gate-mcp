@@ -33,7 +33,7 @@ def _make_config_path(tmp_path: Path, filename: str) -> Path:
 def test_config_error_for_invalid_yaml(tmp_path: Path) -> None:
     """ConfigError raised for invalid YAML syntax."""
     bad_yaml = _make_config_path(tmp_path, "bad_artifacts.yaml")
-    bad_yaml.write_text("version: 1.0\nartifacts: {invalid", encoding="utf-8")
+    bad_yaml.write_text("version: '1.0.0'\nartifacts: {invalid", encoding="utf-8")
 
     with pytest.raises(ConfigError) as exc_info:
         _load_artifact_registry(bad_yaml)
@@ -48,7 +48,7 @@ def test_config_error_for_missing_required_field(tmp_path: Path) -> None:
     """ConfigError raised when artifacts.yaml missing required fields."""
     incomplete_yaml = _make_config_path(tmp_path, "incomplete_artifacts.yaml")
     incomplete_yaml.write_text(
-        """version: "1.0"
+        """version: "1.0.0"
 artifact_types:
   - type: doc
     type_id: test

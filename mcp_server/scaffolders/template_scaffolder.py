@@ -1,4 +1,6 @@
 # mcp_server/scaffolders/template_scaffolder.py
+from __future__ import annotations
+
 """
 TemplateScaffolder - Unified template-based artifact scaffolding.
 
@@ -33,10 +35,8 @@ from mcp_server.scaffolding.template_introspector import introspect_template_wit
 from mcp_server.schemas import ArtifactRegistryConfig
 
 # Project modules
-from mcp_server.utils.template_config import get_template_root
-
 if TYPE_CHECKING:
-    pass  # TYPE_CHECKING block for future type-only imports
+    from mcp_server.config.settings import Settings
 
 
 class TemplateScaffolder(BaseScaffolder):
@@ -46,6 +46,7 @@ class TemplateScaffolder(BaseScaffolder):
         self,
         registry: ArtifactRegistryConfig,
         renderer: JinjaRenderer | None = None,
+        settings: Settings | None = None,
     ) -> None:
         """Initialize with dependency injection."""
         super().__init__()
@@ -53,7 +54,10 @@ class TemplateScaffolder(BaseScaffolder):
 
         # Initialize renderer with configurable template root (fail-fast)
         if renderer is None:
-            template_dir = get_template_root()
+            from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+            effective_settings = settings or Settings.from_env()
+            template_dir = effective_settings.server.resolved_template_root
             renderer = JinjaRenderer(template_dir=template_dir)
         self._renderer = renderer
 

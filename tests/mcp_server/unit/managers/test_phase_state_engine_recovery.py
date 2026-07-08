@@ -1,6 +1,8 @@
 """Tests for StateReconstructor after C_STATE_RECOVERY extraction."""
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 from pathlib import Path
 from unittest.mock import patch
@@ -109,7 +111,7 @@ class TestStateReconstructor:
             workspace_root,
             project_manager=project_manager,
         )
-        deliverables_file = workspace_root / ".phase-gate" / "deliverables.json"
+        deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
         if deliverables_file.exists():
             deliverables_file.unlink()
 

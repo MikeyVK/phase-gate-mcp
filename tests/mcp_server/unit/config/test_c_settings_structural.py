@@ -11,7 +11,7 @@ These tests must all be GREEN after the settings and loader flag-day work.
 
 import importlib.util
 import inspect
-
+import re
 import mcp_server.config.settings as _settings_module
 from mcp_server.config.settings import Settings
 
@@ -46,3 +46,10 @@ def test_log_level_env_var_renamed() -> None:
     assert "MCP_LOG_LEVEL" not in source, (
         "settings.py still references 'MCP_LOG_LEVEL'. Rename to 'LOG_LEVEL'."
     )
+
+
+def test_mcp_env_vars_renamed() -> None:
+    """'MCP_*' environment variables must not appear in settings source."""
+    source = inspect.getsource(_settings_module)
+    matches = re.findall(r"\bMCP_[A-Z0-9_]+\b", source)
+    assert not matches, f"settings.py still references legacy variables: {matches}"

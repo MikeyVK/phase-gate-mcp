@@ -4,6 +4,7 @@
 @dependencies: pytest, mcp_server.tools.label_tools, mcp_server.config.schemas
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -32,7 +33,7 @@ from mcp_server.tools.label_tools import (
     RemoveLabelsTool,
 )
 
-_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / ".phase-gate" / "config"
+_PGMCP_CONFIG = Path(__file__).resolve().parents[4] / get_default_server_root() / "config"
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ def mock_github_manager() -> MagicMock:
 @pytest.fixture
 def test_label_config(tmp_path: Path) -> Generator[LabelConfig, None, None]:
     """Create a temp label config with test labels."""
-    yaml_content = """version: "1.0"
+    yaml_content = """version: "1.0.0"
 labels:
   - name: "bug"
     color: "d73a4a"

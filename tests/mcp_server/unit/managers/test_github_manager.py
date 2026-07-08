@@ -234,7 +234,7 @@ class TestGitHubManagerValidateIssueParams:
     @pytest.fixture
     def issue_config(self) -> IssueConfig:
         return IssueConfig(
-            version="1.0",
+            version="1.0.0",
             issue_types=[
                 {"name": "feature", "workflow": "feature", "label": "type:feature"},
                 {"name": "bug", "workflow": "bug", "label": "type:bug"},
@@ -246,7 +246,7 @@ class TestGitHubManagerValidateIssueParams:
     @pytest.fixture
     def label_config(self) -> LabelConfig:
         return LabelConfig(
-            version="1.0",
+            version="1.0.0",
             labels=[
                 {"name": "priority:high", "color": "D93F0B", "description": "High priority"},
                 {"name": "priority:low", "color": "0E8A16", "description": "Low priority"},
@@ -257,16 +257,16 @@ class TestGitHubManagerValidateIssueParams:
 
     @pytest.fixture
     def scope_config(self) -> ScopeConfig:
-        return ScopeConfig(version="1.0", scopes=["workflow", "architecture"])
+        return ScopeConfig(version="1.0.0", scopes=["workflow", "architecture"])
 
     @pytest.fixture
     def milestone_config(self) -> MilestoneConfig:
-        return MilestoneConfig(version="1.0", milestones=[{"number": 1, "title": "v1.0"}])
+        return MilestoneConfig(version="1.0.0", milestones=[{"number": 1, "title": "v1.0"}])
 
     @pytest.fixture
     def contributor_config(self) -> ContributorConfig:
         return ContributorConfig(
-            version="1.0",
+            version="1.0.0",
             contributors=[{"login": "alice", "name": "Alice"}],
         )
 

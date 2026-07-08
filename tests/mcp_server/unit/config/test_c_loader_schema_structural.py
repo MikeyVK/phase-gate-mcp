@@ -10,6 +10,8 @@ No manager/tool consumer rewiring is validated here.
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import inspect
 from pathlib import Path
@@ -45,7 +47,7 @@ from mcp_server.managers import enforcement_runner, phase_contract_resolver
 def config_root(tmp_path: Path) -> Path:
     """Create a minimal config root covering all 15 migrated schemas."""
 
-    config_dir = tmp_path / ".phase-gate" / "config"
+    config_dir = tmp_path / get_default_server_root() / "config"
 
     def write_yaml(relative_path: str, data: dict[str, Any]) -> None:
         target = config_dir / relative_path
@@ -55,6 +57,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "git.yaml",
         {
+            "version": "1.0.0",
             "branch_types": ["feature", "bug"],
             "protected_branches": ["main"],
             "branch_name_pattern": "^[a-z0-9-]+$",
@@ -66,7 +69,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "labels.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "labels": [
                 {
                     "name": "type:feature",
@@ -78,11 +81,11 @@ def config_root(tmp_path: Path) -> Path:
             "label_patterns": [],
         },
     )
-    write_yaml("scopes.yaml", {"version": "1.0", "scopes": ["architecture", "workflow"]})
+    write_yaml("scopes.yaml", {"version": "1.0.0", "scopes": ["architecture", "workflow"]})
     write_yaml(
         "workflows.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "workflows": {
                 "feature": {
                     "name": "feature",
@@ -95,7 +98,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "workphases.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "phases": {
                 "implementation": {
                     "display_name": "Implementation",
@@ -115,7 +118,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "artifacts.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "code",
@@ -137,14 +140,14 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "contributors.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "contributors": [{"login": "alice", "name": "Alice Doe"}],
         },
     )
     write_yaml(
         "issues.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "issue_types": [{"name": "feature", "workflow": "feature", "label": "type:feature"}],
             "required_label_categories": ["type", "priority", "scope"],
             "optional_label_inputs": {},
@@ -153,13 +156,14 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "milestones.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "milestones": [{"number": 1, "title": "v1.0", "state": "open"}],
         },
     )
     write_yaml(
         "policies.yaml",
         {
+            "version": "1.0.0",
             "operations": {
                 "create_file": {
                     "description": "Create file",
@@ -169,12 +173,13 @@ def config_root(tmp_path: Path) -> Path:
                     "require_tdd_prefix": False,
                     "allowed_prefixes": [],
                 }
-            }
+            },
         },
     )
     write_yaml(
         "project_structure.yaml",
         {
+            "version": "1.0.0",
             "directories": {
                 "src": {
                     "parent": None,
@@ -183,13 +188,13 @@ def config_root(tmp_path: Path) -> Path:
                     "allowed_extensions": [".py"],
                     "require_scaffold_for": [],
                 }
-            }
+            },
         },
     )
     write_yaml(
         "quality.yaml",
         {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_logging": {
                 "enabled": True,
                 "output_dir": "temp/qa_logs",
@@ -217,7 +222,7 @@ def config_root(tmp_path: Path) -> Path:
     write_yaml(
         "scaffold_metadata.yaml",
         {
-            "version": "2.0",
+            "version": "1.0.0",
             "comment_patterns": [
                 {
                     "syntax": "hash",
@@ -236,10 +241,11 @@ def config_root(tmp_path: Path) -> Path:
             ],
         },
     )
-    write_yaml("enforcement.yaml", {"enforcement": []})
+    write_yaml("enforcement.yaml", {"version": "1.0.0", "enforcement": []})
     write_yaml(
         "contracts.yaml",
         {
+            "version": "1.0.0",
             "merge_policy": {
                 "pr_allowed_phase": "ready",
                 "branch_local_artifacts": [],
@@ -384,7 +390,7 @@ def _assert_schema_package_has_no_hardcoded_config_paths() -> None:
     schema_dir = Path(inspect.getfile(scaffold_schema)).parent
     for schema_file in schema_dir.rglob("*.py"):
         source = schema_file.read_text(encoding="utf-8")
-        assert ".phase-gate/config/" not in source, (
+        assert f"{get_default_server_root()}/config/" not in source, (
             f"{schema_file.name} must not hardcode config-root paths in schema code"
         )
 

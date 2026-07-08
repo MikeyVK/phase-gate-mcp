@@ -5,18 +5,15 @@ Unit tests for tier3_pattern_python_async.jinja2 template.
 @dependencies: [pytest, jinja2, pathlib, mcp_server.scaffolding]
 """
 
-from pathlib import Path
-
 import pytest
+from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader
 
 
 @pytest.fixture
 def jinja_env():
     """Create Jinja2 environment with test templates path."""
-    templates_path = (
-        Path(__file__).parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
-    )
+    templates_path = get_template_root()
     return Environment(loader=FileSystemLoader(str(templates_path)))
 
 
@@ -31,63 +28,33 @@ class TestTier3PatternPythonAsync:
 
     def test_template_no_extends(self) -> None:
         """Test that tier3 pattern template does not extend (standalone blocks)."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_async.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_async.jinja2"
         content = template_path.read_text(encoding="utf-8")
         # Tier3 patterns are standalone block libraries
         assert "{% extends" not in content
 
     def test_template_has_metadata(self) -> None:
         """Test that template contains TEMPLATE_METADATA."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_async.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_async.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "TEMPLATE_METADATA" in content
         assert "enforcement: ARCHITECTURAL" in content
 
     def test_has_pattern_async_imports_block(self) -> None:
         """Test that template defines pattern_async_imports block."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_async.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_async.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "{% macro pattern_async_imports" in content
 
     def test_has_pattern_async_methods_block(self) -> None:
         """Test that template defines pattern_async_methods block."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_async.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_async.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "{% macro pattern_async_methods" in content
 
     def test_has_pattern_async_context_managers_block(self) -> None:
         """Test that template defines pattern_async_context_managers block."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_async.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_async.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "{% macro pattern_async_context_managers" in content
 

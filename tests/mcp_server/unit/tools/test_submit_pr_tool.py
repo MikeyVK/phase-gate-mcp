@@ -6,6 +6,8 @@
 """
 
 from __future__ import annotations
+from tests.mcp_server.test_support import get_default_server_root
+
 
 import asyncio
 import inspect
@@ -52,8 +54,8 @@ class TestSubmitPRTool:
 
     def test_is_branch_mutating_in_config(self) -> None:
         repo_root = Path(__file__).parent.parent.parent.parent.parent
-        loader = ConfigLoader(config_root=repo_root / ".phase-gate" / "config")
-        config_path = repo_root / ".phase-gate" / "config" / "enforcement.yaml"
+        loader = ConfigLoader(config_root=repo_root / get_default_server_root() / "config")
+        config_path = repo_root / get_default_server_root() / "config" / "enforcement.yaml"
         config = loader.load_enforcement_config(config_path=config_path)
         assert "submit_pr" in config.categories.get("branch_mutating", [])
 

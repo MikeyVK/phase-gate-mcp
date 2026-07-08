@@ -10,6 +10,7 @@ Issue #229 Cycle 10: GAP-17 — blocking gates must appear BEFORE OK in response
 @dependencies: [pytest, pathlib, mcp_server.tools.phase_tools]
 """
 
+from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
 
@@ -293,10 +294,11 @@ class TestForcePhaseTransitionToolSkippedGatesResponse:
     @pytest.fixture
     def workspace_with_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has exit_requires on planning."""
-        phase_gate_config = tmp_path / ".phase-gate" / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config"
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -315,10 +317,11 @@ phases:
     @pytest.fixture
     def workspace_no_gates(self, tmp_path: Path) -> Path:
         """Workspace with workphases.yaml that has no gates defined."""
-        phase_gate_config = tmp_path / ".phase-gate" / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config"
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -418,10 +421,11 @@ class TestForceTransitionResponseFormat:
 
     def _setup_workspace(self, tmp_path: Path, *, with_gate_key: bool = True) -> tuple[Path, str]:
         """Build workspace with workphases.yaml gate + optional planning_deliverables key."""
-        phase_gate_config = tmp_path / ".phase-gate" / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config"
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -443,7 +447,7 @@ phases:
 
         if with_gate_key:
             # Inject planning_deliverables so gate would have PASSED
-            projects_path = tmp_path / ".phase-gate" / "deliverables.json"
+            projects_path = tmp_path / get_default_server_root() / "deliverables.json"
             data = json.loads(projects_path.read_text())
             data["42"]["planning_deliverables"] = {"cycles": {"total": 1, "cycles": []}}
             projects_path.write_text(json.dumps(data, indent=2))
@@ -519,10 +523,11 @@ phases:
         self, tmp_path: Path
     ) -> None:
         """No gates defined → only ✅ in response, no ⚠️ or ACTION REQUIRED (GAP-17/D10.3)."""
-        phase_gate_config = tmp_path / ".phase-gate" / "config"
+        phase_gate_config = tmp_path / get_default_server_root() / "config"
         phase_gate_config.mkdir(parents=True)
         (phase_gate_config / "workphases.yaml").write_text(
             """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
