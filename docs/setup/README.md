@@ -143,6 +143,9 @@ Verify that the following files are present in your workspace:
 
 *To activate an agent role in VS Code, load `@file:.github/agents/<role>.agent.md` (e.g., `@file:.github/agents/co.agent.md`). In Google Antigravity, load `@file:.agents/rules/<role>.agent.md` (e.g., `@file:.agents/rules/co.agent.md`).*
 
+### Workspace Rule Synchronization
+Because VS Code and Google Antigravity resolve agent files and slash commands from different directory structures (under `.github/` and `.agents/` respectively), any manual modifications made to rules, prompts, or workflows must be manually synchronized between these directories to keep the workspace aligned across both IDEs.
+
 ---
 
 ## 5. Verification
