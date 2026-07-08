@@ -119,43 +119,45 @@ This tool call generates `.pgmcp/state.json` and transitions the project to the 
 
 ---
 
-## Scenario B: Bootstrapping an Existing Cloned Project
+## Scenario B: Integrating pgmcp into an Existing Project (No prior pgmcp setup)
 
-When a developer clones an existing repository that already has `pgmcp` integrated, the global rules (`AGENTS.md`), agent prompts, and custom workflows are already tracked in Git. The assistant only needs to bootstrap the **machine-specific, gitignored runtime files**:
+When a developer wants to add the Phase-Gate workflow to an existing project/repository, the assistant can perform the integration autonomously:
 
-### 1. Recreate Virtual Environment & Install Dependencies
-Run the following commands to recreate the local virtual environment and install dependencies:
+### 1. Install phase-gate-mcp Package
+The agent installs the package in the project's existing Python virtual environment:
 ```powershell
-# Create local virtual environment
-python -m venv .venv
-
-# Install all project dependencies (including phase-gate-mcp)
-.\.venv\Scripts\python -m pip install -r requirements.txt
-.\.venv\Scripts\python -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python -m pip install -e .
+.\.venv\Scripts\python -m pip install phase-gate-mcp
 ```
 
-### 2. Deploy Local IDE Configuration
-Since the configuration templates are already tracked under `.pgmcp/agents/` in the repository, the agent does NOT run `pgmcp --init`. Instead, it simply copies the pre-configured templates to the local, gitignored config paths:
+### 2. Run CLI Initializer
+The agent initializes the server root config and templates under `.pgmcp/`:
+```powershell
+.\.venv\Scripts\pgmcp --init
+```
 
-* **For Google Antigravity**:
-  ```powershell
-  # Copy local mcp_config.json from templates
-  Copy-Item .pgmcp/agents/antigravity/mcp_config.json .agents/mcp_config.json
-  ```
-  *Note: The agent must edit `.agents/mcp_config.json` to replace the placeholder paths with the absolute paths of the newly cloned workspace.*
+### 3. Deploy IDE-Specific Configurations & Rules
+The agent copies the prepackaged rules, prompts, workflows, and configurations from `.pgmcp/agents/` to the workspace root, exactly as described in **Scenario A, Step 3** (deploying `.agents/` or `.vscode/` & `.github/` structures).
 
-* **For VS Code**:
-  ```powershell
-  # Copy VS Code MCP server configuration
-  Copy-Item .pgmcp/agents/vscode/copilot/mcp.json .vscode/mcp.json
-  ```
+### 4. Update Existing Git Ignore Patterns
+Since the project already has a `.gitignore` file, the agent must append the `pgmcp` runtime exclusions to the existing `.gitignore` to prevent committing local logs and config secrets:
+```powershell
+# Append pgmcp ignores to the existing .gitignore
+$ignores = "`n# Phase-Gate MCP Server ignores`n.pgmcp/logs/`n.pgmcp/temp/`n.pgmcp/.restart_marker`n.agents/mcp_config.json`n.vscode/mcp.json`n.logs/`ntemp/"
+$ignores | Add-Content .gitignore
+```
 
-### 3. Initialize Local State File
-The state file `.pgmcp/state.json` is machine-specific and gitignored. To recreate it on the active branch, the assistant must run:
+### 5. Initialize State & Commit the Integration
+Once the MCP server proxy boots, the agent calls:
 ```json
-initialize_project(issue_number=<current_issue>, issue_title="<current_title>", workflow_name="<workflow_type>")
+initialize_project(issue_number=1, issue_title="Integrate phase-gate-mcp", workflow_name="feature")
 ```
+Finally, the agent adds and commits the configuration files (`.pgmcp/`, `AGENTS.md`, `.agents/` or `.github/`, and the modified `.gitignore`) to the repository:
+```powershell
+git add .pgmcp/ AGENTS.md .agents/ .gitignore
+git commit -m "chore: integrate phase-gate-mcp workflow"
+git push
+```
+This ensures that the workflow configurations are tracked in Git, making them instantly available to other developers on the team.
 
 ---
 
