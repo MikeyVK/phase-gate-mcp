@@ -21,15 +21,14 @@ from pathlib import Path
 
 # Third-party
 import pytest
+from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader
 
 
 @pytest.fixture
 def jinja_env():
     """Create Jinja2 environment with template loader."""
-    templates_dir = (
-        Path(__file__).parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
-    )
+    templates_dir = get_template_root()
     return Environment(loader=FileSystemLoader(str(templates_dir)))
 
 
@@ -43,13 +42,7 @@ class TestTier3PatternPythonLifecycle:
 
     def test_template_has_no_extends_or_blocks(self) -> None:
         """Verify template is a MACRO LIBRARY (no extends, no blocks)."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_lifecycle.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_lifecycle.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         assert "{% extends" not in content
@@ -59,13 +52,7 @@ class TestTier3PatternPythonLifecycle:
 
     def test_template_has_metadata(self) -> None:
         """Verify TEMPLATE_METADATA with ARCHITECTURAL enforcement."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_lifecycle.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_lifecycle.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         assert "TEMPLATE_METADATA" in content
@@ -75,13 +62,7 @@ class TestTier3PatternPythonLifecycle:
 
     def test_required_macros_exist(self) -> None:
         """Verify lifecycle macros are defined."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "tier3_pattern_python_lifecycle.jinja2"
-        )
+        template_path = get_template_root() / "tier3_pattern_python_lifecycle.jinja2"
         content = template_path.read_text(encoding="utf-8")
 
         assert "{% macro pattern_lifecycle_imports" in content

@@ -5,12 +5,11 @@ Tests that all templates render correctly with tier3 patterns after refactoring.
 @dependencies: pytest, jinja2, pathlib, mcp_server.scaffolding.templates
 """
 
-from pathlib import Path
-
 import pytest
+from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader
 
-TEMPLATES_DIR = Path(__file__).parents[3] / "mcp_server" / "scaffolding" / "templates"
+TEMPLATES_DIR = get_template_root()
 
 
 @pytest.fixture

@@ -21,9 +21,10 @@ from pathlib import Path
 
 # Third-party
 import pytest
+from tests.mcp_server.test_support import get_template_root
 from jinja2 import Environment, FileSystemLoader, Template
 
-TEMPLATE_DIR = Path(__file__).parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
+TEMPLATE_DIR = get_template_root()
 
 
 @pytest.fixture

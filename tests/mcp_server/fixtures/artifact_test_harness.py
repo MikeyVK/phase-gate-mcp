@@ -42,8 +42,9 @@ def _temp_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generato
     workspace.mkdir()
 
     # Set TEMPLATE_ROOT to actual project templates (not relative to temp CWD)
-    project_root = Path(__file__).parent.parent.parent.parent
-    template_root = project_root / "mcp_server" / "scaffolding" / "templates"
+    from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
+
+    template_root = get_template_root()
     monkeypatch.setenv("TEMPLATE_ROOT", str(template_root))
 
     # Change CWD to workspace (template paths are relative)

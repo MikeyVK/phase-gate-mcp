@@ -83,7 +83,9 @@ def test_project_md_state_json_branch_local_wording() -> None:
     # state.json line must now say branch-local, not runtime/not-committed
     # find the state.json line specifically
     lines = content.splitlines()
-    state_json_lines = [ln for ln in lines if "state.json" in ln and (".pgmcp" in ln or "phase-gate" in ln)]
+    state_json_lines = [
+        ln for ln in lines if "state.json" in ln and (".pgmcp" in ln or "phase-gate" in ln)
+    ]
     assert state_json_lines, "state.json reference line not found"
     state_line = state_json_lines[0]
     assert "branch-local" in state_line

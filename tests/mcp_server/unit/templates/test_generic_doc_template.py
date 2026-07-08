@@ -4,7 +4,7 @@
 @dependencies: [pytest, pathlib, jinja2]
 """
 
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 from typing import Any
 
 import pytest
@@ -14,12 +14,7 @@ from jinja2 import Environment, FileSystemLoader
 @pytest.fixture
 def template_env() -> Environment:
     """Create Jinja2 environment rooted at scaffolding templates."""
-    template_dir = (
-        Path(__file__).parent.parent.parent.parent.parent
-        / "mcp_server"
-        / "scaffolding"
-        / "templates"
-    )
+    template_dir = get_template_root()
     return Environment(loader=FileSystemLoader(template_dir))
 
 

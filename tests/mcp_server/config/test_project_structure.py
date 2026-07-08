@@ -163,7 +163,7 @@ class TestProjectStructureConfig:
                     parent="backend",
                     description="DTOs",
                 ),
-            }
+            },
         )
 
         assert config.get_directory("backend") is not None

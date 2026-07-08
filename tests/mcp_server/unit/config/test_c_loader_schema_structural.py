@@ -173,7 +173,7 @@ def config_root(tmp_path: Path) -> Path:
                     "require_tdd_prefix": False,
                     "allowed_prefixes": [],
                 }
-            }
+            },
         },
     )
     write_yaml(
@@ -188,7 +188,7 @@ def config_root(tmp_path: Path) -> Path:
                     "allowed_extensions": [".py"],
                     "require_scaffold_for": [],
                 }
-            }
+            },
         },
     )
     write_yaml(

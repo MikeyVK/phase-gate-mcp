@@ -34,6 +34,7 @@ from pathlib import Path
 
 # Third-party
 import pytest
+from tests.mcp_server.test_support import get_template_root
 
 # Project modules
 from mcp_server.scaffolding.template_introspector import (
@@ -54,7 +55,7 @@ logger = logging.getLogger(__name__)
 # Shared helpers
 # ---------------------------------------------------------------------------
 
-_TEMPLATE_ROOT = Path(__file__).parents[4] / "mcp_server" / "scaffolding" / "templates"
+_TEMPLATE_ROOT = get_template_root()
 
 # Tier2 structural vars that exist in parent templates but are overridden in concrete templates.
 # Concrete templates (test_unit, test_integration, worker, etc.) override all tier2 blocks,

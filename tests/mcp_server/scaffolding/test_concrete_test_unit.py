@@ -6,6 +6,7 @@ Unit tests for concrete/test_unit.py.jinja2 template.
 """
 
 from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 import pytest
 from jinja2 import Environment, FileSystemLoader
@@ -14,9 +15,7 @@ from jinja2 import Environment, FileSystemLoader
 @pytest.fixture
 def jinja_env():
     """Create Jinja2 environment with test templates path."""
-    templates_path = (
-        Path(__file__).parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
-    )
+    templates_path = get_template_root()
     return Environment(loader=FileSystemLoader(str(templates_path)))
 
 
@@ -31,14 +30,7 @@ class TestConcreteTestUnit:
 
     def test_template_extends_tier2_base(self) -> None:
         """Test that template extends tier2_base_python."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "concrete"
-            / "test_unit.py.jinja2"
-        )
+        template_path = get_template_root() / "concrete" / "test_unit.py.jinja2"
         content = template_path.read_text(encoding="utf-8")
         # Concrete templates extend tier2 base (not tier3 patterns)
         assert '{% extends "tier2_base_python.jinja2" %}' in content
@@ -46,14 +38,7 @@ class TestConcreteTestUnit:
 
     def test_template_imports_tier3_patterns(self) -> None:
         """Test that template imports tier3 pattern templates."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "concrete"
-            / "test_unit.py.jinja2"
-        )
+        template_path = get_template_root() / "concrete" / "test_unit.py.jinja2"
         content = template_path.read_text(encoding="utf-8")
         # Template should import tier3 patterns for DRY composition
         assert '{% import "tier3_pattern_python_' in content
@@ -61,14 +46,7 @@ class TestConcreteTestUnit:
 
     def test_template_has_metadata(self) -> None:
         """Test that template contains TEMPLATE_METADATA."""
-        template_path = (
-            Path(__file__).parent.parent.parent.parent
-            / "mcp_server"
-            / "scaffolding"
-            / "templates"
-            / "concrete"
-            / "test_unit.py.jinja2"
-        )
+        template_path = get_template_root() / "concrete" / "test_unit.py.jinja2"
         content = template_path.read_text(encoding="utf-8")
         assert "TEMPLATE_METADATA" in content
         assert "enforcement: GUIDELINE" in content

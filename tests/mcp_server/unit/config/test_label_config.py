@@ -201,7 +201,9 @@ labels:
         yaml_file = tmp_path / "labels.yaml"
         yaml_file.write_text(yaml_content)
 
-        with pytest.raises(ConfigError, match="Configuration version is missing|Config validation failed"):
+        with pytest.raises(
+            ConfigError, match="Configuration version is missing|Config validation failed"
+        ):
             _load_label_config(yaml_file)
 
     def test_load_missing_labels_field(self, tmp_path: Path) -> None:

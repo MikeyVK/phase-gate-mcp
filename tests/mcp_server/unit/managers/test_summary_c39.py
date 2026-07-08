@@ -35,7 +35,6 @@ def _make_summary_results(
     duration_total_ms: int = 0,
 ) -> dict:
     """Minimal results dict compatible with format_summary_line."""
-    version: "1.0.0"
     gates: list[dict] = []
     for name in failed_gate_names or []:
         gates.append({"name": name, "status": "failed", "issues": []})
