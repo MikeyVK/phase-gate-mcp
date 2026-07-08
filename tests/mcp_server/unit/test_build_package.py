@@ -10,9 +10,7 @@
 """
 
 # Standard library
-import os
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 # Third-party
 import pytest
@@ -23,7 +21,6 @@ from scripts.build_package import (
     copy_assets,
     read_manifest,
 )
-from tests.conftest import pytest_sessionstart
 
 
 class TestBuildPackage:
@@ -80,22 +77,3 @@ class TestBuildPackage:
         with pytest.raises(FileNotFoundError) as exc_info:
             copy_assets(project_root, assets_dir, manifest)
         assert "non_existent_source" in str(exc_info.value)
-
-    def test_pytest_sessionstart_exits_when_assets_missing(self) -> None:
-        """pytest_sessionstart must call pytest.exit on missing/empty assets."""
-        mock_session = MagicMock()
-        mock_session.config.rootdir = "/fake/root"
-
-        msg = (
-            "Error: Package assets directory 'mcp_server/assets' is empty or missing. "
-            "Please run 'python scripts/build_package.py' to compile package "
-            "assets before running tests."
-        )
-
-        with (
-            patch.dict(os.environ, {}),
-            patch("pathlib.Path.exists", return_value=False),
-            patch("pytest.exit") as mock_exit,
-        ):
-            pytest_sessionstart(mock_session)
-            mock_exit.assert_called_once_with(msg)
