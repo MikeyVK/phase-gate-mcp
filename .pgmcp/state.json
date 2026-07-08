@@ -2,9 +2,9 @@
   "branch": "bug/422-fix-dirty-worktree-git-add-or-commit",
   "issue_number": 422,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 2,
-  "last_cycle": 1,
+  "last_cycle": 2,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -51,8 +51,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-07-08T19:18:07.608811+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": null
 }
