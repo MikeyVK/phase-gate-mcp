@@ -2,7 +2,7 @@
   "branch": "bug/422-fix-dirty-worktree-git-add-or-commit",
   "issue_number": 422,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -20,7 +20,16 @@
   "issue_title": "Fix dirty worktree defect in git_add_or_commit",
   "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
   "created_at": "2026-07-08T18:28:21.628825+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-08T18:50:20.908527+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
