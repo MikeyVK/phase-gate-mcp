@@ -65,38 +65,24 @@ def _patch_server_settings(
     token: str | None = None,
 ) -> None:
     """Configure a Settings class mock for server tests."""
+    from tests.mcp_server.test_support import RealSettings  # noqa: PLC0415
+
     resolved_workspace_root = workspace_root or str(Path(__file__).resolve().parents[3])
     server_root_dir = get_default_server_root()
-    resolved_server_root = Path(resolved_workspace_root) / server_root_dir
 
-    # Resolve config root: if local exists, use it, else use package assets
-    config_dir = resolved_server_root / "config"
-    if not config_dir.exists():
-        package_root = Path(__file__).resolve().parents[3]
-        resolved_config_root = package_root / "mcp_server" / "assets" / "config"
-    else:
-        resolved_config_root = config_dir
+    settings = RealSettings.from_env()
+    settings.server.name = "test-server"
+    settings.server.workspace_root = resolved_workspace_root
+    settings.server.config_root = None
+    settings.server.server_root_dir = server_root_dir
+    settings.github.token = token
+    settings.github.owner = "test"
+    settings.github.repo = "repo"
+    settings.logging.level = "INFO"
+    settings.logging.audit_log = ".logs/mcp_audit.log"
 
-    # Resolve template root: if local exists, use it, else use package assets
-    template_dir = resolved_server_root / "templates"
-    if not template_dir.exists():
-        package_root = Path(__file__).resolve().parents[3]
-        resolved_template_root = package_root / "mcp_server" / "assets" / "templates"
-    else:
-        resolved_template_root = template_dir
-
-    mock.from_env.return_value.server.name = "test-server"
-    mock.from_env.return_value.server.workspace_root = resolved_workspace_root
-    mock.from_env.return_value.server.config_root = None
-    mock.from_env.return_value.server.server_root_dir = server_root_dir
-    mock.from_env.return_value.server.resolved_server_root = resolved_server_root
-    mock.from_env.return_value.server.resolved_config_root = resolved_config_root
-    mock.from_env.return_value.server.resolved_template_root = resolved_template_root
-    mock.from_env.return_value.github.token = token
-    mock.from_env.return_value.github.owner = "test"
-    mock.from_env.return_value.github.repo = "repo"
-    mock.from_env.return_value.logging.level = "INFO"
-    mock.from_env.return_value.logging.audit_log = ".logs/mcp_audit.log"
+    mock.return_value = settings
+    mock.from_env.return_value = settings
 
 
 def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:

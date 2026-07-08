@@ -16,9 +16,7 @@ from mcp_server.config.loader import (
     ConfigLoader,
     normalize_config_root,
 )
-from mcp_server.config.loader import (
-    resolve_config_root as resolve_runtime_config_root,
-)
+
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.interfaces import GateReport
 from mcp_server.core.phase_detection import ScopeDecoder
@@ -47,6 +45,7 @@ from mcp_server.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.tools.issue_tools import CreateIssueTool
+from mcp_server.config.settings import Settings as RealSettings
 
 if TYPE_CHECKING:
     from mcp_server.config.settings import Settings
@@ -167,27 +166,15 @@ def resolve_config_root(
     workspace_root: Path | str | None = None,
     required_paths: tuple[str | Path, ...] = (),
 ) -> Path:
-    """Resolve the best config root for one workspace under test.
-
-    Production probe only tries .pgmcp.  Tests may still create workspaces
-    with the default .pgmcp layout, so we fall through to that candidate before
-    giving up and using the canonical project config.
-    """
-    _project_config = Path(__file__).resolve().parents[2] / "mcp_server" / "assets" / "config"
-    if workspace_root is None:
-        return _project_config
-    try:
-        return resolve_runtime_config_root(
-            preferred_root=workspace_root,
-            required_files=required_paths,
-        )
-    except FileNotFoundError:
-        # Production probe only tries .pgmcp; try default .pgmcp next (test
-        # workspaces often use the default layout) but only if all required files exist.
-        legacy = Path(workspace_root) / get_default_server_root() / "config"
-        if legacy.exists() and all((legacy / f).exists() for f in required_paths):
-            return legacy
-        return _project_config
+    """Resolve the best config root for one workspace under test."""
+    settings = RealSettings.from_env()
+    if workspace_root is not None:
+        candidate = Path(workspace_root)
+        if candidate.name != "config":
+            candidate = candidate / settings.server.server_root_dir / "config"
+        if candidate.exists() and all((candidate / f).exists() for f in required_paths):
+            return candidate
+    return settings.server.resolved_config_root
 
 
 def make_config_loader(

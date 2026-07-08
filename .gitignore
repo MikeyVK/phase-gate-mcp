@@ -97,5 +97,6 @@ temp/qa_logs/
 .pgmcp/pyright_test.json
 
 # Release assets (compiled from sources at build time)
-mcp_server/assets/
+mcp_server/assets/*
+!mcp_server/assets/.gitkeep
 
