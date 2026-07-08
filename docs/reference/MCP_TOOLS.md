@@ -433,5 +433,5 @@ DOCS:         git_add_or_commit(workflow_phase="documentation", message="Update 
 
 **Issues or suggestions?**
 - Create issue with `mcp:` label
-- Search existing [MCP reference](../mcp/MCP_TOOLS.md)
+- Search existing [MCP reference](tools/README.md)
 - Check [TDD Workflow](../../coding_standards/TDD_WORKFLOW.md) for best practices

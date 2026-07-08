@@ -55,7 +55,7 @@ PGMCP_WORKSPACE_ROOT          (default: cwd)
 | Variable | Model field | Default | Description |
 |---|---|---|---|
 | `LOG_LEVEL` | `logging.level` | `INFO` | Python log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
-| `MCP_AUDIT_LOG` | `logging.audit_log` | *(logs_dir/mcp_audit.log)* | Override audit log path. Set to empty string to disable. |
+| `PGMCP_AUDIT_LOG` | `logging.audit_log` | *(logs_dir/mcp_audit.log)* | Override audit log path. Set to empty string to disable. |
 
 ### GitHub Integration
 
@@ -94,7 +94,7 @@ settings: Settings = Settings.from_env()
 | Field | Type | Env var | Default |
 |---|---|---|-----------|
 | `level` | `str` | `LOG_LEVEL` | `"INFO"` |
-| `audit_log` | `str \| None` | `MCP_AUDIT_LOG` | `None` (auto-derived) |
+| `audit_log` | `str \| None` | `PGMCP_AUDIT_LOG` | `None` (auto-derived) |
 
 When `audit_log` is `None` the server writes to `logs_dir / "mcp_audit.log"`.
 Set to an empty string `""` to disable audit logging entirely.
