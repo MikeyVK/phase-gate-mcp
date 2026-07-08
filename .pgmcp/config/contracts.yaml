@@ -682,7 +682,7 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
-            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+            [ ] If .pgmcp/state.json contains the final phase or transition audit trail
                 for this branch, commit it before PR preparation.
                 Do not leave the last branch audit trail as dirty local state
                 just because submit_pr may later neutralize branch-local artifacts.
@@ -735,8 +735,8 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
-            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
-                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update pgmcp state before PR')
+                  Ensures .pgmcp/state.json and any other dirty tracked files are committed.
                   submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
@@ -1489,7 +1489,7 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
-            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+            [ ] If .pgmcp/state.json contains the final phase or transition audit trail
                 for this branch, commit it before PR preparation.
                 Do not leave the last branch audit trail as dirty local state
                 just because submit_pr may later neutralize branch-local artifacts.
@@ -1542,8 +1542,8 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
-            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
-                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update pgmcp state before PR')
+                  Ensures .pgmcp/state.json and any other dirty tracked files are committed.
                   submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
@@ -1863,7 +1863,7 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
-            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+            [ ] If .pgmcp/state.json contains the final phase or transition audit trail
                 for this branch, commit it before PR preparation.
                 Do not leave the last branch audit trail as dirty local state
                 just because submit_pr may later neutralize branch-local artifacts.
@@ -1916,8 +1916,8 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
-            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
-                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update pgmcp state before PR')
+                  Ensures .pgmcp/state.json and any other dirty tracked files are committed.
                   submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
@@ -2525,7 +2525,7 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
-            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+            [ ] If .pgmcp/state.json contains the final phase or transition audit trail
                 for this branch, commit it before PR preparation.
                 Do not leave the last branch audit trail as dirty local state
                 just because submit_pr may later neutralize branch-local artifacts.
@@ -2578,8 +2578,8 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
-            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
-                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update pgmcp state before PR')
+                  Ensures .pgmcp/state.json and any other dirty tracked files are committed.
                   submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
@@ -2805,7 +2805,7 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
-            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+            [ ] If .pgmcp/state.json contains the final phase or transition audit trail
                 for this branch, commit it before PR preparation.
                 Do not leave the last branch audit trail as dirty local state
                 just because submit_pr may later neutralize branch-local artifacts.
@@ -2858,8 +2858,8 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
-            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
-                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update pgmcp state before PR')
+                  Ensures .pgmcp/state.json and any other dirty tracked files are committed.
                   submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')
@@ -3395,7 +3395,7 @@ workflows:
             [ ] Run final quality gate: run_quality_gates(scope='branch')
                 If this fails, stop.
 
-            [ ] If .phase-gate/state.json contains the final phase or transition audit trail
+            [ ] If .pgmcp/state.json contains the final phase or transition audit trail
                 for this branch, commit it before PR preparation.
                 Do not leave the last branch audit trail as dirty local state
                 just because submit_pr may later neutralize branch-local artifacts.
@@ -3448,8 +3448,8 @@ workflows:
                 - does the PR body carry: delivered scope, Closes #N claims, deferred items, tracking state?
                 - use the hand-over template sections as a gate before calling submit_pr
 
-            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update phase-gate state before PR')
-                  Ensures .phase-gate/state.json and any other dirty tracked files are committed.
+            [ ] Commit state files before PR: git_add_or_commit(workflow_phase='ready', message='chore: update pgmcp state before PR')
+                  Ensures .pgmcp/state.json and any other dirty tracked files are committed.
                   submit_pr requires a clean working tree — this step must always precede it.
 
             [ ] Submit PR: submit_pr(head='<branch>', title='<title>', body='<scaffolded pr markdown>')

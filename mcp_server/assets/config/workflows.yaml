@@ -1,11 +1,11 @@
 # Workflow Configuration
 # Schema Version: 1.0
-# Phase ordering (SSOT): .phase-gate/config/contracts.yaml (workflow → phase membership)
-# Phase definitions: .phase-gate/config/workphases.yaml (phase metadata, subphase whitelists, commit type hints)
+# Phase ordering (SSOT): .pgmcp/config/contracts.yaml (workflow → phase membership)
+# Phase definitions: .pgmcp/config/workphases.yaml (phase metadata, subphase whitelists, commit type hints)
 # Documentation: docs/reference/WORKFLOWS.md
 
 version: "1.0.0"
-phase_source: ".phase-gate/config/workphases.yaml"
+phase_source: ".pgmcp/config/workphases.yaml"
 
 workflows:
   # Feature Development (full workflow)
