@@ -2,7 +2,7 @@
   "branch": "refactor/386-rename-env-var-prefix-mcp-to-pgmcp",
   "issue_number": 386,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -19,7 +19,16 @@
   "issue_title": "Rename env var prefix MCP_* to PGMCP_*",
   "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
   "created_at": "2026-07-08T19:27:50.541616+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-07-08T19:37:20.374104+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
