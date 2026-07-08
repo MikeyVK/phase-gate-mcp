@@ -97,7 +97,5 @@ temp/qa_logs/
 .pgmcp/pyright_test.json
 
 # Release assets (compiled from sources at build time)
-mcp_server/assets/agents/
-mcp_server/assets/docs/
-mcp_server/assets/config/release_manifest.yaml
+mcp_server/assets/
 

@@ -1,8 +1,0 @@
-version: "1.0.0"
-scopes:
-  - architecture
-  - mcp-server
-  - platform
-  - tooling
-  - workflow
-  - documentation

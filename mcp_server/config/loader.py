@@ -333,22 +333,36 @@ class ConfigLoader:
         data: dict[str, Any],
         resolved_path: Path,
     ) -> SchemaT:
+        # Resolve expected version dynamically from schema type annotation
+        version_field = schema_cls.model_fields.get("version")
+        annotation = version_field.annotation if version_field else None
+        args = getattr(annotation, "__args__", None)
+        if args and isinstance(args, tuple) and len(args) > 0:
+            expected_val = str(args[0])
+        else:
+            expected_val = "1.0.0"
+
+        # Explicit check for version field existence before validation
         if "version" not in data:
             raise ConfigError(
                 f"Configuration version is missing in {resolved_path.name}. "
-                "(expected version '1.0.0')",
+                f"(expected version '{expected_val}')",
                 file_path=str(resolved_path),
             )
-        actual = data.get("version")
-        if actual != "1.0.0":
-            raise ConfigError(
-                f"Configuration version mismatch in {resolved_path.name}. "
-                f"(expected version '1.0.0', got '{actual}')",
-                file_path=str(resolved_path),
-            )
+
         try:
             return schema_cls.model_validate(data)
         except ValidationError as exc:
+            errors = exc.errors()
+            for err in errors:
+                if "version" in err.get("loc", ()):
+                    input_val = err.get("input")
+                    raise ConfigError(
+                        f"Config version mismatch in {resolved_path.name}: "
+                        f"expected version '{expected_val}', found '{input_val}'. "
+                        f"Please update your configuration.",
+                        file_path=str(resolved_path),
+                    ) from exc
             raise ConfigError(
                 f"Config validation failed for {resolved_path.name}: {exc}",
                 file_path=str(resolved_path),

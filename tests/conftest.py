@@ -25,5 +25,14 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     default_settings = Settings()
     dev_server_root = default_settings.server.server_root_dir
 
+    # Fail-fast check for compiled package assets in development repository
+    assets_dir = _project_root / "mcp_server" / "assets"
+    if not assets_dir.exists() or not any(assets_dir.iterdir()):
+        pytest.exit(
+            "CRITICAL: The mcp_server/assets/ directory is empty or missing. "
+            "Please run 'python scripts/build_package.py' first.",
+            returncode=1,
+        )
+
     # Configure default templates root for settings path resolution in tests
     os.environ["MCP_TEMPLATE_ROOT"] = str((_project_root / dev_server_root / "templates").resolve())
