@@ -14,5 +14,22 @@
     "skip_reason": null,
     "parent_branch": "feature/385-package-identity-rename-pgmcp-entry-point",
     "created_at": "2026-07-05T21:41:25.046609+00:00"
+  },
+  "422": {
+    "issue_title": "Fix dirty worktree defect in git_add_or_commit",
+    "workflow_name": "bug",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
+    "created_at": "2026-07-08T18:28:21.533499+00:00"
   }
 }
