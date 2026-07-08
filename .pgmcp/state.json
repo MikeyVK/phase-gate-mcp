@@ -2,7 +2,7 @@
   "branch": "refactor/386-rename-env-var-prefix-mcp-to-pgmcp",
   "issue_number": 386,
   "workflow_name": "refactor",
-  "current_phase": "documentation",
+  "current_phase": "ready",
   "current_cycle": 2,
   "last_cycle": 2,
   "cycle_history": [
@@ -55,6 +55,14 @@
       "from_phase": "validation",
       "to_phase": "documentation",
       "timestamp": "2026-07-08T20:16:18.521929+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-07-08T20:18:09.937727+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null
