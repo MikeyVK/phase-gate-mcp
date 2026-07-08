@@ -1,73 +1,25 @@
 {
-  "branch": "refactor/386-rename-env-var-prefix-mcp-to-pgmcp",
-  "issue_number": 386,
-  "workflow_name": "refactor",
-  "current_phase": "ready",
-  "current_cycle": 2,
-  "last_cycle": 2,
-  "cycle_history": [
-    {
-      "cycle_number": 2,
-      "name": "Cycle 2: Sync Documentation & Configs",
-      "forced": false,
-      "entered": "2026-07-08T20:04:30.360501+00:00"
-    }
-  ],
+  "branch": "epic/416-installable-wheel-standalone-mcp-server",
+  "issue_number": 416,
+  "workflow_name": "epic",
+  "current_phase": "research",
+  "current_cycle": null,
+  "last_cycle": null,
+  "cycle_history": [],
   "required_phases": [
     "research",
     "planning",
-    "implementation",
-    "validation",
+    "design",
+    "coordination",
     "documentation",
     "ready"
   ],
   "execution_mode": "interactive",
   "skip_reason": null,
-  "issue_title": "Rename env var prefix MCP_* to PGMCP_*",
-  "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
-  "created_at": "2026-07-08T19:27:50.541616+00:00",
-  "transitions": [
-    {
-      "from_phase": "research",
-      "to_phase": "planning",
-      "timestamp": "2026-07-08T19:37:20.374104+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "planning",
-      "to_phase": "implementation",
-      "timestamp": "2026-07-08T19:48:49.575352+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "implementation",
-      "to_phase": "validation",
-      "timestamp": "2026-07-08T20:14:01.385594+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "validation",
-      "to_phase": "documentation",
-      "timestamp": "2026-07-08T20:16:18.521929+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    },
-    {
-      "from_phase": "documentation",
-      "to_phase": "ready",
-      "timestamp": "2026-07-08T20:18:09.937727+00:00",
-      "human_approval": null,
-      "forced": false,
-      "skip_reason": null
-    }
-  ],
+  "issue_title": "Installable wheel and standalone MCP server",
+  "parent_branch": "feature/385-package-identity-rename-pgmcp-entry-point",
+  "created_at": "2026-07-05T21:41:25.131895+00:00",
+  "transitions": [],
   "reconstructed": false,
   "current_sub_phase": null
 }
