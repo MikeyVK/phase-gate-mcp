@@ -46,3 +46,18 @@ def test_log_level_env_var_renamed() -> None:
     assert "MCP_LOG_LEVEL" not in source, (
         "settings.py still references 'MCP_LOG_LEVEL'. Rename to 'LOG_LEVEL'."
     )
+
+def test_mcp_env_vars_renamed() -> None:
+    """'MCP_*' environment variables must not appear in settings source."""
+    source = inspect.getsource(_settings_module)
+    legacy_vars = [
+        "MCP_CONFIG_PATH",
+        "MCP_SERVER_NAME",
+        "MCP_WORKSPACE_ROOT",
+        "MCP_SERVER_PROJECT_DIR",
+        "MCP_LOGS_DIR",
+        "MCP_CONFIG_ROOT",
+        "MCP_TEMPLATE_ROOT",
+    ]
+    for var in legacy_vars:
+        assert var not in source, f"settings.py still references legacy variable '{var}'."
