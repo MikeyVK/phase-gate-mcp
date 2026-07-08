@@ -15,6 +15,7 @@ rules loaded by the config layer.
 
 from __future__ import annotations
 
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -36,6 +37,7 @@ class DirectoryPolicy(BaseModel):
 class ProjectStructureConfig(BaseModel):
     """Project structure configuration value object."""
 
+    version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
     directories: dict[str, DirectoryPolicy] = Field(...)
 
     def get_directory(self, path: str) -> DirectoryPolicy | None:

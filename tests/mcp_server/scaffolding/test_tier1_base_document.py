@@ -10,8 +10,9 @@ for tier3 pattern injection.
 from pathlib import Path
 
 import pytest
+from tests.mcp_server.test_support import get_template_root
 
-TEMPLATES_DIR = Path(__file__).parents[3] / "mcp_server" / "scaffolding" / "templates"
+TEMPLATES_DIR = get_template_root()
 TIER1_BASE_DOC = TEMPLATES_DIR / "tier1_base_document.jinja2"
 
 

@@ -43,7 +43,7 @@ class TestTemplateAnalyzer:
 {#- TEMPLATE_METADATA:
   enforcement: STRICT
   level: format
-  version: "2.0"
+  version: "1.0.0"
   validates:
     strict:
       - rule: test_rule
@@ -59,7 +59,7 @@ class TestTemplateAnalyzer:
         # Assert
         assert metadata["enforcement"] == "STRICT"
         assert metadata["level"] == "format"
-        assert metadata["version"] == "2.0"
+        assert metadata["version"] == "1.0.0"
         assert "strict" in metadata["validates"]
         assert len(metadata["validates"]["strict"]) == 1
 

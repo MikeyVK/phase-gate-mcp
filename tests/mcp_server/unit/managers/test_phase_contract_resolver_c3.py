@@ -62,7 +62,7 @@ def _minimal_contracts() -> ContractsConfig:
 
 def _minimal_workphases() -> WorkphasesConfig:
     return WorkphasesConfig(
-        version="1.0",
+        version="1.0.0",
         phases={
             "research": PhaseDefinition(display_name="Research"),
             "ready": PhaseDefinition(display_name="Ready", terminal=True),

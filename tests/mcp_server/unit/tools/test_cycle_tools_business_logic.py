@@ -36,6 +36,7 @@ def cycle_based_phase_contracts(tmp_path: Path) -> None:
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "contracts.yaml").write_text(
         (
+            "version: '1.0.0'\n"
             "merge_policy:\n"
             "  pr_allowed_phase: ready\n"
             "  branch_local_artifacts: []\n"

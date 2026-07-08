@@ -76,7 +76,7 @@ def workspace_root(tmp_path: Path) -> Path:
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(
         """
-version: "1"
+version: "1.0.0"
 phases:
   implementation:
     display_name: "Implementation"
@@ -89,6 +89,7 @@ phases:
     )
     (config_dir / "contracts.yaml").write_text(
         """
+version: "1.0.0"
 merge_policy:
   pr_allowed_phase: ready
   branch_local_artifacts: []

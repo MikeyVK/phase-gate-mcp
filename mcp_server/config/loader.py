@@ -158,14 +158,7 @@ class ConfigLoader:
                 file_path=str(resolved_path),
             )
 
-        try:
-            return ArtifactRegistryConfig.model_validate(raw_loaded)
-        except ValidationError as exc:
-            raise ConfigError(
-                "Failed to load artifact registry: "
-                f"{exc}. Fix: Check file permissions and YAML structure.",
-                file_path=str(resolved_path),
-            ) from exc
+        return self._validate_schema(ArtifactRegistryConfig, raw_loaded, resolved_path)
 
     def load_contributor_config(self, config_path: Path | None = None) -> ContributorConfig:
         data, resolved_path = self._load_yaml("contributors.yaml", config_path=config_path)
@@ -253,6 +246,8 @@ class ConfigLoader:
             config_path=config_path,
             allow_missing=True,
         )
+        if not resolved_path.exists():
+            return EnforcementConfig(version="1.0.0")
         return self._validate_schema(EnforcementConfig, data, resolved_path)
 
     def load_contracts_config(
@@ -338,6 +333,19 @@ class ConfigLoader:
         data: dict[str, Any],
         resolved_path: Path,
     ) -> SchemaT:
+        if "version" not in data:
+            raise ConfigError(
+                f"Configuration version is missing in {resolved_path.name}. "
+                "(expected version '1.0.0')",
+                file_path=str(resolved_path),
+            )
+        actual = data.get("version")
+        if actual != "1.0.0":
+            raise ConfigError(
+                f"Configuration version mismatch in {resolved_path.name}. "
+                f"(expected version '1.0.0', got '{actual}')",
+                file_path=str(resolved_path),
+            )
         try:
             return schema_cls.model_validate(data)
         except ValidationError as exc:

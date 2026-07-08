@@ -28,6 +28,7 @@ def _load_git_config(config_path: Path | None = None) -> GitConfig:
 
 def _git_config_payload(**overrides: object) -> dict[str, object]:
     payload: dict[str, object] = {
+        "version": "1.0.0",
         "branch_types": ["feature", "bug", "fix", "refactor", "docs", "hotfix", "epic"],
         "protected_branches": ["main", "master", "develop"],
         "branch_name_pattern": r"^[a-z0-9-]+$",
@@ -81,7 +82,7 @@ class TestGitConfig:
         fields_with_defaults = [
             name
             for name, field in GitConfig.model_fields.items()
-            if not field.is_required() or field.default_factory is not None
+            if (not field.is_required() or field.default_factory is not None) and name != "version"
         ]
 
         assert fields_with_defaults == []

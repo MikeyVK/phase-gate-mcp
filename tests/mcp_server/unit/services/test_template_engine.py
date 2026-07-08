@@ -8,7 +8,7 @@ to backend/services/template_engine.py for reusability.
 """
 
 import tempfile
-from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
 import pytest
 from jinja2 import TemplateNotFound, UndefinedError
@@ -21,7 +21,7 @@ class TestTemplateEngineInitialization:
 
     def test_accepts_template_root_parameter(self) -> None:
         """TemplateEngine accepts template_root as Path or str."""
-        template_root = Path("mcp_server/scaffolding/templates")
+        template_root = get_template_root()
 
         # Should accept Path
         engine = TemplateEngine(template_root=template_root)
@@ -33,7 +33,7 @@ class TestTemplateEngineInitialization:
 
     def test_accepts_template_dir_parameter(self) -> None:
         """TemplateEngine accepts template_dir (backwards compatibility)."""
-        template_dir = Path("mcp_server/scaffolding/templates")
+        template_dir = get_template_root()
 
         # Should accept template_dir as alias for template_root
         engine = TemplateEngine(template_dir=template_dir)
@@ -55,7 +55,7 @@ class TestTemplateEngineRendering:
     @pytest.fixture
     def engine(self) -> TemplateEngine:
         """Provide TemplateEngine with test templates."""
-        template_root = Path("mcp_server/scaffolding/templates")
+        template_root = get_template_root()
         return TemplateEngine(template_root=template_root)
 
     def test_renders_simple_template(self, engine: TemplateEngine) -> None:
@@ -86,7 +86,7 @@ class TestTemplateEngineInheritance:
     @pytest.fixture
     def engine(self) -> TemplateEngine:
         """Provide TemplateEngine with test templates."""
-        template_root = Path("mcp_server/scaffolding/templates")
+        template_root = get_template_root()
         return TemplateEngine(template_root=template_root)
 
     def test_supports_extends_chain(self, engine: TemplateEngine) -> None:
@@ -129,7 +129,7 @@ class TestTemplateEngineCustomFilters:
     @pytest.fixture
     def engine(self) -> TemplateEngine:
         """Provide TemplateEngine with test templates."""
-        template_root = Path("mcp_server/scaffolding/templates")
+        template_root = get_template_root()
         return TemplateEngine(template_root=template_root)
 
     def test_pascalcase_filter(self, engine: TemplateEngine) -> None:
@@ -170,7 +170,7 @@ class TestTemplateEngineErrorHandling:
     @pytest.fixture
     def engine(self) -> TemplateEngine:
         """Provide TemplateEngine with test templates."""
-        template_root = Path("mcp_server/scaffolding/templates")
+        template_root = get_template_root()
         return TemplateEngine(template_root=template_root)
 
     def test_template_not_found_message(self, engine: TemplateEngine) -> None:
@@ -225,7 +225,7 @@ class TestTemplateEngineDiscovery:
     @pytest.fixture
     def engine(self) -> TemplateEngine:
         """Provide TemplateEngine with test templates."""
-        template_root = Path("mcp_server/scaffolding/templates")
+        template_root = get_template_root()
         return TemplateEngine(template_root=template_root)
 
     def test_list_templates_returns_jinja2_files(self, engine: TemplateEngine) -> None:

@@ -9,7 +9,7 @@
 # Migration: Renamed from components.yaml, extended with document types
 # NOTE: Issue #107 will remove scaffolder_class/scaffolder_module (LEGACY fields)
 
-version: "1.0"
+version: "1.0.0"
 
 artifact_types:
   # ===== CODE ARTIFACTS =====

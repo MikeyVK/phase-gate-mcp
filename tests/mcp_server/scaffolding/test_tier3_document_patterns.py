@@ -15,10 +15,9 @@ All 8 patterns for markdown DOCUMENT templates.
 from __future__ import annotations
 
 from pathlib import Path
+from tests.mcp_server.test_support import get_template_root
 
-TEMPLATE_ROOT = (
-    Path(__file__).parent.parent.parent.parent / "mcp_server" / "scaffolding" / "templates"
-)
+TEMPLATE_ROOT = get_template_root()
 
 
 def test_tier3_pattern_markdown_status_header_exists() -> None:

@@ -88,6 +88,7 @@ def workspace_root(tmp_path: Path) -> Path:
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(
         """
+version: "1.0.0"
 phases:
   planning:
     display_name: "Planning"
@@ -118,6 +119,7 @@ def workspace_root_no_gates(tmp_path: Path) -> Path:
     config_dir.mkdir(parents=True)
     (config_dir / "workphases.yaml").write_text(
         """
+version: "1.0.0"
 phases:
   research:
     display_name: "Research"

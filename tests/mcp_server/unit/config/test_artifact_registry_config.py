@@ -41,7 +41,7 @@ def _load_artifact_registry(config_path: Path) -> ArtifactRegistryConfig:
 def minimal_yaml() -> dict[str, Any]:
     """Minimal valid artifacts.yaml structure."""
     return {
-        "version": "1.0",
+        "version": "1.0.0",
         "artifact_types": [
             {
                 "type": "code",
@@ -76,7 +76,7 @@ class TestArtifactRegistryConfigLoading:
         """Config loads from artifacts.yaml."""
         config = _load_artifact_registry(temp_yaml_file)
 
-        assert config.version == "1.0"
+        assert config.version == "1.0.0"
         assert len(config.artifact_types) == 1
         assert config.artifact_types[0].type_id == "dto"
 
@@ -130,7 +130,7 @@ class TestArtifactDefinitionValidation:
     def test_validates_required_fields(self, tmp_path: Path) -> None:
         """Missing required field raises validation error."""
         invalid_data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "code",
@@ -214,7 +214,7 @@ class TestArtifactRegistryConfigMethods:
     def test_list_type_ids_filtered(self, tmp_path: Path) -> None:
         """list_type_ids() filters by ArtifactType."""
         mixed_data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "code",
@@ -259,7 +259,7 @@ class TestArtifactDefinitionFields:
     def test_parses_all_required_fields(self, tmp_path: Path) -> None:
         """Parses artifact with all required fields."""
         data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "code",
@@ -291,7 +291,7 @@ class TestArtifactDefinitionFields:
     def test_optional_fields_work(self, tmp_path: Path) -> None:
         """Optional fields (LEGACY, template, suffix) parse correctly."""
         data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "code",
@@ -333,7 +333,7 @@ class TestArtifactDefinitionFields:
     def test_optional_fields_default_to_none_or_empty(self, tmp_path: Path) -> None:
         """Optional fields have sensible defaults when omitted."""
         data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "doc",
@@ -380,7 +380,7 @@ class TestStateMachineDefinition:
     def test_state_transitions_parsed(self, tmp_path: Path) -> None:
         """State transitions with from/to parsed correctly."""
         data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "artifact_types": [
                 {
                     "type": "doc",

@@ -314,6 +314,7 @@ class TestServerToolRegistration:
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "enforcement.yaml").write_text(
             """
+            version: "1.0.0"
             enforcement:
               - event_source: tool
                 tool: create_branch

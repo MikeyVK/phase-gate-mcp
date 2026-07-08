@@ -131,7 +131,11 @@ async def _wrapped_execute(
     return ToolResult.json_data(payload, text=text, is_error=is_error)
 
 
-RunTestsTool.execute = _wrapped_execute
+@pytest.fixture(scope="module", autouse=True)
+def _patch_run_tests_execute():
+    RunTestsTool.execute = _wrapped_execute
+    yield
+    RunTestsTool.execute = _original_execute
 
 
 async def _execute_unwrapped(

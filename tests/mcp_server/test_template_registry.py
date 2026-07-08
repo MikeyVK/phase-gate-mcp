@@ -39,7 +39,7 @@ class TestTemplateRegistryInitialization:
         registry_path.parent.mkdir(parents=True, exist_ok=True)
 
         existing_data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "version_hashes": {
                 "abc12345": {
                     "artifact_type": "worker",
@@ -92,7 +92,7 @@ class TestTemplateRegistryInitialization:
         target_json = phase_gate_dir / "template_registry.json"
 
         legacy_data = {
-            "version": "1.0",
+            "version": "1.0.0",
             "version_hashes": {
                 "abc12345": {
                     "artifact_type": "worker",

@@ -2,10 +2,47 @@
   "branch": "feature/420-deferred-release-assets-templates",
   "issue_number": 420,
   "workflow_name": "feature",
-  "current_phase": "research",
-  "current_cycle": null,
-  "last_cycle": null,
-  "cycle_history": [],
+  "current_phase": "implementation",
+  "current_cycle": 7,
+  "last_cycle": 6,
+  "cycle_history": [
+    {
+      "cycle_number": 2,
+      "name": "Test Suite Path Resolution",
+      "forced": false,
+      "entered": "2026-07-07T22:04:39.109562+00:00"
+    },
+    {
+      "cycle_number": 3,
+      "name": "Scaffolding Duplicates Deletion & Git Tracking",
+      "forced": false,
+      "entered": "2026-07-07T22:25:28.162529+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "CLI Flat Copy Initialization",
+      "forced": false,
+      "entered": "2026-07-08T05:07:59.358973+00:00"
+    },
+    {
+      "cycle_number": 5,
+      "name": "IDE Agent Instructions Partitioning",
+      "forced": false,
+      "entered": "2026-07-08T05:14:09.229121+00:00"
+    },
+    {
+      "cycle_number": 6,
+      "name": "Build-Time Packaging Automation",
+      "forced": false,
+      "entered": "2026-07-08T05:29:00.433848+00:00"
+    },
+    {
+      "cycle_number": 7,
+      "name": "Developer Isolation Documentation",
+      "forced": false,
+      "entered": "2026-07-08T05:41:16.230610+00:00"
+    }
+  ],
   "required_phases": [
     "research",
     "design",
@@ -16,11 +53,116 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Documenting test path resolution and versioning findings in research.md.",
   "issue_title": "Implement Deferred Release Assets and Template Bootstrap",
   "parent_branch": "epic/416-installable-wheel-standalone-mcp-server",
   "created_at": "2026-07-06T05:17:15.398891+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-06T05:52:29.248177+00:00",
+      "human_approval": "User approved the research nucleus and strategy in chat.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-07-06T18:51:28.077246+00:00",
+      "human_approval": "Reopening research phase to align strategy.",
+      "forced": true,
+      "skip_reason": "Need to correct research strategy before proceeding to design."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-06T18:51:33.585851+00:00",
+      "human_approval": "User approved the updated research document containing the packaging flat copy strategy.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-07-06T18:59:20.101390+00:00",
+      "human_approval": "Reopening research phase.",
+      "forced": true,
+      "skip_reason": "Reopening research phase to adjust manifest path and dev-isolation documentation."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-06T18:59:30.377163+00:00",
+      "human_approval": "User approved updated research. Moving to design phase.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-07-07T08:00:02.087383+00:00",
+      "human_approval": "Reopening research phase to deepen the versioning analysis.",
+      "forced": true,
+      "skip_reason": "Versioning must be researched and finalized before build pipeline."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-07T08:00:16.961557+00:00",
+      "human_approval": "User approved the updated research strategy including the versioning and upgrade pre-requisites.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-07-07T08:26:25.174186+00:00",
+      "human_approval": "Reopening research phase to simplify versioning strategy based on user feedback.",
+      "forced": true,
+      "skip_reason": "Simplifying versioning to clean-break config version check."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-07T08:33:50.751129+00:00",
+      "human_approval": "Forcing transition to design phase.",
+      "forced": true,
+      "skip_reason": "Resetting to start of design phase per user request."
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-07-07T09:37:10.579318+00:00",
+      "human_approval": "Reopening research phase to record template path resolution and configuration version findings.",
+      "forced": true,
+      "skip_reason": "Documenting test path resolution and versioning findings in research.md."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-07T09:37:37.572413+00:00",
+      "human_approval": "User approved the finalized research strategy including test path resolution. Moving to design phase.",
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-07-07T10:22:23.397066+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "implementation",
+      "timestamp": "2026-07-07T20:09:35.481887+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }

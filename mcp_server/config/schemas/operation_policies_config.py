@@ -18,6 +18,7 @@ from __future__ import annotations
 import fnmatch
 from pathlib import Path
 
+from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -62,6 +63,7 @@ class OperationPolicy(BaseModel):
 class OperationPoliciesConfig(BaseModel):
     """Operation policies configuration value object."""
 
+    version: Literal["1.0.0"] = Field("1.0.0", description="Schema version")
     operations: dict[str, OperationPolicy] = Field(...)
 
     def get_operation_policy(self, operation_id: str) -> OperationPolicy:

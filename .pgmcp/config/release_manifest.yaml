@@ -1,0 +1,10 @@
+version: "1.0.0"
+assets:
+  - source: ".pgmcp/config"
+    target: "config"
+  - source: ".pgmcp/templates"
+    target: "templates"
+  - source: "docs/agents/vscode"
+    target: "agents/vscode"
+  - source: "docs/agents/antigravity"
+    target: "agents/antigravity"

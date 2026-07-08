@@ -186,7 +186,7 @@ async def test_title_too_long_is_refused_before_api_call() -> None:
 
 async def test_milestone_accepted_when_milestones_yaml_is_empty() -> None:
     dependencies = load_issue_tool_dependencies()
-    empty_milestones = MilestoneConfig(version="1.0", milestones=[])
+    empty_milestones = MilestoneConfig(version="1.0.0", milestones=[])
     adapter = MagicMock()
     manager = GitHubManager(
         adapter=adapter,

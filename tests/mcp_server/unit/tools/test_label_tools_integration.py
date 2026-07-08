@@ -71,7 +71,7 @@ class TestCreateLabelToolValidation:
     @pytest.mark.asyncio
     async def test_create_label_valid_succeeds(self, tmp_path: Path) -> None:
         """CreateLabelTool creates label with valid name and color."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -113,7 +113,7 @@ class TestAddLabelsToolValidation:
     @pytest.mark.asyncio
     async def test_add_labels_validates_existence(self, tmp_path: Path) -> None:
         """AddLabelsTool rejects undefined labels (strict enforcement)."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -129,7 +129,7 @@ labels:
     @pytest.mark.asyncio
     async def test_add_labels_all_valid_succeeds(self, tmp_path: Path) -> None:
         """AddLabelsTool adds all labels when all are valid."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -155,7 +155,7 @@ labels:
     @pytest.mark.asyncio
     async def test_add_labels_partial_invalid_rejects_all(self, tmp_path: Path) -> None:
         """AddLabelsTool rejects entire operation if ANY label is undefined."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 labels:
   - name: "type:feature"
     color: "1D76DB"
@@ -177,7 +177,7 @@ labels:
     @pytest.mark.asyncio
     async def test_add_labels_freeform_allowed(self, tmp_path: Path) -> None:
         """AddLabelsTool accepts freeform exceptions."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 freeform_exceptions:
   - "good first issue"
 labels:
@@ -204,7 +204,7 @@ labels:
     @pytest.mark.asyncio
     async def test_add_labels_accepts_dynamic_pattern_label(self, tmp_path: Path) -> None:
         """AddLabelsTool accepts labels matching label_patterns (e.g. parent:302)."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 label_patterns:
   - pattern: "^parent:\\\\d+$"
     description: "Parent issue reference"
@@ -235,7 +235,7 @@ labels:
 def workphases_config() -> WorkphasesConfig:
     """Minimal WorkphasesConfig fixture with standard phases."""
     return WorkphasesConfig(
-        version="1.0",
+        version="1.0.0",
         phases={
             "research": PhaseDefinition(display_name="Research"),
             "planning": PhaseDefinition(display_name="Planning"),
@@ -288,7 +288,7 @@ class TestAddLabelsToolPhaseValidation:
         self, tmp_path: Path, workphases_config: WorkphasesConfig
     ) -> None:
         """AddLabelsTool rejects phase labels not in workphases.yaml."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 label_patterns:
   - pattern: "^phase:[a-z][a-z0-9-]*$"
     description: "Workflow phase label"
@@ -312,7 +312,7 @@ labels: []
         self, tmp_path: Path, workphases_config: WorkphasesConfig
     ) -> None:
         """AddLabelsTool accepts phase:implementation as a valid phase label."""
-        yaml_content = """version: "1.0"
+        yaml_content = """version: "1.0.0"
 label_patterns:
   - pattern: "^phase:[a-z][a-z0-9-]*$"
     description: "Workflow phase label"

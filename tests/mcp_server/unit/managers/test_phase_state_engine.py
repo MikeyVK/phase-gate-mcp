@@ -262,6 +262,7 @@ class TestTransitionHooksWiring:
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "contracts.yaml").write_text(
             (
+                'version: "1.0.0"\n'
                 "merge_policy:\n"
                 "  pr_allowed_phase: ready\n"
                 "  branch_local_artifacts: []\n"
@@ -725,6 +726,7 @@ class TestContextLoadedWriterReset:
     """C5: IContextLoadedWriter injected into PhaseStateEngine clears flag on state changes."""
 
     _CONTRACTS_YAML = (
+        "version: '1.0.0'\n"
         "merge_policy:\n"
         "  pr_allowed_phase: ready\n"
         "  branch_local_artifacts: []\n"
@@ -956,6 +958,7 @@ class TestPhaseStateFreshSLambdaC1:
         config_dir.mkdir(parents=True, exist_ok=True)
         (config_dir / "contracts.yaml").write_text(
             (
+                'version: "1.0.0"\n'
                 "merge_policy:\n"
                 "  pr_allowed_phase: ready\n"
                 "  branch_local_artifacts: []\n"

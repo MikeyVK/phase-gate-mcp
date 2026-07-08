@@ -39,7 +39,7 @@ def _load_workflow_config(config_path: Path | None = None) -> WorkflowConfig:
 def valid_workflows_yaml(tmp_path: Path) -> Path:
     """Create valid workflows.yaml fixture (C6+: no phases lists)."""
     config_data = {
-        "version": "1.0",
+        "version": "1.0.0",
         "workflows": {
             "feature": {
                 "name": "feature",
@@ -77,7 +77,7 @@ class TestWorkflowConfigLoading:
         config = _load_workflow_config(valid_workflows_yaml)
 
         assert isinstance(config, WorkflowConfig)
-        assert config.version == "1.0"
+        assert config.version == "1.0.0"
         assert "feature" in config.workflows
         assert "hotfix" in config.workflows
         assert len(config.workflows) == 2

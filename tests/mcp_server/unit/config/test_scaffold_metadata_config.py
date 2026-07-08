@@ -126,7 +126,7 @@ class TestScaffoldMetadataConfig:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
-version: "2.0"
+version: "1.0.0"
 
 comment_patterns:
   - syntax: hash
@@ -171,6 +171,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -196,6 +197,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -220,6 +222,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -250,6 +253,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -289,6 +293,7 @@ metadata_fields:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns:
   - syntax: hash
     prefix: "#\\\\s*"
@@ -306,6 +311,7 @@ comment_patterns:
         config_file = tmp_path / "scaffold_metadata.yaml"
         config_file.write_text(
             """
+version: "1.0.0"
 comment_patterns: []
 
 metadata_fields:
