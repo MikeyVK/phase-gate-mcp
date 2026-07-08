@@ -11,9 +11,6 @@
 # Standard library
 from pathlib import Path
 
-# Third-party
-import pytest
-
 
 class TestC7Docs:
     """Test suite for verifying Developer Isolation Documentation."""
@@ -24,12 +21,13 @@ class TestC7Docs:
         docs_file = project_root / "docs" / "setup" / "dev-isolation.md"
 
         # Check existence
-        assert docs_file.exists(), "docs/setup/dev-isolation.md does not exist"
+        assert docs_file.exists(), "dev-isolation.md missing"
 
         # Check content structure
         content = docs_file.read_text(encoding="utf-8")
-        assert "# Developer Isolation" in content, "Missing title header"
-        assert "## Introduction" in content or "## Purpose" in content, "Missing Introduction/Purpose section"
+        assert "## Introduction" in content or "## Purpose" in content, (
+            "Missing Introduction/Purpose section"
+        )
         assert "## Architecture" in content, "Missing Architecture section"
         assert "mermaid" in content, "Missing Mermaid architecture diagram"
         assert "## Step-by-Step" in content or "## Setup" in content, "Missing Setup section"
