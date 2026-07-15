@@ -19,7 +19,6 @@ from mcp_server.tools.discovery_tools import SearchDocumentationInput, SearchDoc
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput, ScaffoldArtifactTool
 
 
-
 @pytest.mark.asyncio
 async def test_scaffold_design_doc_with_required_context(
     temp_workspace: Path,

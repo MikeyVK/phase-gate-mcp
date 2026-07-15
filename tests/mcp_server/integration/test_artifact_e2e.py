@@ -18,7 +18,6 @@ import pytest
 from mcp_server.managers.artifact_manager import ArtifactManager
 
 
-
 @pytest.mark.asyncio
 async def test_artifact_scaffolding_smoke(
     artifact_manager: ArtifactManager, temp_workspace: Path

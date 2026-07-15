@@ -63,8 +63,14 @@ class TestArtifactManagerCore:
         mock_artifact.type = "code"
         mock_artifact.file_extension = ".py"
         mock_artifact.name_suffix = "DTO"
-        mock_artifact.context_class = "DTOContext"
-        mock_artifact.context_schema = None
+        mock_artifact.context_schema = {
+            "name": SchemaFieldDef(
+                type="string", title="Name", description="DTO Name", required=True
+            ),
+            "fields": SchemaFieldDef(
+                type="array", title="Fields", description="Fields list", required=False
+            ),
+        }
         mock_registry = Mock(spec=ArtifactRegistryConfig)
         mock_registry.get_artifact.return_value = mock_artifact
 
@@ -229,6 +235,7 @@ class TestArtifactManagerDynamicContext:
 
         manager = ArtifactManager(registry=mock_registry, server_root=Path("."))
         from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
+
         with pytest.raises(ConfigError) as exc_info:
             manager.get_context_schema("dummy")
         assert "No Context schema defined for" in str(exc_info.value)

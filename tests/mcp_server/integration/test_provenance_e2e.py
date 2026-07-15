@@ -282,7 +282,10 @@ class TestProvenanceE2E:
             problem_statement="Define architecture",
             decision="Use layered architecture",
             rationale="Separation of concerns",
-            options=[{"name": "Layered", "description": "Layered arch"}, {"name": "Microservices", "description": "Microservices arch"}],
+            options=[
+                {"name": "Layered", "description": "Layered arch"},
+                {"name": "Microservices", "description": "Microservices arch"},
+            ],
             key_decisions=[{"area": "Architecture", "decision": "Use MVC pattern"}],
             requirements_functional=["Feature X"],
             requirements_nonfunctional=["Performance Y"],

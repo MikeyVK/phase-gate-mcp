@@ -92,6 +92,15 @@ def _make_manager_with_failing_scaffolder(
     """Configure ArtifactManager with mock scaffolder that raises exc_to_raise on scaffold()."""
 
     registry = MagicMock(spec=ArtifactRegistryConfig)
+    mock_art = MagicMock()
+    from mcp_server.config.schemas.artifact_registry_config import SchemaFieldDef  # noqa: PLC0415
+    mock_art.context_schema = {
+        "name": SchemaFieldDef(
+            type="string", title="Name", description="DTO Name", required=True
+        ),
+    }
+    registry.get_artifact.return_value = mock_art
+
     scaffolder = MagicMock(spec=TemplateScaffolder)
     scaffolder.scaffold.side_effect = exc_to_raise
 

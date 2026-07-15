@@ -198,103 +198,58 @@ class ArtifactManager:
         base_class: type[BaseModel],
     ) -> type[BaseModel]:
         """Build a dynamic frozen Pydantic model for context validation."""
-        from pydantic import BaseModel, create_model, Field, ConfigDict  # noqa: PLC0415
+        from pydantic import create_model, Field, ConfigDict  # noqa: PLC0415
         from typing import Any  # noqa: PLC0415
 
         fields: dict[str, Any] = {}
 
         context_schema = getattr(artifact, "context_schema", None)
-        context_class_name = getattr(artifact, "context_class", None)
+        if not isinstance(context_schema, dict):
+            raise ConfigError(f"No Context schema defined for artifact type '{artifact_type}'.")
 
-        if isinstance(context_schema, dict):
-            model_config = ConfigDict(frozen=True, extra="forbid")
-            for field_name, field_def in context_schema.items():
-                # Map type string to python type
-                if field_def.type == "string":
-                    field_type: type = str
-                elif field_def.type == "integer":
-                    field_type = int
-                elif field_def.type == "boolean":
-                    field_type = bool
-                elif field_def.type == "array":
-                    if field_def.items and field_def.items.get("type") == "string":
-                        field_type = list[str]
-                    else:
-                        field_type = list[Any]
+        model_config = ConfigDict(frozen=True, extra="forbid")
+        for field_name, field_def in context_schema.items():
+            # Map type string to python type
+            if field_def.type == "string":
+                field_type: Any = str
+            elif field_def.type == "integer":
+                field_type = int
+            elif field_def.type == "boolean":
+                field_type = bool
+            elif field_def.type == "array":
+                if field_def.items and field_def.items.get("type") == "string":
+                    field_type = list[str]
                 else:
-                    field_type = Any
+                    field_type = list[Any]
+            else:
+                field_type = Any
 
-                # Handle optional vs required
-                if not field_def.required:
-                    field_type = field_type | None
+            # Handle optional vs required
+            if not field_def.required:
+                field_type = field_type | None
+                default_val = field_def.default
+            else:
+                if field_def.default is not None:
                     default_val = field_def.default
                 else:
-                    if field_def.default is not None:
-                        default_val = field_def.default
-                    else:
-                        default_val = ...
+                    default_val = ...
 
-                # Build Field(...)
-                field_kwargs: dict[str, Any] = {
-                    "title": field_def.title,
-                    "description": field_def.description,
-                }
-                if field_def.min_length is not None:
-                    field_kwargs["min_length"] = field_def.min_length
-                if field_def.pattern is not None:
-                    field_kwargs["pattern"] = field_def.pattern
+            # Build Field(...)
+            field_kwargs: dict[str, Any] = {
+                "title": field_def.title,
+                "description": field_def.description,
+            }
+            if field_def.min_length is not None:
+                field_kwargs["min_length"] = field_def.min_length
+            if field_def.pattern is not None:
+                field_kwargs["pattern"] = field_def.pattern
 
-                fields[field_name] = (field_type, Field(default_val, **field_kwargs))
-        elif isinstance(context_class_name, str):
-            # Fallback to inspecting legacy context_class during migration
-            # Set extra="allow" to maintain V1/V2 backward compatibility
-            model_config = ConfigDict(frozen=True, extra="allow")
-            import sys  # noqa: PLC0415
-            schemas_module = sys.modules.get("mcp_server.schemas")
-            if schemas_module is None:
-                import mcp_server.schemas as schemas_module  # noqa: PLC0415
-            context_class = (
-                getattr(schemas_module, context_class_name, None) if context_class_name else None
-            )
-            if context_class:
-                for field_name, field_info in context_class.model_fields.items():
-                    if field_name not in {
-                        "output_path",
-                        "scaffold_created",
-                        "template_id",
-                        "version_hash",
-                    }:
-                        # Map list[str] or list[dict] to list[Any] to allow V1/V2 list formats
-                        if field_info.annotation in (list[str], list[str] | None, list[dict[str, object]]):
-                            if field_info.annotation == list[str] | None:
-                                field_type = list[Any] | None
-                            else:
-                                field_type = list[Any]
-                        else:
-                            field_type = field_info.annotation
-                        
-                        field_kwargs = {
-                            "title": field_info.title,
-                            "description": field_info.description,
-                        }
-                        if field_info.default_factory is not None:
-                            field_kwargs["default_factory"] = field_info.default_factory
-                            fields[field_name] = (field_type, Field(**field_kwargs))
-                        else:
-                            default_val = ... if field_info.is_required() else field_info.default
-                            fields[field_name] = (
-                                field_type,
-                                Field(default_val, **field_kwargs),
-                            )
-        else:
-            model_config = ConfigDict(frozen=True, extra="allow")
+            fields[field_name] = (field_type, Field(default_val, **field_kwargs))
 
         # Create model name based on snake_case type_id
         model_name = f"{artifact_type.title().replace('_', '')}Dynamic{base_class.__name__}"
 
-        return create_model(
-            model_name, __base__=base_class, __config__=model_config, **fields
-        )
+        return create_model(model_name, __base__=base_class, __config__=model_config, **fields)
 
     def _enrich_schema_context(
         self, context: BaseContext, artifact_type: str, provided_output_path: str | None = None
@@ -331,6 +286,7 @@ class ArtifactManager:
                 output_path=output_path_value,
             ),
         )
+
     def _extract_tier_chain(self, template_file: str) -> list[tuple[str, str]]:
         """Extract tier chain with real template names and versions from TEMPLATE_METADATA.
 
@@ -637,6 +593,7 @@ class ArtifactManager:
             context_instance = user_model(**user_context)
         except Exception as e:
             from pydantic import ValidationError as PydanticValidationError  # noqa: PLC0415
+
             missing_fields = []
             msg_details = str(e)
             if isinstance(e, PydanticValidationError):
@@ -644,7 +601,9 @@ class ArtifactManager:
                     if err.get("type") == "missing":
                         loc_path = ".".join(str(x) for x in err["loc"])
                         missing_fields.append(loc_path)
-                msg_details = ", ".join(f"{'.'.join(str(x) for x in err['loc'])}: {err['msg']}" for err in e.errors())
+                msg_details = ", ".join(
+                    f"{'.'.join(str(x) for x in err['loc'])}: {err['msg']}" for err in e.errors()
+                )
 
             val_err = ValidationError(
                 f"Failed to validate {artifact_type} context: {msg_details}",
@@ -659,7 +618,9 @@ class ArtifactManager:
         # 2. Enrich to RenderContext (adds lifecycle fields)
         # We call _enrich_schema_context which is spied on by tests!
         render_context = self._enrich_schema_context(
-            context_instance, artifact_type, provided_output_path=resolved_output_path
+            cast(BaseContext, context_instance),
+            artifact_type,
+            provided_output_path=resolved_output_path,
         )
 
         # 3. Update version_hash in render_context
@@ -811,8 +772,8 @@ class ArtifactManager:
         from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
 
         artifact = self.registry.get_artifact(artifact_type)
-        if not artifact.context_schema and not getattr(artifact, "context_class", None):
-            raise ConfigError(f"No Context schema for artifact type '{artifact_type}'.")
+        if not artifact.context_schema:
+            raise ConfigError(f"No Context schema defined for artifact type '{artifact_type}'.")
 
         dynamic_model = self._build_dynamic_model(artifact_type, artifact, BaseContext)
         return resolve_schema_refs(dynamic_model.model_json_schema())

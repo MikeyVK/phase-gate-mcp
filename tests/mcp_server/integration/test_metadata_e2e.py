@@ -28,7 +28,6 @@ from tests.mcp_server.test_support import make_artifact_manager, make_metadata_p
 class TestMetadataEndToEnd:
     """E2E tests for scaffold metadata workflow."""
 
-
     @pytest.fixture
     def manager(self, tmp_path: Path) -> ArtifactManager:
         """Create manager with workspace_root set."""

@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import pytest
 
-from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
+from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig, SchemaFieldDef
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_registry import TemplateRegistry
@@ -51,6 +51,14 @@ class TestArtifactManagerRegistryIntegration:
         mock_artifact.type = "code"
         mock_artifact.file_extension = ".py"
         mock_artifact.name_suffix = "DTO"
+        mock_artifact.context_schema = {
+            "name": SchemaFieldDef(
+                type="string", title="Name", description="DTO Name", required=True
+            ),
+            "fields": SchemaFieldDef(
+                type="array", title="Fields", description="Fields list", required=False
+            ),
+        }
         mock_config_registry = Mock(spec=ArtifactRegistryConfig)
         mock_config_registry.get_artifact.return_value = mock_artifact
         mock_fs_adapter = Mock()
@@ -97,6 +105,14 @@ class TestArtifactManagerRegistryIntegration:
         mock_artifact.type = "code"
         mock_artifact.file_extension = ".py"
         mock_artifact.name_suffix = "DTO"
+        mock_artifact.context_schema = {
+            "name": SchemaFieldDef(
+                type="string", title="Name", description="DTO Name", required=True
+            ),
+            "fields": SchemaFieldDef(
+                type="array", title="Fields", description="Fields list", required=False
+            ),
+        }
         mock_config_registry = Mock(spec=ArtifactRegistryConfig)
         mock_config_registry.get_artifact.return_value = mock_artifact
 
@@ -145,6 +161,14 @@ class TestArtifactManagerRegistryIntegration:
         mock_artifact.type = "code"
         mock_artifact.file_extension = ".py"
         mock_artifact.name_suffix = "DTO"
+        mock_artifact.context_schema = {
+            "name": SchemaFieldDef(
+                type="string", title="Name", description="DTO Name", required=True
+            ),
+            "fields": SchemaFieldDef(
+                type="array", title="Fields", description="Fields list", required=False
+            ),
+        }
         mock_config_registry = Mock(spec=ArtifactRegistryConfig)
         mock_config_registry.get_artifact.return_value = mock_artifact
 
@@ -193,6 +217,14 @@ class TestArtifactManagerRegistryIntegration:
         mock_artifact.type = "code"
         mock_artifact.file_extension = ".py"
         mock_artifact.name_suffix = "DTO"
+        mock_artifact.context_schema = {
+            "name": SchemaFieldDef(
+                type="string", title="Name", description="DTO Name", required=True
+            ),
+            "fields": SchemaFieldDef(
+                type="array", title="Fields", description="Fields list", required=False
+            ),
+        }
         mock_config_registry = Mock(spec=ArtifactRegistryConfig)
         mock_config_registry.get_artifact.return_value = mock_artifact
 

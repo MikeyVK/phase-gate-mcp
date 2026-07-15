@@ -19,7 +19,6 @@ from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput, ScaffoldArtifactTool
 
 
-
 @pytest.mark.asyncio
 async def test_tool_execute_scaffolds_design_doc(
     temp_workspace: Path, artifact_manager: ArtifactManager
@@ -97,7 +96,7 @@ async def test_tool_execute_scaffolds_dto(
                 {"name": "id", "type": "int"},
                 {"name": "name", "type": "str"},
             ],
-        }
+        },
     )
 
     # Act
