@@ -13,16 +13,13 @@ Verify loading and merging of modular artifact config files from the artifacts/ 
     - None
 """
 
-# Standard library
-from typing import Any
-
 # Third-party
 import pytest
 from pathlib import Path
-from pydantic import ValidationError
 
 # Project modules
 from mcp_server.config.loader import ConfigLoader, ArtifactRegistryConfig
+from mcp_server.core.exceptions import ConfigError
 
 
 class TestModularLoader:
@@ -41,8 +38,30 @@ class TestModularLoader:
         artifacts_dir.mkdir(parents=True)
 
         # Create two modular YAML files
-        (artifacts_dir / "dto.yaml").write_text("type: code\ntype_id: dto\nname: DTO\ndescription: DTO desc\nfile_extension: .py\nstate_machine:\n  states: [CREATED]\n  initial_state: CREATED\n  valid_transitions: []\n", encoding="utf-8")
-        (artifacts_dir / "worker.yaml").write_text("type: code\ntype_id: worker\nname: Worker\ndescription: Worker desc\nfile_extension: .py\nstate_machine:\n  states: [CREATED]\n  initial_state: CREATED\n  valid_transitions: []\n", encoding="utf-8")
+        dto_yaml = (
+            "type: code\n"
+            "type_id: dto\n"
+            "name: DTO\n"
+            "description: DTO desc\n"
+            "file_extension: .py\n"
+            "state_machine:\n"
+            "  states: [CREATED]\n"
+            "  initial_state: CREATED\n"
+            "  valid_transitions: []\n"
+        )
+        worker_yaml = (
+            "type: code\n"
+            "type_id: worker\n"
+            "name: Worker\n"
+            "description: Worker desc\n"
+            "file_extension: .py\n"
+            "state_machine:\n"
+            "  states: [CREATED]\n"
+            "  initial_state: CREATED\n"
+            "  valid_transitions: []\n"
+        )
+        (artifacts_dir / "dto.yaml").write_text(dto_yaml, encoding="utf-8")
+        (artifacts_dir / "worker.yaml").write_text(worker_yaml, encoding="utf-8")
 
         loader = ConfigLoader(config_root)
 
@@ -50,6 +69,7 @@ class TestModularLoader:
         config = loader.load_artifact_registry_config()
 
         # Assert
+        assert isinstance(config, ArtifactRegistryConfig)
         assert config.version == "1.0.0"
         assert len(config.artifact_types) == 2
         type_ids = [a.type_id for a in config.artifact_types]
