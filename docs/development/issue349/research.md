@@ -38,7 +38,7 @@ The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) i
     *   **No Import-Time Side Effects**: Removing Python schema loading eliminates the security and reloading issues.
 *   **Dynamic Validation**: By utilizing `pydantic.create_model` or `jsonschema.validate`, `ArtifactManager` can dynamically generate memory-based validation schemas directly from the `artifacts.yaml` definitions.
 *   **Lifecycle Enrichment**: Generic base classes (`DocRenderContext`, `CodeRenderContext`) can handle all lifecycle metadata injection without needing a 1-to-1 concrete python `RenderContext` for every template.
-
+*   **Modular Configuration**: A monolithic `artifacts.yaml` of 1400+ lines introduces maintenance bottlenecks and DRY violations. By implementing a modular folder-based loader (scanning `config/artifacts/*.yaml`), we can split definitions into separate, small files.
 ---
 
 ## Approved Strategy
@@ -51,7 +51,7 @@ The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) i
 - **No Python Schemas**: `context` and `render_context` Python schemas for individual templates are completely eliminated. The server will dynamically build validation boundaries (via Pydantic `create_model` or JSON Schema) based on the YAML constraints (e.g., `min_length`, `pattern`, `type: array`).
 - **Generic Render Context**: Lifecycle fields (e.g., `output_path`, `version_hash`) will be injected generically via base render contexts rather than template-specific classes.
 - **Issue #326 Absorption**: The V1 dict-based fallback pipeline and the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag are permanently removed.
-
+- **Modular Configuration**: The config loader will scan the `config/artifacts/` (and `.pgmcp/config/artifacts/`) directories and dynamically compile all artifact definitions. The monolithic `artifacts.yaml` file will be cleaned up and split. This change is not backward compatible with monolithic files if they are not modularized.
 ---
 
 ## Expected Results
@@ -60,7 +60,7 @@ Users can define a new template entirely via a `.jinja2` file and a block in `.p
 
 ## Related Documentation
 - Issue #326
----
+- Issue #349 - Modular Configuration Initiative (Proposed in v1.3)
 
 ## Version History
 
@@ -69,3 +69,4 @@ Users can define a new template entirely via a `.jinja2` file and a block in `.p
 | 1.0 | 2026-07-14 | Agent | Initial draft |
 | 1.1 | 2026-07-15 | Agent | Updated with Approved Strategy: Clean Break, YAML-driven validation |
 | 1.2 | 2026-07-15 | Agent | Broadened scope to absorb Issue #326 (Remove V1 pipeline and feature flag) |
+| 1.3 | 2026-07-15 | Agent | Added Modular Configuration Initiative (split artifacts.yaml into artifacts/*.yaml) |
