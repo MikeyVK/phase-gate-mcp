@@ -2,7 +2,7 @@
   "branch": "feature/template-workspace-initiative",
   "issue_number": 349,
   "workflow_name": "feature",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -25,6 +25,14 @@
       "from_phase": "research",
       "to_phase": "design",
       "timestamp": "2026-07-15T17:24:05.711626+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-07-15T18:01:31.351994+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null

@@ -1,0 +1,119 @@
+<!-- docs\development\issue349\planning.md -->
+<!-- template=planning version=130ac5ea created=2026-07-15T18:16Z updated= -->
+# Implementation Plan: Dynamic YAML Schema Validation
+
+**Status:** DRAFT  
+**Version:** 1.0  
+**Last Updated:** 2026-07-15
+
+---
+
+## Purpose
+
+Define safe sequential slices (TDD cycles) to replace legacy context classes.
+
+## Scope
+
+**In Scope:**
+mcp_server/config/schemas/artifact_registry_config.py, mcp_server/managers/artifact_manager.py, artifacts.yaml, scaffold_artifact tool, mcp_server/schemas/ (legacy contexts).
+
+**Out of Scope:**
+Versioning, remote schema fetching.
+
+## Prerequisites
+
+Read these first:
+1. Approved strategy and design from previous phases.
+---
+
+## Summary
+
+Execute a Clean Break migration to replace internal Python-coupled template loading with a declarative YAML-driven `ArtifactManager` that builds frozen Pydantic validation models at runtime.
+
+---
+
+## Dependencies
+
+- Cycles must be executed in sequential order.
+
+---
+
+## TDD Cycles
+
+
+### Cycle 1: C_CONFIG.1
+
+**Goal:** Update ArtifactRegistryConfig and artifacts.yaml to use declarative SchemaFieldDef instead of context_class string.
+
+**Tests:**
+- tests/mcp_server/config/test_component_registry.py
+
+**Success Criteria:**
+- ArtifactRegistryConfig parses schema definition correctly
+- tests/mcp_server/config/test_component_registry.py passes
+
+
+
+### Cycle 2: C_ENGINE.2
+
+**Goal:** Refactor ArtifactManager to build frozen Pydantic models at runtime via pydantic.create_model (inheriting/injecting BaseRenderContext lifecycle fields) and use them for schema generation and validation.
+
+**Tests:**
+- tests/mcp_server/managers/test_artifact_manager.py
+
+**Success Criteria:**
+- get_schema() outputs valid JSON Schema
+- scaffold_artifact properly fails fast on invalid input using the dynamic model
+- All typing/mypy obligations from TYPE_CHECKING_PLAYBOOK.md are respected when instantiating dynamic types.
+
+
+
+### Cycle 3: C_CLEANUP.3
+
+**Goal:** Delete legacy *RenderContext classes and clean up test fixtures.
+
+**Tests:**
+- tests/mcp_server/acceptance/test_issue56_acceptance.py
+- tests/mcp_server/tools/test_scaffold_artifact.py
+
+**Success Criteria:**
+- No Python module lookups remain in ArtifactManager
+- Test helpers are DRY and resolve paths centrally (SSOT)
+- Legacy DTOContext, WorkerContext, etc. are fully deleted
+
+
+---
+
+## Risks & Mitigation
+
+- **Risk:** Dynamic Pydantic models bypass strict Mypy checks and trigger linter warnings.
+  - **Mitigation:** Use targeted casting or `assert` narrowing where required, strictly documenting deviations per TYPE_CHECKING_PLAYBOOK.md. Explicit Quality Gate Expectation: No global or file-level suppressions (e.g., `# ruff: noqa:`) are permitted for dynamic model logic. Strict 10.00/10 pylint adherence must be maintained.
+- **Risk:** Regression tests may fail purely because they explicitly assert legacy Python schemas.
+  - **Mitigation:** Delete test baggage that proves a negative. Refactor to test observable tool behavior instead of internal mock signatures.
+
+---
+
+## Milestones
+
+- Configuration logic adapted
+- ArtifactManager Engine running on pure YAML
+- Legacy Contexts removed
+
+## Related Documentation
+- **[docs/development/issue349/design.md][related-1]**
+- **[docs/development/issue349/research.md][related-2]**
+- **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md][related-3]**
+
+<!-- Link definitions -->
+
+[related-1]: docs/development/issue349/design.md
+[related-2]: docs/development/issue349/research.md
+[related-3]: docs/coding_standards/ARCHITECTURE_PRINCIPLES.md
+
+---
+
+## Version History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2026-07-15 | Agent | Initial draft |
