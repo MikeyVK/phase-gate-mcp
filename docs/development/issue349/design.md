@@ -124,8 +124,12 @@ class BaseRenderContext(BaseModel):
 class ArtifactManager:
     # No changes to public signatures, only internal resolution changes:
     def get_schema(self, artifact_type: str) -> dict[str, Any]:
-        # Returns model_json_schema() from dynamically generated model
-        ...
+**4. Config Loader Modularity (Option B - Explicit & Modular):**
+The config loader will read `artifacts.yaml` as the index, then scan the `artifacts/` subdirectory situated in the same folder. All `.yaml` files in `artifacts/` will be safe-loaded.
+To prevent loader-level magic and adhere strictly to "Explicit over Implicit":
+1. **No Shared Field Inheritance**: Each modular YAML file explicitly defines its entire `context_schema`.
+2. **Explicit State Machine**: Each modular YAML file explicitly defines its `state_machine` block.
+All definitions are then validated together under `ArtifactRegistryConfig` at load-time. All path resolutions are relative to the loader's resolved `config_root` directory (no absolute or hardcoded path string literals).
 
     def scaffold_artifact(self, artifact_type: str, name: str, context: dict[str, Any]) -> ScaffoldResult:
         # Validates context against dynamic Pydantic model instead of getattr(schemas_module)
