@@ -19,11 +19,6 @@ from tests.mcp_server.test_support import make_artifact_manager
 class TestArtifactManagerCore:
     """Test ArtifactManager core functionality."""
 
-    @pytest.fixture(autouse=True)
-    def _force_v1_pipeline(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Force V1 pipeline: these tests validate V1 scaffolding infrastructure."""
-        monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
-
     def test_constructor_accepts_optional_registry(self) -> None:
         """Test that constructor accepts optional registry parameter."""
         mock_registry = Mock(spec=ArtifactRegistryConfig)
@@ -136,15 +131,38 @@ class TestGetContextSchema:
 
     def _make_manager(self) -> ArtifactManager:
         mock_registry = Mock(spec=ArtifactRegistryConfig)
+        from mcp_server.config.schemas.artifact_registry_config import SchemaFieldDef
 
         def get_mock_artifact(artifact_type: str) -> Mock:
             mock_art = Mock()
+            mock_art.template_path = "concrete/dto.py.jinja2"
+            type(mock_art).output_type = PropertyMock(return_value="file")
+            mock_art.type = "code"
+            mock_art.file_extension = ".py"
+            mock_art.name_suffix = "DTO"
+            mock_art.required_fields = []
+            mock_art.optional_fields = []
+
             if artifact_type == "research":
-                mock_art.context_class = "ResearchContext"
+                mock_art.context_schema = {
+                    "title": SchemaFieldDef(
+                        type="string", title="Title", description="The title", required=True
+                    )
+                }
             elif artifact_type == "generic_doc":
-                mock_art.context_class = "GenericDocContext"
+                mock_art.context_schema = {
+                    "title": SchemaFieldDef(
+                        type="string", title="Title", description="The title", required=True
+                    ),
+                    "purpose": SchemaFieldDef(
+                        type="string", title="Purpose", description="The purpose", required=True
+                    ),
+                    "summary": SchemaFieldDef(
+                        type="string", title="Summary", description="The summary", required=True
+                    )
+                }
             else:
-                mock_art.context_class = None
+                mock_art.context_schema = None
             return mock_art
 
         mock_registry.get_artifact.side_effect = get_mock_artifact
