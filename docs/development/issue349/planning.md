@@ -127,6 +127,12 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 - ArtifactManager Engine running on pure YAML (V3), V1 pipeline eliminated
 - Massive legacy cleanup completed
 
+## Documentation Deliverables
+
+During the documentation phase, the following mandatory guides must be created:
+1. **Scaffolding Architecture Guide**: A complete description of the new decoupled, tiered Jinja2 template and YAML-driven schema architecture.
+2. **Developer & Agent Guide**: A tutorial for new developers and LLM agents on how to create and contribute new templates and artifacts.
+3. **Migration Guide**: Step-by-step instructions on splitting the legacy monolithic `artifacts.yaml` configuration into the new modular folder-based `artifacts/` folder structure.
 ## Related Documentation
 - **[docs/development/issue349/design.md][related-1]**
 - **[docs/development/issue349/research.md][related-2]**
@@ -145,3 +151,4 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 | 1.0 | 2026-07-15 | Agent | Initial draft |
 | 1.1 | 2026-07-15 | Agent | Fix test paths, incorporate QA review (Issue 326 deletion blast radius) |
 | 1.2 | 2026-07-15 | Agent | Added C_MODULAR_LOADER.4 and C_MIGRATE_MODULAR.5 cycles for folder-based config modularity |
+| 1.3 | 2026-07-15 | Agent | Updated planning to reflect Option B Clean Break and documented extra documentation obligations |
