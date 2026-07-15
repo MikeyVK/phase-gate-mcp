@@ -47,7 +47,7 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 
 **Tests:**
 - tests/mcp_server/config/test_component_registry.py (Verified existing file)
-
+- tests/mcp_server/unit/config/test_artifact_registry_config.py
 **Success Criteria:**
 - ArtifactRegistryConfig parses schema definition correctly
 - tests/mcp_server/config/test_component_registry.py passes

@@ -32,7 +32,7 @@
                 "description": "Update tests/mcp_server/config/test_component_registry.py to cover the new schema parsing"
               }
             ],
-            "exit_criteria": "ArtifactRegistryConfig parses schema definition correctly and test_component_registry.py passes"
+            "exit_criteria": "ArtifactRegistryConfig parses schema definition correctly and both test_component_registry.py and test_artifact_registry_config.py pass"
           },
           {
             "cycle_number": 2,
