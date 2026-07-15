@@ -288,6 +288,44 @@ class TestArtifactDefinitionFields:
         assert artifact.file_extension == ".py"
         assert artifact.state_machine.states == ["CREATED"]
 
+    def test_parses_context_schema(self, tmp_path: Path) -> None:
+        """Test parsing of declarative context_schema."""
+        data = {
+            "version": "1.0.0",
+            "artifact_types": [
+                {
+                    "type": "code",
+                    "type_id": "dto",
+                    "name": "DTO",
+                    "description": "DTO",
+                    "file_extension": ".py",
+                    "state_machine": {"states": ["CREATED"], "initial_state": "CREATED"},
+                    "context_schema": {
+                        "name": {
+                            "type": "string",
+                            "title": "Name",
+                            "description": "The name",
+                            "required": True,
+                            "min_length": 2,
+                            "pattern": "^[A-Z]"
+                        }
+                    }
+                }
+            ]
+        }
+        file_path = tmp_path / "schema.yaml"
+        file_path.write_text(yaml.safe_dump(data), encoding="utf-8")
+        config = _load_artifact_registry(file_path)
+        artifact = config.get_artifact("dto")
+
+        assert artifact.context_schema is not None
+        assert "name" in artifact.context_schema
+        field = artifact.context_schema["name"]
+        assert field.type == "string"
+        assert field.title == "Name"
+        assert field.min_length == 2
+        assert field.pattern == "^[A-Z]"
+        assert not hasattr(artifact, "context_class")
     def test_optional_fields_work(self, tmp_path: Path) -> None:
         """Optional fields (LEGACY, template, suffix) parse correctly."""
         data = {
