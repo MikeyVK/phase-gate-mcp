@@ -25,14 +25,14 @@
             "deliverables": [
               {
                 "id": "C1.D1",
-                "description": "Update mcp_server/config/schemas/artifact_registry_config.py to parse YAML schema definition"
+                "description": "ArtifactRegistryConfig and artifacts.yaml use declarative SchemaFieldDef"
               },
               {
                 "id": "C1.D2",
                 "description": "Update tests/mcp_server/config/test_component_registry.py to cover the new schema parsing"
               }
             ],
-            "exit_criteria": "ArtifactRegistryConfig parses schema definition correctly. tests/mcp_server/config/test_component_registry.py passes."
+            "exit_criteria": "ArtifactRegistryConfig parses schema definition correctly and test_component_registry.py passes"
           },
           {
             "cycle_number": 2,
@@ -40,14 +40,14 @@
             "deliverables": [
               {
                 "id": "C2.D1",
-                "description": "Refactor mcp_server/managers/artifact_manager.py to dynamically build models"
+                "description": "ArtifactManager refactored to build frozen Pydantic models at runtime"
               },
               {
                 "id": "C2.D2",
-                "description": "Update tests/mcp_server/managers/test_artifact_manager.py"
+                "description": "PYDANTIC_SCAFFOLDING_ENABLED flag and V1 fallback logic removed"
               }
             ],
-            "exit_criteria": "get_schema() outputs valid JSON Schema. scaffold_artifact properly fails fast on invalid input using the dynamic model. All typing obligations respected."
+            "exit_criteria": "get_schema() outputs valid JSON Schema, scaffold_artifact fails fast on invalid input, feature flag deleted"
           },
           {
             "cycle_number": 3,
@@ -55,14 +55,14 @@
             "deliverables": [
               {
                 "id": "C3.D1",
-                "description": "Delete legacy contexts and refactor tests/mcp_server/acceptance/test_issue56_acceptance.py"
+                "description": "Legacy *RenderContext classes and contexts deleted"
               },
               {
                 "id": "C3.D2",
-                "description": "Update tests/mcp_server/tools/test_scaffold_artifact.py to remove mock baggage"
+                "description": "Test helpers DRYed out and 17 parity tests deleted"
               }
             ],
-            "exit_criteria": "No Python module lookups remain in ArtifactManager. Test helpers are DRY and resolve paths centrally (SSOT). Legacy DTOContext, WorkerContext, etc. are fully deleted."
+            "exit_criteria": "No Python module lookups remain, ~23 Context files and ~21 RenderContext files deleted, 21 entries migrated"
           }
         ]
       }

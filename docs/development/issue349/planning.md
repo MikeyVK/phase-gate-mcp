@@ -2,7 +2,7 @@
 <!-- template=planning version=130ac5ea created=2026-07-15T18:16Z updated= -->
 # Implementation Plan: Dynamic YAML Schema Validation
 
-**Status:** DRAFT  
+**Status:** APPROVED  
 **Version:** 1.0  
 **Last Updated:** 2026-07-15
 
@@ -10,12 +10,12 @@
 
 ## Purpose
 
-Define safe sequential slices (TDD cycles) to replace legacy context classes.
+Define safe sequential slices (TDD cycles) to replace legacy context classes and absorb Issue #326 scope (V1 pipeline removal).
 
 ## Scope
 
 **In Scope:**
-mcp_server/config/schemas/artifact_registry_config.py, mcp_server/managers/artifact_manager.py, artifacts.yaml, scaffold_artifact tool, mcp_server/schemas/ (legacy contexts).
+mcp_server/config/schemas/artifact_registry_config.py, mcp_server/managers/artifact_manager.py, artifacts.yaml, scaffold_artifact tool, mcp_server/schemas/ (legacy contexts), test paths.
 
 **Out of Scope:**
 Versioning, remote schema fetching.
@@ -28,7 +28,7 @@ Read these first:
 
 ## Summary
 
-Execute a Clean Break migration to replace internal Python-coupled template loading with a declarative YAML-driven `ArtifactManager` that builds frozen Pydantic validation models at runtime.
+Execute a Clean Break migration to replace internal Python-coupled template loading with a declarative YAML-driven `ArtifactManager` that builds frozen Pydantic validation models at runtime. Also eliminates V1/V2 dual pipelines.
 
 ---
 
@@ -46,7 +46,7 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 **Goal:** Update ArtifactRegistryConfig and artifacts.yaml to use declarative SchemaFieldDef instead of context_class string.
 
 **Tests:**
-- tests/mcp_server/config/test_component_registry.py
+- tests/mcp_server/config/test_component_registry.py (Verified existing file)
 
 **Success Criteria:**
 - ArtifactRegistryConfig parses schema definition correctly
@@ -56,30 +56,33 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 
 ### Cycle 2: C_ENGINE.2
 
-**Goal:** Refactor ArtifactManager to build frozen Pydantic models at runtime via pydantic.create_model (inheriting/injecting BaseRenderContext lifecycle fields) and use them for schema generation and validation.
+**Goal:** Refactor ArtifactManager to build frozen Pydantic models at runtime via pydantic.create_model (inheriting/injecting BaseRenderContext lifecycle fields) and use them for schema generation and validation. Remove the V1 dict-based fallback logic and the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag (Issue #326).
 
 **Tests:**
-- tests/mcp_server/managers/test_artifact_manager.py
+- tests/mcp_server/unit/managers/test_artifact_manager.py
 
 **Success Criteria:**
 - get_schema() outputs valid JSON Schema
 - scaffold_artifact properly fails fast on invalid input using the dynamic model
 - All typing/mypy obligations from TYPE_CHECKING_PLAYBOOK.md are respected when instantiating dynamic types.
+- Feature flag and V1 fallback logic are completely deleted.
 
 
 
 ### Cycle 3: C_CLEANUP.3
 
-**Goal:** Delete legacy *RenderContext classes and clean up test fixtures.
+**Goal:** Delete legacy python contexts, test fixtures, and 17 parity tests from Issue #326. Explicitly migrate all artifacts.yaml entries.
 
 **Tests:**
 - tests/mcp_server/acceptance/test_issue56_acceptance.py
-- tests/mcp_server/tools/test_scaffold_artifact.py
+- tests/mcp_server/unit/tools/test_scaffold_artifact.py
 
 **Success Criteria:**
 - No Python module lookups remain in ArtifactManager
 - Test helpers are DRY and resolve paths centrally (SSOT)
-- Legacy DTOContext, WorkerContext, etc. are fully deleted
+- ~23 legacy Context files (`schemas/contexts/`) and ~21 legacy RenderContext files (`schemas/render_contexts/`) are fully deleted
+- ~17 V1/V2 parity tests deleted or rewritten
+- 21 entries in `artifacts.yaml` successfully migrated from `context_class` to `context_schema`
 
 
 ---
@@ -96,8 +99,8 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 ## Milestones
 
 - Configuration logic adapted
-- ArtifactManager Engine running on pure YAML
-- Legacy Contexts removed
+- ArtifactManager Engine running on pure YAML (V3), V1 pipeline eliminated
+- Massive legacy cleanup completed
 
 ## Related Documentation
 - **[docs/development/issue349/design.md][related-1]**
@@ -117,3 +120,4 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-07-15 | Agent | Initial draft |
+| 1.1 | 2026-07-15 | Agent | Fix test paths, incorporate QA review (Issue 326 deletion blast radius) |
