@@ -2,7 +2,7 @@
   "branch": "feature/template-workspace-initiative",
   "issue_number": 349,
   "workflow_name": "feature",
-  "current_phase": "planning",
+  "current_phase": "research",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Re-opening research phase to broaden scope to include Issue #326 (remove V1 pipeline and feature flag) and incorporate QA feedback.",
   "issue_title": "Template Workspace Initiative: workspace-owned templates, schema packs",
   "parent_branch": "main",
   "created_at": "2026-07-14T20:22:10.945694+00:00",
@@ -36,6 +36,14 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "research",
+      "timestamp": "2026-07-15T18:44:54.177369+00:00",
+      "human_approval": "true",
+      "forced": true,
+      "skip_reason": "Re-opening research phase to broaden scope to include Issue #326 (remove V1 pipeline and feature flag) and incorporate QA feedback."
     }
   ],
   "reconstructed": false,

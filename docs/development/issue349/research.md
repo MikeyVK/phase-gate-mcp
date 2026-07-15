@@ -12,12 +12,15 @@
 
 The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) is currently bundled inside the wheel. Users have no supported path to adapt scaffolding to their projects or to reuse template schema packs across arbitrary projects without modifying the core server. Furthermore, requiring Python-based `context_class` schemas introduces security risks (arbitrary code execution), caching/reloading issues requiring server restarts, and friction for users wanting simple declarative templates.
 
+**Broadened Scope (Issue #326):** The legacy V1 pipeline (dict-based fallbacks) and the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag in `ArtifactManager` are dead weight. Because this initiative replaces Python-based V2 contexts with pure declarative YAML models (effectively "V3"), retaining the V1 fallback and feature flag would create unacceptable maintenance overhead. Issue #326 is formally absorbed into this initiative's Clean Break strategy.
+
 ## Research Goals
 
 - **Decoupled Template Architecture**: Templates are no longer bundled. The server operates as an engine that resolves scaffolding from a single configured template root.
 - **Folder-Contained Scaffolding**: The "scaffolding trinity" (Jinja2 templates, `artifacts.yaml` metadata, and schema logic) is fully resolved from the workspace configuration paths.
 - **Single Source of Truth**: There is exactly one `artifacts.yaml` (no merging needed) and one template directory.
 - **Pure Declarative Schemas**: Eliminate the need for Python-based `context` and `render_context` schemas for custom templates. Replace with dynamic models built entirely from YAML configuration.
+- **V1/V2 Cleanup**: Completely remove the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag and the legacy V1 dict-based fallback pipeline.
 
 ## Background
 
@@ -28,6 +31,8 @@ The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) i
 ## Findings
 
 *   **Blast Radius**: Implementing these changes impacts `JinjaRenderer` and `TemplateEngine` initialization. `ArtifactManager` must completely drop the Python `sys.modules` lookup for `context_class` and `RenderContext`. `ArtifactRegistryConfig` must be updated to replace `required_fields`/`optional_fields` (or augment them) with JSON Schema-like constraints.
+    *   **Massive Deletion Scope**: The cleanup explicitly encompasses ~23 Context classes (`schemas/contexts/`), ~21 RenderContext classes (`schemas/render_contexts/`), the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag, and the V1 fallback code in `scaffold_artifact()`. 
+    *   **Test Suite Impact**: Approximately 17 tests tied to the V1/V2 feature flag parity (from Issue #326) must be deleted or refactored.
 *   **Architectural Constraints**:
     *   **SSOT (Single Source of Truth)**: The single `artifacts.yaml` at the configured `resolved_config_root` is the definitive SSOT. No fallback merging logic.
     *   **No Import-Time Side Effects**: Removing Python schema loading eliminates the security and reloading issues.
@@ -45,15 +50,16 @@ The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) i
 - **YAML-Driven Validation**: `artifacts.yaml` becomes the sole source of truth for validation. 
 - **No Python Schemas**: `context` and `render_context` Python schemas for individual templates are completely eliminated. The server will dynamically build validation boundaries (via Pydantic `create_model` or JSON Schema) based on the YAML constraints (e.g., `min_length`, `pattern`, `type: array`).
 - **Generic Render Context**: Lifecycle fields (e.g., `output_path`, `version_hash`) will be injected generically via base render contexts rather than template-specific classes.
+- **Issue #326 Absorption**: The V1 dict-based fallback pipeline and the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag are permanently removed.
 
 ---
 
 ## Expected Results
 
-Users can define a new template entirely via a `.jinja2` file and a block in `.pgmcp/config/artifacts.yaml`. Scaffolding validation occurs dynamically without requiring server restarts, custom Python classes, or complex plugin registry management. True folder-contained simplicity is achieved.
+Users can define a new template entirely via a `.jinja2` file and a block in `.pgmcp/config/artifacts.yaml`. Scaffolding validation occurs dynamically without requiring server restarts, custom Python classes, or complex plugin registry management. True folder-contained simplicity is achieved, and the bloated legacy pipelines (V1/V2) are eliminated.
 
 ## Related Documentation
-None
+- Issue #326
 ---
 
 ## Version History
@@ -62,3 +68,4 @@ None
 |---------|------|--------|---------|
 | 1.0 | 2026-07-14 | Agent | Initial draft |
 | 1.1 | 2026-07-15 | Agent | Updated with Approved Strategy: Clean Break, YAML-driven validation |
+| 1.2 | 2026-07-15 | Agent | Broadened scope to absorb Issue #326 (Remove V1 pipeline and feature flag) |
