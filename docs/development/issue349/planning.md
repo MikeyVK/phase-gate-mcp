@@ -88,7 +88,7 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 
 ### Cycle 4: C_MODULAR_LOADER.4
 
-**Goal:** Refactor `loader.py`'s `load_artifact_registry_config` method to scan and load modular configurations from `.pgmcp/config/artifacts/*.yaml` (and `config/artifacts/*.yaml`), merging them dynamically.
+**Goal:** Refactor `loader.py`'s `load_artifact_registry_config` method to scan and load modular configurations from the resolved config folder root (`artifacts/` subdirectory), merging them dynamically.
 
 **Tests:**
 - `tests/mcp_server/unit/config/test_modular_loader.py` (New test file)
@@ -101,7 +101,7 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 
 ### Cycle 5: C_MIGRATE_MODULAR.5
 
-**Goal:** Migrate the monolithic `artifacts.yaml` by splitting it into modular `.yaml` files under `.pgmcp/config/artifacts/`. Add the new `typescript_dto` template and register it in `.pgmcp/config/artifacts/typescript_dto.yaml`.
+**Goal:** Migrate the monolithic `artifacts.yaml` by splitting it into modular `.yaml` files under the resolved config directory's `artifacts/` subdirectory. Add the new `typescript_dto` template and register it in the modular configuration folder.
 
 **Tests:**
 - `tests/mcp_server/acceptance/test_issue56_acceptance.py`

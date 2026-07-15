@@ -96,9 +96,8 @@ class ArtifactDef(BaseModel):
     template_name: str | None = None
     # REPLACES context_class:
     context_schema: dict[str, SchemaFieldDef] | None = None
+```
 
-**3. Config Loader Modularity:**
-The config loader will read `artifacts.yaml` as the index, then scan the `artifacts/` subdirectory next to it. All `.yaml` files in `artifacts/` will be safe-loaded. If a file is a list, its elements are added to `artifact_types`. If it is a dictionary representing a single artifact definition, it is appended. All definitions are validated together under `ArtifactRegistryConfig`.
 **2. Generic Render Context Model:**
 A dynamic builder generates Pydantic models at runtime that inherit from a base context.
 ```python
@@ -125,6 +124,8 @@ class ArtifactManager:
         ...
 ```
 
+**4. Config Loader Modularity:**
+The config loader will read `artifacts.yaml` as the index, then scan the `artifacts/` subdirectory situated in the same folder. All `.yaml` files in `artifacts/` will be safe-loaded. If a file is a list, its elements are added to `artifact_types`. If it is a dictionary representing a single artifact definition, it is appended. All definitions are validated together under `ArtifactRegistryConfig`. All path resolutions are relative to the loader's resolved `config_root` directory (no absolute or hardcoded path string literals).
 ### 3.3. Testing Strategy & Constraints
 
 **Test Relevance & Pruning:**

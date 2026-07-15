@@ -17,7 +17,7 @@
     "created_at": "2026-07-14T20:22:10.934817+00:00",
     "planning_deliverables": {
       "cycles": {
-        "total": 3,
+        "total": 5,
         "cycles": [
           {
             "cycle_number": 1,
@@ -63,6 +63,28 @@
               }
             ],
             "exit_criteria": "No Python module lookups remain, ~23 Context files and ~21 RenderContext files deleted, 21 entries migrated"
+          },
+          {
+            "cycle_number": 4,
+            "name": "C_MODULAR_LOADER.4",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "Refactor loader.py to support modular scanning and merging of artifacts/*.yaml configs"
+              }
+            ],
+            "exit_criteria": "Loader unit tests verify directory scanning and merging"
+          },
+          {
+            "cycle_number": 5,
+            "name": "C_MIGRATE_MODULAR.5",
+            "deliverables": [
+              {
+                "id": "D5.1",
+                "description": "Migrate monolithic artifacts.yaml to modular config/artifacts/ files and add typescript_dto template"
+              }
+            ],
+            "exit_criteria": "Full test suite passes and typescript_dto runs smoke test"
           }
         ]
       }

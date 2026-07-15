@@ -51,12 +51,12 @@ The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) i
 - **No Python Schemas**: `context` and `render_context` Python schemas for individual templates are completely eliminated. The server will dynamically build validation boundaries (via Pydantic `create_model` or JSON Schema) based on the YAML constraints (e.g., `min_length`, `pattern`, `type: array`).
 - **Generic Render Context**: Lifecycle fields (e.g., `output_path`, `version_hash`) will be injected generically via base render contexts rather than template-specific classes.
 - **Issue #326 Absorption**: The V1 dict-based fallback pipeline and the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag are permanently removed.
-- **Modular Configuration**: The config loader will scan the `config/artifacts/` (and `.pgmcp/config/artifacts/`) directories and dynamically compile all artifact definitions. The monolithic `artifacts.yaml` file will be cleaned up and split. This change is not backward compatible with monolithic files if they are not modularized.
+- **Modular Configuration**: The config loader will scan the `artifacts/` folder within the resolved configuration root and dynamically compile all artifact definitions. The monolithic config file will be split. This change is not backward compatible with monolithic files if they are not modularized.
 ---
 
 ## Expected Results
 
-Users can define a new template entirely via a `.jinja2` file and a block in `.pgmcp/config/artifacts.yaml`. Scaffolding validation occurs dynamically without requiring server restarts, custom Python classes, or complex plugin registry management. True folder-contained simplicity is achieved, and the bloated legacy pipelines (V1/V2) are eliminated.
+Users can define a new template entirely via a `.jinja2` file and a modular block in the resolved config folder. Scaffolding validation occurs dynamically without requiring server restarts, custom Python classes, or complex plugin registry management. True folder-contained simplicity is achieved, and the bloated legacy pipelines (V1/V2) are eliminated.
 
 ## Related Documentation
 - Issue #326
