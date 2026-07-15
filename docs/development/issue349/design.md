@@ -124,12 +124,8 @@ class BaseRenderContext(BaseModel):
 class ArtifactManager:
     # No changes to public signatures, only internal resolution changes:
     def get_schema(self, artifact_type: str) -> dict[str, Any]:
-**4. Config Loader Modularity (Option B - Explicit & Modular):**
-The config loader will read `artifacts.yaml` as the index, then scan the `artifacts/` subdirectory situated in the same folder. All `.yaml` files in `artifacts/` will be safe-loaded.
-To prevent loader-level magic and adhere strictly to "Explicit over Implicit":
-1. **No Shared Field Inheritance**: Each modular YAML file explicitly defines its entire `context_schema`.
-2. **Explicit State Machine**: Each modular YAML file explicitly defines its `state_machine` block.
-All definitions are then validated together under `ArtifactRegistryConfig` at load-time. All path resolutions are relative to the loader's resolved `config_root` directory (no absolute or hardcoded path string literals).
+        # Returns model_json_schema() from dynamically generated model
+        ...
 
     def scaffold_artifact(self, artifact_type: str, name: str, context: dict[str, Any]) -> ScaffoldResult:
         # Validates context against dynamic Pydantic model instead of getattr(schemas_module)
@@ -137,12 +133,34 @@ All definitions are then validated together under `ArtifactRegistryConfig` at lo
         ...
 ```
 
-**4. Config Loader Modularity:**
-The config loader will read `artifacts.yaml` as the index, which acts as the SSOT for `shared_context_fields`. It then scans the `artifacts/` subdirectory situated in the same folder. All `.yaml` files in `artifacts/` will be safe-loaded.
-To prevent DRY violations across the modular files:
-1. **Shared Fields Resolution**: If an artifact definition includes `extends_shared_fields: [field1, field2]`, the loader will look up those fields in the index's `shared_context_fields` and dynamically inject them into the artifact's `context_schema` at load time.
-2. **Default State Machine**: If `state_machine` is omitted from an individual file, the loader automatically defaults it to the standard `CREATED` lifecycle state machine.
-All definitions are then validated together under `ArtifactRegistryConfig`. All path resolutions are relative to the loader's resolved `config_root` directory (no absolute or hardcoded path string literals).
+**4. Config Loader Modularity (Option B - Explicit & Modular - Clean Break):**
+The config loader will read `artifacts.yaml` as the index (containing only `version: 1.0.0` and `artifact_types: []`), then scan the `artifacts/` subdirectory situated in the same folder. All `.yaml` files in `artifacts/` will be safe-loaded.
+To prevent loader-level magic and adhere strictly to "Explicit over Implicit" (Rule 8):
+- **No Shared Field Inheritance**: Each modular YAML file explicitly defines its entire `context_schema`.
+- **Explicit State Machine**: Each modular YAML file explicitly defines its `state_machine` block.
+- **Clean Break**: Supporting monolithic `artifacts.yaml` loading is deprecated and removed. Workspaces must migrate by splitting their configs.
+All definitions are then validated together under `ArtifactRegistryConfig` at load-time. All path resolutions are relative to the loader's resolved `config_root` directory (no absolute or hardcoded path string literals).
+
+### 3.3. TypeScript Tiered Template Specification
+
+To prove the language-agnostic extensibility of the V3 tiered template pipeline, we implement support for a TypeScript DTO template. The template inherits through the Jinja2 extends chain:
+
+1. **Tier 0 (Universal Base)**: `tier0_base_artifact.jinja2` is updated to support `format == "typescript"`:
+   ```jinja2
+   {%- elif format == "typescript" or format == "javascript" -%}
+   {%- if output_path -%}
+   // {{ output_path }}
+   // template={{ artifact_type }} version={{ version_hash }} created={{ timestamp }} updated=
+   {%- else -%}
+   // template={{ artifact_type }} version={{ version_hash }}
+   {%- endif -%}
+   ```
+2. **Tier 2 (Language Syntax)**: `tier2_base_typescript.jinja2` extends `tier1_base_code.jinja2` and overrides:
+   - `module_docstring` using JSDoc comments (`/** ... */`)
+   - `imports_section` using ES6 imports (`import { ... } from "..."`)
+   - `class_structure` using `export class {{ class_name }} { ... }`
+3. **Tier 3 (Domain Pattern)**: `tier3_pattern_typescript_dto.jinja2` extends `tier2_base_typescript.jinja2` to define public properties (with conditional `readonly` modifier) and constructor field assignment.
+4. **Tier 4 (Concrete)**: `concrete/typescript_dto.ts.jinja2` extends the Tier 3 pattern to provide the concrete artifact entry.
 ### 3.3. Testing Strategy & Constraints
 
 **Test Relevance & Pruning:**
@@ -173,3 +191,4 @@ All definitions are then validated together under `ArtifactRegistryConfig`. All 
 | 1.1 | 2026-07-15 | Agent | Add concrete interface contracts, options table |
 | 1.2 | 2026-07-15 | Agent | Broadened scope with Issue #326, reconciled lifecycle fields |
 | 1.3 | 2026-07-15 | Agent | Added Modular Configuration system design (split artifacts.yaml into artifacts/*.yaml) |
+| 1.4 | 2026-07-15 | Agent | Clean Break (no monolithic fallback) and TypeScript template design |
