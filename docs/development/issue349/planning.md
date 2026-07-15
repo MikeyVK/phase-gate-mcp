@@ -85,6 +85,31 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 - 21 entries in `artifacts.yaml` successfully migrated from `context_class` to `context_schema`
 
 
+
+### Cycle 4: C_MODULAR_LOADER.4
+
+**Goal:** Refactor `loader.py`'s `load_artifact_registry_config` method to scan and load modular configurations from `.pgmcp/config/artifacts/*.yaml` (and `config/artifacts/*.yaml`), merging them dynamically.
+
+**Tests:**
+- `tests/mcp_server/unit/config/test_modular_loader.py` (New test file)
+
+**Success Criteria:**
+- `loader.load_artifact_registry_config()` resolves directory-based configuration files and successfully merges them.
+- Fails fast on invalid syntax or schema mismatches in sub-files.
+
+
+
+### Cycle 5: C_MIGRATE_MODULAR.5
+
+**Goal:** Migrate the monolithic `artifacts.yaml` by splitting it into modular `.yaml` files under `.pgmcp/config/artifacts/`. Add the new `typescript_dto` template and register it in `.pgmcp/config/artifacts/typescript_dto.yaml`.
+
+**Tests:**
+- `tests/mcp_server/acceptance/test_issue56_acceptance.py`
+- Full test suite passes successfully.
+
+**Success Criteria:**
+- Monolithic `artifacts.yaml` cleaned up and split.
+- `typescript_dto` fully registered and scaffolded successfully.
 ---
 
 ## Risks & Mitigation
@@ -117,7 +142,6 @@ Execute a Clean Break migration to replace internal Python-coupled template load
 
 ## Version History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
 | 1.0 | 2026-07-15 | Agent | Initial draft |
 | 1.1 | 2026-07-15 | Agent | Fix test paths, incorporate QA review (Issue 326 deletion blast radius) |
+| 1.2 | 2026-07-15 | Agent | Added C_MODULAR_LOADER.4 and C_MIGRATE_MODULAR.5 cycles for folder-based config modularity |
