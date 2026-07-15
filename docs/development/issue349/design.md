@@ -18,7 +18,7 @@ Define the technical schema and architecture required to transition to pure decl
 - Refactoring ArtifactManager, ArtifactRegistryConfig, get_schema tool, scaffold_artifact tool.
 - Deletion of V1 dict-based fallback and `PYDANTIC_SCAFFOLDING_ENABLED` feature flag (Closes #326).
 - Deletion of legacy python `contexts` and `render_contexts`.
-
+- Refactoring config loader to support scanning and merging multi-file `artifacts/*.yaml` configs.
 **Out of Scope:**
 - Template registry versioning (deferred to another issue).
 
@@ -71,7 +71,7 @@ The scaffolding trinity (Jinja2 templates, artifacts.yaml, Pydantic context sche
 |----------|-----------|
 | artifacts.yaml defines purely declarative schema constraints (e.g. min_length, pattern, type) instead of a 'context_class' string. | SSOT constraint - single source of truth for template validation. |
 | Remove explicit *RenderContext classes. Use a generic RenderContext builder that injects lifecycle fields into the dynamically built Pydantic model. | Reduces boilerplate; dynamic schema can inherit base fields automatically. |
-
+| Config loader scans 'artifacts/' folder next to 'artifacts.yaml'. | Avoid monolithic artifacts.yaml; separates concern per artifact category and makes adding/deleting artifact types trivial and isolated. |
 ### 3.2. Concrete Interface Contracts
 
 **1. Configuration Schema (artifacts.yaml changes):**
@@ -96,8 +96,9 @@ class ArtifactDef(BaseModel):
     template_name: str | None = None
     # REPLACES context_class:
     context_schema: dict[str, SchemaFieldDef] | None = None
-```
 
+**3. Config Loader Modularity:**
+The config loader will read `artifacts.yaml` as the index, then scan the `artifacts/` subdirectory next to it. All `.yaml` files in `artifacts/` will be safe-loaded. If a file is a list, its elements are added to `artifact_types`. If it is a dictionary representing a single artifact definition, it is appended. All definitions are validated together under `ArtifactRegistryConfig`.
 **2. Generic Render Context Model:**
 A dynamic builder generates Pydantic models at runtime that inherit from a base context.
 ```python
@@ -150,7 +151,7 @@ class ArtifactManager:
 ## Version History
 
 | Version | Date | Author | Changes |
-|---------|------|--------|---------|
 | 1.0 | 2026-07-15 | Agent | Initial draft |
 | 1.1 | 2026-07-15 | Agent | Add concrete interface contracts, options table |
 | 1.2 | 2026-07-15 | Agent | Broadened scope with Issue #326, reconciled lifecycle fields |
+| 1.3 | 2026-07-15 | Agent | Added Modular Configuration system design (split artifacts.yaml into artifacts/*.yaml) |
