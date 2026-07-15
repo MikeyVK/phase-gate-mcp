@@ -1,206 +1,63 @@
-<!-- c:\temp\pgmcp\docs\development\issue349\research.md -->
-<!-- template=research version=8b7bb3ab created=2026-07-14T20:39Z updated= -->
-# Research: Template Workspace Initiative (workspace-owned templates, schema packs)
+<!-- docs\development\issue349\research.md -->
+<!-- template=research version=8b7bb3ab created=2026-07-14T20:52Z updated= -->
+# Template Workspace Initiative: workspace-owned templates, schema packs
 
-**Status:** APPROVED  
+**Status:** DRAFT  
 **Version:** 1.0  
-**Last Updated:** 2026-07-14  
-
----
-
-## Purpose
-
-Investigate and design a system to decouple Jinja2 templates, Pydantic context schemas, and `artifacts.yaml` definitions from the core server package. This enables:
-1. **Workspace-local overrides** of templates, schemas, and configurations.
-2. **Schema packs (plugins)** distributed as Python packages and registered via entry points.
-3. **Project-local design** of custom templates and schemas, enabling seamless reuse across different projects.
-
----
-
-## Scope
-
-**In Scope:**
-* Jinja2 template fallback loading across multiple roots.
-* Config Loader merging for `artifacts.yaml` overrides (Workspace > Plugin > Bundle).
-* Dynamic plugin discovery for Pydantic context schemas via `importlib.metadata.entry_points`.
-* Dynamic project-local schema loading from `.pgmcp/schemas/*.py`.
-* Programmatic/dynamic generation of `RenderContext` schemas from user-facing `Context` schemas.
-
-**Out of Scope:**
-* Local HTTP server on `localhost:7890` (deferred stretch goal).
-* Template registry versioning migrations/upgrades (deferred from #420).
+**Last Updated:** 2026-07-14
 
 ---
 
 ## Problem Statement
 
-Currently, Pydantic context schemas, Jinja2 templates, and `artifacts.yaml` are bundled inside the server wheel. 
-Once the server is deployed as a standalone wheel, users cannot modify or customize scaffolding output without altering the Python source code.
-Additionally, when working in an agentic orchestration setup, agents have no way to define new project-specific templates in one project and easily share/reuse them in other projects.
-
----
+The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) is currently bundled inside the wheel. Users have no supported path to adapt scaffolding to their projects or to reuse template schema packs across arbitrary projects without modifying the core server.
 
 ## Research Goals
 
-1. **Identify Current Behavior**: Map existing paths for template loading, schema registration, and registry config parsing.
-2. **Design Resolution Hierarchy**: Design fallback paths for template, schema, and config discovery.
-3. **Explore Plugin Mechanisms**: Investigate standard Python entry points for schema pack distribution.
-4. **Enable Workspace-Local Prototyping**: Define a mechanism to design templates/schemas project-locally.
+- **Decoupled Template Architecture**: Templates are no longer strictly bundled. The server operates as an engine that resolves scaffolding from a configured list of template directory paths (e.g., `template_paths`).
+- **Folder-Contained Scaffolding**: The "scaffolding trinity" (Jinja2 templates, `artifacts.yaml` metadata, and schema logic) is fully resolved from these configured paths, making them external to the core engine.
+- **Path-Based Resolution & Merging**: `artifacts.yaml` merges across all configured paths in priority order. Jinja2 templates are loaded via `FileSystemLoader(searchpath=template_paths)`.
+- Enable agentic orchestration of project-specific templates reusable across projects.
 
----
+## Background
 
-## Findings & Analysis
+*   **Current State of Templating**: The Jinja2 templates are bundled in the MCP server wheel, loaded directly via `FileSystemLoader` pointing to a single bundled directory. Schema validation uses Python imports dynamically loaded from the internal `mcp_server.schemas` package. `artifacts.yaml` configuration is loaded strictly from the `server_root/config/artifacts.yaml` path.
+*   **Prior Art in Other Tools**: External tools like Copier use Git to track and merge changes from a template repository, whereas Cookiecutter behaves as a single-pass generator. Neither inherently supports a path-based composition of multiple template directories out of the box. However, Jinja2's native `FileSystemLoader` accepts a list of directories (`searchpath=[workspace_dir, shared_dir, bundled_dir]`), making it trivial to compose templates from multiple generic paths.
+*   **Reusability across Projects**: The user wishes to establish a template workspace initiative where specific templates designed for one project via agentic orchestration can be shared and reused in other projects.
 
-### 1. Existing Pipeline Analysis
+## Findings
 
-The current three-part trinity is tightly coupled to the packaged defaults. The table below details the current component resolution paths:
-
-| Component | Packaging/Storage Location | Resolution Code Path | Limitation |
-|---|---|---|---|
-| **Jinja2 Templates** | `mcp_server/assets/templates/` | `Settings.server.resolved_template_root` (resolves to workspace `.pgmcp/templates/` if init'd) | Hardcodes a single root; copying is required via `--init`. No fallback search. |
-| **Context Schemas** | `mcp_server/schemas/contexts/` | Dynamic `getattr` on `mcp_server.schemas` package globals | Cannot resolve schemas outside of the installed `mcp_server` package. |
-| **artifacts.yaml** | `mcp_server/assets/config/artifacts.yaml` | `ConfigLoader._resolve_yaml_path("artifacts.yaml")` | Loads either workspace or packaged file. No merging/inheritance. |
-
-### 2. Proposed Architecture
-
-We propose a three-tier resolution hierarchy (Workspace > Plugin > Bundled) for templates, schemas, and configurations.
-
-```mermaid
-graph TD
-    subgraph Input ["Artifact Scaffolding Request"]
-        REQ["scaffold_artifact(type_id, name, **context)"]
-    end
-
-    subgraph Resolution ["Three-Tier Resource Resolution"]
-        direction TB
-        subgraph Config ["1. artifacts.yaml Merging"]
-            L_CFG["Workspace Override: .pgmcp/config/artifacts.yaml"]
-            P_CFG["Plugin Defaults: registered via entry_points"]
-            B_CFG["Bundled Defaults: mcp_server/assets/config/artifacts.yaml"]
-            CFG_MERGE["ConfigLoader merges configs (Workspace > Plugin > Bundled)"]
-            L_CFG --> CFG_MERGE
-            P_CFG --> CFG_MERGE
-            B_CFG --> CFG_MERGE
-        end
-
-        subgraph Schema ["2. Pydantic Schema Resolution"]
-            L_SCH["Workspace Schemas: .pgmcp/schemas/*.py"]
-            P_SCH["Plugin Schemas: entry_points('phase_gate.schemas')"]
-            B_SCH["Bundled Schemas: mcp_server/schemas/"]
-            SCH_REG["SchemaRegistry resolves Context and dynamically constructs RenderContext"]
-            L_SCH --> SCH_REG
-            P_SCH --> SCH_REG
-            B_SCH --> SCH_REG
-        end
-
-        subgraph Template ["3. Jinja2 Template Overrides"]
-            L_TPL["Workspace Templates: .pgmcp/templates/"]
-            P_TPL["Plugin Templates: importlib.resources.files(plugin)"]
-            B_TPL["Bundled Templates: mcp_server/assets/templates/"]
-            J_ENV["JinjaRenderer with FileSystemLoader search paths (Workspace > Plugins > Bundled)"]
-            L_TPL --> J_ENV
-            P_TPL --> J_ENV
-            B_TPL --> J_ENV
-        end
-    end
-
-    REQ --> CFG_MERGE
-    REQ --> SCH_REG
-    SCH_REG --> |Validate Context| J_ENV
-    CFG_MERGE --> |Map type_id to schema & template| J_ENV
-    J_ENV --> |Render and Write| OUT["Generated Artifact File"]
-```
-
-### 3. Detailed Component Designs
-
-#### A. Template Resolution with Overrides
-Using Jinja2's `FileSystemLoader`, we can pass a list of search paths instead of a single path:
-```python
-FileSystemLoader([
-    str(workspace_template_root),
-    # ... plugin template roots ...
-    str(packaged_template_root)
-])
-```
-Jinja2 automatically searches the directories in order. If a workspace-local template exists, it overrides the packaged default.
-* **Inheritance Compatibility**: An overridden template (e.g. `concrete/dto.py.jinja2`) can still inherit from a packaged default base template (e.g. `tier1_base_code.jinja2`) because Jinja2 resolves inheritance chains through the same loader search paths.
-
-#### B. Dynamic Schema Packs (Plugins)
-* **Discovery**: Scan `importlib.metadata.entry_points(group="phase_gate.schemas")` at server startup (composition root).
-* **Metadata Association**: The plugin registers its Pydantic Context class. To prevent plugin authors from having to write custom registry configuration, the Context class can expose metadata using class attributes:
-  ```python
-  class DjangoModelContext(BaseContext):
-      # Default metadata
-      __template_path__: ClassVar[str] = "concrete/django_model.py.jinja2"
-      __artifact_type__: ClassVar[str] = "code"
-  ```
-* **Template Export**: If the plugin contains templates, the server resolves their path using `importlib.resources.files(plugin_module_name) / "templates"`.
-
-#### C. Dynamic Local Workspace Schemas
-To support project-local design before packaging a plugin, the server will dynamically compile and load schemas from `.pgmcp/schemas/*.py` at startup using `importlib.util.spec_from_file_location` and `module_from_spec`.
-
-#### D. Dynamic RenderContext Generation
-To keep the plugin creation overhead low, plugin authors or workspace developers should only define the user-facing `Context` class. The server will dynamically construct the system-enriched `RenderContext` by combining the `Context` with `LifecycleMixin` via Pydantic model subclassing:
-```python
-def create_render_context(context_cls: type[BaseContext]) -> type[BaseRenderContext]:
-    name = context_cls.__name__.replace("Context", "RenderContext")
-    class DynamicRenderContext(BaseRenderContext, context_cls):
-        pass
-    DynamicRenderContext.__name__ = name
-    return DynamicRenderContext
-```
-
----
-
-## Strategy-Sensitive Boundaries & Migration Policy
-
-We analyzed the migration options for each boundary in scope:
-
-| Boundary | Preserve Compatibility (Recommended) | Temporary Bridge | Clean Break |
-|---|---|---|---|
-| **Existing Workspaces** | **Yes.** Old workspaces with copies of `artifacts.yaml` and `templates/` continue to work. The workspace-local files override the package defaults. | N/A | No. Rejecting old workspace formats would force unnecessary migrations. |
-| **`artifacts.yaml` Format** | **Yes.** The schema of `artifacts.yaml` remains identical. Merging is done at the model level key-by-key (workspace entries override default ones). | N/A | No. |
-| **Dynamic RenderContext** | **Yes.** Core components (DTO, Worker) continue using their explicitly defined `XxxRenderContext` classes, while external schemas dynamically auto-generate them. | N/A | No. |
+*   **Blast Radius**: Implementing these changes impacts `JinjaRenderer` and `TemplateEngine` initialization. `ArtifactManager._enrich_schema_context` must be refactored to discover schemas from the configured template paths rather than internal `sys.modules`. `ConfigLoader` requires deep-merge functionality for `artifacts.yaml` reading across all configured paths. Tests such as `test_concrete_templates.py`, `test_template_scaffolder.py`, and `test_artifact_registry_config.py` will also need significant updates.
+*   **Architectural Constraints**:
+    *   **SSOT (Single Source of Truth)**: The merged `artifacts.yaml` definition (from all paths) must become the SSOT. Downstream services and validation logic should not handle merging; they should consume a unified `ArtifactRegistryConfig`.
+    *   **Law of Demeter**: `ArtifactManager` should be injected with a `SchemaRegistry` rather than using `getattr(sys.modules, ...)` directly.
+*   **Configuration**: The server must support a configuration option (e.g., in `.pgmcp/config.yaml`) that specifies `template_paths`. If none is specified, it might default to `[.pgmcp/templates, <internal_defaults>]`, but the engine itself treats all paths equally.
+*   **Schema Resolution**: Schemas need to be resolvable within these "folder-contained" packs. This could mean reading a `schemas.py` in the template path, or defining schemas entirely within the `artifacts.yaml` as JSON schemas, avoiding Python imports altogether.
 
 ---
 
 ## Approved Strategy
 
-* **Boundary / consumer scope**: Applies to workspace-local configurations, custom templates, and installed Python schema packs.
-* **Selected strategy**: **Preserve Compatibility**. All existing workspace structures remain supported. Overrides and plugins are additive, resolved via the new hierarchy.
-* **Rationale**: This approach minimizes disruption for existing users, makes the transition completely transparent, and keeps the codebase backwards-compatible while introducing powerful modular extensions.
-* **Constraints for later phases**:
-  * **Version Tracking**: Workspace-local templates and schemas must be fully tracked in the version history and hash generation mechanism (`template_registry.json`). Any modification to workspace-local templates/schemas will compute a new version hash to guarantee provenance.
-  * Design phase must define the explicit interface contracts for the new `SchemaRegistry`.
-  * Dynamic loading of local Python files must run inside a fail-fast loader validation block to ensure syntax/import errors surface immediately at startup.
+The compatibility and migration policy is to transition to a pure "path-based" template resolution engine. Instead of a hardcoded "wheel vs workspace" fallback or complex python `entry_points`, the server will rely on a configured list of `template_paths`. 
+
+The physical template folders (whether they reside in the workspace, in a shared organizational repo, or in the package installation directory) will contain the complete scaffolding trinity (Jinja2 templates, `artifacts.yaml`, and schema definitions). 
+
+- **Jinja2**: Loaded via a standard `FileSystemLoader` initialized with the configured list of paths.
+- **Metadata**: `artifacts.yaml` files discovered across the search paths are deep-merged, with earlier paths taking precedence.
+- **Schemas**: Schemas are resolved from the template packs directly, decoupling them from internal module imports.
 
 ---
 
 ## Expected Results
 
-1. **Tooling fallback**: Scaffolding works out-of-the-box on a clean checkout without running `pgmcp --init` (it falls back to bundled templates).
-2. **Workspace overrides**: Placing a modified `concrete/dto.py.jinja2` under `.pgmcp/templates/concrete/` immediately alters `scaffold_artifact(artifact_type="dto")` output.
-3. **Workspace schemas**: Placing `my_schema.py` in `.pgmcp/schemas/` and registering it in `.pgmcp/config/artifacts.yaml` makes it immediately scaffoldable.
-4. **Plugin discovery**: Installing a package with `phase_gate.schemas` entry points registers new artifact types automatically, including their schemas and templates.
+Jinja templates load via a search path spanning the configured directories. `artifacts.yaml` is deep-merged across all valid paths in order of precedence. Scaffolding logic operates entirely independently of where the physical files are stored, allowing true "folder-contained" agentic orchestration.
 
----
-
-## Open Questions
-
-1. **Security**: How should the server handle untrusted code in workspace-local `.pgmcp/schemas/`? (We assume workspaces are trusted by definition since the developer is running the MCP server locally).
-
----
-
-## References
-
-* **[docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../coding_standards/ARCHITECTURE_PRINCIPLES.md)**
-* **[docs/development/schema-template-maintenance.md](../schema-template-maintenance.md)**
-* **[docs/reference/tools/scaffolding.md](../../reference/tools/scaffolding.md)**
-
+## Related Documentation
+None
 ---
 
 ## Version History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-07-14 | Agent | Detailed research findings, Mermaid architecture diagram, dynamic resolution logic, and Approved Strategy. |
+| 1.0 | 2026-07-14 | Agent | Initial draft |
