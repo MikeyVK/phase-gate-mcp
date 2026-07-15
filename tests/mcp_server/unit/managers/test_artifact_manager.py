@@ -9,7 +9,10 @@ from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import pytest
 
-from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
+from mcp_server.config.schemas.artifact_registry_config import (
+    ArtifactRegistryConfig,
+    SchemaFieldDef,
+)
 from mcp_server.core.exceptions import ValidationError
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
@@ -60,6 +63,8 @@ class TestArtifactManagerCore:
         mock_artifact.type = "code"
         mock_artifact.file_extension = ".py"
         mock_artifact.name_suffix = "DTO"
+        mock_artifact.context_class = "DTOContext"
+        mock_artifact.context_schema = None
         mock_registry = Mock(spec=ArtifactRegistryConfig)
         mock_registry.get_artifact.return_value = mock_artifact
 
@@ -72,7 +77,11 @@ class TestArtifactManagerCore:
                 server_root=Path("."),
             )
             result = await manager.scaffold_artifact(
-                "dto", output_path="test_scaffold_output.py", name="Test", fields=[]
+                "dto",
+                output_path="test_scaffold_output.py",
+                name="Test",
+                dto_name="Test",
+                fields=[],
             )
 
         # Verify scaffolder was called with metadata fields
@@ -131,7 +140,6 @@ class TestGetContextSchema:
 
     def _make_manager(self) -> ArtifactManager:
         mock_registry = Mock(spec=ArtifactRegistryConfig)
-        from mcp_server.config.schemas.artifact_registry_config import SchemaFieldDef
 
         def get_mock_artifact(artifact_type: str) -> Mock:
             mock_art = Mock()
@@ -159,7 +167,7 @@ class TestGetContextSchema:
                     ),
                     "summary": SchemaFieldDef(
                         type="string", title="Summary", description="The summary", required=True
-                    )
+                    ),
                 }
             else:
                 mock_art.context_schema = None

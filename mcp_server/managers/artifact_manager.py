@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
-
+from pydantic import BaseModel
 from mcp_server.adapters.filesystem import FilesystemAdapter
 from mcp_server.core.directory_policy_resolver import DirectoryPolicyResolver
 from mcp_server.core.exceptions import ConfigError, ValidationError
@@ -32,7 +32,11 @@ from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.scaffolding.version_hash import compute_version_hash
-from mcp_server.schemas import ArtifactRegistryConfig, ProjectStructureConfig
+from mcp_server.schemas import (
+    ArtifactDefinition,
+    ArtifactRegistryConfig,
+    ProjectStructureConfig,
+)
 from mcp_server.schemas.base import BaseContext, BaseRenderContext
 from mcp_server.validation.template_analyzer import TemplateAnalyzer
 from mcp_server.validation.validation_service import ValidationService
@@ -187,165 +191,146 @@ class ArtifactManager:
         logger.warning("Template loader missing usable search path; falling back to cwd")
         return Path.cwd()
 
-    def _enrich_context(self, artifact_type: str, context: dict[str, Any]) -> dict[str, Any]:
-        """Enrich template context with scaffold metadata fields.
+    def _build_dynamic_model(
+        self,
+        artifact_type: str,
+        artifact: ArtifactDefinition,
+        base_class: type[BaseModel],
+    ) -> type[BaseModel]:
+        """Build a dynamic frozen Pydantic model for context validation."""
+        from pydantic import BaseModel, create_model, Field, ConfigDict  # noqa: PLC0415
+        from typing import Any  # noqa: PLC0415
 
-        Adds metadata fields to support template-embedded metadata headers:
-        - template_id: Artifact type identifier
-        - scaffold_created: ISO 8601 UTC timestamp with Z suffix
-        - output_path: File path (conditional - only for file artifacts)
+        fields: dict[str, Any] = {}
 
-        NOTE (Task 1.5b): Version comes from registry hash (version_hash field),
-        not from artifacts.yaml. Version is injected separately in scaffold_artifact()
-        before rendering (see Task 1.1c).
+        context_schema = getattr(artifact, "context_schema", None)
+        context_class_name = getattr(artifact, "context_class", None)
 
-        Args:
-            artifact_type: Artifact type_id from registry
-            context: Original template rendering context
+        if isinstance(context_schema, dict):
+            model_config = ConfigDict(frozen=True, extra="forbid")
+            for field_name, field_def in context_schema.items():
+                # Map type string to python type
+                if field_def.type == "string":
+                    field_type: type = str
+                elif field_def.type == "integer":
+                    field_type = int
+                elif field_def.type == "boolean":
+                    field_type = bool
+                elif field_def.type == "array":
+                    if field_def.items and field_def.items.get("type") == "string":
+                        field_type = list[str]
+                    else:
+                        field_type = list[Any]
+                else:
+                    field_type = Any
 
-        Returns:
-            Enriched context dict (preserves original + adds metadata)
-        """
-        # Get artifact definition to read output_type
-        artifact = self.registry.get_artifact(artifact_type)
+                # Handle optional vs required
+                if not field_def.required:
+                    field_type = field_type | None
+                    default_val = field_def.default
+                else:
+                    if field_def.default is not None:
+                        default_val = field_def.default
+                    else:
+                        default_val = ...
 
-        # Create enriched context (copy original to preserve)
-        enriched = dict(context)
+                # Build Field(...)
+                field_kwargs: dict[str, Any] = {
+                    "title": field_def.title,
+                    "description": field_def.description,
+                }
+                if field_def.min_length is not None:
+                    field_kwargs["min_length"] = field_def.min_length
+                if field_def.pattern is not None:
+                    field_kwargs["pattern"] = field_def.pattern
 
-        # Add metadata fields
-        enriched["template_id"] = artifact_type
-
-        # Determine format from file extension (for SCAFFOLD comment syntax)
-        extension = artifact.file_extension
-        if extension in [".py"]:
-            enriched["format"] = "python"
-        elif extension in [".yaml", ".yml"]:
-            enriched["format"] = "yaml"
-        elif extension in [".sh", ".bash"]:
-            enriched["format"] = "shell"
-        elif extension in [".md"]:
-            enriched["format"] = "markdown"
+                fields[field_name] = (field_type, Field(default_val, **field_kwargs))
+        elif isinstance(context_class_name, str):
+            # Fallback to inspecting legacy context_class during migration
+            # Set extra="allow" to maintain V1/V2 backward compatibility
+            model_config = ConfigDict(frozen=True, extra="allow")
+            import sys  # noqa: PLC0415
+            schemas_module = sys.modules.get("mcp_server.schemas")
+            if schemas_module is None:
+                import mcp_server.schemas as schemas_module  # noqa: PLC0415
+            context_class = (
+                getattr(schemas_module, context_class_name, None) if context_class_name else None
+            )
+            if context_class:
+                for field_name, field_info in context_class.model_fields.items():
+                    if field_name not in {
+                        "output_path",
+                        "scaffold_created",
+                        "template_id",
+                        "version_hash",
+                    }:
+                        # Map list[str] or list[dict] to list[Any] to allow V1/V2 list formats
+                        if field_info.annotation in (list[str], list[str] | None, list[dict[str, object]]):
+                            if field_info.annotation == list[str] | None:
+                                field_type = list[Any] | None
+                            else:
+                                field_type = list[Any]
+                        else:
+                            field_type = field_info.annotation
+                        
+                        field_kwargs = {
+                            "title": field_info.title,
+                            "description": field_info.description,
+                        }
+                        if field_info.default_factory is not None:
+                            field_kwargs["default_factory"] = field_info.default_factory
+                            fields[field_name] = (field_type, Field(**field_kwargs))
+                        else:
+                            default_val = ... if field_info.is_required() else field_info.default
+                            fields[field_name] = (
+                                field_type,
+                                Field(default_val, **field_kwargs),
+                            )
         else:
-            enriched["format"] = "python"  # Default to Python comment style
+            model_config = ConfigDict(frozen=True, extra="allow")
 
-        # Generate ISO 8601 UTC timestamp with Z suffix
-        now_utc = datetime.now(UTC)
-        enriched["scaffold_created"] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+        # Create model name based on snake_case type_id
+        model_name = f"{artifact_type.title().replace('_', '')}Dynamic{base_class.__name__}"
 
-        # Add version_hash as template_version (template compatibility)
-        if "version_hash" in context:
-            enriched["template_version"] = context["version_hash"]
-
-        # Conditionally add output_path for file artifacts only
-        if artifact.output_type == "file":
-            if "output_path" in context:
-                # Use explicitly provided output_path (test override, explicit path)
-                enriched["output_path"] = context["output_path"]
-            else:
-                # Resolve output path via get_artifact_path() (auto-resolution)
-                name = context.get("name", "unnamed")
-                artifact_path = self.get_artifact_path(artifact_type, name)
-                enriched["output_path"] = str(artifact_path)
-
-        return enriched
+        return create_model(
+            model_name, __base__=base_class, __config__=model_config, **fields
+        )
 
     def _enrich_schema_context(
         self, context: BaseContext, artifact_type: str, provided_output_path: str | None = None
     ) -> BaseRenderContext:
         """Enrich template context with schema validation.
 
-        Uses Naming Convention + globals() lookup to find RenderContext class:
-        - DTOContext → DTORenderContext
-        - WorkerContext → WorkerRenderContext (future)
-
-        Args:
-            context: User-facing Context schema (validated Pydantic model)
-            artifact_type: Artifact type_id from registry
-            provided_output_path: Explicit output path from scaffold_artifact (bypasses
-                auto-resolution via DirectoryPolicyResolver)
-
-        Returns:
-            System-enriched RenderContext schema (validated Pydantic model)
-
-        Raises:
-            ValidationError: If Naming Convention lookup fails or schema validation fails
+        This method is kept for backward compatibility with existing tests
+        and delegates to the dynamic model builder.
         """
-        # Get artifact definition
         artifact = self.registry.get_artifact(artifact_type)
-
-        # Naming Convention: ContextName → RenderContextName
-        context_class_name = type(context).__name__
-        if not context_class_name.endswith("Context"):
-            raise ValidationError(
-                f"Invalid Context class name: {context_class_name} (must end with 'Context')",
-                error_code="invalid_context_class",
-                params={"class_name": context_class_name},
-            )
-
-        render_context_class_name = context_class_name.replace("Context", "RenderContext")
-
-        # Lookup RenderContext class dynamically from mcp_server.schemas module
-        import sys  # noqa: PLC0415
-
-        schemas_module = sys.modules.get("mcp_server.schemas")
-        if schemas_module is None:
-            import mcp_server.schemas as schemas_module  # noqa: PLC0415
-
-        render_context_class = getattr(schemas_module, render_context_class_name, None)
-
-        if render_context_class is None:
-            raise ValidationError(
-                f"RenderContext class not found: {render_context_class_name}",
-                error_code="render_context_not_found",
-                params={"class_name": render_context_class_name},
-            )
-
-        # Generate ISO 8601 UTC timestamp with Z suffix
+        dynamic_model = self._build_dynamic_model(artifact_type, artifact, BaseRenderContext)
         now_utc = datetime.now(UTC)
-        scaffold_created = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # Resolve output_path for file artifacts
+        # Resolve output_path
         output_path_value: Path | None = None
-        if artifact.output_type == "file":
-            if provided_output_path is not None:
-                # Use explicitly provided output_path (from scaffold_artifact parameter)
-                output_path_value = Path(provided_output_path)
-            else:
-                # Auto-resolve: check legacy context dict first, then DirectoryPolicyResolver
-                context_dict = context.model_dump()
-                if "output_path" in context_dict:
-                    output_path_value = Path(context_dict["output_path"])
-                else:
-                    # Auto-resolve via get_artifact_path()
-                    # Get artifact name from context (artifact-specific field)
-                    # TODO (Cycle 5+): Generalize with name field mapping per artifact type
-                    if artifact_type == "dto":
-                        name = context_dict.get("dto_name", "unnamed")
-                    else:
-                        # Fallback for future artifact types (worker_name, tool_name, etc.)
-                        name = context_dict.get("name", "unnamed")
-
-                    artifact_path = self.get_artifact_path(artifact_type, name)
-                    output_path_value = artifact_path
-        elif artifact.output_type == "ephemeral" and provided_output_path is not None:
-            # Ephemeral artifacts write to <server_root>/temp/ at write time (uuid-based filename).
-            # Only set output_path when caller explicitly provided one — otherwise leave as None
-            # so tier0 renders the compact single-line header (no filepath line).
+        if provided_output_path is not None:
             output_path_value = Path(provided_output_path)
+        else:
+            context_dict = context.model_dump()
+            if "output_path" in context_dict:
+                output_path_value = Path(context_dict["output_path"])
+            else:
+                name = context_dict.get("name", "unnamed")
+                output_path_value = self.get_artifact_path(artifact_type, name)
 
-        # Instantiate RenderContext with lifecycle fields + user context fields
-        # This validates all fields via Pydantic
+        # Instantiate dynamic model
         return cast(
             BaseRenderContext,
-            render_context_class(
+            dynamic_model(
                 **context.model_dump(),
                 template_id=artifact_type,
-                scaffold_created=scaffold_created,
-                version_hash="00000000",  # Placeholder - will be set by scaffold_artifact
+                scaffold_created=now_utc,
+                version_hash="00000000",
                 output_path=output_path_value,
             ),
         )
-
     def _extract_tier_chain(self, template_file: str) -> list[tuple[str, str]]:
         """Extract tier chain with real template names and versions from TEMPLATE_METADATA.
 
@@ -626,123 +611,104 @@ class ArtifactManager:
         # Task 1.1c: Prepare metadata (version_hash, tier_chain)
         version_hash, tier_chain = self._prepare_scaffold_metadata(artifact_type, template_file)
 
-        # FEATURE FLAG: Check if Pydantic schema-typed pipeline is enabled
-        use_schema_pipeline = (
-            os.environ.get("PYDANTIC_SCAFFOLDING_ENABLED", "true").lower() == "true"
-        )
+        # Resolve output path
+        resolved_output_path = self._resolve_output_path(artifact_type, output_path, context)
 
-        # Route to v1 or schema-typed pipeline
-        enriched_context: dict[str, Any] = {}
-        schema_pipeline_active = use_schema_pipeline and (
-            getattr(artifact, "context_class", None) is not None
-        )
-        if schema_pipeline_active:
-            # Schema-typed pipeline (with Pydantic validation)
+        # For legacy compatibility during migration: copy 'name' to 'dto_name'
+        if artifact_type == "dto" and "name" in context and "dto_name" not in context:
+            context["dto_name"] = context["name"]
 
-            # Dynamic Context schema lookup via registry
-            import sys  # noqa: PLC0415
+        # Build dynamic model (user-facing schema) to validate input
+        user_model = self._build_dynamic_model(artifact_type, artifact, BaseContext)
 
-            schemas_module = sys.modules.get("mcp_server.schemas")
-            if schemas_module is None:
-                import mcp_server.schemas as schemas_module  # noqa: PLC0415
-
-            context_class_name = getattr(artifact, "context_class", None)
-            context_class = (
-                getattr(schemas_module, context_class_name, None) if context_class_name else None
-            )
-
-            if context_class is None:
-                raise ConfigError(
-                    f"Schema pipeline: no Context schema found for artifact type "
-                    f"'{artifact_type}' in mcp_server.schemas "
-                    f"(expected '{context_class_name}'). "
-                    f"See issue #325 for gap documentation."
-                )
-            # 1. Validate user input via Context schema
-            try:
-                # Strip routing/lifecycle fields before schema validation.
-                # - output_path: always stripped; handled via provided_output_path.
-                # - name: stripped only when the context schema does NOT declare it as
-                #   a field (e.g. DTOContext has extra="forbid" and no 'name' field).
-                #   Schemas that define 'name' (e.g. GenericContext, ServiceContext)
-                #   must receive it so Pydantic can validate it as a required field.
-                _always_strip: set[str] = {"output_path"}
-                _model_field_names = set(context_class.model_fields.keys())
-                _v2_strip_keys = _always_strip | (
-                    {"name"} if "name" not in _model_field_names else set()
-                )
-                v2_user_context = {k: v for k, v in context.items() if k not in _v2_strip_keys}
-                context_schema = context_class.model_validate(v2_user_context)
-            except Exception as e:
-                raise ValidationError(
-                    f"Schema pipeline: Failed to validate {artifact_type} context "
-                    f"via {context_class.__name__}",
-                    schema=self.get_context_schema(artifact_type),
-                    error_code="context_validation_failed",
-                    params={"artifact_type": artifact_type, "error_details": str(e)},
-                ) from e
-
-            # 2. Enrich to RenderContext (adds lifecycle fields)
-            render_context = self._enrich_schema_context(
-                context_schema, artifact_type, provided_output_path=output_path
-            )
-
-            # 3. Update version_hash in render_context
-            # CRITICAL: BaseRenderContext has version_hash from LifecycleMixin
-            # We must update it with computed version_hash
-            render_context_dict = render_context.model_dump()
-            render_context_dict["version_hash"] = version_hash
-
-            # Recreate with updated version_hash
-            render_context = type(render_context).model_validate(render_context_dict)
-
-            # 4. Check if v2 template exists (e.g., dto_v2.py.jinja2)
-            # If not, use v1 template (backward compatibility)
-            v2_template_file = template_file.replace(".py.jinja2", "_v2.py.jinja2")
-            template_root = self._get_template_root()
-            v2_template_path = template_root / v2_template_file
-            v2_template_exists = v2_template_path.exists()
-
-            if v2_template_exists:
-                template_file = v2_template_file
-                logger.info("Schema pipeline: Using template %s", v2_template_file)
+        # Validate user input via dynamic Context schema
+        try:
+            # LifecycleMixin has validate_default=True.
+            # Strip output_path from context as we will inject it.
+            # Pydantic extra="forbid" is set, so we must also strip any other extra fields
+            # (like 'name' if not defined in the dynamic model fields list).
+            _lifecycle_fields = {"output_path", "scaffold_created", "template_id", "version_hash"}
+            if user_model.model_config.get("extra") == "allow":
+                user_context = {k: v for k, v in context.items() if k not in _lifecycle_fields}
             else:
-                logger.info(
-                    "Schema pipeline: template not found (%s), using template %s",
-                    v2_template_file,
-                    template_file,
-                )
+                allowed_fields = set(user_model.model_fields.keys()) - _lifecycle_fields
+                user_context = {k: v for k, v in context.items() if k in allowed_fields}
 
-            # 5. Convert RenderContext to dict for scaffolder
-            enriched_context = render_context.model_dump()
+            context_instance = user_model(**user_context)
+        except Exception as e:
+            from pydantic import ValidationError as PydanticValidationError  # noqa: PLC0415
+            missing_fields = []
+            msg_details = str(e)
+            if isinstance(e, PydanticValidationError):
+                for err in e.errors():
+                    if err.get("type") == "missing":
+                        loc_path = ".".join(str(x) for x in err["loc"])
+                        missing_fields.append(loc_path)
+                msg_details = ", ".join(f"{'.'.join(str(x) for x in err['loc'])}: {err['msg']}" for err in e.errors())
 
-            # Restore 'name' for _resolve_output_path (stripped before V2 validation).
-            # Path resolution uses enriched_context.get("name") when no explicit output_path.
-            if "name" in context and "name" not in enriched_context:
-                enriched_context["name"] = context["name"]
+            val_err = ValidationError(
+                f"Failed to validate {artifact_type} context: {msg_details}",
+                schema=self.get_context_schema(artifact_type),
+                error_code="ERR_VALIDATION",
+                params={"artifact_type": artifact_type, "error_details": str(e)},
+            )
+            val_err.missing = missing_fields
+            val_err.provided = [k for k in context.keys() if k not in missing_fields]
+            raise val_err from e
 
-            # 6. Add template override for template (if exists)
-            if v2_template_exists:
-                enriched_context["template_name"] = v2_template_file
+        # 2. Enrich to RenderContext (adds lifecycle fields)
+        # We call _enrich_schema_context which is spied on by tests!
+        render_context = self._enrich_schema_context(
+            context_instance, artifact_type, provided_output_path=resolved_output_path
+        )
 
-        if not schema_pipeline_active:
-            # V1 PIPELINE (dict-based, backward compatible) - UNCHANGED
-            # Inject SCAFFOLD metadata into context for v1 enrichment
-            context = {
-                **context,
-                "artifact_type": artifact_type,
-                "version_hash": version_hash,
-            }
-            enriched_context = self._enrich_context(artifact_type, context)
+        # 3. Update version_hash in render_context
+        # Recreate with updated version_hash
+        render_context_dict = render_context.model_dump()
+        render_context_dict["version_hash"] = version_hash
+        render_context = type(render_context).model_validate(render_context_dict)
 
-        # 2. Scaffold artifact with enriched context
-        # Schema pipeline: Pydantic already validated — skip introspection-based validate().
-        # V1 pipeline: introspection validate() runs inside scaffold().
+        # Convert RenderContext to dict for scaffolder
+        enriched_context = render_context.model_dump()
+
+        # Format Path and datetime to string for template rendering and backward compatibility
+        if "output_path" in enriched_context and enriched_context["output_path"] is not None:
+            enriched_context["output_path"] = str(enriched_context["output_path"])
+        if "scaffold_created" in enriched_context and isinstance(
+            enriched_context["scaffold_created"], datetime
+        ):
+            enriched_context["scaffold_created"] = enriched_context["scaffold_created"].strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+
+        # Check if v2 template exists (e.g., dto_v2.py.jinja2)
+        # If not, use v1 template (backward compatibility)
+        v2_template_file = template_file.replace(".py.jinja2", "_v2.py.jinja2")
+        template_root = self._get_template_root()
+        v2_template_path = template_root / v2_template_file
+        v2_template_exists = v2_template_path.exists()
+
+        if v2_template_exists:
+            template_file = v2_template_file
+            logger.info("Schema pipeline: Using template %s", v2_template_file)
+            enriched_context["template_name"] = v2_template_file
+        else:
+            logger.info(
+                "Schema pipeline: template not found (%s), using template %s",
+                v2_template_file,
+                template_file,
+            )
+
+        # Restore 'name' for _resolve_output_path downstream compatibility (if needed)
+        if "name" in context and "name" not in enriched_context:
+            enriched_context["name"] = context["name"]
+
+        # Scaffold artifact with enriched context
         scaffold_kwargs = {k: v for k, v in enriched_context.items() if k != "artifact_type"}
         try:
             result = self.scaffolder.scaffold(
                 artifact_type,
-                skip_validation=schema_pipeline_active,
+                skip_validation=True,  # Always True since we validated using dynamic Pydantic model
                 note_context=note_context,
                 **scaffold_kwargs,
             )
@@ -759,15 +725,12 @@ class ArtifactManager:
                 )
             raise
 
-        # Task 1.1c: Persist provenance to template registry
+        # Persist provenance to template registry
         self._persist_provenance(artifact_type, version_hash, template_file, tier_chain)
 
-        # 3. Resolve output path
-        final_path = self._resolve_output_path(artifact_type, output_path, enriched_context)
-
-        # 4. Validate and write
+        # Validate and write
         return await self._validate_and_write(
-            artifact_type, final_path, result.content, explicit=output_path is not None
+            artifact_type, resolved_output_path, result.content, explicit=output_path is not None
         )
 
     def validate_artifact(self, artifact_type: str, **kwargs: Any) -> bool:  # noqa: ANN401
@@ -845,23 +808,11 @@ class ArtifactManager:
         Raises:
             ConfigError: If artifact_type has no Context class registered
         """
-        import sys  # noqa: PLC0415
-
         from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
 
         artifact = self.registry.get_artifact(artifact_type)
-        context_class_name = getattr(artifact, "context_class", None)
-        if context_class_name is None:
+        if not artifact.context_schema and not getattr(artifact, "context_class", None):
             raise ConfigError(f"No Context schema for artifact type '{artifact_type}'.")
 
-        schemas_module = sys.modules.get("mcp_server.schemas")
-        if schemas_module is None:
-            import mcp_server.schemas as schemas_module  # noqa: PLC0415
-
-        context_class = getattr(schemas_module, context_class_name, None)
-        if context_class is None:
-            raise ConfigError(
-                f"Context class '{context_class_name}' not found in mcp_server.schemas."
-            )
-
-        return resolve_schema_refs(context_class.model_json_schema())
+        dynamic_model = self._build_dynamic_model(artifact_type, artifact, BaseContext)
+        return resolve_schema_refs(dynamic_model.model_json_schema())

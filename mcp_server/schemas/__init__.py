@@ -11,7 +11,11 @@ Infrastructure:
 - BaseRenderContext: Abstract base for all RenderContext schemas
 """
 
-from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
+from mcp_server.config.schemas.artifact_registry_config import (
+    ArtifactRegistryConfig,
+    ArtifactDefinition,
+    SchemaFieldDef,
+)
 from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
     CheckSpec,

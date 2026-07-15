@@ -42,10 +42,7 @@ async def test_validation_error_returns_schema(
         artifact_type="dto",
         name="TestDTO",
         output_path=str(output_path),
-        context={
-            "name": "TestDTO"
-            # Missing 'description' - required by DTO template
-        },
+        context={"fields": "not-a-list"},
     )
 
     # WHEN: Attempting to scaffold DTO artifact without required 'description' field
@@ -99,10 +96,7 @@ async def test_system_fields_filtered_from_schema(
         artifact_type="dto",
         name="TestDTO",
         output_path=str(output_path),
-        context={
-            "name": "TestDTO"
-            # Missing description - will trigger validation error with schema
-        },
+        context={"fields": "not-a-list"},
     )
 
     # WHEN: Validation error occurs and schema is returned
