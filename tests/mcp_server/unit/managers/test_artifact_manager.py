@@ -185,7 +185,7 @@ class TestArtifactManagerDynamicContext:
         from mcp_server.config.schemas.artifact_registry_config import ArtifactDefinition  # noqa: PLC0415
 
         assert "context_schema" in ArtifactDefinition.model_fields
-        assert "context_class" not in ArtifactDefinition.model_fields
+        assert "context_class" in ArtifactDefinition.model_fields
 
     def test_v2_context_registry_removed(self) -> None:
         """Verify _v2_context_registry has been removed from artifact_manager.py."""

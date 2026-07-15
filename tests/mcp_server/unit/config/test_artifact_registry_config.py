@@ -325,7 +325,7 @@ class TestArtifactDefinitionFields:
         assert field.title == "Name"
         assert field.min_length == 2
         assert field.pattern == "^[A-Z]"
-        assert not hasattr(artifact, "context_class")
+        assert artifact.context_class is None
 
     def test_optional_fields_work(self, tmp_path: Path) -> None:
         """Optional fields (LEGACY, template, suffix) parse correctly."""

@@ -94,3 +94,45 @@ class TestArtifactRegistryConfig:
         dto = config.get_artifact("dto")
 
         dto.validate_artifact_fields({"name": "User", "description": "User DTO"})
+
+    def test_context_schema_loading(self, tmp_path: Path) -> None:
+        """Test that SchemaFieldDef and context_schema are loaded correctly."""
+        import yaml  # noqa: PLC0415
+
+        data = {
+            "version": "1.0.0",
+            "artifact_types": [
+                {
+                    "type": "code",
+                    "type_id": "test_artifact",
+                    "name": "Test",
+                    "description": "Test description",
+                    "file_extension": ".py",
+                    "state_machine": {
+                        "states": ["CREATED"],
+                        "initial_state": "CREATED",
+                    },
+                    "context_schema": {
+                        "field_a": {
+                            "type": "string",
+                            "title": "Field A",
+                            "description": "Description A",
+                            "required": True,
+                            "min_length": 5,
+                        }
+                    },
+                }
+            ],
+        }
+        yaml_file = tmp_path / "artifacts.yaml"
+        yaml_file.write_text(yaml.safe_dump(data), encoding="utf-8")
+
+        config = _load_artifact_registry(config_path=yaml_file)
+        artifact = config.get_artifact("test_artifact")
+
+        assert artifact.context_schema is not None
+        assert "field_a" in artifact.context_schema
+        field = artifact.context_schema["field_a"]
+        assert field.type == "string"
+        assert field.title == "Field A"
+        assert field.min_length == 5

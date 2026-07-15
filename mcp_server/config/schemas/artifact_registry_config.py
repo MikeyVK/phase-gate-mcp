@@ -100,6 +100,7 @@ class ArtifactDefinition(BaseModel):
     generate_test: bool = Field(False, description="Generate test file")
     required_fields: list[str] = Field(default_factory=list, description="Required context fields")
     optional_fields: list[str] = Field(default_factory=list, description="Optional context fields")
+    context_class: str | None = Field(None, description="Pydantic context schema class name")
     context_schema: dict[str, SchemaFieldDef] | None = Field(
         None, description="Declarative schema definition"
     )
