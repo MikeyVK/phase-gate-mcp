@@ -39,6 +39,7 @@ The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) i
 *   **Dynamic Validation**: By utilizing `pydantic.create_model` or `jsonschema.validate`, `ArtifactManager` can dynamically generate memory-based validation schemas directly from the `artifacts.yaml` definitions.
 *   **Lifecycle Enrichment**: Generic base classes (`DocRenderContext`, `CodeRenderContext`) can handle all lifecycle metadata injection without needing a 1-to-1 concrete python `RenderContext` for every template.
 *   **Modular Configuration**: A monolithic `artifacts.yaml` of 1400+ lines introduces maintenance bottlenecks and DRY violations. By implementing a modular folder-based loader (scanning `config/artifacts/*.yaml`), we can split definitions into separate, small files.
+*   **Extensibility Case Study (TypeScript DTO)**: To prove the language-agnostic extensibility of the V3 tiered template pipeline, we will design and implement TypeScript support. This serves as a blueprint showing how a non-Python template fits into Tier 0, Tier 1, Tier 2 (language syntax), Tier 3 (domain patterns), and Tier 4 (concrete definitions).
 ---
 
 ## Approved Strategy
@@ -51,7 +52,7 @@ The three-part scaffolding trinity (schemas, Jinja2 templates, artifacts.yaml) i
 - **No Python Schemas**: `context` and `render_context` Python schemas for individual templates are completely eliminated. The server will dynamically build validation boundaries (via Pydantic `create_model` or JSON Schema) based on the YAML constraints (e.g., `min_length`, `pattern`, `type: array`).
 - **Generic Render Context**: Lifecycle fields (e.g., `output_path`, `version_hash`) will be injected generically via base render contexts rather than template-specific classes.
 - **Issue #326 Absorption**: The V1 dict-based fallback pipeline and the `PYDANTIC_SCAFFOLDING_ENABLED` feature flag are permanently removed.
-- **Modular Configuration**: The config loader will scan the `artifacts/` folder within the resolved configuration root and dynamically compile all artifact definitions. The monolithic config file will be split. This change is not backward compatible with monolithic files if they are not modularized.
+- **Modular Configuration (Breaking)**: The config loader is permanently rewritten to load all files under the `artifacts/` folder of the resolved `config_root`. Monolithic `artifacts.yaml` support is removed (Clean Break). This change is breaking and requires monolithic files to be split. A formal developer and migration guide must be provided during the documentation phase to instruct developers on splitting files and implementing new templates.
 ---
 
 ## Expected Results
@@ -70,3 +71,4 @@ Users can define a new template entirely via a `.jinja2` file and a modular bloc
 | 1.1 | 2026-07-15 | Agent | Updated with Approved Strategy: Clean Break, YAML-driven validation |
 | 1.2 | 2026-07-15 | Agent | Broadened scope to absorb Issue #326 (Remove V1 pipeline and feature flag) |
 | 1.3 | 2026-07-15 | Agent | Added Modular Configuration Initiative (split artifacts.yaml into artifacts/*.yaml) |
+| 1.4 | 2026-07-15 | Agent | Updated Strategy: Clean Break (breaking monolithic config) and TypeScript Case Study scope |
