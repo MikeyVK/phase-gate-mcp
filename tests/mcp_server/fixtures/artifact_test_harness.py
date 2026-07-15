@@ -334,14 +334,14 @@ def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
 
     # Build context_schema
     context_schema = {}
-    for f in (spec.template_fields.required or ["name"]):
+    for f in spec.template_fields.required or ["name"]:
         context_schema[f] = {
             "type": "string",
             "title": f.replace("_", " ").title(),
             "description": f,
             "required": True,
         }
-    for f in (spec.template_fields.optional or []):
+    for f in spec.template_fields.optional or []:
         context_schema[f] = {
             "type": "string",
             "title": f.replace("_", " ").title(),
@@ -388,6 +388,7 @@ def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
     # Write back
     with open(artifacts_yaml_path, "w", encoding="utf-8") as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
 
 def create_template(workspace_root: Path, template_relpath: str, template_content: str) -> Path:
     """

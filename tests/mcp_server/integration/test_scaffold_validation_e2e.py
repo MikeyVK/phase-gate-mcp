@@ -24,11 +24,6 @@ from mcp_server.tools.scaffold_artifact import (
 )
 
 
-@pytest.fixture()
-def _force_v1_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Force V1 pipeline (used only by tests that explicitly request it)."""
-    monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
-
 
 @pytest.mark.asyncio
 async def test_validation_error_returns_schema(
@@ -61,7 +56,7 @@ async def test_validation_error_returns_schema(
 
 @pytest.mark.asyncio
 async def test_success_response_includes_schema(
-    _force_v1_pipeline: None, artifact_manager: ArtifactManager, temp_workspace: Path
+    artifact_manager: ArtifactManager, temp_workspace: Path
 ) -> None:
     """Verify successful scaffold includes schema in response"""
     # GIVEN: scaffold_artifact tool with complete valid context
@@ -86,7 +81,7 @@ async def test_success_response_includes_schema(
 
 @pytest.mark.asyncio
 async def test_system_fields_filtered_from_schema(
-    _force_v1_pipeline: None, artifact_manager: ArtifactManager, temp_workspace: Path
+    artifact_manager: ArtifactManager, temp_workspace: Path
 ) -> None:
     """Verify system fields not included in agent-facing schema"""
     # GIVEN: Template with system fields (template_id, template_version, etc.)

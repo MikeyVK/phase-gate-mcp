@@ -3,7 +3,7 @@ from tests.mcp_server.test_support import get_default_server_root
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
 """Integration Step 1: Schema-validated scaffolding smoke test for all 21 artifact types.
 
-Validates that PYDANTIC_SCAFFOLDING_ENABLED=true produces non-empty output
+Validates that dynamic schema-validated scaffolding produces non-empty output
 for every type registered in artifacts.yaml. One parametrized test per type.
 
 @module: tests.mcp_server.integration.test_smoke_all_types
@@ -45,9 +45,6 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     - Changes CWD → tmp_path (so registry + ephemeral writes resolve there)
     - Enables PYDANTIC_SCAFFOLDING_ENABLED=true
     """
-    # Enable schema-validated scaffolding
-    monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "true")
-
     # Point template discovery to actual production templates
     from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
 

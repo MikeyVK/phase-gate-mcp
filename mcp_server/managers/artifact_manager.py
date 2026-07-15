@@ -519,16 +519,10 @@ class ArtifactManager:
     ) -> str:
         """Scaffold artifact from template and write to file.
 
-        Feature Flag Support (Issue #135 Cycle 4):
-        - PYDANTIC_SCAFFOLDING_ENABLED=false → v1 pipeline (dict-based, default)
-        - PYDANTIC_SCAFFOLDING_ENABLED=true → v2 pipeline (schema-typed with Pydantic)
-
-        V2 Pipeline (when feature flag ON + artifact_type supported):
-        1. Validate user input via Context schema (e.g., DTOContext)
-        2. Enrich to RenderContext via _enrich_context_v2 (adds lifecycle fields)
-        3. Use v2 template if exists (e.g., dto_v2.py.jinja2), else v1 template
-        4. Render with schema-typed context (no defensive | default patterns)
-
+        V3 Pipeline (declarative schema-typed validation):
+        1. Validate user input via dynamic Context schema from registry
+        2. Enrich to RenderContext (adds lifecycle fields)
+        3. Render with schema-typed context
         Args:
             artifact_type: Artifact type_id from registry
             output_path: Optional explicit output path (overrides auto-resolution)

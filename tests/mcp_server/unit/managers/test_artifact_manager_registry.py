@@ -17,7 +17,10 @@ from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import pytest
 
-from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig, SchemaFieldDef
+from mcp_server.config.schemas.artifact_registry_config import (
+    ArtifactRegistryConfig,
+    SchemaFieldDef,
+)
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.template_registry import TemplateRegistry
@@ -25,11 +28,6 @@ from mcp_server.scaffolding.template_registry import TemplateRegistry
 
 class TestArtifactManagerRegistryIntegration:
     """Test registry integration in scaffold_artifact flow (Task 1.1c)."""
-
-    @pytest.fixture(autouse=True)
-    def _force_v1_pipeline(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Force V1 pipeline: these tests validate V1 scaffolding infrastructure."""
-        monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
 
     @pytest.mark.asyncio
     async def test_scaffold_artifact_saves_to_registry(self) -> None:
