@@ -75,7 +75,7 @@ The scaffolding trinity (Jinja2 templates, artifacts.yaml, Pydantic context sche
 ### 3.2. Concrete Interface Contracts
 
 **1. Configuration Schema (artifacts.yaml changes):**
-The `ArtifactRegistryConfig` will drop `context_class` and use a declarative schema definition:
+The `ArtifactRegistryConfig` will drop `context_class` and use a declarative schema definition, including `shared_context_fields` for DRY sharing:
 ```python
 class SchemaFieldDef(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -91,11 +91,20 @@ class SchemaFieldDef(BaseModel):
 
 class ArtifactDef(BaseModel):
     model_config = ConfigDict(frozen=True)
+    type: str
+    type_id: str
     name: str
     description: str
-    template_name: str | None = None
-    # REPLACES context_class:
+    template_path: str | None = None
+    file_extension: str
     context_schema: dict[str, SchemaFieldDef] | None = None
+    extends_shared_fields: list[str] | None = None
+    state_machine: StateMachine | None = None  # Optional: defaults to CREATED state machine if omitted
+
+class ArtifactRegistryConfig(BaseModel):
+    version: str = "1.0.0"
+    shared_context_fields: dict[str, SchemaFieldDef] = Field(default_factory=dict)
+    artifact_types: list[ArtifactDef] = Field(..., description="All artifact definitions")
 ```
 
 **2. Generic Render Context Model:**
@@ -125,7 +134,11 @@ class ArtifactManager:
 ```
 
 **4. Config Loader Modularity:**
-The config loader will read `artifacts.yaml` as the index, then scan the `artifacts/` subdirectory situated in the same folder. All `.yaml` files in `artifacts/` will be safe-loaded. If a file is a list, its elements are added to `artifact_types`. If it is a dictionary representing a single artifact definition, it is appended. All definitions are validated together under `ArtifactRegistryConfig`. All path resolutions are relative to the loader's resolved `config_root` directory (no absolute or hardcoded path string literals).
+The config loader will read `artifacts.yaml` as the index, which acts as the SSOT for `shared_context_fields`. It then scans the `artifacts/` subdirectory situated in the same folder. All `.yaml` files in `artifacts/` will be safe-loaded.
+To prevent DRY violations across the modular files:
+1. **Shared Fields Resolution**: If an artifact definition includes `extends_shared_fields: [field1, field2]`, the loader will look up those fields in the index's `shared_context_fields` and dynamically inject them into the artifact's `context_schema` at load time.
+2. **Default State Machine**: If `state_machine` is omitted from an individual file, the loader automatically defaults it to the standard `CREATED` lifecycle state machine.
+All definitions are then validated together under `ArtifactRegistryConfig`. All path resolutions are relative to the loader's resolved `config_root` directory (no absolute or hardcoded path string literals).
 ### 3.3. Testing Strategy & Constraints
 
 **Test Relevance & Pruning:**
