@@ -218,3 +218,17 @@ class TestArtifactManagerDynamicContext:
         import mcp_server.managers.artifact_manager as am  # noqa: PLC0415
 
         assert not hasattr(am, "_v2_context_registry")
+
+    def test_get_context_schema_raises_config_error_if_no_yaml_schema(self) -> None:
+        """Test that get_context_schema raises ConfigError if YAML context_schema is missing."""
+        mock_registry = Mock(spec=ArtifactRegistryConfig)
+        mock_art = Mock()
+        mock_art.context_schema = None
+        mock_art.context_class = None
+        mock_registry.get_artifact.return_value = mock_art
+
+        manager = ArtifactManager(registry=mock_registry, server_root=Path("."))
+        from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
+        with pytest.raises(ConfigError) as exc_info:
+            manager.get_context_schema("dummy")
+        assert "No Context schema defined for" in str(exc_info.value)
