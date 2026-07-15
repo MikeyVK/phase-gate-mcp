@@ -98,7 +98,7 @@ class TestScaffoldSchemaTool:
     async def test_returns_schema_for_generic_doc(
         self, tool: ScaffoldSchemaTool, mock_manager: MagicMock
     ) -> None:
-        """execute() returns a schema ToolResult for generic_doc once V2 support exists."""
+        """execute() returns a schema ToolResult for generic_doc."""
         expected_schema = {
             "type": "object",
             "properties": {

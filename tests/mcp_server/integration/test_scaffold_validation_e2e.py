@@ -24,7 +24,6 @@ from mcp_server.tools.scaffold_artifact import (
 )
 
 
-
 @pytest.mark.asyncio
 async def test_validation_error_returns_schema(
     artifact_manager: ArtifactManager, temp_workspace: Path

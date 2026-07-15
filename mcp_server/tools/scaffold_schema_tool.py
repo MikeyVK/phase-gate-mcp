@@ -2,7 +2,7 @@
 """
 Scaffold Schema Tool - Expose artifact context JSON Schema.
 
-Returns the JSON Schema for the context parameter of a V2 artifact type,
+Returns the JSON Schema for the context parameter of an artifact type,
 enabling agents to discover required/optional fields before scaffolding.
 
 @layer: Backend (Tools)
@@ -11,7 +11,7 @@ enabling agents to discover required/optional fields before scaffolding.
     - Accept artifact_type from MCP client
     - Delegate to ArtifactManager.get_context_schema()
     - Return JSON Schema dict as ToolResult
-    - Let tool_error_handler handle ConfigError for V1-only types
+    - Let tool_error_handler handle ConfigError for types without schemas
 """
 
 from typing import Any, ClassVar

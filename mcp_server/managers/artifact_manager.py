@@ -519,7 +519,7 @@ class ArtifactManager:
     ) -> str:
         """Scaffold artifact from template and write to file.
 
-        V3 Pipeline (declarative schema-typed validation):
+        Declarative schema-typed validation:
         1. Validate user input via dynamic Context schema from registry
         2. Enrich to RenderContext (adds lifecycle fields)
         3. Render with schema-typed context
@@ -636,8 +636,8 @@ class ArtifactManager:
                 "%Y-%m-%dT%H:%M:%SZ"
             )
 
-        # Check if v2 template exists (e.g., dto_v2.py.jinja2)
-        # If not, use v1 template (backward compatibility)
+        # Check if schema-specific template exists (e.g., dto_v2.py.jinja2)
+        # If not, use base template (backward compatibility)
         v2_template_file = template_file.replace(".py.jinja2", "_v2.py.jinja2")
         template_root = self._get_template_root()
         v2_template_path = template_root / v2_template_file

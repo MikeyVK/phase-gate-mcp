@@ -19,7 +19,6 @@ from mcp_server.core.exceptions import ConfigError, ValidationError
 from mcp_server.managers.artifact_manager import ArtifactManager
 
 
-
 @pytest.mark.asyncio
 async def test_validation_error_propagates_from_scaffolder(
     artifact_manager: ArtifactManager, temp_workspace: Path

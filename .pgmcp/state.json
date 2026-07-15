@@ -2,7 +2,7 @@
   "branch": "feature/349-template-workspace-initiative",
   "issue_number": 349,
   "workflow_name": "feature",
-  "current_phase": "documentation",
+  "current_phase": "implementation",
   "current_cycle": 3,
   "last_cycle": 3,
   "cycle_history": [
@@ -29,7 +29,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Clean up peripheral test debt and documentation flags per QA Conditional Go",
+  "skip_reason": "Clean up remaining pipeline version comment references",
   "issue_title": "Template Workspace Initiative: workspace-owned templates, schema packs",
   "parent_branch": "main",
   "created_at": "2026-07-14T20:22:10.945694+00:00",
@@ -129,8 +129,24 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "documentation",
+      "to_phase": "ready",
+      "timestamp": "2026-07-15T20:29:21.410437+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "ready",
+      "to_phase": "implementation",
+      "timestamp": "2026-07-15T20:36:22.103289+00:00",
+      "human_approval": "User requested cleanup check",
+      "forced": true,
+      "skip_reason": "Clean up remaining pipeline version comment references"
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": null
+  "current_sub_phase": "green"
 }

@@ -182,8 +182,8 @@ class TestGetContextSchema:
         mock_registry.get_artifact.side_effect = get_mock_artifact
         return ArtifactManager(registry=mock_registry, server_root=Path("."))
 
-    def test_returns_json_schema_dict_for_v2_type(self) -> None:
-        """get_context_schema returns JSON Schema dict for a V2-registered artifact type."""
+    def test_returns_json_schema_dict_for_type(self) -> None:
+        """get_context_schema returns JSON Schema dict for a registered artifact type."""
         manager = self._make_manager()
         schema = manager.get_context_schema("research")
         assert isinstance(schema, dict)
@@ -192,7 +192,7 @@ class TestGetContextSchema:
         assert isinstance(schema["properties"], dict)
 
     def test_required_fields_present_in_schema(self) -> None:
-        """get_context_schema includes 'required' list for V2 type with required fields."""
+        """get_context_schema includes 'required' list for type with required fields."""
         manager = self._make_manager()
         schema = manager.get_context_schema("research")
         assert "required" in schema
@@ -200,7 +200,7 @@ class TestGetContextSchema:
         assert len(schema["required"]) > 0
 
     def test_returns_json_schema_dict_for_generic_doc(self) -> None:
-        """get_context_schema returns JSON Schema dict for generic_doc once V2 support exists."""
+        """get_context_schema returns JSON Schema dict for generic_doc."""
         manager = self._make_manager()
         schema = manager.get_context_schema("generic_doc")
         assert isinstance(schema, dict)
