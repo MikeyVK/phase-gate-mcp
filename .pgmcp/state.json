@@ -1,5 +1,5 @@
 {
-  "branch": "feature/template-workspace-initiative",
+  "branch": "feature/349-template-workspace-initiative",
   "issue_number": 349,
   "workflow_name": "feature",
   "current_phase": "implementation",
@@ -71,5 +71,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "red"
+  "current_sub_phase": "green"
 }

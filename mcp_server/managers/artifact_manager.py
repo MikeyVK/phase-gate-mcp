@@ -633,7 +633,9 @@ class ArtifactManager:
 
         # Route to v1 or schema-typed pipeline
         enriched_context: dict[str, Any] = {}
-        schema_pipeline_active = use_schema_pipeline and artifact.context_class is not None
+        schema_pipeline_active = use_schema_pipeline and (
+            getattr(artifact, "context_class", None) is not None
+        )
         if schema_pipeline_active:
             # Schema-typed pipeline (with Pydantic validation)
 
@@ -644,7 +646,7 @@ class ArtifactManager:
             if schemas_module is None:
                 import mcp_server.schemas as schemas_module  # noqa: PLC0415
 
-            context_class_name = artifact.context_class
+            context_class_name = getattr(artifact, "context_class", None)
             context_class = (
                 getattr(schemas_module, context_class_name, None) if context_class_name else None
             )
@@ -848,7 +850,7 @@ class ArtifactManager:
         from mcp_server.utils.schema_utils import resolve_schema_refs  # noqa: PLC0415
 
         artifact = self.registry.get_artifact(artifact_type)
-        context_class_name = artifact.context_class
+        context_class_name = getattr(artifact, "context_class", None)
         if context_class_name is None:
             raise ConfigError(f"No Context schema for artifact type '{artifact_type}'.")
 

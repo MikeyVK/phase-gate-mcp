@@ -307,11 +307,11 @@ class TestArtifactDefinitionFields:
                             "description": "The name",
                             "required": True,
                             "min_length": 2,
-                            "pattern": "^[A-Z]"
+                            "pattern": "^[A-Z]",
                         }
-                    }
+                    },
                 }
-            ]
+            ],
         }
         file_path = tmp_path / "schema.yaml"
         file_path.write_text(yaml.safe_dump(data), encoding="utf-8")
@@ -326,6 +326,7 @@ class TestArtifactDefinitionFields:
         assert field.min_length == 2
         assert field.pattern == "^[A-Z]"
         assert not hasattr(artifact, "context_class")
+
     def test_optional_fields_work(self, tmp_path: Path) -> None:
         """Optional fields (LEGACY, template, suffix) parse correctly."""
         data = {
