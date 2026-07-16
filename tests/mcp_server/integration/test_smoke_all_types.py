@@ -57,6 +57,9 @@ def _manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactManager
     shutil.copy(
         _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts.yaml", artifacts_path
     )
+    shutil.copytree(
+        _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts", config_dir / "artifacts"
+    )
 
     # CWD → tmp_path: registry loads from tmp_path/.pgmcp/config/artifacts.yaml,
     # ephemeral writes go to tmp_path/.pgmcp/temp/ (not project root)
