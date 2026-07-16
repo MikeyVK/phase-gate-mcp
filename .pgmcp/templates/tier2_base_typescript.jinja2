@@ -1,0 +1,58 @@
+{#- tier2_base_typescript.jinja2 - Language base for TypeScript code -#}
+{#- Version: 1.0.0 -#}
+{#- Purpose: Adds TypeScript-specific patterns (JSDoc docstrings, ES6 imports, class exports) -#}
+{%- extends "tier1_base_code.jinja2" -%}
+
+{%- set format = "typescript" -%}
+
+{% block module_docstring %}
+/**
+{% if module_title -%}
+ * {{ module_title }}.
+{% else -%}
+ * {{ name }} module.
+{% endif %}
+{%- if module_description %}
+ *
+ * {{ module_description }}
+{% endif %}
+ *
+ * @layer {{ layer | default('Unknown') }}
+{%- if dependencies %}
+ * @dependencies {{ dependencies | join(', ') }}
+{%- endif %}
+ * @responsibilities
+{%- if responsibilities %}
+{%- for responsibility in responsibilities %}
+ *   - {{ responsibility }}
+{%- endfor %}
+{%- else %}
+ *   - [To be defined]
+{%- endif %}
+ */
+{% endblock %}
+
+{% block imports_section %}
+{%- if imports and imports.stdlib %}
+{%- for imp in imports.stdlib %}
+{{ imp }}
+{%- endfor %}
+{%- endif %}
+{%- if imports and imports.third_party %}
+{%- for imp in imports.third_party %}
+{{ imp }}
+{%- endfor %}
+{%- endif %}
+{%- if imports and imports.project %}
+{%- for imp in imports.project %}
+{{ imp }}
+{%- endfor %}
+{%- endif %}
+{% endblock %}
+
+{% block class_structure %}
+export class {{ name }}{% if implements %} implements {{ implements }}{% endif %} {
+{%- block class_body -%}
+{%- endblock -%}
+}
+{% endblock %}

@@ -1,0 +1,72 @@
+type: doc
+type_id: reference
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  status:
+    type: string
+    title: Status
+    description: Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)
+    required: true
+  version:
+    type: string
+    title: Version
+    description: Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)
+    required: true
+  last_updated:
+    type: string
+    title: Last Updated
+    description: Last updated date in ISO format YYYY-MM-DD
+    required: true
+  source_file:
+    type: string
+    title: Source File
+    description: Path to the implementation source file
+    required: true
+  test_file:
+    type: string
+    title: Test File
+    description: Path to the test file
+    required: true
+  api_reference:
+    type: array
+    title: Api Reference
+    description: API reference items (each has 'name' and 'description' keys)
+    required: true
+    items:
+      type: object
+  usage_examples:
+    type: string
+    title: Usage Examples
+    description: Usage examples and code snippets
+    required: false
+  test_count:
+    type: integer
+    title: Test Count
+    description: Number of tests for this component
+    required: false
+name: Reference Document
+description: Reference documentation
+output_type: file
+template_path: concrete/reference.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - DRAFT
+  - APPROVED
+  - DEFINITIVE
+  initial_state: DRAFT
+  valid_transitions:
+  - from: DRAFT
+    to:
+    - APPROVED
+    - DEFINITIVE
+  - from: APPROVED
+    to:
+    - DEFINITIVE

@@ -1,0 +1,77 @@
+type: tracking
+type_id: issue
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  problem:
+    type: string
+    title: Problem
+    description: "Problem description \u2014 what is wrong or needed"
+    required: true
+  summary:
+    type: string
+    title: Summary
+    description: Brief summary of the issue
+    required: false
+  expected:
+    type: string
+    title: Expected
+    description: Expected behavior or outcome
+    required: false
+  actual:
+    type: string
+    title: Actual
+    description: Actual behavior observed
+    required: false
+  context:
+    type: string
+    title: Context
+    description: Additional context and background
+    required: false
+  steps_to_reproduce:
+    type: string
+    title: Steps To Reproduce
+    description: Steps to reproduce the issue
+    required: false
+  related_docs:
+    type: array
+    title: Related Docs
+    description: Related documentation links
+    required: false
+    items:
+      type: string
+  labels:
+    type: array
+    title: Labels
+    description: GitHub labels to apply (e.g. type:bug)
+    required: false
+    items:
+      type: string
+  milestone:
+    type: string
+    title: Milestone
+    description: Target milestone
+    required: false
+  assignees:
+    type: array
+    title: Assignees
+    description: GitHub usernames to assign this issue
+    required: false
+    items:
+      type: string
+name: GitHub Issue Description
+description: GitHub issue description with problem, expected, actual sections
+output_type: ephemeral
+template_path: concrete/issue.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

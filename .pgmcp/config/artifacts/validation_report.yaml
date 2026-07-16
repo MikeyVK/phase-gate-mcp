@@ -1,0 +1,65 @@
+type: doc
+type_id: validation_report
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  status:
+    type: string
+    title: Status
+    description: Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)
+    required: true
+  version:
+    type: string
+    title: Version
+    description: Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)
+    required: true
+  last_updated:
+    type: string
+    title: Last Updated
+    description: Last updated date in ISO format YYYY-MM-DD
+    required: true
+  issue_number:
+    type: integer
+    title: Issue Number
+    description: Issue reference number
+    required: false
+  cycle:
+    type: string
+    title: Cycle
+    description: Cycle label being validated
+    required: false
+  validation_status:
+    type: string
+    title: Validation Status
+    description: Validation outcome (PASS/FAIL/PARTIAL)
+    required: false
+  scope:
+    type: string
+    title: Scope
+    description: Validation scope summary
+    required: false
+name: Validation Report
+description: Validation report documenting test results and quality gate status
+output_type: file
+template_path: concrete/validation_report.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - DRAFT
+  - APPROVED
+  - DEFINITIVE
+  initial_state: DRAFT
+  valid_transitions:
+  - from: DRAFT
+    to:
+    - APPROVED
+    - DEFINITIVE
+  - from: APPROVED
+    to:
+    - DEFINITIVE

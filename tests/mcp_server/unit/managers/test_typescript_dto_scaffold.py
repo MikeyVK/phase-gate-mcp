@@ -13,21 +13,15 @@ Test scaffolding of TypeScript DTO artifact.
     - None
 """
 
-# Standard library
-from typing import Any
-
 # Third-party
 import pytest
 from pathlib import Path
-from pydantic import ValidationError
 
 # Project modules
-from mcp_server.managers.artifact_manager import ArtifactManager
+from tests.mcp_server.test_support import make_artifact_manager
 
 
 class TestTypeScriptDTOScaffold:
-    """Test suite for artifact_manager."""
-
     @pytest.mark.asyncio
     async def test_scaffold_typescript_dto(self, tmp_path: Path) -> None:
         """Test scaffolding of a TypeScript DTO using the tiered template structure."""
@@ -42,14 +36,27 @@ class TestTypeScriptDTOScaffold:
         concrete_dir.mkdir(parents=True)
 
         # Write index configuration file
-        (config_root / "artifacts.yaml").write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
+        (config_root / "artifacts.yaml").write_text(
+            "version: '1.0.0'\nartifact_types: []\n", encoding="utf-8"
+        )
         (config_root / "git.yaml").write_text("branch_types: []\n", encoding="utf-8")
-        (config_root / "project_structure.yaml").write_text("version: '1.0.0'\nbase_path: '.'\n", encoding="utf-8")
+        project_struct = (
+            "version: '1.0.0'\n"
+            "directories:\n"
+            "  src/dtos:\n"
+            "    parent: null\n"
+            "    description: 'TS DTOs'\n"
+            "    allowed_artifact_types:\n"
+            "      - typescript_dto\n"
+            "    allowed_extensions:\n"
+            "      - '.ts'\n"
+        )
+        (config_root / "project_structure.yaml").write_text(project_struct, encoding="utf-8")
 
         # Create artifacts/ directory with typescript_dto.yaml
         artifacts_dir = config_root / "artifacts"
         artifacts_dir.mkdir(parents=True)
-        
+
         dto_yaml = (
             "type: code\n"
             "type_id: typescript_dto\n"
@@ -71,14 +78,7 @@ class TestTypeScriptDTOScaffold:
             "    description: List of DTO properties\n"
             "    required: true\n"
             "    items:\n"
-            "      type: object\n"
-            "      properties:\n"
-            "        name:\n"
-            "          type: string\n"
-            "        type:\n"
-            "          type: string\n"
-            "        readonly:\n"
-            "          type: boolean\n"
+            "      type: string\n"
             "  implements:\n"
             "    type: string\n"
             "    title: Implements interface\n"
@@ -131,16 +131,27 @@ class TestTypeScriptDTOScaffold:
         tier3_content = (
             "{% extends 'tier2_base_typescript.jinja2' %}\n"
             "{% block class_body %}\n"
-            "{% for field in fields %}\n"
-            "  public {% if field.readonly %}readonly {% endif %}{{ field.name }}: {{ field.type }};\n"
+            "{% for field_str in fields %}\n"
+            "  {%- set parts = field_str.strip().split() -%}\n"
+            "  {%- if parts[0] == 'readonly' -%}\n"
+            "    {%- set is_readonly = true -%}\n"
+            "    {%- set field_decl = parts[1:] | join(' ') -%}\n"
+            "  {%- else -%}\n"
+            "    {%- set is_readonly = false -%}\n"
+            "    {%- set field_decl = parts | join(' ') -%}\n"
+            "  {%- endif -%}\n"
+            "  {%- set name_type = field_decl.split(':') -%}\n"
+            "  {%- set f_name = name_type[0] | trim -%}\n"
+            "  {%- set f_type = name_type[1] | trim if name_type | length > 1 else 'string' -%}\n"
+            "  public {% if is_readonly %}readonly {% endif %}{{ f_name }}: {{ f_type }};\n"
             "{% endfor %}\n"
             "{% endblock %}\n"
         )
-        (templates_dir / "tier3_pattern_typescript_dto.jinja2").write_text(tier3_content, encoding="utf-8")
-
-        concrete_content = (
-            "{% extends 'tier3_pattern_typescript_dto.jinja2' %}\n"
+        (templates_dir / "tier3_pattern_typescript_dto.jinja2").write_text(
+            tier3_content, encoding="utf-8"
         )
+
+        concrete_content = "{% extends 'tier3_pattern_typescript_dto.jinja2' %}\n"
         (concrete_dir / "typescript_dto.ts.jinja2").write_text(concrete_content, encoding="utf-8")
 
         # Initialize manager
@@ -151,15 +162,13 @@ class TestTypeScriptDTOScaffold:
             artifact_type="typescript_dto",
             output_path="src/dtos/user.ts",
             name="UserDTO",
-            fields=[
-                {"name": "id", "type": "string", "readonly": True},
-                {"name": "name", "type": "string", "readonly": False}
-            ]
+            fields=["readonly id: string", "name: string"],
         )
 
         # Assert
-        assert result.file_name == "user.ts"
-        content = result.content
+        output_file = Path(result)
+        assert output_file.exists()
+        content = output_file.read_text(encoding="utf-8")
         assert "template=typescript_dto" in content
         assert "export class UserDTO" in content
         assert "public readonly id: string;" in content

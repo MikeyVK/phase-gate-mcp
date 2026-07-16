@@ -1,0 +1,110 @@
+type: doc
+type_id: planning
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  status:
+    type: string
+    title: Status
+    description: Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)
+    required: true
+  version:
+    type: string
+    title: Version
+    description: Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)
+    required: true
+  last_updated:
+    type: string
+    title: Last Updated
+    description: Last updated date in ISO format YYYY-MM-DD
+    required: true
+  summary:
+    type: string
+    title: Summary
+    description: High-level summary of what is being planned
+    required: true
+  cycles:
+    type: array
+    title: Cycles
+    description: 'TDD cycle breakdown. Each entry is a dict with keys: name (str),
+      goal (str), tests (list[str]), success_criteria (list[str] | str), dependencies
+      (list[str], optional).'
+    required: true
+    items:
+      type: object
+  purpose:
+    type: string
+    title: Purpose
+    description: Purpose of this planning document
+    required: false
+  scope_in:
+    type: string
+    title: Scope In
+    description: What is in scope
+    required: false
+  scope_out:
+    type: string
+    title: Scope Out
+    description: What is out of scope
+    required: false
+  prerequisites:
+    type: array
+    title: Prerequisites
+    description: Prerequisites before work can begin
+    required: false
+    items:
+      type: string
+  dependencies:
+    type: array
+    title: Dependencies
+    description: Dependencies between cycles or on external work
+    required: false
+    items:
+      type: string
+  risks:
+    type: array
+    title: Risks
+    description: 'Identified risks. Each entry is a dict with keys: description (str),
+      mitigation (str).'
+    required: false
+    items:
+      type: object
+  milestones:
+    type: array
+    title: Milestones
+    description: Key milestones and checkpoints
+    required: false
+    items:
+      type: string
+  related_docs:
+    type: array
+    title: Related Docs
+    description: Related documents in the project
+    required: false
+    items:
+      type: string
+name: Planning Document
+description: Planning phase TDD cycle breakdown
+output_type: file
+template_path: concrete/planning.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - DRAFT
+  - APPROVED
+  - DEFINITIVE
+  initial_state: DRAFT
+  valid_transitions:
+  - from: DRAFT
+    to:
+    - APPROVED
+    - DEFINITIVE
+  - from: APPROVED
+    to:
+    - DEFINITIVE

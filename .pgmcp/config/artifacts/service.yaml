@@ -1,0 +1,52 @@
+type: code
+type_id: service
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the Service command class (PascalCase required)
+    required: true
+  description:
+    type: string
+    title: Description
+    description: Description of the service command's purpose
+    required: false
+  layer:
+    type: string
+    title: Layer
+    description: Architectural layer of the service
+    required: false
+  responsibilities:
+    type: array
+    title: Responsibilities
+    description: List of service responsibilities
+    required: false
+    items:
+      type: string
+  parameters:
+    type: array
+    title: Parameters
+    description: 'List of parameter definitions (format: ''name: type'')'
+    required: false
+    items:
+      type: string
+  return_type:
+    type: string
+    title: Return Type
+    description: Return type annotation for the execute() method
+    required: false
+name: Service
+description: Service - orchestration or business logic
+output_type: file
+scaffolder_class: ServiceScaffolder
+scaffolder_module: mcp_server.scaffolders.service_scaffolder
+template_path: concrete/service_command.py.jinja2
+fallback_template: null
+name_suffix: Service
+file_extension: .py
+generate_test: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

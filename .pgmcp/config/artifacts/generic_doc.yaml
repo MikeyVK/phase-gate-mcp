@@ -1,0 +1,115 @@
+type: doc
+type_id: generic_doc
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  status:
+    type: string
+    title: Status
+    description: Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)
+    required: true
+  version:
+    type: string
+    title: Version
+    description: Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)
+    required: true
+  last_updated:
+    type: string
+    title: Last Updated
+    description: Last updated date in ISO format YYYY-MM-DD
+    required: true
+  purpose:
+    type: string
+    title: Purpose
+    description: Purpose statement for the document
+    required: true
+  summary:
+    type: string
+    title: Summary
+    description: High-level summary for the document
+    required: true
+  scope_in:
+    type: string
+    title: Scope In
+    description: In-scope summary
+    required: false
+  scope_out:
+    type: string
+    title: Scope Out
+    description: Out-of-scope summary
+    required: false
+  prerequisites:
+    type: array
+    title: Prerequisites
+    description: Prerequisite items
+    required: false
+    items:
+      type: string
+  related_docs:
+    type: array
+    title: Related Docs
+    description: Related document paths
+    required: false
+    items:
+      type: string
+  key_changes:
+    type: array
+    title: Key Changes
+    description: Key change bullets
+    required: false
+    items:
+      type: string
+  migration_steps:
+    type: array
+    title: Migration Steps
+    description: Migration step list
+    required: false
+    items:
+      type: string
+  validation_checklist:
+    type: array
+    title: Validation Checklist
+    description: Validation checklist items
+    required: false
+    items:
+      type: string
+  faq:
+    type: array
+    title: Faq
+    description: FAQ entries
+    required: false
+    items:
+      type: string
+  custom_sections:
+    type: array
+    title: Custom Sections
+    description: Additional structured document sections
+    required: false
+    items:
+      type: string
+name: Generic Document
+description: Generic flexible document with custom sections for migration guides and
+  reference docs
+output_type: file
+template_path: concrete/generic.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - DRAFT
+  - APPROVED
+  - DEFINITIVE
+  initial_state: DRAFT
+  valid_transitions:
+  - from: DRAFT
+    to:
+    - APPROVED
+    - DEFINITIVE
+  - from: APPROVED
+    to:
+    - DEFINITIVE

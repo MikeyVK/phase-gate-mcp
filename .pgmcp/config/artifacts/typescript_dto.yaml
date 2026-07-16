@@ -1,0 +1,31 @@
+type: code
+type_id: typescript_dto
+name: TypeScript DTO
+description: TypeScript Data Transfer Object using tiered templates
+output_type: file
+scaffolder_class: GenericScaffolder
+scaffolder_module: mcp_server.scaffolders.generic_scaffolder
+template_path: concrete/typescript_dto.ts.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .ts
+generate_test: false
+base_path: src/dtos/
+context_schema:
+  fields:
+    type: array
+    title: Fields
+    description: "List of DTO properties (format: '[readonly] name: type')"
+    required: true
+    items:
+      type: string
+  implements:
+    type: string
+    title: Implements interface
+    description: Optional interface to implement
+    required: false
+state_machine:
+  states:
+    - CREATED
+  initial_state: CREATED
+  valid_transitions: []

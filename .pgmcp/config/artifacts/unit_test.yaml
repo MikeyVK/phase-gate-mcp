@@ -1,0 +1,73 @@
+type: code
+type_id: unit_test
+context_schema:
+  module_under_test:
+    type: string
+    title: Module Under Test
+    description: Fully qualified module path (e.g. 'mcp_server.schemas.contexts.dto')
+    required: true
+  test_class_name:
+    type: string
+    title: Test Class Name
+    description: Name of the test class (PascalCase, e.g. TestDTOContext)
+    required: true
+  test_description:
+    type: string
+    title: Test Description
+    description: Optional test suite description
+    required: false
+  test_focus:
+    type: string
+    title: Test Focus
+    description: What this test suite focuses on (docstring line)
+    required: false
+  additional_responsibility:
+    type: string
+    title: Additional Responsibility
+    description: Extra responsibility line in docstring
+    required: false
+  imported_classes:
+    type: array
+    title: Imported Classes
+    description: List of class names to import from module_under_test
+    required: false
+    items:
+      type: string
+  has_mocks:
+    type: boolean
+    title: Has Mocks
+    description: If True, include unittest.mock imports
+    required: false
+  has_async_tests:
+    type: boolean
+    title: Has Async Tests
+    description: If True, include asyncio imports and pytest-asyncio markers
+    required: false
+  has_pydantic:
+    type: boolean
+    title: Has Pydantic
+    description: If True, include pydantic ValidationError import
+    required: false
+  test_methods:
+    type: array
+    title: Test Methods
+    description: List of test method definitions for the template
+    required: false
+    items:
+      type: string
+name: Unit Test
+description: Unit test file with proper structure and quality gates
+output_type: file
+scaffolder_class: GenericScaffolder
+scaffolder_module: mcp_server.scaffolders.generic_scaffolder
+template_path: concrete/test_unit.py.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .py
+generate_test: false
+base_path: tests/mcp_server/unit/
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

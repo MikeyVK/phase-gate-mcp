@@ -1,0 +1,58 @@
+type: tracking
+type_id: commit
+context_schema:
+  type:
+    type: string
+    title: Type
+    description: Commit type (feat, fix, docs, refactor, etc.)
+    required: true
+  message:
+    type: string
+    title: Message
+    description: "Commit subject line (imperative mood, \u226450 chars)"
+    required: true
+  scope:
+    type: string
+    title: Scope
+    description: Component scope (e.g. schemas, workers)
+    required: false
+  body:
+    type: string
+    title: Body
+    description: Multi-line body (72-char wrap)
+    required: false
+  breaking_change:
+    type: boolean
+    title: Breaking Change
+    description: Whether this is a breaking change
+    required: false
+  breaking_description:
+    type: string
+    title: Breaking Description
+    description: BREAKING CHANGE footer description
+    required: false
+  footer:
+    type: string
+    title: Footer
+    description: Additional footer information
+    required: false
+  refs:
+    type: array
+    title: Refs
+    description: 'Issue references (e.g., #123)'
+    required: false
+    items:
+      type: string
+name: Git Commit Message
+description: Git commit message for conventional commits format
+output_type: ephemeral
+template_path: concrete/commit.txt.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .txt
+generate_test: false
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

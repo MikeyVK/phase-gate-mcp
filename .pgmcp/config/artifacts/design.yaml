@@ -1,0 +1,131 @@
+type: doc
+type_id: design
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  status:
+    type: string
+    title: Status
+    description: Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)
+    required: true
+  version:
+    type: string
+    title: Version
+    description: Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)
+    required: true
+  last_updated:
+    type: string
+    title: Last Updated
+    description: Last updated date in ISO format YYYY-MM-DD
+    required: true
+  problem_statement:
+    type: string
+    title: Problem Statement
+    description: Problem being solved by this design
+    required: true
+  requirements_functional:
+    type: array
+    title: Requirements Functional
+    description: Functional requirements the design must satisfy
+    required: true
+    items:
+      type: string
+  requirements_nonfunctional:
+    type: array
+    title: Requirements Nonfunctional
+    description: Non-functional requirements (performance, maintainability, etc.)
+    required: true
+    items:
+      type: string
+  decision:
+    type: string
+    title: Decision
+    description: The chosen design decision
+    required: true
+  rationale:
+    type: string
+    title: Rationale
+    description: Rationale for the chosen decision
+    required: true
+  purpose:
+    type: string
+    title: Purpose
+    description: Purpose of this design document
+    required: false
+  scope_in:
+    type: string
+    title: Scope In
+    description: What is in scope
+    required: false
+  scope_out:
+    type: string
+    title: Scope Out
+    description: What is out of scope
+    required: false
+  prerequisites:
+    type: array
+    title: Prerequisites
+    description: Prerequisites for this design
+    required: false
+    items:
+      type: string
+  related_docs:
+    type: array
+    title: Related Docs
+    description: Related documents in the project
+    required: false
+    items:
+      type: string
+  constraints:
+    type: array
+    title: Constraints
+    description: Technical or business constraints
+    required: false
+    items:
+      type: string
+  options:
+    type: array
+    title: Options
+    description: Design options to compare
+    required: true
+    items:
+      type: object
+  key_decisions:
+    type: array
+    title: Key Decisions
+    description: Key design decisions table
+    required: true
+    items:
+      type: object
+  open_questions:
+    type: array
+    title: Open Questions
+    description: Open questions list
+    required: false
+    items:
+      type: string
+name: Design Document
+description: Design phase schemas and specifications
+output_type: file
+template_path: concrete/design.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - DRAFT
+  - APPROVED
+  - DEFINITIVE
+  initial_state: DRAFT
+  valid_transitions:
+  - from: DRAFT
+    to:
+    - APPROVED
+    - DEFINITIVE
+  - from: APPROVED
+    to:
+    - DEFINITIVE

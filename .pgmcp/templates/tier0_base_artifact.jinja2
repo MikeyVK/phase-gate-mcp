@@ -60,6 +60,13 @@ TEMPLATE_METADATA:
 {%- else -%}
 <!-- template={{ artifact_type }} version={{ version_hash }} -->
 {%- endif -%}
+{%- elif format == "typescript" or format == "javascript" -%}
+{%- if output_path -%}
+// {{ output_path }}
+// template={{ artifact_type }} version={{ version_hash }} created={{ timestamp }} updated=
+{%- else -%}
+// template={{ artifact_type }} version={{ version_hash }}
+{%- endif -%}
 {%- else -%}
 {%- if output_path -%}
 # {{ output_path }}

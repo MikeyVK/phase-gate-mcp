@@ -1,0 +1,38 @@
+type: code
+type_id: adapter
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the adapter class (PascalCase required)
+    required: true
+  description:
+    type: string
+    title: Description
+    description: Description of the adapter's purpose
+    required: false
+  target_interface:
+    type: string
+    title: Target Interface
+    description: Target interface or protocol implemented by the adapter
+    required: false
+  methods:
+    type: array
+    title: Methods
+    description: Optional structured method definitions
+    required: false
+    items:
+      type: string
+name: Adapter
+description: Adapter - integrates external systems (implements Interface)
+output_type: file
+template_path: concrete/adapter.py.jinja2
+fallback_template: null
+name_suffix: Adapter
+file_extension: .py
+generate_test: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

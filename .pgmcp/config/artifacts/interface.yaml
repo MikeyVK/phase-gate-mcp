@@ -1,0 +1,33 @@
+type: code
+type_id: interface
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the interface class (PascalCase required)
+    required: true
+  description:
+    type: string
+    title: Description
+    description: Description of the interface's purpose
+    required: false
+  methods:
+    type: array
+    title: Methods
+    description: Optional structured method definitions
+    required: false
+    items:
+      type: string
+name: Interface
+description: Interface - abstract protocol definition
+output_type: file
+template_path: concrete/interface.py.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .py
+generate_test: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

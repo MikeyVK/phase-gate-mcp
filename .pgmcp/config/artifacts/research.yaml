@@ -1,0 +1,121 @@
+type: doc
+type_id: research
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  status:
+    type: string
+    title: Status
+    description: Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)
+    required: true
+  version:
+    type: string
+    title: Version
+    description: Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)
+    required: true
+  last_updated:
+    type: string
+    title: Last Updated
+    description: Last updated date in ISO format YYYY-MM-DD
+    required: true
+  problem_statement:
+    type: string
+    title: Problem Statement
+    description: Problem or question being investigated
+    required: true
+  goals:
+    type: array
+    title: Goals
+    description: Research goals / questions to answer
+    required: true
+    items:
+      type: string
+  purpose:
+    type: string
+    title: Purpose
+    description: Purpose of this research document
+    required: false
+  scope_in:
+    type: string
+    title: Scope In
+    description: What is in scope
+    required: false
+  scope_out:
+    type: string
+    title: Scope Out
+    description: What is out of scope
+    required: false
+  prerequisites:
+    type: array
+    title: Prerequisites
+    description: Prerequisites or prior knowledge required
+    required: false
+    items:
+      type: string
+  background:
+    type: string
+    title: Background
+    description: Background context and prior art
+    required: false
+  findings:
+    type: string
+    title: Findings
+    description: Findings and conclusions so far
+    required: false
+  questions_list:
+    type: array
+    title: Questions List
+    description: Open questions remaining after research
+    required: false
+    items:
+      type: string
+  references:
+    type: array
+    title: References
+    description: External references and links
+    required: false
+    items:
+      type: string
+  related_docs:
+    type: array
+    title: Related Docs
+    description: Related documents in the project
+    required: false
+    items:
+      type: string
+  approved_strategy:
+    type: string
+    title: Approved Strategy
+    description: The approved compatibility and migration policy/strategy for the
+      issue
+    required: false
+  expected_results:
+    type: string
+    title: Expected Results
+    description: The expected outcomes and verification baseline for the issue
+    required: false
+name: Research Document
+description: Research phase findings and questions
+output_type: file
+template_path: concrete/research.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - DRAFT
+  - APPROVED
+  - DEFINITIVE
+  initial_state: DRAFT
+  valid_transitions:
+  - from: DRAFT
+    to:
+    - APPROVED
+    - DEFINITIVE
+  - from: APPROVED
+    to:
+    - DEFINITIVE

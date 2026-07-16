@@ -1,0 +1,40 @@
+type: code
+type_id: tool
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the Tool class (PascalCase required)
+    required: true
+  description:
+    type: string
+    title: Description
+    description: Description of the tool's purpose
+    required: false
+  layer:
+    type: string
+    title: Layer
+    description: Architectural layer of the tool
+    required: false
+  responsibilities:
+    type: array
+    title: Responsibilities
+    description: List of tool responsibilities
+    required: false
+    items:
+      type: string
+name: MCP Tool
+description: MCP Tool - exposes functionality via MCP protocol
+output_type: file
+scaffolder_class: ToolScaffolder
+scaffolder_module: mcp_server.scaffolders.tool_scaffolder
+template_path: concrete/tool.py.jinja2
+fallback_template: null
+name_suffix: Tool
+file_extension: .py
+generate_test: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []
