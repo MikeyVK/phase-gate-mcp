@@ -1,0 +1,48 @@
+type: code
+type_id: generic
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the class (PascalCase required)
+    required: true
+  description:
+    type: string
+    title: Description
+    description: Description of the class's purpose
+    required: false
+  layer:
+    type: string
+    title: Layer
+    description: Architectural layer (e.g. 'Backend (Generic)', 'MCP Server')
+    required: false
+  methods:
+    type: array
+    title: Methods
+    description: List of structured method definitions to scaffold
+    required: false
+    items:
+      type: string
+  responsibilities:
+    type: array
+    title: Responsibilities
+    description: List of responsibility descriptions
+    required: false
+    items:
+      type: string
+name: Generic Component
+description: Generic component from custom template
+output_type: file
+scaffolder_class: GenericScaffolder
+scaffolder_module: mcp_server.scaffolders.generic_scaffolder
+template_path: concrete/generic.py.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .py
+generate_test: false
+strict_validation: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

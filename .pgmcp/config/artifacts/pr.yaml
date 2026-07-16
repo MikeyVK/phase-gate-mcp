@@ -1,0 +1,72 @@
+type: tracking
+type_id: pr
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  changes:
+    type: string
+    title: Changes
+    description: Description of changes in this PR
+    required: true
+  summary:
+    type: string
+    title: Summary
+    description: High-level PR summary
+    required: false
+  testing:
+    type: string
+    title: Testing
+    description: Testing strategy and results
+    required: false
+  checklist_items:
+    type: array
+    title: Checklist Items
+    description: Checklist items for PR completion
+    required: false
+    items:
+      type: string
+  related_docs:
+    type: array
+    title: Related Docs
+    description: Related documentation links
+    required: false
+    items:
+      type: string
+  closes_issues:
+    type: array
+    title: Closes Issues
+    description: Issue numbers closed by this PR
+    required: false
+    items:
+      type: string
+  breaking_changes:
+    type: string
+    title: Breaking Changes
+    description: "Breaking changes description (\u26A0\uFE0F warning)"
+    required: false
+  deferred_work:
+    type: string
+    title: Deferred Work
+    description: Deferred items or work not included in this PR
+    required: false
+  tracking_state:
+    type: string
+    title: Tracking State
+    description: Tracking state for deferred items (e.g. issue refs or triage notes)
+    required: false
+name: Pull Request Description
+description: Pull request description with changes, testing, checklist sections
+output_type: ephemeral
+template_path: concrete/pr.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

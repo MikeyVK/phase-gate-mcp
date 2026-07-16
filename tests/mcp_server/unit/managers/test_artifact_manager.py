@@ -9,7 +9,10 @@ from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import pytest
 
-from mcp_server.config.schemas.artifact_registry_config import ArtifactRegistryConfig
+from mcp_server.config.schemas.artifact_registry_config import (
+    ArtifactRegistryConfig,
+    SchemaFieldDef,
+)
 from mcp_server.core.exceptions import ValidationError
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
@@ -18,11 +21,6 @@ from tests.mcp_server.test_support import make_artifact_manager
 
 class TestArtifactManagerCore:
     """Test ArtifactManager core functionality."""
-
-    @pytest.fixture(autouse=True)
-    def _force_v1_pipeline(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Force V1 pipeline: these tests validate V1 scaffolding infrastructure."""
-        monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
 
     def test_constructor_accepts_optional_registry(self) -> None:
         """Test that constructor accepts optional registry parameter."""
@@ -65,6 +63,14 @@ class TestArtifactManagerCore:
         mock_artifact.type = "code"
         mock_artifact.file_extension = ".py"
         mock_artifact.name_suffix = "DTO"
+        mock_artifact.context_schema = {
+            "name": SchemaFieldDef(
+                type="string", title="Name", description="DTO Name", required=True
+            ),
+            "fields": SchemaFieldDef(
+                type="array", title="Fields", description="Fields list", required=False
+            ),
+        }
         mock_registry = Mock(spec=ArtifactRegistryConfig)
         mock_registry.get_artifact.return_value = mock_artifact
 
@@ -77,7 +83,11 @@ class TestArtifactManagerCore:
                 server_root=Path("."),
             )
             result = await manager.scaffold_artifact(
-                "dto", output_path="test_scaffold_output.py", name="Test", fields=[]
+                "dto",
+                output_path="test_scaffold_output.py",
+                name="Test",
+                dto_name="Test",
+                fields=[],
             )
 
         # Verify scaffolder was called with metadata fields
@@ -139,19 +149,41 @@ class TestGetContextSchema:
 
         def get_mock_artifact(artifact_type: str) -> Mock:
             mock_art = Mock()
+            mock_art.template_path = "concrete/dto.py.jinja2"
+            type(mock_art).output_type = PropertyMock(return_value="file")
+            mock_art.type = "code"
+            mock_art.file_extension = ".py"
+            mock_art.name_suffix = "DTO"
+            mock_art.required_fields = []
+            mock_art.optional_fields = []
+
             if artifact_type == "research":
-                mock_art.context_class = "ResearchContext"
+                mock_art.context_schema = {
+                    "title": SchemaFieldDef(
+                        type="string", title="Title", description="The title", required=True
+                    )
+                }
             elif artifact_type == "generic_doc":
-                mock_art.context_class = "GenericDocContext"
+                mock_art.context_schema = {
+                    "title": SchemaFieldDef(
+                        type="string", title="Title", description="The title", required=True
+                    ),
+                    "purpose": SchemaFieldDef(
+                        type="string", title="Purpose", description="The purpose", required=True
+                    ),
+                    "summary": SchemaFieldDef(
+                        type="string", title="Summary", description="The summary", required=True
+                    ),
+                }
             else:
-                mock_art.context_class = None
+                mock_art.context_schema = None
             return mock_art
 
         mock_registry.get_artifact.side_effect = get_mock_artifact
         return ArtifactManager(registry=mock_registry, server_root=Path("."))
 
-    def test_returns_json_schema_dict_for_v2_type(self) -> None:
-        """get_context_schema returns JSON Schema dict for a V2-registered artifact type."""
+    def test_returns_json_schema_dict_for_type(self) -> None:
+        """get_context_schema returns JSON Schema dict for a registered artifact type."""
         manager = self._make_manager()
         schema = manager.get_context_schema("research")
         assert isinstance(schema, dict)
@@ -160,7 +192,7 @@ class TestGetContextSchema:
         assert isinstance(schema["properties"], dict)
 
     def test_required_fields_present_in_schema(self) -> None:
-        """get_context_schema includes 'required' list for V2 type with required fields."""
+        """get_context_schema includes 'required' list for type with required fields."""
         manager = self._make_manager()
         schema = manager.get_context_schema("research")
         assert "required" in schema
@@ -168,7 +200,7 @@ class TestGetContextSchema:
         assert len(schema["required"]) > 0
 
     def test_returns_json_schema_dict_for_generic_doc(self) -> None:
-        """get_context_schema returns JSON Schema dict for generic_doc once V2 support exists."""
+        """get_context_schema returns JSON Schema dict for generic_doc."""
         manager = self._make_manager()
         schema = manager.get_context_schema("generic_doc")
         assert isinstance(schema, dict)
@@ -184,6 +216,7 @@ class TestArtifactManagerDynamicContext:
         """Verify context_class field is present on ArtifactDefinition."""
         from mcp_server.config.schemas.artifact_registry_config import ArtifactDefinition  # noqa: PLC0415
 
+        assert "context_schema" in ArtifactDefinition.model_fields
         assert "context_class" in ArtifactDefinition.model_fields
 
     def test_v2_context_registry_removed(self) -> None:
@@ -191,3 +224,18 @@ class TestArtifactManagerDynamicContext:
         import mcp_server.managers.artifact_manager as am  # noqa: PLC0415
 
         assert not hasattr(am, "_v2_context_registry")
+
+    def test_get_context_schema_raises_config_error_if_no_yaml_schema(self) -> None:
+        """Test that get_context_schema raises ConfigError if YAML context_schema is missing."""
+        mock_registry = Mock(spec=ArtifactRegistryConfig)
+        mock_art = Mock()
+        mock_art.context_schema = None
+        mock_art.context_class = None
+        mock_registry.get_artifact.return_value = mock_art
+
+        manager = ArtifactManager(registry=mock_registry, server_root=Path("."))
+        from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
+
+        with pytest.raises(ConfigError) as exc_info:
+            manager.get_context_schema("dummy")
+        assert "No Context schema defined for" in str(exc_info.value)

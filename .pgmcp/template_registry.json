@@ -413,6 +413,15 @@
         "template_id": "validation_report.md",
         "version": "1.0.0"
       }
+    },
+    "25d3e19c": {
+      "artifact_type": "typescript_dto",
+      "created": "2026-07-16T06:37:21.009398+00:00",
+      "hash_algorithm": "SHA256",
+      "concrete": {
+        "template_id": "typescript_dto.ts",
+        "version": "1.0"
+      }
     }
   },
   "current_versions": {
@@ -436,8 +445,9 @@
     "adapter": "fb412e6d",
     "interface": "3fb28c28",
     "resource": "32eda039",
-    "validation_report": "fe38a66d"
+    "validation_report": "fe38a66d",
+    "typescript_dto": "25d3e19c"
   },
   "templates": {},
-  "last_updated": "2026-06-05T08:50:45.033412+00:00"
+  "last_updated": "2026-07-16T06:37:21.009411+00:00"
 }

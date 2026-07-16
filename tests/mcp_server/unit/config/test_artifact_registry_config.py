@@ -288,6 +288,45 @@ class TestArtifactDefinitionFields:
         assert artifact.file_extension == ".py"
         assert artifact.state_machine.states == ["CREATED"]
 
+    def test_parses_context_schema(self, tmp_path: Path) -> None:
+        """Test parsing of declarative context_schema."""
+        data = {
+            "version": "1.0.0",
+            "artifact_types": [
+                {
+                    "type": "code",
+                    "type_id": "dto",
+                    "name": "DTO",
+                    "description": "DTO",
+                    "file_extension": ".py",
+                    "state_machine": {"states": ["CREATED"], "initial_state": "CREATED"},
+                    "context_schema": {
+                        "name": {
+                            "type": "string",
+                            "title": "Name",
+                            "description": "The name",
+                            "required": True,
+                            "min_length": 2,
+                            "pattern": "^[A-Z]",
+                        }
+                    },
+                }
+            ],
+        }
+        file_path = tmp_path / "schema.yaml"
+        file_path.write_text(yaml.safe_dump(data), encoding="utf-8")
+        config = _load_artifact_registry(file_path)
+        artifact = config.get_artifact("dto")
+
+        assert artifact.context_schema is not None
+        assert "name" in artifact.context_schema
+        field = artifact.context_schema["name"]
+        assert field.type == "string"
+        assert field.title == "Name"
+        assert field.min_length == 2
+        assert field.pattern == "^[A-Z]"
+        assert artifact.context_class is None
+
     def test_optional_fields_work(self, tmp_path: Path) -> None:
         """Optional fields (LEGACY, template, suffix) parse correctly."""
         data = {
@@ -407,3 +446,69 @@ class TestStateMachineDefinition:
         transition = artifact.state_machine.valid_transitions[0]
         assert transition.from_state == "DRAFT"
         assert transition.to_states == ["APPROVED"]
+
+
+class TestExtensibleRegistryFeatures:
+    """Test OCP-compliance and extensibility changes."""
+
+    def test_strict_validation_parsed(self, tmp_path: Path) -> None:
+        """strict_validation is parsed correctly and defaults to False."""
+        data_default = {
+            "version": "1.0.0",
+            "artifact_types": [
+                {
+                    "type": "code",
+                    "type_id": "test_default",
+                    "name": "Default test",
+                    "description": "Test",
+                    "file_extension": ".py",
+                    "state_machine": {"states": ["CREATED"], "initial_state": "CREATED"},
+                }
+            ],
+        }
+        data_explicit = {
+            "version": "1.0.0",
+            "artifact_types": [
+                {
+                    "type": "code",
+                    "type_id": "test_explicit",
+                    "name": "Explicit test",
+                    "description": "Test",
+                    "file_extension": ".py",
+                    "strict_validation": True,
+                    "state_machine": {"states": ["CREATED"], "initial_state": "CREATED"},
+                }
+            ],
+        }
+
+        path_default = tmp_path / "default.yaml"
+        path_default.write_text(yaml.safe_dump(data_default), encoding="utf-8")
+        path_explicit = tmp_path / "explicit.yaml"
+        path_explicit.write_text(yaml.safe_dump(data_explicit), encoding="utf-8")
+
+        config_default = _load_artifact_registry(path_default)
+        config_explicit = _load_artifact_registry(path_explicit)
+
+        assert config_default.get_artifact("test_default").strict_validation is False
+        assert config_explicit.get_artifact("test_explicit").strict_validation is True
+
+    def test_extensible_artifact_type(self, tmp_path: Path) -> None:
+        """Any custom string is accepted as artifact category/type."""
+        data_custom = {
+            "version": "1.0.0",
+            "artifact_types": [
+                {
+                    "type": "custom_category",
+                    "type_id": "test_custom",
+                    "name": "Custom Category test",
+                    "description": "Test",
+                    "file_extension": ".py",
+                    "state_machine": {"states": ["CREATED"], "initial_state": "CREATED"},
+                }
+            ],
+        }
+        path_custom = tmp_path / "custom.yaml"
+        path_custom.write_text(yaml.safe_dump(data_custom), encoding="utf-8")
+
+        config = _load_artifact_registry(path_custom)
+        assert config.get_artifact("test_custom").type == "custom_category"

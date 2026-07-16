@@ -84,7 +84,7 @@ class TestArtifactsTypeField:
             "planning",
             "design",
             "architecture",
-            # "tracking",  # DISABLED (issue #325 - stale template, no V2 support)
+            # "tracking",  # DISABLED (issue #325 - stale template)
             "reference",
         ]
         for type_id in doc_type_ids:

@@ -1,0 +1,54 @@
+type: code
+type_id: integration_test
+context_schema:
+  test_scenario:
+    type: string
+    title: Test Scenario
+    description: Name of the integration scenario being tested (snake_case)
+    required: true
+  test_class_name:
+    type: string
+    title: Test Class Name
+    description: Name of the test class (PascalCase, e.g. TestScaffoldDTOE2E)
+    required: true
+  test_description:
+    type: string
+    title: Test Description
+    description: Optional test suite description
+    required: false
+  managers_needed:
+    type: array
+    title: Managers Needed
+    description: List of manager class names needed for the integration test
+    required: false
+    items:
+      type: string
+  workspace_fixture:
+    type: boolean
+    title: Workspace Fixture
+    description: If True, scaffold a temp_workspace pytest fixture
+    required: false
+  test_methods:
+    type: array
+    title: Test Methods
+    description: List of test method definitions for the template
+    required: false
+    items:
+      type: string
+name: Integration Test
+description: Integration/E2E test file with @module structure
+output_type: file
+scaffolder_class: GenericScaffolder
+scaffolder_module: mcp_server.scaffolders.generic_scaffolder
+template_path: concrete/test_integration.py.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .py
+generate_test: false
+strict_validation: true
+base_path: tests/mcp_server/integration/
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

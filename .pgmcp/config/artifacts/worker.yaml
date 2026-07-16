@@ -1,0 +1,58 @@
+type: code
+type_id: worker
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the Worker class (PascalCase required)
+    required: true
+  layer:
+    type: string
+    title: Layer
+    description: Architectural layer (platform|strategy|platform_within_strategy)
+    required: true
+  module_description:
+    type: string
+    title: Module Description
+    description: Description of the worker module
+    required: false
+  worker_scope:
+    type: string
+    title: Worker Scope
+    description: Worker scope (platform|strategy|platform_within_strategy)
+    required: false
+  responsibilities:
+    type: array
+    title: Responsibilities
+    description: List of worker responsibilities
+    required: false
+    items:
+      type: string
+  capabilities:
+    type: array
+    title: Capabilities
+    description: List of required capabilities (dependency injection)
+    required: false
+    items:
+      type: string
+  use_async:
+    type: boolean
+    title: Use Async
+    description: If True, scaffold async warmup example
+    required: false
+name: Worker
+description: Worker - executes single domain operation (async task processor)
+output_type: file
+scaffolder_class: WorkerScaffolder
+scaffolder_module: mcp_server.scaffolders.worker_scaffolder
+template_path: concrete/worker.py.jinja2
+fallback_template: null
+name_suffix: Worker
+file_extension: .py
+generate_test: true
+strict_validation: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

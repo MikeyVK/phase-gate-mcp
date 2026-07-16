@@ -28,11 +28,6 @@ from tests.mcp_server.test_support import make_artifact_manager, make_metadata_p
 class TestMetadataEndToEnd:
     """E2E tests for scaffold metadata workflow."""
 
-    @pytest.fixture(autouse=True)
-    def _force_v1_pipeline(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Force V1 pipeline: these tests validate V1 scaffolding infrastructure."""
-        monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
-
     @pytest.fixture
     def manager(self, tmp_path: Path) -> ArtifactManager:
         """Create manager with workspace_root set."""
@@ -52,14 +47,11 @@ class TestMetadataEndToEnd:
         result = await manager.scaffold_artifact(
             "dto",
             output_path=str(tmp_path / "UserDTO.py"),
-            name="UserDTO",
+            dto_name="UserDTO",
             description="User data transfer object",
             frozen=False,  # User state is mutable
             examples=[{"id": 123, "name": "John Doe"}],
-            fields=[
-                {"name": "id", "type": "int", "description": "User ID"},
-                {"name": "name", "type": "str", "description": "User name"},
-            ],
+            fields=["id: int", "name: str"],
             dependencies=["pydantic"],
             responsibilities=["User data validation"],
         )
@@ -94,11 +86,11 @@ class TestMetadataEndToEnd:
         result = await manager.scaffold_artifact(
             "dto",
             output_path=str(tmp_path / "TestDTO.py"),
-            name="TestDTO",
+            dto_name="TestDTO",
             description="Test DTO",
             frozen=True,
             examples=[{"test": "data"}],
-            fields=[{"name": "test", "type": "str", "description": "Test field"}],
+            fields=["test: str"],
             dependencies=["pydantic"],
             responsibilities=["Data validation"],
         )
@@ -151,11 +143,11 @@ class TestMetadataEndToEnd:
         with pytest.raises(ValidationError) as exc_info:
             await manager.scaffold_artifact(
                 "dto",
-                name="TestDTO",
+                dto_name="TestDTO",
                 description="Test",
                 frozen=True,
                 examples=[{"test": "data"}],
-                fields=[{"name": "test", "type": "str", "description": "Test field"}],
+                fields=["test: str"],
                 dependencies=["pydantic"],
                 responsibilities=["Validation"],
             )
@@ -220,11 +212,11 @@ class TestMetadataEndToEnd:
         result = await manager.scaffold_artifact(
             "dto",
             output_path=str(tmp_path / "ProvenanceDto.py"),
-            name="ProvenanceDto",
+            dto_name="ProvenanceDto",
             description="Test provenance tracking",
             frozen=True,
             examples=[{"tracking_id": "test-123"}],
-            fields=[{"name": "tracking_id", "type": "str", "description": "Tracking ID"}],
+            fields=["tracking_id: str"],
             dependencies=["pydantic"],
             responsibilities=["Provenance data validation"],
         )

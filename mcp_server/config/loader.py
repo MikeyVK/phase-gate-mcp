@@ -146,19 +146,66 @@ class ConfigLoader:
             ) from exc
 
         if raw_loaded is None:
-            raise ConfigError(
-                "Empty artifact registry: "
-                f"{resolved_path}. Fix: Add artifact_types array with at least "
-                "one artifact definition.",
-                file_path=str(resolved_path),
-            )
-        if not isinstance(raw_loaded, dict):
+            raw_loaded = {}
+        elif not isinstance(raw_loaded, dict):
             raise ConfigError(
                 f"Invalid YAML root in {resolved_path.name}: expected mapping",
                 file_path=str(resolved_path),
             )
 
-        return self._validate_schema(ArtifactRegistryConfig, raw_loaded, resolved_path)
+        index_version = raw_loaded.get("version", "1.0.0")
+        merged_artifact_types = list(raw_loaded.get("artifact_types", []))
+
+        artifacts_dir = resolved_path.parent / "artifacts"
+        if not artifacts_dir.is_dir():
+            if not merged_artifact_types:
+                raise ConfigError(
+                    "Empty artifact registry: no artifact types defined "
+                    "(artifacts/ directory is missing or empty)",
+                    file_path=str(resolved_path),
+                )
+        else:
+            yaml_files = sorted(
+                [
+                    f
+                    for f in artifacts_dir.iterdir()
+                    if f.is_file() and f.suffix in (".yaml", ".yml")
+                ]
+            )
+            for filepath in yaml_files:
+                try:
+                    with filepath.open(encoding="utf-8") as fh:
+                        file_data = yaml.safe_load(fh)
+                except yaml.YAMLError as exc:
+                    raise ConfigError(
+                        f"Invalid YAML syntax: {exc}.",
+                        file_path=str(filepath),
+                    ) from exc
+                if file_data is None:
+                    continue
+                if isinstance(file_data, list):
+                    merged_artifact_types.extend(file_data)
+                elif isinstance(file_data, dict):
+                    merged_artifact_types.append(file_data)
+                else:
+                    raise ConfigError(
+                        "Invalid YAML structure in modular file: "
+                        f"expected mapping or list, got {type(file_data).__name__}",
+                        file_path=str(filepath),
+                    )
+
+        if not merged_artifact_types:
+            raise ConfigError(
+                "Empty artifact registry: no artifact types defined",
+                file_path=str(resolved_path),
+            )
+
+        full_config = {
+            "version": index_version,
+            "artifact_types": merged_artifact_types,
+        }
+
+        return self._validate_schema(ArtifactRegistryConfig, full_config, resolved_path)
 
     def load_contributor_config(self, config_path: Path | None = None) -> ContributorConfig:
         data, resolved_path = self._load_yaml("contributors.yaml", config_path=config_path)

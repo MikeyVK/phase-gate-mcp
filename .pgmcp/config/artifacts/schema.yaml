@@ -1,0 +1,53 @@
+type: code
+type_id: schema
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the Schema class (PascalCase required)
+    required: true
+  description:
+    type: string
+    title: Description
+    description: Description of the schema's purpose
+    required: false
+  layer:
+    type: string
+    title: Layer
+    description: Architectural layer of the schema
+    required: false
+  fields:
+    type: array
+    title: Fields
+    description: 'List of field definitions (format: ''name: type'')'
+    required: false
+    items:
+      type: string
+  frozen:
+    type: boolean
+    title: Frozen
+    description: If True, generate frozen=True in model_config (immutable config)
+    required: false
+  examples:
+    type: array
+    title: Examples
+    description: Example values for self-documentation
+    required: false
+    items:
+      type: string
+name: Pydantic Schema
+description: Pydantic Schema - validation models
+output_type: file
+scaffolder_class: SchemaScaffolder
+scaffolder_module: mcp_server.scaffolders.schema_scaffolder
+template_path: concrete/config_schema.py.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .py
+generate_test: true
+strict_validation: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

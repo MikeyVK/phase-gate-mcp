@@ -1,0 +1,100 @@
+type: doc
+type_id: architecture
+context_schema:
+  title:
+    type: string
+    title: Title
+    description: Artifact title
+    required: true
+  status:
+    type: string
+    title: Status
+    description: Document lifecycle status (DRAFT|PRELIMINARY|APPROVED|DEFINITIVE|DEPRECATED|PENDING)
+    required: true
+  version:
+    type: string
+    title: Version
+    description: Document version in x.y or x.y.z format (e.g. 1.0, 2.3.1)
+    required: true
+  last_updated:
+    type: string
+    title: Last Updated
+    description: Last updated date in ISO format YYYY-MM-DD
+    required: true
+  concepts:
+    type: array
+    title: Concepts
+    description: Architectural concepts to document (WHAT and WHY, not HOW)
+    required: true
+    items:
+      type: string
+  purpose:
+    type: string
+    title: Purpose
+    description: Purpose of this architecture document
+    required: false
+  scope_in:
+    type: string
+    title: Scope In
+    description: What is in scope
+    required: false
+  scope_out:
+    type: string
+    title: Scope Out
+    description: What is out of scope
+    required: false
+  prerequisites:
+    type: array
+    title: Prerequisites
+    description: Prerequisites and background knowledge
+    required: false
+    items:
+      type: string
+  related_docs:
+    type: array
+    title: Related Docs
+    description: Related documents in the project
+    required: false
+    items:
+      type: string
+  constraints:
+    type: array
+    title: Constraints
+    description: Architectural constraints and boundaries
+    required: false
+    items:
+      type: string
+  decisions:
+    type: array
+    title: Decisions
+    description: Key architectural decisions made
+    required: false
+    items:
+      type: string
+name: Architecture Document
+description: System architecture documentation
+output_type: file
+template_path: concrete/architecture.md.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .md
+generate_test: false
+state_machine:
+  states:
+  - DRAFT
+  - REVIEW
+  - APPROVED
+  - DEFINITIVE
+  initial_state: DRAFT
+  valid_transitions:
+  - from: DRAFT
+    to:
+    - REVIEW
+    - APPROVED
+  - from: REVIEW
+    to:
+    - APPROVED
+    - DRAFT
+  - from: APPROVED
+    to:
+    - DEFINITIVE

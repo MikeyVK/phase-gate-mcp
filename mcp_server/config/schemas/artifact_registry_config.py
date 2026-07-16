@@ -23,6 +23,23 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 from mcp_server.core.exceptions import ConfigError
 
 
+class SchemaFieldDef(BaseModel):
+    """Declarative field definition for artifact context validation."""
+
+    model_config = ConfigDict(frozen=True)
+
+    type: str = Field(..., description="Field type: string, array, boolean, integer")
+    title: str = Field(..., description="Field title")
+    description: str = Field(..., description="Field description")
+    default: Any | None = Field(None, description="Default value")
+    required: bool = Field(True, description="Whether the field is required")
+    min_length: int | None = Field(None, description="Minimum length validation constraint")
+    pattern: str | None = Field(None, description="Regex pattern validation constraint")
+    items: dict[str, str] | None = Field(
+        None, description="Array items schema validation constraint"
+    )
+
+
 class ArtifactType(StrEnum):
     """Artifact category: code, documentation, or tracking."""
 
@@ -66,7 +83,7 @@ class StateMachine(BaseModel):
 class ArtifactDefinition(BaseModel):
     """Single artifact type definition from artifacts.yaml."""
 
-    type: ArtifactType = Field(..., description="code or doc")
+    type: str = Field(..., description="Artifact category (e.g. 'code', 'doc')")
     type_id: str = Field(..., description="Unique identifier (e.g. 'dto', 'worker')")
     name: str = Field(..., description="Display name")
     description: str = Field(..., description="Purpose description")
@@ -84,6 +101,12 @@ class ArtifactDefinition(BaseModel):
     required_fields: list[str] = Field(default_factory=list, description="Required context fields")
     optional_fields: list[str] = Field(default_factory=list, description="Optional context fields")
     context_class: str | None = Field(None, description="Pydantic context schema class name")
+    context_schema: dict[str, SchemaFieldDef] | None = Field(
+        None, description="Declarative schema definition"
+    )
+    strict_validation: bool = Field(
+        False, description="If True, validation failures block writing and raise an error."
+    )
     state_machine: StateMachine = Field(..., description="Lifecycle state machine")
 
     def validate_artifact_fields(self, provided: dict[str, Any]) -> None:
@@ -120,7 +143,7 @@ class ArtifactRegistryConfig(BaseModel):
             f"{available}. Fix: Check spelling or add a matching artifact definition.",
         )
 
-    def list_type_ids(self, artifact_type: ArtifactType | None = None) -> list[str]:
+    def list_type_ids(self, artifact_type: str | ArtifactType | None = None) -> list[str]:
         if artifact_type is None:
             return sorted(artifact.type_id for artifact in self.artifact_types)
         return sorted(

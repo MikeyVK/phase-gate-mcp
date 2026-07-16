@@ -1,10 +1,10 @@
 <!-- docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md -->
-<!-- template=reference version=064954ea created=2026-02-07T00:00Z updated=2026-06-05 -->
+<!-- template=reference version=349a0003 created=2026-02-07T00:00Z updated=2026-07-16 -->
 # Template Library Quick Reference
 
 **Status:** DEFINITIVE
-**Version:** 2.1
-**Last Updated:** 2026-06-05
+**Version:** 3.0
+**Last Updated:** 2026-07-16
 
 **Source:** [.pgmcp/templates/][source]
 **Tests:** [tests/mcp_server/integration/test_smoke_all_types.py][tests]
@@ -13,7 +13,7 @@
 
 ## Purpose
 
-Quick-lookup inventory of all registered artifact types, their required context fields, and their template locations. For full usage guidance see docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md.
+Quick-lookup inventory of all registered artifact types, their required context fields, and their template locations. For full usage guidance see docs/reference/TEMPLATE_LIBRARY_USAGE.md.
 
 ---
 
@@ -21,13 +21,14 @@ Quick-lookup inventory of all registered artifact types, their required context 
 
 Use `scaffold_schema(artifact_type="<type>")` to get the full JSON Schema for any type's context.
 
-Registry: `.pgmcp/config/artifacts.yaml`
+Registry: `.pgmcp/config/artifacts/`
 
 ### Code Artifacts
 
 | Type | Minimum required context | Template |
 |---|---|---|
 | `dto` | `dto_name: str`, `fields: list[str]` | `concrete/dto.py.jinja2` |
+| `typescript_dto` | `fields: list[str]` | `concrete/typescript_dto.ts.jinja2` |
 | `worker` | `name: str`, `layer: str` | `concrete/worker.py.jinja2` |
 | `adapter` | `name: str` | `concrete/adapter.py.jinja2` |
 | `tool` | `name: str` | `concrete/tool.py.jinja2` |
@@ -48,8 +49,8 @@ Registry: `.pgmcp/config/artifacts.yaml`
 | `design` | `title: str`, `status: str`, `version: str`, `problem_statement: str`, `requirements_functional: list[str]`, `requirements_nonfunctional: list[str]`, `decision: str`, `rationale: str` | `concrete/design.md.jinja2` |
 | `architecture` | `title: str`, `concepts: list[str]` | `concrete/architecture.md.jinja2` |
 | `reference` | `title: str` | `concrete/reference.md.jinja2` |
-| `validation_report` | `title: str`, `status: str`, `version: str`, `last_updated: str` | `concrete/validation_report.md.jinja2` |
-| `generic_doc` | `title: str`, `status: str`, `version: str`, `last_updated: str`, `purpose: str`, `summary: str` | `concrete/generic.md.jinja2` |
+| `validation_report` | `title: str`, `issue_number: int`, `validation_outcome: str` | `concrete/validation_report.md.jinja2` |
+| `generic_doc` | `title: str` | `concrete/generic.md.jinja2` |
 
 ### Tracking Artifacts
 
@@ -71,9 +72,9 @@ Templates root: `.pgmcp/templates/`
 |---|---|---|
 | 0 | Universal SCAFFOLD header | `tier0_base_artifact.jinja2` |
 | 1 | Format structure | `tier1_base_code.jinja2`, `tier1_base_document.jinja2` |
-| 2 | Language/syntax | `tier2_base_python.jinja2`, `tier2_base_markdown.jinja2` |
-| 3 | Pattern macros | `tier3_pattern_python_logging.jinja2`, `tier3_pattern_markdown_status_header.jinja2` |
-| Concrete | Artifact outputs | `concrete/dto.py.jinja2`, `concrete/design.md.jinja2` |
+| 2 | Language/syntax | `tier2_base_python.jinja2`, `tier2_base_typescript.jinja2`, `tier2_base_markdown.jinja2` |
+| 3 | Pattern macros | `tier3_pattern_python_logging.jinja2`, `tier3_pattern_typescript_dto.jinja2`, `tier3_pattern_markdown_status_header.jinja2` |
+| Concrete | Artifact outputs | `concrete/dto.py.jinja2`, `concrete/typescript_dto.ts.jinja2`, `concrete/design.md.jinja2` |
 
 ---
 
@@ -85,8 +86,8 @@ Templates root: `.pgmcp/templates/`
 |---|---|
 | SCAFFOLD provenance header | Tier 0 |
 | Module docstring + class skeleton | Tier 1 |
-| Python language syntax | Tier 2 |
-| Optional patterns (logging, DI, async, error, ...) | Tier 3 (`{% import %}`) |
+| Language syntax (Python / TypeScript) | Tier 2 |
+| Optional patterns (logging, DI, async, DTO loop, ...) | Tier 3 (`{% import %}`) |
 | Artifact-specific behavior | Concrete |
 
 ### Document artifacts
@@ -112,10 +113,10 @@ Templates root: `.pgmcp/templates/`
 ---
 
 ## Related Documentation
-- **[docs/reference/mcp/README.md][related-1]**
-- **[docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md][related-2]**
+- **[docs/reference/README.md][related-1]**
+- **[docs/reference/TEMPLATE_LIBRARY_USAGE.md][related-2]**
 - **[docs/manuals/architecture.md][related-3]**
-- **[docs/reference/mcp/template_metadata_format.md][related-4]**
+- **[docs/reference/template_metadata_format.md][related-4]**
 
 <!-- Link definitions -->
 [source]: ../../.pgmcp/templates/
@@ -129,7 +130,9 @@ Templates root: `.pgmcp/templates/`
 
 ## Version History
 
-| 3.0 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 3.0 | 2026-07-16 | Agent | Updated for V3 modular YAML configuration, dynamic validation model, and added typescript_dto definitions. |
 | 2.1 | 2026-06-05 | Agent | Reconciled artifact inventory with validated branch state: added adapter/resource/interface and validation_report; generic_doc minimum context updated to current schema-validated contract |
 | 2.0 | 2026-06-04 | Agent | Full rewrite: artifact inventory updated to all 17 registered types; correct template paths; three-layer model integrated; removed legacy paths and branding (#286) |
 | 1.0 | 2026-02-07 | Agent | Initial draft |

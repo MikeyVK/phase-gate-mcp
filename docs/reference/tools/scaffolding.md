@@ -13,7 +13,7 @@
 
 ## Purpose
 
-Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same artifact registry defined in [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml).
+Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same modular artifact registry defined under [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/).
 
 The scaffolding system provides:
 - **Unified tool** for code and documentation generation (replaces separate tools)
@@ -57,7 +57,7 @@ Generate any artifact type (code or document) from unified registry.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `"dto"`, `"design"`, `"worker"`). The available enum values are populated at runtime from `artifacts.yaml` via the registry. |
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `\"dto\"`, `\"design\"`, `\"worker\"`). The available values are populated at runtime from the modular configurations under `.pgmcp/config/artifacts/`. |
 | `name` | `str` | **Yes** | Artifact name — PascalCase for code, kebab-case for docs |
 | `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.pgmcp/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |
@@ -145,7 +145,7 @@ Return the JSON Schema for the `context` parameter of an artifact type. Use this
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available enum values are populated at runtime from `artifacts.yaml`. |
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available values are populated at runtime from `.pgmcp/config/artifacts/`. |
 
 #### Returns (via MCP Resource Cache)
 
@@ -178,22 +178,23 @@ This eliminates trial-and-error context validation failures.
 ## Artifact Registry
 
 
-The unified artifact registry is defined in [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml).
+The unified artifact registry is defined by modular YAML configuration files under [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/).
 
 
 ### Registry Structure
 
-The registry is defined in `.pgmcp/config/artifacts.yaml`. Each entry has at minimum: `type_id`, `display_name`, `category`, `template`, and (for enabled types) the template path.
+The registry is loaded from individual `.yaml` files under `.pgmcp/config/artifacts/`. Each file defines at minimum: `type_id`, `name`, `description`, `template_path`, `file_extension`, `strict_validation`, and the `context_schema`.
 
-**See:** [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml) for the full registry.
+**See:** [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/) for the configuration files.
 
 ### Supported Artifact Types
 
-#### Code Artifacts (11 types)
+#### Code Artifacts (12 types)
 
 | ID | Template | Description |
 |----|----------|-------------|
 | `dto` | `concrete/dto.py.jinja2` | Data Transfer Objects (frozen Pydantic models) |
+| `typescript_dto` | `concrete/typescript_dto.ts.jinja2` | TypeScript Data Transfer Objects |
 | `worker` | `concrete/worker.py.jinja2` | Async background workers |
 | `adapter` | `concrete/adapter.py.jinja2` | Adapter classes |
 | `tool` | `concrete/tool.py.jinja2` | MCP server tools |
@@ -256,7 +257,7 @@ Concrete templates extend the appropriate tier 2 base (`{% extends %}`) and impo
 
 ### Context Variables
 
-Each artifact type defines its required and optional context fields in a Context schema (`mcp_server/schemas/contexts/<type>.py`). Use `scaffold_schema(artifact_type="<type>")` to retrieve the full JSON Schema before scaffolding.
+Each artifact type defines its required and optional context fields in the declarative `context_schema` under `.pgmcp/config/artifacts/<type>.yaml`. Use `scaffold_schema(artifact_type=\"<type>\")` to retrieve the full JSON Schema before scaffolding.
 
 ```json
 {
@@ -288,7 +289,7 @@ All generated artifacts include a SCAFFOLD header for template provenance tracki
 ```
 
 **Header Fields:**
-- `template` — Template ID from artifacts.yaml
+- `template` — Template ID from the configuration
 - `version` — Template version hash (8-char SHA from template content)
 - `created` — ISO 8601 timestamp when artifact was scaffolded
 - `updated` — ISO 8601 timestamp of last update (empty when first created)
@@ -310,7 +311,7 @@ Templates are organized into tiers based on complexity and composition depth:
 | **Tier 1** | Templates with includes | `worker`, `adapter`, `design` |
 | **Tier 2** | Templates with inheritance | `tool`, `architecture` |
 
-Tier information is stored in `artifacts.yaml` and `template_registry.json`.
+Tier information is stored in the modular configurations and `template_registry.json`.
 
 ---
 
@@ -365,11 +366,11 @@ Tier information is stored in `artifacts.yaml` and `template_registry.json`.
 
 ## Configuration
 
-### .pgmcp/config/artifacts.yaml
+### .pgmcp/config/artifacts/
 
-Complete artifact registry with template mappings, context schemas, and tier information.
+Complete modular artifact registry with template mappings, context schemas, and tier information.
 
-**See:** [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml) for full registry.
+**See:** [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/) for the configuration files.
 
 ---
 
@@ -490,7 +491,7 @@ When templates are updated:
 - [README.md](README.md) — MCP Tools navigation index
 - [editing.md](editing.md) — safe_edit_file for manual edits
 - [quality.md](quality.md) — validate_template for conformance checking
-- [.pgmcp/config/artifacts.yaml](../../../../.pgmcp/config/artifacts.yaml) — Complete artifact registry
+- [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/) — Modular configuration directory
 - [.pgmcp/config/project_structure.yaml](../../../../.pgmcp/config/project_structure.yaml) — Directory resolution
 - [.pgmcp/config/scaffold_metadata.yaml](../../../../.pgmcp/config/scaffold_metadata.yaml) — SCAFFOLD header specs
 - [.pgmcp/templates/](../../../.pgmcp/templates/) — Template library
@@ -499,6 +500,7 @@ When templates are updated:
 ---
 
 ## Version History
+| 3.2 | 2026-07-16 | Agent | Updated for modular YAML configuration loading, dynamic validation model, and added typescript_dto. |
 | 3.1 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
 | 2.2 | 2026-06-04 | Agent | Remove legacy error example; fix artifact type tables (17 registered types); fix template paths; replaced fake context schema YAML with registry reference; removed stale links (#286) |
 | 2.1 | 2026-06-02 | Agent | Add scaffold_schema API Reference section; update tool counts (1→2); proactive schema exposure documented |

@@ -68,14 +68,77 @@ artifact_types:
     name_suffix: null
     file_extension: ".md"
     generate_test: false
-    required_fields:
-      - issue_number
-      - title
-      - author
-    optional_fields:
-      - sections
-      - status
-    context_class: DesignContext
+    context_schema:
+      issue_number:
+        type: "string"
+        title: "Issue Number"
+        description: "The issue number"
+        required: true
+      title:
+        type: "string"
+        title: "Title"
+        description: "The design title"
+        required: true
+      author:
+        type: "string"
+        title: "Author"
+        description: "The author"
+        required: true
+      status:
+        type: "string"
+        title: "Status"
+        description: "Lifecycle status"
+        required: false
+      version:
+        type: "string"
+        title: "Version"
+        description: "Version"
+        required: false
+      last_updated:
+        type: "string"
+        title: "Last Updated"
+        description: "Last updated date"
+        required: false
+      problem_statement:
+        type: "string"
+        title: "Problem Statement"
+        description: "Problem statement"
+        required: false
+      requirements_functional:
+        type: "array"
+        title: "Functional Requirements"
+        description: "Functional requirements"
+        required: false
+      requirements_nonfunctional:
+        type: "array"
+        title: "Non-Functional Requirements"
+        description: "Non-functional requirements"
+        required: false
+      decision:
+        type: "string"
+        title: "Decision"
+        description: "The decision"
+        required: false
+      rationale:
+        type: "string"
+        title: "Rationale"
+        description: "The rationale"
+        required: false
+      options:
+        type: "array"
+        title: "Options"
+        description: "Design options"
+        required: false
+      key_decisions:
+        type: "array"
+        title: "Key Decisions"
+        description: "Key decisions"
+        required: false
+      sections:
+        type: "array"
+        title: "Sections"
+        description: "Sections list"
+        required: false
     state_machine:
       states: [DRAFT, APPROVED, DEFINITIVE]
       initial_state: DRAFT
@@ -94,13 +157,27 @@ artifact_types:
     name_suffix: null
     file_extension: ".py"
     generate_test: true
-    required_fields:
-      - name
-      - description
-    optional_fields:
-      - fields
-      - validation_rules
-    context_class: DTOContext
+    context_schema:
+      name:
+        type: "string"
+        title: "Name"
+        description: "DTO Name"
+        required: true
+      dto_name:
+        type: "string"
+        title: "DTO Name"
+        description: "DTO Name"
+        required: false
+      description:
+        type: "string"
+        title: "Description"
+        description: "DTO Description"
+        required: true
+      fields:
+        type: "array"
+        title: "Fields"
+        description: "Fields list"
+        required: false
     state_machine:
       states: [CREATED]
       initial_state: CREATED
@@ -241,6 +318,7 @@ class ArtifactSpec:
     description: str | None = None
     template_fields: TemplateFields = field(default_factory=TemplateFields)
     generate_test: bool = False
+    strict_validation: bool | None = None
 
 
 def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
@@ -255,7 +333,42 @@ def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
     with open(artifacts_yaml_path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
+    # Build context_schema
+    context_schema = {}
+    for f in spec.template_fields.required or ["name"]:
+        context_schema[f] = {
+            "type": "string",
+            "title": f.replace("_", " ").title(),
+            "description": f,
+            "required": True,
+        }
+    for f in spec.template_fields.optional or []:
+        context_schema[f] = {
+            "type": "string",
+            "title": f.replace("_", " ").title(),
+            "description": f,
+            "required": False,
+        }
+    if "name" not in context_schema:
+        context_schema["name"] = {
+            "type": "string",
+            "title": "Name",
+            "description": "Name",
+            "required": False,
+        }
+    if "description" not in context_schema:
+        context_schema["description"] = {
+            "type": "string",
+            "title": "Description",
+            "description": "Description",
+            "required": False,
+        }
+
     # Create new artifact definition
+    strict_val = spec.strict_validation
+    if strict_val is None:
+        strict_val = spec.identity.artifact_type in ("code", "tracking")
+
     artifact_def = {
         "type": spec.identity.artifact_type,
         "type_id": spec.identity.type_id,
@@ -266,8 +379,8 @@ def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
         "name_suffix": None,
         "file_extension": spec.file_extension,
         "generate_test": spec.generate_test,
-        "required_fields": spec.template_fields.required or ["name"],
-        "optional_fields": spec.template_fields.optional or [],
+        "strict_validation": strict_val,
+        "context_schema": context_schema,
         "state_machine": {
             "states": ["CREATED"],
             "initial_state": "CREATED",

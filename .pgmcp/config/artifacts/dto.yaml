@@ -1,0 +1,36 @@
+type: code
+type_id: dto
+context_schema:
+  dto_name:
+    type: string
+    title: Dto Name
+    description: Name of the DTO class (PascalCase required)
+    required: true
+  fields:
+    type: array
+    title: Fields
+    description: 'List of field definitions (format: ''name: type'')'
+    required: false
+    items:
+      type: string
+  description:
+    type: string
+    title: Description
+    description: DTO Description
+    required: false
+name: Data Transfer Object
+description: Data Transfer Object - immutable data container (Pydantic BaseModel)
+output_type: file
+scaffolder_class: DTOScaffolder
+scaffolder_module: mcp_server.scaffolders.dto_scaffolder
+template_path: concrete/dto.py.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .py
+generate_test: true
+strict_validation: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

@@ -3,7 +3,7 @@ from tests.mcp_server.test_support import get_default_server_root
 # SCAFFOLD: integration_test:smoke135 | 2026-02-19T00:00:00Z
 """Integration Step 1: Schema-validated scaffolding smoke test for all 21 artifact types.
 
-Validates that PYDANTIC_SCAFFOLDING_ENABLED=true produces non-empty output
+Validates that dynamic schema-validated scaffolding produces non-empty output
 for every type registered in artifacts.yaml. One parametrized test per type.
 
 @module: tests.mcp_server.integration.test_smoke_all_types
@@ -33,8 +33,8 @@ from mcp_server.managers.artifact_manager import ArtifactManager
 _PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 
 
-@pytest.fixture(name="v2_manager")
-def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactManager:
+@pytest.fixture(name="manager")
+def _manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactManager:
     """ArtifactManager configured for schema-validated scaffolding pipeline.
 
     Uses production registry + templates.
@@ -43,11 +43,7 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     - Copies production .pgmcp/artifacts.yaml into hermetic tmp workspace
     - Sets TEMPLATE_ROOT → production mcp_server/scaffolding/templates/
     - Changes CWD → tmp_path (so registry + ephemeral writes resolve there)
-    - Enables PYDANTIC_SCAFFOLDING_ENABLED=true
     """
-    # Enable schema-validated scaffolding
-    monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "true")
-
     # Point template discovery to actual production templates
     from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
 
@@ -60,6 +56,9 @@ def _v2_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactMana
     artifacts_path = config_dir / "artifacts.yaml"
     shutil.copy(
         _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts.yaml", artifacts_path
+    )
+    shutil.copytree(
+        _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts", config_dir / "artifacts"
     )
 
     # CWD → tmp_path: registry loads from tmp_path/.pgmcp/config/artifacts.yaml,
@@ -88,7 +87,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
     (
         "dto",
         # Non-empty fields required: empty fields renders invalid Python
-        # (V2 template issue with 0 fields — see test_dto_parity.py pytest.skip)
+        # (Template issue with 0 fields — see test_dto_parity.py pytest.skip)
         {"dto_name": "SmokeDTO", "fields": ["id: str", "name: str"]},
         False,
         ".py",
@@ -218,7 +217,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
             "status": "DRAFT",
             "version": "1.0.0",
             "last_updated": "2026-06-05",
-            "concepts": ["V2 context schema validation", "Pydantic render contexts"],
+            "concepts": ["Declarative context schema validation", "Pydantic render contexts"],
         },
         False,
         ".md",
@@ -270,7 +269,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
     # --- Tracking artifacts (ephemeral: write to .pgmcp/temp/, not via fs_adapter) ---
     (
         "commit",
-        {"type": "feat", "message": "add V2 smoke test coverage"},
+        {"type": "feat", "message": "add smoke test coverage"},
         True,
         ".txt",
     ),
@@ -278,7 +277,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "pr",
         {
             "title": "Smoke PR",
-            "changes": "Added V2 pipeline smoke tests for all 21 artifact types",
+            "changes": "Added pipeline smoke tests for all 21 artifact types",
         },
         True,
         ".md",
@@ -287,7 +286,7 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
         "issue",
         {
             "title": "Smoke Issue",
-            "problem": "V2 pipeline lacks integration smoke coverage for all types",
+            "problem": "pipeline lacks integration smoke coverage for all types",
         },
         True,
         ".md",
@@ -301,15 +300,15 @@ _SMOKE_CASES: list[tuple[str, dict, bool, str]] = [
     _SMOKE_CASES,
     ids=[case[0] for case in _SMOKE_CASES],
 )
-async def test_v2_smoke_produces_nonempty_output(
-    v2_manager: ArtifactManager,
+async def test_smoke_produces_nonempty_output(
+    manager: ArtifactManager,
     tmp_path: Path,
     artifact_type: str,
     context_kwargs: dict,
     _is_ephemeral: bool,
     file_ext: str,
 ) -> None:
-    """V2 pipeline produces a non-empty string for every registered artifact type.
+    """The scaffolding pipeline produces a non-empty string for every registered artifact type.
 
     Passing criteria:
     - result is a non-empty str
@@ -320,13 +319,13 @@ async def test_v2_smoke_produces_nonempty_output(
     # (ephemeral types ignore this value in _validate_and_write, but it avoids resolver errors)
     output_path = str(tmp_path / f"smoke_{artifact_type}{file_ext}")
 
-    result = await v2_manager.scaffold_artifact(
+    result = await manager.scaffold_artifact(
         artifact_type,
         output_path=output_path,
         **context_kwargs,
     )
 
-    # Core assertion: V2 pipeline returns a non-empty string path
+    # Core assertion: The pipeline returns a non-empty string path
     assert isinstance(result, str), (
         f"[{artifact_type}] scaffold_artifact should return str, got {type(result).__name__}"
     )

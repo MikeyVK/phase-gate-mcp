@@ -1,0 +1,47 @@
+{#- tier3_pattern_typescript_dto.jinja2 - TypeScript DTO Scaffolding Pattern -#}
+{#- Version: 1.0.0 -#}
+{#- Purpose: Provides TypeScript class properties and constructor assignment -#}
+{% extends "tier2_base_typescript.jinja2" %}
+
+{% block class_body %}
+{%- for field_str in fields -%}
+  {%- set parts = field_str.strip().split() -%}
+  {%- if parts[0] == 'readonly' -%}
+    {%- set is_readonly = true -%}
+    {%- set field_decl = parts[1:] | join(' ') -%}
+  {%- else -%}
+    {%- set is_readonly = false -%}
+    {%- set field_decl = parts | join(' ') -%}
+  {%- endif -%}
+  {%- set name_type = field_decl.split(':') -%}
+  {%- set f_name = name_type[0] | trim -%}
+  {%- set f_type = name_type[1] | trim if name_type | length > 1 else 'string' -%}
+  {{ "  " }}public {% if is_readonly %}readonly {% endif %}{{ f_name }}: {{ f_type }};
+{% endfor %}
+  constructor(data: {
+{% for field_str in fields %}
+  {%- set parts = field_str.strip().split() -%}
+  {%- if parts[0] == 'readonly' -%}
+    {%- set field_decl = parts[1:] | join(' ') -%}
+  {%- else -%}
+    {%- set field_decl = parts | join(' ') -%}
+  {%- endif -%}
+  {%- set name_type = field_decl.split(':') -%}
+  {%- set f_name = name_type[0] | trim -%}
+  {%- set f_type = name_type[1] | trim if name_type | length > 1 else 'string' -%}
+  {{ "    " }}{{ f_name }}: {{ f_type }};
+{% endfor %}
+  }) {
+{% for field_str in fields %}
+  {%- set parts = field_str.strip().split() -%}
+  {%- if parts[0] == 'readonly' -%}
+    {%- set field_decl = parts[1:] | join(' ') -%}
+  {%- else -%}
+    {%- set field_decl = parts | join(' ') -%}
+  {%- endif -%}
+  {%- set name_type = field_decl.split(':') -%}
+  {%- set f_name = name_type[0] | trim -%}
+  {{ "    " }}this.{{ f_name }} = data.{{ f_name }};
+{% endfor %}
+  }
+{% endblock %}

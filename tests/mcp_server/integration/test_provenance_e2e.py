@@ -34,11 +34,6 @@ from tests.mcp_server.test_support import make_artifact_manager, make_metadata_p
 class TestProvenanceE2E:
     """E2E tests for scaffold provenance tracking (Task 1.6b)."""
 
-    @pytest.fixture(autouse=True)
-    def _force_v1_pipeline(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Force V1 pipeline: these tests validate V1 scaffolding infrastructure."""
-        monkeypatch.setenv("PYDANTIC_SCAFFOLDING_ENABLED", "false")
-
     @pytest.fixture
     def manager(self, tmp_path: Path) -> ArtifactManager:
         """Create artifact manager with workspace root."""
@@ -156,15 +151,8 @@ class TestProvenanceE2E:
         }
 
         if artifact_type == "dto":
-            context["fields"] = [
-                {"name": "id", "type": "int", "description": "Identifier"},
-                {"name": "name", "type": "str", "description": "Name"},
-            ]
-            context["frozen"] = True
-            context["examples"] = [{"id": 1, "name": "Test"}]
-            context["dependencies"] = ["pydantic"]
-            context["responsibilities"] = ["Data validation", "Type safety"]
-
+            context["dto_name"] = "TestDto"
+            context["fields"] = ["id: int", "name: str"]
         if artifact_type == "design":
             context.update(
                 {
@@ -252,15 +240,8 @@ class TestProvenanceE2E:
         }
 
         if artifact_type == "dto":
-            context["fields"] = [
-                {"name": "id", "type": "int", "description": "Identifier"},
-                {"name": "name", "type": "str", "description": "Name"},
-            ]
-            context["frozen"] = True
-            context["examples"] = [{"id": 1, "name": "Test"}]
-            context["dependencies"] = ["pydantic"]
-            context["responsibilities"] = ["Data validation", "Type safety"]
-
+            context["dto_name"] = "TestDto"
+            context["fields"] = ["id: int", "name: str"]
         file_path = await manager.scaffold_artifact(
             artifact_type,
             output_path=str(tmp_path / f"Test{artifact_type.title()}.py"),
@@ -301,8 +282,11 @@ class TestProvenanceE2E:
             problem_statement="Define architecture",
             decision="Use layered architecture",
             rationale="Separation of concerns",
-            options=["Layered", "Microservices"],
-            key_decisions=["Use MVC pattern"],
+            options=[
+                {"name": "Layered", "description": "Layered arch"},
+                {"name": "Microservices", "description": "Microservices arch"},
+            ],
+            key_decisions=[{"area": "Architecture", "decision": "Use MVC pattern"}],
             requirements_functional=["Feature X"],
             requirements_nonfunctional=["Performance Y"],
             timestamp="2026-01-27T10:00:00Z",

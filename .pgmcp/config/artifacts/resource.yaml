@@ -1,0 +1,39 @@
+type: code
+type_id: resource
+context_schema:
+  name:
+    type: string
+    title: Name
+    description: Name of the resource class (PascalCase required)
+    required: true
+  description:
+    type: string
+    title: Description
+    description: Description of the resource's purpose
+    required: false
+  resource_type:
+    type: string
+    title: Resource Type
+    description: Resource category or protocol surface
+    required: false
+  methods:
+    type: array
+    title: Methods
+    description: Optional structured method definitions
+    required: false
+    items:
+      type: string
+name: MCP Resource
+description: MCP Resource - provides dynamic content
+output_type: file
+template_path: concrete/resource.py.jinja2
+fallback_template: null
+name_suffix: null
+file_extension: .py
+generate_test: true
+strict_validation: true
+state_machine:
+  states:
+  - CREATED
+  initial_state: CREATED
+  valid_transitions: []

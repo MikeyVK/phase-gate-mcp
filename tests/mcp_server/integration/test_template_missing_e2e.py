@@ -62,10 +62,17 @@ async def test_template_missing_error_propagates_through_call_chain(
     name_suffix: null
     file_extension: ".py"
     generate_test: false
-    required_fields:
-      - name
-      - description
-    optional_fields: []
+    context_schema:
+      name:
+        type: "string"
+        title: "Name"
+        description: "DTO Name"
+        required: true
+      description:
+        type: "string"
+        title: "Description"
+        description: "DTO Description"
+        required: true
     state_machine:
       states: [CREATED]
       initial_state: CREATED

@@ -56,7 +56,7 @@ Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 | :--- | :--- |
 | `workflows.yaml` / `workphases.yaml` | Phase sequences and lifecycle states |
 | `policies.yaml` / `enforcement.yaml` | Transition rules and strictness levels |
-| `artifacts.yaml` / `contracts.yaml` | Expected deliverables per phase |
+| `artifacts/` / `contracts.yaml` | Expected deliverables per phase |
 | `quality.yaml` | Active quality gates and thresholds |
 | `git.yaml` | Branch naming conventions |
 

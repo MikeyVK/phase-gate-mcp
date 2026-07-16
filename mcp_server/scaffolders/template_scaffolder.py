@@ -148,7 +148,7 @@ class TemplateScaffolder(BaseScaffolder):
         Args:
             artifact_type: Artifact type_id from registry
             skip_validation: If True, skip introspection-based validation.
-                Used by V2 pipeline where Pydantic schemas already validated input.
+                 Used when Pydantic schemas have already validated input.
             note_context: Optional NoteContext for producing typed notes on error paths.
             **kwargs: Context for template rendering
 
@@ -158,8 +158,8 @@ class TemplateScaffolder(BaseScaffolder):
         Raises:
             ValidationError: If validation fails or template missing
         """
-        # Validate via introspection (V1 pipeline only).
-        # V2 pipeline uses Pydantic schemas for validation — skip introspection here.
+        # Validate via introspection when skip_validation is False.
+        # When validation is done using Pydantic schemas, we skip introspection.
         if not skip_validation:
             self.validate(artifact_type, note_context=note_context, **kwargs)
 
@@ -248,7 +248,7 @@ class TemplateScaffolder(BaseScaffolder):
             if template_name and isinstance(template_name, str):
                 return str(template_name)  # PRIORITY: context overrides artifacts.yaml
 
-        # GENERAL OVERRIDE: Any artifact can override via template_name (Cycle 4 v2 templates)
+        # GENERAL OVERRIDE: Any artifact can override via template_name
         template_name_override = context.get("template_name")
         if template_name_override and isinstance(template_name_override, str):
             return str(template_name_override)
