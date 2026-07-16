@@ -482,13 +482,12 @@ class ArtifactManager:
         passed, issues = await self.validation_service.validate(output_path, content)
 
         if not passed:
-            if artifact.type == "code":
+            if artifact.strict_validation:
                 raise ValidationError(
                     f"Generated {artifact_type} artifact failed validation:\n{issues}",
                     error_code="artifact_validation_failed",
                     params={"artifact_type": artifact_type, "issues": issues},
                 )
-
             logger.warning(
                 "Validation issues in %s artifact (type=%s), writing anyway:\n%s",
                 artifact_type,

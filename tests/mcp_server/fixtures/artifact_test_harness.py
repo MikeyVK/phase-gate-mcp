@@ -318,6 +318,7 @@ class ArtifactSpec:
     description: str | None = None
     template_fields: TemplateFields = field(default_factory=TemplateFields)
     generate_test: bool = False
+    strict_validation: bool | None = None
 
 
 def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
@@ -364,6 +365,10 @@ def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
         }
 
     # Create new artifact definition
+    strict_val = spec.strict_validation
+    if strict_val is None:
+        strict_val = spec.identity.artifact_type in ("code", "tracking")
+
     artifact_def = {
         "type": spec.identity.artifact_type,
         "type_id": spec.identity.type_id,
@@ -374,6 +379,7 @@ def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
         "name_suffix": None,
         "file_extension": spec.file_extension,
         "generate_test": spec.generate_test,
+        "strict_validation": strict_val,
         "context_schema": context_schema,
         "state_machine": {
             "states": ["CREATED"],

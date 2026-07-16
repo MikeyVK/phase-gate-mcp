@@ -65,6 +65,7 @@ fallback_template: null
 name_suffix: null
 file_extension: .py
 generate_test: false
+strict_validation: true
 base_path: tests/mcp_server/unit/
 state_machine:
   states:

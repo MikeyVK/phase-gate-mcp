@@ -56,7 +56,7 @@ class TestArtifactsYamlTypeField:
             artifact_types.append(
                 {
                     "type_id": artifact.type_id,
-                    "type": artifact.type.value,
+                    "type": artifact.type,
                 }
             )
         return {"artifact_types": artifact_types}

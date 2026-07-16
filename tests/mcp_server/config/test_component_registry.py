@@ -40,7 +40,7 @@ class TestArtifactRegistryConfig:
         dto = config.get_artifact("dto")
         assert dto.type_id == "dto"
         assert dto.description is not None
-        assert dto.type.value == "code"
+        assert dto.type == "code"
 
     def test_repeated_loads_are_equivalent(self) -> None:
         """Repeated loads of the same file should be value-equivalent."""
@@ -59,7 +59,7 @@ class TestArtifactRegistryConfig:
         dto = config.get_artifact("dto")
 
         assert dto.type_id == "dto"
-        assert dto.type.value == "code"
+        assert dto.type == "code"
 
     def test_get_artifact_invalid(self) -> None:
         """Test get_artifact with unknown type."""

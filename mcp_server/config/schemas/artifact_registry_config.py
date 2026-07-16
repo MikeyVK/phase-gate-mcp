@@ -83,7 +83,7 @@ class StateMachine(BaseModel):
 class ArtifactDefinition(BaseModel):
     """Single artifact type definition from artifacts.yaml."""
 
-    type: ArtifactType = Field(..., description="code or doc")
+    type: str = Field(..., description="Artifact category (e.g. 'code', 'doc')")
     type_id: str = Field(..., description="Unique identifier (e.g. 'dto', 'worker')")
     name: str = Field(..., description="Display name")
     description: str = Field(..., description="Purpose description")
@@ -103,6 +103,9 @@ class ArtifactDefinition(BaseModel):
     context_class: str | None = Field(None, description="Pydantic context schema class name")
     context_schema: dict[str, SchemaFieldDef] | None = Field(
         None, description="Declarative schema definition"
+    )
+    strict_validation: bool = Field(
+        False, description="If True, validation failures block writing and raise an error."
     )
     state_machine: StateMachine = Field(..., description="Lifecycle state machine")
 
@@ -140,7 +143,7 @@ class ArtifactRegistryConfig(BaseModel):
             f"{available}. Fix: Check spelling or add a matching artifact definition.",
         )
 
-    def list_type_ids(self, artifact_type: ArtifactType | None = None) -> list[str]:
+    def list_type_ids(self, artifact_type: str | ArtifactType | None = None) -> list[str]:
         if artifact_type is None:
             return sorted(artifact.type_id for artifact in self.artifact_types)
         return sorted(

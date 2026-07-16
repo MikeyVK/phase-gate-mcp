@@ -26,6 +26,7 @@ fallback_template: null
 name_suffix: null
 file_extension: .py
 generate_test: true
+strict_validation: true
 state_machine:
   states:
   - CREATED
