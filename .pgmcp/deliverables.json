@@ -1,0 +1,19 @@
+{
+  "428": {
+    "issue_title": "Feature: Implement --upgrade CLI command and release v2.0.0",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-07-16T09:16:04.898036+00:00"
+  }
+}
