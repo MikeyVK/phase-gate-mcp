@@ -52,7 +52,7 @@
 
 {% block class_structure %}
 export class {{ name }}{% if implements %} implements {{ implements }}{% endif %} {
-{%- block class_body -%}
-{%- endblock -%}
+{% block class_body %}
+{% endblock %}
 }
 {% endblock %}
