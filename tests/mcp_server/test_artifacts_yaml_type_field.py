@@ -12,10 +12,11 @@ per tdd-planning.md Cycle 1 and tracking-type-architecture.md.
 """
 
 from pathlib import Path
-from typing import TypedDict, cast
+from typing import TypedDict
 
 import pytest
-import yaml
+
+from mcp_server.config.loader import ConfigLoader
 
 
 class ArtifactTypeEntry(TypedDict, total=False):
@@ -46,16 +47,19 @@ class TestArtifactsYamlTypeField:
 
     @pytest.fixture
     def artifacts_data(self, artifacts_yaml_path: Path) -> ArtifactsYamlData:
-        """Load artifacts.yaml data."""
-        with open(artifacts_yaml_path, encoding="utf-8") as f:
-            loaded = yaml.safe_load(f)
-
-        assert isinstance(loaded, dict)
-        artifact_types = loaded.get("artifact_types")
-        assert isinstance(artifact_types, list)
-        assert all(isinstance(item, dict) for item in artifact_types)
-
-        return {"artifact_types": cast(list[ArtifactTypeEntry], artifact_types)}
+        """Load artifacts data from modular loader."""
+        loader = ConfigLoader(artifacts_yaml_path.parent)
+        config = loader.load_artifact_registry_config()
+        # Convert models to dict structure expected by these tests
+        artifact_types = []
+        for artifact in config.artifact_types:
+            artifact_types.append(
+                {
+                    "type_id": artifact.type_id,
+                    "type": artifact.type.value,
+                }
+            )
+        return {"artifact_types": artifact_types}
 
     def test_all_artifacts_have_type_field(self, artifacts_data: ArtifactsYamlData) -> None:
         """All artifacts must have type field set to code|doc|config|tracking."""
