@@ -1,13 +1,13 @@
-<!-- docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md -->
-<!-- template=reference version=064954ea created=2026-02-07T00:00Z updated=2026-06-04 -->
+<!-- docs/reference/TEMPLATE_LIBRARY_USAGE.md -->
+<!-- template=reference version=349a0002 created=2026-02-07T00:00Z updated=2026-07-16 -->
 # Template Library Usage Guide
 
 **Status:** DEFINITIVE
-**Version:** 2.0
-**Last Updated:** 2026-06-04
+**Version:** 3.0
+**Last Updated:** 2026-07-16
 
-**Source:** [mcp_server/tools/scaffold_artifact.py][source]
-**Tests:** [tests/mcp_server/integration/test_smoke_all_types.py][tests]
+**Source:** [mcp_server/tools/scaffold_artifact.py](file:///C:/temp/pgmcp/mcp_server/tools/scaffold_artifact.py)
+**Tests:** [tests/mcp_server/unit/config/test_modular_loader.py](file:///C:/temp/pgmcp/tests/mcp_server/unit/config/test_modular_loader.py) | [tests/mcp_server/unit/managers/test_artifact_manager.py](file:///C:/temp/pgmcp/tests/mcp_server/unit/managers/test_artifact_manager.py)
 
 ---
 
@@ -19,29 +19,27 @@ Practical guide for using the scaffolding pipeline: how to scaffold an artifact,
 
 **In Scope:**
 - Using `scaffold_artifact` and `scaffold_schema` tools
-- Understanding the three-layer pipeline from a caller perspective
-- How artifact types map to Context schemas and Jinja2 templates
-- How to add a new artifact type (all six required steps)
+- Understanding the V3 dynamic template validation pipeline
+- How artifact types map to declarative YAML schemas and Jinja2 templates
+- How to add a new artifact type (no Python edits required)
 - Context schema conventions
 
 **Out of Scope:**
 - Full TEMPLATE_METADATA format → See docs/reference/mcp/template_metadata_format.md
-- Architecture rationale → See docs/manuals/architecture.md
+- Architecture rationale → See docs/development/schema-template-maintenance.md
 - Artifact type inventory → See docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md
 
 ---
 
----
-
-## The Three-Layer Pipeline (Caller View)
+## The Dynamic Validation Pipeline (Caller View)
 
 When you call `scaffold_artifact(artifact_type, name, context)`, your call passes through three layers:
 
-1. **Layer 1 — Context schema** (`mcp_server/schemas/contexts/`): your `context` dict is validated against a Pydantic schema. Required fields are enforced; unknown fields are rejected. This is the only layer you interact with directly.
-2. **Layer 2 — RenderContext schema** (`mcp_server/schemas/render_contexts/`): the system adds lifecycle fields (`output_path`, `template_id`, `scaffold_created`, `version_hash`). These are never user-facing.
-3. Layer 3 — Jinja2 template (`.pgmcp/templates/concrete/`): the enriched context is rendered into the output artifact. The `TEMPLATE_METADATA` block is the Layer 3 variable contract SSOT.
+1. **Layer 1 — Declarative Schema**: Your `context` dict is validated against a dynamic Pydantic model constructed at runtime from the `context_schema` configured under `.pgmcp/config/artifacts/<artifact_type>.yaml`. Required fields are enforced; unknown fields are rejected.
+2. **Layer 2 — RenderContext enrichment**: The system dynamically enriches the model with lifecycle fields (`output_path`, `template_id`, `scaffold_created`, `version_hash`).
+3. **Layer 3 — Jinja2 template** (`.pgmcp/templates/concrete/`): The enriched context is rendered into the output artifact.
 
-**Practical implication:** always use `scaffold_schema` to discover required and optional context fields before calling `scaffold_artifact`.
+**Practical implication:** Always use `scaffold_schema` to discover required and optional context fields before calling `scaffold_artifact`.
 
 ---
 
@@ -55,16 +53,16 @@ Return the JSON Schema for the `context` parameter of an artifact type. Use this
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `artifact_type` | `str` | Yes | Artifact type ID (e.g. `"design"`, `"worker"`, `"dto"`) |
+| `artifact_type` | `str` | Yes | Artifact type ID (e.g. `"design"`, `"worker"`, `"dto"`, `"typescript_dto"`) |
 
 **Returns:** A JSON Schema object describing the `context` parameter for the type.
 
-**Error:** Returns an error if the type has no registered Context schema.
+**Error:** Returns an error if the type has no registered configuration file.
 
 **Example:**
 ```
 scaffold_schema(artifact_type="design")
-→ { "properties": { "title": {...}, "summary": {...}, ... }, "required": ["title", "summary", "cycles"], ... }
+→ { "properties": { "title": {...}, "summary": {...}, ... }, "required": ["title"], ... }
 ```
 
 ---
@@ -77,9 +75,9 @@ Generate any registered artifact type from a context dict.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `artifact_type` | `str` | Yes | Artifact type ID from registry |
+| `artifact_type` | `str` | Yes | Artifact type ID from registry (e.g., `dto`, `typescript_dto`) |
 | `name` | `str` | Yes | PascalCase for code artifacts, kebab-case for document artifacts |
-| `context` | `dict` | No | Template rendering context — validated against the type's Context schema |
+| `context` | `dict` | No | Template rendering context — validated against the type's dynamic schema |
 | `output_path` | `str` | No | Explicit output path; auto-resolved from `project_structure.yaml` when omitted |
 
 ---
@@ -107,6 +105,19 @@ This eliminates trial-and-error context validation failures.
   "context": {
     "dto_name": "OrderDTO",
     "fields": ["id: int", "user_id: int", "total: Decimal"]
+  }
+}
+```
+
+### Scaffold a TypeScript DTO
+
+```json
+{
+  "artifact_type": "typescript_dto",
+  "name": "OrderDTO",
+  "context": {
+    "fields": ["id: number", "readonly userId: number", "total: number"],
+    "implements": "IOrder"
   }
 }
 ```
@@ -152,27 +163,21 @@ This eliminates trial-and-error context validation failures.
 
 ---
 
-
 ## How to Add a New Artifact Type
 
-All six steps are required. Steps 1–4 require Python source code changes.
+Adding a new artifact type is fully declarative. **No Python source code changes are required.**
 
 | Step | File | Action |
 |---|---|---|
-| 1 | `mcp_server/schemas/contexts/<type>.py` | Create Context schema: user-facing Pydantic `BaseModel`; required fields from `TEMPLATE_METADATA.introspection.variables.required`; optional fields with sensible defaults |
-| 2 | `mcp_server/schemas/render_contexts/<type>.py` | Create RenderContext schema: extends appropriate render base; adds lifecycle fields |
-| 3 | `mcp_server/schemas/__init__.py` | Export `TypeContext` and `TypeRenderContext` |
-| 4 | `mcp_server/managers/artifact_manager.py` | Add the new type to the artifact-to-Context registry |
-| 5 | `.pgmcp/config/artifacts.yaml` | Enable the artifact type entry |
-| 6 | `.pgmcp/templates/concrete/<type>.<ext>.jinja2` | Create Jinja2 template with `TEMPLATE_METADATA` block including `introspection.variables` |
+| 1 | `.pgmcp/config/artifacts/<new_type>.yaml` | Create modular configuration file defining metadata, template path, file extension, strict validation policies, and the `context_schema` (defining required/optional fields). |
+| 2 | `.pgmcp/templates/concrete/<new_type>.<ext>.jinja2` | Create Jinja2 template extending the appropriate language base (e.g. `tier2_base_python.jinja2`, `tier2_base_typescript.jinja2`). |
 
 ### Context schema conventions
 
-- Only truly required fields are required (minimalism: callers need the minimum input to get a working scaffold)
-- Code artifact types: `name: str` as only mandatory field unless template requires more
-- Document artifact types: `title: str` as only mandatory field unless template requires more
-- All other fields are optional with sensible defaults
-- Shared value objects must be `frozen=True`
+- Only truly required fields are marked `required: true` (minimalism: callers need the minimum input to get a working scaffold).
+- Code artifact types: `name` or `dto_name` as only mandatory field unless template requires more.
+- Document artifact types: `title` as only mandatory field unless template requires more.
+- All other fields are optional with sensible defaults.
 
 ---
 
@@ -180,29 +185,31 @@ All six steps are required. Steps 1–4 require Python source code changes.
 
 | Artifact category | Name format | Example |
 |---|---|---|
-| Code (dto, worker, tool, service, ...) | PascalCase | `OrderDTO`, `ProcessOrderWorker` |
+| Code (dto, worker, tool, service, typescript_dto, ...) | PascalCase | `OrderDTO`, `ProcessOrderWorker` |
 | Document (design, architecture, research, ...) | kebab-case | `oauth-design`, `worker-pattern-architecture` |
 
 ---
 
 ## Related Documentation
-- **[docs/manuals/architecture.md][related-1]**
-- **[docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md][related-2]**
-- **[docs/reference/mcp/template_metadata_format.md][related-3]**
-- **[docs/reference/mcp/tools/scaffolding.md][related-4]**
+- **[docs/development/schema-template-maintenance.md][related-1]** — Scaffolding Architecture Guide
+- **[docs/reference/TEMPLATE_LIBRARY_QUICK_REFERENCE.md][related-2]**
+- **[docs/reference/template_metadata_format.md][related-3]**
+- **[docs/reference/tools/scaffolding.md][related-4]**
 
 <!-- Link definitions -->
-[source]: ../../mcp_server/tools/scaffold_artifact.py
-[tests]: ../../tests/mcp_server/integration/test_smoke_all_types.py
-[related-1]: ../manuals/architecture.md
+[related-1]: ../development/schema-template-maintenance.md
 [related-2]: TEMPLATE_LIBRARY_QUICK_REFERENCE.md
 [related-3]: template_metadata_format.md
 [related-4]: tools/scaffolding.md
+[source]: ../../mcp_server/tools/scaffold_artifact.py
+[tests]: ../../tests/mcp_server/unit/config/test_modular_loader.py
 
 ---
 
 ## Version History
-| 3.0 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
-| 2.0 | 2026-06-04 | Agent | Full rewrite: three-layer model; real API and context examples; 6-step contributor guide; removed legacy paths and branding (#286) |
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 3.0 | 2026-07-16 | Agent | Updated for modular YAML configuration loading, dynamic validation model, and added TypeScript DTO examples. Removed Python context class dependencies. |
+| 2.1 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
 | 2.0 | 2026-06-04 | Agent | Full rewrite: three-layer model; real API and context examples; 6-step contributor guide; removed legacy paths and branding (#286) |
 | 1.0 | 2026-02-07 | Agent | Initial draft |

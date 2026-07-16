@@ -145,9 +145,8 @@ Unified artifact generation from Jinja2 templates for code and documentation art
 | `scaffold_schema` | Return JSON Schema for artifact type context | `artifact_type` |
 
 **Supported Artifact Types:**
-- **Code:** `dto`, `worker`, `adapter`, `tool`, `manager`, `service`
+- **Code:** `dto`, `typescript_dto`, `worker`, `adapter`, `tool`, `manager`, `service`
 - **Documentation:** `design`, `architecture`, `tracking`, `research`, `reference`, `planning`, `guide`, `procedure`
-
 **📖 See:** [scaffolding.md](scaffolding.md) for artifact registry structure, template resolution, and context variables.
 
 ---
@@ -274,7 +273,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 ## Related Documentation
 
 - [editing.md](editing.md) — `safe_edit_file` deep-dive (4 edit modes, anti-patterns)
-- [scaffolding.md](scaffolding.md) — `scaffold_artifact` and `scaffold_schema` and artifacts.yaml registry
+- [scaffolding.md](scaffolding.md) — `scaffold_artifact` and `scaffold_schema` and the modular configuration registry
 - [project.md](project.md) — Workflow types and phase management
 - [docs/reference/mcp/proxy_restart.md](../proxy_restart.md) — Hot-reload mechanism for `restart_server`
 - [docs/reference/mcp/mcp_vision_reference.md](../mcp_vision_reference.md) — MCP server architecture and vision
@@ -285,7 +284,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 ## Version History
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.1 | 2026-07-16 | Agent | Updated scaffolding reference to modular configurations and added typescript_dto type. |
 | 3.0 | 2026-06-15 | Agent | Document ITool DTO and MCP Resource Caching migration (#402) |
-| 2.3 | 2026-06-11 | Agent | Document Structured JSON Transport (MCP structuredContent) design principle |
 | 2.2 | 2026-05-23 | Agent | Update discovery/index guidance for the delivered `get_work_context` contract and startup flow |
 | 2.1 | 2026-04-10 | Agent | Fix tool counts (50 total, Project/Phase 8, GitHub-Dependent 16); fix stale params and merge_method |

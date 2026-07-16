@@ -98,7 +98,7 @@ Takes a `config_root: Path` in its constructor. Each `load_*` method:
 | `scopes.yaml` | `load_scope_config` | `ScopeConfig` | — |
 | `workflows.yaml` | `load_workflow_config` | `WorkflowConfig` | — |
 | `workphases.yaml` | `load_workphases_config` | `WorkphasesConfig` | — |
-| `artifacts.yaml` | `load_artifact_registry_config` | `ArtifactRegistryConfig` | Custom YAML open + `model_validate` (bypasses `_load_yaml`) |
+| `artifacts.yaml` | `load_artifact_registry_config` | `ArtifactRegistryConfig` | Custom YAML open + scans and merges files under `artifacts/` folder |
 | `contributors.yaml` | `load_contributor_config` | `ContributorConfig` | — |
 | `issues.yaml` | `load_issue_config` | `IssueConfig` | — |
 | `milestones.yaml` | `load_milestone_config` | `MilestoneConfig` | — |
@@ -358,7 +358,7 @@ flowchart TD
         Y4[workflows.yaml]
         Y5[contracts.yaml]
         Y6[policies.yaml]
-        Y7[artifacts.yaml]
+        Y7["artifacts.yaml + artifacts/*.yaml"]
         Y8["issues / milestones<br/>scopes / contributors"]
         Y9["enforcement / quality<br/>project_structure"]
     end
@@ -369,7 +369,7 @@ flowchart TD
         L4[WorkflowConfig]
         L5[ContractsConfig]
         L6[OperationPoliciesConfig]
-        L7[ArtifactRegistryConfig]
+        L7["ArtifactRegistryConfig (merged)"]
         L8["IssueConfig / MilestoneConfig<br/>ScopeConfig / ContributorConfig"]
         L9["EnforcementConfig / QualityConfig<br/>ProjectStructureConfig"]
     end
@@ -435,5 +435,13 @@ flowchart TD
 3. Add `load_new_thing_config()` to `ConfigLoader`
 4. Load in `ServerBootstrapper._build_config_layer()` (in `mcp_server/bootstrap.py`) before `ConfigValidator.validate_startup()`; add the field to the `ConfigLayer` dataclass
 5. If the new config references workphases or artifact types, add a cross-validation check to `ConfigValidator`
-6. Inject into managers/tools that need it
 7. Add shared fixture in `tests/mcp_server/fixtures/` if widely used across tests
+
+---
+
+## Version History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 2.0 | 2026-07-16 | Agent | Updated for modular YAML configuration loading (split configurations under artifacts/ directory). |
+| 1.0 | 2026-05-07 | Agent | Initial draft |

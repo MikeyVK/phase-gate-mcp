@@ -410,7 +410,7 @@ sequenceDiagram
 | `scope_config` | `scopes.yaml` | Scope definitions |
 | `milestone_config` | `milestones.yaml` | Milestone config |
 | `contributor_config` | `contributors.yaml` | Contributor entries |
-| `artifact_registry` | `artifacts.yaml` | Artifact type registry |
+| `artifact_registry` | `artifacts/` folder | Artifact type registry (modular YAML configurations) |
 | `project_structure_config` | `project_structure.yaml` | Directory policies |
 | `operation_policies_config` | `policies.yaml` | Phase-based operation restrictions |
 | `enforcement_config` | `enforcement.yaml` | Tool enforcement rules |
@@ -769,9 +769,8 @@ class MyNewTool(ICoreTool[MyToolInput, MyToolOutput]):
 ### 13.3 Adding a New Scaffold Template
 
 1. Create a Jinja2 template in `.pgmcp/templates/concrete/`
-2. Register the artifact type in `.pgmcp/config/artifacts.yaml`
-3. Create a context schema in `mcp_server/schemas/contexts/`
-4. Use via `scaffold_artifact(artifact_type="...", name="...", context={...})`
+2. Register the artifact type by creating `.pgmcp/config/artifacts/<new_type>.yaml` (defining `context_schema`)
+3. Use via `scaffold_artifact(artifact_type="...", name="...", context={...})`
 
 ---
 
@@ -850,6 +849,7 @@ pip install phase_gate_mcp-1.0.0-py3-none-any.whl
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.2 | 2026-07-16 | Updated for modular YAML configuration loading and dynamic template validation. Removed Python context class creation step. |
 | 3.1 | 2026-06-24 | Separated ICoreTool/ILegacyTool interfaces, removed retired tools, corrected architectural diagrams, and documented cache run resource and validation schema URIs |
 | 3.0 | 2026-06-10 | Complete rewrite reflecting actual architecture: ServerBootstrapper composition root, 50 class-based tools, 15 YAML configs, enforcement system, proxy architecture |
 | 2.0 | 2025-12-08 | Original draft (now superseded) |
