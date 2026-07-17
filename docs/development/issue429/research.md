@@ -23,25 +23,28 @@ The configuration YAMLs for artifacts currently live in `.pgmcp/config/artifacts
 
 ## Findings
 
-## Current State
+### Current State
 - `ConfigLoader` loads `artifacts.yaml` as an index, then scans `config_root / "artifacts"` to merge modular configurations into `ArtifactRegistryConfig`.
 - `ArtifactManager` uses this registry to resolve scaffolding requests, locating the Jinja2 templates via its own `_get_template_root()` logic.
 
-## Blast Radius & Dependencies
-- `ConfigLoader` currently only knows about `config_root`. Changing it to scan `templates/` introduces presentation layer knowledge into the config loader, which creates an architectural tension.
-- Heavy reliance on the old path in test suites: `test_modular_loader.py`, `artifact_test_harness.py`, and multiple integration tests.
-- The `mcp_server/assets/config/artifacts.yaml` is currently one monolithic file that needs to be broken up and moved to `assets/templates/`.
+### Resolving Architectural Tension
+- **New Principle:** "Things that belong together, should live together." Co-locating the artifact config with its template resolves the fundamental cohesion violation.
+- **Config Sub-directory:** By introducing a `config/` sub-directory within the templates root (e.g., `templates/config/`), we further soften the architectural tension. This provides a clean separation of configuration from presentation within the unified Template Package, explicitly choosing `config/` rather than `artifacts/` as the subfolder.
 
-## Architecture Preservation
+### Blast Radius & Path Resolution
+- **Uniform Path Resolution:** The blast radius across the test suite is manageable because path resolution (like `server_root`) should already be centralized and uniform across both production and test suites. Any hard-coded config paths currently scattered in the test code represent existing violations. This refactor is the exact moment to eradicate those violations and enforce unified path resolution everywhere.
+- **Assets Folder Role:** The `assets/` directory acts strictly as a package container for the wheel distribution and its content is completely irrelevant during dev-time. To prevent confusion and eliminate unnecessary baggage, the assets directory should be emptied entirely when beginning this refactoring against the stable release.
+
+### Architecture Preservation
 - The internal representation and Pydantic validation of `ArtifactRegistryConfig` must remain unchanged.
 - The `ConfigLoader` must receive `template_root` via its constructor (Dependency Injection) from `bootstrap.py` to preserve the Domain vs Presentation separation defined in `ARCHITECTURE_PRINCIPLES.md`.
 
-## Seams
+### Seams
 The refactor can be split into safely testable steps:
-1. Update `ArtifactDefinition` to support version-pairing.
-2. Update `ConfigLoader` to accept `template_root` and scan the new location (removing the old one).
-3. Refactor all affected tests and harnesses to mock/provide a `template_root`.
-4. Migrate the physical assets (`assets/config/artifacts.yaml` to `assets/templates/concrete/...`).
+1. Update `ArtifactDefinition` to support strict version-pairing.
+2. Unify path resolution for `template_root` across production and test suites, eliminating hard-coded paths.
+3. Update `ConfigLoader` to scan the new `templates/config/` location and remove legacy loading.
+4. Empty the dev-time `assets/` directory and migrate physical assets accordingly for the package container.
 
 ---
 
@@ -59,11 +62,11 @@ The refactor can be split into safely testable steps:
 
 ## Expected Results
 
-1. `ArtifactRegistryConfig` successfully loads its modular configs directly from the `templates/` directory (e.g., `templates/concrete/`).
+1. `ArtifactRegistryConfig` successfully loads its modular configs directly from the `templates/config/` directory (e.g., `templates/concrete/config/` or `templates/config/`).
 2. `ConfigLoader` remains architecturally clean by accepting `template_root` via dependency injection from the composition root, rather than hardcoding presentation paths.
 3. Legacy loading from `config/artifacts/` is strictly removed.
 4. `ArtifactDefinition` includes explicit version-pairing logic to ensure the Jinja2 template and its YAML schema are structurally aligned.
-5. All test suites (e.g., `test_modular_loader.py`, `artifact_test_harness.py`, `test_concrete_templates.py`) are refactored to use the new `templates/` structure.
+5. All test suites (e.g., `test_modular_loader.py`, `artifact_test_harness.py`, `test_concrete_templates.py`) are refactored to use the new `templates/config/` structure and enforce uniform centralized path resolution.
 
 ## Related Documentation
 None
