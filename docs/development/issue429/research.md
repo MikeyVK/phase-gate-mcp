@@ -33,7 +33,11 @@ The configuration YAMLs for artifacts currently live in `.pgmcp/config/artifacts
 
 ### Blast Radius & Path Resolution
 - **Scattered Hard-Codings Verified:** A codebase search confirms that test code currently has scattered hard-codings of `config/artifacts.yaml` and `artifacts/` directories (e.g., in `test_smoke_all_types.py`, `artifact_test_harness.py`, `test_template_missing_e2e.py`). 
-- **Uniform Path Resolution:** The blast radius across the test suite is therefore significant, but manageable by fixing this underlying tech debt. Path resolution should be centralized and uniform across both production and test suites (similar to `get_default_server_root()`). This refactor is the exact moment to eradicate these scattered path violations and enforce unified path resolution everywhere.
+- **In Scope for Test Suite:**
+  - Refactoring the `artifact_test_harness.py` helper to centrally intercept and resolve the new paths.
+  - Fixing tests that *actively fail* (turn red) purely as a result of the YAML relocation.
+- **Out of Scope (Explicit Exclusion):**
+  - We will **not** proactively rewrite or refactor the entire test suite purely to clean up historical hard-coded paths. Sweeping cleanups are excluded to maintain scope discipline. Focus is strictly on tests that break.
 - **Assets Folder Role:** The `assets/` directory acts strictly as a package container for the wheel distribution and its content is completely irrelevant during dev-time. To prevent confusion and eliminate unnecessary baggage, the assets directory should be emptied entirely when beginning this refactoring against the stable release.
 
 ### Architecture Preservation
