@@ -37,17 +37,16 @@ This document outlines the sequential cycles required to bundle Jinja2 templates
 
 **Tests:**
 - test_versioning.py (new)
-
-**Success Criteria:**
-The `validate_compatibility` function correctly identifies and raises/warns on Major/Minor/Patch mismatches according to the defined SemVer rules.
-
 ### Cycle 2: C_VERSION.2: Version-Pairing Foundation
 
-**Goal:** Update ArtifactDefinition and loader logic to strictly pair template versions with configuration files by extracting the `{#- Version: X.Y.Z -#}` header from the Jinja2 file and comparing it to `template_version` in the YAML.
+**Goal:** Update `ArtifactDefinition` to include a `template_version: str` field. Implement a pure utility `mcp_server/utils/template_parser.py` to extract the `{#- Version: X.Y.Z -#}` header. Delegate the actual pairing and validation to `ArtifactManager` (using `validate_compatibility`) to avoid File I/O in Pydantic models (Principle 12) and to keep `ConfigLoader` strictly focused on YAML parsing (SRP).
 
 **Tests:**
-- test_artifact_registry_config.py
-- test_artifacts_yaml_type_field.py
+- test_template_parser.py (new)
+- test_artifact_manager.py
+
+**Success Criteria:**
+`ArtifactManager` correctly reads the YAML via `ConfigLoader`, extracts the version from the `.jinja2` template via `template_parser`, and successfully delegates validation to `SemVerValidator`.
 
 **Success Criteria:**
 ConfigLoader raises ConfigError if `template_version` is missing in the YAML, or if it fails to match the version embedded in the Jinja2 template header.

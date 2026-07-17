@@ -14,6 +14,68 @@
     ],
     "skip_reason": null,
     "parent_branch": "main",
-    "created_at": "2026-07-17T16:12:51.198325+00:00"
+    "created_at": "2026-07-17T16:12:51.198325+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 5,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C_SEMVER.1: Centralized Version Validation",
+            "deliverables": [
+              {
+                "id": "C1.D1",
+                "description": "semver_validator_utility"
+              }
+            ],
+            "exit_criteria": "The validate_compatibility function correctly identifies and raises/warns on Major/Minor/Patch mismatches according to the defined SemVer rules."
+          },
+          {
+            "cycle_number": 2,
+            "name": "C_VERSION.2: Version-Pairing Foundation",
+            "deliverables": [
+              {
+                "id": "C2.D1",
+                "description": "version_pairing_schema"
+              }
+            ],
+            "exit_criteria": "ArtifactManager correctly reads the YAML via ConfigLoader, extracts the version from the .jinja2 template via template_parser, and successfully delegates validation to SemVerValidator."
+          },
+          {
+            "cycle_number": 3,
+            "name": "C_HARNESS.3: Test Harness & Path Centralization",
+            "deliverables": [
+              {
+                "id": "C3.D1",
+                "description": "centralized_test_paths"
+              }
+            ],
+            "exit_criteria": "The test infrastructure correctly provisions and intercepts `templates/config/` without hardcoded legacy paths."
+          },
+          {
+            "cycle_number": 4,
+            "name": "C_LOADER.4: The Loader Migration (Clean Break)",
+            "deliverables": [
+              {
+                "id": "C4.D1",
+                "description": "loader_migration"
+              }
+            ],
+            "exit_criteria": "ConfigLoader successfully loads modular configs from `templates/config/` and fails if legacy `config/artifacts/` is used."
+          },
+          {
+            "cycle_number": 5,
+            "name": "C_ASSETS.5: Assets Package Container Cleanup",
+            "deliverables": [
+              {
+                "id": "C5.D1",
+                "description": "assets_purged"
+              }
+            ],
+            "exit_criteria": "The `assets/` directory is completely empty in the source tree."
+          }
+        ]
+      }
+    }
   }
 }
