@@ -32,7 +32,8 @@ The configuration YAMLs for artifacts currently live in `.pgmcp/config/artifacts
 - **Config Sub-directory:** By introducing a `config/` sub-directory within the templates root (e.g., `templates/config/`), we further soften the architectural tension. This provides a clean separation of configuration from presentation within the unified Template Package, explicitly choosing `config/` rather than `artifacts/` as the subfolder.
 
 ### Blast Radius & Path Resolution
-- **Uniform Path Resolution:** The blast radius across the test suite is manageable because path resolution (like `server_root`) should already be centralized and uniform across both production and test suites. Any hard-coded config paths currently scattered in the test code represent existing violations. This refactor is the exact moment to eradicate those violations and enforce unified path resolution everywhere.
+- **Scattered Hard-Codings Verified:** A codebase search confirms that test code currently has scattered hard-codings of `config/artifacts.yaml` and `artifacts/` directories (e.g., in `test_smoke_all_types.py`, `artifact_test_harness.py`, `test_template_missing_e2e.py`). 
+- **Uniform Path Resolution:** The blast radius across the test suite is therefore significant, but manageable by fixing this underlying tech debt. Path resolution should be centralized and uniform across both production and test suites (similar to `get_default_server_root()`). This refactor is the exact moment to eradicate these scattered path violations and enforce unified path resolution everywhere.
 - **Assets Folder Role:** The `assets/` directory acts strictly as a package container for the wheel distribution and its content is completely irrelevant during dev-time. To prevent confusion and eliminate unnecessary baggage, the assets directory should be emptied entirely when beginning this refactoring against the stable release.
 
 ### Architecture Preservation
