@@ -13,7 +13,7 @@ Documents requirement that 5 concrete templates must exist and scaffold successf
     mcp_server.scaffolders.template_scaffolder, mcp_server.scaffolding.renderer
 """
 
-from tests.mcp_server.test_support import get_default_server_root, get_template_root
+from tests.mcp_server.test_support import get_template_root
 from pathlib import Path
 
 import pytest
@@ -25,10 +25,13 @@ from mcp_server.scaffolding.renderer import JinjaRenderer
 
 
 def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistryConfig:
-    loader = ConfigLoader(
-        Path(f"{get_default_server_root()}/config") if config_path is None else config_path.parent
-    )
-    return loader.load_artifact_registry_config(config_path=config_path)
+    from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+    settings = Settings.from_env()
+    resolved_config_root = Path(settings.server.resolved_config_root)
+    loader = ConfigLoader(resolved_config_root)
+    resolved_config_path = config_path or (resolved_config_root / "artifacts.yaml")
+    return loader.load_artifact_registry_config(config_path=resolved_config_path)
 
 
 class TestConcreteTemplateExistence:
