@@ -86,9 +86,10 @@ async def test_template_missing_error_propagates_through_call_chain(
     artifacts_yaml.write_text(content, encoding="utf-8")
 
     # Reload registry to pick up new artifact type
-    fresh_registry = ConfigLoader(artifacts_yaml.parent).load_artifact_registry_config(
-        config_path=artifacts_yaml
-    )
+    fresh_registry = ConfigLoader(
+        config_root=artifacts_yaml.parent,
+        template_root=settings.server.resolved_template_root,
+    ).load_artifact_registry_config()
 
     # Reinitialize manager with updated registry (hermetic fixture uses temp workspace)
     artifact_manager.scaffolder.registry = fresh_registry

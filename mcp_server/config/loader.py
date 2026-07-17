@@ -144,15 +144,15 @@ class ConfigLoader:
             )
 
         if config_path is None:
-            resolved_path = self.template_root / "config" / "artifacts.yaml"
+            resolved_path = Path(self.config_root) / "artifacts.yaml"
         else:
             resolved_path = Path(config_path).resolve()
 
         if not resolved_path.exists():
             raise ConfigError(
                 "Artifact registry not found: "
-                f"{resolved_path}. Expected: templates/config/artifacts.yaml. "
-                "Fix: Create templates/config/artifacts.yaml manually or restore from backup.",
+                f"{resolved_path}. Expected: config/artifacts.yaml. "
+                "Fix: Create config/artifacts.yaml manually or restore from backup.",
                 file_path=str(resolved_path),
             )
 
@@ -179,7 +179,12 @@ class ConfigLoader:
         index_version = raw_loaded.get("version", "1.0.0")
         merged_artifact_types = list(raw_loaded.get("artifact_types", []))
 
-        config_dir = resolved_path.parent
+        if config_path is not None:
+            config_dir = resolved_path.parent
+        else:
+            config_dir = (
+                Path(self.template_root) / "config" if self.template_root else resolved_path.parent
+            )
         if not config_dir.is_dir():
             if not merged_artifact_types:
                 raise ConfigError(

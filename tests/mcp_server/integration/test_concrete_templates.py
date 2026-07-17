@@ -31,8 +31,7 @@ def _load_artifact_registry(config_path: Path | None = None) -> ArtifactRegistry
     resolved_config_root = Path(settings.server.resolved_config_root)
     resolved_template_root = Path(settings.server.resolved_template_root)
     loader = ConfigLoader(resolved_config_root, template_root=resolved_template_root)
-    resolved_config_path = config_path or (resolved_template_root / "config" / "artifacts.yaml")
-    return loader.load_artifact_registry_config(config_path=resolved_config_path)
+    return loader.load_artifact_registry_config(config_path=config_path)
 
 
 class TestConcreteTemplateExistence:

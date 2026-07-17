@@ -38,7 +38,7 @@ class TestTypeScriptDTOScaffold:
         concrete_dir.mkdir(parents=True)
 
         # Write index configuration file
-        (templates_config_dir / "artifacts.yaml").write_text(
+        (config_root / "artifacts.yaml").write_text(
             "version: '1.0.0'\nartifact_types: []\n", encoding="utf-8"
         )
         (config_root / "git.yaml").write_text("branch_types: []\n", encoding="utf-8")

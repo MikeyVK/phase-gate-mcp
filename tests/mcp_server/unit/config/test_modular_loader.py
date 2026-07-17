@@ -30,10 +30,10 @@ class TestModularLoader:
         # Arrange
         config_root = tmp_path / "config"
         template_root = tmp_path / "templates"
-        index_file = template_root / "config" / "artifacts.yaml"
+        index_file = config_root / "artifacts.yaml"
         index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
-
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
         # Create modular YAML files
         dto_yaml = (
             "type: code\n"
@@ -80,9 +80,10 @@ class TestModularLoader:
         # Arrange
         config_root = tmp_path / "config"
         template_root = tmp_path / "templates"
-        index_file = template_root / "config" / "artifacts.yaml"
+        index_file = config_root / "artifacts.yaml"
         index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
 
         # Create templates/config/ directory with bad YAML
         (template_root / "config" / "bad.yaml").write_text(
@@ -101,9 +102,10 @@ class TestModularLoader:
         # Arrange
         config_root = tmp_path / "config"
         template_root = tmp_path / "templates"
-        index_file = template_root / "config" / "artifacts.yaml"
+        index_file = config_root / "artifacts.yaml"
         index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
 
         loader = ConfigLoader(config_root=config_root, template_root=template_root)
 
@@ -117,9 +119,10 @@ class TestModularLoader:
         # Arrange
         config_root = tmp_path / "config"
         template_root = tmp_path / "templates"
-        index_file = template_root / "config" / "artifacts.yaml"
+        index_file = config_root / "artifacts.yaml"
         index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
 
         # Create legacy artifacts dir
         legacy_dir = config_root / "artifacts"

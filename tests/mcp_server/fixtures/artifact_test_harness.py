@@ -51,7 +51,7 @@ def _temp_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generato
     )
     monkeypatch.setenv(
         "PGMCP_CONFIG_ROOT",
-        str(workspace / get_default_server_root() / "templates" / "config"),
+        str(workspace / get_default_server_root() / "config"),
     )
     monkeypatch.setenv("TEMPLATE_ROOT", str(template_root))
 
@@ -205,7 +205,7 @@ def _artifacts_yaml_file_phase_gate(
 
     Returns path to templates/config/artifacts.yaml
     """
-    config_dir = temp_workspace / get_default_server_root() / "templates" / "config"
+    config_dir = temp_workspace / get_default_server_root() / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
     artifacts_file = config_dir / "artifacts.yaml"
     artifacts_file.write_text(artifacts_yaml_content, encoding="utf-8")
@@ -253,9 +253,13 @@ def _fs_adapter(temp_workspace: Path) -> FilesystemAdapter:
 @pytest.fixture(name="artifact_registry")
 def _artifact_registry(
     artifacts_yaml_file: Path,
+    temp_workspace: Path,
 ) -> ArtifactRegistryConfig:
     """Load ArtifactRegistryConfig from temp artifacts.yaml via ConfigLoader."""
-    loader = ConfigLoader(artifacts_yaml_file.parent)
+    loader = ConfigLoader(
+        config_root=artifacts_yaml_file.parent,
+        template_root=temp_workspace / get_default_server_root() / "templates",
+    )
     return loader.load_artifact_registry_config(config_path=artifacts_yaml_file)
 
 
