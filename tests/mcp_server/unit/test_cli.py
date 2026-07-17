@@ -66,9 +66,26 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
         )
     )
 
+    # Set up mock assets dir
+    mock_assets = tmp_path / "mock_assets"
+    (mock_assets / "config").mkdir(parents=True)
+    (mock_assets / "templates").mkdir(parents=True)
+    (mock_assets / "config" / "workflows.yaml").touch()
+    import shutil  # noqa: PLC0415
+
+    orig_copytree = shutil.copytree
+
+    def mock_copytree(src, dst, *args, **kwargs):
+        shutil.copytree = orig_copytree
+        try:
+            return shutil.copytree(mock_assets, dst, *args, **kwargs)
+        finally:
+            shutil.copytree = mock_copytree
+
     with (
         patch("sys.argv", ["mcp-server", "--init"]),
         patch("sys.exit") as mock_exit,
+        patch("shutil.copytree", side_effect=mock_copytree),
     ):
         mock_exit.side_effect = SystemExit(0)
         with contextlib.suppress(SystemExit):

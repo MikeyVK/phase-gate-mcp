@@ -79,9 +79,8 @@ def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
     ):
         template_dir = resolved_server_root / "templates"
         if not template_dir.exists():
-            package_root = Path(__file__).resolve().parents[4]
             settings.server.resolved_template_root = (
-                package_root / "mcp_server" / "assets" / "templates"
+                Path.cwd() / get_default_server_root() / "templates"
             )
         else:
             settings.server.resolved_template_root = template_dir
