@@ -1,5 +1,6 @@
 type: doc
 type_id: architecture
+template_version: 2.1.0
 context_schema:
   title:
     type: string

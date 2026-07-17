@@ -60,6 +60,7 @@ class TestTypeScriptDTOScaffold:
         dto_yaml = (
             "type: code\n"
             "type_id: typescript_dto\n"
+            "template_version: 1.0.0\n"
             "name: TypeScript DTO\n"
             "description: TypeScript DTO class\n"
             "output_type: file\n"
@@ -151,7 +152,9 @@ class TestTypeScriptDTOScaffold:
             tier3_content, encoding="utf-8"
         )
 
-        concrete_content = "{% extends 'tier3_pattern_typescript_dto.jinja2' %}\n"
+        concrete_content = (
+            "{#- Version: 1.0.0 -#}\n" + "{% extends 'tier3_pattern_typescript_dto.jinja2' %}\n"
+        )
         (concrete_dir / "typescript_dto.ts.jinja2").write_text(concrete_content, encoding="utf-8")
 
         # Initialize manager

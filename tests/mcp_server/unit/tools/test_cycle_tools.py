@@ -10,7 +10,7 @@ from tests.mcp_server.test_support import get_default_server_root
 """
 
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Generator
 from pathlib import Path
 from shutil import copytree
 from unittest.mock import MagicMock, patch
@@ -40,6 +40,15 @@ from tests.mcp_server.test_support import (
     make_test_server,
 )
 from mcp_server.core.tool_factory import ToolFactory
+
+
+@pytest.fixture(autouse=True)
+def mock_artifact_manager_template_validation() -> Generator[None, None, None]:
+    with patch(
+        "mcp_server.managers.artifact_manager.ArtifactManager._validate_template_versions",
+        return_value=None,
+    ):
+        yield
 
 
 def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:

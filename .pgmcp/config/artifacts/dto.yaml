@@ -1,5 +1,6 @@
 type: code
 type_id: dto
+template_version: 1.5.1
 context_schema:
   dto_name:
     type: string

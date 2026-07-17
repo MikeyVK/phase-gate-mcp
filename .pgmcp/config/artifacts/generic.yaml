@@ -1,5 +1,6 @@
 type: code
 type_id: generic
+template_version: 1.2.0
 context_schema:
   name:
     type: string

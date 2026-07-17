@@ -1,5 +1,6 @@
 type: doc
 type_id: generic_doc
+template_version: 1.0.0
 context_schema:
   title:
     type: string
@@ -91,8 +92,7 @@ context_schema:
     items:
       type: string
 name: Generic Document
-description: Generic flexible document with custom sections for migration guides and
-  reference docs
+description: Generic flexible document with custom sections for migration guides and reference docs
 output_type: file
 template_path: concrete/generic.md.jinja2
 fallback_template: null

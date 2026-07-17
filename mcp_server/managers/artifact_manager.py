@@ -40,6 +40,8 @@ from mcp_server.schemas import (
 from mcp_server.schemas.base import BaseContext, BaseRenderContext
 from mcp_server.validation.template_analyzer import TemplateAnalyzer
 from mcp_server.validation.validation_service import ValidationService
+from mcp_server.utils.template_parser import extract_template_version
+from mcp_server.utils.versioning import validate_compatibility
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +178,43 @@ class ArtifactManager:
             registry_path = self.server_root / "template_registry.json"
             template_registry = TemplateRegistry(registry_path=registry_path)
         self.template_registry = template_registry
+        self._validate_template_versions()
+
+    def _validate_template_versions(self) -> None:
+        """Validate that all template versions match the YAML configuration."""
+        # Safely get artifact_types to avoid AttributeError on Mocks in unit tests
+        artifact_types = getattr(self.registry, "artifact_types", None)
+        if not isinstance(artifact_types, list):
+            return
+        for artifact in artifact_types:
+            # Only validate if template_path is configured
+            if not artifact.template_path:
+                continue
+
+            # Ensure template_version is present in configuration
+            if not artifact.template_version:
+                raise ConfigError(
+                    "Missing 'template_version' in configuration for "
+                    f"artifact '{artifact.type_id}'."
+                )
+
+            # Resolve template path relative to template root
+            template_root = self._get_template_root()
+            template_path = template_root / artifact.template_path
+
+            # Validate that template file exists
+            if not template_path.exists():
+                raise ConfigError(
+                    f"Template file not found for '{artifact.type_id}' at '{template_path}'."
+                )
+
+            # Extract version from template and validate compatibility
+            actual_version = extract_template_version(template_path)
+            validate_compatibility(
+                expected_version=artifact.template_version,
+                actual_version=actual_version,
+                context=f"artifact type '{artifact.type_id}'",
+            )
 
     def _get_template_root(self) -> Path:
         """Resolve template root from the injected scaffolder renderer."""

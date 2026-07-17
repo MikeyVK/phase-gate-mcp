@@ -1,5 +1,6 @@
 type: code
 type_id: adapter
+template_version: 1.0.0
 context_schema:
   name:
     type: string

@@ -1,5 +1,6 @@
 type: doc
 type_id: design
+template_version: 3.5.0
 context_schema:
   title:
     type: string

@@ -1,5 +1,6 @@
 type: code
 type_id: unit_test
+template_version: 1.0.0
 context_schema:
   module_under_test:
     type: string

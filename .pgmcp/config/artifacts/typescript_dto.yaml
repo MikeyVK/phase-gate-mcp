@@ -1,5 +1,6 @@
 type: code
 type_id: typescript_dto
+template_version: 1.0.0
 name: TypeScript DTO
 description: TypeScript Data Transfer Object using tiered templates
 output_type: file
@@ -16,7 +17,7 @@ context_schema:
   fields:
     type: array
     title: Fields
-    description: "List of DTO properties (format: '[readonly] name: type')"
+    description: 'List of DTO properties (format: ''[readonly] name: type'')'
     required: true
     items:
       type: string
@@ -27,6 +28,6 @@ context_schema:
     required: false
 state_machine:
   states:
-    - CREATED
+  - CREATED
   initial_state: CREATED
   valid_transitions: []

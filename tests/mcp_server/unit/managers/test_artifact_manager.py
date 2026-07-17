@@ -13,7 +13,7 @@ from mcp_server.config.schemas.artifact_registry_config import (
     ArtifactRegistryConfig,
     SchemaFieldDef,
 )
-from mcp_server.core.exceptions import ValidationError
+from mcp_server.core.exceptions import ValidationError, ConfigError
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from tests.mcp_server.test_support import make_artifact_manager
@@ -234,8 +234,6 @@ class TestArtifactManagerDynamicContext:
         mock_registry.get_artifact.return_value = mock_art
 
         manager = ArtifactManager(registry=mock_registry, server_root=Path("."))
-        from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
-
         with pytest.raises(ConfigError) as exc_info:
             manager.get_context_schema("dummy")
         assert "No Context schema defined for" in str(exc_info.value)
@@ -293,7 +291,6 @@ class TestArtifactManagerVersionValidation:
         mock_loader.searchpath = [str(template_dir)]
         mock_scaffolder._renderer.env.loader = mock_loader
 
-        from mcp_server.core.exceptions import ConfigError
         with pytest.raises(ConfigError) as exc_info:
             ArtifactManager(
                 registry=mock_registry,
@@ -350,7 +347,6 @@ class TestArtifactManagerVersionValidation:
         mock_loader.searchpath = [str(tmp_path / "templates")]
         mock_scaffolder._renderer.env.loader = mock_loader
 
-        from mcp_server.core.exceptions import ConfigError
         with pytest.raises(ConfigError) as exc_info:
             ArtifactManager(
                 registry=mock_registry,
