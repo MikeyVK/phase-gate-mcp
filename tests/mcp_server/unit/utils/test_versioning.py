@@ -12,8 +12,6 @@ Unit tests for mcp_server.utils.versioning
     - Verify compatibility rules (major/minor/patch)
 """
 
-# Standard library
-from typing import Any
 import logging
 
 # Third-party
@@ -63,14 +61,23 @@ class TestSemVerValidator:
     def test_validate_compatibility_major_mismatch_raises_config_error(self) -> None:
         """Verify that a MAJOR version mismatch raises ConfigError."""
         with pytest.raises(ConfigError) as exc_info:
-            validate_compatibility(expected_version="1.0.0", actual_version="2.0.0", context="test_major")
+            validate_compatibility(
+                expected_version="1.0.0",
+                actual_version="2.0.0",
+                context="test_major",
+            )
         assert "MAJOR version mismatch" in str(exc_info.value)
 
-    def test_validate_compatibility_minor_newer_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_validate_compatibility_minor_newer_warning(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Verify that a newer MINOR version logs a Warning but passes."""
         with caplog.at_level(logging.WARNING):
-            validate_compatibility(expected_version="1.1.0", actual_version="1.2.0", context="test_minor_newer")
-        
+            validate_compatibility(
+                expected_version="1.1.0",
+                actual_version="1.2.0",
+                context="test_minor_newer",
+            )
         # Verify warning log
         assert len(caplog.records) == 1
         assert caplog.records[0].levelno == logging.WARNING
@@ -89,7 +96,11 @@ class TestSemVerValidator:
     ) -> None:
         """Verify that older or equal MINOR version passes silently without warnings."""
         with caplog.at_level(logging.WARNING):
-            validate_compatibility(expected_version=expected, actual_version=actual, context="test_minor_ok")
+            validate_compatibility(
+                expected_version=expected,
+                actual_version=actual,
+                context="test_minor_ok",
+            )
         assert len(caplog.records) == 0
 
     @pytest.mark.parametrize(
@@ -105,5 +116,9 @@ class TestSemVerValidator:
     ) -> None:
         """Verify that any patch version mismatch passes silently without warnings."""
         with caplog.at_level(logging.WARNING):
-            validate_compatibility(expected_version=expected, actual_version=actual, context="test_patch")
+            validate_compatibility(
+                expected_version=expected,
+                actual_version=actual,
+                context="test_patch",
+            )
         assert len(caplog.records) == 0
