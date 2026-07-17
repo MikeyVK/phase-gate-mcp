@@ -31,7 +31,17 @@ This document outlines the sequential cycles required to bundle Jinja2 templates
 ## TDD Cycles
 
 
-### Cycle 1: C_VERSION.1: Version-Pairing Foundation
+### Cycle 1: C_SEMVER.1: Centralized Version Validation
+
+**Goal:** Implement a centralized Semantic Versioning (SemVer) utility (`mcp_server/utils/versioning.py`) that strictly enforces version alignment (MAJOR=crash, MINOR=warn/accept, PATCH=accept) to ensure DRY and SRP compliance across all version checks.
+
+**Tests:**
+- test_versioning.py (new)
+
+**Success Criteria:**
+The `validate_compatibility` function correctly identifies and raises/warns on Major/Minor/Patch mismatches according to the defined SemVer rules.
+
+### Cycle 2: C_VERSION.2: Version-Pairing Foundation
 
 **Goal:** Update ArtifactDefinition and loader logic to strictly pair template versions with configuration files by extracting the `{#- Version: X.Y.Z -#}` header from the Jinja2 file and comparing it to `template_version` in the YAML.
 
@@ -44,7 +54,7 @@ ConfigLoader raises ConfigError if `template_version` is missing in the YAML, or
 
 
 
-### Cycle 2: C_HARNESS.2: Test Harness & Path Centralization
+### Cycle 3: C_HARNESS.3: Test Harness & Path Centralization
 
 **Goal:** Centralize path resolution for the test suite to use `templates/config/`.
 
@@ -59,7 +69,7 @@ The test infrastructure correctly provisions and intercepts `templates/config/` 
 
 
 
-### Cycle 3: C_LOADER.3: The Loader Migration (Clean Break)
+### Cycle 4: C_LOADER.4: The Loader Migration (Clean Break)
 
 **Goal:** Point ConfigLoader to `template_root / 'config'` and remove legacy loading fallbacks.
 
@@ -71,7 +81,7 @@ ConfigLoader successfully loads modular configs from `templates/config/` and fai
 
 
 
-### Cycle 4: C_ASSETS.4: Assets Package Container Cleanup
+### Cycle 5: C_ASSETS.5: Assets Package Container Cleanup
 
 **Goal:** Empty the dev-time `assets/` directory to solidify its role as a build-time package container.
 

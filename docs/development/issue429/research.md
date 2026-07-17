@@ -60,8 +60,13 @@ The refactor can be split into safely testable steps:
 **Rationale:** The v2.0.0 release is already breaking compared to v1.0.0. Maintaining a dual-loader fallback for the old `config/artifacts/` directory adds technical debt and architectural contamination (mixing domain loaders with presentation fallbacks). Instead, we enforce a clean break where old workspaces must use the `pgmcp --upgrade` command to align their structures.
 
 ### Version-Pairing Strategy
-**Policy:** Strict Version Pairing
-**Rationale:** To prevent templates and their YAML configurations from drifting out of sync, `ArtifactDefinition` will receive a `version` (or `template_version`) field. The system will enforce alignment between the YAML configuration and the corresponding Jinja2 template.
+**Policy:** Strict Centralized Semantic Versioning (SemVer)
+**Rationale:** To prevent templates and their YAML configurations from drifting out of sync, `ArtifactDefinition` will receive a `template_version` field. The system will enforce alignment between the YAML configuration and the corresponding Jinja2 template.
+**Centralization:** All version validation (both template-vs-yaml and wheel-vs-workspace) must occur centrally (e.g., via a `mcp_server/utils/versioning.py` utility) to adhere to DRY and SRP.
+**SemVer Rules:**
+- **MAJOR:** Mismatches crash the application (Breaking API/Schema changes).
+- **MINOR:** Newer asset versions yield a Warning (forward-incompatible features missing in engine); older asset versions are silently accepted (backward compatible).
+- **PATCH:** Silently accepted (safe bugfixes).
 
 ---
 
