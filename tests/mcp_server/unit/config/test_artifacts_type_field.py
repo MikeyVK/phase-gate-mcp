@@ -24,8 +24,10 @@ def artifacts_config() -> ArtifactRegistryConfig:
 
     settings = Settings.from_env()
     config_root = Path(settings.server.resolved_config_root)
-    artifacts_yaml = config_root / "artifacts.yaml"
-    return ConfigLoader(config_root).load_artifact_registry_config(config_path=artifacts_yaml)
+    template_root = Path(settings.server.resolved_template_root)
+    artifacts_yaml = template_root / "config" / "artifacts.yaml"
+    loader = ConfigLoader(config_root, template_root=template_root)
+    return loader.load_artifact_registry_config(config_path=artifacts_yaml)
 
 
 class TestArtifactsTypeField:

@@ -172,7 +172,13 @@ def resolve_config_root(
         candidate = Path(workspace_root)
         if candidate.name != "config":
             candidate = candidate / settings.server.server_root_dir / "config"
-        if candidate.exists() and all((candidate / f).exists() for f in required_paths):
+
+        def _file_exists(f: str | Path) -> bool:
+            if str(f) == "artifacts.yaml":
+                return (candidate.parent / "templates" / "config" / "artifacts.yaml").exists()
+            return (candidate / f).exists()
+
+        if candidate.exists() and all(_file_exists(f) for f in required_paths):
             return candidate
     return settings.server.resolved_config_root
 

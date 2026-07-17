@@ -55,17 +55,14 @@ def _manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactManager
     config_dir = tmp_path / get_default_server_root() / "templates" / "config"
     config_dir.mkdir(parents=True)
     monkeypatch.setenv("PGMCP_CONFIG_ROOT", str(config_dir))
-    artifacts_path = config_dir / "artifacts.yaml"
-    shutil.copy(
-        _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts.yaml", artifacts_path
-    )
-    shutil.copytree(
-        _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts", config_dir / "artifacts"
-    )
+    src_config_dir = _PROJECT_ROOT / get_default_server_root() / "templates" / "config"
+    for yaml_file in src_config_dir.glob("*.yaml"):
+        shutil.copy(yaml_file, config_dir / yaml_file.name)
     # CWD → tmp_path: registry loads from tmp_path/.pgmcp/config/artifacts.yaml,
     # ephemeral writes go to tmp_path/.pgmcp/temp/ (not project root)
     monkeypatch.chdir(tmp_path)
 
+    artifacts_path = config_dir / "artifacts.yaml"
     registry = ConfigLoader(artifacts_path.parent).load_artifact_registry_config(
         config_path=artifacts_path
     )

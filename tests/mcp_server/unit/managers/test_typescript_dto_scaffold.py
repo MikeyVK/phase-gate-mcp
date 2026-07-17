@@ -29,14 +29,16 @@ class TestTypeScriptDTOScaffold:
         workspace_root = tmp_path / "workspace"
         config_root = workspace_root / ".pgmcp" / "config"
         templates_dir = workspace_root / ".pgmcp" / "templates"
+        templates_config_dir = templates_dir / "config"
         concrete_dir = templates_dir / "concrete"
 
         # Create directories
         config_root.mkdir(parents=True)
+        templates_config_dir.mkdir(parents=True)
         concrete_dir.mkdir(parents=True)
 
         # Write index configuration file
-        (config_root / "artifacts.yaml").write_text(
+        (templates_config_dir / "artifacts.yaml").write_text(
             "version: '1.0.0'\nartifact_types: []\n", encoding="utf-8"
         )
         (config_root / "git.yaml").write_text("branch_types: []\n", encoding="utf-8")
@@ -52,10 +54,6 @@ class TestTypeScriptDTOScaffold:
             "      - '.ts'\n"
         )
         (config_root / "project_structure.yaml").write_text(project_struct, encoding="utf-8")
-
-        # Create artifacts/ directory with typescript_dto.yaml
-        artifacts_dir = config_root / "artifacts"
-        artifacts_dir.mkdir(parents=True)
 
         dto_yaml = (
             "type: code\n"
@@ -90,7 +88,7 @@ class TestTypeScriptDTOScaffold:
             "  initial_state: CREATED\n"
             "  valid_transitions: []\n"
         )
-        (artifacts_dir / "typescript_dto.yaml").write_text(dto_yaml, encoding="utf-8")
+        (templates_config_dir / "typescript_dto.yaml").write_text(dto_yaml, encoding="utf-8")
 
         # Write tiered templates
         tier0_content = (

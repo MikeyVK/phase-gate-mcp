@@ -70,7 +70,7 @@ def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
             else resolved_server_root / "config"
         )
         if not config_dir.exists():
-            package_root = Path(__file__).resolve().parents[3]
+            package_root = Path(__file__).resolve().parents[4]
             settings.server.resolved_config_root = package_root / "mcp_server" / "assets" / "config"
         else:
             settings.server.resolved_config_root = config_dir
@@ -79,7 +79,7 @@ def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
     ):
         template_dir = resolved_server_root / "templates"
         if not template_dir.exists():
-            package_root = Path(__file__).resolve().parents[3]
+            package_root = Path(__file__).resolve().parents[4]
             settings.server.resolved_template_root = (
                 package_root / "mcp_server" / "assets" / "templates"
             )
