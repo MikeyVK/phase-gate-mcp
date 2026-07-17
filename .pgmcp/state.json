@@ -2,7 +2,7 @@
   "branch": "refactor/429-bundle-template-package",
   "issue_number": 429,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -19,7 +19,16 @@
   "issue_title": "Refactor: Bundle template configuration and artifacts under templates/",
   "parent_branch": "main",
   "created_at": "2026-07-17T07:09:07.754523+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "planning",
+      "timestamp": "2026-07-17T08:48:49.352605+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
