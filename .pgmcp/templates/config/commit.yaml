@@ -1,5 +1,6 @@
 type: tracking
 type_id: commit
+template_version: 1.0.0
 context_schema:
   type:
     type: string

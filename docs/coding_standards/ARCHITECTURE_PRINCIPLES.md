@@ -327,6 +327,17 @@ runner = EnforcementRunner(workspace_root=tmp_path, config=config, merge_readine
 - Core and domain services must produce structured data outputs (such as models, data transfer objects, error codes, or metadata event keys with raw parameter dictionaries).
 - The presentation of these outputs (including human-readable translations, formatting, iconography/emojis, and visual structures) is the exclusive responsibility of a dedicated presentation layer or external configuration/localization files.
 - This ensures the domain layer remains fully agnostic of the final display format and media (e.g., CLI, JSON-RPC responses, web UI, or logs).
+
+---
+
+## 16. Things That Belong Together, Should Live Together
+
+Assets that form a tight, logical unit should be co-located to maximize cohesion, even if they span different architectural layers. 
+
+**Binding rules:**
+- **Template Packages:** A Jinja2 template (presentation) and its artifact configuration YAML (domain/schema mapping) are intrinsically coupled. They must be bundled together in the `templates/` directory (e.g., with configs in `templates/config/`).
+- **Legitimate Exception:** This is an explicit, legitimate exception to the strict separation implied by Principle 12 and 15. Because their distribution, versioning, and content are deeply intertwined, their physical bundling in one directory structure is justified and required to prevent drift and configuration scattering.
+
 ---
 
 ## Quick Reference — Prohibited Patterns

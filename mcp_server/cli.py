@@ -23,7 +23,6 @@ def main(settings: Settings | None = None) -> None:
     )
 
     args = parser.parse_args()
-
     if args.version:
         # pylint: disable=no-member
         print(f"Phase-Gate MCP Server v{_settings.server.version}")

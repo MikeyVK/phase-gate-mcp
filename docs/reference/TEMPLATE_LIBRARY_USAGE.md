@@ -35,7 +35,7 @@ Practical guide for using the scaffolding pipeline: how to scaffold an artifact,
 
 When you call `scaffold_artifact(artifact_type, name, context)`, your call passes through three layers:
 
-1. **Layer 1 — Declarative Schema**: Your `context` dict is validated against a dynamic Pydantic model constructed at runtime from the `context_schema` configured under `.pgmcp/config/artifacts/<artifact_type>.yaml`. Required fields are enforced; unknown fields are rejected.
+1. **Layer 1 — Declarative Schema**: Your `context` dict is validated against a dynamic Pydantic model constructed at runtime from the `context_schema` configured under `.pgmcp/templates/config/<artifact_type>.yaml`. Required fields are enforced; unknown fields are rejected.
 2. **Layer 2 — RenderContext enrichment**: The system dynamically enriches the model with lifecycle fields (`output_path`, `template_id`, `scaffold_created`, `version_hash`).
 3. **Layer 3 — Jinja2 template** (`.pgmcp/templates/concrete/`): The enriched context is rendered into the output artifact.
 
@@ -169,7 +169,7 @@ Adding a new artifact type is fully declarative. **No Python source code changes
 
 | Step | File | Action |
 |---|---|---|
-| 1 | `.pgmcp/config/artifacts/<new_type>.yaml` | Create modular configuration file defining metadata, template path, file extension, strict validation policies, and the `context_schema` (defining required/optional fields). |
+| 1 | `.pgmcp/templates/config/<new_type>.yaml` | Create modular configuration file defining metadata, template path, file extension, strict validation policies, and the `context_schema` (defining required/optional fields). |
 | 2 | `.pgmcp/templates/concrete/<new_type>.<ext>.jinja2` | Create Jinja2 template extending the appropriate language base (e.g. `tier2_base_python.jinja2`, `tier2_base_typescript.jinja2`). |
 
 ### Context schema conventions
@@ -188,6 +188,9 @@ Adding a new artifact type is fully declarative. **No Python source code changes
 | Code (dto, worker, tool, service, typescript_dto, ...) | PascalCase | `OrderDTO`, `ProcessOrderWorker` |
 | Document (design, architecture, research, ...) | kebab-case | `oauth-design`, `worker-pattern-architecture` |
 
+## Strict Version Pairing
+Templates and their configurations are strictly paired using Semantic Versioning. Every Jinja2 template MUST include a header like `{#- Version: X.Y.Z -#}` that exactly matches the `template_version` specified in its corresponding YAML configuration. A mismatch in the major version will cause a strict configuration error at startup.
+
 ---
 
 ## Related Documentation
@@ -204,7 +207,6 @@ Adding a new artifact type is fully declarative. **No Python source code changes
 [source]: ../../mcp_server/tools/scaffold_artifact.py
 [tests]: ../../tests/mcp_server/unit/config/test_modular_loader.py
 
----
 
 ## Version History
 | Version | Date | Author | Changes |

@@ -1,5 +1,6 @@
 type: code
 type_id: service
+template_version: 1.3.1
 context_schema:
   name:
     type: string

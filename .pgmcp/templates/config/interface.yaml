@@ -1,20 +1,16 @@
 type: code
-type_id: resource
+type_id: interface
+template_version: 1.0.0
 context_schema:
   name:
     type: string
     title: Name
-    description: Name of the resource class (PascalCase required)
+    description: Name of the interface class (PascalCase required)
     required: true
   description:
     type: string
     title: Description
-    description: Description of the resource's purpose
-    required: false
-  resource_type:
-    type: string
-    title: Resource Type
-    description: Resource category or protocol surface
+    description: Description of the interface's purpose
     required: false
   methods:
     type: array
@@ -23,10 +19,10 @@ context_schema:
     required: false
     items:
       type: string
-name: MCP Resource
-description: MCP Resource - provides dynamic content
+name: Interface
+description: Interface - abstract protocol definition
 output_type: file
-template_path: concrete/resource.py.jinja2
+template_path: concrete/interface.py.jinja2
 fallback_template: null
 name_suffix: null
 file_extension: .py

@@ -9,7 +9,6 @@ Validates:
 @dependencies: pytest, mcp_server.config.schemas.artifact_registry_config
 """
 
-from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest
@@ -21,18 +20,13 @@ from mcp_server.config.schemas import ArtifactRegistryConfig, ArtifactType
 @pytest.fixture
 def artifacts_config() -> ArtifactRegistryConfig:
     """Load config from actual .pgmcp/config/artifacts.yaml."""
-    # Find project root (.pgmcp directory exists there)
-    current_dir = Path(__file__).resolve()
-    project_root = current_dir
-    while not (project_root / get_default_server_root()).exists():
-        project_root = project_root.parent
-        if project_root == project_root.parent:
-            raise FileNotFoundError("Could not find .pgmcp directory")
+    from mcp_server.config.settings import Settings  # noqa: PLC0415
 
-    artifacts_yaml = project_root / get_default_server_root() / "config" / "artifacts.yaml"
-    return ConfigLoader(artifacts_yaml.parent).load_artifact_registry_config(
-        config_path=artifacts_yaml
-    )
+    settings = Settings.from_env()
+    config_root = Path(settings.server.resolved_config_root)
+    template_root = Path(settings.server.resolved_template_root)
+    loader = ConfigLoader(config_root, template_root=template_root)
+    return loader.load_artifact_registry_config()
 
 
 class TestArtifactsTypeField:

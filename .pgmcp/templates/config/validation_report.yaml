@@ -1,5 +1,6 @@
 type: doc
 type_id: validation_report
+template_version: 1.0.0
 context_schema:
   title:
     type: string

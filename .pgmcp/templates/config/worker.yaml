@@ -1,5 +1,6 @@
 type: code
 type_id: worker
+template_version: 3.2.0
 context_schema:
   name:
     type: string

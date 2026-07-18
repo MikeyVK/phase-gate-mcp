@@ -18,7 +18,7 @@ In the V3 scaffolding architecture, Python-based static context schema classes a
 ```mermaid
 graph TD
     Loader[ConfigLoader]
-    Yaml[".pgmcp/config/artifacts/*.yaml"]
+    Yaml[".pgmcp/templates/config/*.yaml"]
     ArtifactManager[ArtifactManager]
     BaseContext[BaseContext]
     BaseRenderContext[BaseRenderContext]
@@ -55,7 +55,7 @@ The following system fields are injected dynamically during context enrichment a
 
 ## 2. Modular Configuration Merging
 
-The monolithic `artifacts.yaml` configuration is replaced by a modular structure. Config files are loaded dynamically from the `.pgmcp/config/artifacts/` directory and merged.
+The monolithic `artifacts.yaml` configuration is replaced by a modular structure. Config files are loaded dynamically from the `.pgmcp/templates/config/` directory and merged.
 
 ```mermaid
 graph TD
@@ -69,7 +69,7 @@ graph TD
 
 ### 2.1. Merging & Validation Rules
 - **Version Index**: The root `artifacts.yaml` serves as the version index (e.g. `version: 1.0.0`) and must not contain inline configurations.
-- **Fail-Fast Loader**: `ConfigLoader` scans `.pgmcp/config/artifacts/` for all `.yaml` / `.yml` files. It parses each file and merges their definitions. If any file has invalid YAML syntax or invalid `SchemaFieldDef` structures, a `ConfigError` is raised immediately on startup.
+- **Fail-Fast Loader**: `ConfigLoader` scans `.pgmcp/templates/config/` for all `.yaml` / `.yml` files. It parses each file and merges their definitions. If any file has invalid YAML syntax or invalid `SchemaFieldDef` structures, a `ConfigError` is raised immediately on startup.
 - **Strict Validation Policies**: If `strict_validation` is set to `true` for a code artifact, any validation failure blocks the file write. For document artifacts, validation errors trigger warnings rather than failures.
 
 ---
@@ -112,7 +112,7 @@ graph TD
 To add a new template, follow these steps. **No Python code changes are required.**
 
 ### Step 1: Create the Modular Configuration
-Create a new YAML file under `.pgmcp/config/artifacts/<type_id>.yaml`:
+Create a new YAML file under `.pgmcp/templates/config/<type_id>.yaml`:
 ```yaml
 type: code
 type_id: my_artifact
@@ -146,6 +146,9 @@ Create the concrete Jinja2 template under `.pgmcp/templates/concrete/my_artifact
 {#- concrete/my_artifact.py.jinja2 -#}
 {%- extends "tier2_base_python.jinja2" -%}
 ```
+
+## Strict Version Pairing
+Configuration files loaded by the system must specify a `template_version`. The system centrally validates this version against the `{#- Version: X.Y.Z -#}` header in the corresponding Jinja2 template. A major version mismatch will trigger a strict fail-fast error, preventing invalid templating results.
 
 ---
 

@@ -93,8 +93,18 @@ def resolve_config_root(
 class ConfigLoader:
     """Single YAML reader for migrated config schemas."""
 
-    def __init__(self, config_root: Path) -> None:
+    def __init__(self, config_root: Path, template_root: Path | None = None) -> None:
         self.config_root = normalize_config_root(config_root)
+        if template_root is not None:
+            self.template_root = Path(template_root).resolve()
+        else:
+            try:
+                from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+                settings = Settings.from_env()
+                self.template_root = Path(settings.server.resolved_template_root)
+            except Exception:  # noqa: BLE001
+                self.template_root = (self.config_root.parent / "templates").resolve()
 
     def load_git_config(self, config_path: Path | None = None) -> GitConfig:
         data, resolved_path = self._load_yaml("git.yaml", config_path=config_path)
@@ -124,7 +134,20 @@ class ConfigLoader:
         self,
         config_path: Path | None = None,
     ) -> ArtifactRegistryConfig:
-        resolved_path = self._resolve_yaml_path("artifacts.yaml", config_path=config_path)
+        legacy_dir = self.config_root / "artifacts"
+        if legacy_dir.is_dir():
+            raise ConfigError(
+                "Legacy config/artifacts/ directory is no longer supported under the "
+                "Template Packages contract. Fix: Move all artifact modular configuration "
+                "files to templates/config/ and delete this directory.",
+                file_path=str(legacy_dir),
+            )
+
+        if config_path is None:
+            resolved_path = Path(self.config_root) / "artifacts.yaml"
+        else:
+            resolved_path = Path(config_path).resolve()
+
         if not resolved_path.exists():
             raise ConfigError(
                 "Artifact registry not found: "
@@ -156,20 +179,28 @@ class ConfigLoader:
         index_version = raw_loaded.get("version", "1.0.0")
         merged_artifact_types = list(raw_loaded.get("artifact_types", []))
 
-        artifacts_dir = resolved_path.parent / "artifacts"
-        if not artifacts_dir.is_dir():
+        if config_path is not None:
+            config_dir = resolved_path.parent
+        else:
+            config_dir = (
+                Path(self.template_root) / "config" if self.template_root else resolved_path.parent
+            )
+        if not config_dir.is_dir():
             if not merged_artifact_types:
                 raise ConfigError(
-                    "Empty artifact registry: no artifact types defined "
-                    "(artifacts/ directory is missing or empty)",
+                    "Empty artifact registry: no artifact types defined",
                     file_path=str(resolved_path),
                 )
         else:
             yaml_files = sorted(
                 [
                     f
-                    for f in artifacts_dir.iterdir()
-                    if f.is_file() and f.suffix in (".yaml", ".yml")
+                    for f in config_dir.iterdir()
+                    if (
+                        f.is_file()
+                        and f.suffix in (".yaml", ".yml")
+                        and f.name not in ("artifacts.yaml", resolved_path.name)
+                    )
                 ]
             )
             for filepath in yaml_files:
@@ -182,6 +213,10 @@ class ConfigLoader:
                         file_path=str(filepath),
                     ) from exc
                 if file_data is None:
+                    continue
+                if isinstance(file_data, dict) and (
+                    "version" in file_data or "artifact_types" in file_data
+                ):
                     continue
                 if isinstance(file_data, list):
                     merged_artifact_types.extend(file_data)

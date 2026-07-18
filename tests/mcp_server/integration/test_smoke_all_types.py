@@ -48,26 +48,27 @@ def _manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ArtifactManager
     from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
 
     template_root = get_template_root()
+    monkeypatch.setenv("PGMCP_TEMPLATE_ROOT", str(template_root))
     monkeypatch.setenv("TEMPLATE_ROOT", str(template_root))
 
     # Hermetic workspace: copy production artifacts.yaml so registry loads correctly
     config_dir = tmp_path / get_default_server_root() / "config"
     config_dir.mkdir(parents=True)
-    artifacts_path = config_dir / "artifacts.yaml"
+    monkeypatch.setenv("PGMCP_CONFIG_ROOT", str(config_dir))
+
+    # Copy artifacts.yaml
     shutil.copy(
-        _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts.yaml", artifacts_path
-    )
-    shutil.copytree(
-        _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts", config_dir / "artifacts"
+        _PROJECT_ROOT / get_default_server_root() / "config" / "artifacts.yaml",
+        config_dir / "artifacts.yaml",
     )
 
-    # CWD → tmp_path: registry loads from tmp_path/.pgmcp/config/artifacts.yaml,
-    # ephemeral writes go to tmp_path/.pgmcp/temp/ (not project root)
+    # CWD → tmp_path: registry loads from tmp_path/.pgmcp/config/artifacts.yaml
     monkeypatch.chdir(tmp_path)
 
-    registry = ConfigLoader(artifacts_path.parent).load_artifact_registry_config(
-        config_path=artifacts_path
-    )
+    registry = ConfigLoader(
+        config_root=config_dir,
+        template_root=template_root,
+    ).load_artifact_registry_config()
     return ArtifactManager(
         workspace_root=str(tmp_path),
         registry=registry,

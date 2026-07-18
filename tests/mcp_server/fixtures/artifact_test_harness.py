@@ -45,6 +45,14 @@ def _temp_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generato
     from tests.mcp_server.test_support import get_template_root  # noqa: PLC0415
 
     template_root = get_template_root()
+    monkeypatch.setenv(
+        "PGMCP_TEMPLATE_ROOT",
+        str(workspace / get_default_server_root() / "templates"),
+    )
+    monkeypatch.setenv(
+        "PGMCP_CONFIG_ROOT",
+        str(workspace / get_default_server_root() / "config"),
+    )
     monkeypatch.setenv("TEMPLATE_ROOT", str(template_root))
 
     # Change CWD to workspace (template paths are relative)
@@ -61,6 +69,7 @@ def _artifacts_yaml_content() -> str:
 artifact_types:
   - type: doc
     type_id: design
+    template_version: "1.0.0"
     name: "Design Document"
     description: "Design document for features"
     template_path: documents/design.md.jinja2
@@ -150,6 +159,7 @@ artifact_types:
 
   - type: code
     type_id: dto
+    template_version: "1.0.0"
     name: "Data Transfer Object"
     description: "Pydantic DTO"
     template_path: components/dto.py.jinja2
@@ -193,7 +203,7 @@ def _artifacts_yaml_file_phase_gate(
     """
     Write artifacts.yaml to temp workspace.
 
-    Returns path to .pgmcp/config/artifacts.yaml
+    Returns path to templates/config/artifacts.yaml
     """
     config_dir = temp_workspace / get_default_server_root() / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -201,20 +211,25 @@ def _artifacts_yaml_file_phase_gate(
     artifacts_file.write_text(artifacts_yaml_content, encoding="utf-8")
 
     # Create dummy templates for testing
-    template_dir = temp_workspace / "documents"
-    template_dir.mkdir(parents=True)
+    template_dir = temp_workspace / get_default_server_root() / "templates" / "documents"
+    template_dir.mkdir(parents=True, exist_ok=True)
 
     dummy_design_template = template_dir / "design.md.jinja2"
     dummy_design_template.write_text(
-        "# {{ title }}\n\nIssue: #{{ issue_number }}\nAuthor: {{ author }}\n", encoding="utf-8"
+        "{#- Version: 1.0.0 -#}\n"
+        "# {{ title }}\n\n"
+        "Issue: #{{ issue_number }}\n"
+        "Author: {{ author }}\n",
+        encoding="utf-8",
     )
 
     # Create code template for dto
-    code_template_dir = temp_workspace / "components"
-    code_template_dir.mkdir(parents=True)
+    code_template_dir = temp_workspace / get_default_server_root() / "templates" / "components"
+    code_template_dir.mkdir(parents=True, exist_ok=True)
 
     dummy_dto_template = code_template_dir / "dto.py.jinja2"
     dummy_dto_template.write_text(
+        "{#- Version: 1.0.0 -#}\n"
         '"""{{ description }}"""\n'
         "from pydantic import BaseModel\n\n"
         "class {{ name }}(BaseModel):\n"
@@ -238,9 +253,13 @@ def _fs_adapter(temp_workspace: Path) -> FilesystemAdapter:
 @pytest.fixture(name="artifact_registry")
 def _artifact_registry(
     artifacts_yaml_file: Path,
+    temp_workspace: Path,
 ) -> ArtifactRegistryConfig:
     """Load ArtifactRegistryConfig from temp artifacts.yaml via ConfigLoader."""
-    loader = ConfigLoader(artifacts_yaml_file.parent)
+    loader = ConfigLoader(
+        config_root=artifacts_yaml_file.parent,
+        template_root=temp_workspace / get_default_server_root() / "templates",
+    )
     return loader.load_artifact_registry_config(config_path=artifacts_yaml_file)
 
 
@@ -254,8 +273,8 @@ def _template_scaffolder_alternate(
 
     Uses temp workspace templates instead of production templates.
     """
-    # Point renderer to temp workspace (hermetic)
-    renderer = JinjaRenderer(template_dir=temp_workspace)
+    template_root = temp_workspace / get_default_server_root() / "templates"
+    renderer = JinjaRenderer(template_dir=template_root)
     return TemplateScaffolder(registry=artifact_registry, renderer=renderer)
 
 
@@ -319,6 +338,7 @@ class ArtifactSpec:
     template_fields: TemplateFields = field(default_factory=TemplateFields)
     generate_test: bool = False
     strict_validation: bool | None = None
+    template_version: str = "1.0.0"
 
 
 def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
@@ -372,6 +392,7 @@ def add_artifact_to_yaml(artifacts_yaml_path: Path, spec: ArtifactSpec) -> None:
     artifact_def = {
         "type": spec.identity.artifact_type,
         "type_id": spec.identity.type_id,
+        "template_version": spec.template_version,
         "name": spec.name,
         "description": spec.description or f"{spec.name} artifact",
         "template_path": spec.template_path,
@@ -408,7 +429,10 @@ def create_template(workspace_root: Path, template_relpath: str, template_conten
     Returns:
         Absolute path to created template
     """
-    template_path = workspace_root / template_relpath
+    template_root = workspace_root / get_default_server_root() / "templates"
+    template_path = template_root / template_relpath
     template_path.parent.mkdir(parents=True, exist_ok=True)
+    if "{#- Version:" not in template_content:
+        template_content = "{#- Version: 1.0.0 -#}\n" + template_content
     template_path.write_text(template_content, encoding="utf-8")
     return template_path

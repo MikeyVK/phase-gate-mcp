@@ -29,10 +29,12 @@ class TestTypeScriptDTOScaffold:
         workspace_root = tmp_path / "workspace"
         config_root = workspace_root / ".pgmcp" / "config"
         templates_dir = workspace_root / ".pgmcp" / "templates"
+        templates_config_dir = templates_dir / "config"
         concrete_dir = templates_dir / "concrete"
 
         # Create directories
         config_root.mkdir(parents=True)
+        templates_config_dir.mkdir(parents=True)
         concrete_dir.mkdir(parents=True)
 
         # Write index configuration file
@@ -53,13 +55,10 @@ class TestTypeScriptDTOScaffold:
         )
         (config_root / "project_structure.yaml").write_text(project_struct, encoding="utf-8")
 
-        # Create artifacts/ directory with typescript_dto.yaml
-        artifacts_dir = config_root / "artifacts"
-        artifacts_dir.mkdir(parents=True)
-
         dto_yaml = (
             "type: code\n"
             "type_id: typescript_dto\n"
+            "template_version: 1.0.0\n"
             "name: TypeScript DTO\n"
             "description: TypeScript DTO class\n"
             "output_type: file\n"
@@ -89,7 +88,7 @@ class TestTypeScriptDTOScaffold:
             "  initial_state: CREATED\n"
             "  valid_transitions: []\n"
         )
-        (artifacts_dir / "typescript_dto.yaml").write_text(dto_yaml, encoding="utf-8")
+        (templates_config_dir / "typescript_dto.yaml").write_text(dto_yaml, encoding="utf-8")
 
         # Write tiered templates
         tier0_content = (
@@ -151,7 +150,9 @@ class TestTypeScriptDTOScaffold:
             tier3_content, encoding="utf-8"
         )
 
-        concrete_content = "{% extends 'tier3_pattern_typescript_dto.jinja2' %}\n"
+        concrete_content = (
+            "{#- Version: 1.0.0 -#}\n" + "{% extends 'tier3_pattern_typescript_dto.jinja2' %}\n"
+        )
         (concrete_dir / "typescript_dto.ts.jinja2").write_text(concrete_content, encoding="utf-8")
 
         # Initialize manager

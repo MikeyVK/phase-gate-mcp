@@ -769,7 +769,7 @@ class MyNewTool(ICoreTool[MyToolInput, MyToolOutput]):
 ### 13.3 Adding a New Scaffold Template
 
 1. Create a Jinja2 template in `.pgmcp/templates/concrete/`
-2. Register the artifact type by creating `.pgmcp/config/artifacts/<new_type>.yaml` (defining `context_schema`)
+2. Register the artifact type by creating `.pgmcp/templates/config/<new_type>.yaml` (defining `context_schema`)
 3. Use via `scaffold_artifact(artifact_type="...", name="...", context={...})`
 
 ---

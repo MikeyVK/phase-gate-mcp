@@ -1,5 +1,6 @@
 type: tracking
 type_id: pr
+template_version: 1.0.0
 context_schema:
   title:
     type: string

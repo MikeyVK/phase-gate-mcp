@@ -21,7 +21,7 @@ Quick-lookup inventory of all registered artifact types, their required context 
 
 Use `scaffold_schema(artifact_type="<type>")` to get the full JSON Schema for any type's context.
 
-Registry: `.pgmcp/config/artifacts/`
+Registry: `.pgmcp/templates/config/`
 
 ### Code Artifacts
 

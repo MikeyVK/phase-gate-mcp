@@ -14,7 +14,6 @@ This test uses NO MOCKS - real template loading against temp workspace.
 @dependencies: [pytest, pathlib, mcp_server.tools.scaffold_artifact]
 """
 
-from tests.mcp_server.test_support import get_default_server_root
 from pathlib import Path
 
 import pytest
@@ -48,13 +47,18 @@ async def test_template_missing_error_propagates_through_call_chain(
     - message contains template path
     """
     # Arrange: Add artifact type with non-existent template to registry
-    artifacts_yaml = temp_workspace / get_default_server_root() / "config" / "artifacts.yaml"
+    from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+    settings = Settings.from_env()
+    config_root = Path(settings.server.resolved_config_root)
+    artifacts_yaml = config_root / "artifacts.yaml"
     content = artifacts_yaml.read_text(encoding="utf-8")
 
     # Add dto_missing artifact type with non-existent template
     missing_artifact = """
   - type: code
     type_id: dto_missing
+    template_version: "1.0.0"
     name: "DTO with missing template"
     description: "Test artifact with non-existent template"
     template_path: components/does_not_exist.py.jinja2
@@ -82,9 +86,10 @@ async def test_template_missing_error_propagates_through_call_chain(
     artifacts_yaml.write_text(content, encoding="utf-8")
 
     # Reload registry to pick up new artifact type
-    fresh_registry = ConfigLoader(artifacts_yaml.parent).load_artifact_registry_config(
-        config_path=artifacts_yaml
-    )
+    fresh_registry = ConfigLoader(
+        config_root=artifacts_yaml.parent,
+        template_root=settings.server.resolved_template_root,
+    ).load_artifact_registry_config()
 
     # Reinitialize manager with updated registry (hermetic fixture uses temp workspace)
     artifact_manager.scaffolder.registry = fresh_registry

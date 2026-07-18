@@ -26,21 +26,19 @@ class TestModularLoader:
     """Test suite for loader."""
 
     def test_loader_scans_artifacts_dir_and_merges(self, tmp_path: Path) -> None:
-        """Test that loader scans artifacts/ dir and merges definitions."""
+        """Test that loader scans template_root/config/ dir and merges definitions."""
         # Arrange
         config_root = tmp_path / "config"
+        template_root = tmp_path / "templates"
         index_file = config_root / "artifacts.yaml"
         index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
-
-        # Create artifacts/ directory
-        artifacts_dir = config_root / "artifacts"
-        artifacts_dir.mkdir(parents=True)
-
-        # Create two modular YAML files
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
+        # Create modular YAML files
         dto_yaml = (
             "type: code\n"
             "type_id: dto\n"
+            "template_version: '1.0.0'\n"
             "name: DTO\n"
             "description: DTO desc\n"
             "file_extension: .py\n"
@@ -52,6 +50,7 @@ class TestModularLoader:
         worker_yaml = (
             "type: code\n"
             "type_id: worker\n"
+            "template_version: '1.0.0'\n"
             "name: Worker\n"
             "description: Worker desc\n"
             "file_extension: .py\n"
@@ -60,10 +59,10 @@ class TestModularLoader:
             "  initial_state: CREATED\n"
             "  valid_transitions: []\n"
         )
-        (artifacts_dir / "dto.yaml").write_text(dto_yaml, encoding="utf-8")
-        (artifacts_dir / "worker.yaml").write_text(worker_yaml, encoding="utf-8")
+        (template_root / "config" / "dto.yaml").write_text(dto_yaml, encoding="utf-8")
+        (template_root / "config" / "worker.yaml").write_text(worker_yaml, encoding="utf-8")
 
-        loader = ConfigLoader(config_root)
+        loader = ConfigLoader(config_root=config_root, template_root=template_root)
 
         # Act
         config = loader.load_artifact_registry_config()
@@ -80,16 +79,18 @@ class TestModularLoader:
         """Test that loader fails fast when a modular file has invalid YAML syntax."""
         # Arrange
         config_root = tmp_path / "config"
+        template_root = tmp_path / "templates"
         index_file = config_root / "artifacts.yaml"
         index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
 
-        # Create artifacts/ directory with bad YAML
-        artifacts_dir = config_root / "artifacts"
-        artifacts_dir.mkdir(parents=True)
-        (artifacts_dir / "bad.yaml").write_text("invalid: yaml: syntax: [}", encoding="utf-8")
+        # Create templates/config/ directory with bad YAML
+        (template_root / "config" / "bad.yaml").write_text(
+            "invalid: yaml: syntax: [}", encoding="utf-8"
+        )
 
-        loader = ConfigLoader(config_root)
+        loader = ConfigLoader(config_root=config_root, template_root=template_root)
 
         # Act & Assert
         with pytest.raises(ConfigError) as exc_info:
@@ -100,13 +101,39 @@ class TestModularLoader:
         """Test that under Clean Break, loading fails if registry is empty."""
         # Arrange
         config_root = tmp_path / "config"
+        template_root = tmp_path / "templates"
         index_file = config_root / "artifacts.yaml"
         index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
 
-        loader = ConfigLoader(config_root)
+        loader = ConfigLoader(config_root=config_root, template_root=template_root)
 
         # Act & Assert
         with pytest.raises(ConfigError) as exc_info:
             loader.load_artifact_registry_config()
         assert "Empty" in str(exc_info.value) or "no artifact types defined" in str(exc_info.value)
+
+    def test_loader_fails_if_legacy_artifacts_directory_exists(self, tmp_path: Path) -> None:
+        """Test that under Clean Break, loading fails if legacy config/artifacts exists."""
+        # Arrange
+        config_root = tmp_path / "config"
+        template_root = tmp_path / "templates"
+        index_file = config_root / "artifacts.yaml"
+        index_file.parent.mkdir(parents=True, exist_ok=True)
+        index_file.write_text("version: '1.0.0'\nartifact_types: []\n", encoding="utf-8")
+        (template_root / "config").mkdir(parents=True, exist_ok=True)
+
+        # Create legacy artifacts dir
+        legacy_dir = config_root / "artifacts"
+        legacy_dir.mkdir(parents=True)
+
+        loader = ConfigLoader(config_root=config_root, template_root=template_root)
+
+        # Act & Assert
+        with pytest.raises(ConfigError) as exc_info:
+            loader.load_artifact_registry_config()
+        assert (
+            "legacy" in str(exc_info.value).lower()
+            or "no longer supported" in str(exc_info.value).lower()
+        )

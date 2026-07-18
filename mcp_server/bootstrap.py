@@ -256,7 +256,10 @@ class ServerBootstrapper:
         """Load and validate all configurations."""
         config_root = self._settings.server.resolved_config_root
 
-        config_loader = ConfigLoader(config_root=config_root)
+        config_loader = ConfigLoader(
+            config_root=config_root,
+            template_root=self._settings.server.resolved_template_root,
+        )
         git_config = config_loader.load_git_config()
         workflow_config = config_loader.load_workflow_config()
         workphases_config = config_loader.load_workphases_config()

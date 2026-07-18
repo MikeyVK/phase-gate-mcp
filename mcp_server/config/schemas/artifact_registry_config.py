@@ -95,6 +95,7 @@ class ArtifactDefinition(BaseModel):
     scaffolder_module: str | None = Field(None, description="LEGACY: Scaffolder module path")
     template_path: str | None = Field(None, description="Jinja2 template path")
     fallback_template: str | None = Field(None, description="Fallback template if primary missing")
+    template_version: str | None = Field(None, description="Expected template version")
     name_suffix: str | None = Field(None, description="Default name suffix")
     file_extension: str = Field(..., description="File extension (.py, .md)")
     generate_test: bool = Field(False, description="Generate test file")

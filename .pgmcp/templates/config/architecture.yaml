@@ -1,5 +1,6 @@
 type: doc
-type_id: design
+type_id: architecture
+template_version: 2.1.0
 context_schema:
   title:
     type: string
@@ -21,39 +22,17 @@ context_schema:
     title: Last Updated
     description: Last updated date in ISO format YYYY-MM-DD
     required: true
-  problem_statement:
-    type: string
-    title: Problem Statement
-    description: Problem being solved by this design
-    required: true
-  requirements_functional:
+  concepts:
     type: array
-    title: Requirements Functional
-    description: Functional requirements the design must satisfy
+    title: Concepts
+    description: Architectural concepts to document (WHAT and WHY, not HOW)
     required: true
     items:
       type: string
-  requirements_nonfunctional:
-    type: array
-    title: Requirements Nonfunctional
-    description: Non-functional requirements (performance, maintainability, etc.)
-    required: true
-    items:
-      type: string
-  decision:
-    type: string
-    title: Decision
-    description: The chosen design decision
-    required: true
-  rationale:
-    type: string
-    title: Rationale
-    description: Rationale for the chosen decision
-    required: true
   purpose:
     type: string
     title: Purpose
-    description: Purpose of this design document
+    description: Purpose of this architecture document
     required: false
   scope_in:
     type: string
@@ -68,7 +47,7 @@ context_schema:
   prerequisites:
     type: array
     title: Prerequisites
-    description: Prerequisites for this design
+    description: Prerequisites and background knowledge
     required: false
     items:
       type: string
@@ -82,35 +61,21 @@ context_schema:
   constraints:
     type: array
     title: Constraints
-    description: Technical or business constraints
+    description: Architectural constraints and boundaries
     required: false
     items:
       type: string
-  options:
+  decisions:
     type: array
-    title: Options
-    description: Design options to compare
-    required: true
-    items:
-      type: object
-  key_decisions:
-    type: array
-    title: Key Decisions
-    description: Key design decisions table
-    required: true
-    items:
-      type: object
-  open_questions:
-    type: array
-    title: Open Questions
-    description: Open questions list
+    title: Decisions
+    description: Key architectural decisions made
     required: false
     items:
       type: string
-name: Design Document
-description: Design phase schemas and specifications
+name: Architecture Document
+description: System architecture documentation
 output_type: file
-template_path: concrete/design.md.jinja2
+template_path: concrete/architecture.md.jinja2
 fallback_template: null
 name_suffix: null
 file_extension: .md
@@ -118,14 +83,19 @@ generate_test: false
 state_machine:
   states:
   - DRAFT
+  - REVIEW
   - APPROVED
   - DEFINITIVE
   initial_state: DRAFT
   valid_transitions:
   - from: DRAFT
     to:
+    - REVIEW
     - APPROVED
-    - DEFINITIVE
+  - from: REVIEW
+    to:
+    - APPROVED
+    - DRAFT
   - from: APPROVED
     to:
     - DEFINITIVE

@@ -1,5 +1,6 @@
 type: doc
-type_id: generic_doc
+type_id: planning
+template_version: 1.3.0
 context_schema:
   title:
     type: string
@@ -21,80 +22,72 @@ context_schema:
     title: Last Updated
     description: Last updated date in ISO format YYYY-MM-DD
     required: true
-  purpose:
-    type: string
-    title: Purpose
-    description: Purpose statement for the document
-    required: true
   summary:
     type: string
     title: Summary
-    description: High-level summary for the document
+    description: High-level summary of what is being planned
     required: true
+  cycles:
+    type: array
+    title: Cycles
+    description: 'TDD cycle breakdown. Each entry is a dict with keys: name (str), goal (str), tests (list[str]), success_criteria (list[str] | str), dependencies (list[str], optional).'
+    required: true
+    items:
+      type: object
+  purpose:
+    type: string
+    title: Purpose
+    description: Purpose of this planning document
+    required: false
   scope_in:
     type: string
     title: Scope In
-    description: In-scope summary
+    description: What is in scope
     required: false
   scope_out:
     type: string
     title: Scope Out
-    description: Out-of-scope summary
+    description: What is out of scope
     required: false
   prerequisites:
     type: array
     title: Prerequisites
-    description: Prerequisite items
+    description: Prerequisites before work can begin
+    required: false
+    items:
+      type: string
+  dependencies:
+    type: array
+    title: Dependencies
+    description: Dependencies between cycles or on external work
+    required: false
+    items:
+      type: string
+  risks:
+    type: array
+    title: Risks
+    description: 'Identified risks. Each entry is a dict with keys: description (str), mitigation (str).'
+    required: false
+    items:
+      type: object
+  milestones:
+    type: array
+    title: Milestones
+    description: Key milestones and checkpoints
     required: false
     items:
       type: string
   related_docs:
     type: array
     title: Related Docs
-    description: Related document paths
+    description: Related documents in the project
     required: false
     items:
       type: string
-  key_changes:
-    type: array
-    title: Key Changes
-    description: Key change bullets
-    required: false
-    items:
-      type: string
-  migration_steps:
-    type: array
-    title: Migration Steps
-    description: Migration step list
-    required: false
-    items:
-      type: string
-  validation_checklist:
-    type: array
-    title: Validation Checklist
-    description: Validation checklist items
-    required: false
-    items:
-      type: string
-  faq:
-    type: array
-    title: Faq
-    description: FAQ entries
-    required: false
-    items:
-      type: string
-  custom_sections:
-    type: array
-    title: Custom Sections
-    description: Additional structured document sections
-    required: false
-    items:
-      type: string
-name: Generic Document
-description: Generic flexible document with custom sections for migration guides and
-  reference docs
+name: Planning Document
+description: Planning phase TDD cycle breakdown
 output_type: file
-template_path: concrete/generic.md.jinja2
+template_path: concrete/planning.md.jinja2
 fallback_template: null
 name_suffix: null
 file_extension: .md
