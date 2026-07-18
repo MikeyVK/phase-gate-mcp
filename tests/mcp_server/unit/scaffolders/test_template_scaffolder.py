@@ -172,6 +172,27 @@ class TestValidate:
         finally:
             object.__setattr__(artifact, "template_version", old_version)
 
+    def test_validate_does_not_instantiate_template_analyzer(
+        self, scaffolder: TemplateScaffolder
+    ) -> None:
+        """Validate should use extract_template_version and not TemplateAnalyzer."""
+        from unittest.mock import patch
+
+        with patch("mcp_server.validation.template_analyzer.TemplateAnalyzer") as mock_analyzer:
+            scaffolder.validate(
+                artifact_type="dto",
+                name="TestDTO",
+                description="Test DTO",
+                frozen=True,
+                examples=[{"id": "test-1"}],
+                fields=[{"name": "id", "type": "str", "description": "ID"}],
+                dependencies=["pydantic"],
+                responsibilities=["Validation"],
+                output_path="src/dtos/TestDTO.py",
+            )
+            mock_analyzer.assert_not_called()
+
+
     def test_validate_fails_when_required_field_missing(
         self, scaffolder: TemplateScaffolder
     ) -> None:

@@ -2,7 +2,7 @@
   "branch": "bug/432-graceful-server-init",
   "issue_number": 432,
   "workflow_name": "bug",
-  "current_phase": "validation",
+  "current_phase": "implementation",
   "current_cycle": 3,
   "last_cycle": 3,
   "cycle_history": [
@@ -29,7 +29,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Herstel van ongeldige voorwaartse transitie door AI zonder authorisatie.",
+  "skip_reason": "QA review rejected implementation, rolling back to implementation phase to refactor TemplateScaffolder",
   "issue_title": "Bug: Graceful Server Initialization and Config Validation",
   "parent_branch": "main",
   "created_at": "2026-07-18T17:38:05.310331+00:00",
@@ -81,8 +81,16 @@
       "human_approval": null,
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "validation",
+      "to_phase": "implementation",
+      "timestamp": "2026-07-18T22:28:55.950301+00:00",
+      "human_approval": "Approved by user in chat request",
+      "forced": true,
+      "skip_reason": "QA review rejected implementation, rolling back to implementation phase to refactor TemplateScaffolder"
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": null
+  "current_sub_phase": "red"
 }
