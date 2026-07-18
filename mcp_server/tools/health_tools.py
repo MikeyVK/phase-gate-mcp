@@ -26,6 +26,16 @@ class HealthCheckTool(ICoreTool[HealthCheckInput, HealthCheckOutput]):
 
     output_model: ClassVar[type[BaseModel]] = HealthCheckOutput
 
+    def __init__(
+        self,
+        override_status: HealthStatus | None = None,
+        override_reason: str | None = None,
+    ) -> None:
+        """Initialize with optional status override."""
+        super().__init__()
+        self.override_status = override_status
+        self.override_reason = override_reason
+
     @property
     def name(self) -> str:
         return "health_check"
@@ -46,8 +56,10 @@ class HealthCheckTool(ICoreTool[HealthCheckInput, HealthCheckOutput]):
     async def execute(self, params: HealthCheckInput, context: NoteContext) -> HealthCheckOutput:
         del params, context  # Not used
         settings = Settings.from_env()
+        status = self.override_status or HealthStatus.HEALTHY
         return HealthCheckOutput(
-            status=HealthStatus.HEALTHY,
+            status=status,
+            reason=self.override_reason,
             version=settings.server.version,
             pid=os.getpid(),
             platform=sys.platform,
