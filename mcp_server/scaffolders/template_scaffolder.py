@@ -95,8 +95,6 @@ class TemplateScaffolder(BaseScaffolder):
         if not template_path:
             raise ValidationError(f"No template configured for artifact type: {artifact_type}")
 
-        # Extract schema from template via inheritance-aware introspection (Task 2.1)
-        # This resolves the entire inheritance chain to detect ALL variables
         if self._renderer.env.loader is None:
             raise ValidationError(f"Template loader not configured for {artifact_type}")
 
@@ -108,6 +106,20 @@ class TemplateScaffolder(BaseScaffolder):
             )
 
         template_root = Path(loader.searchpath[0])
+
+        # Validate template version against expected version from registry (delayed validation)
+        # Only validate when template_path matches the official registry template_path
+        if artifact.template_version and template_path == artifact.template_path:
+            from mcp_server.scaffolding.version_hash import extract_template_version  # noqa: PLC0415
+
+            actual_version = extract_template_version(template_root / template_path)
+            if actual_version != artifact.template_version:
+                raise ValidationError(
+                    f"Template version mismatch for {artifact_type}: "
+                    f"expected {artifact.template_version}, found {actual_version}"
+                )
+        # Extract schema from template via inheritance-aware introspection (Task 2.1)
+        # This resolves the entire inheritance chain to detect ALL variables
         schema = introspect_template_with_inheritance(template_root, template_path)
 
         # Check required fields present
