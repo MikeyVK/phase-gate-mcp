@@ -110,6 +110,16 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 **Scaffold Design Document:**
 ```json
 {
+  "artifact_type": "design",
+  "name": "oauth-design",
+  "context": {
+    "title": "OAuth 2.0 Integration Design",
+    "summary": "Design document for integrating OAuth 2.0 authentication",
+    "purpose": "Define the architecture and flows for the new auth system"
+  }
+}
+```
+
 **Scaffold Architecture Document:**
 ```json
 {
@@ -500,6 +510,9 @@ When templates are updated:
 ---
 
 ## Version History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
 | 3.2 | 2026-07-16 | Agent | Updated for modular YAML configuration loading, dynamic validation model, and added typescript_dto. |
 | 3.1 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
 | 2.2 | 2026-06-04 | Agent | Remove legacy error example; fix artifact type tables (17 registered types); fix template paths; replaced fake context schema YAML with registry reference; removed stale links (#286) |
