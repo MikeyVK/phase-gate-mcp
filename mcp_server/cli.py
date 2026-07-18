@@ -67,8 +67,14 @@ def main(settings: Settings | None = None) -> None:
         )
         sys.exit(1)
 
+    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
+    from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
+
     bootstrapper = ServerBootstrapper(_settings)
-    server = bootstrapper.bootstrap()
+    try:
+        server = bootstrapper.bootstrap()
+    except (ConfigError, FileNotFoundError) as e:
+        server = DegradedMCPServer(_settings, str(e))
     asyncio.run(server.run())
 
 

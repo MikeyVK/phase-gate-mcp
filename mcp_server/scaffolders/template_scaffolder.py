@@ -109,7 +109,7 @@ class TemplateScaffolder(BaseScaffolder):
 
         # Validate template version against expected version from registry (delayed validation)
         # Only validate when template_path matches the official registry template_path
-        if artifact.template_version and template_path == artifact.template_path:
+        if isinstance(artifact.template_version, str) and template_path == artifact.template_path:
             from mcp_server.validation.template_analyzer import TemplateAnalyzer  # noqa: PLC0415
 
             analyzer = TemplateAnalyzer(template_root)

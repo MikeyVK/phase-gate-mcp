@@ -245,3 +245,25 @@ class MCPServer:
     async def shutdown(self) -> None:
         """Shutdown the MCP server gracefully."""
         lifecycle_logger.info("MCP server shutting down")
+
+
+class DegradedMCPServer(MCPServer):
+    """Degraded MCP server initialized when a config error occurs."""
+
+    def __init__(self, settings: Settings, reason: str) -> None:
+        """Initialize the degraded server with only the health check tool."""
+        from mcp_server.schemas.tool_outputs import HealthStatus  # noqa: PLC0415
+        from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415
+
+        health_tool = HealthCheckTool(
+            override_status=HealthStatus.UNHEALTHY,
+            override_reason=reason,
+        )
+
+        super().__init__(
+            settings=settings,
+            tools=[health_tool],
+            resources=[],
+            presenter=None,
+            publisher=None,
+        )
