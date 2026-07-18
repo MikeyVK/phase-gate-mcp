@@ -1,4 +1,4 @@
-<!-- docs\development\issue349\deferred_work_notice.md -->
+<!-- docs\development\issue429\deferred_work_notice.md -->
 <!-- template=generic_doc version=43c84181 created=2026-07-17T22:10Z updated= -->
 # Deferred Work Notice: Graceful Server Initialization & Config Validation
 
