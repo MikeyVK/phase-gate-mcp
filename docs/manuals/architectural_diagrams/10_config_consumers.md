@@ -69,7 +69,7 @@ graph LR
 |-------------|-----------|---------------------|
 | `WorkflowConfig` | `.pgmcp/config/workflows.yaml` | `PhaseStateEngine`, `ProjectManager`, `project_tools`, `issue_tools` |
 | `WorkphasesConfig` | `.pgmcp/config/workphases.yaml` or similar | `PhaseStateEngine`, `PhaseContractResolver` |
-| `ArtifactRegistryConfig` | `.pgmcp/config/artifacts.yaml` | `ArtifactManager` |
+| `ArtifactRegistryConfig` | `.pgmcp/templates/config.yaml` | `ArtifactManager` |
 | `LabelConfig` | `.pgmcp/config/labels.yaml` | `label_tools`, `issue_tools` |
 | `IssueConfig` | `.pgmcp/config/issue_config.yaml` | `issue_tools` |
 | `MilestoneConfig` | `.pgmcp/config/milestone_config.yaml` | `issue_tools` |

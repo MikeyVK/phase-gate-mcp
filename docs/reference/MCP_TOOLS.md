@@ -154,14 +154,14 @@ Generate new artifacts from templates (unified system).
 | **ScaffoldArtifactTool** | Generate code/docs from artifacts.yaml | `artifact_type` (dto/worker/design/etc), `name`, context fields (varies by type), `output_path` (optional) | Generated file path |
 | **ScaffoldSchemaTool** | Return JSON Schema for artifact type context | `artifact_type` | JSON Schema for the context parameter |
 
-**Artifact Types (from .pgmcp/config/artifacts.yaml):**
+**Artifact Types (from .pgmcp/templates/config.yaml):**
 - `dto` - Data Transfer Object with Pydantic
 - `worker` - Background job/processor
 - `design` - Design document
 - `adapter` - External API integration
 - `tool` - MCP tool
 
-See `.pgmcp/config/artifacts.yaml` for complete list and required fields per type.
+See `.pgmcp/templates/config.yaml` for complete list and required fields per type.
 
 ### 6. Quality & Validation (3 tools)
 

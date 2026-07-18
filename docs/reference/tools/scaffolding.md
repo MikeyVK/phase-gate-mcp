@@ -13,7 +13,7 @@
 
 ## Purpose
 
-Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same modular artifact registry defined under [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/).
+Complete reference documentation for the two MCP scaffolding tools: `scaffold_artifact` (artifact generation from templates) and `scaffold_schema` (proactive context schema discovery). Both tools use the same modular artifact registry defined under [.pgmcp/templates/config/](../../../../.pgmcp/templates/config/).
 
 The scaffolding system provides:
 - **Unified tool** for code and documentation generation (replaces separate tools)
@@ -57,7 +57,7 @@ Generate any artifact type (code or document) from unified registry.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `\"dto\"`, `\"design\"`, `\"worker\"`). The available values are populated at runtime from the modular configurations under `.pgmcp/config/artifacts/`. |
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry (e.g., `\"dto\"`, `\"design\"`, `\"worker\"`). The available values are populated at runtime from the modular configurations under `.pgmcp/templates/config/`. |
 | `name` | `str` | **Yes** | Artifact name — PascalCase for code, kebab-case for docs |
 | `output_path` | `str` | No | Explicit output path. **Optional** — auto-resolved by ArtifactManager via `project_structure.yaml`. Provide only as override. Optional for ephemeral artifacts (`issue`, `tracking`, …) — when provided, artifact is written there instead of `.pgmcp/temp/`. |
 | `context` | `dict` | No | Template rendering context (varies by artifact type) — default: `{}` |
@@ -145,7 +145,7 @@ Return the JSON Schema for the `context` parameter of an artifact type. Use this
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available values are populated at runtime from `.pgmcp/config/artifacts/`. |
+| `artifact_type` | `str` | **Yes** | Artifact type ID from registry. The available values are populated at runtime from `.pgmcp/templates/config/`. |
 
 #### Returns (via MCP Resource Cache)
 
@@ -178,14 +178,14 @@ This eliminates trial-and-error context validation failures.
 ## Artifact Registry
 
 
-The unified artifact registry is defined by modular YAML configuration files under [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/).
+The unified artifact registry is defined by modular YAML configuration files under [.pgmcp/templates/config/](../../../../.pgmcp/templates/config/).
 
 
 ### Registry Structure
 
-The registry is loaded from individual `.yaml` files under `.pgmcp/config/artifacts/`. Each file defines at minimum: `type_id`, `name`, `description`, `template_path`, `file_extension`, `strict_validation`, and the `context_schema`.
+The registry is loaded from individual `.yaml` files under `.pgmcp/templates/config/`. Each file defines at minimum: `type_id`, `name`, `description`, `template_path`, `file_extension`, `strict_validation`, and the `context_schema`.
 
-**See:** [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/) for the configuration files.
+**See:** [.pgmcp/templates/config/](../../../../.pgmcp/templates/config/) for the configuration files.
 
 ### Supported Artifact Types
 
@@ -257,7 +257,7 @@ Concrete templates extend the appropriate tier 2 base (`{% extends %}`) and impo
 
 ### Context Variables
 
-Each artifact type defines its required and optional context fields in the declarative `context_schema` under `.pgmcp/config/artifacts/<type>.yaml`. Use `scaffold_schema(artifact_type=\"<type>\")` to retrieve the full JSON Schema before scaffolding.
+Each artifact type defines its required and optional context fields in the declarative `context_schema` under `.pgmcp/templates/config/<type>.yaml`. Use `scaffold_schema(artifact_type=\"<type>\")` to retrieve the full JSON Schema before scaffolding.
 
 ```json
 {
@@ -366,11 +366,11 @@ Tier information is stored in the modular configurations and `template_registry.
 
 ## Configuration
 
-### .pgmcp/config/artifacts/
+### .pgmcp/templates/config/
 
 Complete modular artifact registry with template mappings, context schemas, and tier information.
 
-**See:** [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/) for the configuration files.
+**See:** [.pgmcp/templates/config/](../../../../.pgmcp/templates/config/) for the configuration files.
 
 ---
 
@@ -491,7 +491,7 @@ When templates are updated:
 - [README.md](README.md) — MCP Tools navigation index
 - [editing.md](editing.md) — safe_edit_file for manual edits
 - [quality.md](quality.md) — validate_template for conformance checking
-- [.pgmcp/config/artifacts/](../../../../.pgmcp/config/artifacts/) — Modular configuration directory
+- [.pgmcp/templates/config/](../../../../.pgmcp/templates/config/) — Modular configuration directory
 - [.pgmcp/config/project_structure.yaml](../../../../.pgmcp/config/project_structure.yaml) — Directory resolution
 - [.pgmcp/config/scaffold_metadata.yaml](../../../../.pgmcp/config/scaffold_metadata.yaml) — SCAFFOLD header specs
 - [.pgmcp/templates/](../../../.pgmcp/templates/) — Template library

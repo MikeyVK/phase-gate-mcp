@@ -43,7 +43,7 @@ The scaffolding pipeline has three layers:
 2. Create RenderContext schema in `mcp_server/schemas/render_contexts/<type>.py`
 3. Export both from `mcp_server/schemas/__init__.py`
 4. Add the new type to the artifact-to-Context registry in `mcp_server/managers/artifact_manager.py`
-5. Enable the type in `.pgmcp/config/artifacts.yaml`
+5. Enable the type in `.pgmcp/templates/config.yaml`
 6. Create the Jinja2 template in `.pgmcp/templates/concrete/<type>.<ext>.jinja2`
 
 > Steps 1–4 require Python source code changes.

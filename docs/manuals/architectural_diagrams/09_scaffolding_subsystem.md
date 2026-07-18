@@ -150,7 +150,7 @@ detect drift and preserve `created` timestamps.
 | ID | Severity | Description |
 |----|----------|-------------|
 | SC-1 | Medium | `ArtifactManager` instantiates the scaffolding classes directly rather than receiving them via DI, making unit testing harder |
-| SC-2 | Low | No public API for listing available artifact types; callers must read `.pgmcp/config/artifacts.yaml` directly |
+| SC-2 | Low | No public API for listing available artifact types; callers must read `.pgmcp/templates/config.yaml` directly |
 | SC-3 | Low | `generic.py` scaffolder acts as catch-all but has no strict schema — context errors surface only at render time |
 
 ---

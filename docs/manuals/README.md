@@ -34,7 +34,7 @@ This directory links the MCP server architecture and operational guidance around
 
 ## Standardized Development
 
-Use `scaffold_artifact` to generate code and documentation artifacts from the artifact registry in `.pgmcp/config/artifacts.yaml`.
+Use `scaffold_artifact` to generate code and documentation artifacts from the artifact registry in `.pgmcp/templates/config.yaml`.
 
 | Artifact Type | Example Usage |
 | :--- | :--- |
