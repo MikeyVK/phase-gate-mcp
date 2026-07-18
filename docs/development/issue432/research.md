@@ -58,6 +58,14 @@ No separate `--stdio` flag is needed because no CLI/CI consumers rely on the non
 
 <!-- Link definitions -->
 [related-1]: ../issue429/deferred_work_notice.md
+## Deferred Work
+
+To prevent scope creep, the following items are explicitly deferred and must be picked up by the `@co` agent during the Documentation/Ready phase for assignment to a new feature/tech-debt issue:
+
+1. **Workspace Version Tracking**: Implement a mechanism during `pgmcp --init` to record the initialized wheel version in the workspace (e.g., in `.pgmcp/state.json`). This will enable the CLI to detect mismatches gracefully and provide targeted upgrade instructions.
+2. **Upgrade Tooling**: The actual implementation of a `pgmcp --upgrade` command and associated migration scripts is deferred.
+3. **Architectural Purity of Schema Versions**: Refactor the hardcoded `version: Literal["1.0.0"]` fields in the Pydantic schemas. Hardcoding these version strings in Python files violates the "Config-First" architectural principle (Principle 3: "never as string literals in Python"). The expected versions should be resolved centrally or via configuration.
+
 ---
 
 ## Version History
