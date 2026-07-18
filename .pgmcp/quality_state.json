@@ -1,4 +1,23 @@
 {
   "baseline_sha": "b57a2f3cf0f4e22cba5f62ac92ea04fff6d20bd7",
-  "failed_files": []
+  "failed_files": [
+    "mcp_server/bootstrap.py",
+    "mcp_server/cli.py",
+    "mcp_server/config/loader.py",
+    "mcp_server/config/schemas/artifact_registry_config.py",
+    "mcp_server/managers/artifact_manager.py",
+    "mcp_server/utils/template_parser.py",
+    "tests/mcp_server/fixtures/artifact_test_harness.py",
+    "tests/mcp_server/integration/test_concrete_templates.py",
+    "tests/mcp_server/integration/test_smoke_all_types.py",
+    "tests/mcp_server/integration/test_template_missing_e2e.py",
+    "tests/mcp_server/test_support.py",
+    "tests/mcp_server/unit/config/test_artifacts_type_field.py",
+    "tests/mcp_server/unit/config/test_modular_loader.py",
+    "tests/mcp_server/unit/managers/test_artifact_manager.py",
+    "tests/mcp_server/unit/managers/test_typescript_dto_scaffold.py",
+    "tests/mcp_server/unit/test_cli.py",
+    "tests/mcp_server/unit/tools/test_cycle_tools.py",
+    "tests/mcp_server/unit/utils/test_template_parser.py"
+  ]
 }

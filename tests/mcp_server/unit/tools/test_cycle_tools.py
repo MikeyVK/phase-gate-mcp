@@ -42,13 +42,7 @@ from tests.mcp_server.test_support import (
 from mcp_server.core.tool_factory import ToolFactory
 
 
-@pytest.fixture(autouse=True)
-def mock_artifact_manager_template_validation() -> Generator[None, None, None]:
-    with patch(
-        "mcp_server.managers.artifact_manager.ArtifactManager._validate_template_versions",
-        return_value=None,
-    ):
-        yield
+
 
 
 def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
