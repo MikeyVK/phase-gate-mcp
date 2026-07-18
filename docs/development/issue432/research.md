@@ -16,13 +16,12 @@ Furthermore, the `ConfigError` that triggers this crash is directly caused by ha
 
 ## Research Goals
 
-- Identify root cause of hard crashes on config errors
-- Determine architectural constraints for fixing the initialization sequence
-- Propose a strategy for graceful error reporting via MCP protocol
+1. Analyze the current startup sequence in `cli.py` and `server.py` to trace where `ConfigLoader` crashes bubble up.
+2. Verify if the `mcp_server` (wheel) version plays any actual role in the domain data structures or if it's purely informational.
+3. Assess the Pydantic schemas (e.g., `ArtifactRegistryConfig`) to verify the hardcoded `Literal["1.0.0"]` versions and their architectural implications.
+4. Separate the concerns between system-level OS errors and domain-level configuration errors.
 
----
-
-## Background
+## Root Cause Candidates
 
 This issue was originally discovered during the implementation of #429 and deferred for separate handling. The server uses `ConfigLoader` which raises `ConfigError` or `FileNotFoundError` on startup for invalid configurations or template mismatches. This correctly enforces the architectural 'Fail-Fast' principle at the domain layer. However, in `cli.py`, this exception is unhandled and causes a non-zero exit code process crash, terminating the `stdio` connection used by the MCP protocol. Because MCP relies on JSON-RPC over `stdio`, the agent experiences an unexpected EOF, perceives the tools as 'dead', and presents an unrecoverable initialization failure to the user.
 
@@ -37,12 +36,19 @@ This issue was originally discovered during the implementation of #429 and defer
 
 ---
 
+## Blast Radius & Boundaries
+
+1. **Pydantic Schema Files (16 files)**: The removal of `Literal["1.0.0"]` impacts exactly 16 configuration schemas in `mcp_server/config/schemas/` (e.g. `artifact_registry_config.py`, `contracts_config.py`, `workflows.py`, etc.). This means the refactor will touch the core definitions of all domain models.
+2. **ConfigLoader (Tests & Logic)**: Changing how versions are validated will impact `mcp_server/config/loader.py` and potentially dozens of unit tests (e.g., `tests/mcp_server/unit/config/`) that currently expect validation failures for version strings other than `"1.0.0"`.
+3. **CLI Boundary (`cli.py`)**: Modifying the server initialization entrypoint to catch `ConfigError` and boot a Degraded Server affects the integration tests that might currently assert non-zero exit codes. The boundary behavior changes from "crash and burn" to "connect and explain".
+4. **Agent Client Compatibility**: The MCP agent (consumer of `pgmcp`) strongly benefits from a stable `stdio` connection. Falling back to a degraded server rather than crashing explicitly supports the agent's need to report status to the user.
+
 ## Approved Strategy
 
 Clean break strategy with distinct handling paths:
 1. **Architectural Purity & Version Validation**: Refactor the hardcoded `version: Literal["1.0.0"]` fields out of the Pydantic schemas. The expected version must be resolved centrally or via configuration, adhering to the "Config-First" principle, as this hardcoding is directly responsible for triggering the mismatch crash.
 2. **Template/Artifact Version Mismatches**: Decouple these from the global server bootstrap validation. The server must initialize normally even if templates mismatch. The mismatch must be handled locally by the scaffolding tools (e.g., returning a validation error when the specific tool is invoked).
-3. **True Server-Related Config Errors**: Modify the CLI entrypoint to catch domain-level server `ConfigError`s. Translate these gracefully into an MCP JSON-RPC error response (or Degraded Server) so the agent UX is preserved.
+3. **True Server-Related Config Errors (Degraded Server Pattern)**: Modify the CLI entrypoint to catch domain-level server `ConfigError`s. Instead of exiting the process, the CLI will instantiate a **Degraded Server**. This minimal MCP server successfully accepts the agent's `initialize` handshake but registers only a single tool (e.g. `get_startup_error`). This allows the agent to gracefully read the error and explain it to the user without losing its connection.
 4. **Infrastructure Errors**: True server infrastructure errors (e.g., failing to bind, OS faults) will continue to fail fast.
 No separate `--stdio` flag is needed because no CLI/CI consumers rely on the non-zero exit code.
 
