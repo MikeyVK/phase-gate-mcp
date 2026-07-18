@@ -22,7 +22,7 @@ Vulnerabilities in the MCP Server's startup sequence cause hard crashes on confi
 
 ## Background
 
-The server uses `ConfigLoader` which raises `ConfigError` or `FileNotFoundError` on startup for invalid configurations or template mismatches. This correctly enforces the architectural 'Fail-Fast' principle at the domain layer. However, in `cli.py`, this exception is unhandled and causes a non-zero exit code process crash, terminating the `stdio` connection used by the MCP protocol. Because MCP relies on JSON-RPC over `stdio`, the agent experiences an unexpected EOF, perceives the tools as 'dead', and presents an unrecoverable initialization failure to the user.
+This issue was originally discovered during the implementation of #429 and deferred for separate handling. The server uses `ConfigLoader` which raises `ConfigError` or `FileNotFoundError` on startup for invalid configurations or template mismatches. This correctly enforces the architectural 'Fail-Fast' principle at the domain layer. However, in `cli.py`, this exception is unhandled and causes a non-zero exit code process crash, terminating the `stdio` connection used by the MCP protocol. Because MCP relies on JSON-RPC over `stdio`, the agent experiences an unexpected EOF, perceives the tools as 'dead', and presents an unrecoverable initialization failure to the user.
 
 ---
 
@@ -52,7 +52,12 @@ No separate `--stdio` flag is needed because no CLI/CI consumers rely on the non
 3. True infrastructure faults continue to fail-fast.
 
 ## Related Documentation
-None
+
+- **[docs/development/issue429/deferred_work_notice.md][related-1]**
+- **Issue #429**
+
+<!-- Link definitions -->
+[related-1]: ../issue429/deferred_work_notice.md
 ---
 
 ## Version History
