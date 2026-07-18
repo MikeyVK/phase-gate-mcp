@@ -56,3 +56,4 @@ The refactor successfully relocates configuration loading, bundles templates wit
 
 - **Caveat:** Legacy environments or sub-projects upgrading to this release will experience a clean-break failure on boot if their artifacts are not migrated to `templates/config/`.
 - **Follow-up:** The `pgmcp --upgrade` logic will need to handle this directory restructure smoothly for live end-users when v2.0 is fully released.
+- **Deferred Work:** Server crash vulnerabilities discovered during this issue (such as the chicken-and-egg startup crash on config validation) have been documented in [deferred_work_notice.md](file:///c:/temp/pgmcp/docs/development/issue349/deferred_work_notice.md) and deferred to a new feature issue to prevent scope creep.
