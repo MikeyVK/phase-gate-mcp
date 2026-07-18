@@ -188,6 +188,9 @@ Adding a new artifact type is fully declarative. **No Python source code changes
 | Code (dto, worker, tool, service, typescript_dto, ...) | PascalCase | `OrderDTO`, `ProcessOrderWorker` |
 | Document (design, architecture, research, ...) | kebab-case | `oauth-design`, `worker-pattern-architecture` |
 
+## Strict Version Pairing
+Templates and their configurations are strictly paired using Semantic Versioning. Every Jinja2 template MUST include a header like `{#- Version: X.Y.Z -#}` that exactly matches the `template_version` specified in its corresponding YAML configuration. A mismatch in the major version will cause a strict configuration error at startup.
+
 ---
 
 ## Related Documentation
@@ -204,10 +207,6 @@ Adding a new artifact type is fully declarative. **No Python source code changes
 [source]: ../../mcp_server/tools/scaffold_artifact.py
 [tests]: ../../tests/mcp_server/unit/config/test_modular_loader.py
 
-## Strict Version Pairing
-Templates and their configurations are strictly paired using Semantic Versioning. Every Jinja2 template MUST include a header like `{#- Version: X.Y.Z -#}` that exactly matches the `template_version` specified in its corresponding YAML configuration. A mismatch in the major version will cause a strict configuration error at startup.
-
----
 
 ## Version History
 | Version | Date | Author | Changes |
