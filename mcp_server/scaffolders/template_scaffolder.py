@@ -32,6 +32,7 @@ from mcp_server.scaffolders.base_scaffolder import BaseScaffolder
 from mcp_server.scaffolders.scaffold_result import ScaffoldResult
 from mcp_server.scaffolding.renderer import JinjaRenderer
 from mcp_server.scaffolding.template_introspector import introspect_template_with_inheritance
+from mcp_server.scaffolding.version_hash import extract_template_version
 from mcp_server.schemas import ArtifactRegistryConfig
 
 # Project modules
@@ -110,14 +111,7 @@ class TemplateScaffolder(BaseScaffolder):
         # Validate template version against expected version from registry (delayed validation)
         # Only validate when template_path matches the official registry template_path
         if isinstance(artifact.template_version, str) and template_path == artifact.template_path:
-            from mcp_server.validation.template_analyzer import TemplateAnalyzer  # noqa: PLC0415
-
-            analyzer = TemplateAnalyzer(template_root)
-            try:
-                metadata = analyzer.extract_metadata(template_root / template_path)
-                actual_version = metadata.get("version") or "1.0.0"
-            except ValueError:
-                actual_version = "1.0.0"
+            actual_version = extract_template_version(template_root / template_path)
 
             if actual_version != artifact.template_version:
                 raise ValidationError(
@@ -196,14 +190,7 @@ class TemplateScaffolder(BaseScaffolder):
             template_root = Path(loader.searchpath[0])
             is_valid_version = isinstance(artifact.template_version, str)
             if is_valid_version and template_path == artifact.template_path:
-                from mcp_server.validation.template_analyzer import TemplateAnalyzer  # noqa: PLC0415
-
-                analyzer = TemplateAnalyzer(template_root)
-                try:
-                    metadata = analyzer.extract_metadata(template_root / template_path)
-                    actual_version = metadata.get("version") or "1.0.0"
-                except ValueError:
-                    actual_version = "1.0.0"
+                actual_version = extract_template_version(template_root / template_path)
 
                 if actual_version != artifact.template_version:
                     raise ValidationError(
