@@ -10,7 +10,7 @@ from tests.mcp_server.test_support import get_default_server_root
 """
 
 from collections.abc import Awaitable, Callable
-from typing import Any, Generator
+from typing import Any
 from pathlib import Path
 from shutil import copytree
 from unittest.mock import MagicMock, patch
@@ -40,9 +40,6 @@ from tests.mcp_server.test_support import (
     make_test_server,
 )
 from mcp_server.core.tool_factory import ToolFactory
-
-
-
 
 
 def _get_test_bootstrap_context(settings: Any) -> tuple[Any, Path]:
