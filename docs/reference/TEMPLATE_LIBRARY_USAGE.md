@@ -202,19 +202,17 @@ Adding a new artifact type is fully declarative. **No Python source code changes
 [related-3]: template_metadata_format.md
 [related-4]: tools/scaffolding.md
 [source]: ../../mcp_server/tools/scaffold_artifact.py
-```json
-{
-  "artifact_type": "typescript_dto",
-  "name": "OrderDTO",
-  "context": {
-    "fields": {
-      "id": "string",
-      "amount": "number",
-      "status": "string"
-    }
-  }
-}
-```
+[tests]: ../../tests/mcp_server/unit/config/test_modular_loader.py
+
+---
+
+## Version History
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 3.0 | 2026-07-16 | Agent | Updated for modular YAML configuration loading, dynamic validation model, and added TypeScript DTO examples. Removed Python context class dependencies. |
+| 2.1 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
+| 2.0 | 2026-06-04 | Agent | Full rewrite: three-layer model; real API and context examples; 6-step contributor guide; removed legacy paths and branding (#286) |
+| 1.0 | 2026-02-07 | Agent | Initial draft |
 
 ## Strict Version Pairing
 Templates and their configurations are strictly paired using Semantic Versioning. Every Jinja2 template MUST include a header like `{#- Version: X.Y.Z -#}` that exactly matches the `template_version` specified in its corresponding YAML configuration. A mismatch in the major version will cause a strict configuration error at startup.
