@@ -110,9 +110,15 @@ class TemplateScaffolder(BaseScaffolder):
         # Validate template version against expected version from registry (delayed validation)
         # Only validate when template_path matches the official registry template_path
         if artifact.template_version and template_path == artifact.template_path:
-            from mcp_server.scaffolding.version_hash import extract_template_version  # noqa: PLC0415
+            from mcp_server.validation.template_analyzer import TemplateAnalyzer  # noqa: PLC0415
 
-            actual_version = extract_template_version(template_root / template_path)
+            analyzer = TemplateAnalyzer(template_root)
+            try:
+                metadata = analyzer.extract_metadata(template_root / template_path)
+                actual_version = metadata.get("version") or "1.0.0"
+            except ValueError:
+                actual_version = "1.0.0"
+
             if actual_version != artifact.template_version:
                 raise ValidationError(
                     f"Template version mismatch for {artifact_type}: "
