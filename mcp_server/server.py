@@ -251,18 +251,20 @@ class DegradedMCPServer(MCPServer):
     """Degraded MCP server initialized when a config error occurs."""
 
     def __init__(self, settings: Settings, reason: str) -> None:
-        """Initialize the degraded server with only the health check tool."""
+        """Initialize the degraded server with health check and restart server tools."""
         from mcp_server.schemas.tool_outputs import HealthStatus  # noqa: PLC0415
         from mcp_server.tools.health_tools import HealthCheckTool  # noqa: PLC0415
+        from mcp_server.tools.admin_tools import RestartServerTool  # noqa: PLC0415
 
         health_tool = HealthCheckTool(
             override_status=HealthStatus.UNHEALTHY,
             override_reason=reason,
         )
 
+        restart_tool = RestartServerTool(server_root=settings.server.resolved_server_root)
         super().__init__(
             settings=settings,
-            tools=[health_tool],
+            tools=[health_tool, restart_tool],
             resources=[],
             presenter=None,
             publisher=None,

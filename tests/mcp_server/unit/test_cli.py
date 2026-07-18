@@ -251,4 +251,3 @@ def test_degraded_mcp_server_exposes_tools(tmp_path: Path) -> None:
     tool_names = [t.name for t in server.tools]
     assert "health_check" in tool_names
     assert "restart_server" in tool_names
-
