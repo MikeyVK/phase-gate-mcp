@@ -1,8 +1,8 @@
 # mcp_server/scaffolders/template_scaffolder.py
 from __future__ import annotations
 
+
 """
-TemplateScaffolder - Unified template-based artifact scaffolding.
 
 Single scaffolder implementation that replaces 9 separate scaffolder classes.
 Uses JinjaRenderer with FileSystemLoader for safe template loading.
@@ -189,6 +189,27 @@ class TemplateScaffolder(BaseScaffolder):
 
         if not template_path:
             raise ValidationError(f"No template configured for artifact type: {artifact_type}")
+        # Always validate template version against expected version (delayed validation)
+        # Even if skip_validation is True (since Pydantic does not validate templates)
+        loader = self._renderer.env.loader
+        if loader is not None and hasattr(loader, "searchpath"):
+            template_root = Path(loader.searchpath[0])
+            is_valid_version = isinstance(artifact.template_version, str)
+            if is_valid_version and template_path == artifact.template_path:
+                from mcp_server.validation.template_analyzer import TemplateAnalyzer  # noqa: PLC0415
+
+                analyzer = TemplateAnalyzer(template_root)
+                try:
+                    metadata = analyzer.extract_metadata(template_root / template_path)
+                    actual_version = metadata.get("version") or "1.0.0"
+                except ValueError:
+                    actual_version = "1.0.0"
+
+                if actual_version != artifact.template_version:
+                    raise ValidationError(
+                        f"Template version mismatch for {artifact_type}: "
+                        f"expected {artifact.template_version}, found {actual_version}"
+                    )
 
         # Render template via JinjaRenderer (safe FileSystemLoader)
         # Add artifact_type to render context (needed by Tier 0 SCAFFOLD block)
