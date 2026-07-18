@@ -45,6 +45,27 @@ class TestHealthAndAdminTools:
         assert result.status == "healthy"
 
     @pytest.mark.asyncio
+    async def test_health_check_tool_with_injected_override(self) -> None:
+        """HealthCheckTool should execute and return unhealthy status and reason when overridden."""
+        from mcp_server.core.operation_notes import NoteContext  # noqa: PLC0415
+        from mcp_server.schemas.tool_outputs import HealthCheckOutput, HealthStatus  # noqa: PLC0415
+        from mcp_server.tools.health_tools import HealthCheckInput  # noqa: PLC0415
+
+        tool = HealthCheckTool(
+            override_status=HealthStatus.UNHEALTHY,
+            override_reason="Database connection failed",
+        )
+        context = NoteContext()
+        params = HealthCheckInput()
+
+        result = await tool.execute(params, context)
+
+        assert isinstance(result, HealthCheckOutput)
+        assert result.success
+        assert result.status == HealthStatus.UNHEALTHY
+        assert result.reason == "Database connection failed"
+
+    @pytest.mark.asyncio
     async def test_restart_server_tool_returns_dto(self, tmp_path: Path) -> None:
         """RestartServerTool should execute and return RestartServerOutput."""
         from mcp_server.core.operation_notes import NoteContext  # noqa: PLC0415

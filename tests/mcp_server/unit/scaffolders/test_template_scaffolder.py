@@ -17,6 +17,7 @@ Tests unified template-based scaffolding via public API only.
 
 from collections.abc import Iterator
 from pathlib import Path
+from unittest.mock import patch
 
 # Third-party
 import pytest
@@ -146,6 +147,49 @@ class TestValidate:
         )
 
         assert result is True
+
+    def test_validate_fails_when_template_version_mismatch(
+        self, scaffolder: TemplateScaffolder
+    ) -> None:
+        """Validate raises ValidationError when template version mismatches."""
+        artifact = scaffolder.registry.get_artifact("dto")
+        old_version = artifact.template_version
+        try:
+            object.__setattr__(artifact, "template_version", "9.9.9")
+            with pytest.raises(ValidationError) as exc_info:
+                scaffolder.validate(
+                    artifact_type="dto",
+                    name="TestDTO",
+                    description="Test DTO",
+                    frozen=True,
+                    examples=[{"id": "test-1"}],
+                    fields=[{"name": "id", "type": "str", "description": "ID"}],
+                    dependencies=["pydantic"],
+                    responsibilities=["Validation"],
+                    output_path="src/dtos/TestDTO.py",
+                )
+            assert "Template version mismatch" in str(exc_info.value)
+            assert "expected 9.9.9" in str(exc_info.value)
+        finally:
+            object.__setattr__(artifact, "template_version", old_version)
+
+    def test_validate_does_not_instantiate_template_analyzer(
+        self, scaffolder: TemplateScaffolder
+    ) -> None:
+        """Validate should use extract_template_version and not TemplateAnalyzer."""
+        with patch("mcp_server.validation.template_analyzer.TemplateAnalyzer") as mock_analyzer:
+            scaffolder.validate(
+                artifact_type="dto",
+                name="TestDTO",
+                description="Test DTO",
+                frozen=True,
+                examples=[{"id": "test-1"}],
+                fields=[{"name": "id", "type": "str", "description": "ID"}],
+                dependencies=["pydantic"],
+                responsibilities=["Validation"],
+                output_path="src/dtos/TestDTO.py",
+            )
+            mock_analyzer.assert_not_called()
 
     def test_validate_fails_when_required_field_missing(
         self, scaffolder: TemplateScaffolder

@@ -378,21 +378,30 @@ sequenceDiagram
     participant CL as ConfigLoader
     participant CV as ConfigValidator
     participant Server as MCPServer
+    participant DegradedServer as DegradedMCPServer
 
     CLI->>BS: ServerBootstrapper(settings)
     BS->>BS: 1. setup_logging()
     BS->>BS: 2. init TemplateRegistry
-    BS->>CL: 3. load 15 YAML configs
-    CL-->>BS: raw config objects
-    BS->>CV: 4. cross-validate configs
-    CV-->>BS: validated
-    BS->>BS: 5. build ConfigLayer (frozen)
-    BS->>BS: 6. build ManagerGraph (frozen)
-    BS->>BS: 7. build Tools + Resources
-    BS->>Server: MCPServer(settings, tools, resources, presenter, publisher)
-    Server->>Server: setup_handlers()
-    Server->>Server: asyncio.run(server.run())
+    alt Load/Validate Success
+        BS->>CL: 3. load 15 YAML configs
+        CL-->>BS: raw config objects
+        BS->>CV: 4. cross-validate configs
+        CV-->>BS: validated
+        BS->>BS: 5. build ConfigLayer (frozen)
+        BS->>BS: 6. build ManagerGraph (frozen)
+        BS->>BS: 7. build Tools + Resources
+        BS->>Server: MCPServer(settings, tools, resources, presenter, publisher)
+        Server->>Server: setup_handlers()
+        Server->>Server: asyncio.run(server.run())
+    else ConfigError or FileNotFoundError
+        CLI->>DegradedServer: DegradedMCPServer(settings, reason)
+        DegradedServer->>DegradedServer: Register only health_check
+        DegradedServer->>DegradedServer: asyncio.run(server.run())
+    end
 ```
+
+> **Graceful Degradation:** If `ConfigError` or `FileNotFoundError` is raised during bootstrap, the CLI catches the exception and launches `DegradedMCPServer`. This registers only `health_check` to report the diagnostic reason to the client and keeps the transport connection open.
 
 ### 5.3 ConfigLayer (Frozen Dataclass)
 

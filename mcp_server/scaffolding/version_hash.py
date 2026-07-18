@@ -37,24 +37,23 @@ def extract_template_version(template_path: Path) -> str:
         metadata_pattern = r"\{#-?\s*TEMPLATE_METADATA:(.*?)-?#\}"
         match = re.search(metadata_pattern, content, re.DOTALL)
 
-        if not match:
+        actual_version = None
+        if match:
+            metadata_yaml = match.group(1)
+            # Match only top-level version (2 spaces indentation)
+            version_pattern = r'(?m)^\s{2}version:\s*["\']?([0-9]+(?:\.[0-9]+)*)["\']?'
+            version_match = re.search(version_pattern, metadata_yaml)
+            if version_match:
+                actual_version = version_match.group(1)
+
+        if not actual_version:
             # Fallback: try simple {#- Version: X.X.X -#} format
-            version_pattern = r"\{#-\s*Version:\s*([0-9]+\.[0-9]+\.[0-9]+)\s*-?#\}"
+            version_pattern = r"(?i)\{#-\s*Version:\s*([0-9]+(?:\.[0-9]+)*)\s*-?#\}"
             version_match = re.search(version_pattern, content)
             if version_match:
-                return version_match.group(1)
-            return "1.0.0"  # Default fallback
+                actual_version = version_match.group(1)
 
-        metadata_yaml = match.group(1)
-
-        # Extract version field from YAML
-        version_pattern = r'version:\s*["\']?([0-9]+\.[0-9]+\.[0-9]+)["\']?'
-        version_match = re.search(version_pattern, metadata_yaml)
-
-        if version_match:
-            return version_match.group(1)
-
-        return "1.0.0"  # Default fallback
+        return actual_version or "1.0.0"
 
     except (OSError, UnicodeDecodeError, re.error):
         return "1.0.0"  # Fallback on any error

@@ -45,6 +45,7 @@ class HealthStatus(StrEnum):
 
 class HealthCheckOutput(BaseToolOutput):
     status: HealthStatus = HealthStatus.HEALTHY
+    reason: str | None = None
     version: str
     pid: int
     platform: str

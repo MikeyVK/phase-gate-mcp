@@ -137,8 +137,13 @@ mcp_server/config/schemas/
 
 **Module:** `mcp_server/config/validator.py`
 
-Called after all configs are loaded, before any manager is constructed. Raises `ConfigError`
-on any violation — server fails to start.
+Called after all configs are loaded, before any manager is constructed. Raises `ConfigError` on any violation.
+
+**Degraded Startup Fallback:**
+If `ConfigValidator.validate_startup()` raises a `ConfigError` (or if a `FileNotFoundError` occurs during loading), the CLI catches the exception and boots the server in a **degraded mode** (`DegradedMCPServer`) exposing only the `health_check` tool. True infrastructure errors still crash the process.
+
+**Decoupled Template Validation:**
+Template version validation is decoupled from global bootstrap and deferred to `TemplateScaffolder` execution (e.g. during `scaffold_artifact` or `validate_template` tool calls) to prevent individual template errors from blocking server startup.
 
 ```mermaid
 flowchart LR

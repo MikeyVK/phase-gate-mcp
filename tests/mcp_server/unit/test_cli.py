@@ -195,3 +195,38 @@ def test_cli_init_flat_copy(tmp_path: Path) -> None:
         ignored = ignore_func(str(workspace), ["workflows.yaml", "template_registry.json"])
         assert "template_registry.json" in ignored
         assert "workflows.yaml" not in ignored
+
+
+def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
+    """Test that CLI boots DegradedMCPServer when ConfigError is raised."""
+    from unittest.mock import AsyncMock  # noqa: PLC0415
+    from mcp_server.core.exceptions import ConfigError  # noqa: PLC0415
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    server_root = workspace / ".pgmcp"
+    server_root.mkdir()
+
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(workspace),
+            server_root_dir=".pgmcp",
+        )
+    )
+
+    with (
+        patch("sys.argv", ["mcp-server"]),
+        patch("mcp_server.bootstrap.ServerBootstrapper.bootstrap") as mock_bootstrap,
+        patch("mcp_server.cli.Settings.from_env", return_value=settings),
+    ):
+        mock_bootstrap.side_effect = ConfigError("Corrupt artifacts.yaml config")
+
+        # Patch DegradedMCPServer class
+        with patch("mcp_server.server.DegradedMCPServer") as mock_degraded_server:
+            mock_server_instance = mock_degraded_server.return_value
+            mock_server_instance.run = AsyncMock()
+
+            main(settings)
+
+            mock_degraded_server.assert_called_once_with(settings, "Corrupt artifacts.yaml config")
+            mock_server_instance.run.assert_called_once()

@@ -1,8 +1,8 @@
 # mcp_server/scaffolders/template_scaffolder.py
 from __future__ import annotations
 
+
 """
-TemplateScaffolder - Unified template-based artifact scaffolding.
 
 Single scaffolder implementation that replaces 9 separate scaffolder classes.
 Uses JinjaRenderer with FileSystemLoader for safe template loading.
@@ -32,6 +32,7 @@ from mcp_server.scaffolders.base_scaffolder import BaseScaffolder
 from mcp_server.scaffolders.scaffold_result import ScaffoldResult
 from mcp_server.scaffolding.renderer import JinjaRenderer
 from mcp_server.scaffolding.template_introspector import introspect_template_with_inheritance
+from mcp_server.scaffolding.version_hash import extract_template_version
 from mcp_server.schemas import ArtifactRegistryConfig
 
 # Project modules
@@ -95,8 +96,6 @@ class TemplateScaffolder(BaseScaffolder):
         if not template_path:
             raise ValidationError(f"No template configured for artifact type: {artifact_type}")
 
-        # Extract schema from template via inheritance-aware introspection (Task 2.1)
-        # This resolves the entire inheritance chain to detect ALL variables
         if self._renderer.env.loader is None:
             raise ValidationError(f"Template loader not configured for {artifact_type}")
 
@@ -108,6 +107,19 @@ class TemplateScaffolder(BaseScaffolder):
             )
 
         template_root = Path(loader.searchpath[0])
+
+        # Validate template version against expected version from registry (delayed validation)
+        # Only validate when template_path matches the official registry template_path
+        if isinstance(artifact.template_version, str) and template_path == artifact.template_path:
+            actual_version = extract_template_version(template_root / template_path)
+
+            if actual_version != artifact.template_version:
+                raise ValidationError(
+                    f"Template version mismatch for {artifact_type}: "
+                    f"expected {artifact.template_version}, found {actual_version}"
+                )
+        # Extract schema from template via inheritance-aware introspection (Task 2.1)
+        # This resolves the entire inheritance chain to detect ALL variables
         schema = introspect_template_with_inheritance(template_root, template_path)
 
         # Check required fields present
@@ -171,6 +183,20 @@ class TemplateScaffolder(BaseScaffolder):
 
         if not template_path:
             raise ValidationError(f"No template configured for artifact type: {artifact_type}")
+        # Always validate template version against expected version (delayed validation)
+        # Even if skip_validation is True (since Pydantic does not validate templates)
+        loader = self._renderer.env.loader
+        if loader is not None and hasattr(loader, "searchpath"):
+            template_root = Path(loader.searchpath[0])
+            is_valid_version = isinstance(artifact.template_version, str)
+            if is_valid_version and template_path == artifact.template_path:
+                actual_version = extract_template_version(template_root / template_path)
+
+                if actual_version != artifact.template_version:
+                    raise ValidationError(
+                        f"Template version mismatch for {artifact_type}: "
+                        f"expected {artifact.template_version}, found {actual_version}"
+                    )
 
         # Render template via JinjaRenderer (safe FileSystemLoader)
         # Add artifact_type to render context (needed by Tier 0 SCAFFOLD block)
