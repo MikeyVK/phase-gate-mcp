@@ -17,6 +17,7 @@ Tests unified template-based scaffolding via public API only.
 
 from collections.abc import Iterator
 from pathlib import Path
+from unittest.mock import patch
 
 # Third-party
 import pytest
@@ -176,8 +177,6 @@ class TestValidate:
         self, scaffolder: TemplateScaffolder
     ) -> None:
         """Validate should use extract_template_version and not TemplateAnalyzer."""
-        from unittest.mock import patch
-
         with patch("mcp_server.validation.template_analyzer.TemplateAnalyzer") as mock_analyzer:
             scaffolder.validate(
                 artifact_type="dto",
@@ -191,7 +190,6 @@ class TestValidate:
                 output_path="src/dtos/TestDTO.py",
             )
             mock_analyzer.assert_not_called()
-
 
     def test_validate_fails_when_required_field_missing(
         self, scaffolder: TemplateScaffolder
