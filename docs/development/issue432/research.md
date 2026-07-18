@@ -10,7 +10,9 @@
 
 ## Problem Statement
 
-Vulnerabilities in the MCP Server's startup sequence cause hard crashes on config validation errors. Crucially, the current sequence conflates actual server-related initialization issues with template vs. artifact (config) version mismatches. Template and artifact version mismatches have nothing to do with the server itself and only affect the template/artifact/scaffolding tools, yet they currently bring down the entire server and break the agent connection.
+Vulnerabilities in the MCP Server's startup sequence cause hard crashes on config validation errors. Crucially, the current sequence conflates actual server-related initialization issues with template vs. artifact (config) version mismatches. Template and artifact version mismatches have nothing to do with the server itself and only affect the template/artifact/scaffolding tools, yet they currently bring down the entire server and break the agent connection. 
+
+Furthermore, the `ConfigError` that triggers this crash is directly caused by hardcoded `version: Literal["1.0.0"]` fields inside the Pydantic schemas. This violates the "Config-First" architectural principle (Principle 3) and must be resolved as part of the core fix.
 
 ## Research Goals
 
@@ -38,9 +40,10 @@ This issue was originally discovered during the implementation of #429 and defer
 ## Approved Strategy
 
 Clean break strategy with distinct handling paths:
-1. **Template/Artifact Version Mismatches**: Decouple these from the global server bootstrap validation. The server must initialize normally even if templates mismatch. The mismatch must be handled locally by the scaffolding tools (e.g., returning a validation error when the specific tool is invoked).
-2. **True Server-Related Config Errors**: Modify the CLI entrypoint to catch domain-level server `ConfigError`s. Translate these gracefully into an MCP JSON-RPC error response (or Degraded Server) so the agent UX is preserved.
-3. **Infrastructure Errors**: True server infrastructure errors (e.g., failing to bind, OS faults) will continue to fail fast.
+1. **Architectural Purity & Version Validation**: Refactor the hardcoded `version: Literal["1.0.0"]` fields out of the Pydantic schemas. The expected version must be resolved centrally or via configuration, adhering to the "Config-First" principle, as this hardcoding is directly responsible for triggering the mismatch crash.
+2. **Template/Artifact Version Mismatches**: Decouple these from the global server bootstrap validation. The server must initialize normally even if templates mismatch. The mismatch must be handled locally by the scaffolding tools (e.g., returning a validation error when the specific tool is invoked).
+3. **True Server-Related Config Errors**: Modify the CLI entrypoint to catch domain-level server `ConfigError`s. Translate these gracefully into an MCP JSON-RPC error response (or Degraded Server) so the agent UX is preserved.
+4. **Infrastructure Errors**: True server infrastructure errors (e.g., failing to bind, OS faults) will continue to fail fast.
 No separate `--stdio` flag is needed because no CLI/CI consumers rely on the non-zero exit code.
 
 ---
@@ -62,9 +65,8 @@ No separate `--stdio` flag is needed because no CLI/CI consumers rely on the non
 
 To prevent scope creep, the following items are explicitly deferred and must be picked up by the `@co` agent during the Documentation/Ready phase for assignment to a new feature/tech-debt issue:
 
-1. **Workspace Version Tracking**: Implement a mechanism during `pgmcp --init` to record the initialized wheel version in the workspace (e.g., in `.pgmcp/state.json`). This will enable the CLI to detect mismatches gracefully and provide targeted upgrade instructions.
+1. **Workspace Version Tracking**: Implement a mechanism during `pgmcp --init` to record the initialized wheel version in the workspace (e.g., in a dedicated configuration file, **not** in `.pgmcp/state.json` which is strictly for branch state). This will enable the CLI to detect mismatches gracefully and provide targeted upgrade instructions.
 2. **Upgrade Tooling**: The actual implementation of a `pgmcp --upgrade` command and associated migration scripts is deferred.
-3. **Architectural Purity of Schema Versions**: Refactor the hardcoded `version: Literal["1.0.0"]` fields in the Pydantic schemas. Hardcoding these version strings in Python files violates the "Config-First" architectural principle (Principle 3: "never as string literals in Python"). The expected versions should be resolved centrally or via configuration.
 
 ---
 
