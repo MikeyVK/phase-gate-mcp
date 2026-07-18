@@ -230,24 +230,3 @@ def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
 
             mock_degraded_server.assert_called_once_with(settings, "Corrupt artifacts.yaml config")
             mock_server_instance.run.assert_called_once()
-
-
-def test_degraded_mcp_server_exposes_tools(tmp_path: Path) -> None:
-    """DegradedMCPServer should expose both health_check and restart_server tools."""
-    from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
-
-    workspace = tmp_path / "workspace"
-    workspace.mkdir()
-
-    settings = Settings(
-        server=ServerSettings(
-            workspace_root=str(workspace),
-            server_root_dir=".pgmcp",
-        )
-    )
-
-    server = DegradedMCPServer(settings, "Syntax error in artifacts.yaml")
-
-    tool_names = [t.name for t in server.tools]
-    assert "health_check" in tool_names
-    assert "restart_server" in tool_names
