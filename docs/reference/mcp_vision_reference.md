@@ -629,6 +629,9 @@ class WorkflowConfig:
 
 **Known server-side limitation (Issue #271 — F-271-B)**: All `.pgmcp/config/` files are loaded **once at server startup** and cached in memory. Any change to `contracts.yaml`, `workflows.yaml`, or any other config file has **no effect until the server is restarted**. Use `restart_server()` after editing config files. This applies to phase order, exit gates, enforcement rules, and all other config-driven behaviour.
 
+> [!IMPORTANT]
+> If a configuration error or version mismatch is introduced during edits, the server boots into **degraded mode** (exposing only `health_check`). Since `restart_server()` is not registered in degraded mode, you must manually restart the server process (or IDE session) to reload the configuration after correcting the files.
+
 ---
 
 ## Design Patterns

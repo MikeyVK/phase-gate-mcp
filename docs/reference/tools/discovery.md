@@ -233,7 +233,7 @@ None.
 
 | Metric | Type | Description |
 |--------|------|-------------|
-| `status` | `str` | Overall status: `"healthy"`, `"degraded"`, `"unhealthy"` |
+| `status` | `str` | Overall status: `"healthy"`, `"unhealthy"` |
 | `uptime` | `int` | Server uptime in seconds |
 | `memory_usage_mb` | `float` | Current memory usage in megabytes |
 | `registered_tools` | `int` | Number of registered MCP tools |
@@ -248,6 +248,12 @@ None.
 - **Performance:** Minimal overhead (<10ms execution time)
 - **Use Case:** Debugging, CI/CD health checks, agent diagnostics
 
+#### Degraded Mode (Safe Mode)
+
+If the server encounters domain-level configuration errors during startup (e.g., syntax errors or version mismatches in `.pgmcp/config/`), it boots into a **degraded mode**:
+- Only the `health_check` tool is registered; all other tools are disabled.
+- The `status` field returns `"unhealthy"`.
+- The diagnostic error reason is populated in the `reason` field of the output.
 ---
 
 ### restart_server

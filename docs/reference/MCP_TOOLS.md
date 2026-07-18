@@ -187,8 +187,11 @@ Documentation search, work context aggregation, and server administration.
 |------|---------|------------|---------|
 | **SearchDocumentationTool** | Search docs semantically | `query`, `scope` (optional: all/architecture/coding_standards/development/reference/implementation) | Ranked results with file path, line number, snippet |
 | **GetWorkContextTool** | Get current work state | `none` | Orientation header with TODO reminder, phase instructions, optional hand-over template |
-| **HealthCheckTool** | Server health check | None | OK/ERROR |
-| **RestartServerTool** | Hot-reload server via proxy mechanism | `reason` | Confirmation |
+| **HealthCheckTool** | Server health check | None | OK/ERROR (Sole tool registered in degraded mode) |
+| **RestartServerTool** | Hot-reload server via proxy mechanism | `reason` | Confirmation (Unavailable in degraded mode) |
+
+> [!NOTE]
+> If a domain configuration error occurs during startup, the server runs in **degraded mode**. In this mode, only `HealthCheckTool` is available. `RestartServerTool` is excluded, requiring a manual restart of the server process after configuration fixes are applied.
 
 **Usage Example:**
 ```
