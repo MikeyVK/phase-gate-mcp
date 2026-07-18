@@ -147,6 +147,9 @@ Create the concrete Jinja2 template under `.pgmcp/templates/concrete/my_artifact
 {%- extends "tier2_base_python.jinja2" -%}
 ```
 
+## Strict Version Pairing
+Configuration files loaded by the system must specify a `template_version`. The system centrally validates this version against the `{#- Version: X.Y.Z -#}` header in the corresponding Jinja2 template. A major version mismatch will trigger a strict fail-fast error, preventing invalid templating results.
+
 ---
 
 ## Version History
@@ -156,6 +159,3 @@ Create the concrete Jinja2 template under `.pgmcp/templates/concrete/my_artifact
 | 3.0 | 2026-07-16 | Agent | Complete rewrite: repurposed to Scaffolding Architecture Guide for Issue #349. Documented modular YAML config loader and dynamic validation model. |
 | 2.0 | 2026-06-26 | Agent | Refactored V2 scaffolding pipeline terminology to neutral schema-based naming |
 | 1.0 | 2026-02-18 | Agent | Initial draft |
-
-## Strict Version Pairing
-Configuration files loaded by the system must specify a `template_version`. The system centrally validates this version against the `{#- Version: X.Y.Z -#}` header in the corresponding Jinja2 template. A major version mismatch will trigger a strict fail-fast error, preventing invalid templating results.
