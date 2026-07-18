@@ -3,7 +3,7 @@
 # Bug #432 Research: Graceful Server Initialization
 
 **Status:** APPROVED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-07-18
 
 ---
@@ -12,7 +12,7 @@
 
 Vulnerabilities in the MCP Server's startup sequence cause hard crashes on config validation errors. Crucially, the current sequence conflates actual server-related initialization issues with template vs. artifact (config) version mismatches. Template and artifact version mismatches have nothing to do with the server itself and only affect the template/artifact/scaffolding tools, yet they currently bring down the entire server and break the agent connection. 
 
-Furthermore, the `ConfigError` that triggers this crash is directly caused by hardcoded `version: Literal["1.0.0"]` fields inside the Pydantic schemas. This violates the "Config-First" architectural principle (Principle 3) and must be resolved as part of the core fix.
+Furthermore, the `ConfigError` that triggers this crash is directly caused by hardcoded `version: Literal["1.0.0"]` fields inside the Pydantic schemas when they mismatch with disk configs. While initially considered an architectural violation, deeper analysis reveals these Literals act as structural type tags tightly coupled to the Python fields. Removing them would violate SRP and Schema Cohesion, meaning the fix must occur in the error handling layers (CLI and ArtifactManager) rather than by altering the schemas.
 
 ## Research Goals
 
@@ -38,15 +38,15 @@ This issue was originally discovered during the implementation of #429 and defer
 
 ## Blast Radius & Boundaries
 
-1. **Pydantic Schema Files (16 files)**: The removal of `Literal["1.0.0"]` impacts exactly 16 configuration schemas in `mcp_server/config/schemas/` (e.g. `artifact_registry_config.py`, `contracts_config.py`, `workflows.py`, etc.). This means the refactor will touch the core definitions of all domain models.
-2. **ConfigLoader (Tests & Logic)**: Changing how versions are validated will impact `mcp_server/config/loader.py` and potentially dozens of unit tests (e.g., `tests/mcp_server/unit/config/`) that currently expect validation failures for version strings other than `"1.0.0"`.
+1. **Pydantic Schema Files (16 files)**: Initially considered a risk, it is now decided that the `Literal["1.0.0"]` tags will **not** be removed. The blast radius for schema files is therefore zero.
+2. **ConfigLoader (Tests & Logic)**: Since schema versions remain untouched, `ConfigLoader` and its unit tests will remain unchanged. Validation continues to work as intended.
 3. **CLI Boundary (`cli.py`)**: Modifying the server initialization entrypoint to catch `ConfigError` and boot a Degraded Server affects the integration tests that might currently assert non-zero exit codes. The boundary behavior changes from "crash and burn" to "connect and explain".
 4. **Agent Client Compatibility**: The MCP agent (consumer of `pgmcp`) strongly benefits from a stable `stdio` connection. Falling back to a degraded server rather than crashing explicitly supports the agent's need to report status to the user.
 
 ## Approved Strategy
 
 Clean break strategy with distinct handling paths:
-1. **Architectural Purity & Version Validation**: Refactor the hardcoded `version: Literal["1.0.0"]` fields out of the Pydantic schemas. The expected version must be resolved centrally or via configuration, adhering to the "Config-First" principle, as this hardcoding is directly responsible for triggering the mismatch crash.
+1. **Architectural Purity & Version Validation**: Retain the `version: Literal["1.0.0"]` constraints in the Pydantic schemas. These act as necessary structural type tags. Removing them would push business logic into the loader, violating SRP and Cohesion.
 2. **Template/Artifact Version Mismatches**: Decouple these from the global server bootstrap validation. The server must initialize normally even if templates mismatch. The mismatch must be handled locally by the scaffolding tools (e.g., returning a validation error when the specific tool is invoked).
 3. **True Server-Related Config Errors (Degraded Server Pattern)**: Modify the CLI entrypoint to catch domain-level server `ConfigError`s. Instead of exiting the process, the CLI will instantiate a **Degraded Server**. This minimal MCP server successfully accepts the agent's `initialize` handshake but registers only a single tool (e.g. `get_startup_error`). This allows the agent to gracefully read the error and explain it to the user without losing its connection.
 4. **Infrastructure Errors**: True server infrastructure errors (e.g., failing to bind, OS faults) will continue to fail fast.
@@ -81,3 +81,4 @@ To prevent scope creep, the following items are explicitly deferred and must be 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-07-18 | Agent | Initial draft |
+| 1.1 | 2026-07-18 | Agent | Updated strategy: Retain Pydantic Literals |

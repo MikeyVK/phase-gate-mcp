@@ -2,7 +2,7 @@
   "branch": "bug/432-graceful-server-init",
   "issue_number": 432,
   "workflow_name": "bug",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -16,7 +16,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": null,
+  "skip_reason": "Herstel van ongeldige voorwaartse transitie door AI zonder authorisatie.",
   "issue_title": "Bug: Graceful Server Initialization and Config Validation",
   "parent_branch": "main",
   "created_at": "2026-07-18T17:38:05.310331+00:00",
@@ -25,6 +25,30 @@
       "from_phase": "research",
       "to_phase": "design",
       "timestamp": "2026-07-18T19:05:01.670340+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-07-18T20:02:45.916083+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "planning",
+      "to_phase": "design",
+      "timestamp": "2026-07-18T20:13:33.646102+00:00",
+      "human_approval": "true",
+      "forced": true,
+      "skip_reason": "Herstel van ongeldige voorwaartse transitie door AI zonder authorisatie."
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-07-18T20:19:02.284021+00:00",
       "human_approval": null,
       "forced": false,
       "skip_reason": null

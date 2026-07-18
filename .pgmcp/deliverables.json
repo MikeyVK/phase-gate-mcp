@@ -14,6 +14,58 @@
     ],
     "skip_reason": null,
     "parent_branch": "main",
-    "created_at": "2026-07-18T17:38:05.198960+00:00"
+    "created_at": "2026-07-18T17:38:05.198960+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 3,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C1_TEMPLATE_VALIDATION",
+            "deliverables": [
+              {
+                "id": "c1-scaffolder-update",
+                "description": "Update TemplateScaffolder.validate() to reject mismatched template versions"
+              },
+              {
+                "id": "c1-test-scaffolder",
+                "description": "Test for template version validation rejection"
+              }
+            ],
+            "exit_criteria": "TemplateScaffolder raise't expliciet een ValidationError bij een versie mismatch. Geen exception bubble up naar server boot (de MCP tool wrapper vangt dit af)."
+          },
+          {
+            "cycle_number": 2,
+            "name": "C2_HEALTHCHECK_INJECTION",
+            "deliverables": [
+              {
+                "id": "c2-health-tool-update",
+                "description": "Add override_status and override_reason to HealthCheckTool"
+              },
+              {
+                "id": "c2-test-health-tool",
+                "description": "Test for injected status and reason behavior"
+              }
+            ],
+            "exit_criteria": "Tool geeft UNHEALTHY + injected reason terug als resultaat."
+          },
+          {
+            "cycle_number": 3,
+            "name": "C3_CLI_DEGRADED_BOOT",
+            "deliverables": [
+              {
+                "id": "c3-cli-update",
+                "description": "Catch ConfigError and FileNotFoundError in cli.py and boot DegradedMCPServer"
+              },
+              {
+                "id": "c3-test-cli",
+                "description": "Test degraded boot sequence on invalid config"
+              }
+            ],
+            "exit_criteria": "Bij ConfigError of FileNotFoundError blijft het proces draaien in degraded modus. Enige tool beschikbaar in deze modus is health_check met de bijbehorende error."
+          }
+        ]
+      }
+    }
   }
 }
