@@ -2,7 +2,7 @@
   "branch": "bug/432-graceful-server-init",
   "issue_number": 432,
   "workflow_name": "bug",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -20,7 +20,16 @@
   "issue_title": "Bug: Graceful Server Initialization and Config Validation",
   "parent_branch": "main",
   "created_at": "2026-07-18T17:38:05.310331+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-18T19:05:01.670340+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
