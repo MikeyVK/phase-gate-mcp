@@ -1,9 +1,9 @@
 <!-- docs\development\issue432\validation.md -->
-<!-- template=validation_report version=fe38a66d created=2026-07-18T22:23Z updated=2026-07-18T22:25Z -->
+<!-- template=validation_report version=fe38a66d created=2026-07-18T22:23Z updated=2026-07-18T22:45Z -->
 # Validation Report - Bug #432 Graceful Server Initialization
 
 **Status:** APPROVED  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-07-19  
 **Validation Outcome:** PASS  
 **Issue:** #432  
@@ -25,7 +25,7 @@ This validation report verifies the implementation of Bug #432: "Graceful Server
 
 **Verdict:** **PASS**
 
-All planned deliverables have been fully implemented, verified via automated test suites (2715 passing tests), verified via branch-wide quality gates, and verified manually via live boot scenarios.
+All planned deliverables and subsequent refactoring feedback (resolving DIP & DRY violations) have been fully implemented, verified via automated test suites (2716 passing tests), verified via branch-wide quality gates, and verified manually via live boot scenarios.
 
 ---
 
@@ -33,7 +33,7 @@ All planned deliverables have been fully implemented, verified via automated tes
 
 ### 3.1. Full-Suite Test Result
 - **Command:** `run_tests(scope='full')`
-- **Result:** **PASS** (2715 passed, 2 skipped, 1 xpassed)
+- **Result:** **PASS** (2716 passed, 2 skipped, 1 xpassed)
 - **Execution Time:** ~53 seconds
 - **Failing Tests:** 0
 
@@ -55,6 +55,7 @@ All planned deliverables have been fully implemented, verified via automated tes
 | `c2-test-health-tool` | Unit tests for health tool overrides. | `test_health_check_tool_with_injected_override` in `test_health_tools.py`. | **Satisfied** |
 | `c3-cli-update` | Catch config errors on boot and start `DegradedMCPServer`. | Exception handling in `cli.py` and definition of `DegradedMCPServer` in `server.py` containing only the `health_check` tool. | **Satisfied** |
 | `c3-test-cli` | Unit/integration tests for CLI degraded boot. | `test_cli_degraded_server_on_config_error` in `test_cli.py`. | **Satisfied** |
+| `refactor-dip-dry` | Fix DIP and DRY violations in `TemplateScaffolder`. | Removed inline `TemplateAnalyzer` instantiations and used `extract_template_version` utility. Added `test_validate_does_not_instantiate_template_analyzer`. | **Satisfied** |
 
 ---
 
@@ -68,10 +69,12 @@ All planned deliverables have been fully implemented, verified via automated tes
 - The normal startup path remains unchanged: if the configuration files are valid, `cli.py` spawns the fully featured `MCPServer` containing all MCP tools.
 - Scaffolding of valid templates continues to function normally.
 
-### 5.3. Approved Strategy Alignment
+### 5.3. Approved Strategy & Refactoring Alignment
 - **Config-First:** Preserved `Literal["1.0.0"]` schema tag versioning rules.
 - **Fail-Fast:** True infrastructure errors (like binding issues or network faults) are **not** caught by `cli.py` and will still result in a crash, satisfying the fail-fast principle.
 - **No Complex Tools in Degraded Mode:** Exposing `RestartServerTool` in degraded mode was reverted and completely removed to prevent exposing complex/destructive capabilities when enforcement policies and configurations are broken.
+- **Dependency Inversion (DIP) & Performance:** The zware `TemplateAnalyzer` class is no longer instantiated inline in `TemplateScaffolder` methods. Instead, we use `extract_template_version` which performs lightweight, dependency-free comment/YAML parsing. A test verifies `TemplateAnalyzer` is never instantiated.
+- **DRY & Single Source of Truth:** `extract_template_version` was refined to only match top-level `version:` keys (indented by 2 spaces), preventing collisions with versions inside template `changelog:` blocks.
 
 ---
 
@@ -105,3 +108,4 @@ All planned deliverables have been fully implemented, verified via automated tes
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-07-19 | Agent | Initial validation report |
+| 1.1 | 2026-07-19 | Agent | Add DIP and DRY refactoring changes and version_hash.py fixes |

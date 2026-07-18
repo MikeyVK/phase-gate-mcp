@@ -2,7 +2,7 @@
   "branch": "bug/432-graceful-server-init",
   "issue_number": 432,
   "workflow_name": "bug",
-  "current_phase": "implementation",
+  "current_phase": "validation",
   "current_cycle": 3,
   "last_cycle": 3,
   "cycle_history": [
@@ -89,8 +89,16 @@
       "human_approval": "Approved by user in chat request",
       "forced": true,
       "skip_reason": "QA review rejected implementation, rolling back to implementation phase to refactor TemplateScaffolder"
+    },
+    {
+      "from_phase": "implementation",
+      "to_phase": "validation",
+      "timestamp": "2026-07-18T22:45:01.718098+00:00",
+      "human_approval": null,
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": null
 }
