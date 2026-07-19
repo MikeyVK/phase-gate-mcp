@@ -57,6 +57,9 @@ class ServerSettings(BaseModel):
     template_root: str | None = None
     server_root_dir: str = ".pgmcp"
     logs_dir: str = "logs"
+    bypass_version_check: bool = Field(
+        default_factory=lambda: bool(os.environ.get("PYTEST_CURRENT_TEST"))
+    )
 
     @property
     def resolved_server_root(self) -> Path:
@@ -124,6 +127,14 @@ class Settings(BaseModel):
             server_data["config_root"] = env_config_root
         if env_template_root := os.environ.get("PGMCP_TEMPLATE_ROOT"):
             server_data["template_root"] = env_template_root
+        if env_bypass_version_check := os.environ.get("PGMCP_BYPASS_VERSION_CHECK"):
+            server_data["bypass_version_check"] = env_bypass_version_check.lower() in (
+                "true",
+                "1",
+                "t",
+                "y",
+                "yes",
+            )
 
         if env_owner := os.environ.get("GITHUB_OWNER"):
             github_data["owner"] = env_owner
