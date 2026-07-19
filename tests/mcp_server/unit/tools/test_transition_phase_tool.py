@@ -12,7 +12,7 @@ Enforces strict sequential phase transitions per workflow definition.
 from pathlib import Path
 
 import pytest
-
+from pydantic import ValidationError
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
@@ -182,7 +182,7 @@ class TestTransitionPhaseTool:
         # Arrange
         approval_message = "All discovery tasks complete"
         params = TransitionPhaseInput(
-            branch=initialized_branch, to_phase=feature_phases[1], human_approval=approval_message
+            branch=initialized_branch, to_phase=feature_phases[1], human_approval_message=approval_message
         )
 
         # Act
@@ -195,7 +195,7 @@ class TestTransitionPhaseTool:
         # Verify human approval recorded in state
         state = phase_engine.get_state(initialized_branch)
         transition = state.transitions[0]
-        assert transition["human_approval"] == approval_message
+        assert transition["human_approval_message"] == approval_message
 
     def test_transition_phase_tool_input_model_validation(self, feature_phases: list[str]) -> None:
         """Test that TransitionPhaseInput model validates correctly."""
@@ -203,10 +203,25 @@ class TestTransitionPhaseTool:
         valid_input = TransitionPhaseInput(branch="feature/42-test", to_phase=feature_phases[1])
         assert valid_input.branch == "feature/42-test"
         assert valid_input.to_phase == feature_phases[1]
-        assert valid_input.human_approval is None
+        assert valid_input.human_approval_message is None
 
-        # Test with optional human_approval
+        # Test with optional human_approval_message
         with_approval = TransitionPhaseInput(
-            branch="feature/42-test", to_phase=feature_phases[1], human_approval="Ready"
+            branch="feature/42-test", to_phase=feature_phases[1], human_approval_message="Ready"
         )
-        assert with_approval.human_approval == "Ready"
+        assert with_approval.human_approval_message == "Ready"
+
+    def test_transition_phase_input_rejects_boolean_approval(self) -> None:
+        """Reject boolean input for human_approval_message (C_PHASE_TOOLS.2)."""
+        with pytest.raises(ValidationError, match="human_approval_message"):
+            TransitionPhaseInput(
+                branch="feature/42-test",
+                to_phase="design",
+                human_approval_message=True,  # type: ignore
+            )
+        with pytest.raises(ValidationError, match="human_approval_message"):
+            TransitionPhaseInput(
+                branch="feature/42-test",
+                to_phase="design",
+                human_approval_message=False,  # type: ignore
+            )

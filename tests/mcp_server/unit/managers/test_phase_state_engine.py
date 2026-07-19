@@ -1309,11 +1309,10 @@ class TestHumanApprovalMessageMigration:
         assert len(state.transitions) == 1
         assert state.transitions[0]["human_approval_message"] == "Orientation approved"
 
-    def test_transition_deprecated_fallback(self, tmp_path: Path) -> None:
+    def test_transition_rejects_human_approval_deprecated_fallback(self, tmp_path: Path) -> None:
+        """C2: Parameter 'human_approval' is removed from transition()."""
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-
-        # Setup branch
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature")
         state = BranchState(
@@ -1334,17 +1333,10 @@ class TestHumanApprovalMessageMigration:
 
         engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
 
-        # Act
-        with pytest.deprecated_call():
+        with pytest.raises(TypeError, match="unexpected keyword argument 'human_approval'"):
             engine.transition(
-                branch=branch, to_phase="planning", human_approval="Orientation fallback approved"
+                branch=branch, to_phase="planning", human_approval="Orientation fallback approved"  # type: ignore
             )
-
-        # Assert
-        state = engine.get_state(branch)
-        assert len(state.transitions) == 1
-        assert state.transitions[0]["human_approval_message"] == "Orientation fallback approved"
-
     def test_force_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
@@ -1383,11 +1375,10 @@ class TestHumanApprovalMessageMigration:
         assert len(state.transitions) == 1
         assert state.transitions[0]["human_approval_message"] == "Orientation approved"
 
-    def test_force_transition_deprecated_fallback(self, tmp_path: Path) -> None:
+    def test_force_transition_rejects_human_approval_deprecated_fallback(self, tmp_path: Path) -> None:
+        """C2: Parameter 'human_approval' is removed from force_transition()."""
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-
-        # Setup branch
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature")
         state = BranchState(
@@ -1408,20 +1399,13 @@ class TestHumanApprovalMessageMigration:
 
         engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
 
-        # Act
-        with pytest.deprecated_call():
+        with pytest.raises(TypeError, match="unexpected keyword argument 'human_approval'"):
             engine.force_transition(
                 branch=branch,
                 to_phase="planning",
                 skip_reason="Skip planning",
-                human_approval="Orientation fallback approved",
+                human_approval="Orientation fallback approved",  # type: ignore
             )
-
-        # Assert
-        state = engine.get_state(branch)
-        assert len(state.transitions) == 1
-        assert state.transitions[0]["human_approval_message"] == "Orientation fallback approved"
-
     def test_force_cycle_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
