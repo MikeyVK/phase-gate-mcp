@@ -101,6 +101,7 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     assert version_file.exists()
     assert version_file.read_text(encoding="utf-8").strip() == settings.server.version
 
+
 def test_cli_fails_fast_when_state_dir_missing(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
