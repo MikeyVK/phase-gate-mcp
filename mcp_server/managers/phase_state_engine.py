@@ -22,7 +22,6 @@ import json
 import logging
 import os
 import subprocess
-import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -210,7 +209,7 @@ class PhaseStateEngine:
             self.on_exit_cycle_based_phase(branch)
             state = self._load_state_or_reconstruct(branch)
 
-        resolved_approval = self._resolve_approval(human_approval_message, None, required=False)
+        resolved_approval = self._resolve_approval(human_approval_message, required=False)
 
         transition = TransitionRecord(
             from_phase=from_phase,
@@ -272,7 +271,7 @@ class PhaseStateEngine:
             self.on_exit_cycle_based_phase(branch)
             state = self.get_state(branch)
 
-        resolved_approval = self._resolve_approval(human_approval_message, None, required=True)
+        resolved_approval = self._resolve_approval(human_approval_message, required=True)
 
         transition = TransitionRecord(
             from_phase=from_phase,
@@ -368,7 +367,6 @@ class PhaseStateEngine:
         to_cycle: int,
         skip_reason: str,
         human_approval_message: str | None = None,
-        human_approval: str | None = None,
         gate_runner: IWorkflowGateRunner | None = None,
     ) -> dict[str, Any]:
         """Execute one forced cycle transition inside the active cycle-based phase."""
@@ -378,10 +376,7 @@ class PhaseStateEngine:
                 "Provide justification for backward/skip transition."
             )
 
-        resolved_approval = self._resolve_approval(
-            human_approval_message, human_approval, required=True
-        )
-
+        resolved_approval = self._resolve_approval(human_approval_message, required=True)
         state = self._load_state_or_reconstruct(branch)
         issue_number = self._require_issue_number(branch, state)
         cycles, total_cycles = self._get_cycles(issue_number)
@@ -720,20 +715,10 @@ class PhaseStateEngine:
     def _resolve_approval(
         self,
         human_approval_message: str | None,
-        human_approval: str | None = None,
         required: bool = False,
     ) -> str | None:
-        """Resolve human_approval_message parameter with deprecated human_approval fallback."""
+        """Resolve human_approval_message parameter."""
         actual_approval = human_approval_message
-        if human_approval is not None:
-            warnings.warn(
-                "Parameter 'human_approval' is deprecated; use 'human_approval_message' instead.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            if actual_approval is None:
-                actual_approval = human_approval
-
         if required and (not actual_approval or not actual_approval.strip()):
             raise ValueError(
                 "human_approval_message is required for forced transitions. "

@@ -293,7 +293,7 @@ class TestForceCycleTransitionToolConflict:
         params = ForceCycleTransitionInput(
             to_cycle=1,
             skip_reason="test rollback",
-            human_approval="Agent approved",
+            human_approval_message="Agent approved",
         )
 
         result = await conflict_tool.execute(params, context)
@@ -313,7 +313,7 @@ class TestForceCycleTransitionToolConflict:
         params = ForceCycleTransitionInput(
             to_cycle=1,
             skip_reason="test rollback",
-            human_approval="Agent approved",
+            human_approval_message="Agent approved",
         )
 
         await conflict_tool.execute(params, context)

@@ -772,8 +772,9 @@ class TestForceCycleToolFormatting:
 
     def test_force_cycle_transition_input_rejects_boolean_approval(self) -> None:
         """Reject boolean input for human_approval_message (C_CYCLE_TOOLS.3)."""
-        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput
-        from pydantic import ValidationError
+        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput  # noqa: PLC0415
+        from pydantic import ValidationError  # noqa: PLC0415
+
         with pytest.raises(ValidationError, match="human_approval_message"):
             ForceCycleTransitionInput(
                 to_cycle=2,
@@ -789,9 +790,10 @@ class TestForceCycleToolFormatting:
 
     def test_force_cycle_transition_input_rejects_empty_approval_and_reason(self) -> None:
         """Reject empty/whitespace approval/reason (C_CYCLE_TOOLS.3)."""
-        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput
-        from pydantic import ValidationError
-        with pytest.raises(ValidationError, match="Field cannot be empty"):
+        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput  # noqa: PLC0415
+        from pydantic import ValidationError  # noqa: PLC0415
+
+        with pytest.raises(ValidationError, match="String should have at least 1 character"):
             ForceCycleTransitionInput(
                 to_cycle=2,
                 skip_reason="Valid reason",

@@ -916,7 +916,7 @@ class TestContextLoadedWriterReset:
             branch=branch,
             to_cycle=2,
             skip_reason="skipping for test",
-            human_approval="test approved on 2026-01-01",
+            human_approval_message="test approved on 2026-01-01",
         )
 
         writer.set_context_loaded.assert_called_with(branch, value=False)
@@ -1229,7 +1229,7 @@ class TestPhaseStateFreshSLambdaC1:
             branch=branch,
             to_cycle=2,
             skip_reason="force-test",
-            human_approval="tester approved on 2026-05-25",
+            human_approval_message="tester approved on 2026-05-25",
         )
 
         # After fix: 3 entries (2 from fresh_s + 1 new force-cycle entry).
@@ -1468,7 +1468,9 @@ class TestHumanApprovalMessageMigration:
         assert len(state.cycle_history) == 1
         assert state.cycle_history[0]["human_approval_message"] == "Cycle transition approved"
 
-    def test_force_cycle_transition_rejects_human_approval_deprecated_fallback(self, tmp_path: Path) -> None:
+    def test_force_cycle_transition_rejects_human_approval_deprecated_fallback(
+        self, tmp_path: Path
+    ) -> None:
         """C3: Parameter 'human_approval' is removed from force_cycle_transition()."""
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()

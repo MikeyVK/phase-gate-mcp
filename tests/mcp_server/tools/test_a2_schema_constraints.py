@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from mcp_server.tools.label_tools import CreateLabelInput
 from mcp_server.tools.phase_tools import ForcePhaseTransitionInput
 from mcp_server.tools.project_tools import InitializeProjectInput
+from mcp_server.tools.cycle_tools import ForceCycleTransitionInput
 
 
 class TestForcePhaseTransitionInputSchema:
@@ -25,6 +26,21 @@ class TestForcePhaseTransitionInputSchema:
 
     def test_human_approval_message_has_min_length_in_schema(self) -> None:
         schema = ForcePhaseTransitionInput.model_json_schema()
+        assert schema["properties"]["human_approval_message"].get("minLength") == 1
+
+
+class TestForceCycleTransitionInputSchema:
+    """C3: skip_reason and human_approval_message have minLength=1 in JSON schema
+
+    for cycle tools.
+    """
+
+    def test_skip_reason_has_min_length_in_schema(self) -> None:
+        schema = ForceCycleTransitionInput.model_json_schema()
+        assert schema["properties"]["skip_reason"].get("minLength") == 1
+
+    def test_human_approval_message_has_min_length_in_schema(self) -> None:
+        schema = ForceCycleTransitionInput.model_json_schema()
         assert schema["properties"]["human_approval_message"].get("minLength") == 1
 
 

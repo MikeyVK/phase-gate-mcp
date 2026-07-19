@@ -376,7 +376,7 @@ class TestForceCycleTransitionTool:
                 ForceCycleTransitionInput(
                     to_cycle=1,
                     skip_reason="Re-testing schema changes",
-                    human_approval="John approved on 2026-02-17",
+                    human_approval_message="John approved on 2026-02-17",
                 ),
                 NoteContext(),
             )
@@ -419,7 +419,7 @@ class TestForceCycleTransitionTool:
                 ForceCycleTransitionInput(
                     to_cycle=4,
                     skip_reason="Cycle 3 covered by integration tests",
-                    human_approval="Jane approved on 2026-02-17",
+                    human_approval_message="Jane approved on 2026-02-17",
                 ),
                 NoteContext(),
             )
@@ -434,61 +434,33 @@ class TestForceCycleTransitionTool:
         state = state_engine.get_state("feature/146-tdd-cycle-tracking")
         assert state.current_cycle == 4
 
-    @pytest.mark.asyncio()
-    async def test_force_blocks_without_skip_reason(
-        self, tool: ForceCycleTransitionTool, setup_forced_project: tuple[Path, int]
-    ) -> None:
+    def test_force_blocks_without_skip_reason(self, setup_forced_project: tuple[Path, int]) -> None:
         """Test that forced transition blocks when skip_reason is empty."""
-        _workspace_root, _ = setup_forced_project
+        from pydantic import ValidationError  # noqa: PLC0415
 
-        with (
-            patch("mcp_server.tools.cycle_tools.GitManager") as mock_git_class,
+        with pytest.raises(
+            ValidationError, match="skip_reason|String should have at least 1 character"
         ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git_class.return_value = mock_git
-
-            result = await tool.execute(
-                ForceCycleTransitionInput(
-                    to_cycle=1,
-                    skip_reason="",  # Empty reason
-                    human_approval="John approved on 2026-02-17",
-                ),
-                NoteContext(),
+            ForceCycleTransitionInput(
+                to_cycle=1,
+                skip_reason="",  # Empty reason
+                human_approval_message="John approved on 2026-02-17",
             )
 
-        # Assert blocked
-        assert not result.success, "Expected error when skip_reason is empty"
-        text = result.error_message or ""
-        assert "skip_reason" in text.lower() or "reason" in text.lower()
-
-    @pytest.mark.asyncio()
-    async def test_force_blocks_without_human_approval(
-        self, tool: ForceCycleTransitionTool, setup_forced_project: tuple[Path, int]
+    def test_force_blocks_without_human_approval_message(
+        self, setup_forced_project: tuple[Path, int]
     ) -> None:
-        """Test that forced transition blocks when human_approval is empty."""
-        _workspace_root, _ = setup_forced_project
+        """Test that forced transition blocks when human_approval_message is empty."""
+        from pydantic import ValidationError  # noqa: PLC0415
 
-        with (
-            patch("mcp_server.tools.cycle_tools.GitManager") as mock_git_class,
+        with pytest.raises(
+            ValidationError, match="human_approval_message|String should have at least 1 character"
         ):
-            mock_git = MagicMock()
-            mock_git.get_current_branch.return_value = "feature/146-tdd-cycle-tracking"
-            mock_git_class.return_value = mock_git
-
-            result = await tool.execute(
-                ForceCycleTransitionInput(
-                    to_cycle=1,
-                    skip_reason="Re-testing schema changes",
-                    human_approval="",  # Empty approval
-                ),
-                NoteContext(),
+            ForceCycleTransitionInput(
+                to_cycle=1,
+                skip_reason="Re-testing schema changes",
+                human_approval_message="",  # Empty approval
             )
-
-        # Assert blocked
-        assert not result.success, "Expected error when human_approval is empty"
-        text = result.error_message or ""
-        assert "approval" in text.lower() or "human" in text.lower()
 
 
 class TestForceCycleAuditSchema:
@@ -597,7 +569,7 @@ class TestForceCycleAuditSchema:
                 ForceCycleTransitionInput(
                     to_cycle=4,
                     skip_reason="Cycles 3 covered by parent",
-                    human_approval="John approved on 2026-02-17",
+                    human_approval_message="John approved on 2026-02-17",
                 ),
                 NoteContext(),
             )
@@ -638,7 +610,7 @@ class TestForceCycleAuditSchema:
                 ForceCycleTransitionInput(
                     to_cycle=1,
                     skip_reason="Re-testing",
-                    human_approval="John approved",
+                    human_approval_message="John approved",
                 ),
                 NoteContext(),
             )
@@ -676,7 +648,7 @@ class TestForceCycleAuditSchema:
                 ForceCycleTransitionInput(
                     to_cycle=4,
                     skip_reason="Cycles 3 covered by parent tests",
-                    human_approval="Jane approved on 2026-02-17",
+                    human_approval_message="Jane approved on 2026-02-17",
                 ),
                 NoteContext(),
             )

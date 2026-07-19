@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Generic, TypeVar
 
 import anyio
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from mcp_server.core.interfaces import GateViolation, IWorkflowGateRunner, ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
@@ -223,15 +223,33 @@ class ForceCycleTransitionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     to_cycle: int = Field(..., description="Target cycle number (any direction)")
-    skip_reason: str = Field(..., description="Reason for forced transition (backward/skip)")
-    human_approval: str = Field(
+    skip_reason: str = Field(
+        ..., description="Reason for forced transition (backward/skip)", min_length=1
+    )
+    human_approval_message: str = Field(
         ...,
         description="Human approval (name + date, e.g., 'John approved on 2026-02-17')",
+        min_length=1,
     )
     issue_number: int | None = Field(
         default=None,
         description="Issue number (auto-detected from branch if omitted)",
     )
+
+    @field_validator("human_approval_message", mode="before")
+    @classmethod
+    def reject_boolean_approval(cls, v: Any) -> Any:
+        if isinstance(v, bool):
+            raise ValueError("human_approval_message cannot be a boolean")
+        return v
+
+    @field_validator("skip_reason", "human_approval_message")
+    @classmethod
+    def validate_not_empty(cls, v: str) -> str:
+        """Ensure skip_reason and human_approval_message are not empty."""
+        if not v or not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v.strip()
 
 
 class ForceCycleTransitionTool(
@@ -250,7 +268,7 @@ class ForceCycleTransitionTool(
     def description(self) -> str:
         return (
             "Force transition to any TDD cycle (backward or skip). "
-            "Requires skip_reason and human_approval for audit trail."
+            "Requires skip_reason and human_approval_message for audit trail."
         )
 
     @property
@@ -272,7 +290,7 @@ class ForceCycleTransitionTool(
                 total_cycles=0,
                 cycle_name="",
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
             )
 
         state_engine = self._create_engine()
@@ -282,7 +300,7 @@ class ForceCycleTransitionTool(
                 branch=branch,
                 to_cycle=params.to_cycle,
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
                 gate_runner=self._gate_runner,
             )
 
@@ -300,7 +318,7 @@ class ForceCycleTransitionTool(
                 passing_gates_count=len(result.get("passing_gates", [])),
                 skipped_gates_count=len(result.get("skipped_gates", [])),
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
             )
         except StateMutationConflictError as e:
             context.produce(
@@ -314,7 +332,7 @@ class ForceCycleTransitionTool(
                 total_cycles=0,
                 cycle_name="",
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
             )
         except (GateViolation, OSError, ValueError, RuntimeError, KeyError) as exc:
             return ForceCycleTransitionOutput(
@@ -325,5 +343,5 @@ class ForceCycleTransitionTool(
                 total_cycles=0,
                 cycle_name="",
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
             )

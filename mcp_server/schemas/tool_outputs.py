@@ -78,7 +78,7 @@ class CycleTransitionOutput(GateTransitionOutput):
 
 class ForceCycleTransitionOutput(CycleTransitionOutput):
     skip_reason: str
-    human_approval: str
+    human_approval_message: str
 
 
 class SearchResultDTO(BaseModel):
