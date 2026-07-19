@@ -132,10 +132,10 @@ Workflow lifecycle management: project initialization, phase transitions, TDD cy
 | **GetProjectPlanTool** | Get project phase plan for issue | `issue_number` | Phase plan with exit criteria |
 | **SavePlanningDeliverablesTool** | Save planning deliverables | `issue_number` | Confirmation |
 | **UpdatePlanningDeliverablesTool** | Update/merge planning deliverables | `issue_number` | Confirmation |
-| **TransitionPhaseTool** | Sequential phase transition | `branch`, `to_phase`, `human_approval` | New phase state |
-| **ForcePhaseTransitionTool** | Skip phases with reason + approval | `branch`, `to_phase`, `skip_reason`, `human_approval` | New phase state |
+| **TransitionPhaseTool** | Sequential phase transition | `branch`, `to_phase`, `human_approval_message` | New phase state |
+| **ForcePhaseTransitionTool** | Skip phases with reason + approval | `branch`, `to_phase`, `skip_reason`, `human_approval_message` | New phase state |
 | **TransitionCycleTool** | Sequential TDD cycle transition | `to_cycle` | New cycle state |
-| **ForceCycleTransitionTool** | Skip to cycle with reason + approval | `to_cycle`, `skip_reason`, `human_approval` | New cycle state |
+| **ForceCycleTransitionTool** | Skip to cycle with reason + approval | `to_cycle`, `skip_reason`, `human_approval_message` | New cycle state |
 
 ### 4. File Editing (1 tool)
 
