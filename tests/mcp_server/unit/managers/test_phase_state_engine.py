@@ -12,13 +12,14 @@ from tests.mcp_server.test_support import get_default_server_root
 
 from pathlib import Path
 from unittest.mock import MagicMock
-
+import json
 import pytest
 
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.state_repository import (
     BranchState,
+    FileStateRepository,
     InMemoryStateRepository,
     StateBranchMismatchError,
 )
@@ -1269,22 +1270,40 @@ class TestSaveStateMethodRemoved:
 
 
 class TestHumanApprovalMessageMigration:
-    """C1 (issue #430): Rename human_approval parameter to human_approval_message in force transition tools,
-    while keeping temporary deprecated human_approval fallback.
+    """C1 (issue #430): Rename human_approval parameter to human_approval_message
+    in force transition tools, while keeping temporary deprecated human_approval fallback.
     """
 
     def test_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
-        
+
         # Setup branch
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature")
-        
+        state = BranchState(
+            branch=branch,
+            issue_number=430,
+            workflow_name="feature",
+            current_phase="design",
+            required_phases=[
+                "research",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
+        )
+        repo.save(state)
+
+        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+
         # Act
-        engine.transition(branch=branch, to_phase="planning", human_approval_message="Orientation approved")
-        
+        engine.transition(
+            branch=branch, to_phase="planning", human_approval_message="Orientation approved"
+        )
+
         # Assert
         state = engine.get_state(branch)
         assert len(state.transitions) == 1
@@ -1293,16 +1312,34 @@ class TestHumanApprovalMessageMigration:
     def test_transition_deprecated_fallback(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
-        
+
         # Setup branch
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature")
-        
+        state = BranchState(
+            branch=branch,
+            issue_number=430,
+            workflow_name="feature",
+            current_phase="design",
+            required_phases=[
+                "research",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
+        )
+        repo.save(state)
+
+        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+
         # Act
         with pytest.deprecated_call():
-            engine.transition(branch=branch, to_phase="planning", human_approval="Orientation fallback approved")
-        
+            engine.transition(
+                branch=branch, to_phase="planning", human_approval="Orientation fallback approved"
+            )
+
         # Assert
         state = engine.get_state(branch)
         assert len(state.transitions) == 1
@@ -1311,20 +1348,36 @@ class TestHumanApprovalMessageMigration:
     def test_force_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
-        
+
         # Setup branch
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature")
-        
+        state = BranchState(
+            branch=branch,
+            issue_number=430,
+            workflow_name="feature",
+            current_phase="research",
+            required_phases=[
+                "research",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
+        )
+        repo.save(state)
+
+        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+
         # Act
         engine.force_transition(
             branch=branch,
             to_phase="planning",
             skip_reason="Skip planning",
-            human_approval_message="Orientation approved"
+            human_approval_message="Orientation approved",
         )
-        
+
         # Assert
         state = engine.get_state(branch)
         assert len(state.transitions) == 1
@@ -1333,21 +1386,37 @@ class TestHumanApprovalMessageMigration:
     def test_force_transition_deprecated_fallback(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
-        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
-        
+
         # Setup branch
         branch = "feature/430-test"
         pm.initialize_project(430, "Test issue", "feature")
-        
+        state = BranchState(
+            branch=branch,
+            issue_number=430,
+            workflow_name="feature",
+            current_phase="research",
+            required_phases=[
+                "research",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
+        )
+        repo.save(state)
+
+        engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
+
         # Act
         with pytest.deprecated_call():
             engine.force_transition(
                 branch=branch,
                 to_phase="planning",
                 skip_reason="Skip planning",
-                human_approval="Orientation fallback approved"
+                human_approval="Orientation fallback approved",
             )
-        
+
         # Assert
         state = engine.get_state(branch)
         assert len(state.transitions) == 1
@@ -1364,18 +1433,18 @@ class TestHumanApprovalMessageMigration:
                     {
                         "cycle_number": 1,
                         "deliverables": [{"id": "D1", "description": "D1"}],
-                        "exit_criteria": "Criteria 1"
+                        "exit_criteria": "Criteria 1",
                     },
                     {
                         "cycle_number": 2,
                         "deliverables": [{"id": "D2", "description": "D2"}],
-                        "exit_criteria": "Criteria 2"
-                    }
-                ]
+                        "exit_criteria": "Criteria 2",
+                    },
+                ],
             }
         }
         pm.save_planning_deliverables(430, planning_deliverables)
-        
+
         branch = "feature/430-test"
         state = BranchState(
             branch=branch,
@@ -1383,20 +1452,27 @@ class TestHumanApprovalMessageMigration:
             workflow_name="feature",
             current_phase="implementation",
             current_cycle=1,
-            required_phases=["research", "planning", "implementation", "validation", "documentation", "ready"]
+            required_phases=[
+                "research",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
         )
         repo.save(state)
-        
+
         engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
-        
+
         # Act
         engine.force_cycle_transition(
             branch=branch,
             to_cycle=2,
             skip_reason="Force test",
-            human_approval_message="Cycle transition approved"
+            human_approval_message="Cycle transition approved",
         )
-        
+
         # Assert
         state = engine.get_state(branch)
         assert len(state.cycle_history) == 1
@@ -1410,13 +1486,21 @@ class TestHumanApprovalMessageMigration:
             "cycles": {
                 "total": 2,
                 "cycles": [
-                    {"cycle_number": 1, "deliverables": [{"id": "D1", "description": "D1"}], "exit_criteria": "Criteria 1"},
-                    {"cycle_number": 2, "deliverables": [{"id": "D2", "description": "D2"}], "exit_criteria": "Criteria 2"}
-                ]
+                    {
+                        "cycle_number": 1,
+                        "deliverables": [{"id": "D1", "description": "D1"}],
+                        "exit_criteria": "Criteria 1",
+                    },
+                    {
+                        "cycle_number": 2,
+                        "deliverables": [{"id": "D2", "description": "D2"}],
+                        "exit_criteria": "Criteria 2",
+                    },
+                ],
             }
         }
         pm.save_planning_deliverables(430, planning_deliverables)
-        
+
         branch = "feature/430-test"
         state = BranchState(
             branch=branch,
@@ -1424,31 +1508,37 @@ class TestHumanApprovalMessageMigration:
             workflow_name="feature",
             current_phase="implementation",
             current_cycle=1,
-            required_phases=["research", "planning", "implementation", "validation", "documentation", "ready"]
+            required_phases=[
+                "research",
+                "planning",
+                "implementation",
+                "validation",
+                "documentation",
+                "ready",
+            ],
         )
         repo.save(state)
-        
+
         engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
-        
+
         # Act
         with pytest.deprecated_call():
             engine.force_cycle_transition(
                 branch=branch,
                 to_cycle=2,
                 skip_reason="Force test",
-                human_approval="Cycle transition fallback approved"
+                human_approval="Cycle transition fallback approved",
             )
-        
+
         # Assert
         state = engine.get_state(branch)
         assert len(state.cycle_history) == 1
-        assert state.cycle_history[0]["human_approval_message"] == "Cycle transition fallback approved"
+        assert (
+            state.cycle_history[0]["human_approval_message"] == "Cycle transition fallback approved"
+        )
 
     def test_load_legacy_state_with_human_approval(self, tmp_path: Path) -> None:
-        from mcp_server.managers.state_repository import FileStateRepository
         state_file = tmp_path / "state.json"
-        
-        import json
         legacy_data = {
             "branch": "feature/430-test",
             "issue_number": 430,
@@ -1461,7 +1551,7 @@ class TestHumanApprovalMessageMigration:
                     "timestamp": "2026-07-19T06:35:28Z",
                     "human_approval": "Approved",
                     "forced": True,
-                    "skip_reason": "Skipped research"
+                    "skip_reason": "Skipped research",
                 }
             ],
             "cycle_history": [
@@ -1471,16 +1561,16 @@ class TestHumanApprovalMessageMigration:
                     "entered": "2026-07-19T06:35:28Z",
                     "forced": True,
                     "skip_reason": "Force skip",
-                    "human_approval": "Approved"
+                    "human_approval": "Approved",
                 }
             ],
-            "required_phases": ["research", "planning", "implementation"]
+            "required_phases": ["research", "planning", "implementation"],
         }
         state_file.write_text(json.dumps(legacy_data), encoding="utf-8")
-        
+
         repo = FileStateRepository(state_file)
         state = repo.load("feature/430-test")
-        
+
         assert state.branch == "feature/430-test"
         assert len(state.transitions) == 1
         assert state.transitions[0]["human_approval"] == "Approved"
