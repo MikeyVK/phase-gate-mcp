@@ -188,7 +188,6 @@ class PhaseStateEngine:
         branch: str,
         to_phase: str,
         human_approval_message: str | None = None,
-        human_approval: str | None = None,
     ) -> dict[str, Any]:
         """Execute strict sequential phase transition."""
         state = self._load_state_or_reconstruct(branch)
@@ -211,9 +210,7 @@ class PhaseStateEngine:
             self.on_exit_cycle_based_phase(branch)
             state = self._load_state_or_reconstruct(branch)
 
-        resolved_approval = self._resolve_approval(
-            human_approval_message, human_approval, required=False
-        )
+        resolved_approval = self._resolve_approval(human_approval_message, None, required=False)
 
         transition = TransitionRecord(
             from_phase=from_phase,
@@ -244,7 +241,6 @@ class PhaseStateEngine:
         to_phase: str,
         skip_reason: str,
         human_approval_message: str | None = None,
-        human_approval: str | None = None,
     ) -> dict[str, Any]:
         """Execute forced non-sequential phase transition."""
         state = self._load_state_or_reconstruct(branch)
@@ -276,9 +272,7 @@ class PhaseStateEngine:
             self.on_exit_cycle_based_phase(branch)
             state = self.get_state(branch)
 
-        resolved_approval = self._resolve_approval(
-            human_approval_message, human_approval, required=True
-        )
+        resolved_approval = self._resolve_approval(human_approval_message, None, required=True)
 
         transition = TransitionRecord(
             from_phase=from_phase,
@@ -726,7 +720,7 @@ class PhaseStateEngine:
     def _resolve_approval(
         self,
         human_approval_message: str | None,
-        human_approval: str | None,
+        human_approval: str | None = None,
         required: bool = False,
     ) -> str | None:
         """Resolve human_approval_message parameter with deprecated human_approval fallback."""

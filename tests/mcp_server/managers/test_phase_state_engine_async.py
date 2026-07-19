@@ -75,7 +75,7 @@ class TestPhaseToolsAsyncSafe:
                 branch="test/123-test",
                 to_phase="design",
                 skip_reason="test reason",
-                human_approval="test approval",
+                human_approval_message="test approval",
             )
             await tool.execute(params, NoteContext())
 
@@ -125,7 +125,7 @@ class TestPhaseToolsAsyncSafe:
             params = TransitionPhaseInput(
                 branch="test/123-test",
                 to_phase="implementation",
-                human_approval="test approval",
+                human_approval_message="test approval",
             )
             await tool.execute(params, NoteContext())
 

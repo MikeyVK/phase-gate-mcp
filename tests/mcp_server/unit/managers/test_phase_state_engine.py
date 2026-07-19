@@ -419,13 +419,13 @@ class TestTransitionHooksWiring:
             branch=branch,
             to_phase="planning",
             skip_reason="Test detour to planning",
-            human_approval="Test approved on 2026-06-04",
+            human_approval_message="Test approved on 2026-06-04",
         )
         state_engine.force_transition(
             branch=branch,
             to_phase="implementation",
             skip_reason="Test re-entry to implementation",
-            human_approval="Test approved on 2026-06-04",
+            human_approval_message="Test approved on 2026-06-04",
         )
 
         state = state_engine.get_state(branch)
@@ -663,7 +663,7 @@ class TestPhaseStateEngineRecordSubPhase:
             branch=branch,
             to_phase="design",
             skip_reason="QA approved skip",
-            human_approval="MVerkaik approved on 2026-05-05",
+            human_approval_message="MVerkaik approved on 2026-05-05",
         )
         assert repo.load(branch).current_sub_phase is None
 
@@ -836,7 +836,7 @@ class TestContextLoadedWriterReset:
             branch=branch,
             to_phase="validation",
             skip_reason="skipping for test",
-            human_approval="test approved on 2026-01-01",
+            human_approval_message="test approved on 2026-01-01",
         )
 
         writer.set_context_loaded.assert_called_with(branch, value=False)
@@ -1111,7 +1111,7 @@ class TestPhaseStateFreshSLambdaC1:
             branch="feature/292-test",
             to_phase="design",
             skip_reason="force-test",
-            human_approval="tester approved on 2026-05-25",
+            human_approval_message="tester approved on 2026-05-25",
         )
 
         assert len(mutator.results) >= 1
@@ -1335,8 +1335,11 @@ class TestHumanApprovalMessageMigration:
 
         with pytest.raises(TypeError, match="unexpected keyword argument 'human_approval'"):
             engine.transition(
-                branch=branch, to_phase="planning", human_approval="Orientation fallback approved"  # type: ignore
+                branch=branch,
+                to_phase="planning",
+                human_approval="Orientation fallback approved",  # type: ignore
             )
+
     def test_force_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
@@ -1375,7 +1378,9 @@ class TestHumanApprovalMessageMigration:
         assert len(state.transitions) == 1
         assert state.transitions[0]["human_approval_message"] == "Orientation approved"
 
-    def test_force_transition_rejects_human_approval_deprecated_fallback(self, tmp_path: Path) -> None:
+    def test_force_transition_rejects_human_approval_deprecated_fallback(
+        self, tmp_path: Path
+    ) -> None:
         """C2: Parameter 'human_approval' is removed from force_transition()."""
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
@@ -1406,6 +1411,7 @@ class TestHumanApprovalMessageMigration:
                 skip_reason="Skip planning",
                 human_approval="Orientation fallback approved",  # type: ignore
             )
+
     def test_force_cycle_transition_accepts_human_approval_message(self, tmp_path: Path) -> None:
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()

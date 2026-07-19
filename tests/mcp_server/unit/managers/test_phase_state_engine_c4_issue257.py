@@ -361,7 +361,7 @@ def test_force_cycle_transition_returns_gate_inspection_report(
         branch=branch,
         to_cycle=3,
         skip_reason="audited forward skip",
-        human_approval="Verifier approved on 2026-04-04",
+        human_approval_message="Verifier approved on 2026-04-04",
     )
 
     state = engine.get_state(branch)

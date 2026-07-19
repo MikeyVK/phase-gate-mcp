@@ -467,7 +467,7 @@ class ForcePhaseTransitionOutput(PhaseTransitionOutput):
     """Output for ForcePhaseTransitionTool."""
 
     skip_reason: str
-    human_approval: str
+    human_approval_message: str
 
 
 class ScaffoldArtifactOutput(BaseToolOutput):

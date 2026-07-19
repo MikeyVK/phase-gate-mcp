@@ -257,7 +257,7 @@ def test_force_phase_transition_returns_gate_report_with_blocked_checks(
         branch="feature/257-c2-force",
         to_phase="design",
         skip_reason="audited bypass for test",
-        human_approval="Verifier approved on 2026-04-04",
+        human_approval_message="Verifier approved on 2026-04-04",
     )
 
     assert result["success"] is True

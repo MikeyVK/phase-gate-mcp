@@ -256,7 +256,7 @@ def test_force_transition_loads_state_or_reconstructs_when_missing(
         branch=branch,
         to_phase="design",
         skip_reason="audited bypass for recovery test",
-        human_approval="Verifier approved on 2026-04-04",
+        human_approval_message="Verifier approved on 2026-04-04",
     )
 
     assert result["success"] is True

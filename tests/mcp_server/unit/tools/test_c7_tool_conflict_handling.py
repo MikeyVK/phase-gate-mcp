@@ -149,7 +149,7 @@ class TestForcePhaseTransitionToolConflict:
             branch="feature/42-x",
             to_phase="validation",
             skip_reason="test",
-            human_approval="Agent approved",
+            human_approval_message="Agent approved",
         )
 
         result = await conflict_tool.execute(params, context)
@@ -168,7 +168,7 @@ class TestForcePhaseTransitionToolConflict:
             branch="feature/42-x",
             to_phase="validation",
             skip_reason="test",
-            human_approval="Agent approved",
+            human_approval_message="Agent approved",
         )
 
         await conflict_tool.execute(params, context)

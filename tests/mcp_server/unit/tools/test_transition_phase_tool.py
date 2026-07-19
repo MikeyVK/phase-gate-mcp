@@ -85,7 +85,9 @@ class TestTransitionPhaseTool:
         """Test successful sequential transition: first → second phase."""
         # Arrange
         params = TransitionPhaseInput(
-            branch=initialized_branch, to_phase=feature_phases[1], human_approval="Ready to plan"
+            branch=initialized_branch,
+            to_phase=feature_phases[1],
+            human_approval_message="Ready to plan",
         )
 
         # Act
@@ -104,7 +106,9 @@ class TestTransitionPhaseTool:
     ) -> None:
         """Successful transitions should emit the standard get_work_context advisory note."""
         params = TransitionPhaseInput(
-            branch=initialized_branch, to_phase=feature_phases[1], human_approval="Ready to plan"
+            branch=initialized_branch,
+            to_phase=feature_phases[1],
+            human_approval_message="Ready to plan",
         )
         context = NoteContext()
 
@@ -122,7 +126,9 @@ class TestTransitionPhaseTool:
         """Test that non-sequential transition is rejected."""
         # Arrange - Try to skip second phase and go directly to third
         params = TransitionPhaseInput(
-            branch=initialized_branch, to_phase=feature_phases[2], human_approval="Trying to skip"
+            branch=initialized_branch,
+            to_phase=feature_phases[2],
+            human_approval_message="Trying to skip",
         )
 
         # Act
@@ -143,7 +149,7 @@ class TestTransitionPhaseTool:
         params = TransitionPhaseInput(
             branch="feature/999-nonexistent",
             to_phase=feature_phases[1],
-            human_approval="Should fail",
+            human_approval_message="Should fail",
         )
 
         # Act
@@ -160,7 +166,9 @@ class TestTransitionPhaseTool:
         """Test error handling for invalid target phase."""
         # Arrange - Target phase not in workflow
         params = TransitionPhaseInput(
-            branch=initialized_branch, to_phase="invalid_phase", human_approval="Should fail"
+            branch=initialized_branch,
+            to_phase="invalid_phase",
+            human_approval_message="Should fail",
         )
 
         # Act
@@ -171,7 +179,7 @@ class TestTransitionPhaseTool:
         assert result.success is False
 
     @pytest.mark.asyncio
-    async def test_transition_phase_tool_with_human_approval(
+    async def test_transition_phase_tool_with_human_approval_message(
         self,
         tool: TransitionPhaseTool,
         initialized_branch: str,
@@ -182,7 +190,9 @@ class TestTransitionPhaseTool:
         # Arrange
         approval_message = "All discovery tasks complete"
         params = TransitionPhaseInput(
-            branch=initialized_branch, to_phase=feature_phases[1], human_approval_message=approval_message
+            branch=initialized_branch,
+            to_phase=feature_phases[1],
+            human_approval_message=approval_message,
         )
 
         # Act

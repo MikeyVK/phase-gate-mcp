@@ -173,7 +173,7 @@ class TestPrimaryMixedConcurrentWritesC4:
                     _BRANCH_D1,
                     "validation",
                     skip_reason="C4-D1-thread-A",
-                    human_approval="C4 regression test approved",
+                    human_approval_message="C4 regression test approved",
                 )
             except Exception as exc:  # noqa: BLE001
                 errors.append(exc)
@@ -185,7 +185,7 @@ class TestPrimaryMixedConcurrentWritesC4:
                     branch=_BRANCH_D1,
                     to_cycle=2,
                     skip_reason="C4-D1-thread-B",
-                    human_approval="C4 regression test approved",
+                    human_approval_message="C4 regression test approved",
                 )
             except Exception as exc:  # noqa: BLE001
                 errors.append(exc)
@@ -241,7 +241,7 @@ class TestSecondaryHomogeneousConcurrentWritesC4:
                     _BRANCH_D2,
                     "design",
                     skip_reason="C4-D2-thread-A",
-                    human_approval="C4 regression test approved",
+                    human_approval_message="C4 regression test approved",
                 )
             except Exception as exc:  # noqa: BLE001
                 errors.append(exc)
@@ -253,7 +253,7 @@ class TestSecondaryHomogeneousConcurrentWritesC4:
                     _BRANCH_D2,
                     "planning",
                     skip_reason="C4-D2-thread-B",
-                    human_approval="C4 regression test approved",
+                    human_approval_message="C4 regression test approved",
                 )
             except Exception as exc:  # noqa: BLE001
                 errors.append(exc)

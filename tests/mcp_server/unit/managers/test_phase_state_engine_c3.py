@@ -202,7 +202,7 @@ class TestForceTransitionSkippedGateWarning:
                 branch="feature/229-c3",
                 to_phase="design",
                 skip_reason="test: skip exit gate",
-                human_approval="tester approved",
+                human_approval_message="tester approved",
             )
 
         assert "skipped_gates" in caplog.text
@@ -234,7 +234,7 @@ class TestForceTransitionSkippedGateWarning:
                 branch="feature/229-c3b",
                 to_phase="implementation",
                 skip_reason="test: skip entry expects",
-                human_approval="tester approved",
+                human_approval_message="tester approved",
             )
 
         assert "skipped_gates" in caplog.text
@@ -266,7 +266,7 @@ class TestForceTransitionSkippedGateWarning:
                 branch="feature/229-c3c",
                 to_phase="planning",
                 skip_reason="test: no gates present",
-                human_approval="tester approved",
+                human_approval_message="tester approved",
             )
 
         assert "skipped_gates" not in caplog.text
@@ -321,7 +321,7 @@ class TestForceTransitionNoWarningWhenDeliverablesPresent:
                 branch=branch,
                 to_phase="design",
                 skip_reason="test: deliverables present",
-                human_approval="tester approved",
+                human_approval_message="tester approved",
             )
 
         assert "skipped_gates" not in caplog.text
@@ -343,7 +343,7 @@ class TestForceTransitionNoWarningWhenDeliverablesPresent:
                 branch=branch,
                 to_phase="implementation",
                 skip_reason="test: deliverables present, entry gate should be silent",
-                human_approval="tester approved",
+                human_approval_message="tester approved",
             )
 
         assert "skipped_gates" not in caplog.text

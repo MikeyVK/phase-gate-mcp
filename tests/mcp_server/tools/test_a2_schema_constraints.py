@@ -1,7 +1,7 @@
 """Tests for C2 A2 static Pydantic model-level constraints.
 
 Covers:
-- ForcePhaseTransitionInput: skip_reason and human_approval have minLength=1 in JSON schema
+- ForcePhaseTransitionInput: skip_reason and human_approval_message have minLength=1 in JSON schema
 - CreateLabelInput: name pattern and color pattern constraints
 - InitializeProjectInput: model_validator requiring custom_phases for workflow_name='custom'
 
@@ -17,15 +17,15 @@ from mcp_server.tools.project_tools import InitializeProjectInput
 
 
 class TestForcePhaseTransitionInputSchema:
-    """C2.D1: skip_reason and human_approval have minLength=1 in JSON schema."""
+    """C2.D1: skip_reason and human_approval_message have minLength=1 in JSON schema."""
 
     def test_skip_reason_has_min_length_in_schema(self) -> None:
         schema = ForcePhaseTransitionInput.model_json_schema()
         assert schema["properties"]["skip_reason"].get("minLength") == 1
 
-    def test_human_approval_has_min_length_in_schema(self) -> None:
+    def test_human_approval_message_has_min_length_in_schema(self) -> None:
         schema = ForcePhaseTransitionInput.model_json_schema()
-        assert schema["properties"]["human_approval"].get("minLength") == 1
+        assert schema["properties"]["human_approval_message"].get("minLength") == 1
 
 
 class TestCreateLabelInputConstraints:

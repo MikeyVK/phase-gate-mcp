@@ -190,7 +190,7 @@ class TestIssue39CrossMachine:
             branch="fix/42-cross-machine-test",
             to_phase="validation",
             skip_reason="Trigger cross-machine recovery",
-            human_approval="Verifier approved on 2026-04-05",
+            human_approval_message="Verifier approved on 2026-04-05",
         )
 
         # Verify recovery inferred the pre-transition state correctly.
@@ -258,7 +258,7 @@ class TestIssue39CrossMachine:
             branch="fix/43-no-labels",
             to_phase="planning",
             skip_reason="Trigger recovery without scoped commits",
-            human_approval="Verifier approved on 2026-04-05",
+            human_approval_message="Verifier approved on 2026-04-05",
         )
 
         # Recovery should fallback to the first phase of the workflow.
@@ -339,7 +339,7 @@ class TestIssue39CrossMachine:
             branch="docs/44-documentation",
             to_phase="documentation",
             skip_reason="Trigger recovery for docs workflow",
-            human_approval="Verifier approved on 2026-04-05",
+            human_approval_message="Verifier approved on 2026-04-05",
         )
 
         # Git log returns commits newest first.

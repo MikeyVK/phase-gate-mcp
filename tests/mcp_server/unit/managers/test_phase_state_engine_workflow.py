@@ -65,7 +65,9 @@ class TestPhaseStateEngineTransitions:
 
         # Valid transition: phase[0] ÔåÆ phase[1] (next phase in workflow)
         result = phase_engine.transition(
-            branch="feature/42-test", to_phase=feature_phases[1], human_approval="Move to planning"
+            branch="feature/42-test",
+            to_phase=feature_phases[1],
+            human_approval_message="Move to planning",
         )
 
         assert result["success"] is True
@@ -92,7 +94,9 @@ class TestPhaseStateEngineTransitions:
         # Invalid transition: phase[0] ÔåÆ phase[2] (skips phase[1])
         with pytest.raises(ValueError) as exc_info:
             phase_engine.transition(
-                branch="feature/43-test", to_phase=feature_phases[2], human_approval="Skip planning"
+                branch="feature/43-test",
+                to_phase=feature_phases[2],
+                human_approval_message="Skip planning",
             )
 
         error_msg = str(exc_info.value)
@@ -122,7 +126,7 @@ class TestPhaseStateEngineTransitions:
             branch="feature/44-test",
             to_phase=feature_phases[2],
             skip_reason="Planning already done in previous project",
-            human_approval="Force skip planning",
+            human_approval_message="Force skip planning",
         )
 
         assert result["success"] is True
@@ -181,7 +185,9 @@ class TestPhaseStateEngineTransitions:
 
         # Normal transition
         phase_engine.transition(
-            branch="feature/47-test", to_phase=feature_phases[1], human_approval="Next phase"
+            branch="feature/47-test",
+            to_phase=feature_phases[1],
+            human_approval_message="Next phase",
         )
 
         # Forced transition
@@ -189,7 +195,7 @@ class TestPhaseStateEngineTransitions:
             branch="feature/47-test",
             to_phase=feature_phases[3],
             skip_reason="Design already done",
-            human_approval="Force skip design",
+            human_approval_message="Force skip design",
         )
 
         # Check transition history

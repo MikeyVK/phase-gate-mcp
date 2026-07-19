@@ -110,7 +110,7 @@ class TestExtraForbidOnAllInputModels:
                     "branch": "feature/1-x",
                     "to_phase": "implementation",
                     "skip_reason": "r",
-                    "human_approval": "ok",
+                    "human_approval_message": "ok",
                 },
             ),
             # pr

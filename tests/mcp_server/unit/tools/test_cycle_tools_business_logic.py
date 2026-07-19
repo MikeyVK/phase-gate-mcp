@@ -399,7 +399,7 @@ class TestForceCycleTransitionTool:
         assert last_entry.get("cycle_number") == 1
         assert last_entry.get("forced") is True
         assert "Re-testing schema changes" in last_entry.get("skip_reason", "")
-        assert "John approved" in last_entry.get("human_approval", "")
+        assert "John approved" in last_entry.get("human_approval_message", "")
 
     @pytest.mark.asyncio()
     async def test_force_skip_transition_succeeds(
