@@ -311,6 +311,7 @@ class TestServerBootstrapperConfigsAndManagers:
             server = bootstrapper.bootstrap()
             assert server is mock_mcp_server_cls.return_value
 
+
 class TestServerBootstrapperToolsAndResources:
     """Test suite for ServerBootstrapper tool and resource extraction."""
 
