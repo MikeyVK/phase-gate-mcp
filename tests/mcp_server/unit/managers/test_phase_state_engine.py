@@ -1468,7 +1468,8 @@ class TestHumanApprovalMessageMigration:
         assert len(state.cycle_history) == 1
         assert state.cycle_history[0]["human_approval_message"] == "Cycle transition approved"
 
-    def test_force_cycle_transition_deprecated_fallback(self, tmp_path: Path) -> None:
+    def test_force_cycle_transition_rejects_human_approval_deprecated_fallback(self, tmp_path: Path) -> None:
+        """C3: Parameter 'human_approval' is removed from force_cycle_transition()."""
         pm = make_project_manager(tmp_path)
         repo = InMemoryStateRepository()
         pm.initialize_project(430, "Test issue", "feature")
@@ -1511,21 +1512,13 @@ class TestHumanApprovalMessageMigration:
 
         engine = make_phase_state_engine(tmp_path, project_manager=pm, state_repository=repo)
 
-        # Act
-        with pytest.deprecated_call():
+        with pytest.raises(TypeError, match="unexpected keyword argument 'human_approval'"):
             engine.force_cycle_transition(
                 branch=branch,
                 to_cycle=2,
                 skip_reason="Force test",
-                human_approval="Cycle transition fallback approved",
+                human_approval="Cycle transition fallback approved",  # type: ignore
             )
-
-        # Assert
-        state = engine.get_state(branch)
-        assert len(state.cycle_history) == 1
-        assert (
-            state.cycle_history[0]["human_approval_message"] == "Cycle transition fallback approved"
-        )
 
     def test_load_legacy_state_with_human_approval(self, tmp_path: Path) -> None:
         state_file = tmp_path / "state.json"

@@ -98,14 +98,14 @@ class FakeForceCycleStateEngine:
         branch: str,
         to_cycle: int,
         skip_reason: str,
-        human_approval: str,
+        human_approval_message: str,
         gate_runner: object | None = None,
     ) -> dict[str, object]:
         self.last_call = {
             "branch": branch,
             "to_cycle": to_cycle,
             "skip_reason": skip_reason,
-            "human_approval": human_approval,
+            "human_approval_message": human_approval_message,
             "gate_runner": gate_runner,
         }
         return self._result
@@ -134,7 +134,7 @@ def _make_transition_advisory_execute(
                 total_cycles=total_cycles,
                 cycle_name=cycle_name,
                 skip_reason="testing",
-                human_approval="test",
+                human_approval_message="test",
             )
         return CycleTransitionOutput(
             success=success,
@@ -353,7 +353,7 @@ class TestCycleTools:
                         arguments={
                             "to_cycle": 2,
                             "skip_reason": "Force test",
-                            "human_approval": "Approved",
+                            "human_approval_message": "Approved",
                             "issue_number": 257,
                         },
                     )
@@ -540,7 +540,7 @@ class TestCycleTools:
                         arguments={
                             "to_cycle": 2,
                             "skip_reason": "Force test",
-                            "human_approval": "Approved",
+                            "human_approval_message": "Approved",
                             "issue_number": 257,
                         },
                     )
@@ -657,7 +657,7 @@ class TestForceCycleToolAdvisoryNote:
             ForceCycleTransitionInput(
                 to_cycle=3,
                 skip_reason="audited skip",
-                human_approval="Verifier approved",
+                human_approval_message="Verifier approved",
                 issue_number=257,
             ),
             context,
@@ -706,7 +706,7 @@ class TestForceCycleToolFormatting:
             ForceCycleTransitionInput(
                 to_cycle=4,
                 skip_reason="audited skip",
-                human_approval="Verifier approved",
+                human_approval_message="Verifier approved",
                 issue_number=257,
             ),
             NoteContext(),
@@ -755,7 +755,7 @@ class TestForceCycleToolFormatting:
             ForceCycleTransitionInput(
                 to_cycle=3,
                 skip_reason="audited skip",
-                human_approval="Verifier approved",
+                human_approval_message="Verifier approved",
                 issue_number=257,
             ),
             NoteContext(),
@@ -769,3 +769,37 @@ class TestForceCycleToolFormatting:
         assert result.passing_gates == ["cycle-docs"]
         assert result.skipped_gates_count == 0
         assert result.passing_gates_count == 1
+
+    def test_force_cycle_transition_input_rejects_boolean_approval(self) -> None:
+        """Reject boolean input for human_approval_message (C_CYCLE_TOOLS.3)."""
+        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError, match="human_approval_message"):
+            ForceCycleTransitionInput(
+                to_cycle=2,
+                skip_reason="Valid reason",
+                human_approval_message=True,  # type: ignore
+            )
+        with pytest.raises(ValidationError, match="human_approval_message"):
+            ForceCycleTransitionInput(
+                to_cycle=2,
+                skip_reason="Valid reason",
+                human_approval_message=False,  # type: ignore
+            )
+
+    def test_force_cycle_transition_input_rejects_empty_approval_and_reason(self) -> None:
+        """Reject empty/whitespace approval/reason (C_CYCLE_TOOLS.3)."""
+        from mcp_server.tools.cycle_tools import ForceCycleTransitionInput
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError, match="Field cannot be empty"):
+            ForceCycleTransitionInput(
+                to_cycle=2,
+                skip_reason="Valid reason",
+                human_approval_message="",
+            )
+        with pytest.raises(ValidationError, match="Field cannot be empty"):
+            ForceCycleTransitionInput(
+                to_cycle=2,
+                skip_reason="   ",
+                human_approval_message="Approved",
+            )
