@@ -227,7 +227,7 @@ class ForcePhaseTransitionTool(
 ):
     """MCP tool for forced non-sequential phase transitions.
 
-    Bypasses workflow validation. Requires skip_reason and human_approval.
+    Bypasses workflow validation. Requires skip_reason and human_approval_message.
     Marks transitions with forced=True flag in state.json audit trail.
     """
 
