@@ -97,7 +97,9 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     assert (server_root / "config").exists()
     assert (server_root / "templates").exists()
     assert (server_root / "config" / "workflows.yaml").exists()
-
+    version_file = server_root / ".version"
+    assert version_file.exists()
+    assert version_file.read_text(encoding="utf-8").strip() == settings.server.version
 
 def test_cli_fails_fast_when_state_dir_missing(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
