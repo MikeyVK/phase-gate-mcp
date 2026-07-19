@@ -273,3 +273,23 @@ def test_assets_directories_exist() -> None:
     # Verifies assets directory exists
     assets_dir = Path(__file__).resolve().parents[4] / "mcp_server" / "assets"
     assert assets_dir.exists()
+
+
+def test_bypass_version_check_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Under pytest, it should default to True
+    assert Settings().server.bypass_version_check is True
+
+    # If we clear PYTEST_CURRENT_TEST, it should default to False
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    assert Settings().server.bypass_version_check is False
+
+
+def test_bypass_version_check_from_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Explicit PGMCP_BYPASS_VERSION_CHECK="false" overrides pytest Default
+    monkeypatch.setenv("PGMCP_BYPASS_VERSION_CHECK", "false")
+    assert Settings.from_env().server.bypass_version_check is False
+
+    # Explicit PGMCP_BYPASS_VERSION_CHECK="true" overrides default False
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.setenv("PGMCP_BYPASS_VERSION_CHECK", "true")
+    assert Settings.from_env().server.bypass_version_check is True
