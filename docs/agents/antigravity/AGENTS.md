@@ -85,7 +85,7 @@ This document is a **binding contract**. Code that violates these principles is 
 | Initialize project | `initialize_project(issue_number, issue_title, workflow_name)` | Manual .pgmcp/ file creation |
 | Get project plan | `get_project_plan(issue_number)` | Manual .pgmcp/ file reading |
 | Transition phase | `transition_phase(branch, to_phase)` | Manual .pgmcp/state.json edit |
-| Force phase transition | `force_phase_transition(branch, to_phase, skip_reason, human_approval)` | Manual .pgmcp/state.json edit |
+| Force phase transition | `force_phase_transition(branch, to_phase, skip_reason, human_approval_message)` | Manual .pgmcp/state.json edit |
 
 ### Discovery & Admin
 | Action | ✅ USE THIS | ❌ NEVER USE |

@@ -1,7 +1,7 @@
 """Tests for C2 A2 static Pydantic model-level constraints.
 
 Covers:
-- ForcePhaseTransitionInput: skip_reason and human_approval have minLength=1 in JSON schema
+- ForcePhaseTransitionInput: skip_reason and human_approval_message have minLength=1 in JSON schema
 - CreateLabelInput: name pattern and color pattern constraints
 - InitializeProjectInput: model_validator requiring custom_phases for workflow_name='custom'
 
@@ -14,18 +14,34 @@ from pydantic import ValidationError
 from mcp_server.tools.label_tools import CreateLabelInput
 from mcp_server.tools.phase_tools import ForcePhaseTransitionInput
 from mcp_server.tools.project_tools import InitializeProjectInput
+from mcp_server.tools.cycle_tools import ForceCycleTransitionInput
 
 
 class TestForcePhaseTransitionInputSchema:
-    """C2.D1: skip_reason and human_approval have minLength=1 in JSON schema."""
+    """C2.D1: skip_reason and human_approval_message have minLength=1 in JSON schema."""
 
     def test_skip_reason_has_min_length_in_schema(self) -> None:
         schema = ForcePhaseTransitionInput.model_json_schema()
         assert schema["properties"]["skip_reason"].get("minLength") == 1
 
-    def test_human_approval_has_min_length_in_schema(self) -> None:
+    def test_human_approval_message_has_min_length_in_schema(self) -> None:
         schema = ForcePhaseTransitionInput.model_json_schema()
-        assert schema["properties"]["human_approval"].get("minLength") == 1
+        assert schema["properties"]["human_approval_message"].get("minLength") == 1
+
+
+class TestForceCycleTransitionInputSchema:
+    """C3: skip_reason and human_approval_message have minLength=1 in JSON schema
+
+    for cycle tools.
+    """
+
+    def test_skip_reason_has_min_length_in_schema(self) -> None:
+        schema = ForceCycleTransitionInput.model_json_schema()
+        assert schema["properties"]["skip_reason"].get("minLength") == 1
+
+    def test_human_approval_message_has_min_length_in_schema(self) -> None:
+        schema = ForceCycleTransitionInput.model_json_schema()
+        assert schema["properties"]["human_approval_message"].get("minLength") == 1
 
 
 class TestCreateLabelInputConstraints:

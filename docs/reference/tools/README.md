@@ -114,10 +114,10 @@ Workflow lifecycle management with phase tracking and transition validation.
 | `get_project_plan` | Get project phase plan for issue | `issue_number` |
 | `save_planning_deliverables` | Save planning deliverables for issue | `issue_number` |
 | `update_planning_deliverables` | Update/merge planning deliverables | `issue_number` |
-| `transition_phase` | Sequential phase transition | `branch`, `to_phase`, `human_approval` |
-| `force_phase_transition` | Skip phases (requires reason + approval) | `branch`, `to_phase`, `skip_reason`, `human_approval` |
+| `transition_phase` | Sequential phase transition | `branch`, `to_phase`, `human_approval_message` |
+| `force_phase_transition` | Skip phases (requires reason + approval) | `branch`, `to_phase`, `skip_reason`, `human_approval_message` |
 | `transition_cycle` | Sequential TDD cycle transition | `to_cycle` |
-| `force_cycle_transition` | Skip to cycle (requires reason + approval) | `to_cycle`, `skip_reason`, `human_approval` |
+| `force_cycle_transition` | Skip to cycle (requires reason + approval) | `to_cycle`, `skip_reason`, `human_approval_message` |
 
 **📖 See:** [project.md](project.md) for workflow types, phase validation rules, and state tracking.
 

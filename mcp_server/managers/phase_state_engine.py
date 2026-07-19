@@ -26,8 +26,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-# Project modules
 from pydantic import ValidationError
 
 from mcp_server.core.interfaces import (
@@ -63,7 +61,7 @@ class TransitionRecord:
     timestamp: str
 
     # Metadata
-    human_approval: str | None
+    human_approval_message: str | None
     forced: bool
 
     # Optional fields
@@ -185,7 +183,10 @@ class PhaseStateEngine:
         }
 
     def transition(
-        self, branch: str, to_phase: str, human_approval: str | None = None
+        self,
+        branch: str,
+        to_phase: str,
+        human_approval_message: str | None = None,
     ) -> dict[str, Any]:
         """Execute strict sequential phase transition."""
         state = self._load_state_or_reconstruct(branch)
@@ -208,11 +209,13 @@ class PhaseStateEngine:
             self.on_exit_cycle_based_phase(branch)
             state = self._load_state_or_reconstruct(branch)
 
+        resolved_approval = self._resolve_approval(human_approval_message, required=False)
+
         transition = TransitionRecord(
             from_phase=from_phase,
             to_phase=to_phase,
             timestamp=datetime.now(UTC).isoformat(),
-            human_approval=human_approval,
+            human_approval_message=resolved_approval,
             forced=False,
         )
 
@@ -232,7 +235,11 @@ class PhaseStateEngine:
         return {"success": True, "from_phase": from_phase, "to_phase": to_phase}
 
     def force_transition(
-        self, branch: str, to_phase: str, skip_reason: str, human_approval: str
+        self,
+        branch: str,
+        to_phase: str,
+        skip_reason: str,
+        human_approval_message: str | None = None,
     ) -> dict[str, Any]:
         """Execute forced non-sequential phase transition."""
         state = self._load_state_or_reconstruct(branch)
@@ -264,11 +271,13 @@ class PhaseStateEngine:
             self.on_exit_cycle_based_phase(branch)
             state = self.get_state(branch)
 
+        resolved_approval = self._resolve_approval(human_approval_message, required=True)
+
         transition = TransitionRecord(
             from_phase=from_phase,
             to_phase=to_phase,
             timestamp=datetime.now(UTC).isoformat(),
-            human_approval=human_approval,
+            human_approval_message=resolved_approval,
             forced=True,
             skip_reason=skip_reason,
         )
@@ -357,7 +366,7 @@ class PhaseStateEngine:
         branch: str,
         to_cycle: int,
         skip_reason: str,
-        human_approval: str,
+        human_approval_message: str | None = None,
         gate_runner: IWorkflowGateRunner | None = None,
     ) -> dict[str, Any]:
         """Execute one forced cycle transition inside the active cycle-based phase."""
@@ -366,12 +375,8 @@ class PhaseStateEngine:
                 "skip_reason is required for forced transitions. "
                 "Provide justification for backward/skip transition."
             )
-        if not human_approval or not human_approval.strip():
-            raise ValueError(
-                "human_approval is required for forced transitions. "
-                "Provide approval (e.g., 'John approved on 2026-02-17')."
-            )
 
+        resolved_approval = self._resolve_approval(human_approval_message, required=True)
         state = self._load_state_or_reconstruct(branch)
         issue_number = self._require_issue_number(branch, state)
         cycles, total_cycles = self._get_cycles(issue_number)
@@ -402,7 +407,7 @@ class PhaseStateEngine:
             "entered": datetime.now(UTC).isoformat(),
             "forced": True,
             "skip_reason": skip_reason,
-            "human_approval": human_approval,
+            "human_approval_message": resolved_approval,
             "skipped_cycles": skipped_cycles,
         }
         self._workflow_state_mutator.apply(
@@ -652,7 +657,7 @@ class PhaseStateEngine:
             "from_phase": transition.from_phase,
             "to_phase": transition.to_phase,
             "timestamp": transition.timestamp,
-            "human_approval": transition.human_approval,
+            "human_approval_message": transition.human_approval_message,
             "forced": transition.forced,
             "skip_reason": transition.skip_reason,
         }
@@ -706,3 +711,17 @@ class PhaseStateEngine:
             return _s
 
         self._workflow_state_mutator.apply(branch, _exit_lambda)
+
+    def _resolve_approval(
+        self,
+        human_approval_message: str | None,
+        required: bool = False,
+    ) -> str | None:
+        """Resolve human_approval_message parameter."""
+        actual_approval = human_approval_message
+        if required and (not actual_approval or not actual_approval.strip()):
+            raise ValueError(
+                "human_approval_message is required for forced transitions. "
+                "Provide approval (e.g., 'John approved on 2026-02-17')."
+            )
+        return actual_approval

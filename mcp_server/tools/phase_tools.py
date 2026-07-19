@@ -40,13 +40,22 @@ class TransitionPhaseInput(BaseModel):
             "Call get_work_context() to see the valid phase list for this branch."
         )
     )
-    human_approval: str | None = Field(default=None, description="Optional human approval message")
+    human_approval_message: str | None = Field(
+        default=None, description="Optional human approval message"
+    )
+
+    @field_validator("human_approval_message", mode="before")
+    @classmethod
+    def reject_boolean_approval(cls, v: Any) -> Any:
+        if isinstance(v, bool):
+            raise ValueError("human_approval_message cannot be a boolean")
+        return v
 
 
 class ForcePhaseTransitionInput(BaseModel):
     """Input model for ForcePhaseTransitionTool.
 
-    Requires both skip_reason and human_approval for audit trail.
+    Requires both skip_reason and human_approval_message for audit trail.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -59,12 +68,21 @@ class ForcePhaseTransitionInput(BaseModel):
         )
     )
     skip_reason: str = Field(description="Reason for skipping validation (audit)", min_length=1)
-    human_approval: str = Field(description="Human approval message (required)", min_length=1)
+    human_approval_message: str = Field(
+        description="Human approval message (required)", min_length=1
+    )
 
-    @field_validator("skip_reason", "human_approval")
+    @field_validator("human_approval_message", mode="before")
+    @classmethod
+    def reject_boolean_approval(cls, v: Any) -> Any:
+        if isinstance(v, bool):
+            raise ValueError("human_approval_message cannot be a boolean")
+        return v
+
+    @field_validator("skip_reason", "human_approval_message")
     @classmethod
     def validate_not_empty(cls, v: str) -> str:
-        """Ensure skip_reason and human_approval are not empty."""
+        """Ensure skip_reason and human_approval_message are not empty."""
         if not v or not v.strip():
             msg = "Field cannot be empty"
             raise ValueError(msg)
@@ -164,7 +182,9 @@ class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransit
 
         def do_transition() -> dict[str, Any]:
             return engine.transition(
-                branch=params.branch, to_phase=params.to_phase, human_approval=params.human_approval
+                branch=params.branch,
+                to_phase=params.to_phase,
+                human_approval_message=params.human_approval_message,
             )
 
         try:
@@ -207,7 +227,7 @@ class ForcePhaseTransitionTool(
 ):
     """MCP tool for forced non-sequential phase transitions.
 
-    Bypasses workflow validation. Requires skip_reason and human_approval.
+    Bypasses workflow validation. Requires skip_reason and human_approval_message.
     Marks transitions with forced=True flag in state.json audit trail.
     """
 
@@ -243,7 +263,7 @@ class ForcePhaseTransitionTool(
                 branch=params.branch,
                 to_phase=params.to_phase,
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
             )
 
         try:
@@ -277,7 +297,7 @@ class ForcePhaseTransitionTool(
                 passing_gates_count=len(passing),
                 skipped_gates_count=len(blocking),
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
                 skipped_gates_warning=skipped_gates_warning,
                 passing_gates_info=passing_gates_info,
             )
@@ -292,7 +312,7 @@ class ForcePhaseTransitionTool(
                 from_phase="",
                 to_phase=params.to_phase,
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
             )
         except (ValueError, OSError, RuntimeError, KeyError) as e:
             return ForcePhaseTransitionOutput(
@@ -302,5 +322,5 @@ class ForcePhaseTransitionTool(
                 from_phase="",
                 to_phase=params.to_phase,
                 skip_reason=params.skip_reason,
-                human_approval=params.human_approval,
+                human_approval_message=params.human_approval_message,
             )

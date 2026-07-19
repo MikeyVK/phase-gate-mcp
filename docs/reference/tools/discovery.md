@@ -361,7 +361,7 @@ The restart mechanism uses a transparent proxy:
 
 ```
 1. get_work_context() → inspect the invalid workflow-state warning and valid phases list
-2. force_phase_transition(branch="feature/123-oauth", to_phase="documentation", skip_reason="Repair invalid branch state", human_approval="Approved by workflow owner to repair invalid phase state")
+2. force_phase_transition(branch="feature/123-oauth", to_phase="documentation", skip_reason="Repair invalid branch state", human_approval_message="Approved by workflow owner to repair invalid phase state")
 3. get_work_context() → reload the current phase context and instructions
 ```
 

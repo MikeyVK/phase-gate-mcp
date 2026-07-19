@@ -151,7 +151,7 @@ class TestForcePhaseTransitionTool:
             branch=initialized_branch,
             to_phase=feature_phases[2],  # design
             skip_reason="Planning already done in previous project",
-            human_approval="Approved: Skip planning phase",
+            human_approval_message="Approved: Skip planning phase",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -183,7 +183,7 @@ class TestForcePhaseTransitionTool:
             branch=initialized_branch,
             to_phase=feature_phases[2],
             skip_reason="Planning already done in previous project",
-            human_approval="Approved: Skip planning phase",
+            human_approval_message="Approved: Skip planning phase",
         )
         context = NoteContext()
 
@@ -201,19 +201,19 @@ class TestForcePhaseTransitionTool:
                 branch=initialized_branch,
                 to_phase=feature_phases[2],  # design
                 skip_reason="",
-                human_approval="Approved",
+                human_approval_message="Approved",
             )
 
-    def test_force_phase_transition_tool_requires_human_approval(
+    def test_force_phase_transition_tool_requires_human_approval_message(
         self, initialized_branch: str, feature_phases: list[str]
     ) -> None:
-        """Test tool requires human_approval parameter."""
+        """Test tool requires human_approval_message parameter."""
         with pytest.raises(ValidationError):
             ForcePhaseTransitionInput(
                 branch=initialized_branch,
                 to_phase=feature_phases[2],  # design
                 skip_reason="Planning done",
-                human_approval="",
+                human_approval_message="",
             )
 
     @pytest.mark.asyncio
@@ -225,7 +225,7 @@ class TestForcePhaseTransitionTool:
             branch="feature/999-unknown",
             to_phase=feature_phases[2],  # design
             skip_reason="Testing error handling",
-            human_approval="Approved",
+            human_approval_message="Approved",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -247,7 +247,7 @@ class TestForcePhaseTransitionTool:
         phase_engine.transition(
             branch=initialized_branch,
             to_phase=feature_phases[1],  # planning
-            human_approval="Normal transition",
+            human_approval_message="Normal transition",
         )
 
         # Force backward transition (planning → discovery)
@@ -255,7 +255,7 @@ class TestForcePhaseTransitionTool:
             branch=initialized_branch,
             to_phase=feature_phases[0],  # discovery (Backward!)
             skip_reason="Need to revisit discovery phase",
-            human_approval="Approved: Return to discovery",
+            human_approval_message="Approved: Return to discovery",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -274,13 +274,13 @@ class TestForcePhaseTransitionTool:
             branch="feature/42-test",
             to_phase=feature_phases[2],  # design
             skip_reason="Valid reason",
-            human_approval="Approved",
+            human_approval_message="Approved",
         )
 
         assert valid.branch == "feature/42-test"
         assert valid.to_phase == feature_phases[2]  # design
         assert valid.skip_reason == "Valid reason"
-        assert valid.human_approval == "Approved"
+        assert valid.human_approval_message == "Approved"
 
 
 # ---------------------------------------------------------------------------
@@ -364,7 +364,7 @@ phases:
             branch=branch,
             to_phase="design",
             skip_reason="Emergency skip",
-            human_approval="Michel approved on 2026-02-19",
+            human_approval_message="Michel approved on 2026-02-19",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -396,7 +396,7 @@ phases:
             branch=branch,
             to_phase="design",
             skip_reason="Emergency skip",
-            human_approval="Michel approved on 2026-02-19",
+            human_approval_message="Michel approved on 2026-02-19",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -477,7 +477,7 @@ phases:
             branch=branch,
             to_phase="design",
             skip_reason="Force test",
-            human_approval="Approved",
+            human_approval_message="Approved",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -509,7 +509,7 @@ phases:
             branch=branch,
             to_phase="design",
             skip_reason="Force test",
-            human_approval="Approved",
+            human_approval_message="Approved",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -559,7 +559,7 @@ phases:
             branch=branch,
             to_phase="design",
             skip_reason="Force test",
-            human_approval="Approved",
+            human_approval_message="Approved",
         )
 
         result = await tool.execute(params, NoteContext())
@@ -568,3 +568,20 @@ phases:
         assert result.success is True
         assert len(result.skipped_gates) == 0
         assert len(result.passing_gates) == 0
+
+    def test_force_phase_transition_input_rejects_boolean_approval(self) -> None:
+        """Reject boolean input for human_approval_message (C_PHASE_TOOLS.2)."""
+        with pytest.raises(ValidationError, match="human_approval_message"):
+            ForcePhaseTransitionInput(
+                branch="feature/42-test",
+                to_phase="design",
+                skip_reason="Valid reason",
+                human_approval_message=True,  # type: ignore
+            )
+        with pytest.raises(ValidationError, match="human_approval_message"):
+            ForcePhaseTransitionInput(
+                branch="feature/42-test",
+                to_phase="design",
+                skip_reason="Valid reason",
+                human_approval_message=False,  # type: ignore
+            )

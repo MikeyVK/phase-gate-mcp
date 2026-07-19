@@ -64,7 +64,7 @@ class TestExtraForbidOnAllInputModels:
             (TransitionCycleInput, {"to_cycle": 2}),
             (
                 ForceCycleTransitionInput,
-                {"to_cycle": 2, "skip_reason": "r", "human_approval": "ok"},
+                {"to_cycle": 2, "skip_reason": "r", "human_approval_message": "ok"},
             ),
             # discovery
             (SearchDocumentationInput, {"query": "test"}),
@@ -110,7 +110,7 @@ class TestExtraForbidOnAllInputModels:
                     "branch": "feature/1-x",
                     "to_phase": "implementation",
                     "skip_reason": "r",
-                    "human_approval": "ok",
+                    "human_approval_message": "ok",
                 },
             ),
             # pr

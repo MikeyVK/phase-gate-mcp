@@ -447,7 +447,7 @@ class TestServerToolRegistration:
                         arguments={
                             "branch": "feature/257-reorder-workflow-phases",
                             "to_phase": "planning",
-                            "human_approval": "Move into planning",
+                            "human_approval_message": "Move into planning",
                         },
                     )
                 )
@@ -505,7 +505,7 @@ class TestServerToolRegistration:
                             "branch": "feature/257-reorder-workflow-phases",
                             "to_phase": "planning",
                             "skip_reason": "Force test",
-                            "human_approval": "Approved",
+                            "human_approval_message": "Approved",
                         },
                     )
                 )
@@ -580,7 +580,7 @@ class TestServerToolRegistration:
                         arguments={
                             "branch": branch,
                             "to_phase": "design",
-                            "human_approval": "Move into design",
+                            "human_approval_message": "Move into design",
                         },
                     )
                 )
@@ -642,7 +642,7 @@ class TestServerToolRegistration:
                             "branch": "feature/257-reorder-workflow-phases",
                             "to_phase": "planning",
                             "skip_reason": "Force test",
-                            "human_approval": "Approved",
+                            "human_approval_message": "Approved",
                         },
                     )
                 )
