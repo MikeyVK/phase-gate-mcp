@@ -265,9 +265,9 @@ class ServerBootstrapper:
         version_file = settings.server.resolved_server_root / ".version"
         if not version_file.exists():
             raise ConfigError(
-                f"Workspace version tracking file is missing: '{version_file}'. "
+                f"Workspace version tracking file is missing: '{version_file.as_posix()}'. "
                 "Please run with '--init' to initialize the workspace.",
-                file_path=str(version_file),
+                file_path=version_file.as_posix(),
             )
 
         try:
@@ -275,7 +275,7 @@ class ServerBootstrapper:
         except Exception as e:
             raise ConfigError(
                 f"Failed to read workspace version file: {e}",
-                file_path=str(version_file),
+                file_path=version_file.as_posix(),
             ) from e
 
         expected_version = settings.server.version
@@ -283,7 +283,7 @@ class ServerBootstrapper:
             raise ConfigError(
                 f"Workspace version mismatch. Workspace version: {version_str}, "
                 f"Server version: {expected_version}. Please upgrade your workspace.",
-                file_path=str(version_file),
+                file_path=version_file.as_posix(),
             )
 
     def _build_config_layer(self) -> ConfigLayer:
