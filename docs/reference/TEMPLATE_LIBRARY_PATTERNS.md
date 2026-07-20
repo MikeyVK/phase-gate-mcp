@@ -1,4 +1,4 @@
-<!-- docs/reference/mcp/TEMPLATE_LIBRARY_PATTERNS.md -->
+<!-- docs/reference/TEMPLATE_LIBRARY_PATTERNS.md -->
 <!-- template=reference version=064954ea created=2026-02-07T00:00Z updated= -->
 # Template Library Pattern Guide (Tier 3) - S1mpleTraderV3
 
@@ -52,12 +52,12 @@ Tier 3 templates are macro libraries imported into concrete templates. Each patt
 
 ## Related Documentation
 - **[docs/architecture/TEMPLATE_LIBRARY.md][related-1]**
-- **[docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md][related-2]**
+- **[docs/reference/TEMPLATE_LIBRARY_USAGE.md][related-2]**
 
 <!-- Link definitions -->
 
 [related-1]: docs/architecture/TEMPLATE_LIBRARY.md
-[related-2]: docs/reference/mcp/TEMPLATE_LIBRARY_USAGE.md
+[related-2]: docs/reference/TEMPLATE_LIBRARY_USAGE.md
 
 ---
 
@@ -65,4 +65,5 @@ Tier 3 templates are macro libraries imported into concrete templates. Each patt
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ paths in headers and links |
 | 1.0 | 2026-02-07 | Agent | Initial draft |

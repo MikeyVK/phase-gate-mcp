@@ -1,4 +1,4 @@
-<!-- docs/reference/mcp/README.md -->
+<!-- docs/reference/README.md -->
 <!-- template=reference version=064954ea created=2026-06-04T00:00Z updated= -->
 # MCP Template/Scaffolding Reference
 
@@ -54,4 +54,5 @@ The scaffolding pipeline has three layers:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ path in header |
 | 1.0 | 2026-06-04 | Agent | Initial navigation surface for template/scaffolding cluster (#286) |

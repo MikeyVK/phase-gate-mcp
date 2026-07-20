@@ -6,14 +6,14 @@ This directory is the operational index for the PhaseGate MCP Server.
 
 To avoid contract drift, the authoritative public MCP tool documentation lives in:
 
-- [docs/reference/mcp/MCP_TOOLS.md](../reference/mcp/MCP_TOOLS.md) for the public tool inventory
-- [docs/reference/mcp/tools/README.md](../reference/mcp/tools/README.md) for category navigation
-- [docs/reference/mcp/tools/git.md](../reference/mcp/tools/git.md) for git workflow tools
-- [docs/reference/mcp/tools/github.md](../reference/mcp/tools/github.md) for issue, PR, label, and milestone tools
-- [docs/reference/mcp/tools/project.md](../reference/mcp/tools/project.md) for project and phase tools
-- [docs/reference/mcp/tools/quality.md](../reference/mcp/tools/quality.md) for tests, gates, and validation
-- [docs/reference/mcp/tools/scaffolding.md](../reference/mcp/tools/scaffolding.md) for `scaffold_artifact`
-- [docs/reference/mcp/tools/discovery.md](../reference/mcp/tools/discovery.md) for `search_documentation` and `get_work_context`
+- [docs/reference/MCP_TOOLS.md](../reference/MCP_TOOLS.md) for the public tool inventory
+- [docs/reference/tools/README.md](../reference/tools/README.md) for category navigation
+- [docs/reference/tools/git.md](../reference/tools/git.md) for git workflow tools
+- [docs/reference/tools/github.md](../reference/tools/github.md) for issue, PR, label, and milestone tools
+- [docs/reference/tools/project.md](../reference/tools/project.md) for project and phase tools
+- [docs/reference/tools/quality.md](../reference/tools/quality.md) for tests, gates, and validation
+- [docs/reference/tools/scaffolding.md](../reference/tools/scaffolding.md) for `scaffold_artifact`
+- [docs/reference/tools/discovery.md](../reference/tools/discovery.md) for `search_documentation` and `get_work_context`
 
 This directory links the MCP server architecture and operational guidance around those references.
 
@@ -44,7 +44,7 @@ Use `scaffold_artifact` to generate code and documentation artifacts from the ar
 | **Design Doc** | `scaffold_artifact(artifact_type="design", name="momentum-scanner-design", context={...})` |
 | **Architecture Doc** | `scaffold_artifact(artifact_type="architecture", name="system-overview", context={...})` |
 
-For template and registry details, see [docs/reference/mcp/tools/scaffolding.md](../reference/mcp/tools/scaffolding.md).
+For template and registry details, see [docs/reference/tools/scaffolding.md](../reference/tools/scaffolding.md).
 
 ## Quick Reference
 
@@ -79,3 +79,12 @@ Use `submit_pr` for public PR creation. The tool:
 5. Writes `PRStatus.OPEN` to cache.
 
 `submit_pr` is blocked unless the workflow phase is `ready`, and all `branch_mutating` tools are blocked while the branch has an open PR.
+
+---
+
+## Version History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ paths in tool index links |
+| 1.0 | 2026-06-04 | Agent | Initial README |
