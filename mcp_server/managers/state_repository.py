@@ -38,6 +38,7 @@ class BranchState(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", populate_by_name=True)
 
+    schema_version: str = "1.0.0"
     branch: str
     issue_number: int | None = None
     workflow_name: str

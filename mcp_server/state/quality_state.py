@@ -15,5 +15,7 @@ class QualityState(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
+    schema_version: str = "1.0.0"
+    baseline_sha: str | None = None
     baseline_sha: str | None = None
     failed_files: list[str] = Field(default_factory=list)

@@ -71,6 +71,7 @@ class FileQualityStateRepository:
             current = self.load()
             updated = mutate(current)
             payload = {
+                "schema_version": updated.schema_version,
                 "baseline_sha": updated.baseline_sha,
                 "failed_files": list(updated.failed_files),
             }

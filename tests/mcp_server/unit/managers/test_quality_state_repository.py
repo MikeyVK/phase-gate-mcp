@@ -19,6 +19,7 @@ from tests.mcp_server.test_support import get_default_server_root
 
 
 import inspect
+import json
 from pathlib import Path
 
 import mcp_server.managers.quality_state_repository as _qsr_module

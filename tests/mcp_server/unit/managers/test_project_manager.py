@@ -103,7 +103,7 @@ class TestProjectManagerWorkflows:
         projects_file = workspace_root / get_default_server_root() / "deliverables.json"
         assert projects_file.exists()
 
-        projects = json.loads(projects_file.read_text())
+        projects = manager._read_projects()
         assert "42" in projects
         project = projects["42"]
         assert project["workflow_name"] == "feature"
@@ -128,7 +128,7 @@ class TestProjectManagerWorkflows:
 
         # Check deliverables.json
         projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-        projects = json.loads(projects_file.read_text())
+        projects = manager._read_projects()
         assert projects["99"]["execution_mode"] == "interactive"
 
     def test_initialize_project_with_execution_mode_override(
@@ -146,7 +146,7 @@ class TestProjectManagerWorkflows:
 
         # Check deliverables.json
         projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-        projects = json.loads(projects_file.read_text())
+        projects = manager._read_projects()
         assert projects["77"]["execution_mode"] == "autonomous"
 
     def test_initialize_project_with_custom_phases(
@@ -178,7 +178,7 @@ class TestProjectManagerWorkflows:
 
         # Check deliverables.json
         projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-        projects = json.loads(projects_file.read_text())
+        projects = manager._read_projects()
         project = projects["50"]
         assert tuple(project["required_phases"]) == custom_phases
         assert project["skip_reason"] == "Adding design phase for complex refactor"
@@ -926,12 +926,22 @@ class TestProjectManagerVersioning:
             
             # 2. save_planning_deliverables
             mock_write.reset_mock()
-            from mcp_server.managers.project_manager import CyclePlanningModel
-            dummy_planning = CyclePlanningModel()
+            dummy_planning = {
+                "cycles": {
+                    "total": 1,
+                    "cycles": [
+                        {
+                            "cycle_number": 1,
+                            "deliverables": [{"id": "D1.1", "description": "dummy"}],
+                            "exit_criteria": "dummy"
+                        }
+                    ]
+                }
+            }
             manager.save_planning_deliverables(42, dummy_planning)
             assert mock_write.call_count == 1
             
             # 3. update_planning_deliverables
             mock_write.reset_mock()
-            manager.update_planning_deliverables(42, "C_EXC_VALIDATOR.1", "D1.1", completed=True)
+            manager.update_planning_deliverables(42, {"cycles": {"cycles": [{"cycle_number": 1, "deliverables": [{"id": "D1.1", "description": "dummy"}]}]}})
             assert mock_write.call_count == 1
