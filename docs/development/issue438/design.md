@@ -1,9 +1,9 @@
 <!-- c:\temp\pgmcp\docs\development\issue438\design.md -->
-<!-- template=design version=5827e841 created=2026-07-20T20:38Z updated=2026-07-20T22:45Z -->
+<!-- template=design version=5827e841 created=2026-07-20T20:38Z updated=2026-07-20T23:05Z -->
 # Dynamic State File Versioning Design
 
 **Status:** DRAFT  
-**Version:** 1.0  
+**Version:** 1.1  
 **Last Updated:** 2026-07-20
 
 ---
@@ -16,8 +16,10 @@ Define the architectural and interface design for dynamic state file version val
 
 **In Scope:**
 - Exception hierarchy subclassing `ConfigError` for state errors.
-- Design of the `StateVersionValidator` utility service.
-- Integration points in `FileStateRepository`, `ProjectManager`, and `FileQualityStateRepository`.
+- Design of the `StateVersionValidator` utility service respecting Command-Query Separation (CQS).
+- Deliverables validation and envelope save paths in `ProjectManager`.
+- Integration points in `FileStateRepository` and `FileQualityStateRepository`.
+- Refactoring `GetWorkContextTool` error handling to let corruption and mismatch exceptions bubble.
 - Removal of the git-log silent reconstruction fallback in `PhaseStateEngine`.
 - Schema additions (`schema_version: str = "1.0.0"`) to all state DTO models.
 - Design of the `WorkspaceVersionValidator` service and `ServerBootstrapper` cleanup.
@@ -74,7 +76,7 @@ A dedicated manager service `StateVersionValidator` performs load-time file vali
 
 ### 2.2. Option 2: Automatic Pydantic schema migration in Python code
 
-Implement python-level migration logic to translate older schema versions to new schema formats on the fly.
+Implement python-level migration logic to translate older schema formats to new schema formats on the fly.
 
 **Pros:**
 - Preserves existing state data across minor version changes.
@@ -101,16 +103,10 @@ Implement python-level migration logic to translate older schema versions to new
 
 ## 4. Technical Specification
 
-### 4.1. Class Structure & Interfaces
+### 4.1. State Exceptions (`mcp_server/core/exceptions.py`)
 
-```mermaid
-graph TD
-    Repo[FileStateRepository / ProjectManager / QualityRepo] -->|validate / load| Validator[StateVersionValidator]
-    Validator -->|mismatch / corrupt| Disk[Disk - rename to .bak]
-    Validator -->|raise exception| Exception[ConfigError Subclass]
-```
+We introduce/refactor the following exceptions as subclasses of `ConfigError` to align with the Russian Doll pipeline:
 
-#### State Exceptions (`mcp_server/core/exceptions.py`)
 ```python
 from mcp_server.core.exceptions import ConfigError
 
@@ -131,47 +127,129 @@ class PlanningVersionMismatchError(ConfigError):
     def __init__(self, message: str, file_path: str, actual_version: str, expected_version: str) -> None: ...
 ```
 
-#### State Version Validator (`mcp_server/managers/state_version_validator.py`)
+---
+
+### 4.2. State Version Validator with CQS Compliance (`mcp_server/managers/state_version_validator.py`)
+
+To satisfy Command-Query Separation (CQS), validation checks (Queries) are split from file operations (Commands).
+
 ```python
 from pathlib import Path
-from typing import Any
 
 class StateVersionValidator:
     """Service responsible for validating dynamic state file schema versions and corruptions."""
     
-    def validate_and_load(
+    def validate_file(
         self,
         file_path: Path,
         expected_version: str,
         is_planning: bool = False
-    ) -> dict[str, Any] | None:
-        """Validate dynamic state file schema version and contents.
+    ) -> None:
+        """Read and validate the version and syntax of a state file (Query).
         
-        If missing: returns None.
-        If corrupt: renames file to {filename}.bak and raises StateCorruptedError.
-        If version mismatch: renames file to {filename}.bak and raises appropriate VersionMismatchError.
-        If valid: returns parsed json dictionary.
+        Does not mutate the filesystem.
+        
+        Raises:
+            StateNotFoundError: If the file does not exist.
+            StateCorruptedError: If JSON decoding or base schema validation fails.
+            StateVersionMismatchError: If the version field does not match expected_version.
+            PlanningVersionMismatchError: If deliverables.json version does not match expected_version.
+        """
+        ...
+
+    def backup_file(self, file_path: Path) -> None:
+        """Rename the invalid file at file_path to file_path.bak (Command).
+        
+        If a backup file already exists, it is overwritten.
         """
         ...
 ```
 
-#### Workspace Version Validator (`mcp_server/core/workspace_validator.py`)
+#### Orchestration Flow in Repositories/Managers (CQS Integration)
+Repositories compose `StateVersionValidator` and orchestrate the Query and Command operations in their load paths:
+
 ```python
-from mcp_server.config.settings import ServerSettings
-
-class WorkspaceVersionValidator:
-    """Validator for workspace .version compatibility checking at server boot."""
-    
-    def validate(self, settings: ServerSettings) -> None:
-        """Validate workspace .version file against server package version.
-        
-        Bypasses if bypass_version_check is configured.
-        Raises ConfigError on mismatch or missing file.
-        """
-        ...
+# Conceptual repository loading logic
+try:
+    # 1. Query: Validate the file (throws on mismatch/corrupt)
+    self._validator.validate_file(self._backing_file, EXPECTED_VERSION)
+    # 2. Query: Read and parse file if valid
+    return self._read_validated_file()
+except (StateCorruptedError, StateVersionMismatchError) as e:
+    # 3. Command: Execute backup/rename operation on error
+    self._validator.backup_file(self._backing_file)
+    raise e
 ```
 
-### 4.2. DTO Models Schema Updates
+---
+
+### 4.3. Deliverables.json Version Control and Save Envelope (`mcp_server/managers/project_manager.py`)
+
+#### A. Load-Time Version Validation
+When `ProjectManager` reads the deliverables, it invokes the validator lazy to enforce the SemVer version envelope:
+
+```python
+def _read_projects(self) -> dict[str, Any]:
+    """Load and validate projects from deliverables.json (Query/Orchestration).
+    
+    Orchestration:
+    1. Check file existence (return empty dict if missing).
+    2. Query: Invoke StateVersionValidator.validate_file.
+    3. Query: Load and parse file if valid.
+    4. Command (on corruption/version mismatch): Invoke StateVersionValidator.backup_file and reraise.
+    """
+    ...
+```
+
+#### B. Envelope Saving in All Write Paths
+To ensure the `"schema_version"` envelope is saved across all writes, the private persistence bottleneck `_write_deliverables` is used. The three public write paths in `ProjectManager` must delegate to this method:
+
+1. `initialize_project(...)`
+2. `save_planning_deliverables(...)`
+3. `update_planning_deliverables(...)`
+
+```python
+def _write_deliverables(self, projects: dict[str, Any]) -> None:
+    """Persist deliverables.json via atomic replacement inside version envelope (Command)."""
+    ...
+```
+
+---
+
+### 4.4. GetWorkContext Tool Error Handling (`mcp_server/tools/discovery_tools.py`)
+
+To ensure uninitialized branches fail gracefully while version mismatches and corruptions block agent actions, `GetWorkContextTool.execute` restricts exception trapping:
+
+```python
+# Inside GetWorkContextTool.execute:
+try:
+    state = self._state_engine.get_state(branch)
+    # ... read status
+    phase_source = "state.json"
+    phase_confidence = "high"
+except StateNotFoundError:
+    # Catch only StateNotFoundError (uninitialized branch).
+    # Gracefully degrade to phase_source="unknown".
+    pass
+# StateCorruptedError and StateVersionMismatchError are NOT caught here
+# and bubble up to ToolErrorHandlerDecorator, blocking execution with a clear diagnostics message.
+```
+
+---
+
+### 4.5. QualityState Storage in Apply Method (`mcp_server/managers/quality_state_repository.py`)
+
+`FileQualityStateRepository.apply` serializes the mutated `QualityState` DTO. It must write the `schema_version` to the payload:
+
+```python
+def apply(self, mutate: Callable[[QualityState], QualityState]) -> None:
+    """Load, mutate, and persist the QualityState DTO, writing schema_version to the payload."""
+    ...
+```
+
+---
+
+### 4.6. DTO Models Schema Updates
 
 #### `BranchState` (`mcp_server/managers/state_repository.py`)
 ```python
@@ -191,21 +269,37 @@ class QualityState(BaseModel):
     failed_files: list[str] = Field(default_factory=list)
 ```
 
+#### `WorkspaceVersionValidator` (`mcp_server/core/workspace_validator.py`)
+```python
+from mcp_server.config.settings import ServerSettings
+
+class WorkspaceVersionValidator:
+    """Validator for workspace .version compatibility checking at server boot."""
+    
+    def validate(self, settings: ServerSettings) -> None:
+        """Validate workspace .version file against server package version.
+        
+        Bypasses if bypass_version_check is configured.
+        Raises ConfigError on mismatch or missing file.
+        """
+        ...
+```
+
 ---
 
 ## 5. Design Validation & Test Plan
 
 ### 5.1. Unit and Integration Test Plan
 1. **Validator Tests (`test_state_version_validator.py`):**
-   - Verify missing file returns `None`.
-   - Verify corrupt file renames to `.bak` and raises `StateCorruptedError`.
-   - Verify mismatched version renames to `.bak` and raises `StateVersionMismatchError`.
+   - Verify missing file triggers `StateNotFoundError`.
+   - Verify `backup_file` moves the file and renames it to `{filename}.bak`.
 2. **Repository Integration Tests:**
-   - Verify `FileStateRepository.load()` raises `StateNotFoundError` when missing, and handles corrupt/mismatch correctly.
-   - Verify `ProjectManager` handles deliverables envelop load-time mismatches.
+   - Verify `FileStateRepository.load()` handles CQS backup orchestration.
+   - Verify `ProjectManager` handles deliverables envelope load-time mismatches.
    - Verify `FileQualityStateRepository` auto-resets on mismatch/corruption after backing up.
-3. **Graceful degradation in get_work_context:**
-   - Verify that when `FileStateRepository.load()` raises `StateNotFoundError` or `StateCorruptedError`, `get_work_context` tool intercepts it and returns a clean warning instructing the agent to run `initialize_project` instead of crashing.
+3. **GetWorkContext Error Handling Verification:**
+   - Verify `GetWorkContextTool` passes on `StateNotFoundError`.
+   - Verify `GetWorkContextTool` bubbles `StateCorruptedError` and `StateVersionMismatchError`.
 
 ---
 
@@ -234,3 +328,4 @@ class QualityState(BaseModel):
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-07-20 | Agent | Initial design artifact for dynamic state version validation and bootstrapper refactoring. |
+| 1.1 | 2026-07-20 | Agent | Refine design for CQS compliance, ProjectManager write paths, GetWorkContext error boundaries, and QualityState persistence. |
