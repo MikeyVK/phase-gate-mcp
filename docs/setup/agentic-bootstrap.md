@@ -66,6 +66,7 @@ This command automatically creates the `.pgmcp/` directory structure containing:
 * `templates/` (Jinja2 templates for issues, PRs, etc.)
 * `agents/` (Prepackaged IDE configurations and rule files)
 * `docs/` (Workflow documentation templates)
+* `.version` (Plain-text version file containing package version string used for validation)
 
 ### 4. Deploy IDE-Specific Configurations & Rules
 Based on the active IDE, copy and set up the workspace rules and configurations:
@@ -169,4 +170,5 @@ This ensures that the workflow configurations are tracked in Git, making them in
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-07-20 | Agent | Document .version file creation during CLI init |
 | 1.0 | 2026-07-08 | Agent | Initial draft |

@@ -49,6 +49,7 @@ PGMCP_WORKSPACE_ROOT          (default: cwd)
 | `PGMCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.pgmcp` | Sub-directory under workspace_root for all server data. |
 | `PGMCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
 | `PGMCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
+| `PGMCP_BYPASS_VERSION_CHECK` | `server.bypass_version_check` | `False` | Set to `true` to skip workspace version validation checks. |
 
 ### Logging
 
@@ -88,6 +89,7 @@ settings: Settings = Settings.from_env()
 | `server_root_dir` | `str` | `PGMCP_SERVER_PROJECT_DIR` | `\".pgmcp\"` |
 | `logs_dir` | `str` | `PGMCP_LOGS_DIR` | `"logs"` |
 | `config_root` | `str \| None` | `PGMCP_CONFIG_ROOT` | `None` — **dead field; not used by `server.py`.** Kept in `settings.py` for backward compat only. |
+| `bypass_version_check` | `bool` | `PGMCP_BYPASS_VERSION_CHECK` | `False` (automatically defaults to `True` during pytest runs) |
 
 ### `LogSettings`
 
@@ -209,4 +211,5 @@ Resulting paths:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-07-20 | Agent | Document PGMCP_BYPASS_VERSION_CHECK and bypass_version_check fields |
 | 1.0 | 2026-05-11 | Agent | Initial draft |

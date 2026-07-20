@@ -97,6 +97,9 @@ def test_cli_init_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     assert (server_root / "config").exists()
     assert (server_root / "templates").exists()
     assert (server_root / "config" / "workflows.yaml").exists()
+    version_file = server_root / ".version"
+    assert version_file.exists()
+    assert version_file.read_text(encoding="utf-8").strip() == settings.server.version
 
 
 def test_cli_fails_fast_when_state_dir_missing(
@@ -230,3 +233,39 @@ def test_cli_degraded_server_on_config_error(tmp_path: Path) -> None:
 
             mock_degraded_server.assert_called_once_with(settings, "Corrupt artifacts.yaml config")
             mock_server_instance.run.assert_called_once()
+
+
+def test_cli_degraded_server_on_version_mismatch(tmp_path: Path) -> None:
+    """Test that CLI boots DegradedMCPServer on version validation failure."""
+    from unittest.mock import AsyncMock  # noqa: PLC0415
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    server_root = workspace / ".pgmcp"
+    server_root.mkdir()
+
+    # Create a mismatched version file
+    version_file = server_root / ".version"
+    version_file.write_text("9.9.9\n", encoding="utf-8")
+
+    settings = Settings(
+        server=ServerSettings(
+            workspace_root=str(workspace),
+            server_root_dir=".pgmcp",
+            bypass_version_check=False,
+        )
+    )
+
+    with (
+        patch("sys.argv", ["mcp-server"]),
+        patch("mcp_server.cli.Settings.from_env", return_value=settings),
+        patch("mcp_server.server.DegradedMCPServer") as mock_degraded_server,
+    ):
+        mock_server_instance = mock_degraded_server.return_value
+        mock_server_instance.run = AsyncMock()
+
+        main(settings)
+
+        # Verify DegradedMCPServer was initialized with version mismatch error
+        mock_degraded_server.assert_called_once()
+        assert "Workspace version mismatch" in mock_degraded_server.call_args[0][1]

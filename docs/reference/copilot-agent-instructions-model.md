@@ -1,4 +1,4 @@
-<!-- docs/reference/mcp/copilot-agent-instructions-model.md -->
+<!-- docs/reference/copilot-agent-instructions-model.md -->
 <!-- template=generic_doc version=43c84181 created=2026-05-17 updated=2026-05-24 -->
 # Copilot Agent Instructions Model
 
@@ -520,6 +520,7 @@ the new phase changes a global role boundary, ownership model, or lifecycle exce
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.3 | 2026-07-20 | Agent | Fix stale reference/mcp/ path in header comment |
 | 1.2 | 2026-05-24 | Agent | Update the three-agent model reference for `@co` epic ownership, config-driven `get_work_context`, and lifecycle-boundary startup exceptions |
 | 1.1 | 2026-05-17 | Agent | Consolidation decision: single always-on file (AGENTS.md); remove copilot-instructions.md references; update diagram, precedence chain, loading order, rationale |
-| 1.0 | 2026-05-17 | Agent | Initial document \u2014 covers instruction hierarchy, three-agent model, MCP integration, context loading order |
+| 1.0 | 2026-05-17 | Agent | Initial document — covers instruction hierarchy, three-agent model, MCP integration, context loading order |

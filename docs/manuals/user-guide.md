@@ -3,6 +3,11 @@
 **Status:** v1.0 (Foundation)
 **Last Updated:** 2025-01-21
 
+> [!WARNING]
+> **DEPRECATED / UNDER REVIEW**
+> This user guide represents the legacy v1.0 architecture and is currently under review.
+> For the authoritative server configuration and settings, please refer to [docs/reference/server-configuration.md](../reference/server-configuration.md).
+> For the complete list of tools and categories, see [docs/reference/tools/README.md](../reference/tools/README.md).
 ---
 
 ## 1. Introduction
@@ -114,3 +119,12 @@ Future updates will include tools for:
 - GitHub integration (issues, PRs)
 - Code scaffolding
 - Quality checks
+
+---
+
+## Version History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.1 | 2026-07-20 | Agent | Mark user guide as deprecated in favor of server-configuration.md and tools/README.md |
+| 1.0 | 2025-01-21 | Agent | Initial draft |

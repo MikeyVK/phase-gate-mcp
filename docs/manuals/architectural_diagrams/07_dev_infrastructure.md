@@ -95,10 +95,10 @@ make the boundary explicit in the project structure.
 ## Related Documentation
 
 - **[docs/mcp_server/architectural_diagrams/00_system_context.md][related-1]**
-- **[docs/reference/mcp/proxy_restart.md][related-2]**
+- **[docs/reference/proxy_restart.md][related-2]**
 
 [related-1]: docs/mcp_server/architectural_diagrams/00_system_context.md
-[related-2]: docs/reference/mcp/proxy_restart.md
+[related-2]: docs/reference/proxy_restart.md
 
 ---
 
@@ -106,4 +106,5 @@ make the boundary explicit in the project structure.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ path for proxy_restart.md |
 | 1.0 | 2026-03-13 | Agent | Initial draft |

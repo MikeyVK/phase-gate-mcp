@@ -49,6 +49,10 @@ def main(settings: Settings | None = None) -> None:
                 ignore=shutil.ignore_patterns("template_registry.json"),
             )
 
+            # Write package version file
+            version_file = resolved_server_root / ".version"
+            version_file.write_text(_settings.server.version + "\n", encoding="utf-8")
+
             print(
                 f"Successfully initialized server root at '{resolved_server_root}'",
                 file=sys.stdout,

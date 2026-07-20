@@ -13,6 +13,7 @@ from tests.mcp_server.test_support import get_default_server_root
 """
 
 import dataclasses
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -54,6 +55,7 @@ from mcp_server.scaffolding.template_registry import TemplateRegistry
 from mcp_server.server import MCPServer
 from mcp_server.state.context_loaded_cache import ContextLoadedCache
 from mcp_server.state.pr_status_cache import PRStatusCache
+from mcp_server.core.exceptions import ConfigError
 
 
 class TestBootstrap:
@@ -223,6 +225,90 @@ class TestServerBootstrapperConfigsAndManagers:
             assert isinstance(call_kwargs["resources"], list)
             assert "presenter" in call_kwargs
             assert "publisher" in call_kwargs
+            assert server is mock_mcp_server_cls.return_value
+
+    def test_bootstrap_missing_version_raises_config_error(self) -> None:
+        """Verify bootstrap() raises ConfigError if version file is missing."""
+        mock_settings = MagicMock()
+        mock_settings.server.bypass_version_check = False
+        mock_settings.server.resolved_server_root = Path("/fake/root")
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = "/fake/root/.pgmcp/logs/mcp_audit.log"
+
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            pytest.raises(ConfigError) as exc_info,
+        ):
+            bootstrapper = ServerBootstrapper(mock_settings)
+            bootstrapper.bootstrap()
+
+        assert "version tracking file is missing" in str(exc_info.value)
+
+    def test_bootstrap_version_mismatch_raises_config_error(self, tmp_path: Path) -> None:
+        """Verify bootstrap() raises ConfigError if workspace version mismatches."""
+        mock_settings = MagicMock()
+        mock_settings.server.bypass_version_check = False
+        mock_settings.server.resolved_server_root = tmp_path
+        mock_settings.server.version = "1.0.0"
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = str(tmp_path / "audit.log")
+
+        # Write incorrect version to file
+        version_file = tmp_path / ".version"
+        version_file.write_text("9.9.9\n", encoding="utf-8")
+
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            pytest.raises(ConfigError) as exc_info,
+        ):
+            bootstrapper = ServerBootstrapper(mock_settings)
+            bootstrapper.bootstrap()
+
+        assert "Workspace version mismatch" in str(exc_info.value)
+
+    def test_bootstrap_version_match_success(self, tmp_path: Path) -> None:
+        """Verify bootstrap() succeeds if version matches."""
+        mock_settings = MagicMock()
+        mock_settings.server.bypass_version_check = False
+        mock_settings.server.resolved_server_root = tmp_path
+        mock_settings.server.version = "1.0.0"
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = str(tmp_path / "audit.log")
+
+        # Write matching version
+        version_file = tmp_path / ".version"
+        version_file.write_text("1.0.0\n", encoding="utf-8")
+
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            patch("mcp_server.bootstrap.TemplateRegistry"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator"),
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
+        ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+            bootstrapper = ServerBootstrapper(mock_settings)
+            server = bootstrapper.bootstrap()
+            assert server is mock_mcp_server_cls.return_value
+
+    def test_bootstrap_bypass_skips_validation(self) -> None:
+        """Verify bootstrap() skips validation if bypass_version_check is True."""
+        mock_settings = MagicMock()
+        mock_settings.server.bypass_version_check = True
+        mock_settings.server.resolved_server_root = Path("/fake/root")
+        mock_settings.logging.level = "WARNING"
+        mock_settings.logging.audit_log = "/fake/root/.pgmcp/logs/mcp_audit.log"
+
+        with (
+            patch("mcp_server.bootstrap.setup_logging"),
+            patch("mcp_server.bootstrap.TemplateRegistry"),
+            patch("mcp_server.bootstrap.ConfigLoader") as mock_config_loader_cls,
+            patch("mcp_server.bootstrap.ConfigValidator"),
+            patch("mcp_server.bootstrap.MCPServer") as mock_mcp_server_cls,
+        ):
+            _setup_mock_config_loader(mock_config_loader_cls)
+            bootstrapper = ServerBootstrapper(mock_settings)
+            server = bootstrapper.bootstrap()
             assert server is mock_mcp_server_cls.return_value
 
 

@@ -250,7 +250,7 @@ None.
 
 #### Degraded Mode (Safe Mode)
 
-If the server encounters domain-level configuration errors during startup (e.g., syntax errors or version mismatches in `.pgmcp/config/`), it boots into a **degraded mode**:
+If the server encounters domain-level configuration errors (e.g., syntax errors in config files) or workspace version validation failures (missing or mismatching `.pgmcp/.version` file) during startup, it boots into a **degraded mode**:
 - Only the `health_check` tool is registered; all other tools are disabled.
 - The `status` field returns `"unhealthy"`.
 - The diagnostic error reason is populated in the `reason` field of the output.
@@ -436,8 +436,8 @@ Proxy behavior configured in [mcp_server/core/proxy.py](../../../../mcp_server/c
 ## Related Documentation
 
 - [README.md](README.md) — MCP Tools navigation index
-- [docs/reference/mcp/proxy_restart.md](../proxy_restart.md) — Hot-reload proxy architecture (detailed)
-- [docs/reference/mcp/mcp_vision_reference.md](../mcp_vision_reference.md) — MCP server architecture and vision
+- [docs/reference/proxy_restart.md](../proxy_restart.md) — Hot-reload proxy architecture (detailed)
+- [docs/reference/mcp_vision_reference.md](../mcp_vision_reference.md) — MCP server architecture and vision
 - [docs/development/issue268/validation.md](../../../development/issue268/validation.md) — Validation evidence for the delivered `get_work_context` contract and `context_loaded` behavior
 
 ---
@@ -445,6 +445,7 @@ Proxy behavior configured in [mcp_server/core/proxy.py](../../../../mcp_server/c
 ## Version History
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 2.3 | 2026-07-20 | Agent | Update degraded mode section for workspace version check failures, and fix stale links |
 | 2.2 | 2026-05-24 | Agent | Document the invalid workflow-phase recovery warning and recovery path for `get_work_context` |
 | 2.1 | 2026-05-23 | Agent | Update `get_work_context` reference to the delivered text contract, phase instructions, hand-over template, and context-loaded behavior |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 discovery/admin tools: documentation search, work context, health check, server restart |

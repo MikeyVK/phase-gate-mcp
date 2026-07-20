@@ -1,4 +1,4 @@
-<!-- docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md -->
+<!-- docs/reference/TEMPLATE_LIBRARY_QUICK_REFERENCE.md -->
 <!-- template=reference version=349a0003 created=2026-02-07T00:00Z updated=2026-07-16 -->
 # Template Library Quick Reference
 
@@ -132,6 +132,7 @@ Templates root: `.pgmcp/templates/`
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ path in header comment |
 | 3.0 | 2026-07-16 | Agent | Updated for V3 modular YAML configuration, dynamic validation model, and added typescript_dto definitions. |
 | 2.1 | 2026-06-05 | Agent | Reconciled artifact inventory with validated branch state: added adapter/resource/interface and validation_report; generic_doc minimum context updated to current schema-validated contract |
 | 2.0 | 2026-06-04 | Agent | Full rewrite: artifact inventory updated to all 17 registered types; correct template paths; three-layer model integrated; removed legacy paths and branding (#286) |

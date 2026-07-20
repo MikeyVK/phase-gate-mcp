@@ -25,10 +25,9 @@ Practical guide for using the scaffolding pipeline: how to scaffold an artifact,
 - Context schema conventions
 
 **Out of Scope:**
-- Full TEMPLATE_METADATA format → See docs/reference/mcp/template_metadata_format.md
+- Full TEMPLATE_METADATA format → See docs/reference/template_metadata_format.md
 - Architecture rationale → See docs/development/schema-template-maintenance.md
-- Artifact type inventory → See docs/reference/mcp/TEMPLATE_LIBRARY_QUICK_REFERENCE.md
-
+- Artifact type inventory → See docs/reference/TEMPLATE_LIBRARY_QUICK_REFERENCE.md
 ---
 
 ## The Dynamic Validation Pipeline (Caller View)
@@ -211,6 +210,7 @@ Templates and their configurations are strictly paired using Semantic Versioning
 ## Version History
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.1 | 2026-07-20 | Agent | Fix stale reference/mcp/ paths in link references |
 | 3.0 | 2026-07-16 | Agent | Updated for modular YAML configuration loading, dynamic validation model, and added TypeScript DTO examples. Removed Python context class dependencies. |
 | 2.1 | 2026-07-08 | Agent | Update template locations to Git-tracked `.pgmcp/templates` and correct broken architecture link (#420) |
 | 2.0 | 2026-06-04 | Agent | Full rewrite: three-layer model; real API and context examples; 6-step contributor guide; removed legacy paths and branding (#286) |

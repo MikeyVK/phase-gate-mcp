@@ -455,7 +455,7 @@ No DI container or framework. All wiring is explicit in
 dataclass — no service locator, no lazy resolution.
 
 > **Detailed config loading architecture:** See
-> [config-loading-architecture.md](../reference/mcp/config-loading-architecture.md).
+> [config-loading-architecture.md](../reference/config-loading-architecture.md).
 
 ---
 
@@ -621,7 +621,7 @@ class BaseResource(ABC):
 All config files reside in `.pgmcp/config/`. See §5.3 for the full mapping.
 
 > **Detailed config-loading architecture:** See
-> [config-loading-architecture.md](../reference/mcp/config-loading-architecture.md).
+> [config-loading-architecture.md](../reference/config-loading-architecture.md).
 
 ### 8.3 Cross-Config Validation
 
@@ -846,7 +846,7 @@ pip install phase_gate_mcp-1.0.0-py3-none-any.whl
 ## 16. Related Documentation
 
 - **[ARCHITECTURE_PRINCIPLES.md](../coding_standards/ARCHITECTURE_PRINCIPLES.md)** — Binding architecture contract
-- **[config-loading-architecture.md](../reference/mcp/config-loading-architecture.md)** — Config loading, Settings, DI map
+- **[config-loading-architecture.md](../reference/config-loading-architecture.md)** — Config loading, Settings, DI map
 - **[TOOLS.md](./TOOLS.md)** — All 50 MCP tools with parameters
 - **[RESOURCES.md](./RESOURCES.md)** — MCP resource specifications
 - **[PHASE_WORKFLOWS.md](./PHASE_WORKFLOWS.md)** — Workflow phase definitions
@@ -858,6 +858,7 @@ pip install phase_gate_mcp-1.0.0-py3-none-any.whl
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.3 | 2026-07-20 | Updated config-loading-architecture.md paths to fix stale reference/mcp/ links |
 | 3.2 | 2026-07-16 | Updated for modular YAML configuration loading and dynamic template validation. Removed Python context class creation step. |
 | 3.1 | 2026-06-24 | Separated ICoreTool/ILegacyTool interfaces, removed retired tools, corrected architectural diagrams, and documented cache run resource and validation schema URIs |
 | 3.0 | 2026-06-10 | Complete rewrite reflecting actual architecture: ServerBootstrapper composition root, 50 class-based tools, 15 YAML configs, enforcement system, proxy architecture |
