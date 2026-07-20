@@ -55,6 +55,14 @@ class TestIQualityStateRepositoryProtocol:
         )
         assert isinstance(repo, IQualityStateRepository)
 
+class TestQualityState:
+    """Tests for QualityState model."""
+
+    def test_quality_state_includes_schema_version(self) -> None:
+        """Verify that QualityState defaults schema_version to '1.0.0'."""
+        state = QualityState(baseline_sha="abc", failed_files=[])
+        assert getattr(state, "schema_version") == "1.0.0"
+
 
 class TestFileQualityStateRepositoryLoad:
     """FileQualityStateRepository.load() returns correct state."""
@@ -153,6 +161,18 @@ class TestFileQualityStateRepositoryApply:
         state = repo.load()
         assert "old.py" in state.failed_files
         assert "new.py" in state.failed_files
+
+
+    def test_apply_serializes_schema_version(self, tmp_path: Path) -> None:
+        """Verify that apply() serializes schema_version to backing file."""
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
+        repo = FileQualityStateRepository(backing_file=backing)
+
+        repo.apply(lambda _s: QualityState(baseline_sha="new_sha", failed_files=[]))
+
+        content = backing.read_text(encoding="utf-8")
+        data = json.loads(content)
+        assert data.get("schema_version") == "1.0.0"
 
     def test_apply_creates_parent_dirs(self, tmp_path: Path) -> None:
         """apply() creates parent directories if they don't exist."""

@@ -52,7 +52,18 @@ class TestBranchState:
         with pytest.raises(ValidationError):
             state.current_phase = "validation"
 
-
+    def test_branch_state_includes_schema_version(self) -> None:
+        """Verify that BranchState defaults schema_version to '1.0.0'."""
+        state = BranchState(
+            branch="feature/257-reorder-workflow-phases",
+            workflow_name="feature",
+            current_phase="implementation",
+            current_cycle=2,
+            last_cycle=1,
+            cycle_history=[],
+            transitions=[],
+        )
+        assert getattr(state, "schema_version") == "1.0.0"
 class TestFileStateRepository:
     """Tests for filesystem-backed state repository."""
 

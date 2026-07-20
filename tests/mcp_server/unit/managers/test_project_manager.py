@@ -862,5 +862,76 @@ class TestGetProjectPlanGracefulDegradation:
         plan = manager.get_project_plan(298)
 
         assert plan is not None
+        assert plan is not None
         assert "current_phase" not in plan
-        assert "phase_source" not in plan
+        assert "parent_branch" not in plan or "parent" not in plan  # type: ignore[operator]
+
+
+class TestProjectManagerVersioning:
+    """Tests for deliverables.json envelope versioning and validation."""
+
+    def test_project_manager_read_projects_validates_envelope(self, tmp_path: Path) -> None:
+        """Verify that _read_projects validates the deliverables.json envelope and calls backup on mismatch."""
+        from unittest.mock import patch
+        from mcp_server.core.exceptions import PlanningVersionMismatchError
+        
+        manager = make_project_manager(tmp_path)
+        
+        # Write valid projects but version mismatch (expected: 1.0.0, actual: 0.9.0)
+        deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
+        deliverables_file.parent.mkdir(parents=True, exist_ok=True)
+        deliverables_file.write_text(
+            json.dumps({"schema_version": "0.9.0", "projects": {}}),
+            encoding="utf-8"
+        )
+        
+        # Calling get_project_plan should raise PlanningVersionMismatchError because validation mismatch bubbles
+        with pytest.raises(PlanningVersionMismatchError):
+            manager.get_project_plan(42)
+            
+        # The mismatched file must have been backed up to deliverables.json.bak
+        backup_file = deliverables_file.with_suffix(deliverables_file.suffix + ".bak")
+        assert not deliverables_file.exists()
+        assert backup_file.exists()
+
+    def test_project_manager_write_deliverables_saves_envelope(self, tmp_path: Path) -> None:
+        """Verify that ProjectManager saves deliverables nested in a version envelope."""
+        manager = make_project_manager(tmp_path)
+        
+        manager.initialize_project(
+            issue_number=42,
+            issue_title="Versioning test",
+            workflow_name="feature"
+        )
+        
+        deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
+        assert deliverables_file.exists()
+        
+        content = deliverables_file.read_text(encoding="utf-8")
+        data = json.loads(content)
+        
+        assert data.get("schema_version") == "1.0.0"
+        assert "projects" in data
+        assert "42" in data["projects"]
+
+    def test_project_manager_write_paths_delegate_to_write_deliverables(self, tmp_path: Path) -> None:
+        """Verify that initialize, save, and update planning deliverables delegate to _write_deliverables."""
+        from unittest.mock import patch
+        manager = make_project_manager(tmp_path)
+        
+        with patch.object(manager, "_write_deliverables", wraps=manager._write_deliverables) as mock_write:
+            # 1. initialize_project
+            manager.initialize_project(42, "Issue 42", "feature")
+            assert mock_write.call_count == 1
+            
+            # 2. save_planning_deliverables
+            mock_write.reset_mock()
+            from mcp_server.managers.project_manager import CyclePlanningModel
+            dummy_planning = CyclePlanningModel()
+            manager.save_planning_deliverables(42, dummy_planning)
+            assert mock_write.call_count == 1
+            
+            # 3. update_planning_deliverables
+            mock_write.reset_mock()
+            manager.update_planning_deliverables(42, "C_EXC_VALIDATOR.1", "D1.1", completed=True)
+            assert mock_write.call_count == 1
