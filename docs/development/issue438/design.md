@@ -90,7 +90,13 @@ Implement python-level migration logic to translate older schema formats to new 
 
 **Decision:** Implement a central `StateVersionValidator` service called lazy by repositories at load-time. Mismatches/corruptions rename files to `*.bak` and raise custom `ConfigError` subclasses caught and formatted cleanly by the Russian Doll Decorator pipeline.
 
-### 3.1. Key Design Decisions
+### 3.1. Approved Strategy: Clean Break
+
+For all affected dynamic state file boundaries (`state.json`, `deliverables.json`, `quality_state.json`), we explicitly select the **Clean Break** strategy. 
+- We do not preserve backward compatibility or implement data migration logic for corrupt or mismatched schema versions.
+- Older, corrupt, or mismatched files are backed up to a `.bak` extension and reset/re-initialized to keep the state tracking engine clean, robust, and free of versioning drift.
+
+### 3.2. Key Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
@@ -300,7 +306,9 @@ class WorkspaceVersionValidator:
 3. **GetWorkContext Error Handling Verification:**
    - Verify `GetWorkContextTool` passes on `StateNotFoundError`.
    - Verify `GetWorkContextTool` bubbles `StateCorruptedError` and `StateVersionMismatchError`.
-
+4. **Removal of Test Ballast (Outdated Reconstruct Tests):**
+   - All existing unit, integration, or regression tests verifying git-based state reconstruction (`PhaseStateEngine._load_state_or_reconstruct` or the `StateReconstructor` class itself) must be **hard-removed** from the codebase.
+   - Commenting out or skipping tests via `@pytest.mark.skip` is forbidden. We do not allow dead test code or test ballast.
 ---
 
 ## 6. Open Questions & Risks
