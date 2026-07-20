@@ -15,7 +15,6 @@ Validator service for dynamic state files schema versions and corruptions.
 import json
 import logging
 from pathlib import Path
-from typing import Any
 
 from mcp_server.core.exceptions import (
     StateNotFoundError,
@@ -44,12 +43,11 @@ class StateVersionValidator:
             StateNotFoundError: If the file does not exist.
             StateCorruptedError: If JSON decoding or base schema validation fails.
             StateVersionMismatchError: If the version field does not match expected_version.
-            PlanningVersionMismatchError: If deliverables.json version does not match expected_version.
+            PlanningVersionMismatchError: If deliverables.json version does
+                not match expected_version.
         """
         if not file_path.exists():
-            raise StateNotFoundError(
-                f"State file does not exist: {file_path.name}", str(file_path)
-            )
+            raise StateNotFoundError(f"State file does not exist: {file_path.name}", str(file_path))
 
         try:
             content = file_path.read_text(encoding="utf-8")
@@ -60,9 +58,7 @@ class StateVersionValidator:
             ) from e
 
         if not isinstance(data, dict):
-            raise StateCorruptedError(
-                "State file content must be a JSON object", str(file_path)
-            )
+            raise StateCorruptedError("State file content must be a JSON object", str(file_path))
 
         actual_version = data.get("schema_version")
         if actual_version != expected_version:
