@@ -196,3 +196,20 @@ class TestExtraForbidOnAllInputModels:
                 path="/test.py",
                 operation={"op": "append", "content": "x", "extra_in_insert": "fail"},
             )
+
+        with pytest.raises(ValidationError):
+            SafeEditInput(
+                path="/test.py",
+                operation={"op": "rewrite", "content": "x", "extra_in_rewrite": "fail"},
+            )
+
+        with pytest.raises(ValidationError):
+            SafeEditInput(
+                path="/test.py",
+                operation={
+                    "op": "pattern_replace",
+                    "pattern": "a",
+                    "replacement": "b",
+                    "extra_in_pattern": "fail",
+                },
+            )
