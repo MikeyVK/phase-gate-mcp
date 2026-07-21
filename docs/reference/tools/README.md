@@ -129,7 +129,7 @@ Multi-mode file editing with quality gate integration and concurrent edit protec
 
 | Tool | Purpose | Status | Key Features |
 |------|---------|--------|-------------|
-| `safe_edit_file` | Multi-mode editing with validation | **PRIMARY** | 4 edit modes, 3 validation modes, file-level mutex |
+| `safe_edit_file` | Frictionless 4-operation editing with validation | **PRIMARY** | 4 operations (replace, append, rewrite, pattern_replace), must_exist=True governance, fuzzy diagnostics |
 
 **📖 See:** [editing.md](editing.md) for the complete `safe_edit_file` deep-dive including anti-patterns, concurrent edit protection, and QA integration.
 
@@ -208,7 +208,7 @@ Documentation search, work context aggregation, and server administration.
 ```
 1. scaffold_artifact(artifact_type="dto", name="MyFeature", context={...})
 2. git_add_or_commit(workflow_phase="implementation", sub_phase="red", cycle_number=1, message="Add failing test for MyFeature")
-3. safe_edit_file(path="...", line_edits=[...])  # Implement
+3. safe_edit_file(path="...", operation={"op": "replace", "target_content": "...", "replacement": "..."})  # Implement
 4. run_tests(path="tests/test_my_feature.py")
 5. git_add_or_commit(workflow_phase="implementation", sub_phase="green", cycle_number=1, message="Implement MyFeature logic")
 6. run_quality_gates(scope="files", files=["backend/dtos/my_feature.py"])
@@ -272,7 +272,7 @@ All GitHub tools (issues, PRs, labels, milestones) handle Unicode content correc
 
 ## Related Documentation
 
-- [editing.md](editing.md) — `safe_edit_file` deep-dive (4 edit modes, anti-patterns)
+- [editing.md](editing.md) — `safe_edit_file` deep-dive (4 operations: replace, append, rewrite, pattern_replace)
 - [scaffolding.md](scaffolding.md) — `scaffold_artifact` and `scaffold_schema` and the modular configuration registry
 - [project.md](project.md) — Workflow types and phase management
 - [docs/reference/mcp/proxy_restart.md](../proxy_restart.md) — Hot-reload mechanism for `restart_server`
