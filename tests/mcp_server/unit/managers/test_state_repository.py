@@ -64,6 +64,8 @@ class TestBranchState:
             transitions=[],
         )
         assert getattr(state, "schema_version") == "1.0.0"
+
+
 class TestFileStateRepository:
     """Tests for filesystem-backed state repository."""
 

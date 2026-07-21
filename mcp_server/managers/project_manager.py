@@ -30,6 +30,7 @@ from pydantic import ValidationError
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_version_validator import StateVersionValidator
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
+from mcp_server.core.exceptions import PlanningVersionMismatchError, StateCorruptedError
 from mcp_server.schemas import ContractsConfig, WorkphasesConfig
 from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
@@ -110,9 +111,7 @@ class ProjectManager:
         self._workflow_status_resolver = workflow_status_resolver
         self.deliverables_file = server_root / "deliverables.json"
         self.atomic_json_writer = AtomicJsonWriter()
-        self._state_version_validator = (
-            state_version_validator or StateVersionValidator()
-        )
+        self._state_version_validator = state_version_validator or StateVersionValidator()
 
     @property
     def workphases_config(self) -> WorkphasesConfig | None:
@@ -415,11 +414,6 @@ class ProjectManager:
         if not self.deliverables_file.exists():
             return {}
 
-        from mcp_server.core.exceptions import (
-            PlanningVersionMismatchError,
-            StateCorruptedError,
-        )
-
         try:
             self._state_version_validator.validate_file(
                 self.deliverables_file, expected_version="1.0.0", is_planning=True
@@ -430,7 +424,12 @@ class ProjectManager:
 
         content = self.deliverables_file.read_text(encoding="utf-8-sig")
         data = json.loads(content)
-        return data.get("projects", {})
+        if not isinstance(data, dict):
+            return {}
+        projects = data.get("projects", {})
+        if not isinstance(projects, dict):
+            return {}
+        return projects
 
     def _write_deliverables(self, projects: dict[str, Any]) -> None:
         """Persist deliverables.json via atomic replacement (Command)."""

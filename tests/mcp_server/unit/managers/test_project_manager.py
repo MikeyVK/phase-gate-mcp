@@ -13,13 +13,14 @@ Issue #50: Tests migrated from PHASE_TEMPLATES to workflows.yaml.
 from tests.mcp_server.test_support import get_default_server_root
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
+from mcp_server.core.exceptions import PlanningVersionMismatchError
 from tests.mcp_server.test_support import (
     load_contracts_config,
     load_workflow_config,
@@ -99,16 +100,11 @@ class TestProjectManagerWorkflows:
         assert result["execution_mode"] == "interactive"
         assert len(result["required_phases"]) == 7
 
-        # Check deliverables.json structure
-        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-        assert projects_file.exists()
-
-        projects = manager._read_projects()
-        assert "42" in projects
-        project = projects["42"]
-        assert project["workflow_name"] == "feature"
-        assert project["execution_mode"] == "interactive"
-        assert len(project["required_phases"]) == 7
+        plan = manager.get_project_plan(42)
+        assert plan is not None
+        assert plan["workflow_name"] == "feature"
+        assert plan["execution_mode"] == "interactive"
+        assert len(plan["required_phases"]) == 7
 
     def test_initialize_project_with_hotfix_workflow(
         self, manager: ProjectManager, workspace_root: Path
@@ -126,10 +122,9 @@ class TestProjectManagerWorkflows:
         assert result["execution_mode"] == "interactive"
         assert len(result["required_phases"]) == 4
 
-        # Check deliverables.json
-        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-        projects = manager._read_projects()
-        assert projects["99"]["execution_mode"] == "interactive"
+        plan = manager.get_project_plan(99)
+        assert plan is not None
+        assert plan["execution_mode"] == "interactive"
 
     def test_initialize_project_with_execution_mode_override(
         self, manager: ProjectManager, workspace_root: Path
@@ -144,10 +139,9 @@ class TestProjectManagerWorkflows:
 
         assert result["execution_mode"] == "autonomous"
 
-        # Check deliverables.json
-        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-        projects = manager._read_projects()
-        assert projects["77"]["execution_mode"] == "autonomous"
+        plan = manager.get_project_plan(77)
+        assert plan is not None
+        assert plan["execution_mode"] == "autonomous"
 
     def test_initialize_project_with_custom_phases(
         self, manager: ProjectManager, workspace_root: Path
@@ -176,12 +170,10 @@ class TestProjectManagerWorkflows:
         assert result["required_phases"] == custom_phases
         assert result["skip_reason"] == "Adding design phase for complex refactor"
 
-        # Check deliverables.json
-        projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-        projects = manager._read_projects()
-        project = projects["50"]
-        assert tuple(project["required_phases"]) == custom_phases
-        assert project["skip_reason"] == "Adding design phase for complex refactor"
+        plan = manager.get_project_plan(50)
+        assert plan is not None
+        assert tuple(plan["required_phases"]) == custom_phases
+        assert plan["skip_reason"] == "Adding design phase for complex refactor"
 
     def test_initialize_project_invalid_workflow(self, manager: ProjectManager) -> None:
         """Test initialize_project rejects unknown workflow."""
@@ -871,24 +863,23 @@ class TestProjectManagerVersioning:
     """Tests for deliverables.json envelope versioning and validation."""
 
     def test_project_manager_read_projects_validates_envelope(self, tmp_path: Path) -> None:
-        """Verify that _read_projects validates the deliverables.json envelope and calls backup on mismatch."""
-        from unittest.mock import patch
-        from mcp_server.core.exceptions import PlanningVersionMismatchError
-        
+        """Verify that _read_projects validates the envelope and backs up on mismatch."""
+
         manager = make_project_manager(tmp_path)
-        
+
         # Write valid projects but version mismatch (expected: 1.0.0, actual: 0.9.0)
         deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
         deliverables_file.parent.mkdir(parents=True, exist_ok=True)
         deliverables_file.write_text(
             json.dumps({"schema_version": "0.9.0", "projects": {}}),
-            encoding="utf-8"
+            encoding="utf-8",
         )
-        
-        # Calling get_project_plan should raise PlanningVersionMismatchError because validation mismatch bubbles
+
+        # Calling get_project_plan should raise PlanningVersionMismatchError
+        # because validation mismatch bubbles
         with pytest.raises(PlanningVersionMismatchError):
             manager.get_project_plan(42)
-            
+
         # The mismatched file must have been backed up to deliverables.json.bak
         backup_file = deliverables_file.with_suffix(deliverables_file.suffix + ".bak")
         assert not deliverables_file.exists()
@@ -897,33 +888,40 @@ class TestProjectManagerVersioning:
     def test_project_manager_write_deliverables_saves_envelope(self, tmp_path: Path) -> None:
         """Verify that ProjectManager saves deliverables nested in a version envelope."""
         manager = make_project_manager(tmp_path)
-        
+
         manager.initialize_project(
             issue_number=42,
             issue_title="Versioning test",
-            workflow_name="feature"
+            workflow_name="feature",
         )
-        
+
         deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
         assert deliverables_file.exists()
-        
+
         content = deliverables_file.read_text(encoding="utf-8")
         data = json.loads(content)
-        
+
         assert data.get("schema_version") == "1.0.0"
         assert "projects" in data
         assert "42" in data["projects"]
 
-    def test_project_manager_write_paths_delegate_to_write_deliverables(self, tmp_path: Path) -> None:
-        """Verify that initialize, save, and update planning deliverables delegate to _write_deliverables."""
-        from unittest.mock import patch
+    def test_project_manager_write_paths_delegate_to_write_deliverables(
+        self, tmp_path: Path
+    ) -> None:
+        """Verify that write paths delegate to private _write_deliverables."""
+
         manager = make_project_manager(tmp_path)
-        
-        with patch.object(manager, "_write_deliverables", wraps=manager._write_deliverables) as mock_write:
+
+        # pyright: ignore[reportPrivateUsage]  # inject test double on private method
+        with patch.object(
+            manager,
+            "_write_deliverables",
+            wraps=manager._write_deliverables,  # pyright: ignore[reportPrivateUsage]
+        ) as mock_write:
             # 1. initialize_project
             manager.initialize_project(42, "Issue 42", "feature")
             assert mock_write.call_count == 1
-            
+
             # 2. save_planning_deliverables
             mock_write.reset_mock()
             dummy_planning = {
@@ -933,15 +931,27 @@ class TestProjectManagerVersioning:
                         {
                             "cycle_number": 1,
                             "deliverables": [{"id": "D1.1", "description": "dummy"}],
-                            "exit_criteria": "dummy"
+                            "exit_criteria": "dummy",
                         }
-                    ]
+                    ],
                 }
             }
             manager.save_planning_deliverables(42, dummy_planning)
             assert mock_write.call_count == 1
-            
+
             # 3. update_planning_deliverables
             mock_write.reset_mock()
-            manager.update_planning_deliverables(42, {"cycles": {"cycles": [{"cycle_number": 1, "deliverables": [{"id": "D1.1", "description": "dummy"}]}]}})
+            manager.update_planning_deliverables(
+                42,
+                {
+                    "cycles": {
+                        "cycles": [
+                            {
+                                "cycle_number": 1,
+                                "deliverables": [{"id": "D1.1", "description": "dummy"}],
+                            }
+                        ]
+                    }
+                },
+            )
             assert mock_write.call_count == 1

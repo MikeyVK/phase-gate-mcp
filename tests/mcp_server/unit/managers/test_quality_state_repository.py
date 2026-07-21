@@ -56,6 +56,7 @@ class TestIQualityStateRepositoryProtocol:
         )
         assert isinstance(repo, IQualityStateRepository)
 
+
 class TestQualityState:
     """Tests for QualityState model."""
 
@@ -162,7 +163,6 @@ class TestFileQualityStateRepositoryApply:
         state = repo.load()
         assert "old.py" in state.failed_files
         assert "new.py" in state.failed_files
-
 
     def test_apply_serializes_schema_version(self, tmp_path: Path) -> None:
         """Verify that apply() serializes schema_version to backing file."""
