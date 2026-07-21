@@ -16,7 +16,79 @@
       ],
       "skip_reason": null,
       "parent_branch": "main",
-      "created_at": "2026-07-21T08:18:38.131291+00:00"
+      "created_at": "2026-07-21T08:18:38.131291+00:00",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 3,
+          "cycles": [
+            {
+              "cycle_number": 1,
+              "name": "C_SCHEMA.1",
+              "deliverables": [
+                {
+                  "id": "DELIV_INTERFACE_FILE_WRITER_1",
+                  "description": "Define IAtomicFileWriter protocol interface in core/interfaces/file_writer.py"
+                },
+                {
+                  "id": "DELIV_UTIL_ATOMIC_FILE_WRITER_1",
+                  "description": "Implement AtomicFileWriter utility in utils/atomic_file_writer.py"
+                },
+                {
+                  "id": "DELIV_SCHEMA_SAFE_EDIT_INPUT_1",
+                  "description": "Refactor SafeEditInput with 4-operation Pydantic models (extra='forbid') in tools/safe_edit_tool.py"
+                }
+              ],
+              "exit_criteria": "IAtomicFileWriter protocol defined; AtomicFileWriter implemented; ReplaceOp, AppendOp, RewriteOp, PatternReplaceOp, and SafeEditInput parse correctly and reject extra fields."
+            },
+            {
+              "cycle_number": 2,
+              "name": "C_EXECUTE.2",
+              "deliverables": [
+                {
+                  "id": "DELIV_EXECUTE_CONTENT_GEN_2",
+                  "description": "Implement pure CQS query transformer _generate_new_content handling replace, append, rewrite, pattern_replace"
+                },
+                {
+                  "id": "DELIV_GOVERNANCE_FILE_EXISTENCE_2",
+                  "description": "Enforce must_exist=True governance check rejecting non-existent target files with scaffold_artifact referral"
+                },
+                {
+                  "id": "DELIV_DIAGNOSTIC_FUZZY_MATCH_2",
+                  "description": "Integrate difflib fuzzy matching in _find_fuzzy_matches for target mismatch diagnostics"
+                },
+                {
+                  "id": "DELIV_TOOL_ATOMIC_WRITER_INTEGRATION_2",
+                  "description": "Inject IAtomicFileWriter into SafeEditTool and perform atomic temp-swap writes under asyncio.Lock"
+                }
+              ],
+              "exit_criteria": "All 4 operations execute cleanly; non-existent files rejected with governance error; difflib returns near-match suggestions on target mismatch; writes use atomic temp-swap under lock."
+            },
+            {
+              "cycle_number": 3,
+              "name": "C_INTEGRATION.3",
+              "deliverables": [
+                {
+                  "id": "DELIV_TEST_SAFE_EDIT_UNIT_3",
+                  "description": "Update unit tests in test_safe_edit_tool.py for all 4 operations, governance, fuzzy match, and atomic writing"
+                },
+                {
+                  "id": "DELIV_TEST_EXTRA_FORBID_3",
+                  "description": "Update schema tests in test_extra_forbid.py for extra='forbid' on all 4 operation models"
+                },
+                {
+                  "id": "DELIV_TEST_VALIDATION_INTEGRATION_3",
+                  "description": "Refactor validation integration tests in test_safe_edit_validation_integration.py"
+                },
+                {
+                  "id": "DELIV_TEST_CLEANUP_LEGACY_3",
+                  "description": "Perform explicit hard-removal of all legacy line_edits and insert_lines test methods across all test files"
+                }
+              ],
+              "exit_criteria": "100% test pass rate across all unit and integration suites; all legacy line_edits and insert_lines test methods hard-removed; 0 typing errors; Pylint score 10.00/10."
+            }
+          ]
+        }
+      }
     }
   }
 }
