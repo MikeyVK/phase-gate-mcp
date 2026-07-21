@@ -46,7 +46,7 @@ from mcp_server.tools.project_tools import (
     UpdatePlanningDeliverablesInput,
 )
 from mcp_server.tools.quality_tools import RunQualityGatesInput
-from mcp_server.tools.safe_edit_tool import LineEdit, SafeEditInput
+from mcp_server.tools.safe_edit_tool import AppendOp, ReplaceOp, SafeEditInput
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
 from mcp_server.tools.template_validation_tool import TemplateValidationInput
 from mcp_server.tools.test_tools import RunTestsInput
@@ -142,6 +142,14 @@ class TestExtraForbidOnAllInputModels:
             (RunQualityGatesInput, {}),
             # scaffold
             (ScaffoldArtifactInput, {"artifact_type": "migration", "name": "test"}),
+            # safe_edit
+            (
+                SafeEditInput,
+                {
+                    "path": "/tmp/f.py",
+                    "operation": {"op": "rewrite", "content": "x"},
+                },
+            ),
             # template_validation
             (TemplateValidationInput, {"path": "/tmp/f.py", "template_type": "tool"}),
             # test_tools
@@ -165,28 +173,26 @@ class TestExtraForbidOnAllInputModels:
         )
 
     def test_safe_edit_nested_extra_forbid(self) -> None:
-        """Extra field inside LineEdit / InsertLine also raises."""
+        """Extra field inside ReplaceOp / AppendOp operation models also raises."""
 
         SafeEditInput(
             path="/test.py",
-            line_edits=[LineEdit(start_line=1, end_line=1, new_content="x = 1\n")],
+            operation={"op": "replace", "target_content": "a", "replacement": "b"},
         )
 
         with pytest.raises(ValidationError):
             SafeEditInput(
                 path="/test.py",
-                line_edits=[
-                    {
-                        "start_line": 1,
-                        "end_line": 1,
-                        "new_content": "x = 1\n",
-                        "extra_in_nested": "fail",
-                    }
-                ],
+                operation={
+                    "op": "replace",
+                    "target_content": "a",
+                    "replacement": "b",
+                    "extra_in_nested": "fail",
+                },
             )
 
         with pytest.raises(ValidationError):
             SafeEditInput(
                 path="/test.py",
-                insert_lines=[{"at_line": 1, "content": "x = 1\n", "extra_in_insert": "fail"}],
+                operation={"op": "append", "content": "x", "extra_in_insert": "fail"},
             )

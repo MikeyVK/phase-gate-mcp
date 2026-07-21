@@ -56,13 +56,8 @@ Missing frontmatter.
         result = await tool.execute(
             SafeEditInput(
                 path=str(test_file),
-                content=invalid_md,
+                operation={"op": "rewrite", "content": invalid_md},
                 mode="strict",
-                line_edits=None,
-                insert_lines=None,
-                search=None,
-                replace=None,
-                search_count=None,
             ),
             NoteContext(),
         )
@@ -94,13 +89,8 @@ class TestDTO:  # Missing BaseModel inheritance
         result = await tool.execute(
             SafeEditInput(
                 path=str(test_file),
-                content=invalid_dto,
+                operation={"op": "rewrite", "content": invalid_dto},
                 mode="strict",
-                line_edits=None,
-                insert_lines=None,
-                search=None,
-                replace=None,
-                search_count=None,
             ),
             NoteContext(),
         )
@@ -133,13 +123,8 @@ class TestDTO:  # Missing BaseModel - STRICT violation
         result = await tool.execute(
             SafeEditInput(
                 path=str(test_file),
-                content=invalid_dto,
+                operation={"op": "rewrite", "content": invalid_dto},
                 mode="strict",
-                line_edits=None,
-                insert_lines=None,
-                search=None,
-                replace=None,
-                search_count=None,
             ),
             NoteContext(),
         )
@@ -169,13 +154,8 @@ class TestDTO(BaseModel):
         result = await tool.execute(
             SafeEditInput(
                 path=str(test_file),
-                content=invalid_dto,
+                operation={"op": "rewrite", "content": invalid_dto},
                 mode="strict",
-                line_edits=None,
-                insert_lines=None,
-                search=None,
-                replace=None,
-                search_count=None,
             ),
             NoteContext(),
         )
@@ -207,13 +187,8 @@ class TestWorker(ABC):
         result = await tool.execute(
             SafeEditInput(
                 path=str(test_file),
-                content=valid_worker,
+                operation={"op": "rewrite", "content": valid_worker},
                 mode="strict",
-                line_edits=None,
-                insert_lines=None,
-                search=None,
-                replace=None,
-                search_count=None,
             ),
             NoteContext(),
         )
@@ -236,13 +211,8 @@ class InvalidWorker(ABC):
         result2 = await tool.execute(
             SafeEditInput(
                 path=str(test_file2),
-                content=invalid_worker,
+                operation={"op": "rewrite", "content": invalid_worker},
                 mode="strict",
-                line_edits=None,
-                insert_lines=None,
-                search=None,
-                replace=None,
-                search_count=None,
             ),
             NoteContext(),
         )

@@ -42,3 +42,6 @@ from mcp_server.core.interfaces.context import (
     IContextLoadedReader as IContextLoadedReader,
     IContextLoadedWriter as IContextLoadedWriter,
 )
+from mcp_server.core.interfaces.file_writer import (
+    IAtomicFileWriter as IAtomicFileWriter,
+)

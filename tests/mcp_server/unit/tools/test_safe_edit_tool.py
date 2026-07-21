@@ -50,13 +50,13 @@ class TestSafeEditTool:
     @pytest.mark.asyncio
     async def test_missing_arguments(self) -> None:
         """Test execution with missing arguments."""
-        # Missing content/edit mode raises ValidationError
+        # Missing operation raises ValidationError
         with pytest.raises(ValidationError):
             SafeEditInput(path="test.py")
 
         # Missing path raises ValidationError
         with pytest.raises(ValidationError):
-            SafeEditInput(content="code")
+            SafeEditInput(operation={"op": "rewrite", "content": "code"})
 
     @pytest.mark.asyncio
     async def test_execute_strict_pass(self, tool: SafeEditTool) -> None:
@@ -75,7 +75,12 @@ class TestSafeEditTool:
             mock_parent.mkdir = MagicMock()
 
             result = await tool.execute(
-                SafeEditInput(path=path, content=content, mode="strict"), NoteContext()
+                SafeEditInput(
+                    path=path,
+                    operation={"op": "rewrite", "content": content},
+                    mode="strict",
+                ),
+                NoteContext(),
             )
 
             assert isinstance(result, SafeEditOutput)
@@ -97,7 +102,12 @@ class TestSafeEditTool:
             patch("pathlib.Path.write_text") as mock_write,
         ):
             result = await tool.execute(
-                SafeEditInput(path=path, content=content, mode="strict"), NoteContext()
+                SafeEditInput(
+                    path=path,
+                    operation={"op": "rewrite", "content": content},
+                    mode="strict",
+                ),
+                NoteContext(),
             )
 
             assert isinstance(result, SafeEditOutput)
@@ -119,7 +129,12 @@ class TestSafeEditTool:
             patch("pathlib.Path.write_text") as mock_write,
         ):
             result = await tool.execute(
-                SafeEditInput(path=path, content=content, mode="interactive"), NoteContext()
+                SafeEditInput(
+                    path=path,
+                    operation={"op": "rewrite", "content": content},
+                    mode="interactive",
+                ),
+                NoteContext(),
             )
 
             assert isinstance(result, SafeEditOutput)
@@ -251,13 +266,11 @@ class TestSafeEditTool:
                 result = await tool.execute(
                     SafeEditInput(
                         path=str(test_file),
-                        line_edits=[
-                            {
-                                "start_line": 1,
-                                "end_line": 1,
-                                "new_content": f"task {task_id} line 1\n",
-                            }
-                        ],
+                        operation={
+                            "op": "replace",
+                            "target_content": "line 1",
+                            "replacement": f"task {task_id} line 1",
+                        },
                         mode="interactive",
                     ),
                     NoteContext(),
