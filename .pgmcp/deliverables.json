@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "projects": {
+    "433": {
+      "issue_title": "Feature: Structurally aware append in safe_edit_file",
+      "workflow_name": "feature",
+      "execution_mode": "interactive",
+      "required_phases": [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation",
+        "ready"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-07-21T08:18:38.131291+00:00"
+    }
+  }
+}
