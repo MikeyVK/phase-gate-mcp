@@ -380,6 +380,7 @@ Current branch state (runtime, branch-local, neutralized before PR submission):
 
 ```json
 {
+  "schema_version": "1.0.0",
   "branch": "feature/123-oauth",
   "issue_number": 123,
   "workflow_name": "feature",
@@ -400,16 +401,17 @@ Current branch state (runtime, branch-local, neutralized before PR submission):
   "issue_title": "Add OAuth2 authentication",
   "parent_branch": "main",
   "created_at": "2026-02-08T10:00:00Z",
-  "transitions": [],
-  "reconstructed": false
+  "transitions": []
 }
+```
 ```
 
 **Behavior:**
-- Updated by `initialize_project`, `transition_phase`, and `force_phase_transition`
-- Synchronized by `git_checkout` (loads state when switching branches)
-- Treated as a branch-local artifact and neutralized before `submit_pr`
-
+- Validated at load-time by `StateVersionValidator` against expected SemVer `1.0.0`.
+- Updated by `initialize_project`, `transition_phase`, and `force_phase_transition`.
+- On schema version mismatch or file corruption, `StateVersionValidator` performs a Clean Break: backs up the file to `state.json.bak` and raises a `ConfigError` without fallback git-log reconstruction.
+- Synchronized by `git_checkout` (loads state when switching branches).
+- Treated as a branch-local artifact and neutralized before `submit_pr`.
 ---
 
 ### .pgmcp/deliverables.json
@@ -418,25 +420,28 @@ Workflow definition and planning deliverables (branch-local artifact):
 
 ```json
 {
-  "123": {
-    "issue_title": "Add OAuth2 authentication",
-    "workflow_name": "feature",
-    "execution_mode": "normal",
-    "required_phases": [
-      "research",
-      "design",
-      "planning",
-      "implementation",
-      "validation",
-      "documentation"
-    ],
-    "skip_reason": null,
-    "parent_branch": "main",
-    "created_at": "2026-02-08T10:00:00Z",
-    "planning_deliverables": {
-      "cycles": {
-        "total": 3,
-        "cycles": []
+  "schema_version": "1.0.0",
+  "projects": {
+    "123": {
+      "issue_title": "Add OAuth2 authentication",
+      "workflow_name": "feature",
+      "execution_mode": "normal",
+      "required_phases": [
+        "research",
+        "design",
+        "planning",
+        "implementation",
+        "validation",
+        "documentation"
+      ],
+      "skip_reason": null,
+      "parent_branch": "main",
+      "created_at": "2026-02-08T10:00:00Z",
+      "planning_deliverables": {
+        "cycles": {
+          "total": 3,
+          "cycles": []
+        }
       }
     }
   }
@@ -444,10 +449,11 @@ Workflow definition and planning deliverables (branch-local artifact):
 ```
 
 **Behavior:**
-- Initialized by `initialize_project`
-- Extended by `save_planning_deliverables` and `update_planning_deliverables`
-- Treated as a branch-local artifact and neutralized before `submit_pr`
-
+- Wrapped in a top-level `"schema_version": "1.0.0"` envelope and validated by `StateVersionValidator` on load.
+- Initialized by `initialize_project`.
+- Extended by `save_planning_deliverables` and `update_planning_deliverables`.
+- On schema version mismatch or corruption, `StateVersionValidator` backs up to `deliverables.json.bak` and raises `ConfigError`.
+- Treated as a branch-local artifact and neutralized before `submit_pr`.
 ---
 ---
 
