@@ -23,7 +23,7 @@ import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from mcp_server.managers.state_repository import BranchState
+from mcp_server.managers.state_repository import BranchState, StateNotFoundError
 
 if TYPE_CHECKING:
     from mcp_server.core.interfaces import IStateRepository
@@ -57,10 +57,8 @@ class WorkflowStateMutator:
     def __init__(
         self,
         state_repository: IStateRepository,
-        state_reconstructor: object | None = None,
     ) -> None:
         self._state_repository = state_repository
-        self._state_reconstructor = state_reconstructor
         self._lock = threading.Lock()
 
     def apply(
@@ -113,16 +111,8 @@ class WorkflowStateMutator:
         """Load current state; use reconstructor or bootstrap for fresh branches."""
         try:
             return self._state_repository.load(branch)
-        except (KeyError, FileNotFoundError, OSError):
+        except (KeyError, FileNotFoundError, OSError, StateNotFoundError):
             pass
-
-        if self._state_reconstructor is not None:
-            try:
-                result = self._state_reconstructor.reconstruct(branch)  # type: ignore[attr-defined]
-                if isinstance(result, BranchState):
-                    return result
-            except Exception:  # noqa: BLE001
-                logger.debug("WorkflowStateMutator: reconstruction failed for branch '%s'", branch)
 
         # Bootstrap case: fresh branch being initialized — provide minimal placeholder.
         # initialize_branch callbacks ignore this completely and create a fresh BranchState.

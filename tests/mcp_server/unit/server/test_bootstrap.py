@@ -46,7 +46,6 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
-from mcp_server.managers.state_reconstructor import StateReconstructor
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
@@ -100,7 +99,6 @@ class TestBootstrap:
             "project_manager": MagicMock(spec=ProjectManager),
             "phase_contract_resolver": MagicMock(spec=PhaseContractResolver),
             "workflow_gate_runner": MagicMock(spec=WorkflowGateRunner),
-            "state_reconstructor": MagicMock(spec=StateReconstructor),
             "workflow_state_mutator": MagicMock(spec=WorkflowStateMutator),
             "context_loaded_cache": MagicMock(spec=ContextLoadedCache),
             "phase_state_engine": MagicMock(spec=PhaseStateEngine),

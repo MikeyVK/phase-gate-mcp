@@ -46,9 +46,10 @@ class WorkflowStatusResolver:
 
         try:
             branch_state = self._state.load(branch)
+        except StateNotFoundError:
+            raise
         except (KeyError, FileNotFoundError) as exc:
             raise StateNotFoundError(branch) from exc
-
         # StateBranchMismatchError propagates unchanged from BranchValidatedStateReader
 
         return WorkflowStatusDTO(

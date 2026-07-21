@@ -98,7 +98,6 @@ class TestPhaseStateEngineTransitionC4:
         scope_decoder = MagicMock()
         workflow_gate_runner = MagicMock()
         workflow_gate_runner.enforce_phase_exit = MagicMock(return_value=None)
-        state_reconstructor = MagicMock()
         workflow_state_mutator = MagicMock()
 
         return PhaseStateEngine(
@@ -109,7 +108,6 @@ class TestPhaseStateEngineTransitionC4:
             state_repository=state_repository,
             scope_decoder=scope_decoder,
             workflow_gate_runner=workflow_gate_runner,
-            state_reconstructor=state_reconstructor,
             workflow_state_mutator=workflow_state_mutator,
             server_root=tmp_path / get_default_server_root(),
         )
@@ -132,8 +130,6 @@ class TestPhaseStateEngineTransitionC4:
         state.current_cycle = None
         # test-only: configure state repository mock for transition path
         engine._state_repository.load.return_value = state  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
-        # test-only: configure state reconstructor mock (fallback path)
-        engine._state_reconstructor.reconstruct.return_value = state  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
 
         with pytest.raises(ValueError, match="invalid transition"):
             engine.transition("feature/1-test", to_phase="design")
@@ -189,7 +185,8 @@ class TestProjectManagerPhaseDelegationC4:
         deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
         assert deliverables_file.exists()
         data = json.loads(deliverables_file.read_text(encoding="utf-8"))
-        assert data["1"]["required_phases"] == ["research", "design", "ready"]
+        projects = data.get("projects", data)
+        assert projects["1"]["required_phases"] == ["research", "design", "ready"]
 
 
 # ---------------------------------------------------------------------------

@@ -68,7 +68,6 @@ from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.pytest_runner import PytestRunner
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
-from mcp_server.managers.state_reconstructor import StateReconstructor
 from mcp_server.managers.state_repository import BranchValidatedStateReader, FileStateRepository
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
@@ -182,7 +181,6 @@ class ManagerGraph:
     project_manager: ProjectManager
     phase_contract_resolver: PhaseContractResolver
     workflow_gate_runner: WorkflowGateRunner
-    state_reconstructor: StateReconstructor
     workflow_state_mutator: WorkflowStateMutator
     context_loaded_cache: ContextLoadedCache
     phase_state_engine: PhaseStateEngine
@@ -379,17 +377,8 @@ class ServerBootstrapper:
             deliverable_checker=DeliverableChecker(workspace_root),
             phase_contract_resolver=phase_contract_resolver,
         )
-        state_reconstructor = StateReconstructor(
-            workspace_root=workspace_root,
-            git_config=configs.git_config,
-            project_manager=project_manager,
-            scope_decoder=ScopeDecoder(
-                workphases_config=configs.workphases_config,
-            ),
-        )
         workflow_state_mutator = WorkflowStateMutator(
             state_repository=state_repository,
-            state_reconstructor=state_reconstructor,
         )
         context_loaded_cache = ContextLoadedCache()
         phase_state_engine = PhaseStateEngine(
@@ -402,8 +391,6 @@ class ServerBootstrapper:
                 workphases_config=configs.workphases_config,
             ),
             workflow_gate_runner=workflow_gate_runner,
-            state_reconstructor=state_reconstructor,
-            workflow_state_mutator=workflow_state_mutator,
             context_loaded_writer=context_loaded_cache,
             server_root=server_root,
         )
@@ -452,7 +439,6 @@ class ServerBootstrapper:
             project_manager=project_manager,
             phase_contract_resolver=phase_contract_resolver,
             workflow_gate_runner=workflow_gate_runner,
-            state_reconstructor=state_reconstructor,
             workflow_state_mutator=workflow_state_mutator,
             context_loaded_cache=context_loaded_cache,
             phase_state_engine=phase_state_engine,

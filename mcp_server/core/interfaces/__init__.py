@@ -19,7 +19,6 @@ from mcp_server.core.interfaces.gate import (
 from mcp_server.core.interfaces.state import (
     IStateReader as IStateReader,
     IStateRepository as IStateRepository,
-    IStateReconstructor as IStateReconstructor,
 )
 from mcp_server.core.interfaces.ipr_status import (
     PRStatus as PRStatus,

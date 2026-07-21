@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from mcp_server.core.interfaces import ICoreTool
 from mcp_server.core.operation_notes import Note, NoteContext
+from mcp_server.core.exceptions import ConfigError
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.workflow_state_mutator import StateMutationConflictError
@@ -212,7 +213,7 @@ class TransitionPhaseTool(_BaseTransitionTool[TransitionPhaseInput, PhaseTransit
                 from_phase="",
                 to_phase=params.to_phase,
             )
-        except (ValueError, OSError, RuntimeError, KeyError) as e:
+        except (ValueError, OSError, RuntimeError, KeyError, ConfigError) as e:
             return PhaseTransitionOutput(
                 success=False,
                 error_message=f"Transition failed: {e}",
@@ -314,7 +315,7 @@ class ForcePhaseTransitionTool(
                 skip_reason=params.skip_reason,
                 human_approval_message=params.human_approval_message,
             )
-        except (ValueError, OSError, RuntimeError, KeyError) as e:
+        except (ValueError, OSError, RuntimeError, KeyError, ConfigError) as e:
             return ForcePhaseTransitionOutput(
                 success=False,
                 error_message=f"Force transition failed: {e}",

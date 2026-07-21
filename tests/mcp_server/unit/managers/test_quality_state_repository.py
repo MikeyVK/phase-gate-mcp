@@ -82,7 +82,7 @@ class TestFileQualityStateRepositoryLoad:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": "abc123", "failed_files": []}',
+            '{"schema_version": "1.0.0", "baseline_sha": "abc123", "failed_files": []}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -94,7 +94,7 @@ class TestFileQualityStateRepositoryLoad:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": null, "failed_files": ["x.py", "y.py"]}',
+            '{"schema_version": "1.0.0", "baseline_sha": null, "failed_files": ["x.py", "y.py"]}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -130,7 +130,7 @@ class TestFileQualityStateRepositoryApply:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": "initial_sha", "failed_files": []}',
+            '{"schema_version": "1.0.0", "baseline_sha": "initial_sha", "failed_files": []}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -150,7 +150,7 @@ class TestFileQualityStateRepositoryApply:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": "sha1", "failed_files": ["old.py"]}',
+            '{"schema_version": "1.0.0", "baseline_sha": "sha1", "failed_files": ["old.py"]}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -175,6 +175,20 @@ class TestFileQualityStateRepositoryApply:
         data = json.loads(content)
         assert data.get("schema_version") == "1.0.0"
 
+    def test_quality_repository_resets_on_error_after_backup(self, tmp_path: Path) -> None:
+        """Loading a corrupt or mismatched quality_state.json backs up file and returns reset state."""
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
+        backing.parent.mkdir(parents=True, exist_ok=True)
+        backing.write_text("{corrupt json", encoding="utf-8")
+
+        repo = FileQualityStateRepository(backing_file=backing)
+        state = repo.load()
+
+        backup_file = backing.with_suffix(backing.suffix + ".bak")
+        assert not backing.exists()
+        assert backup_file.exists()
+        assert state.baseline_sha is None
+        assert state.failed_files == []
     def test_apply_creates_parent_dirs(self, tmp_path: Path) -> None:
         """apply() creates parent directories if they don't exist."""
         backing = tmp_path / "deep" / "nested" / "quality_state.json"

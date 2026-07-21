@@ -156,7 +156,7 @@ class MCPSystemError(MCPError):
 class StateNotFoundError(ConfigError):
     """Raised when a dynamic state file is missing."""
 
-    def __init__(self, message: str, file_path: str) -> None:
+    def __init__(self, message: str, file_path: str = "") -> None:
         """Initialize StateNotFoundError."""
         super().__init__(message, file_path=file_path)
 
@@ -164,7 +164,7 @@ class StateNotFoundError(ConfigError):
 class StateCorruptedError(ConfigError):
     """Raised when a dynamic state file contains malformed JSON."""
 
-    def __init__(self, message: str, file_path: str) -> None:
+    def __init__(self, message: str, file_path: str = "") -> None:
         """Initialize StateCorruptedError."""
         super().__init__(message, file_path=file_path)
 

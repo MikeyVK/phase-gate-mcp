@@ -28,9 +28,3 @@ class IStateRepository(IStateReader, Protocol):
     def save(self, state: BranchState) -> None:
         raise NotImplementedError
 
-
-class IStateReconstructor(Protocol):
-    """Reconstruct missing or invalid branch state for one branch."""
-
-    def reconstruct(self, branch: str) -> BranchState:
-        raise NotImplementedError

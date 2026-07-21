@@ -81,7 +81,8 @@ class TestInitializeProjectToolMode1:
             assert state_file.exists(), "state.json must be created (Issue #39 fix)"
 
             # Verify deliverables.json structure
-            projects = json.loads(projects_file.read_text())
+            _raw = json.loads(projects_file.read_text())
+            projects = _raw.get("projects", _raw)
             assert "39" in projects
             assert projects["39"]["workflow_name"] == "bug"
 
@@ -245,9 +246,9 @@ class TestInitializeProjectToolMode1:
 
             # Verify deliverables.json has core required fields
             projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-            projects = json.loads(projects_file.read_text())
+            _raw = json.loads(projects_file.read_text())
+            projects = _raw.get("projects", _raw)
             project = projects["39"]
-
             # Core required fields must exist
             required_fields = {"workflow_name", "required_phases", "execution_mode"}
             assert required_fields.issubset(project.keys()), (

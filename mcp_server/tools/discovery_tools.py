@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from pydantic import BaseModel, ConfigDict, Field
 
 from mcp_server.config.settings import Settings
-from mcp_server.core.exceptions import ExecutionError
-from mcp_server.core.operation_notes import Note, NoteContext
+from mcp_server.core.exceptions import ExecutionError, StateNotFoundError
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.github_manager import GitHubManager
 from mcp_server.managers.phase_state_engine import PhaseStateEngine
@@ -22,6 +21,7 @@ from mcp_server.schemas.tool_outputs import (
     SearchResultDTO,
 )
 from mcp_server.core.interfaces import ICoreTool
+from mcp_server.core.operation_notes import Note, NoteContext
 from mcp_server.services.document_indexer import DocumentIndexer
 from mcp_server.services.search_service import SearchService
 
@@ -232,7 +232,8 @@ class GetWorkContextTool(ICoreTool[GetWorkContextInput, GetWorkContextOutput]):
                         pass
             phase_source = "state.json"
             phase_confidence = "high"
-        except Exception:  # noqa: BLE001 - bootstrap: branch not yet initialized
+        except (StateNotFoundError, FileNotFoundError, OSError, KeyError):
+            # uninitialized branch: state.json absent or branch not yet initialized
             pass
 
         instructions = None

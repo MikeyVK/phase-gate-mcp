@@ -16,7 +16,7 @@ None
 # No external mocks/dependencies needed for import verification
 # Project modules
 from mcp_server.core.interfaces.gate import GateReport, GateViolation, IWorkflowGateRunner
-from mcp_server.core.interfaces.state import IStateReader, IStateRepository, IStateReconstructor
+from mcp_server.core.interfaces.state import IStateReader, IStateRepository
 from mcp_server.core.interfaces.ipr_status import PRStatus, IPRStatusReader, IPRStatusWriter
 from mcp_server.core.interfaces.ipytest_runner import IPytestRunner
 from mcp_server.core.interfaces.git import IGitContextReader, IBranchParentReader
@@ -35,7 +35,6 @@ class TestInterfaceImports:
         assert IWorkflowGateRunner is not None
         assert IStateReader is not None
         assert IStateRepository is not None
-        assert IStateReconstructor is not None
         assert PRStatus is not None
         assert IPRStatusReader is not None
         assert IPRStatusWriter is not None

@@ -30,7 +30,6 @@ from mcp_server.managers.phase_state_engine import PhaseStateEngine
 from mcp_server.managers.project_manager import ProjectManager
 from mcp_server.managers.qa_manager import QAManager
 from mcp_server.managers.quality_state_repository import FileQualityStateRepository
-from mcp_server.managers.state_reconstructor import StateReconstructor
 from mcp_server.managers.state_repository import FileStateRepository
 from mcp_server.scaffolders.template_scaffolder import TemplateScaffolder
 from mcp_server.scaffolding.metadata import ScaffoldMetadataParser
@@ -302,39 +301,12 @@ def make_project_manager(
     )
 
 
-def make_state_reconstructor(
-    workspace_root: Path | str,
-    project_manager: ProjectManager | None = None,
-    git_config: GitConfig | None = None,
-    scope_decoder: object | None = None,
-) -> StateReconstructor:
-    """Build a StateReconstructor with explicit dependency injection."""
-    manager = project_manager or make_project_manager(workspace_root)
-    resolved_git_config = git_config or cast(
-        GitConfig,
-        _load_config(workspace_root, "git.yaml", "load_git_config"),
-    )
-    resolved_scope_decoder = scope_decoder or ScopeDecoder(
-        workphases_config=cast(
-            WorkphasesConfig,
-            _load_config(workspace_root, "workphases.yaml", "load_workphases_config"),
-        )
-    )
-    return StateReconstructor(
-        workspace_root=workspace_root,
-        git_config=resolved_git_config,
-        project_manager=manager,
-        scope_decoder=resolved_scope_decoder,
-    )
-
-
 def make_phase_state_engine(
     workspace_root: Path | str,
     project_manager: ProjectManager | None = None,
     state_repository: object | None = None,
     scope_decoder: object | None = None,
     workflow_gate_runner: object | None = None,
-    state_reconstructor: object | None = None,
     workflow_state_mutator: object | None = None,
     context_loaded_writer: object | None = None,
 ) -> PhaseStateEngine:
@@ -358,18 +330,11 @@ def make_phase_state_engine(
         workphases_config=cast(WorkphasesConfig, workphases_config)
     )
     resolved_workflow_gate_runner = workflow_gate_runner or _NopGateRunner(contracts_config)
-    resolved_state_reconstructor = state_reconstructor or make_state_reconstructor(
-        workspace_root=workspace_root,
-        project_manager=manager,
-        git_config=git_config,
-        scope_decoder=resolved_scope_decoder,
-    )
     if workflow_state_mutator is None:
         from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator  # noqa: PLC0415
 
         workflow_state_mutator = WorkflowStateMutator(
             state_repository=resolved_state_repository,
-            state_reconstructor=resolved_state_reconstructor,
         )
     return PhaseStateEngine(
         workspace_root=workspace_root,
@@ -379,7 +344,6 @@ def make_phase_state_engine(
         state_repository=resolved_state_repository,
         scope_decoder=resolved_scope_decoder,
         workflow_gate_runner=resolved_workflow_gate_runner,
-        state_reconstructor=resolved_state_reconstructor,
         workflow_state_mutator=workflow_state_mutator,  # type: ignore[arg-type]
         server_root=workspace_path / get_default_server_root(),
         context_loaded_writer=context_loaded_writer,  # type: ignore[arg-type]

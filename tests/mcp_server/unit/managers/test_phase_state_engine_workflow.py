@@ -18,8 +18,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.managers.state_repository import StateBranchMismatchError
-from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 if TYPE_CHECKING:
     from mcp_server.managers.phase_state_engine import PhaseStateEngine
@@ -226,7 +226,7 @@ class TestPhaseStateEngineTransitions:
         self, phase_engine: PhaseStateEngine
     ) -> None:
         """Test get_state fails if state.json doesn't exist."""
-        with pytest.raises(FileNotFoundError, match="No such file"):
+        with pytest.raises((StateNotFoundError, FileNotFoundError)):
             phase_engine.get_state(branch="feature/88-test")
 
     def test_phase_state_engine_get_state_unknown_branch(

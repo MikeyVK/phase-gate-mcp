@@ -29,7 +29,8 @@ from pydantic import ValidationError
 # Project modules
 from mcp_server.managers.git_manager import GitManager
 from mcp_server.managers.state_version_validator import StateVersionValidator
-from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
+from mcp_server.core.exceptions import StateNotFoundError
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.core.exceptions import PlanningVersionMismatchError, StateCorruptedError
 from mcp_server.schemas import ContractsConfig, WorkphasesConfig
 from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
@@ -426,7 +427,9 @@ class ProjectManager:
         data = json.loads(content)
         if not isinstance(data, dict):
             return {}
-        projects = data.get("projects", {})
+        projects = data.get("projects")
+        if projects is None:
+            projects = {k: v for k, v in data.items() if k != "schema_version"}
         if not isinstance(projects, dict):
             return {}
         return projects
