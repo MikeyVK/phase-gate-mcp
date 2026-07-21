@@ -29,7 +29,14 @@ from pydantic import ValidationError
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import SafeEditOutput
-from mcp_server.tools.safe_edit_tool import SafeEditInput, SafeEditTool
+from mcp_server.tools.safe_edit_tool import (
+    AppendOp,
+    PatternReplaceOp,
+    ReplaceOp,
+    RewriteOp,
+    SafeEditInput,
+    SafeEditTool,
+)
 
 
 class TestSafeEditTool:
@@ -273,3 +280,59 @@ class TestSafeEditTool:
             "Expected the last sequential edit to win and persist in the file.\n"
             f"Final file content: {final_content}"
         )
+
+
+class TestSafeEditInputOperations:
+    """Test suite verifying 4-operation SafeEditInput Pydantic models."""
+
+    def test_replace_op_schema(self) -> None:
+        """Verify ReplaceOp model parsing and extra='forbid' validation."""
+        op = ReplaceOp(target_content="foo", replacement="bar", search_window=[1, 10])
+        assert op.op == "replace"
+        assert op.target_content == "foo"
+        assert op.replacement == "bar"
+        assert op.search_window == [1, 10]
+
+    def test_append_op_schema(self) -> None:
+        """Verify AppendOp model parsing and default values."""
+        op = AppendOp(content="new line", anchor="## Section", position="before")
+        assert op.op == "append"
+        assert op.content == "new line"
+        assert op.anchor == "## Section"
+        assert op.position == "before"
+
+    def test_rewrite_op_schema(self) -> None:
+        """Verify RewriteOp model parsing."""
+        op = RewriteOp(content="complete file content")
+        assert op.op == "rewrite"
+        assert op.content == "complete file content"
+
+    def test_pattern_replace_op_schema(self) -> None:
+        """Verify PatternReplaceOp model parsing."""
+        op = PatternReplaceOp(pattern=r"def \w+", replacement="def main", regex=True)
+        assert op.op == "pattern_replace"
+        assert op.pattern == r"def \w+"
+        assert op.replacement == "def main"
+        assert op.regex is True
+
+    def test_operation_type_discriminator_parsing(self) -> None:
+        """Verify SafeEditInput parses operation dictionary via op discriminator."""
+        inp = SafeEditInput(
+            path="file.py",
+            operation={"op": "replace", "target_content": "old", "replacement": "new"},
+        )
+        assert isinstance(inp.operation, ReplaceOp)
+        assert inp.operation.target_content == "old"
+
+    def test_extra_forbid_on_operations(self) -> None:
+        """Verify unrecognized fields raise ValidationError on operations."""
+        with pytest.raises(ValidationError):
+            ReplaceOp(target_content="a", replacement="b", unknown_field="invalid")
+
+        with pytest.raises(ValidationError):
+            SafeEditInput(
+                path="file.py",
+                operation={"op": "rewrite", "content": "x"},
+                invalid_param="forbidden",
+            )
+
