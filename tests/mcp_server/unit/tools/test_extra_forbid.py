@@ -46,7 +46,7 @@ from mcp_server.tools.project_tools import (
     UpdatePlanningDeliverablesInput,
 )
 from mcp_server.tools.quality_tools import RunQualityGatesInput
-from mcp_server.tools.safe_edit_tool import AppendOp, ReplaceOp, SafeEditInput
+from mcp_server.tools.safe_edit_tool import SafeEditInput
 from mcp_server.tools.scaffold_artifact import ScaffoldArtifactInput
 from mcp_server.tools.template_validation_tool import TemplateValidationInput
 from mcp_server.tools.test_tools import RunTestsInput

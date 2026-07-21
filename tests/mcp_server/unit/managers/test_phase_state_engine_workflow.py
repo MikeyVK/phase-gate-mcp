@@ -20,6 +20,7 @@ import pytest
 
 from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.managers.state_repository import StateBranchMismatchError
+from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 if TYPE_CHECKING:
     from mcp_server.managers.phase_state_engine import PhaseStateEngine

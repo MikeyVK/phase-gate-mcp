@@ -192,6 +192,7 @@ class TestSafeEditTool:
                 NoteContext(),
             )
             tool.validation_service.validate.assert_called_once()
+
     @pytest.mark.asyncio
     async def test_rejects_legacy_show_diff_argument(self, tool: SafeEditTool) -> None:
         """Contract test: SafeEditInput must reject the removed show_diff argument."""
@@ -202,7 +203,7 @@ class TestSafeEditTool:
             SafeEditInput.model_validate(
                 {
                     "path": "test.py",
-                    "content": "new code",
+                    "operation": {"op": "rewrite", "content": "new code"},
                     "mode": "strict",
                     "show_diff": True,
                 }
@@ -210,7 +211,6 @@ class TestSafeEditTool:
 
         assert "show_diff" in str(exc_info.value)
 
-    @pytest.mark.asyncio
     @pytest.mark.asyncio
     async def test_no_duplicate_real_validation(self, tool: SafeEditTool) -> None:
         """Test with REAL validation (no duplicate validation issues in response)."""
@@ -389,6 +389,7 @@ class TestSafeEditExecutionHandlers:
         )
         assert result.success is False
         assert result.written is False
+        assert result.error_message is not None
         assert "does not exist" in result.error_message.lower()
         assert "scaffold_artifact" in result.error_message
 
@@ -457,6 +458,7 @@ class TestSafeEditExecutionHandlers:
         )
         assert result.success is False
         assert result.written is False
+        assert result.error_message is not None
         assert "not found in file" in result.error_message.lower()
         assert "did you mean" in result.error_message.lower()
         assert "process_items" in result.error_message
@@ -478,9 +480,7 @@ class TestSafeEditExecutionHandlers:
         assert test_file.read_text(encoding="utf-8") == "line 1\nline 2\n"
 
     @pytest.mark.asyncio
-    async def test_execute_append_op_anchor_after(
-        self, tool: SafeEditTool, tmp_path: Path
-    ) -> None:
+    async def test_execute_append_op_anchor_after(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """AppendOp with anchor and position='after' inserts after anchor line."""
         test_file = tmp_path / "test.txt"
         test_file.write_text("# Section 1\ncontent 1\n", encoding="utf-8")
@@ -543,13 +543,12 @@ class TestSafeEditExecutionHandlers:
             NoteContext(),
         )
         assert result.success is False
+        assert result.error_message is not None
         assert "anchor" in result.error_message.lower()
         assert "did you mean" in result.error_message.lower()
 
     @pytest.mark.asyncio
-    async def test_execute_rewrite_op_success(
-        self, tool: SafeEditTool, tmp_path: Path
-    ) -> None:
+    async def test_execute_rewrite_op_success(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """RewriteOp replaces entire file content on existing file."""
         test_file = tmp_path / "test.txt"
         test_file.write_text("old content", encoding="utf-8")
@@ -608,6 +607,7 @@ class TestSafeEditExecutionHandlers:
             NoteContext(),
         )
         assert result.success is False
+        assert result.error_message is not None
         assert "regex" in result.error_message.lower()
 
     @pytest.mark.asyncio

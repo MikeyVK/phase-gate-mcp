@@ -23,6 +23,18 @@ from mcp_server.managers.state_repository import BranchState
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
 
+@pytest.fixture
+def workspace_root(tmp_path: Path) -> Path:
+    """Temporary workspace root for tests."""
+    return tmp_path
+
+
+@pytest.fixture
+def project_manager(workspace_root: Path) -> ProjectManager:
+    """ProjectManager bound to the temp workspace."""
+    return make_project_manager(workspace_root)
+
+
 class MissingThenPersistingRepository:
     """Repository that simulates one missing-state load until a save happens."""
 

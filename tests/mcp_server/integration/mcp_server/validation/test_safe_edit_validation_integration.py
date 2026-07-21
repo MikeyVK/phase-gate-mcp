@@ -81,10 +81,7 @@ Missing frontmatter.
         test_file = temp_dir / "test_dto.py"
         test_file.write_text("initial", encoding="utf-8")
         invalid_dto = (
-            '"""Test DTO"""\n'
-            'class TestDTO:\n'
-            '    """Invalid DTO without BaseModel."""\n'
-            '    pass\n'
+            '"""Test DTO"""\nclass TestDTO:\n    """Invalid DTO without BaseModel."""\n    pass\n'
         )
 
         result = await tool.execute(
@@ -98,6 +95,7 @@ Missing frontmatter.
 
         assert result.written is True
         assert result.success is True
+
     @pytest.mark.asyncio
     async def test_safe_edit_allows_with_guideline_warnings(
         self, tool: SafeEditTool, temp_dir: Path
@@ -112,10 +110,10 @@ Missing frontmatter.
         test_file.write_text("initial", encoding="utf-8")
         invalid_dto = (
             '"""Test DTO"""\n'
-            'class TestDTO:\n'
+            "class TestDTO:\n"
             '    """Invalid DTO without BaseModel."""\n'
             '    model_config = {"frozen": True}\n'
-            '    name: str\n'
+            "    name: str\n"
         )
 
         result = await tool.execute(
@@ -136,9 +134,9 @@ Missing frontmatter.
         test_file.write_text("initial", encoding="utf-8")
         invalid_dto = (
             '"""Test DTO"""\n'
-            'class TestDTO(BaseModel):\n'
+            "class TestDTO(BaseModel):\n"
             '    """DTO missing frozen config."""\n'
-            '    name: str\n'
+            "    name: str\n"
         )
         result = await tool.execute(
             SafeEditInput(
@@ -165,12 +163,12 @@ Missing frontmatter.
         test_file.write_text("initial", encoding="utf-8")
         valid_worker = (
             '"""Test Worker"""\n'
-            'from abc import ABC\n\n'
-            'class TestWorker(ABC):\n'
+            "from abc import ABC\n\n"
+            "class TestWorker(ABC):\n"
             '    """Valid worker."""\n\n'
-            '    async def process(self, data: dict) -> dict:\n'
+            "    async def process(self, data: dict) -> dict:\n"
             '        """Process data."""\n'
-            '        return data\n'
+            "        return data\n"
         )
 
         result = await tool.execute(
@@ -192,10 +190,10 @@ Missing frontmatter.
         test_file2.write_text("initial", encoding="utf-8")
         invalid_worker = (
             '"""Invalid Worker"""\n'
-            'from abc import ABC\n\n'
-            'class InvalidWorker(ABC):\n'
+            "from abc import ABC\n\n"
+            "class InvalidWorker(ABC):\n"
             '    """Class missing process()."""\n'
-            '    pass\n'
+            "    pass\n"
         )
         result2 = await tool.execute(
             SafeEditInput(
