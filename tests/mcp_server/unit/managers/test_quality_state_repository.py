@@ -19,6 +19,7 @@ from tests.mcp_server.test_support import get_default_server_root
 
 
 import inspect
+import json
 from pathlib import Path
 
 import mcp_server.managers.quality_state_repository as _qsr_module
@@ -56,6 +57,15 @@ class TestIQualityStateRepositoryProtocol:
         assert isinstance(repo, IQualityStateRepository)
 
 
+class TestQualityState:
+    """Tests for QualityState model."""
+
+    def test_quality_state_includes_schema_version(self) -> None:
+        """Verify that QualityState defaults schema_version to '1.0.0'."""
+        state = QualityState(baseline_sha="abc", failed_files=[])
+        assert getattr(state, "schema_version") == "1.0.0"
+
+
 class TestFileQualityStateRepositoryLoad:
     """FileQualityStateRepository.load() returns correct state."""
 
@@ -72,7 +82,7 @@ class TestFileQualityStateRepositoryLoad:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": "abc123", "failed_files": []}',
+            '{"schema_version": "1.0.0", "baseline_sha": "abc123", "failed_files": []}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -84,7 +94,7 @@ class TestFileQualityStateRepositoryLoad:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": null, "failed_files": ["x.py", "y.py"]}',
+            '{"schema_version": "1.0.0", "baseline_sha": null, "failed_files": ["x.py", "y.py"]}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -120,7 +130,7 @@ class TestFileQualityStateRepositoryApply:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": "initial_sha", "failed_files": []}',
+            '{"schema_version": "1.0.0", "baseline_sha": "initial_sha", "failed_files": []}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -140,7 +150,7 @@ class TestFileQualityStateRepositoryApply:
         backing = tmp_path / get_default_server_root() / "quality_state.json"
         backing.parent.mkdir(parents=True, exist_ok=True)
         backing.write_text(
-            '{"baseline_sha": "sha1", "failed_files": ["old.py"]}',
+            '{"schema_version": "1.0.0", "baseline_sha": "sha1", "failed_files": ["old.py"]}',
             encoding="utf-8",
         )
         repo = FileQualityStateRepository(backing_file=backing)
@@ -154,6 +164,31 @@ class TestFileQualityStateRepositoryApply:
         assert "old.py" in state.failed_files
         assert "new.py" in state.failed_files
 
+    def test_apply_serializes_schema_version(self, tmp_path: Path) -> None:
+        """Verify that apply() serializes schema_version to backing file."""
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
+        repo = FileQualityStateRepository(backing_file=backing)
+
+        repo.apply(lambda _s: QualityState(baseline_sha="new_sha", failed_files=[]))
+
+        content = backing.read_text(encoding="utf-8")
+        data = json.loads(content)
+        assert data.get("schema_version") == "1.0.0"
+
+    def test_quality_repository_resets_on_error_after_backup(self, tmp_path: Path) -> None:
+        """Loading a corrupt or mismatched quality_state.json backs up file and returns reset state."""
+        backing = tmp_path / get_default_server_root() / "quality_state.json"
+        backing.parent.mkdir(parents=True, exist_ok=True)
+        backing.write_text("{corrupt json", encoding="utf-8")
+
+        repo = FileQualityStateRepository(backing_file=backing)
+        state = repo.load()
+
+        backup_file = backing.with_suffix(backing.suffix + ".bak")
+        assert not backing.exists()
+        assert backup_file.exists()
+        assert state.baseline_sha is None
+        assert state.failed_files == []
     def test_apply_creates_parent_dirs(self, tmp_path: Path) -> None:
         """apply() creates parent directories if they don't exist."""
         backing = tmp_path / "deep" / "nested" / "quality_state.json"

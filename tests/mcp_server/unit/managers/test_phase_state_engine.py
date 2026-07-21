@@ -1525,8 +1525,8 @@ class TestHumanApprovalMessageMigration:
     def test_load_legacy_state_with_human_approval(self, tmp_path: Path) -> None:
         state_file = tmp_path / "state.json"
         legacy_data = {
+            "schema_version": "1.0.0",
             "branch": "feature/430-test",
-            "issue_number": 430,
             "workflow_name": "feature",
             "current_phase": "planning",
             "transitions": [

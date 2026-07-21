@@ -294,10 +294,21 @@ class TestForceTransitionNoWarningWhenDeliverablesPresent:
             issue_title="Phase deliverables enforcement",
             workflow_name="feature",
         )
-        # Inject the key directly (bypasses schema validation — tests engine check logic only)
-        projects = json.loads(pm.deliverables_file.read_text(encoding="utf-8"))
-        projects["229"]["planning_deliverables"] = {"cycles": {"total": 1, "cycles": []}}
-        pm.deliverables_file.write_text(json.dumps(projects, indent=2))
+        pm.save_planning_deliverables(
+            229,
+            {
+                "cycles": {
+                    "total": 1,
+                    "cycles": [
+                        {
+                            "cycle_number": 1,
+                            "deliverables": [{"id": "D1", "description": "D1"}],
+                            "exit_criteria": "c",
+                        }
+                    ],
+                }
+            },
+        )
 
         engine = make_phase_state_engine(workspace_root, project_manager=pm)
         branch = "feature/229-bugfix"

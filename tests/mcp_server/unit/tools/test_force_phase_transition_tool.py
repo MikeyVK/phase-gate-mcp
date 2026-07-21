@@ -447,10 +447,21 @@ phases:
 
         if with_gate_key:
             # Inject planning_deliverables so gate would have PASSED
-            projects_path = tmp_path / get_default_server_root() / "deliverables.json"
-            data = json.loads(projects_path.read_text())
-            data["42"]["planning_deliverables"] = {"cycles": {"total": 1, "cycles": []}}
-            projects_path.write_text(json.dumps(data, indent=2))
+            pm.save_planning_deliverables(
+                42,
+                {
+                    "cycles": {
+                        "total": 1,
+                        "cycles": [
+                            {
+                                "cycle_number": 1,
+                                "deliverables": [{"id": "D1", "description": "D1"}],
+                                "exit_criteria": "c",
+                            }
+                        ],
+                    }
+                },
+            )
 
         return tmp_path, branch
 

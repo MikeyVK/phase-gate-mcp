@@ -865,14 +865,13 @@ class TestTransitionCycleExitCriteria:
             # Write planning deliverables directly to bypass schema validation
             # Used to simulate corrupt/external state for testing robustness
             projects_file = workspace_root / get_default_server_root() / "deliverables.json"
-            with projects_file.open() as f:
-                projects = json.load(f)
-
+            projects_file = workspace_root / get_default_server_root() / "deliverables.json"
+            raw = json.loads(projects_file.read_text(encoding="utf-8"))
+            projects = raw.get("projects", raw)
             projects[str(issue_number)]["planning_deliverables"] = {
                 "cycles": {"total": len(cycles), "cycles": cycles}
             }
-            with projects_file.open("w") as f:
-                json.dump(projects, f, indent=2)
+            projects_file.write_text(json.dumps(raw, indent=2), encoding="utf-8")
         else:
             planning_deliverables = {
                 "cycles": {

@@ -28,7 +28,10 @@ from pydantic import ValidationError
 
 # Project modules
 from mcp_server.managers.git_manager import GitManager
-from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
+from mcp_server.managers.state_version_validator import StateVersionValidator
+from mcp_server.core.exceptions import StateNotFoundError
+from mcp_server.managers.state_repository import StateBranchMismatchError
+from mcp_server.core.exceptions import PlanningVersionMismatchError, StateCorruptedError
 from mcp_server.schemas import ContractsConfig, WorkphasesConfig
 from mcp_server.schemas.deliverables import CyclePlanningModel, UpdatePlanningModel
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
@@ -99,6 +102,7 @@ class ProjectManager:
         *,
         workflow_status_resolver: WorkflowStatusResolver,
         server_root: Path,
+        state_version_validator: StateVersionValidator | None = None,
     ) -> None:
         """Initialize ProjectManager."""
         self.workspace_root = Path(workspace_root)
@@ -108,6 +112,7 @@ class ProjectManager:
         self._workflow_status_resolver = workflow_status_resolver
         self.deliverables_file = server_root / "deliverables.json"
         self.atomic_json_writer = AtomicJsonWriter()
+        self._state_version_validator = state_version_validator or StateVersionValidator()
 
     @property
     def workphases_config(self) -> WorkphasesConfig | None:
@@ -217,7 +222,7 @@ class ProjectManager:
             raise ValueError(msg)
 
         # Load existing projects
-        projects = json.loads(self.deliverables_file.read_text(encoding="utf-8-sig"))
+        projects = self._read_projects()
 
         # Check project exists
         if str(issue_number) not in projects:
@@ -273,7 +278,7 @@ class ProjectManager:
             msg = f"Project {issue_number} not found - initialize_project must be called first"
             raise ValueError(msg)
 
-        projects = json.loads(self.deliverables_file.read_text(encoding="utf-8-sig"))
+        projects = self._read_projects()
 
         if str(issue_number) not in projects:
             msg = f"Project {issue_number} not found - initialize_project must be called first"
@@ -382,9 +387,7 @@ class ProjectManager:
         if not self.deliverables_file.exists():
             return None
 
-        projects: dict[str, Any] = json.loads(
-            self.deliverables_file.read_text(encoding="utf-8-sig")  # Handle BOM if present
-        )
+        projects = self._read_projects()
         plan: dict[str, Any] | None = projects.get(str(issue_number))
 
         if plan is None:
@@ -403,9 +406,41 @@ class ProjectManager:
         plan["phase_detection_error"] = status.phase_detection_error
         return plan
 
+    def _read_projects(self) -> dict[str, Any]:
+        """Read and validate deliverables envelope (Query).
+
+        Returns:
+            Dict of projects nested under "projects" key.
+        """
+        if not self.deliverables_file.exists():
+            return {}
+
+        try:
+            self._state_version_validator.validate_file(
+                self.deliverables_file, expected_version="1.0.0", is_planning=True
+            )
+        except (PlanningVersionMismatchError, StateCorruptedError):
+            self._state_version_validator.backup_file(self.deliverables_file)
+            raise
+
+        content = self.deliverables_file.read_text(encoding="utf-8-sig")
+        data = json.loads(content)
+        if not isinstance(data, dict):
+            return {}
+        projects = data.get("projects")
+        if projects is None:
+            projects = {k: v for k, v in data.items() if k != "schema_version"}
+        if not isinstance(projects, dict):
+            return {}
+        return projects
+
     def _write_deliverables(self, projects: dict[str, Any]) -> None:
-        """Persist deliverables.json via atomic replacement."""
-        self.atomic_json_writer.write_json(self.deliverables_file, projects)
+        """Persist deliverables.json via atomic replacement (Command)."""
+        payload = {
+            "schema_version": "1.0.0",
+            "projects": projects,
+        }
+        self.atomic_json_writer.write_json(self.deliverables_file, payload)
 
     def _save_project_plan(self, plan: ProjectPlan) -> None:
         """Save project plan to deliverables.json.
@@ -417,11 +452,7 @@ class ProjectManager:
         self.deliverables_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load existing projects
-        projects = (
-            json.loads(self.deliverables_file.read_text())
-            if self.deliverables_file.exists()
-            else {}
-        )
+        projects = self._read_projects()
 
         # Store plan (convert tuple to list for JSON)
         projects[str(plan.issue_number)] = {

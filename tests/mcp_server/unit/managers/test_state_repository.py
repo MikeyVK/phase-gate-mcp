@@ -30,6 +30,7 @@ from mcp_server.managers.state_repository import (
     StateBranchMismatchError,
     StateNotFoundError,
 )
+from mcp_server.core.exceptions import StateCorruptedError, StateVersionMismatchError
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 from tests.mcp_server.test_support import make_phase_state_engine, make_project_manager
 
@@ -52,6 +53,19 @@ class TestBranchState:
         with pytest.raises(ValidationError):
             state.current_phase = "validation"
 
+    def test_branch_state_includes_schema_version(self) -> None:
+        """Verify that BranchState defaults schema_version to '1.0.0'."""
+        state = BranchState(
+            branch="feature/257-reorder-workflow-phases",
+            workflow_name="feature",
+            current_phase="implementation",
+            current_cycle=2,
+            last_cycle=1,
+            cycle_history=[],
+            transitions=[],
+        )
+        assert getattr(state, "schema_version") == "1.0.0"
+
 
 class TestFileStateRepository:
     """Tests for filesystem-backed state repository."""
@@ -63,11 +77,11 @@ class TestFileStateRepository:
         state_file.write_text(
             json.dumps(
                 {
+                    "schema_version": "1.0.0",
                     "branch": "feature/257-reorder-workflow-phases",
                     "issue_number": 257,
                     "workflow_name": "feature",
                     "current_phase": "implementation",
-                    "parent_branch": "main",
                     "transitions": [],
                     "created_at": "2026-03-12T00:00:00+00:00",
                     "current_cycle": 2,
@@ -85,6 +99,22 @@ class TestFileStateRepository:
         assert state.current_phase == "implementation"
         assert state.current_cycle == 2
 
+    def test_file_state_repository_load_orchestrates_cqs_backup_on_error(
+        self, tmp_path: Path
+    ) -> None:
+        """Loading a corrupt or version mismatched state file backs up file and raises exception."""
+        state_file = tmp_path / get_default_server_root() / "state.json"
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        # Write corrupted JSON
+        state_file.write_text("{corrupt json", encoding="utf-8")
+
+        repository = FileStateRepository(state_file=state_file)
+        with pytest.raises(StateCorruptedError):
+            repository.load("feature/test")
+
+        backup_file = state_file.with_suffix(state_file.suffix + ".bak")
+        assert not state_file.exists()
+        assert backup_file.exists()
     def test_save_persists_branch_state(self, tmp_path: Path) -> None:
         """Saving BranchState should write state.json through the shared atomic writer."""
         state_file = tmp_path / get_default_server_root() / "state.json"
@@ -333,6 +363,7 @@ class TestBranchStateCurrentSubPhase:
         state_file.write_text(
             json.dumps(
                 {
+                    "schema_version": "1.0.0",
                     "branch": "feature/298-test",
                     "workflow_name": "feature",
                     "current_phase": "implementation",

@@ -422,6 +422,19 @@
         "template_id": "typescript_dto.ts",
         "version": "1.0"
       }
+    },
+    "8825c0bb": {
+      "artifact_type": "unit_test",
+      "created": "2026-07-20T21:18:24.837006+00:00",
+      "hash_algorithm": "SHA256",
+      "concrete": {
+        "template_id": "test_unit.py",
+        "version": "1.0"
+      },
+      "tier0": {
+        "template_id": "tier2_base_python",
+        "version": "1.2.0"
+      }
     }
   },
   "current_versions": {
@@ -436,7 +449,7 @@
     "service": "5d5b489a",
     "schema": "74378193",
     "tool": "27130d2b",
-    "unit_test": "3d15d309",
+    "unit_test": "8825c0bb",
     "integration_test": "85ea75d4",
     "pr": "93bb9b4e",
     "issue": "8dd42510",
@@ -449,5 +462,5 @@
     "typescript_dto": "25d3e19c"
   },
   "templates": {},
-  "last_updated": "2026-07-16T06:37:21.009411+00:00"
+  "last_updated": "2026-07-20T21:18:24.837547+00:00"
 }

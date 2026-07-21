@@ -105,7 +105,7 @@ class TestContextLoadedGate:
     """EnforcementRunner gate blocks/allows tools based on context-loaded state."""
 
     def test_gate_blocks_tool_when_context_not_loaded(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text("{}")
+        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
         cache = ContextLoadedCache()
         runner = _make_runner(cache, server_root=tmp_path)
 
@@ -119,7 +119,7 @@ class TestContextLoadedGate:
             )
 
     def test_gate_allows_tool_when_context_loaded(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text("{}")
+        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
         cache = ContextLoadedCache()
         cache.set_context_loaded(_BRANCH, value=True)
         runner = _make_runner(cache, server_root=tmp_path)
@@ -134,7 +134,7 @@ class TestContextLoadedGate:
         )
 
     def test_force_phase_transition_exempt(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text("{}")
+        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
         cache = ContextLoadedCache()  # context NOT loaded
         runner = _make_runner(cache, server_root=tmp_path)
 
@@ -148,7 +148,7 @@ class TestContextLoadedGate:
         )
 
     def test_force_cycle_transition_exempt(self, tmp_path: Path) -> None:
-        (tmp_path / "state.json").write_text("{}")
+        (tmp_path / "state.json").write_text('{"schema_version": "1.0.0"}')
         cache = ContextLoadedCache()  # context NOT loaded
         runner = _make_runner(cache, server_root=tmp_path)
 
@@ -179,7 +179,7 @@ class TestContextLoadedGate:
         """C3.D5: gate inactive when state.json present but issue_number mismatches branch."""
         # state.json exists but belongs to a DIFFERENT issue (999 vs branch issue 357)
         (tmp_path / "state.json").write_text(
-            '{"branch": "feature/999-other", "issue_number": 999,'
+            '{"schema_version": "1.0.0", "branch": "feature/999-other", "issue_number": 999,'
             ' "workflow_name": "feature", "current_phase": "implementation"}',
             encoding="utf-8",
         )

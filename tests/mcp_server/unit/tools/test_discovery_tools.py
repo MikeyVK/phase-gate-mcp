@@ -31,7 +31,8 @@ from mcp_server.config.schemas.workphases import WorkphasesConfig
 from mcp_server.config.settings import Settings
 from mcp_server.core.interfaces import IContextLoadedWriter
 from mcp_server.core.operation_notes import NoteContext
-from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
+from mcp_server.core.exceptions import StateNotFoundError
+from mcp_server.managers.state_repository import StateBranchMismatchError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
 from mcp_server.tools.discovery_tools import (
     GetWorkContextInput,
@@ -510,6 +511,14 @@ class TestGetWorkContextTddCycleInfo:
             tool._state_engine = state_engine
             tool._settings.server.workspace_root = str(workspace_root)
 
+            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+                current_phase="design",
+                sub_phase=None,
+                current_cycle=None,
+                phase_source="state.json",
+                phase_confidence="high",
+                phase_detection_error=None,
+            )
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         # Assert - NO tdd_cycle_info in design phase
@@ -563,6 +572,14 @@ class TestGetWorkContextTddCycleInfo:
             tool._state_engine = state_engine
             tool._settings.server.workspace_root = str(workspace_root)
 
+            tool._workflow_status_resolver.resolve_current.return_value = WorkflowStatusDTO(
+                current_phase="implementation",
+                sub_phase="red",
+                current_cycle=1,
+                phase_source="state.json",
+                phase_confidence="high",
+                phase_detection_error=None,
+            )
             result = await tool.execute(GetWorkContextInput(), NoteContext())
 
         # Assert - tool should NOT crash

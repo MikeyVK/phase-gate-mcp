@@ -259,7 +259,7 @@ mcp_server/
 │   ├── workflow_gate_runner.py
 │   ├── enforcement_runner.py
 │   ├── phase_contract_resolver.py
-│   ├── state_reconstructor.py
+│   ├── state_version_validator.py
 │   ├── pytest_runner.py
 │   ├── quality_state_repository.py
 │   ├── deliverable_checker.py
@@ -441,7 +441,7 @@ sequenceDiagram
 | `workflow_status_resolver` | Derive current workflow status |
 | `workflow_gate_runner` | Evaluate phase/cycle exit gates |
 | `state_repository` | Persisted branch state (state.json) |
-| `state_reconstructor` | Reconstruct state for orphaned branches |
+| `state_version_validator` | Validate state schema version and perform .bak backups on version mismatch or corruption |
 | `phase_contract_resolver` | Resolve phase contracts from config |
 | `quality_state_repository` | Quality baseline state |
 | `enforcement_runner` | Pre/post tool enforcement rules |

@@ -497,7 +497,8 @@ class TestUpdatePlanningDeliverablesTool:
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
         manager = make_project_manager(workspace_root)
-        data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
+        _raw = json.loads(manager.deliverables_file.read_text())
+        data = _raw.get("projects", _raw)[str(issue_number)]
         cycles = data["planning_deliverables"]["cycles"]["cycles"]
         assert len(cycles) == 2  # original C1 + new C2
         assert cycles[1]["cycle_number"] == 2
@@ -536,7 +537,8 @@ class TestUpdatePlanningDeliverablesTool:
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
         manager = make_project_manager(workspace_root)
-        data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
+        _raw = json.loads(manager.deliverables_file.read_text())
+        data = _raw.get("projects", _raw)[str(issue_number)]
         cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
         ids = [d["id"] for d in cycle1["deliverables"]]
         assert "D1.1" in ids  # original preserved
@@ -576,7 +578,8 @@ class TestUpdatePlanningDeliverablesTool:
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
         manager = make_project_manager(workspace_root)
-        data = json.loads(manager.deliverables_file.read_text())[str(issue_number)]
+        _raw = json.loads(manager.deliverables_file.read_text())
+        data = _raw.get("projects", _raw)[str(issue_number)]
         cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
         d1_1 = next(d for d in cycle1["deliverables"] if d["id"] == "D1.1")
         assert d1_1["description"] == "updated description"
@@ -670,10 +673,10 @@ class TestPlanningDeliverablesPhaseSchema:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads(
+        _raw = json.loads(
             (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )[str(issue_number)]
-        assert "design" in data["planning_deliverables"]
+        )
+        data = _raw.get("projects", _raw)[str(issue_number)]
 
     @pytest.mark.asyncio()
     async def test_save_rejects_unknown_phase_key(self, initialized: tuple[Path, int]) -> None:
@@ -745,9 +748,10 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads(
+        _raw = json.loads(
             (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )[str(issue_number)]
+        )
+        data = _raw.get("projects", _raw)[str(issue_number)]
         design_ids = [d["id"] for d in data["planning_deliverables"]["design"]["deliverables"]]
         assert "Des1" in design_ids  # original preserved
         assert "Des2" in design_ids  # new one appended (D8.1)
@@ -796,9 +800,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())[
-            str(issue_number)
-        ]
+        _raw = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())
+        data = _raw.get("projects", _raw)[str(issue_number)]
         val_ids = [d["id"] for d in data["planning_deliverables"]["validation"]["deliverables"]]
         assert "Val1" in val_ids
         assert "Val2" in val_ids
@@ -845,9 +848,8 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())[
-            str(issue_number)
-        ]
+        _raw = json.loads((tmp_path / get_default_server_root() / "deliverables.json").read_text())
+        data = _raw.get("projects", _raw)[str(issue_number)]
         doc_ids = [d["id"] for d in data["planning_deliverables"]["documentation"]["deliverables"]]
         assert "Doc1" in doc_ids
         assert "Doc2" in doc_ids
@@ -879,9 +881,10 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads(
+        _raw = json.loads(
             (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )[str(issue_number)]
+        )
+        data = _raw.get("projects", _raw)[str(issue_number)]
         deliverables = data["planning_deliverables"]["design"]["deliverables"]
         by_id = {d["id"]: d for d in deliverables}
         assert by_id["Des1"]["description"] == "updated description"  # overwritten (D8.2)
@@ -917,9 +920,10 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads(
+        _raw = json.loads(
             (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )[str(issue_number)]
+        )
+        data = _raw.get("projects", _raw)[str(issue_number)]
         cycle1 = data["planning_deliverables"]["cycles"]["cycles"][0]
         assert cycle1["exit_criteria"] == "Updated exit criteria"  # (D8.3)
 
@@ -954,9 +958,10 @@ class TestUpdatePlanningDeliverablesPerPhase:
 
         assert isinstance(result, PlanningDeliverablesOutput)
         assert result.success
-        data = json.loads(
+        _raw = json.loads(
             (workspace_root / get_default_server_root() / "deliverables.json").read_text()
-        )[str(issue_number)]
+        )
+        data = _raw.get("projects", _raw)[str(issue_number)]
         cycles = data["planning_deliverables"]["cycles"]["cycles"]
         assert len(cycles) == 2  # original C1 + new C2 appended
         assert cycles[0]["cycle_number"] == 1  # original C1 untouched

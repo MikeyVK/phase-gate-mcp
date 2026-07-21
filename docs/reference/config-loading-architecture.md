@@ -333,7 +333,7 @@ Full config VO → consumer map (managers and tools):
 
 | Config VO | Direct consumers |
 |-----------|-----------------|
-| `GitConfig` | `GitManager`, `GitHubManager`, `StateReconstructor`, `ListPRsTool`, `MergePRTool`, `EnforcementRunner` |
+| `GitConfig` | `GitManager`, `GitHubManager`, `ListPRsTool`, `MergePRTool`, `EnforcementRunner` |
 | `WorkphasesConfig` | `GitManager`, `ProjectManager`, `PhaseStateEngine`, `ScopeDecoder`, `CommitPhaseDetector`, `GetWorkContextTool`, `AddLabelsTool`*, `CreateLabelTool`* |
 | `WorkflowConfig` | `ConfigValidator` (startup only) |
 | `LabelConfig` | `GitHubManager`, `AddLabelsTool`, `CreateLabelTool`, `DeleteLabelTool`, `ListLabelsTool`, `RemoveLabelsTool` |

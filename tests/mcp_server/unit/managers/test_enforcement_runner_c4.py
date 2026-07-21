@@ -80,7 +80,7 @@ def _write_state_json(tmp_path: Path) -> None:
     server_root = tmp_path / get_default_server_root()
     server_root.mkdir(parents=True, exist_ok=True)
     (server_root / "state.json").write_text(
-        '{"branch": "feature/42-test", "current_phase": "implementation",'
+        '{"schema_version": "1.0.0", "branch": "feature/42-test", "current_phase": "implementation",'
         ' "issue_number": 42, "workflow_name": "feature"}',
         encoding="utf-8",
     )

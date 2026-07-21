@@ -151,3 +151,51 @@ class MCPSystemError(MCPError):
         """Initialize the system error."""
         super().__init__(message, code="ERR_SYSTEM")
         self.fallback = fallback
+
+
+class StateNotFoundError(ConfigError):
+    """Raised when a dynamic state file is missing."""
+
+    def __init__(self, message: str, file_path: str = "") -> None:
+        """Initialize StateNotFoundError."""
+        super().__init__(message, file_path=file_path)
+
+
+class StateCorruptedError(ConfigError):
+    """Raised when a dynamic state file contains malformed JSON."""
+
+    def __init__(self, message: str, file_path: str = "") -> None:
+        """Initialize StateCorruptedError."""
+        super().__init__(message, file_path=file_path)
+
+
+class StateVersionMismatchError(ConfigError):
+    """Raised when state.json schema version does not match expected version."""
+
+    def __init__(
+        self,
+        message: str,
+        file_path: str,
+        actual_version: str,
+        expected_version: str,
+    ) -> None:
+        """Initialize StateVersionMismatchError."""
+        super().__init__(message, file_path=file_path)
+        self.actual_version = actual_version
+        self.expected_version = expected_version
+
+
+class PlanningVersionMismatchError(ConfigError):
+    """Raised when deliverables.json schema version does not match expected version."""
+
+    def __init__(
+        self,
+        message: str,
+        file_path: str,
+        actual_version: str,
+        expected_version: str,
+    ) -> None:
+        """Initialize PlanningVersionMismatchError."""
+        super().__init__(message, file_path=file_path)
+        self.actual_version = actual_version
+        self.expected_version = expected_version

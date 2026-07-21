@@ -331,7 +331,7 @@ class TestCheckPhaseReadinessHandler:
         state_dir = tmp_path / get_default_server_root()
         state_dir.mkdir(parents=True, exist_ok=True)
         (state_dir / "state.json").write_text(
-            f'{{"branch": "feature/1-test", "current_phase": "{phase}",'
+            f'{{"schema_version": "1.0.0", "branch": "feature/1-test", "current_phase": "{phase}",'
             f' "workflow_name": "feature"}}',
             encoding="utf-8",
         )

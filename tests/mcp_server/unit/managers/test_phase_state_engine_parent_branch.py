@@ -21,7 +21,6 @@ from mcp_server.managers.state_repository import InMemoryStateRepository
 from tests.mcp_server.test_support import (
     make_phase_state_engine,
     make_project_manager,
-    make_state_reconstructor,
 )
 
 if TYPE_CHECKING:
@@ -160,67 +159,6 @@ class TestPhaseStateEngineParentBranch:
         state = engine.get_state("docs/81-test")
         assert state.parent_branch is None
 
-    def test_reconstruct_branch_state_includes_parent_branch(
-        self, project_manager: ProjectManager, workspace_root: Path
-    ) -> None:
-        """Test auto-recovery reconstructs parent_branch from deliverables.json.
-
-        Issue #79: Cross-machine scenario - state.json missing after git pull.
-        """
-        # Setup - create project with parent_branch
-        project_manager.initialize_project(
-            issue_number=82,
-            issue_title="Test Reconstruction",
-            workflow_name="feature",
-            options=ProjectInitOptions(parent_branch="epic/76-qa"),
-        )
-
-        reconstructor = make_state_reconstructor(
-            workspace_root,
-            project_manager=project_manager,
-        )
-
-        with patch.object(
-            reconstructor,
-            "_get_git_commits",
-            return_value=["docs(P_RESEARCH): Start"],
-        ):
-            state = reconstructor.reconstruct("feature/82-test-reconstruction")
-
-        # Verify - parent_branch reconstructed from deliverables.json
-        assert state.parent_branch == "epic/76-qa"
-        assert state.reconstructed is True
-        assert state.workflow_name == "feature"
-
-    def test_reconstruct_branch_state_with_none_parent_branch(
-        self, project_manager: ProjectManager, workspace_root: Path
-    ) -> None:
-        """Test auto-recovery handles missing parent_branch gracefully.
-
-        Issue #79: Old projects without parent_branch should reconstruct with None.
-        """
-        # Setup - create project WITHOUT parent_branch
-        project_manager.initialize_project(
-            issue_number=83, issue_title="Old Project", workflow_name="bug"
-        )
-
-        reconstructor = make_state_reconstructor(
-            workspace_root,
-            project_manager=project_manager,
-        )
-
-        with patch.object(
-            reconstructor,
-            "_get_git_commits",
-            return_value=["docs(P_RESEARCH): Start"],
-        ):
-            state = reconstructor.reconstruct("bug/83-old-project")
-
-        # Verify - parent_branch is None (backward compat)
-        assert state.parent_branch is None
-        assert state.reconstructed is True
-        assert state.workflow_name == "bug"
-
     def test_initialize_branch_returns_warning_for_uncommitted_state_changes(
         self,
         engine: PhaseStateEngine,
@@ -322,37 +260,6 @@ class TestTddCycleTrackingFields:
         assert state.last_cycle is None
         assert state.cycle_history == []
 
-    def test_reconstruct_state_includes_tdd_cycle_fields(
-        self, project_manager: ProjectManager, workspace_root: Path
-    ) -> None:
-        """Test auto-recovery includes tdd_cycle_* fields.
-
-        Issue #146: Reconstructed state must include TDD cycle tracking fields.
-        """
-        # Setup - create project
-        project_manager.initialize_project(
-            issue_number=146, issue_title="TDD Cycle Tracking", workflow_name="feature"
-        )
-
-        reconstructor = make_state_reconstructor(
-            workspace_root,
-            project_manager=project_manager,
-        )
-
-        with patch.object(
-            reconstructor,
-            "_get_git_commits",
-            return_value=["docs(P_RESEARCH): Start"],
-        ):
-            state = reconstructor.reconstruct("feature/146-tdd-cycle-tracking")
-
-        # Verify - reconstructed flag
-        assert state.reconstructed is True
-
-        # Verify - tdd_cycle_* fields present
-        assert hasattr(state, "current_cycle")
-        assert hasattr(state, "last_cycle")
-        assert hasattr(state, "cycle_history")
 
         # Verify - initial values (None/[])
         assert state.current_cycle is None

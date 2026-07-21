@@ -17,7 +17,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import cast
 
-from mcp_server.core.exceptions import ConfigError, ValidationError
+from mcp_server.core.exceptions import ConfigError, StateNotFoundError, ValidationError
 from mcp_server.core.interfaces import IContextLoadedReader, IPRStatusReader, IStateReader, PRStatus
 from mcp_server.core.operation_notes import (
     Note,
@@ -404,7 +404,8 @@ class EnforcementRunner:
             branch_issue = self._git_config.extract_issue_number(branch)
             if loaded_state.issue_number != branch_issue:
                 return
-        except FileNotFoundError:
+        except (FileNotFoundError, StateNotFoundError):
+            return  # Bootstrap: no state.json means gate is inactive
             return  # Bootstrap: no state.json means gate is inactive
         except Exception:
             pass

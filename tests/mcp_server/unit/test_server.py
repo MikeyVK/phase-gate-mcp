@@ -57,6 +57,25 @@ def _bootstrap_workspace_configs(workspace_root: Path) -> None:
         workspace_root / get_default_server_root(),
         dirs_exist_ok=True,
     )
+    deliverables_file = workspace_root / get_default_server_root() / "deliverables.json"
+    if deliverables_file.exists():
+        try:
+            data = json.loads(deliverables_file.read_text(encoding="utf-8"))
+            if "schema_version" not in data:
+                payload = {"schema_version": "1.0.0", "projects": data.get("projects", data)}
+                deliverables_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+    state_file = workspace_root / get_default_server_root() / "state.json"
+    if state_file.exists():
+        try:
+            data = json.loads(state_file.read_text(encoding="utf-8"))
+            if "schema_version" not in data:
+                data["schema_version"] = "1.0.0"
+                state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
 
 
 def _patch_server_settings(
@@ -101,6 +120,7 @@ def _write_phase_state(workspace_root: Path, current_phase: str) -> None:
     state_file.write_text(
         json.dumps(
             {
+                "schema_version": "1.0.0",
                 "branch": "refactor/283-ready-phase-enforcement",
                 "workflow_name": "refactor",
                 "current_phase": current_phase,

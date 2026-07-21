@@ -38,7 +38,7 @@ class WorkEngine:
 class StateRepository: ...        # state persistence
 class WorkEngine: ...             # transition validation + dispatch
 class EnforcementRunner: ...      # enforcement orchestration
-class StateReconstructor: ...     # external-source reconstruction
+class StateVersionValidator: ...  # state schema versioning & validation
 ```
 
 ### 1.2 OCP — Open/Closed Principle

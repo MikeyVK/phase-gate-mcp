@@ -10,6 +10,8 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
+from mcp_server.core.exceptions import StateCorruptedError, StateVersionMismatchError
+from mcp_server.managers.state_version_validator import StateVersionValidator
 from mcp_server.state.quality_state import QualityState
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
@@ -39,9 +41,11 @@ class FileQualityStateRepository:
         self,
         backing_file: Path,
         writer: AtomicJsonWriter | None = None,
+        state_version_validator: StateVersionValidator | None = None,
     ) -> None:
         self._backing_file = backing_file
         self._writer = writer or AtomicJsonWriter()
+        self._validator = state_version_validator or StateVersionValidator()
         self._lock = threading.Lock()
 
     def load(self) -> QualityState:
@@ -49,10 +53,20 @@ class FileQualityStateRepository:
         if not self._backing_file.exists():
             return QualityState()
         try:
+            self._validator.validate_file(
+                self._backing_file, expected_version="1.0.0", is_planning=False
+            )
             raw = json.loads(self._backing_file.read_text(encoding="utf-8"))
             return QualityState(**raw)
+        except (StateCorruptedError, StateVersionMismatchError):
+            self._validator.backup_file(self._backing_file)
+            logger.warning(
+                "quality_state.json corrupt/mismatched; backed up and returning default state"
+            )
+            return QualityState()
         except (json.JSONDecodeError, OSError, Exception):
-            logger.warning("quality_state.json malformed; returning default state")
+            self._validator.backup_file(self._backing_file)
+            logger.warning("quality_state.json malformed; backed up and returning default state")
             return QualityState()
 
     def apply(self, mutate: Callable[[QualityState], QualityState]) -> None:
@@ -71,6 +85,7 @@ class FileQualityStateRepository:
             current = self.load()
             updated = mutate(current)
             payload = {
+                "schema_version": updated.schema_version,
                 "baseline_sha": updated.baseline_sha,
                 "failed_files": list(updated.failed_files),
             }

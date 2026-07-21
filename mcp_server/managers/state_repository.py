@@ -13,17 +13,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from mcp_server.core.interfaces import IStateReader
 from mcp_server.utils.atomic_json_writer import AtomicJsonWriter
 
+from mcp_server.core.exceptions import (
+    StateCorruptedError,
+    StateNotFoundError,
+    StateVersionMismatchError,
+)
+from mcp_server.managers.state_version_validator import StateVersionValidator
+
 
 class StateBranchMismatchError(Exception):
     """Raised when loaded branch state does not match the requested branch."""
-
-
-class StateNotFoundError(Exception):
-    """Raised when state.json is absent for the requested branch.
-
-    Distinct from FileNotFoundError — this is a domain event (no workflow
-    has been initialised for this branch), not an I/O error.
-    """
 
 
 class StateAlreadyExistsError(Exception):
@@ -38,6 +37,7 @@ class BranchState(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", populate_by_name=True)
 
+    schema_version: str = "1.0.0"
     branch: str
     issue_number: int | None = None
     workflow_name: str
@@ -67,14 +67,27 @@ class FileStateRepository:
         self,
         state_file: Path,
         writer: AtomicJsonWriter | None = None,
+        state_version_validator: StateVersionValidator | None = None,
     ) -> None:
         self._state_file = state_file
         self._writer = writer or AtomicJsonWriter()
+        self._validator = state_version_validator or StateVersionValidator()
 
     def load(self, branch: str) -> BranchState:
         """Load and validate state from disk."""
         # branch field is authoritative in the JSON; param retained for IStateReader protocol
         del branch
+        if not self._state_file.exists():
+            raise StateNotFoundError(f"State file '{self._state_file}' does not exist")
+
+        try:
+            self._validator.validate_file(
+                self._state_file, expected_version="1.0.0", is_planning=False
+            )
+        except (StateCorruptedError, StateVersionMismatchError):
+            self._validator.backup_file(self._state_file)
+            raise
+
         data = json.loads(self._state_file.read_text(encoding="utf-8"))
         return BranchState.model_validate(data)
 

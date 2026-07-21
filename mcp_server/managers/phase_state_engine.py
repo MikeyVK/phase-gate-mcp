@@ -28,10 +28,10 @@ from pathlib import Path
 from typing import Any
 from pydantic import ValidationError
 
+from mcp_server.core.exceptions import StateNotFoundError
 from mcp_server.core.interfaces import (
     GateReport,
     IContextLoadedWriter,
-    IStateReconstructor,
     IStateRepository,
     IWorkflowGateRunner,
     IWorkflowStateMutator,
@@ -84,14 +84,16 @@ class PhaseStateEngine:
         state_repository: IStateRepository,
         scope_decoder: ScopeDecoder,
         workflow_gate_runner: IWorkflowGateRunner,
-        state_reconstructor: IStateReconstructor,
-        workflow_state_mutator: IWorkflowStateMutator,
         server_root: Path,
+        workflow_state_mutator: IWorkflowStateMutator | None = None,
+        state_reconstructor: Any | None = None,
         context_loaded_writer: "IContextLoadedWriter | None" = None,
     ) -> None:
         """Initialize PhaseStateEngine."""
-        self.state_path = server_root / "state.json"
         self._workspace_root = Path(workspace_root)
+        self.state_path = server_root / "state.json"
+        resolved_server_root = server_root or (self._workspace_root / ".pgmcp")
+        self.state_path = resolved_server_root / "state.json"
         self.project_manager = project_manager
 
         self._contracts_config = contracts_config
@@ -99,7 +101,10 @@ class PhaseStateEngine:
         self._state_repository = state_repository
         self._scope_decoder = scope_decoder
         self._workflow_gate_runner = workflow_gate_runner
-        self._state_reconstructor = state_reconstructor
+        if workflow_state_mutator is None:
+            from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator  # noqa: PLC0415
+
+            workflow_state_mutator = WorkflowStateMutator(state_repository=state_repository)
         self._workflow_state_mutator = workflow_state_mutator
 
         self._context_loaded_writer = context_loaded_writer
@@ -138,7 +143,14 @@ class PhaseStateEngine:
                     f"(phase: {loaded.current_phase}). "
                     "Call initialize_project only once per branch."
                 )
-        except (FileNotFoundError, KeyError, OSError, json.JSONDecodeError, ValidationError):
+        except (
+            FileNotFoundError,
+            KeyError,
+            OSError,
+            json.JSONDecodeError,
+            ValidationError,
+            StateNotFoundError,
+        ):
             pass
 
         project = self.project_manager.get_project_plan(issue_number)
@@ -189,10 +201,9 @@ class PhaseStateEngine:
         human_approval_message: str | None = None,
     ) -> dict[str, Any]:
         """Execute strict sequential phase transition."""
-        state = self._load_state_or_reconstruct(branch)
-        from_phase = state.current_phase
+        state = self.get_state(branch)
         workflow_name = state.workflow_name
-
+        from_phase = state.current_phase
         self._contracts_config.validate_transition(workflow_name, from_phase, to_phase)
 
         issue_number = state.issue_number
@@ -207,7 +218,7 @@ class PhaseStateEngine:
 
         if self._is_cycle_based_phase(workflow_name, from_phase):
             self.on_exit_cycle_based_phase(branch)
-            state = self._load_state_or_reconstruct(branch)
+            state = self.get_state(branch)
 
         resolved_approval = self._resolve_approval(human_approval_message, required=False)
 
@@ -242,7 +253,7 @@ class PhaseStateEngine:
         human_approval_message: str | None = None,
     ) -> dict[str, Any]:
         """Execute forced non-sequential phase transition."""
-        state = self._load_state_or_reconstruct(branch)
+        state = self.get_state(branch)
         from_phase = state.current_phase
         workflow_name = state.workflow_name
         issue_number = state.issue_number
@@ -314,7 +325,7 @@ class PhaseStateEngine:
         gate_runner: IWorkflowGateRunner | None = None,
     ) -> dict[str, Any]:
         """Execute one strict sequential cycle transition inside the active cycle-based phase."""
-        state = self._load_state_or_reconstruct(branch)
+        state = self.get_state(branch)
         issue_number = self._require_issue_number(branch, state)
         cycles, total_cycles = self._get_cycles(issue_number)
         runner = gate_runner or self._workflow_gate_runner
@@ -377,7 +388,7 @@ class PhaseStateEngine:
             )
 
         resolved_approval = self._resolve_approval(human_approval_message, required=True)
-        state = self._load_state_or_reconstruct(branch)
+        state = self.get_state(branch)
         issue_number = self._require_issue_number(branch, state)
         cycles, total_cycles = self._get_cycles(issue_number)
         runner = gate_runner or self._workflow_gate_runner
@@ -488,17 +499,6 @@ class PhaseStateEngine:
             msg = f"Branch state for '{branch}' not found"
             raise StateBranchMismatchError(msg)
         return loaded_state
-
-    def _load_state_or_reconstruct(self, branch: str) -> BranchState:
-        """Load persisted state or reconstruct it explicitly for transition flows."""
-        try:
-            return self.get_state(branch)
-        except (FileNotFoundError, OSError, json.JSONDecodeError, ValidationError):
-            logger.warning("Invalid or missing state.json, reconstructing", exc_info=True)
-
-        reconstructed_state = self._state_reconstructor.reconstruct(branch)
-        self._workflow_state_mutator.apply(branch, lambda _s: reconstructed_state)
-        return reconstructed_state
 
     def _require_issue_number(self, branch: str, state: BranchState) -> int:
         """Return the persisted issue number or raise a descriptive error."""
