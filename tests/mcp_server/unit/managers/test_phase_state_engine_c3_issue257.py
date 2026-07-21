@@ -109,7 +109,6 @@ class ReportingGateRunner(PassingGateRunner):
         )
 
 
-
 def test_get_state_does_not_reconstruct_or_save_on_load_failure(
     workspace_root: Path,
     project_manager: ProjectManager,

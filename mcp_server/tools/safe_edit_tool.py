@@ -2,28 +2,26 @@
 """
 Safe File Editing Tool with Validation and Mutex Protection.
 
-Multi-mode file editing tool supporting full rewrites, line-based edits,
-line insertions, and search/replace operations. Includes file-level mutex
-protection to prevent concurrent edit race conditions, integrated validation,
-and diff preview capabilities.
+Multi-mode file editing tool supporting string replacement, text appending,
+complete file rewrites, and regex pattern replacement. Includes file-level mutex
+protection to prevent concurrent edit race conditions and integrated template validation.
 
 @layer: Service (MCP Tools)
-@dependencies: [re, asyncio, difflib, pathlib, typing, dataclasses, pydantic]
+@dependencies: [re, asyncio, difflib, pathlib, typing, pydantic]
 @responsibilities:
-    - Provide safe multi-mode file editing (content/line_edits/insert_lines/search_replace)
+    - Provide safe 4-operation file editing (replace/append/rewrite/pattern_replace)
     - Enforce file-level mutex to prevent concurrent edit race conditions
     - Validate edited content before writing (strict/interactive/verify_only modes)
-    - Generate unified diff previews for transparency
-    - Handle edge cases (new files, encoding, line range validation)
+    - Enforce file existence (must_exist=True) so new files use scaffold_artifact
+    - Handle edge cases (fuzzy-match diagnostics for pattern/anchor mismatches)
 """
 
 # Standard library
 import asyncio
 import re
-from dataclasses import dataclass
-from difflib import get_close_matches, unified_diff
+from difflib import get_close_matches
 from pathlib import Path
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Literal, Union
 
 # Third-party
 from pydantic import BaseModel, ConfigDict, Field
@@ -34,26 +32,6 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import SafeEditOutput
 from mcp_server.utils.atomic_file_writer import AtomicFileWriter
 from mcp_server.validation.validation_service import ValidationService
-
-
-@dataclass
-class EditResponse:
-    """Parameters for building edit response."""
-
-    passed: bool
-    issues: str
-    diff: str
-
-
-@dataclass
-class SearchReplaceParams:
-    """Parameters for search/replace operation."""
-
-    search: str
-    replace: str
-    regex: bool = False
-    count: int | None = None
-    flags: int = 0
 
 
 class ReplaceOp(BaseModel):
@@ -127,23 +105,23 @@ class SafeEditInput(BaseModel):
 
 
 class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
-    """Tool for safely editing files with validation and multiple edit modes.
+    """Tool for safely editing existing files with validation and multiple edit operations.
 
-    Supports four mutually exclusive edit modes:
-    1. **content**: Full file rewrite
-    2. **line_edits**: Replace specific line ranges (surgical edits)
-    3. **insert_lines**: Insert content without replacing existing lines
-    4. **search_replace**: Pattern-based find/replace (literal or regex)
+    Supports four mutually exclusive edit operations:
+    1. **replace**: String-anchored find and replace (with optional line window scoping)
+    2. **append**: Append content to EOF or relative to a text anchor (before/after)
+    3. **rewrite**: Complete file rewrite for existing files
+    4. **pattern_replace**: Regex pattern replacement
 
-    All modes support:
+    All operations support:
     - Validation modes: strict (reject on error) / interactive (warn) / verify_only (dry-run)
     - Validator integration: PythonValidator, MarkdownValidator, TemplateValidator
+    - Governance enforcement: must_exist=True (non-existent files direct to scaffold_artifact)
+    - Fuzzy match diagnostics: suggests close string matches on anchor/target mismatches
 
     **IMPORTANT - Concurrent Edit Protection:**
     - File-level mutex prevents race conditions
-    - Bundle multiple edits in ONE call using line_edits list
     - Sequential calls on same file will wait for lock (10ms timeout)
-    - Example: [{"start_line": 1, "end_line": 1, "new_content": "..."}, ...]
     """
 
     @property
@@ -153,11 +131,10 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
     @property
     def description(self) -> str:
         return (
-            "Write content to a file with automatic validation. "
+            "Edit an existing file with automatic validation. "
             "Supports 'strict' mode (rejects on error) or 'interactive' (warns). "
-            "Shows diff preview by default. "
-            "Supports full content rewrite, chirurgical line-based edits, "
-            "line inserts, or search/replace."
+            "Supports string replacement, anchored/EOF text appending, "
+            "full content rewrite, and regex pattern replacement."
         )
 
     @property
@@ -178,10 +155,10 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
         self._file_locks: dict[str, asyncio.Lock] = {}
 
     async def execute(self, params: SafeEditInput, context: NoteContext) -> SafeEditOutput:
-        """Execute the safe edit with validation.
+        """Execute the safe edit operation with validation.
 
         Uses file-level locking to prevent concurrent edits on the same file.
-        Multiple edits for the same file should be batched in line_edits list.
+        Enforces target file existence (must_exist=True).
         """
         del context  # Not used
         # Normalize path for lock key
@@ -273,7 +250,7 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
                 success=False,
                 error_message=(
                     f"File '{params.path}' is already being edited. "
-                    "Please wait or bundle multiple edits in one call using line_edits list."
+                    "Please wait before attempting another edit operation."
                 ),
                 path=params.path,
                 passed=False,
@@ -397,117 +374,6 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
                     written=False,
                 )
         return original
-        return original
-
-    def _handle_line_edits(
-        self, path: str, original: str, line_edits: list[Any], mode: str
-    ) -> str | SafeEditOutput:
-        """Legacy line_edits stub for Cycle 1."""
-        return original
-
-    def _handle_insert_lines(
-        self, path: str, original: str, insert_lines: list[Any], mode: str
-    ) -> str | SafeEditOutput:
-        """Legacy insert_lines stub for Cycle 1."""
-        return original
-
-    def _handle_search_replace(self, params: SafeEditInput, original: str) -> str | SafeEditOutput:
-        """Handle search/replace mode."""
-        try:
-            new_content, count = self._apply_search_replace(params, original)
-            if params.mode == "strict" and not count:
-                error_msg = f"Pattern not found in file\n\n"
-                error_msg += self._build_file_context_preview(original)
-                return SafeEditOutput(
-                    success=False,
-                    error_message=error_msg,
-                    path=params.path,
-                    passed=False,
-                    mode=params.mode,
-                    written=False,
-                )
-            return new_content
-        except (ValueError, re.error) as e:
-            return SafeEditOutput(
-                success=False,
-                error_message=f"Search/replace failed: {e}",
-                path=params.path,
-                passed=False,
-                mode=params.mode,
-                written=False,
-            )
-
-    def _apply_search_replace(self, params: SafeEditInput, content: str) -> tuple[str, int]:
-        """Apply search/replace with params."""
-        srp = SearchReplaceParams(
-            search="",
-            replace="",
-            regex=False,
-            count=None,
-            flags=0,
-        )
-        return self._apply_search_replace_flat(content, srp)
-
-    def _apply_line_edits(self, content: str, edits: list[Any]) -> str:
-        """Apply line-based edits to content."""
-        return content
-
-    def _apply_insert_lines(self, content: str, inserts: list[Any]) -> str:
-        """Apply line insert operations to content."""
-        return content
-
-    def _apply_search_replace_flat(
-        self,
-        content: str,
-        params: SearchReplaceParams,
-    ) -> tuple[str, int]:
-        """Apply search and replace operation.
-
-        Args:
-            content: Content to search in.
-            params: Search/replace parameters.
-
-        Returns:
-            Tuple of (new_content, replacement_count).
-        """
-        if params.regex:
-            try:
-                pattern = re.compile(params.search, params.flags or 0)
-                if params.count is not None:
-                    new_content, replacement_count = pattern.subn(
-                        params.replace, content, count=params.count
-                    )
-                else:
-                    new_content, replacement_count = pattern.subn(params.replace, content)
-                return new_content, replacement_count
-            except re.error as e:
-                raise ValueError(f"Invalid regex pattern: {e}") from e
-
-        # Literal string matching
-        if params.count is not None:
-            parts = content.split(params.search, params.count)
-            new_content = params.replace.join(parts)
-            replacement_count = len(parts) - 1
-        else:
-            replacement_count = content.count(params.search)
-            new_content = content.replace(params.search, params.replace)
-
-        return new_content, replacement_count
-
-    def _generate_diff(self, path: str, original_content: str, new_content: str) -> str:
-        """Generate unified diff between original and new content."""
-        if original_content == new_content:
-            return ""
-
-        filename = Path(path).name
-        original_lines = original_content.splitlines(keepends=True)
-        new_lines = new_content.splitlines(keepends=True)
-
-        diff_lines = unified_diff(
-            original_lines, new_lines, fromfile=f"a/{filename}", tofile=f"b/{filename}", lineterm=""
-        )
-
-        return "".join(diff_lines)
 
     async def _validate(self, path: str, content: str) -> tuple[bool, str]:
         """Delegate validation to ValidationService."""
