@@ -59,9 +59,11 @@ class TestSafeEditTool:
             SafeEditInput(operation={"op": "rewrite", "content": "code"})
 
     @pytest.mark.asyncio
-    async def test_execute_strict_pass(self, tool: SafeEditTool) -> None:
+    @pytest.mark.asyncio
+    async def test_execute_strict_pass(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """Test strict mode with passing validation."""
-        path = "test.py"
+        test_file = tmp_path / "test.py"
+        test_file.write_text("old", encoding="utf-8")
         content = "valid code"
 
         async def mock_validate(*_: object, **__: object) -> tuple[bool, str]:
@@ -69,14 +71,11 @@ class TestSafeEditTool:
 
         with (
             patch.object(tool.validation_service, "validate", side_effect=mock_validate),
-            patch("pathlib.Path.write_text") as mock_write,
-            patch("pathlib.Path.parent") as mock_parent,
+            patch.object(tool.file_writer, "write_text") as mock_write,
         ):
-            mock_parent.mkdir = MagicMock()
-
             result = await tool.execute(
                 SafeEditInput(
-                    path=path,
+                    path=str(test_file),
                     operation={"op": "rewrite", "content": content},
                     mode="strict",
                 ),
@@ -86,12 +85,13 @@ class TestSafeEditTool:
             assert isinstance(result, SafeEditOutput)
             assert result.success is True
             assert result.written is True
-            mock_write.assert_called_once_with(content, encoding="utf-8")
+            mock_write.assert_called_once_with(Path(str(test_file)), content)
 
     @pytest.mark.asyncio
-    async def test_execute_strict_fail(self, tool: SafeEditTool) -> None:
+    async def test_execute_strict_fail(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """Test strict mode with failing validation."""
-        path = "test.py"
+        test_file = tmp_path / "test.py"
+        test_file.write_text("old", encoding="utf-8")
         content = "invalid code"
 
         async def mock_validate(*_: object, **__: object) -> tuple[bool, str]:
@@ -99,11 +99,11 @@ class TestSafeEditTool:
 
         with (
             patch.object(tool.validation_service, "validate", side_effect=mock_validate),
-            patch("pathlib.Path.write_text") as mock_write,
+            patch.object(tool.file_writer, "write_text") as mock_write,
         ):
             result = await tool.execute(
                 SafeEditInput(
-                    path=path,
+                    path=str(test_file),
                     operation={"op": "rewrite", "content": content},
                     mode="strict",
                 ),
@@ -116,9 +116,10 @@ class TestSafeEditTool:
             mock_write.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_execute_interactive_fail(self, tool: SafeEditTool) -> None:
+    async def test_execute_interactive_fail(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """Test interactive mode allows saving even with validation failure."""
-        path = "test.py"
+        test_file = tmp_path / "test.py"
+        test_file.write_text("old", encoding="utf-8")
         content = "invalid code"
 
         async def mock_validate(*_: object, **__: object) -> tuple[bool, str]:
@@ -126,11 +127,11 @@ class TestSafeEditTool:
 
         with (
             patch.object(tool.validation_service, "validate", side_effect=mock_validate),
-            patch("pathlib.Path.write_text") as mock_write,
+            patch.object(tool.file_writer, "write_text") as mock_write,
         ):
             result = await tool.execute(
                 SafeEditInput(
-                    path=path,
+                    path=str(test_file),
                     operation={"op": "rewrite", "content": content},
                     mode="interactive",
                 ),
@@ -141,12 +142,13 @@ class TestSafeEditTool:
             assert result.success is True
             assert result.written is True
             assert result.passed is False
-            mock_write.assert_called_once()
+            mock_write.assert_called_once_with(Path(str(test_file)), content)
 
     @pytest.mark.asyncio
-    async def test_execute_verify_only(self, tool: SafeEditTool) -> None:
+    async def test_execute_verify_only(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """Test verify_only mode does not write to file."""
-        path = "test.py"
+        test_file = tmp_path / "test.py"
+        test_file.write_text("old", encoding="utf-8")
         content = "code"
 
         async def mock_validate(*_: object, **__: object) -> tuple[bool, str]:
@@ -154,10 +156,15 @@ class TestSafeEditTool:
 
         with (
             patch.object(tool.validation_service, "validate", side_effect=mock_validate),
-            patch("pathlib.Path.write_text") as mock_write,
+            patch.object(tool.file_writer, "write_text") as mock_write,
         ):
             result = await tool.execute(
-                SafeEditInput(path=path, content=content, mode="verify_only"), NoteContext()
+                SafeEditInput(
+                    path=str(test_file),
+                    operation={"op": "rewrite", "content": content},
+                    mode="verify_only",
+                ),
+                NoteContext(),
             )
 
             assert isinstance(result, SafeEditOutput)
@@ -167,18 +174,24 @@ class TestSafeEditTool:
             mock_write.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_fallback_validator_logic(self, tool: SafeEditTool) -> None:
+    async def test_fallback_validator_logic(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """Test implicit addition of base TemplateValidator for python files."""
-        path = "script.py"
+        test_file = tmp_path / "script.py"
+        test_file.write_text("code", encoding="utf-8")
         content = "code"
 
         async def mock_validate(*_: object, **__: object) -> tuple[bool, str]:
             return True, ""
 
         with patch.object(tool.validation_service, "validate", side_effect=mock_validate):
-            await tool.execute(SafeEditInput(path=path, content=content), NoteContext())
+            await tool.execute(
+                SafeEditInput(
+                    path=str(test_file),
+                    operation={"op": "rewrite", "content": content},
+                ),
+                NoteContext(),
+            )
             tool.validation_service.validate.assert_called_once()
-
     @pytest.mark.asyncio
     async def test_rejects_legacy_show_diff_argument(self, tool: SafeEditTool) -> None:
         """Contract test: SafeEditInput must reject the removed show_diff argument."""
@@ -198,6 +211,7 @@ class TestSafeEditTool:
         assert "show_diff" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_no_duplicate_real_validation(self, tool: SafeEditTool) -> None:
         """Test with REAL validation (no duplicate validation issues in response)."""
 
@@ -209,7 +223,7 @@ class TestSafeEditTool:
             result = await tool.execute(
                 SafeEditInput(
                     path=temp_path,
-                    content="invalid syntax here @@@ not python",
+                    operation={"op": "rewrite", "content": "invalid syntax here @@@ not python"},
                     mode="strict",
                 ),
                 NoteContext(),
@@ -225,7 +239,7 @@ class TestSafeEditTool:
 
     @pytest.mark.asyncio
     async def test_pattern_not_found_shows_context(self, tool: SafeEditTool) -> None:
-        """Test that 'Pattern not found' error shows file context (Issue #125 - Priority 2)."""
+        """Test that 'Pattern not found' error shows file context."""
 
         content = "# Header\nline 1\nline 2\nline 3\nline 4\nline 5\n"
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -236,8 +250,11 @@ class TestSafeEditTool:
             result = await tool.execute(
                 SafeEditInput(
                     path=temp_path,
-                    search="this pattern does not exist",
-                    replace="new text",
+                    operation={
+                        "op": "replace",
+                        "target_content": "this pattern does not exist",
+                        "replacement": "new text",
+                    },
                     mode="strict",
                 ),
                 NoteContext(),
@@ -267,9 +284,8 @@ class TestSafeEditTool:
                     SafeEditInput(
                         path=str(test_file),
                         operation={
-                            "op": "replace",
-                            "target_content": "line 1",
-                            "replacement": f"task {task_id} line 1",
+                            "op": "rewrite",
+                            "content": f"task {task_id} line 1\nline 2\nline 3\n",
                         },
                         mode="interactive",
                     ),
@@ -352,6 +368,11 @@ class TestSafeEditInputOperations:
 
 class TestSafeEditExecutionHandlers:
     """Unit tests for SafeEditTool execution handlers and governance rules."""
+
+    @pytest.fixture
+    def tool(self) -> SafeEditTool:
+        """Fixture for SafeEditTool."""
+        return SafeEditTool()
 
     @pytest.mark.asyncio
     async def test_must_exist_governance_enforcement(
@@ -443,7 +464,7 @@ class TestSafeEditExecutionHandlers:
     @pytest.mark.asyncio
     async def test_execute_append_op_eof(self, tool: SafeEditTool, tmp_path: Path) -> None:
         """AppendOp with anchor=None appends to file end."""
-        test_file = tmp_path / "test.py"
+        test_file = tmp_path / "test.txt"
         test_file.write_text("line 1\n", encoding="utf-8")
 
         result = await tool.execute(
@@ -461,7 +482,7 @@ class TestSafeEditExecutionHandlers:
         self, tool: SafeEditTool, tmp_path: Path
     ) -> None:
         """AppendOp with anchor and position='after' inserts after anchor line."""
-        test_file = tmp_path / "test.py"
+        test_file = tmp_path / "test.txt"
         test_file.write_text("# Section 1\ncontent 1\n", encoding="utf-8")
 
         result = await tool.execute(
@@ -484,7 +505,7 @@ class TestSafeEditExecutionHandlers:
         self, tool: SafeEditTool, tmp_path: Path
     ) -> None:
         """AppendOp with anchor and position='before' inserts before anchor line."""
-        test_file = tmp_path / "test.py"
+        test_file = tmp_path / "test.txt"
         test_file.write_text("# Section 1\ncontent 1\n", encoding="utf-8")
 
         result = await tool.execute(
@@ -530,7 +551,7 @@ class TestSafeEditExecutionHandlers:
         self, tool: SafeEditTool, tmp_path: Path
     ) -> None:
         """RewriteOp replaces entire file content on existing file."""
-        test_file = tmp_path / "test.py"
+        test_file = tmp_path / "test.txt"
         test_file.write_text("old content", encoding="utf-8")
 
         result = await tool.execute(

@@ -21,16 +21,18 @@ and diff preview capabilities.
 import asyncio
 import re
 from dataclasses import dataclass
-from difflib import unified_diff
+from difflib import get_close_matches, unified_diff
 from pathlib import Path
 from typing import Annotated, Any, Literal, Union
 
 # Third-party
 from pydantic import BaseModel, ConfigDict, Field
 
-from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.interfaces.file_writer import IAtomicFileWriter
 from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.tool_outputs import SafeEditOutput
+from mcp_server.utils.atomic_file_writer import AtomicFileWriter
 from mcp_server.validation.validation_service import ValidationService
 
 
@@ -162,16 +164,18 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
     def args_model(self) -> type[SafeEditInput] | None:
         return SafeEditInput
 
-    def __init__(self) -> None:
-        """Initialize tool and validation service."""
-        self.validation_service = ValidationService()
+    def __init__(
+        self,
+        validator: ValidationService | None = None,
+        file_writer: IAtomicFileWriter | None = None,
+    ) -> None:
+        """Initialize tool, validation service, and atomic file writer."""
+        self.validation_service = validator if validator is not None else ValidationService()
+        self.file_writer: IAtomicFileWriter = (
+            file_writer if file_writer is not None else AtomicFileWriter()
+        )
         # Mutex for preventing concurrent edits on same file
         self._file_locks: dict[str, asyncio.Lock] = {}
-
-    @property
-    def input_schema(self) -> dict[str, Any]:
-        """Return the input schema for the tool."""
-        return SafeEditInput.model_json_schema()
 
     async def execute(self, params: SafeEditInput, context: NoteContext) -> SafeEditOutput:
         """Execute the safe edit with validation.
@@ -238,11 +242,9 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
                             has_diff=False,
                         )
 
-                    # Write file
+                    # Write file atomically
                     try:
-                        file_path = Path(params.path)
-                        file_path.parent.mkdir(parents=True, exist_ok=True)
-                        file_path.write_text(new_content, encoding="utf-8")
+                        self.file_writer.write_text(Path(params.path), new_content)
                     except OSError as e:
                         return SafeEditOutput(
                             success=False,
@@ -306,39 +308,80 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
                 written=False,
             )
 
+    def _find_fuzzy_matches(self, original_text: str, target: str) -> str | None:
+        """Find close matching lines in original_text for diagnostic error messages."""
+        lines = original_text.splitlines()
+        target_line = target.splitlines()[0] if target.splitlines() else target
+        matches = get_close_matches(target_line, lines, n=3, cutoff=0.6)
+        if matches:
+            suggestions = "\n".join(f"  - '{m.strip()}'" for m in matches)
+            return f"Did you mean one of these lines?\n{suggestions}"
+        return None
+
     def _generate_new_content(self, params: SafeEditInput, original: str) -> str | SafeEditOutput:
         """Generate new content based on operation."""
         op = params.operation
         if isinstance(op, RewriteOp):
             return op.content
         if isinstance(op, ReplaceOp):
-            if op.target_content not in original:
+            search_text = original
+            if op.search_window is not None:
+                start_line, end_line = op.search_window
+                lines = original.splitlines(keepends=True)
+                window_lines = lines[start_line - 1 : end_line]
+                search_text = "".join(window_lines)
+
+            if op.target_content not in search_text:
+                fuzzy = self._find_fuzzy_matches(original, op.target_content)
+                err_msg = f"Pattern '{op.target_content}' not found in file"
+                if fuzzy:
+                    err_msg += f"\n\n{fuzzy}"
+                err_msg += f"\n\n{self._build_file_context_preview(original)}"
                 return SafeEditOutput(
                     success=False,
-                    error_message=f"Pattern '{op.target_content}' not found in file\n\n"
-                    + self._build_file_context_preview(original),
+                    error_message=err_msg,
                     path=params.path,
                     passed=False,
                     mode=params.mode,
                     written=False,
                 )
+
+            if op.search_window is not None:
+                start_line, end_line = op.search_window
+                lines = original.splitlines(keepends=True)
+                target_chunk = "".join(lines[start_line - 1 : end_line])
+                replaced_chunk = target_chunk.replace(op.target_content, op.replacement, 1)
+                lines[start_line - 1 : end_line] = [replaced_chunk]
+                return "".join(lines)
+
             return original.replace(op.target_content, op.replacement, 1)
         if isinstance(op, AppendOp):
+            append_text = op.content
+            if not append_text.endswith("\n"):
+                append_text += "\n"
+
             if op.anchor is None:
-                return original + ("" if original.endswith("\n") else "\n") + op.content
+                prefix = "" if original.endswith("\n") or not original else "\n"
+                return original + prefix + append_text
+
             if op.anchor not in original:
+                fuzzy = self._find_fuzzy_matches(original, op.anchor)
+                err_msg = f"Anchor '{op.anchor}' not found in file"
+                if fuzzy:
+                    err_msg += f"\n\n{fuzzy}"
+                err_msg += f"\n\n{self._build_file_context_preview(original)}"
                 return SafeEditOutput(
                     success=False,
-                    error_message=f"Anchor '{op.anchor}' not found in file\n\n"
-                    + self._build_file_context_preview(original),
+                    error_message=err_msg,
                     path=params.path,
                     passed=False,
                     mode=params.mode,
                     written=False,
                 )
+
             if op.position == "before":
-                return original.replace(op.anchor, op.content + "\n" + op.anchor, 1)
-            return original.replace(op.anchor, op.anchor + "\n" + op.content, 1)
+                return original.replace(op.anchor, append_text + op.anchor, 1)
+            return original.replace(op.anchor, op.anchor + "\n" + append_text.rstrip("\n"), 1)
         if isinstance(op, PatternReplaceOp):
             try:
                 if op.regex:
@@ -353,6 +396,7 @@ class SafeEditTool(ICoreTool[SafeEditInput, SafeEditOutput]):
                     mode=params.mode,
                     written=False,
                 )
+        return original
         return original
 
     def _handle_line_edits(
