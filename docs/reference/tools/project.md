@@ -571,6 +571,7 @@ Phase state is **synchronized** with git branch operations:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 3.0 | 2026-07-21 | Agent | Update state management sections with dynamic state file version validation and Clean Break strategy (#438) |
 | 2.2 | 2026-06-11 | Agent | Rename tdd_cycles to cycles in project planning deliverables schema |
 | 2.1 | 2026-05-24 | Agent | Document the required `get_work_context` follow-up note on successful phase transitions |
 | 2.0 | 2026-02-08 | Agent | Complete reference for 4 project/phase tools: initialize, inspect, transition, force-transition |
