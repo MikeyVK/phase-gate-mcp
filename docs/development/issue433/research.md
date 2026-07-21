@@ -14,6 +14,11 @@ The `safe_edit_file` tool currently requires rigid numeric line indices (`line_e
 
 To eliminate AI editing friction, `safe_edit_file` must be refactored into a frictionless, string-anchored editing primitive while retaining its unique platform capabilities.
 
+### Rationale for Scope Expansion
+
+While Issue #433 originated from a deferred finding in Issue #429 regarding `insert_lines` line-counting errors during appends, limiting the solution to a narrow "append flag" would leave the broader friction of rigid numeric line indexing (`line_edits`) intact across the rest of the tool. 
+
+Analyzing industry prior art (Claude Code `str_replace_editor`, Antigravity `replace_file_content`, Aider diff blocks) demonstrated that AI agents achieve significantly higher edit reliability (>90%) when using string-anchored and symbol-anchored operations rather than counting line numbers. Broadening the scope to refactor `safe_edit_file` into a unified, frictionless editing tool eliminates line-counting friction entirely while providing unique platform value-adds (AST/template validation gates, atomic I/O, mutex locking, and fuzzy-match diagnostic suggestions).
 ---
 
 ## Research Goals
