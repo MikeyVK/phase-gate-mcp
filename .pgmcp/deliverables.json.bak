@@ -1,0 +1,106 @@
+{
+  "438": {
+    "issue_title": "Feature: Implement dynamic state file versioning",
+    "workflow_name": "feature",
+    "execution_mode": "interactive",
+    "required_phases": [
+      "research",
+      "design",
+      "planning",
+      "implementation",
+      "validation",
+      "documentation",
+      "ready"
+    ],
+    "skip_reason": null,
+    "parent_branch": "main",
+    "created_at": "2026-07-20T18:20:07.277224+00:00",
+    "planning_deliverables": {
+      "cycles": {
+        "total": 4,
+        "cycles": [
+          {
+            "cycle_number": 1,
+            "name": "C_EXC_VALIDATOR.1",
+            "deliverables": [
+              {
+                "id": "D1.1",
+                "description": "Custom state exceptions (StateNotFoundError, StateCorruptedError, StateVersionMismatchError, PlanningVersionMismatchError) subclassing ConfigError exist in exceptions.py."
+              },
+              {
+                "id": "D1.2",
+                "description": "StateVersionValidator implementation in state_version_validator.py with validate_file and backup_file methods."
+              },
+              {
+                "id": "D1.3",
+                "description": "Unit tests for StateVersionValidator covering missing, corrupt, and mismatched file cases."
+              }
+            ],
+            "exit_criteria": "StateVersionValidator unit tests pass successfully, and exceptions inherit from ConfigError."
+          },
+          {
+            "cycle_number": 2,
+            "name": "C_MODELS_PROJECT.2",
+            "deliverables": [
+              {
+                "id": "D2.1",
+                "description": "BranchState and QualityState models updated to include schema_version with default '1.0.0'."
+              },
+              {
+                "id": "D2.2",
+                "description": "ProjectManager updated to use lazy validation on load (_read_projects) and wrap all write paths in the schema envelope (_write_deliverables)."
+              },
+              {
+                "id": "D2.3",
+                "description": "Outdated deliverables migration/validation tests hard-removed from the test suite."
+              }
+            ],
+            "exit_criteria": "ProjectManager successfully validates SemVer envelope on load and persists envelope on save. Outdated tests are completely removed."
+          },
+          {
+            "cycle_number": 3,
+            "name": "C_REPO_TOOL.3",
+            "deliverables": [
+              {
+                "id": "D3.1",
+                "description": "FileStateRepository and FileQualityStateRepository load paths integrated with StateVersionValidator for version checking and backup."
+              },
+              {
+                "id": "D3.2",
+                "description": "PhaseStateEngine reconstruct fallback removed, and StateReconstructor class deleted."
+              },
+              {
+                "id": "D3.3",
+                "description": "GetWorkContextTool execute() updated to catch only StateNotFoundError."
+              },
+              {
+                "id": "D3.4",
+                "description": "WorkspaceVersionValidator extracted from ServerBootstrapper.bootstrap()."
+              },
+              {
+                "id": "D3.5",
+                "description": "All legacy tests for _load_state_or_reconstruct and StateReconstructor are hard-removed from test files."
+              }
+            ],
+            "exit_criteria": "Repositories correctly check version and backup on mismatch. Fallbacks and reconstruct code/tests are hard-removed. Bootstrapper is refactored."
+          },
+          {
+            "cycle_number": 4,
+            "name": "C_VALIDATION_GATES.4",
+            "deliverables": [
+              {
+                "id": "D4.1",
+                "description": "Integration tests verify corrupt/mismatched files correctly trigger ConfigErrorOutput without traceback crashes."
+              },
+              {
+                "id": "D4.2",
+                "description": "Run quality gates on all changed Python files with overall pass: True."
+              }
+            ],
+            "exit_criteria": "Integration tests pass successfully, and quality gates are green."
+          }
+        ]
+      }
+    }
+  }
+}
