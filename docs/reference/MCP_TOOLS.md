@@ -143,7 +143,7 @@ Multi-mode file editing with quality gate integration and concurrent edit protec
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
-| **SafeEditFileTool** | Multi-mode file editing with validation | `path`, `content`/`line_edits`/`insert_lines`/`search`+`replace`, `mode` | Saved file path; diff preview |
+| **SafeEditFileTool** | Frictionless 4-operation file editing with validation | `path`, `operation` (`replace`/`append`/`rewrite`/`pattern_replace`), `mode` | `SafeEditOutput` (success, path, passed, issues, written) |
 
 ### 5. Scaffolding (2 tools)
 

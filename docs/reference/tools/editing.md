@@ -1,10 +1,10 @@
-<!-- docs/reference/mcp/tools/editing.md -->
-<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-02-08 -->
+<!-- docs/reference/tools/editing.md -->
+<!-- template=reference version=064954ea created=2026-02-08T12:00:00+01:00 updated=2026-07-21 -->
 # File Editing Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.0  
-**Last Updated:** 2026-06-15  
+**Version:** 4.0  
+**Last Updated:** 2026-07-21  
 
 **Source:** [mcp_server/tools/safe_edit_tool.py](../../../../mcp_server/tools/safe_edit_tool.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_safe_edit_tool.py](../../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py)  
@@ -13,8 +13,7 @@
 
 ## Purpose
 
-Reference documentation for file editing tools in the MCP server. The `safe_edit_file` tool is the **primary file editing mechanism** for all code and documentation changes, providing multi-mode editing with quality gate integration, concurrent edit protection, and validation enforcement.
-
+Reference documentation for file editing tools in the MCP server. The `safe_edit_file` tool is the **primary file editing mechanism** for all existing code and documentation changes, providing frictionless string-anchored editing with quality gate integration, strict file existence governance (`must_exist=True`), concurrent edit protection, and validation enforcement.
 
 ---
 
@@ -24,15 +23,16 @@ The MCP server provides one file editing tool:
 
 | Tool | Status | Purpose | Use Case |
 |------|--------|---------|----------|
-| `safe_edit_file` | **PRIMARY** | Multi-mode editing with validation | All file edits (create, line edits, insert, search/replace) |
+| `safe_edit_file` | **PRIMARY** | Frictionless 4-operation file editing with validation | Editing existing files (`replace`, `append`, `rewrite`, `pattern_replace`) |
 
-`safe_edit_file` is a 552-line tool offering:
-- **4 mutually exclusive edit modes** (full rewrite, line edits, insert, search/replace)
-- **3 validation modes** (strict, interactive, verify-only)
-- **Quality gate integration** via `ValidationService` (Ruff, Pyright, markdown validation)
+`safe_edit_file` offers:
+- **4 string/symbol-anchored operations** (`replace`, `append`, `rewrite`, `pattern_replace`) via Pydantic discriminated union (`Field(discriminator="op")`)
+- **Strict file existence governance** (`must_exist=True`): `safe_edit_file` edits existing files only; new file creation is governed by `scaffold_artifact`
+- **Fuzzy-match typo diagnostics**: Suggests close matching lines via `difflib.get_close_matches` when targets or anchors are not found
+- **3 validation modes** (`strict`, `interactive`, `verify_only`)
+- **Quality gate integration** via `ValidationService` (Python, Markdown, and Jinja2 Template validation)
 - **Concurrent edit protection** with file-level `asyncio.Lock` (10ms timeout)
-- **Diff preview** via `difflib.unified_diff`
-- **Unified DTO & MCP Resource Caching:** Returns a single `TextContent` block containing presented diffs and warnings, and the resource cache link (`pgmcp://cache/runs/{run_id}`). The raw JSON objects documented in the `#### Returns` section below are stored as DTOs in the MCP Resource Cache and can be retrieved using the cached resource URI.
+- **Atomic file writes** via `IAtomicFileWriter` and `AtomicFileWriter` temp-swap logic
 
 ---
 
@@ -44,524 +44,131 @@ The MCP server provides one file editing tool:
 **Class:** `SafeEditTool`  
 **File:** [mcp_server/tools/safe_edit_tool.py](../../../../mcp_server/tools/safe_edit_tool.py)
 
-Multi-mode file editing with automatic validation and concurrent edit protection.
-
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `path` | `str` | **Yes** | Absolute path to the file |
-| `content` | `str` | **Conditional** | Full file content (full rewrite mode) — creates file if not exists |
-| `line_edits` | `list[LineEdit]` | **Conditional** | List of line-based edits (chirurgical mode) — file must exist |
-| `insert_lines` | `list[InsertLine]` | **Conditional** | List of line insert operations — file must exist |
-| `search` | `str` | **Conditional** | Pattern to search for (search/replace mode) — requires `replace` |
-| `replace` | `str` | **Conditional** | Replacement text (search/replace mode) — requires `search` |
-| `regex` | `bool` | No | Use regex pattern matching (search/replace mode) — default: `False` |
-| `search_count` | `int` | No | Maximum replacements (search/replace mode) — default: `None` (all matches) |
-| `search_flags` | `int` | No | Regex flags e.g. `re.IGNORECASE` (search/replace mode) — default: `0` |
+| `path` | `str` | **Yes** | Absolute path to the existing file (`must_exist=True`) |
+| `operation` | `OperationType` | **Yes** | Discriminated union of edit operations (`replace`, `append`, `rewrite`, `pattern_replace`) |
 | `mode` | `str` | No | Validation mode: `"strict"`, `"interactive"`, `"verify_only"` — default: `"strict"` |
-| `show_diff` | `bool` | No | Show unified diff preview — default: `True` |
-
-**⚠️ CRITICAL:** Exactly **ONE** of these parameter groups is required (enforced by Pydantic validator):
-1. `content` — full rewrite mode
-2. `line_edits` — chirurgical edit mode
-3. `insert_lines` — insert mode
-4. `search` + `replace` — search/replace mode
-
-#### LineEdit Sub-model
-
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| `start_line` | `int` | ≥1 | Starting line (1-based, inclusive) |
-| `end_line` | `int` | ≥`start_line` | Ending line (1-based, inclusive) |
-| `new_content` | `str` | — | Replacement text — **MUST include trailing `\n`** for multi-line content |
-
-**Example:**
-```json
-{
-  "start_line": 10,
-  "end_line": 12,
-  "new_content": "def new_function():\n    return 42\n"
-}
-```
-
-#### InsertLine Sub-model
-
-| Field | Type | Constraints | Description |
-|-------|------|-------------|-------------|
-| `at_line` | `int` | ≥1 | Insert **before** this line (use `file_line_count + 1` to append at end) |
-| `content` | `str` | — | Content to insert (can be multi-line) |
-
-**Example:**
-```json
-{
-  "at_line": 5,
-  "content": "# New comment\n"
-}
-```
-
-#### Returns
-
-```json
-{
-  "success": true,
-  "message": "File written successfully",
-  "diff": "--- original\n+++ modified\n@@ -10,3 +10,3 @@\n-old line\n+new line\n",
-  "validation_warnings": []
-}
-```
-
-Or on error:
-
-```json
-{
-  "success": false,
-  "message": "Validation failed: pylint errors detected",
-  "errors": ["line 42: E0602 undefined-variable"],
-  "validation_warnings": ["line 10: W0612 unused-variable"]
-}
-```
 
 ---
 
-### Four Edit Modes
+### Four Edit Operations
 
-#### Mode 1: Full Rewrite (`content`)
+#### 1. Replace Operation (`replace`)
 
-**Purpose:** Create new files or completely replace existing file content.  
-**Parameters:** `content` (string)  
-**File Existence:** Creates file if not exists  
-**Use Cases:**
-- Creating new files
-- Complete file rewrites
-- Complete file rewrites
-
-**Example:**
-```json
-{
-  "path": "/workspace/backend/dtos/my_feature.py",
-  "content": "from dataclasses import dataclass\n\n@dataclass\nclass MyFeature:\n    value: int\n",
-  "mode": "strict"
-}
-```
-
-**Behavior:**
-- Writes `content` to file (replaces entire content)
-- Creates parent directories if needed
-- Validates after write (respects `mode` parameter)
-- Shows diff comparing old content to new content
-
----
-
-#### Mode 2: Line Edits (`line_edits`)
-
-**Purpose:** Surgical edits to specific line ranges (most efficient for targeted changes).  
-**Parameters:** `line_edits` (list of `LineEdit`)  
-**File Existence:** File MUST exist  
-**Use Cases:**
-- Updating specific functions/methods
-- Fixing specific lines
-- Modifying class definitions
-
-**Example:**
-```json
-{
-  "path": "/workspace/backend/dtos/user.py",
-  "line_edits": [
-    {
-      "start_line": 10,
-      "end_line": 12,
-      "new_content": "    def updated_method(self) -> str:\n        return \"updated\"\n"
-    }
-  ],
-  "mode": "strict"
-}
-```
-
-**⚠️ CRITICAL ANTI-PATTERN:** Multiple sequential `safe_edit_file` calls on the same file will trigger mutex timeout. Bundle ALL edits for the same file in ONE call:
-
-```json
-{
-  "path": "/workspace/myfile.py",
-  "line_edits": [
-    {"start_line": 5, "end_line": 5, "new_content": "# Edit 1\n"},
-    {"start_line": 20, "end_line": 22, "new_content": "# Edit 2\ncode\n"},
-    {"start_line": 50, "end_line": 50, "new_content": "# Edit 3\n"}
-  ]
-}
-```
-
-**Behavior:**
-- Edits applied in **reverse order** (by `start_line`) to preserve line numbers
-- Validates line ranges don't overlap
-- Validates line numbers are within file bounds
-- **Trailing `\n` required** for multi-line `new_content` (or next line merges)
-
----
-
-#### Mode 3: Insert Lines (`insert_lines`)
-
-**Purpose:** Insert content without replacing existing lines.  
-**Parameters:** `insert_lines` (list of `InsertLine`)  
-**File Existence:** File MUST exist  
-**Use Cases:**
-- Adding new imports
-- Inserting new methods in a class
-- Appending to files
+**Purpose:** String-anchored find and replace without line number calculations.  
+**Parameters:**
+- `op`: `"replace"`
+- `target_content` (`str`): Exact string sequence to find and replace.
+- `replacement` (`str`): Replacement content.
+- `search_window` (`list[int] | None`): Optional 1-based line window `[start_line, end_line]` to scope search.
 
 **Example:**
 ```json
 {
   "path": "/workspace/backend/services/user_service.py",
-  "insert_lines": [
-    {
-      "at_line": 1,
-      "content": "from typing import Optional\n"
-    },
-    {
-      "at_line": 50,
-      "content": "\n    def new_method(self):\n        pass\n"
-    }
-  ],
+  "operation": {
+    "op": "replace",
+    "target_content": "def old_method(self) -> None:",
+    "replacement": "def new_method(self) -> None:"
+  },
   "mode": "strict"
 }
 ```
-
-**Behavior:**
-- Inserts BEFORE the specified line
-- To append at end: use `at_line = file_line_count + 1`
-- Multiple inserts processed in order
-- Does not replace existing lines
 
 ---
 
-#### Mode 4: Search/Replace (`search` + `replace`)
+#### 2. Append Operation (`append`)
 
-**Purpose:** Pattern-based find and replace operations.  
-**Parameters:** `search`, `replace`, optional: `regex`, `search_count`, `search_flags`  
-**File Existence:** File MUST exist  
-**Use Cases:**
-- Renaming variables/functions
-- Updating imports
-- Bulk text replacements
+**Purpose:** Append content to file end (EOF) or relative to a text anchor string.  
+**Parameters:**
+- `op`: `"append"`
+- `content` (`str`): Content to append or insert.
+- `anchor` (`str | None`): Target anchor string. If `None`, appends to EOF.
+- `position` (`"after" | "before"`): Insertion position relative to anchor (default: `"after"`).
 
-**Example (literal string):**
+**Example (Anchored Append):**
 ```json
 {
-  "path": "/workspace/backend/workers/my_worker.py",
-  "search": "old_function_name",
-  "replace": "new_function_name",
-  "mode": "strict"
+  "path": "/workspace/docs/README.md",
+  "operation": {
+    "op": "append",
+    "anchor": "## Features",
+    "position": "after",
+    "content": "- New feature description\n"
+  }
 }
 ```
 
-**Example (regex):**
+**Example (EOF Append):**
 ```json
 {
-  "path": "/workspace/backend/config/settings.py",
-  "search": "VERSION = ['\"]\\d+\\.\\d+\\.\\d+['\"]",
-  "replace": "VERSION = \"2.0.0\"",
-  "regex": true,
-  "mode": "strict"
+  "path": "/workspace/docs/README.md",
+  "operation": {
+    "op": "append",
+    "content": "<!-- End of document -->\n"
+  }
 }
 ```
-
-**Behavior:**
-- `regex=False` (default): Literal string match
-- `regex=True`: Python `re` module patterns
-- `search_count`: Limits number of replacements (default: all matches)
-- `search_flags`: Pass `re` flags (e.g., `re.IGNORECASE = 2`)
-- **In strict mode:** Pattern not found returns error
 
 ---
 
-### Three Validation Modes
+#### 3. Rewrite Operation (`rewrite`)
 
-| Mode | Write? | Validate? | Fail on Error? | Use Case |
-|------|--------|-----------|----------------|----------|
-| **`strict`** (default) | Only if valid | Yes | **Yes** | Normal editing — rejects invalid changes |
-| **`interactive`** | Always | Yes (warns) | **No** | Manual override — writes regardless, logs warnings |
-| **`verify_only`** | Never | Yes | N/A | Dry-run — preview diff without writing |
-
-#### `strict` Mode (Default)
-
-**Behavior:**
-1. Read original file (if exists)
-2. Apply edits (in-memory)
-3. Run validation via `ValidationService`
-4. **If validation passes:** Write file, return success + diff
-5. **If validation fails:** Do NOT write, return error with validation messages
-
-**Use Case:** Standard editing where you want to ensure code quality before writing.
+**Purpose:** Replace complete file content for an existing file.  
+**Parameters:**
+- `op`: `"rewrite"`
+- `content` (`str`): New complete file content.
 
 **Example:**
 ```json
 {
-  "path": "/workspace/backend/dtos/user.py",
-  "content": "invalid python syntax {",
-  "mode": "strict"
-}
-```
-
-**Result:**
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": ["line 1: E0001 Parsing failed: invalid syntax"]
+  "path": "/workspace/config/settings.json",
+  "operation": {
+    "op": "rewrite",
+    "content": "{\n  \"env\": \"production\"\n}\n"
+  }
 }
 ```
 
 ---
 
-#### `interactive` Mode
+#### 4. Pattern Replace Operation (`pattern_replace`)
 
-**Behavior:**
-1. Read original file (if exists)
-2. Apply edits (in-memory)
-3. Run validation via `ValidationService`
-4. **Always write file** (regardless of validation result)
-5. Return success with validation warnings (if any)
-
-**Use Case:** Emergency fixes, bypassing quality gates, or when validation is too strict.
+**Purpose:** Regex pattern replacement across the file.  
+**Parameters:**
+- `op`: `"pattern_replace"`
+- `pattern` (`str`): Regex pattern to search.
+- `replacement` (`str`): Replacement string.
+- `regex` (`bool`): Treat pattern as regular expression (default: `True`).
 
 **Example:**
 ```json
 {
-  "path": "/workspace/backend/dtos/user.py",
-  "content": "# TODO: incomplete implementation\nclass User:\n    pass\n",
-  "mode": "interactive"
-}
-```
-
-**Result:**
-```json
-{
-  "success": true,
-  "message": "File written (validation warnings present)",
-  "validation_warnings": ["line 2: R0903 too-few-public-methods"]
+  "path": "/workspace/backend/models.py",
+  "operation": {
+    "op": "pattern_replace",
+    "pattern": "\"frozen\": False",
+    "replacement": "\"frozen\": True"
+  }
 }
 ```
 
 ---
 
-#### `verify_only` Mode
+## Governance & Error Diagnostics
 
-**Behavior:**
-1. Read original file (if exists)
-2. Apply edits (in-memory)
-3. Run validation via `ValidationService`
-4. **Do NOT write file**
-5. Return diff + validation results
+1. **`must_exist=True` Enforcement**:
+   - `safe_edit_file` strictly requires target file existence.
+   - If the target file does not exist, `safe_edit_file` returns a governance error instructing the caller to use `scaffold_artifact` instead.
 
-**Use Case:** Preview changes before committing to write, CI/CD dry-run checks.
+2. **Fuzzy-Match Typo Suggestions**:
+   - If `target_content` (in `replace`) or `anchor` (in `append`) is not found, `safe_edit_file` analyzes original file text using `difflib.get_close_matches` and returns actionable line suggestions:
+   ```text
+   ❌ File edit rejected: Pattern 'def process_item():' not found in file
 
-**Example:**
-```json
-{
-  "path": "/workspace/backend/services/order_service.py",
-  "search": "old_api_call",
-  "replace": "new_api_call",
-  "mode": "verify_only"
-}
-```
-
-**Result:**
-```json
-{
-  "success": true,
-  "message": "Validation passed (no changes written)",
-  "diff": "--- original\n+++ modified\n@@ -42,1 +42,1 @@\n-    old_api_call()\n+    new_api_call()\n"
-}
-```
-
----
-
-### Concurrent Edit Protection
-
-**Problem:** Multiple agents/tools editing the same file simultaneously causes race conditions.
-
-**Solution:** File-level `asyncio.Lock` with immediate timeout.
-
-#### Implementation Details
-
-- **Lock scope:** Per resolved absolute file path
-- **Timeout:** 10ms (immediate failure if lock held)
-- **Lock pool:** `Dict[str, asyncio.Lock]` in `SafeEditTool` class
-- **Error message:** `"Another edit operation is in progress for this file"`
-
-#### Anti-Pattern: Sequential Edits
-
-**❌ WRONG (triggers mutex timeout):**
-```python
-# Edit 1
-safe_edit_file(path="file.py", line_edits=[{"start_line": 5, ...}])
-
-# Edit 2 (will fail if Edit 1 still in progress)
-safe_edit_file(path="file.py", line_edits=[{"start_line": 20, ...}])
-```
-
-**✅ CORRECT (bundle in one call):**
-```python
-safe_edit_file(
-    path="file.py",
-    line_edits=[
-        {"start_line": 5, "end_line": 5, "new_content": "...\n"},
-        {"start_line": 20, "end_line": 22, "new_content": "...\n"}
-    ]
-)
-```
-
----
-
-### Quality Gate Integration
-
-`safe_edit_file` delegates validation to `ValidationService` which selects validators by file extension and content:
-
-| File Type | Validator | Checks |
-|-----------|-----------|--------|
-| `*.py` | `PythonValidator` | pylint, mypy/pyright (if installed), syntax errors |
-| `*.md` | `MarkdownValidator` | Structure, SCAFFOLD header format, frontmatter |
-| Files with SCAFFOLD headers | `TemplateValidator` | Template conformance, required sections |
-
-#### Python Validation Example
-
-```python
-# ValidationService detects .py extension
-# Runs PythonValidator:
-#   1. Syntax check (compile with ast.parse)
-#   2. Pylint static analysis
-#   3. Mypy/Pyright type checking (if available)
-```
-
-**Validation result** includes:
-- Errors (blocking in strict mode)
-- Warnings (non-blocking)
-- Line numbers and error codes
-
----
-
-## Common Anti-Patterns & Mistakes
-
-### 1. Missing Trailing `\n` in `line_edits`
-
-**Problem:** Next line merges into edited line.
-
-**❌ WRONG:**
-```json
-{"start_line": 10, "end_line": 10, "new_content": "new line"}
-```
-
-**✅ CORRECT:**
-```json
-{"start_line": 10, "end_line": 10, "new_content": "new line\n"}
-```
-
----
-
-### 2. Multiple Sequential Edits on Same File
-
-**Problem:** Mutex timeout / race condition.
-
-**❌ WRONG:**
-```python
-safe_edit_file(path="file.py", line_edits=[edit1])
-safe_edit_file(path="file.py", line_edits=[edit2])  # Timeout!
-```
-
-**✅ CORRECT:**
-```python
-safe_edit_file(path="file.py", line_edits=[edit1, edit2])
-```
-
----
-
-### 3. Line Edits on Non-Existent Files
-
-**Problem:** File must exist for `line_edits` mode.
-
-**❌ WRONG:**
-```json
-{"path": "/new_file.py", "line_edits": [...]}
-```
-
-**✅ CORRECT:**
-```json
-{"path": "/new_file.py", "content": "initial content\n"}
-```
-
----
-
-### 4. Overlapping Line Ranges
-
-**Problem:** Validator rejects overlapping edits.
-
-**❌ WRONG:**
-```json
-[
-  {"start_line": 10, "end_line": 15, "new_content": "..."},
-  {"start_line": 12, "end_line": 20, "new_content": "..."}  // Overlap!
-]
-```
-
-**✅ CORRECT:**
-```json
-[
-  {"start_line": 10, "end_line": 15, "new_content": "..."},
-  {"start_line": 16, "end_line": 20, "new_content": "..."}
-]
-```
-
----
-
-### 5. Multiple Edit Modes Simultaneously
-
-**Problem:** Model validator rejects multiple modes.
-
-**❌ WRONG:**
-```json
-{
-  "path": "file.py",
-  "content": "...",
-  "line_edits": [...]  // Error: multiple modes
-}
-```
-
-**✅ CORRECT:**
-```json
-{"path": "file.py", "content": "..."}
-```
-
----
----
-
-## Configuration
-
-No environment variables or configuration files required. Quality gate behavior is configured via [.pgmcp/config/quality.yaml](../../../../.pgmcp/config/quality.yaml):
-
-```yaml
-quality_gates:
-  python:
-    - tool: pylint
-      enabled: true
-    - tool: mypy
-      enabled: true
-```
-
----
-
-## Related Documentation
-
-- [README.md](README.md) — MCP Tools navigation index
-- [quality.md](quality.md) — Quality gate tools and validation
-- [scaffolding.md](scaffolding.md) — Template-based artifact generation
-- [docs/reference/mcp/validation_api.md](../validation_api.md) — ValidationService API
-- [docs/development/archive/issue19/research.md](../../../development/archive/issue19/research.md) — Tool inventory research (Section 2: SafeEditTool Deep-Dive)
-
----
-
-## Version History
-
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 2.0 | 2026-02-08 | Agent | Complete safe_edit_file deep-dive: 4 edit modes, 3 validation modes, anti-patterns, concurrent edit protection |
+   Did you mean one of these lines?
+     - 'def process_items():'
+   ```

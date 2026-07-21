@@ -68,7 +68,7 @@ This document is a **binding contract**. Code that violates these principles is 
 ### File Operations
 | Action | ✅ USE THIS | ❌ NEVER USE |
 |--------|-------------|------------|
-| Edit file | `safe_edit_file(path, content/line_edits/insert_lines/search+replace, mode)` | `run_in_terminal("Set-Content")` |
+| Edit file | `safe_edit_file(path, operation, mode)` | `run_in_terminal("Set-Content")` |
 | Scaffold code/docs | `scaffold_artifact(artifact_type, name, context)` | Manual creation |
 | Inspect artifact context schema | `scaffold_schema(artifact_type)` | Guessing context fields or trial-and-error calls |
 
