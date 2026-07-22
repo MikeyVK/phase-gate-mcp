@@ -89,15 +89,12 @@ def test_default_server_version_resolves_via_distribution_map() -> None:
 
 
 def test_default_server_version_raises_when_no_package_metadata_exists() -> None:
-    """Missing package metadata should surface a descriptive error."""
-    with (
-        patch(
-            "mcp_server.config.settings.metadata.version",
-            side_effect=metadata.PackageNotFoundError,
-        ),
-        pytest.raises(metadata.PackageNotFoundError, match="Unable to resolve"),
+    """Missing package metadata should fall back to release manifest or default version."""
+    with patch(
+        "mcp_server.config.settings.metadata.version",
+        side_effect=metadata.PackageNotFoundError,
     ):
-        _default_server_version()
+        assert _default_server_version() == "2.0.0"
 
 
 # ---------------------------------------------------------------------------
