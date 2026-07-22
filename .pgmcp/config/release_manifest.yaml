@@ -14,3 +14,5 @@ assets:
     target: "docs/reference"
   - source: "docs/setup"
     target: "docs/setup"
+  - source: "CHANGELOG.md"
+    target: "docs/CHANGELOG.md"
