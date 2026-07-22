@@ -203,7 +203,7 @@ Resulting paths:
 ## Related Documentation
 
 - [Config Loading Architecture](config-loading-architecture.md) — how `Settings.from_env()` resolves config roots and merges YAML overlays
-- [USER_GUIDE](../../mcp_server/USER_GUIDE.md) — end-to-end setup walkthrough including GitHub token configuration
+- [Setup Guide](../setup/README.md) — end-to-end setup walkthrough including GitHub token configuration
 
 ---
 

@@ -178,7 +178,8 @@ graph TD
 | **Runtime** | `MCPServer`, `NoteContext` | MCP protocol handling, tool dispatch coordination |
 | **Tools** | 50 `ICoreTool` instances wrapped in a decorator pipeline | Delegate business logic to managers and return semantic DTOs |
 | **Resources** | 4 `BaseResource` subclasses | Expose read-only project context via `pgmcp://` URIs |
-| **Managers** | 18 manager classes | Business logic, workflow state, quality gates |
+| **Managers** | 19 manager classes (including `WorkspaceVersionValidator`) | Business logic, workflow state, quality gates, version validation |
+| **Services** | `WorkspaceUpgrader`, `DocumentIndexer`, `SearchService` | Application services for workspace upgrading, search, and indexing |
 | **Adapters** | `FilesystemAdapter`, `GitAdapter`, `GitHubAdapter` | External system integration |
 
 ---
@@ -444,6 +445,7 @@ sequenceDiagram
 | `workflow_gate_runner` | Evaluate phase/cycle exit gates |
 | `state_repository` | Persisted branch state (state.json) |
 | `state_version_validator` | Validate state schema version and perform .bak backups on version mismatch or corruption |
+| `workspace_version_validator` | Validate workspace `.version` file existence and version parity against expected server version |
 | `phase_contract_resolver` | Resolve phase contracts from config |
 | `quality_state_repository` | Quality baseline state |
 | `enforcement_runner` | Pre/post tool enforcement rules |
