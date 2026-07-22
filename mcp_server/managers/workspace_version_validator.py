@@ -52,7 +52,8 @@ class WorkspaceVersionValidator:
         if version_str != expected_version:
             raise ConfigError(
                 f"Workspace version mismatch. Workspace version: {version_str}, "
-                f"Server version: {expected_version}. Please run 'pgmcp --upgrade' to upgrade your workspace.",
+                f"Server version: {expected_version}. "
+                "Please run 'pgmcp --upgrade' to upgrade your workspace.",
                 file_path=version_file.as_posix(),
             )
 
