@@ -27,7 +27,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from mcp_server.core.exceptions import ConfigError
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
@@ -72,6 +71,7 @@ from mcp_server.managers.state_repository import BranchValidatedStateReader, Fil
 from mcp_server.managers.workflow_gate_runner import WorkflowGateRunner
 from mcp_server.managers.workflow_state_mutator import WorkflowStateMutator
 from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
+from mcp_server.managers.workspace_version_validator import WorkspaceVersionValidator
 from mcp_server.resources.base import BaseResource
 from mcp_server.resources.cache import CachedResponseResource
 from mcp_server.resources.github import GitHubIssuesResource
@@ -256,33 +256,12 @@ class ServerBootstrapper:
 
     def _validate_version(self) -> None:
         """Validate that the workspace version matches the running server version."""
-        settings = self._settings
-        if settings.server.bypass_version_check:
-            return
-
-        version_file = settings.server.resolved_server_root / ".version"
-        if not version_file.exists():
-            raise ConfigError(
-                f"Workspace version tracking file is missing: '{version_file.as_posix()}'. "
-                "Please run with '--init' to initialize the workspace.",
-                file_path=version_file.as_posix(),
-            )
-
-        try:
-            version_str = version_file.read_text(encoding="utf-8").strip()
-        except Exception as e:
-            raise ConfigError(
-                f"Failed to read workspace version file: {e}",
-                file_path=version_file.as_posix(),
-            ) from e
-
-        expected_version = settings.server.version
-        if version_str != expected_version:
-            raise ConfigError(
-                f"Workspace version mismatch. Workspace version: {version_str}, "
-                f"Server version: {expected_version}. Please upgrade your workspace.",
-                file_path=version_file.as_posix(),
-            )
+        validator = WorkspaceVersionValidator()
+        validator.validate(
+            server_root=self._settings.server.resolved_server_root,
+            expected_version=self._settings.server.version,
+            bypass_version_check=self._settings.server.bypass_version_check,
+        )
 
     def _build_config_layer(self) -> ConfigLayer:
         """Load and validate all configurations."""

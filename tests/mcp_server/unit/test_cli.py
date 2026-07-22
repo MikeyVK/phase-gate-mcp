@@ -269,3 +269,111 @@ def test_cli_degraded_server_on_version_mismatch(tmp_path: Path) -> None:
         # Verify DegradedMCPServer was initialized with version mismatch error
         mock_degraded_server.assert_called_once()
         assert "Workspace version mismatch" in mock_degraded_server.call_args[0][1]
+
+
+def test_cli_upgrade_missing_server_root_exits_1(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Verify --upgrade when .pgmcp is missing prints error and exits code 1."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    settings = Settings(
+        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
+    )
+
+    with (
+        patch("sys.exit") as mock_exit,
+        patch("sys.argv", ["mcp-server", "--upgrade"]),
+    ):
+        mock_exit.side_effect = SystemExit(1)
+        with contextlib.suppress(SystemExit):
+            main(settings=settings)
+
+        mock_exit.assert_called_with(1)
+        captured = capsys.readouterr()
+        assert "Error: Server root directory" in captured.err
+
+
+def test_cli_upgrade_success_exits_0(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Verify --upgrade triggers upgrader service and exits code 0 on success."""
+    workspace = tmp_path / "workspace"
+    server_root = workspace / ".pgmcp"
+    server_root.mkdir(parents=True)
+    settings = Settings(
+        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
+    )
+
+    mock_upgrader_instance = MagicMock()
+    mock_log = MagicMock()
+    mock_log.from_version = "1.0.0"
+    mock_log.to_version = "2.0.0"
+    mock_upgrader_instance.execute_upgrade.return_value = mock_log
+
+    with (
+        patch(
+            "mcp_server.services.workspace_upgrader.WorkspaceUpgrader",
+            return_value=mock_upgrader_instance,
+        ),
+        patch("sys.exit") as mock_exit,
+        patch("sys.argv", ["mcp-server", "--upgrade"]),
+    ):
+        mock_exit.side_effect = SystemExit(0)
+        with contextlib.suppress(SystemExit):
+            main(settings=settings)
+
+        mock_exit.assert_called_with(0)
+        captured = capsys.readouterr()
+        assert "Successfully upgraded server workspace" in captured.out
+
+
+def test_cli_upgrade_failure_exits_1(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Verify --upgrade handles upgrader exception, prints error to stderr, and exits code 1."""
+    workspace = tmp_path / "workspace"
+    server_root = workspace / ".pgmcp"
+    server_root.mkdir(parents=True)
+    settings = Settings(
+        server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp")
+    )
+
+    mock_upgrader_instance = MagicMock()
+    mock_upgrader_instance.execute_upgrade.side_effect = RuntimeError("Upgrade failed")
+
+    with (
+        patch(
+            "mcp_server.services.workspace_upgrader.WorkspaceUpgrader",
+            return_value=mock_upgrader_instance,
+        ),
+        patch("sys.exit") as mock_exit,
+        patch("sys.argv", ["mcp-server", "--upgrade"]),
+    ):
+        mock_exit.side_effect = SystemExit(1)
+        with contextlib.suppress(SystemExit):
+            main(settings=settings)
+
+        mock_exit.assert_called_with(1)
+        captured = capsys.readouterr()
+        assert "Error upgrading server root: Upgrade failed" in captured.err
+
+
+def test_version_consistency() -> None:
+    """Verify version parity across SSOT files (pyproject.toml, manifest, settings.py)."""
+    import yaml  # noqa: PLC0415
+    from mcp_server.config.settings import Settings  # noqa: PLC0415
+
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+
+    # 1. pyproject.toml
+    pyproject_path = repo_root / "pyproject.toml"
+    assert pyproject_path.exists()
+    pyproject_text = pyproject_path.read_text(encoding="utf-8")
+    assert 'version = "2.0.0"' in pyproject_text
+
+    # 2. release_manifest.yaml
+    manifest_path = repo_root / ".pgmcp" / "config" / "release_manifest.yaml"
+    assert manifest_path.exists()
+    manifest_data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    assert manifest_data.get("version") == "2.0.0"
+
+    # 3. Settings default version
+    settings = Settings()
+    assert settings.server.version == "2.0.0"

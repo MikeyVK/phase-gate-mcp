@@ -49,7 +49,7 @@ PGMCP_WORKSPACE_ROOT          (default: cwd)
 | `PGMCP_SERVER_PROJECT_DIR` | `server.server_root_dir` | `.pgmcp` | Sub-directory under workspace_root for all server data. |
 | `PGMCP_LOGS_DIR` | `server.logs_dir` | `logs` | Sub-directory under server_root for log files. |
 | `PGMCP_SERVER_NAME` | `server.name` | `phase-gate-mcp` | Server identifier shown in logs and API responses. |
-| `PGMCP_BYPASS_VERSION_CHECK` | `server.bypass_version_check` | `False` | Set to `true` to skip workspace version validation checks. |
+| `PGMCP_BYPASS_VERSION_CHECK` | `server.bypass_version_check` | `False` | Set to `true` to skip workspace version validation checks. (To upgrade outdated workspaces to server v2.0.0, run `pgmcp --upgrade`). |
 
 ### Logging
 
@@ -203,7 +203,7 @@ Resulting paths:
 ## Related Documentation
 
 - [Config Loading Architecture](config-loading-architecture.md) — how `Settings.from_env()` resolves config roots and merges YAML overlays
-- [USER_GUIDE](../../mcp_server/USER_GUIDE.md) — end-to-end setup walkthrough including GitHub token configuration
+- [Setup Guide](../setup/README.md) — end-to-end setup walkthrough including GitHub token configuration
 
 ---
 

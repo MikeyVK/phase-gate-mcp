@@ -21,6 +21,11 @@ def main(settings: Settings | None = None) -> None:
         action="store_true",
         help="Initialize workspace configuration and templates",
     )
+    parser.add_argument(
+        "--upgrade",
+        action="store_true",
+        help="Upgrade workspace configuration and templates",
+    )
 
     args = parser.parse_args()
     if args.version:
@@ -60,6 +65,31 @@ def main(settings: Settings | None = None) -> None:
             sys.exit(0)
         except Exception as e:
             print(f"Error initializing server root: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    if args.upgrade:
+        resolved_server_root = Path(_settings.server.resolved_server_root)
+        if not resolved_server_root.exists():
+            print(
+                f"Error: Server root directory '{resolved_server_root}' does not exist.\n"
+                "Please run with --init to initialize it.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        try:
+            from mcp_server.services.workspace_upgrader import WorkspaceUpgrader  # noqa: PLC0415
+
+            upgrader = WorkspaceUpgrader(_settings)
+            log_dto = upgrader.execute_upgrade()
+            print(
+                f"Successfully upgraded server workspace at '{resolved_server_root}' "
+                f"from v{log_dto.from_version} to v{log_dto.to_version}.",
+                file=sys.stdout,
+            )
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error upgrading server root: {e}", file=sys.stderr)
             sys.exit(1)
 
     resolved_server_root = Path(_settings.server.resolved_server_root)

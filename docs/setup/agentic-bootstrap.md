@@ -56,12 +56,16 @@ python -m venv .venv
 .\.venv\Scripts\python -m pip install phase-gate-mcp
 ```
 
-### 3. Initialize the Server Root
-Run the bootstrapping CLI command to generate the configuration files and templates:
+### 3. Initialize or Upgrade the Server Root
+Run the bootstrapping CLI command to generate or upgrade configuration files and templates:
 ```powershell
+# For fresh workspaces:
 .\.venv\Scripts\pgmcp --init
+
+# For existing workspaces upgrading to server v2.0.0 or resolving version mismatch ConfigError:
+.\.venv\Scripts\pgmcp --upgrade
 ```
-This command automatically creates the `.pgmcp/` directory structure containing:
+This generates or updates the `.pgmcp/` directory structure containing:
 * `config/` (Contracts, enforcement, quality guidelines)
 * `templates/` (Jinja2 templates for issues, PRs, etc.)
 * `agents/` (Prepackaged IDE configurations and rule files)

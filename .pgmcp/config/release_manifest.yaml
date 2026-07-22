@@ -1,4 +1,4 @@
-version: "1.0.0"
+version: "2.0.0"
 assets:
   - source: ".pgmcp/config"
     target: "config"
@@ -14,3 +14,9 @@ assets:
     target: "docs/reference"
   - source: "docs/setup"
     target: "docs/setup"
+  - source: "CHANGELOG.md"
+    target: "docs/CHANGELOG.md"
+  - source: "README.md"
+    target: "docs/README.md"
+  - source: "LICENSE"
+    target: "LICENSE"

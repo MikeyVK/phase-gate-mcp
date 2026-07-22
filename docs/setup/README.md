@@ -50,8 +50,12 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 pip install -e .
 
-# Initialize local workspace configuration and templates
+# Initialize local workspace configuration and templates (for new projects)
 pgmcp --init
+
+# Upgrade an existing workspace configuration to match server v2.0.0
+# (For a detailed step-by-step upgrade guide, see docs/setup/workspace-upgrade.md)
+pgmcp --upgrade
 ```
 
 ---
