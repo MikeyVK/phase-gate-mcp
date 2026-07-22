@@ -77,12 +77,15 @@ Currently, there is no standardized way to upgrade an existing user workspace `.
 3. **Strict Dynamic State Preservation**:
    - Dynamic runtime state files (`state.json`, `deliverables.json`, `template_registry.json`, `logs/`) are **strictly preserved** and never modified or deleted during upgrades.
 
-4. **Single Structured Upgrade Log Artifact**:
+4. **Single Structured Upgrade Log & Human-Readable Release Diff**:
    - Write a single structured JSON log file to `.pgmcp/logs/upgrade_YYYYMMDD_HHMMSS.json`.
-   - Records: target version, backup path, preserved files, renewed/updated files, newly added files, and warnings/actions required.
-   - Serves as an audit file for manual or agentic inspection when needed. (`get_work_context` remains focused on workflow state and does not load upgrade logs).
+   - In addition to JSON logs, generate a clean, human-readable Markdown diff summary (`.pgmcp/logs/upgrade_v2.0.0_summary.md` or `RELEASE_NOTES_v2.0.0.md`) showing exact asset differences between v1.0.0 and v2.0.0 (added templates, updated rules, preserved configs) so users do not have to dive into Git commit logs.
 
-5. **Simple CLI Interface (No `--force` Flag)**:
+5. **Release Build Pipeline (`v2.0.0`)**:
+   - Development occurs on feature branches; PR merges to `main`.
+   - The v2.0.0 release wheel is compiled from `main` using `scripts/build_package.py` after bumping version numbers in `pyproject.toml` and `.pgmcp/config/release_manifest.yaml`.
+
+6. **Simple CLI Interface (No `--force` Flag)**:
    - CLI interface remains clean (`pgmcp --upgrade`). If a workspace is severely corrupted beyond repair, standard recovery is deleting `.pgmcp/` and running `pgmcp --init`.
 
 ---
