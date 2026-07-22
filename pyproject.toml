@@ -1,6 +1,6 @@
 [project]
 name = "phase-gate-mcp"
-version = "1.0.0"
+version = "2.0.0"
 description = "Phase-Gate MCP Server — AI-assisted workflow orchestration with phase, cycle, and quality gate enforcement"
 authors = [
     {name = "Phase Gate Team"}

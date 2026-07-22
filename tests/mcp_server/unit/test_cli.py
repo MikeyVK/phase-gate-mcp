@@ -279,13 +279,12 @@ def test_cli_upgrade_missing_server_root_exits_1(tmp_path: Path, capsys: pytest.
     settings = Settings(server=ServerSettings(workspace_root=str(workspace), server_root_dir=".pgmcp"))
 
     with (
-        patch("mcp_server.cli.Settings", return_value=settings),
         patch("sys.exit") as mock_exit,
         patch("sys.argv", ["mcp-server", "--upgrade"]),
     ):
         mock_exit.side_effect = SystemExit(1)
         with contextlib.suppress(SystemExit):
-            main()
+            main(settings=settings)
 
         mock_exit.assert_called_with(1)
         captured = capsys.readouterr()
@@ -306,14 +305,13 @@ def test_cli_upgrade_success_exits_0(tmp_path: Path, capsys: pytest.CaptureFixtu
     mock_upgrader_instance.execute_upgrade.return_value = mock_log
 
     with (
-        patch("mcp_server.cli.Settings", return_value=settings),
         patch("mcp_server.services.workspace_upgrader.WorkspaceUpgrader", return_value=mock_upgrader_instance),
         patch("sys.exit") as mock_exit,
         patch("sys.argv", ["mcp-server", "--upgrade"]),
     ):
         mock_exit.side_effect = SystemExit(0)
         with contextlib.suppress(SystemExit):
-            main()
+            main(settings=settings)
 
         mock_exit.assert_called_with(0)
         captured = capsys.readouterr()
@@ -331,14 +329,13 @@ def test_cli_upgrade_failure_exits_1(tmp_path: Path, capsys: pytest.CaptureFixtu
     mock_upgrader_instance.execute_upgrade.side_effect = RuntimeError("Upgrade failed")
 
     with (
-        patch("mcp_server.cli.Settings", return_value=settings),
         patch("mcp_server.services.workspace_upgrader.WorkspaceUpgrader", return_value=mock_upgrader_instance),
         patch("sys.exit") as mock_exit,
         patch("sys.argv", ["mcp-server", "--upgrade"]),
     ):
         mock_exit.side_effect = SystemExit(1)
         with contextlib.suppress(SystemExit):
-            main()
+            main(settings=settings)
 
         mock_exit.assert_called_with(1)
         captured = capsys.readouterr()
