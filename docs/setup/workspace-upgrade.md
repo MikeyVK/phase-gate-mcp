@@ -17,14 +17,27 @@ The workspace upgrade is executed via the `pgmcp --upgrade` CLI command. The upg
 
 ---
 
-## 2. Prerequisites
+## 2. Prerequisites & Package Installation
 
-1. **Active Virtual Environment**: Ensure your virtual environment is activated.
-2. **Updated Package**: Upgrade the `phase-gate-mcp` package to version `2.0.0`:
-   ```bash
-   pip install --upgrade phase-gate-mcp
-   ```
-3. **Workspace Root**: Open a terminal in the root directory of your repository containing the `.pgmcp/` folder.
+1. **Active Virtual Environment**: Ensure your target workspace's virtual environment is activated (`.venv\Scripts\Activate.ps1`).
+2. **Install Package Version 2.0.0**: Choose one of the following methods based on your deployment environment:
+
+   - **A. Local Wheel Installation (Offline / Local Build)**:
+     ```powershell
+     pip install C:\path\to\phase_gate_mcp-2.0.0-py3-none-any.whl --force-reinstall
+     ```
+
+   - **B. Local Editable Installation (Development Repository)**:
+     ```powershell
+     pip install -e .
+     ```
+
+   - **C. PyPI Registry (If Published)**:
+     ```powershell
+     pip install --upgrade phase-gate-mcp
+     ```
+
+3. **Open Target Workspace**: Open a terminal in the root directory of the repository containing the `.pgmcp/` workspace directory to upgrade.
 
 ---
 
