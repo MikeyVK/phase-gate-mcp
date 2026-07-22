@@ -54,6 +54,7 @@ pip install -e .
 pgmcp --init
 
 # Upgrade an existing workspace configuration to match server v2.0.0
+# (For a detailed step-by-step upgrade guide, see docs/setup/workspace-upgrade.md)
 pgmcp --upgrade
 ```
 
