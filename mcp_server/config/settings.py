@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 def _default_server_version() -> str:
-    """Resolve server version from installed package metadata or fallback to release_manifest.yaml."""
+    """Resolve server version from package metadata or release_manifest.yaml."""
     try:
         ver = metadata.version("phase-gate-mcp")
         if ver and ver != "1.0.0":
@@ -33,7 +33,12 @@ def _default_server_version() -> str:
     except Exception:
         pass
 
-    manifest_path = Path(__file__).resolve().parent.parent.parent / ".pgmcp" / "config" / "release_manifest.yaml"
+    manifest_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / ".pgmcp"
+        / "config"
+        / "release_manifest.yaml"
+    )
     if manifest_path.exists():
         try:
             with open(manifest_path, encoding="utf-8") as f:
