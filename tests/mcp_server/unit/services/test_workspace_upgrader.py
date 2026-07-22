@@ -28,7 +28,10 @@ def mock_settings(tmp_path: Path) -> MagicMock:
     return settings
 
 
-def test_get_current_workspace_version_reads_version(mock_settings: Settings, tmp_path: Path) -> None:
+def test_get_current_workspace_version_reads_version(
+    mock_settings: Settings,
+    tmp_path: Path,
+) -> None:
     """Verify get_current_workspace_version queries .version string or returns 0.0.0 fallback."""
     upgrader = WorkspaceUpgrader(settings=mock_settings)
     assert upgrader.get_current_workspace_version() == "1.0.0"
@@ -38,7 +41,10 @@ def test_get_current_workspace_version_reads_version(mock_settings: Settings, tm
     assert upgrader.get_current_workspace_version() == "0.0.0"
 
 
-def test_execute_upgrade_creates_timestamped_backup(mock_settings: Settings, tmp_path: Path) -> None:
+def test_execute_upgrade_creates_timestamped_backup(
+    mock_settings: Settings,
+    tmp_path: Path,
+) -> None:
     """Verify execute_upgrade creates timestamped backup directory before mutation."""
     server_root = tmp_path / ".pgmcp"
     dummy_file = server_root / "dummy.txt"
@@ -56,12 +62,18 @@ def test_execute_upgrade_creates_timestamped_backup(mock_settings: Settings, tmp
     assert (backup_path / "dummy.txt").read_text(encoding="utf-8") == "pre-upgrade data"
 
 
-def test_execute_upgrade_preserves_dynamic_state(mock_settings: Settings, tmp_path: Path) -> None:
-    """Verify execute_upgrade strictly preserves state.json, deliverables.json, template_registry.json, and logs."""
+def test_execute_upgrade_preserves_dynamic_state(
+    mock_settings: Settings,
+    tmp_path: Path,
+) -> None:
+    """Verify execute_upgrade preserves state.json, deliverables.json, registry & logs."""
     server_root = tmp_path / ".pgmcp"
     (server_root / "state.json").write_text('{"phase": "design"}', encoding="utf-8")
     (server_root / "deliverables.json").write_text('{"cycles": []}', encoding="utf-8")
-    (server_root / "template_registry.json").write_text('{"templates": {}}', encoding="utf-8")
+    (server_root / "template_registry.json").write_text(
+        '{"templates": {}}',
+        encoding="utf-8",
+    )
     logs_dir = server_root / "logs"
     logs_dir.mkdir(exist_ok=True)
     (logs_dir / "old.log").write_text("existing log content", encoding="utf-8")
@@ -74,11 +86,16 @@ def test_execute_upgrade_preserves_dynamic_state(mock_settings: Settings, tmp_pa
 
     assert (server_root / "state.json").read_text(encoding="utf-8") == '{"phase": "design"}'
     assert (server_root / "deliverables.json").read_text(encoding="utf-8") == '{"cycles": []}'
-    assert (server_root / "template_registry.json").read_text(encoding="utf-8") == '{"templates": {}}'
+    assert (server_root / "template_registry.json").read_text(
+        encoding="utf-8",
+    ) == '{"templates": {}}'
     assert (logs_dir / "old.log").read_text(encoding="utf-8") == "existing log content"
 
 
-def test_execute_upgrade_preserves_valid_custom_configs(mock_settings: Settings, tmp_path: Path) -> None:
+def test_execute_upgrade_preserves_valid_custom_configs(
+    mock_settings: Settings,
+    tmp_path: Path,
+) -> None:
     """Verify valid user custom YAML configs in .pgmcp/config/ are preserved."""
     server_root = tmp_path / ".pgmcp"
     config_dir = server_root / "config"
@@ -97,7 +114,10 @@ def test_execute_upgrade_preserves_valid_custom_configs(mock_settings: Settings,
     assert "config/git.yaml" in result.preserved_files or "git.yaml" in result.preserved_files
 
 
-def test_execute_upgrade_writes_upgrade_log(mock_settings: Settings, tmp_path: Path) -> None:
+def test_execute_upgrade_writes_upgrade_log(
+    mock_settings: Settings,
+    tmp_path: Path,
+) -> None:
     """Verify execute_upgrade writes structured JSON upgrade log to .pgmcp/logs/."""
     assets_dir = tmp_path / "assets"
     assets_dir.mkdir()

@@ -6,7 +6,7 @@
 @responsibilities:
     - Create timestamped fail-safe backup (.pgmcp_backup_YYYYMMDD_HHMMSS)
     - Perform Smart Version-Aware Preservation of configuration and templates
-    - Strictly preserve dynamic state files (state.json, deliverables.json, template_registry.json, logs/)
+    - Preserve dynamic state files (state.json, deliverables.json, registry, logs/)
     - Update workspace .version file
     - Write structured upgrade log (.pgmcp/logs/upgrade_YYYYMMDD_HHMMSS.json)
 """
