@@ -3,7 +3,7 @@
 # Research Document - Implement `--upgrade` CLI command and release v2.0.0
 
 **Status:** DEFINITIVE  
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Last Updated:** 2026-07-22  
 
 ---
@@ -18,6 +18,7 @@ Currently, there is no standardized way to upgrade an existing user workspace `.
 
 - Analyze current CLI entry points and argument parsing in `mcp_server/cli.py`.
 - Examine package asset distribution (`mcp_server/assets/`) and build pipelines.
+- Clarify package versioning mechanisms (`pyproject.toml`, `release_manifest.yaml`) and release history tracking (`CHANGELOG.md`).
 - Evaluate workspace upgrade strategies (Full Asset Overwrite vs. Version-Aware Preservation).
 - Formulate the binding Approved Strategy for Issue #428 (fail-safe backups, asset renewal, state preservation, upgrade logging).
 - Map the blast radius across CLI, bootstrapper, services, test suites, and documentation.
@@ -34,14 +35,23 @@ Currently, there is no standardized way to upgrade an existing user workspace `.
   - `--version` (lines 18, 26–29): Prints `Phase-Gate MCP Server v{version}` and exits `0`.
   - `--init` (lines 20–23, 31–63): Checks if `.pgmcp/` exists. If missing, copies `mcp_server/assets/` into `.pgmcp/` and writes `.pgmcp/.version`. If present, exits `1` with error.
 
-### 2. Bootstrapping & Version Validation Decoupling
-- **Current State**: `ServerBootstrapper._validate_version()` in `mcp_server/bootstrap.py` (lines 257–285) checks `.pgmcp/.version` against `settings.server.version`. If missing or mismatched, raises `ConfigError`.
-- **Decoupling Opportunity (SRP)**: To preserve `ServerBootstrapper` SRP, version checking logic should be decoupled into a dedicated validator class (`WorkspaceVersionValidator` or leveraging `StateVersionValidator`), moving version check responsibility out of the core bootstrapper orchestration.
+### 2. Package Versioning & Build Mechanism
+- **Version SSOT**: Package version is explicitly declared in `pyproject.toml` (`version = "1.0.0"`) and `.pgmcp/config/release_manifest.yaml` (`version: "1.0.0"`).
+- **Build Pipeline**: `scripts/build_package.py` reads `release_manifest.yaml`, copies source assets into `mcp_server/assets/`, and invokes `python -m build`. The build tool inspects `pyproject.toml` to name the wheel artifact (e.g. `phase_gate_mcp-2.0.0-py3-none-any.whl`).
+- **Bumping to v2.0.0**: Updating `version = "2.0.0"` in `pyproject.toml`, `release_manifest.yaml`, and `settings.py` signals the build system to compile release `v2.0.0`.
 
-### 3. Package Asset Distribution
-- **Wheel Package Data**: `pyproject.toml` (lines 40–41) includes `mcp_server/assets/**/*` in build artifacts.
-- **Build Pipeline**: `scripts/build_package.py` (lines 72–84) copies source paths (`.pgmcp/config`, `.pgmcp/templates`, `docs/agents`, `docs/coding_standards`, `docs/reference`, etc.) into `mcp_server/assets/` prior to build.
-- **Workspace Runtime State**: Bestanden aangemaakt/bijgewerkt door agent-workflows in `.pgmcp/` die **dynamisch runtime state** bevatten: `state.json`, `deliverables.json`, `template_registry.json`, `logs/`.
+### 3. Version History (Package Changelog) vs. Workspace Migration Log
+- **Package Version History (`CHANGELOG.md`)**:
+  - Permanent repository document tracking changes across server releases (`1.0.0` $\rightarrow$ `2.0.0`).
+  - Leans on Git history (commit logs, closed PRs #428, #433, #438, etc.) to list added features, breaking changes, and bug fixes between releases.
+  - Can be partially automated via release scripts parsing Git logs/tags into a clean Markdown `CHANGELOG.md`.
+- **Workspace Migration Log (`.pgmcp/logs/upgrade_YYYYMMDD_HHMMSS.json`)**:
+  - Dynamic runtime artifact generated on the user's machine during `pgmcp --upgrade`.
+  - Records disk-level actions (timestamped backup path, preserved custom files, updated templates).
+
+### 4. Bootstrapping & Version Validation Decoupling
+- **Current State**: `ServerBootstrapper._validate_version()` in `mcp_server/bootstrap.py` checks `.pgmcp/.version` against `settings.server.version`. If missing or mismatched, raises `ConfigError`.
+- **Decoupling (SRP)**: Decouple workspace version validation into `WorkspaceVersionValidator` so `ServerBootstrapper` remains pure in its startup orchestration.
 
 ---
 
@@ -52,8 +62,9 @@ Currently, there is no standardized way to upgrade an existing user workspace `.
 | **CLI Argument Parsing** | `mcp_server/cli.py` | Add `--upgrade` flag and delegate execution to upgrader service. |
 | **Workspace Upgrader Service** | `mcp_server/services/workspace_upgrader.py` | Dedicated service for fail-safe backup, asset renewal, state preservation, and upgrade logging. |
 | **Version Validation (SRP)** | `mcp_server/managers/workspace_version_validator.py` | Decoupled workspace version validation service. |
-| **Server Bootstrapper** | `mcp_server/bootstrap.py` | Delegate version check to `WorkspaceVersionValidator`; update guidance error message to direct user to `pgmcp --upgrade`. |
-| **Unit & Integration Tests** | `tests/mcp_server/unit/test_cli.py` | Add unit tests for `pgmcp --upgrade`, backup creation, asset renewal, and state preservation. |
+| **Server Bootstrapper** | `mcp_server/bootstrap.py` | Delegate version check to `WorkspaceVersionValidator`; update error message to direct user to `pgmcp --upgrade`. |
+| **Package Changelog** | `CHANGELOG.md` | Formal release notes tracking features/changes from v1.0.0 to v2.0.0. |
+| **Unit & Integration Tests** | `tests/mcp_server/unit/test_cli.py` | Unit tests for `pgmcp --upgrade`, backup creation, asset renewal, and state preservation. |
 | **Documentation & Help** | `docs/reference/mcp/` & `AGENTS.md` | Update CLI usage reference pages and help menus. |
 
 ---
@@ -65,37 +76,33 @@ Currently, there is no standardized way to upgrade an existing user workspace `.
 ### Strategy Principles & Rules:
 
 1. **Fail-Safe Timestamped Backup**:
-   - Before modifying any workspace assets, generate a complete copy of the `.pgmcp/` directory to `.pgmcp_backup_YYYYMMDD_HHMMSS/`.
-   - Protects custom user edits and configurations against data loss. Backup pruning is intentionally left to the user.
+   - Before modifying workspace assets, generate a complete copy of `.pgmcp/` to `.pgmcp_backup_YYYYMMDD_HHMMSS/`.
+   - Backup pruning is left to the user.
 
-2. **Smart Version-Aware Preservation via Existing Loader Validation**:
-   - Do **not** indiscriminately overwrite valid user configurations or develop complex custom diffing helpers.
-   - Leverage existing `ConfigLoader` / `ValidationService` infrastructure: files that pass schema validation and match current contracts are preserved.
-   - Outdated, corrupt, or missing core assets (`config/`, `templates/`, `docs/`) are renewed from package `mcp_server/assets/`.
+2. **Smart Version-Aware Preservation via `ConfigLoader`**:
+   - Leverage `ConfigLoader` / `ValidationService` infrastructure: valid user YAML configs matching schemas remain intact.
+   - Outdated, corrupt, or missing core assets (`config/`, `templates/`, `docs/`) are renewed from `mcp_server/assets/`.
    - `.pgmcp/.version` is updated to the target server version.
 
 3. **Strict Dynamic State Preservation**:
-   - Dynamic runtime state files (`state.json`, `deliverables.json`, `template_registry.json`, `logs/`) are **strictly preserved** and never modified or deleted during upgrades.
+   - Dynamic runtime state files (`state.json`, `deliverables.json`, `template_registry.json`, `logs/`) are **strictly preserved**.
 
-4. **Single Structured Upgrade Log & Human-Readable Release Diff**:
+4. **Single Structured Upgrade Log**:
    - Write a single structured JSON log file to `.pgmcp/logs/upgrade_YYYYMMDD_HHMMSS.json`.
-   - In addition to JSON logs, generate a clean, human-readable Markdown diff summary (`.pgmcp/logs/upgrade_v2.0.0_summary.md` or `RELEASE_NOTES_v2.0.0.md`) showing exact asset differences between v1.0.0 and v2.0.0 (added templates, updated rules, preserved configs) so users do not have to dive into Git commit logs.
 
-5. **Release Build Pipeline (`v2.0.0`)**:
-   - Development occurs on feature branches; PR merges to `main`.
-   - The v2.0.0 release wheel is compiled from `main` using `scripts/build_package.py` after bumping version numbers in `pyproject.toml` and `.pgmcp/config/release_manifest.yaml`.
+5. **Package Version History (`CHANGELOG.md`)**:
+   - Maintain a clear, human-readable `CHANGELOG.md` in the repository documenting all changes between `1.0.0` and `2.0.0` based on Git commit and PR history.
 
 6. **Simple CLI Interface (No `--force` Flag)**:
-   - CLI interface remains clean (`pgmcp --upgrade`). If a workspace is severely corrupted beyond repair, standard recovery is deleting `.pgmcp/` and running `pgmcp --init`.
+   - Clean CLI interface (`pgmcp --upgrade`). Standard recovery for severely broken workspaces remains deleting `.pgmcp/` and running `pgmcp --init`.
 
 ---
 
 ## Architectural Constraints & Principles
 
-- **CQS (Command-Query Separation)**: Separate query methods (checking version compatibility, diffing assets) from command methods (performing backup, overwriting assets).
-- **Dependency Injection (DIP)**: Inject workspace paths, settings, and file writers rather than relying on module-level singletons or globals.
-- **Single Responsibility Principle (SRP)**: Keep `mcp_server/cli.py` concise by delegating backup, asset renewal, and state preservation to a dedicated service class, and decouple version checking from `ServerBootstrapper`.
-- **Fail-Safe Rollback**: If an unhandled exception occurs during asset renewal, clean up transient files and advise the user on restoring from the timestamped backup.
+- **CQS**: Separate query methods from command methods in `WorkspaceUpgrader`.
+- **DIP**: Inject workspace paths, settings, and file writers.
+- **SRP**: Keep `cli.py` concise and decouple version checking from `ServerBootstrapper`.
 
 ---
 
@@ -104,14 +111,9 @@ Currently, there is no standardized way to upgrade an existing user workspace `.
 - High-level design for `WorkspaceUpgrader` service in `mcp_server/services/workspace_upgrader.py`.
 - Decoupled `WorkspaceVersionValidator` design.
 - Interface for `pgmcp --upgrade` CLI command in `mcp_server/cli.py`.
-- Structured Upgrade Log DTO schema and JSON format (`.pgmcp/logs/upgrade_YYYYMMDD_HHMMSS.json`).
-- Comprehensive unit test plan in `test_cli.py` covering:
-  - `--upgrade` on non-existent `.pgmcp/` (fails instructing user to run `--init`).
-  - `--upgrade` creating timestamped backup `.pgmcp_backup_YYYYMMDD_HHMMSS/`.
-  - Renewal of outdated templates and config contracts.
-  - Preservation of user-customized valid YAML configs via `ConfigLoader`.
-  - Preservation of `state.json` and dynamic runtime state.
-  - Verification of `upgrade_YYYYMMDD_HHMMSS.json` log output.
+- Structured Upgrade Log format (`.pgmcp/logs/upgrade_YYYYMMDD_HHMMSS.json`).
+- Package `CHANGELOG.md` template/structure for v2.0.0 release.
+- Comprehensive unit test plan in `test_cli.py`.
 
 ---
 
@@ -128,3 +130,4 @@ Currently, there is no standardized way to upgrade an existing user workspace `.
 |---------|------|--------|---------|
 | 1.0.0 | 2026-07-21 | Agent | Initial draft with Approved Strategy for Issue #428 |
 | 1.1.0 | 2026-07-22 | Agent | Refined with feedback: bootstrapper SRP version check decoupling, ConfigLoader schema validation reuse, single log file, no --force flag, no backup pruning |
+| 1.2.0 | 2026-07-22 | Agent | Added build version bump mechanism (pyproject.toml SSOT) and package CHANGELOG.md distinction |
