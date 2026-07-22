@@ -3,7 +3,7 @@
   "branch": "feature/428-implement-upgrade-cli-command",
   "issue_number": 428,
   "workflow_name": "feature",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -21,7 +21,16 @@
   "issue_title": "Feature: Implement --upgrade CLI command and release v2.0.0",
   "parent_branch": "main",
   "created_at": "2026-07-21T20:58:45.421531+00:00",
-  "transitions": [],
+  "transitions": [
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-07-22T15:36:20.832300+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    }
+  ],
   "reconstructed": false,
   "current_sub_phase": null
 }
