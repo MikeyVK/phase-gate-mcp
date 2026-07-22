@@ -104,6 +104,11 @@ The entry point is `mcp_server.core.proxy` — a thin proxy that handles stdio t
 python -m mcp_server.core.proxy
 ```
 
+### CLI Commands (`pgmcp`)
+
+- **`pgmcp --init`**: Initialize `.pgmcp/` workspace configuration and template assets in a new repository.
+- **`pgmcp --upgrade`**: Upgrade existing `.pgmcp/` workspace configuration to match server release v2.0.0 (creates fail-safe timestamped backup, updates templates, preserves user custom YAML configs, and retains dynamic runtime state).
+
 For MCP client configuration, see [docs/setup/mcp.json](docs/setup/mcp.json) for a reference server definition.
 
 ---

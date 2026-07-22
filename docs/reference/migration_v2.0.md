@@ -16,6 +16,7 @@ Guide teams to migrate from phase-first commit scopes to workflow-first commit s
 
 **In Scope:**
 Commit message format migration, workflow phase mapping, sub-phase usage, validation workflow.
+*Note: For automated workspace configuration directory upgrades (`.pgmcp/`), use `pgmcp --upgrade` (see [README.md](../../README.md)).*
 
 **Out of Scope:**
 Runtime trading logic, infrastructure changes, unrelated refactors.
@@ -90,7 +91,7 @@ If migration causes confusion, keep using v2.0 tooling and document old-to-new m
 
 <!-- Link definitions -->
 
-[related-1]: agent.md
+[related-1]: ../../AGENTS.md
 [related-2]: docs/development/issue138/planning.md
 
 ---

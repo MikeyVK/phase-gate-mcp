@@ -32,3 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quality Gates Engine**: Automated linting (Ruff), type checking (Pyright/Mypy), line length enforcement, and import checking.
 - **Template Scaffolding Engine**: Jinja2-powered artifact scaffolding with strict metadata headers and schema validation (`scaffold_artifact`, `scaffold_schema`).
 - **Release Assets Sync Pipeline**: Build script (`scripts/build_package.py`) driven by `.pgmcp/config/release_manifest.yaml` to bundle workspace assets into Python wheel distribution.
+
+
+[2.0.0]: https://github.com/MikeyVK/phase-gate-mcp/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/MikeyVK/phase-gate-mcp/releases/tag/v1.0.0

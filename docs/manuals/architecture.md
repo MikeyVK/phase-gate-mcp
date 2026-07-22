@@ -263,6 +263,7 @@ mcp_server/
 │   ├── pytest_runner.py
 │   ├── quality_state_repository.py
 │   ├── deliverable_checker.py
+│   ├── workspace_version_validator.py
 │   └── branch_parent_reader.py
 │
 ├── tools/                         # MCP tool implementations (22 files)
@@ -327,7 +328,8 @@ mcp_server/
 ├── services/                      # Application services
 │   ├── document_indexer.py
 │   ├── search_service.py
-│   └── template_engine.py
+│   ├── template_engine.py
+│   └── workspace_upgrader.py      # Automated workspace upgrader service
 │
 ├── validation/                    # Template validation (9 files)
 │   ├── layered_template_validator.py
