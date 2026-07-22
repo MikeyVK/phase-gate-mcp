@@ -3,7 +3,7 @@
   "branch": "feature/428-implement-upgrade-cli-command",
   "issue_number": 428,
   "workflow_name": "feature",
-  "current_phase": "design",
+  "current_phase": "planning",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -26,6 +26,14 @@
       "from_phase": "research",
       "to_phase": "design",
       "timestamp": "2026-07-22T15:36:20.832300+00:00",
+      "human_approval_message": null,
+      "forced": false,
+      "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "planning",
+      "timestamp": "2026-07-22T16:14:41.765454+00:00",
       "human_approval_message": null,
       "forced": false,
       "skip_reason": null
