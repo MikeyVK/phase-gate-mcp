@@ -1,5 +1,8 @@
 # Phase-Gate MCP Server
 
+> [!IMPORTANT]
+> **Upgrading to v2.0.0?** If you are updating an existing workspace from v1.x to v2.0.0, follow the step-by-step **[Workspace Upgrade Guide](docs/setup/workspace-upgrade.md)** to run `pgmcp --upgrade` with automated fail-safe backups and smart asset preservation. See **[CHANGELOG.md](CHANGELOG.md)** for full release notes.
+
 An MCP (Model Context Protocol) server that enforces structured software development lifecycles. It gives AI agents a toolset to navigate, manage, and execute work strictly within predefined project phases — ensuring consistent state management, quality enforcement, and repository orchestration.
 
 ---
@@ -83,6 +86,7 @@ Configuration lives in `.pgmcp/config/` (per-project, not in this repo):
 
 Depending on your use case, choose one of the following guides to get started:
 
+- 🔄 **[Workspace Upgrade Guide (v1.x → v2.0.0)](docs/setup/workspace-upgrade.md)**: Step-by-step instructions for upgrading existing `.pgmcp/` workspace directories to server v2.0.0 using `pgmcp --upgrade` (offline wheel, local editable, or PyPI).
 - 🚀 **[Manual Setup Guide](docs/setup/README.md)**: Detailed step-by-step instructions for manual installation and configuration in your IDE (VS Code or Google Antigravity).
 - 🤖 **[Agentic Bootstrap Guide](docs/setup/agentic-bootstrap.md)**: A step-by-step automated guide to help AI agents bootstrap `pgmcp` in a new workspace or integrate it into an existing repository without manual terminal commands.
 
@@ -107,7 +111,7 @@ python -m mcp_server.core.proxy
 ### CLI Commands (`pgmcp`)
 
 - **`pgmcp --init`**: Initialize `.pgmcp/` workspace configuration and template assets in a new repository.
-- **`pgmcp --upgrade`**: Upgrade existing `.pgmcp/` workspace configuration to match server release v2.0.0 (creates fail-safe timestamped backup, updates templates, preserves user custom YAML configs, and retains dynamic runtime state).
+- **`pgmcp --upgrade`**: Upgrade existing `.pgmcp/` workspace configuration to match server release v2.0.0 (creates fail-safe timestamped backup, updates templates, preserves user custom YAML configs, and retains dynamic runtime state). See the **[Workspace Upgrade Guide](docs/setup/workspace-upgrade.md)** for detailed instructions.
 
 For MCP client configuration, see [docs/setup/mcp.json](docs/setup/mcp.json) for a reference server definition.
 
