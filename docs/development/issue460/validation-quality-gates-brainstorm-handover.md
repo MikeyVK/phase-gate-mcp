@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-25T20:10Z updated=2026-08-25 -->
 # Issue #460 Validation and Quality-Gates Brainstorm Hand-over
 
-**Status:** HISTORICAL — RESOLVED TRANSFER RECORD  
-**Version:** 1.1  
-**Last Updated:** 2026-08-26  
+**Status:** HISTORICAL — SUPERSEDED IN PART BY F-20  
+**Version:** 1.2  
+**Last Updated:** 2026-09-04  
 **Retention:** Preserved as historical reasoning context; superseded for current decisions by the authoritative Research set.
 
 ---
@@ -13,12 +13,14 @@
 
 This document preserves the historical reasoning context of the cross-machine issue #460 validation brainstorm. Its transfer purpose is complete, and its durable decisions have been reconciled into the authoritative Research set.
 
+**F-20 supersession:** the 2026-09-04 Research amendment retains the shared side-effect-free check authority discovered here but supersedes this record wherever it preserves `run_quality_gates`, quality-gate-owned autofix, provider-centric terminology, or behavioral tests outside the shared adapter-package/process infrastructure. The canonical current vocabulary is separate `check`, `test`, and `fix` contracts with `run_checks`, framework-neutral `run_tests`, and `apply_fixes`. See [F-20](research-findings.md#f-20--executable-tooling-is-split-into-language-bound-check-test-and-fix-paths).
+
 It is deliberately more expansive than the canonical Research artifact. It records observations, hypotheses, rejected readings, rationale, and questions as they existed at transfer time. It is **not** a current decision authority and does not override:
 
 - [Research](research.md), which owns approved strategy and expected results;
 - [Research Findings](research-findings.md), which owns durable evidence and rationale;
 - [Template Suite Work Catalog](template-suite-catalog.md), which owns per-component dispositions;
-- [Independent QA Audit](research-to-design-qa-audit.md), which owns the current NOGO and remediation findings.
+- [Independent QA Audit](research-to-design-qa-audit.md), which preserves the superseded point-in-time NOGO and completed remediation findings; it is not a current gate.
 
 Where this note and those documents differ, the authoritative document for that subject wins.
 
@@ -247,7 +249,7 @@ The exact bootstrap or dual-run strategy belongs to Design and Planning, but the
 - Artifact output profiles and quality gate sets are separate selectors over that authority.
 - Scaffolding and safe edit validate complete proposed content before mutation.
 - Pre-mutation validation does not inherit quality baseline, logging, presentation, scope lifecycle, or autofix behavior.
-- `run_quality_gates` remains a distinct public operation and may add those quality-specific responsibilities.
+- Historical F-19 selection: `run_quality_gates` was expected to remain distinct. **Superseded by F-20:** `run_checks` owns explicit check execution while fix behavior moves to the separate `apply_fixes` contract.
 - Passed, failed, unavailable, and not executed are distinct factual outcomes.
 - Strictness changes persistence policy only.
 - Input-schema, startup-graph, workflow-gate, and behavioral-test validation remain separate responsibilities.
@@ -294,7 +296,7 @@ The first two transfer questions below are resolved by retaining F-19 in issue 4
 
 The following prompt was valid only while the cross-machine transfer was unresolved. It must not be used as current workflow direction:
 
-> Resume issue #460 from `validation-quality-gates-brainstorm-handover.md`. Treat `research.md` as decision authority and `research-to-design-qa-audit.md` as the current independent QA verdict. Do not repeat the bottom-up validation brainstorm. Start with the QA-460-02 human scope decision: retain the agreed shared output-validation/quality-gate capability boundary as an explicit issue-460 Design package, or defer it with a minimal non-duplicating contract. Preserve the terminology correction that quality qualifies the gates and workspace is only an execution scope.
+> Historical transfer prompt — superseded: resume issue #460 from this hand-over, treat `research.md` as decision authority, and treat `research-to-design-qa-audit.md` only as the superseded point-in-time verdict. The QA-460-02 scope decision was resolved by retaining the shared output-validation/quality-gate boundary inside issue 460. Do not repeat the bottom-up brainstorm. Preserve the terminology correction that quality qualifies the gates and workspace is only an execution scope.
 
 ## Related Documentation
 
@@ -314,5 +316,6 @@ The transfer has been reconciled. The user explicitly chose to retain this file 
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.2 | 2026-09-04 | `@imp researcher` | Mark the historical F-19 brainstorm as superseded where F-20 replaces quality-gate/autofix/provider vocabulary and includes tests/fixes in one adapter-suite infrastructure with separate role contracts. |
 | 1.1 | 2026-08-26 | `@imp researcher` | Mark the transfer as a resolved historical record and link its selected scope outcome to authoritative F-19 without rewriting the original reasoning context. |
 | 1.0 | 2026-08-25 | `@imp researcher` | Capture the complete cross-machine validation and quality-gate brainstorm, agreed boundary, terminology correction, QA scope decision, and open Design questions. |

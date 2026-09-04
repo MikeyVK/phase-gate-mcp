@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-27T09:08Z updated=2026-08-27 -->
 # Issue 460 Pre-Implementation Documentation Contract
 
-**Status:** DEFINITIVE  
-**Version:** 1.5  
-**Last Updated:** 2026-08-30
+**Status:** DEFINITIVE — RESEARCH REOPENED; F-20 QA REQUIRED; DESIGN PAUSED  
+**Version:** 1.9  
+**Last Updated:** 2026-09-04
 
 ---
 
@@ -60,13 +60,9 @@ source of truth.
 
 ## Research Documentation Structure
 
-Research closed definitively on 2026-08-30 after the user reported that the independent
-QA authority approved the third narrowly bounded F-10/F-11 ownership correction. The
-approved two-fingerprint direction and compact persisted artifact provenance remain
-unchanged; only the overbroad PGMCP promise for historical retention and lookup is
-removed. The unconditional Design GO dated 2026-08-29 remains historical evidence for
-the superseded first-amendment interpretation. The targeted 2026-08-30 confirmation
-supersedes the later pending gate and authorizes Design to continue.
+Research was reopened on 2026-09-04 by explicit human direction. Design investigation established that the approved F-19 validation/check boundary would still leave behavioral testing and fixing in separate Python-oriented extension architectures. F-20 therefore adds one language-agnostic adapter extension suite with separate versioned check/test/fix role contracts, clean-break PGMCP 3.0 tool/configuration vocabulary, bounded fix application, adapter ownership/trust/version/fingerprinting, and independent conformance evidence.
+
+This is an active Research amendment, not Design authority. The existing Design package documents remain preserved but paused. Independent QA must review F-20 before Research can close or Design can resume. All earlier QA verdicts remain historical and scope-bound.
 
 | Document | Authority and Responsibility |
 |---|---|
@@ -77,7 +73,7 @@ supersedes the later pending gate and authorizes Design to continue.
 | [probe-evidence.yaml](probe-evidence.yaml) | Reproducible structured probe observations; evidence rather than policy |
 | [deferred-work.md](deferred-work.md) | Explicit exclusions and post-issue work that Design must not absorb |
 | [design-intake-map.md](design-intake-map.md) | Authoritative routing from findings, strategies, invariants, expected results, consumers, and removals into DI-01–DI-08, XC-01–XC-02, and RC-01 |
-| [research-to-design-qa-audit.md](research-to-design-qa-audit.md) | Independent point-in-time Research review history; the user separately reported targeted independent QA approval of the third ownership correction on 2026-08-30, so no Research gate remains pending |
+| [research-to-design-qa-audit.md](research-to-design-qa-audit.md) | Independent point-in-time Research review history; F-20 is explicitly outside prior verdict scope and awaits a new independent review |
 | [validation-quality-gates-brainstorm-handover.md](validation-quality-gates-brainstorm-handover.md) | Historical exploratory input for the validation/quality boundary; not a current gate or Design authority |
 
 Research documents retain detailed ledgers. Design documents reference their stable IDs
@@ -94,7 +90,7 @@ corresponding workshop has produced a stable decision nucleus.
 | `design.md` | Thin Design hub: rationale, package register, dependency and decision indexes, whole-set coverage, integration risks, and Design hand-over | Planned |
 | `design-shared-contracts.md` | Exact interfaces, DTOs, configuration shapes, status vocabularies, and interaction rules genuinely shared by multiple package documents | Planned |
 | `design-suite-resolution.md` | DI-01 suite contract metamodel and public schema exposure; DI-02 resolved graph, runtime selection, introspection, and provenance | Planned |
-| `design-mutation-validation.md` | DI-04 scaffold/safe-edit mutation orchestration and persistence; DI-05 factual output-validation capabilities and quality orchestration | Planned |
+| `design-mutation-validation.md` | Current approved owner for DI-04 scaffold/safe-edit mutation and DI-05 factual output validation; paused. F-20 makes a separate DI-05 document a serious topology candidate, but ownership may change only after independent QA and explicit human agreement | Existing draft; paused |
 | `design-document-tracking-artifacts.md` | DI-03 contracts and renderer semantics for documentation, issue, PR, commit, planning, validation-report, and related tracking artifacts | Planned |
 | `design-code-test-artifacts.md` | DI-03 contracts and renderer semantics for production-code and public unit/integration-test artifact families | Planned |
 | `design-distribution.md` | DI-06 package distribution, renewal, customization, adoption, and owner-deployment migration | Planned |
@@ -174,8 +170,8 @@ The planned `design.md` remains deliberately thin. It owns:
   `Integrated`;
 - the dependency order and cross-document integration decisions;
 - a decision index that points to the exact owning document and section;
-- consolidated coverage accounting for all 21 findings, 43 Approved Strategy rows,
-  16 invariants, 20 expected results, DI-01–DI-08, XC-01–XC-02, and RC-01;
+- consolidated coverage accounting for all 22 findings, 44 Approved Strategy rows,
+  19 invariants, 23 expected results, DI-01–DI-08, XC-01–XC-02, and RC-01;
 - unresolved conflicts, integration risks, and the final Design hand-over.
 
 It does not own copied component designs, repeated inventories, implementation cycles,
@@ -222,8 +218,8 @@ The default order follows dependency pressure rather than filename order:
 1. Design hub skeleton and shared contract vocabulary.
 2. DI-01/DI-02 suite contract and resolved-graph design.
 3. DI-03 concrete artifact contracts, split across its two documents.
-4. DI-05 factual validation contract, then DI-04 mutation policy around those facts.
-5. DI-08 shared test architecture and XC-02 assurance.
+4. After independent F-20 QA: DI-05 adapter package/catalog/process contract, then its separate check, test, and fix role contracts and public operations.
+5. Reconcile DI-04 mutation policy around DI-05 factual check evidence, then DI-08 shared test architecture and XC-02 assurance.
 6. DI-06 distribution and migration.
 7. DI-07 workflow/documentation alignment after public decisions stabilize.
 8. Cross-package integration and final Design hand-over.
@@ -274,6 +270,10 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.9 | 2026-09-04 | `@imp researcher` | Reopen Research for F-20, pause Design pending independent QA, flag the enlarged DI-05 document topology for explicit post-QA human agreement, and update coverage to 22 findings, 44 strategies, 19 invariants, and 23 expected results. |
+| 1.8 | 2026-09-03 | `@imp researcher` | Record explicit human Design authorization, close Research, and preserve the distinction from an independent QA re-review verdict. |
+| 1.7 | 2026-09-03 | `@imp researcher` | Index the targeted QA checkpoint-bootstrap NOGO, human-approved remediation, I-18/E-22 coverage, and pending independent re-review. |
+| 1.6 | 2026-09-03 | `@imp researcher` | Index the reopened F-10/S-10 component-renewal amendment, revised coverage totals, superseded deferral, and pending independent QA review. |
 | 1.5 | 2026-08-30 | `@imp researcher` | Record the user-reported targeted independent QA approval, close the Research gate, and index the unconditional Design GO. |
 | 1.4 | 2026-08-30 | `@imp researcher` | Index the third F-10/F-11 ownership correction, record that the QA finding is addressed, and retain targeted independent confirmation as the active gate. |
 | 1.3 | 2026-08-30 | `@imp researcher` | Reflect the second F-10/F-11 Research reopening and mark the prior QA GO as point-in-time evidence pending fresh review. |

@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** DEFINITIVE EVIDENCE — THIRD F-10/F-11 OWNERSHIP CORRECTION INDEPENDENTLY CONFIRMED  
-**Version:** 1.10  
-**Last Updated:** 2026-08-30  
+**Status:** DEFINITIVE EVIDENCE — F-20 AMENDMENT AWAITS INDEPENDENT QA  
+**Version:** 1.15  
+**Last Updated:** 2026-09-04  
 **Issue:** 460
 
 ## Purpose
@@ -13,7 +13,9 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 
 ## Authority
 
-This document is an evidence companion, not a decision authority. Research closed definitively on 2026-08-30 after the user reported that the independent QA authority approved the third narrowly bounded F-10/F-11 ownership correction. The unconditional QA GO dated 2026-08-29 remains historical evidence for the first amendment. The targeted 2026-08-30 confirmation closes the later Research reservation without changing this document's supporting rationale.
+This document is an evidence companion, not a decision authority. Research was reopened on 2026-09-04 by explicit human direction after Design investigation exposed the wider executable-tooling boundary recorded in F-20. F-20 supersedes only those F-19 clauses that preserve `run_quality_gates`, attach fixing to quality-gate orchestration, or place behavioral tests outside the shared extension architecture. F-19 remains the authority for side-effect-free check facts shared by output-profile validation and explicit check execution. Check, test, and fix remain separate contracts and consumers despite sharing adapter packaging, discovery, trust, and process infrastructure.
+
+Earlier QA decisions remain historical evidence only for the boundaries they reviewed. They do not approve F-20. F-11 provenance, template-suite fingerprints, artifact metadata, renewal, and unrelated findings remain unchanged.
 
 - [Research](research.md) owns the current decision status, Approved Strategy, expected results, open work, and Research gate.
 - [Template Suite Work Catalog](template-suite-catalog.md) owns inventory and per-component dispositions.
@@ -21,7 +23,7 @@ This document is an evidence companion, not a decision authority. Research close
 - [Deferred Work](deferred-work.md) owns all follow-up work outside issue 460.
 - [Design Intake Map](design-intake-map.md) owns the primary Design destination of every Research obligation without changing its evidence or decision.
 
-Any decision wording retained below is historical rationale only. If it differs from `research.md`, the primary Research artifact governs. The Generic Python class and Python/pytest integration-test responsibilities are approved in `research.md`; any older proposal wording below is retained only as supporting rationale.
+Any decision wording retained below is historical rationale only. If it differs from `research.md`, the primary Research artifact governs. The Generic Python class and Python/pytest integration-test responsibilities remain approved; the Pytest framework remains a supported first-party adapter rather than the generic test-tool contract.
 
 ---
 
@@ -66,7 +68,9 @@ The following were inspected to explain contract divergence:
 - runtime selection and context preparation;
 - template analysis and provenance logic;
 - packaged-asset and workspace-renewal behavior;
-- human reference documentation and examples.
+- human reference documentation and examples;
+- the public and internal `run_quality_gates`, `run_tests`, and `auto_fix` inputs, tools, DTOs, configuration, orchestration, interfaces, state, parsing, presentation, bootstrap composition, tests, and active documentation;
+- prior issue-402 Research as historical evidence for the narrower auto-fix design, without treating it as current strategy authority.
 
 Configuration files are not treated as the caller contract. A change that makes a YAML definition internally consistent but leaves scaffold_schema incomplete would not solve this issue.
 
@@ -86,7 +90,7 @@ Render probes were used as diagnostic observations of content behavior, not as t
 
 The durable evidence authorities for the reopened audit are:
 
-- [Template Suite Work Catalog](template-suite-catalog.md) — complete inventory of all 22 public artifacts, all 79 suite files, example surfaces, 102 active runtime/setup and synchronization consumers, and 105 candidate test/helper files.
+- [Template Suite Work Catalog](template-suite-catalog.md) — complete inventory of all 22 public artifacts, all 79 suite files, example surfaces, 117 active runtime/setup/documentation consumers, and 143 candidate test/helper files.
 - [Probe Evidence](probe-evidence.yaml) — exact minimal and property-complete contexts plus normalized schema, render, output-validation, and error outcomes for all 44 calls.
 
 Cached MCP resources and ignored files below `.pgmcp/temp/issue460/` are supplementary diagnostics only. Research claims must remain reproducible from the committed evidence and live public tools without relying on a machine-local temporary path.
@@ -413,7 +417,7 @@ Five systemic test-architecture findings explain the breadth:
 4. **Prose and historical-state snapshots.** Document-section wording, version histories, scaffold headers, mutable TemplateRegistry entries, and best-effort hashes are treated as contracts even though Research explicitly retires or permits those representations to evolve.
 5. **Duplicated integration proof.** Acceptance, E2E, smoke, concrete-template, document-template, and tool-error suites repeatedly exercise the same narrow Design/DTO examples through different fixture graphs, increasing runtime and maintenance without complete catalog coverage.
 
-The replacement evidence must close the material gaps these suites currently obscure: one complete resolved-catalog acceptance path; standard JSON Schema composition and nested validation; Jinja dependency/import resolution including missing edges and cycles; one caller-context/envelope boundary; declared output-profile pass/fail/unavailable behavior; strict pre-persistence enforcement; public error/schema recovery; and clean-install plus managed-baseline/staged-candidate upgrade decisions. Artifact-specific syntax or semantic cases remain explicit where the artifact contract genuinely differs, but they are not a second inventory of the installed suite.
+The replacement evidence must close the material gaps these suites currently obscure: one complete resolved-catalog acceptance path; standard JSON Schema composition and nested validation; Jinja dependency/import resolution including missing edges and cycles; one caller-context/envelope boundary; declared output-profile pass/fail/unavailable behavior; strict pre-persistence enforcement; public error/schema recovery; and clean-install plus component-wise adopted/actual/candidate renewal with complete-suite validation and activation. Artifact-specific syntax or semantic cases remain explicit where the artifact contract genuinely differs, but they are not a second inventory of the installed suite.
 
 #### Mandatory phase-instruction alignment for issue 460
 
@@ -461,7 +465,7 @@ The Design acceptance test for this boundary is therefore semantic, not textual:
 
 #### Recorded code-artifact responsibilities
 
-- **Interface — Retain/adapt.** Preserve the Python `Protocol` contract under the language-qualified identity required by F-17. Public methods are explicitly caller-owned through an introspectable method contract; the scaffold tool envelope owns the rendered class name. Omitted methods must not fabricate an `execute()` contract. Design decides whether an empty marker protocol is valid or at least one method is required. Remove hard-coded Backend/layer assumptions. Test creation remains workflow/plan/risk-owned; the currently unconsumed `generate_test` flag receives a suite-wide disposition during the engine/config audit rather than becoming automatic behavior.
+- **Interface — Retain/adapt.** Preserve the Python `Protocol` contract under the language-qualified identity required by F-17. The rendered protocol symbol and public methods are explicitly caller-owned through one introspectable artifact-content contract; no operation-envelope value supplies either. Omitted methods must not fabricate an `execute()` contract. Design decides whether an empty marker protocol is valid or at least one method is required. Remove hard-coded Backend/layer assumptions. Test creation remains workflow/plan/risk-owned; the currently unconsumed `generate_test` flag receives a suite-wide disposition during the engine/config audit rather than becoming automatic behavior.
 - **Adapter — Retain/adapt.** Preserve a portable Python boundary adapter under a language-qualified identity. Its local contract relationship, dependencies/imports, translation and failure behavior, and concrete methods must be caller-owned and introspectable. Do not fabricate `adapt()`, hard-code Backend layers, force unused logging, or let the artifact type create tests. Common signature definitions may be composed with Interface without collapsing abstract and concrete method semantics. S1mpleTrader-specific logging/Translator boilerplate is deferred preserved specialization, not package behavior.
 
 #### Approved Python/pytest integration-test responsibility (2026-08-24)
@@ -607,7 +611,7 @@ Direct production blast radius includes the [DTO config](../../../.pgmcp/templat
 
 **Recorded responsibility summary:** retain and adapt one portable, language-qualified Python/Pydantic DTO artifact as an immutable, behavior-free data-transfer contract.
 
-- One caller-owned semantic identity may resolve to different class-symbol, file-name, and presentation forms. The scaffold envelope remains the identity boundary, but its raw `name` must not be copied blindly into every representation. Artifact/language naming policy must derive or validate each form explicitly; `dto_name` does not remain a competing caller-owned identity.
+- The rendered DTO class symbol is an explicit caller-owned artifact-content field and the exact file name is a separate operation-control value. Neither is inferred, copied, case-converted, prefixed, or suffixed from the other. `dto_name` does not remain as a competing alias when the final DI-03 schema selects its single semantic symbol field.
 - A required artifact description, required descriptions for every supplied field, a valid Python module docstring, a concise class docstring, and Pydantic field descriptions form the portable self-documentation baseline. Documentation-generator dialects, extended Google/NumPy/Sphinx sections, project architecture headers, and domain-specific documentation policy remain workspace specialization.
 - The artifact is `frozen=True` with `extra="forbid"`. Declarative field constraints and defaults that describe the data contract are legitimate; free validator bodies, arbitrary methods, lifecycle behavior, typed-ID factories, project imports, and automatic test generation are not package behavior.
 - A schema-valid context with no fields produces a valid empty Pydantic skeleton class. It requires no example and emits no empty examples metadata. This supports workspace skeleton scaffolding before implementation details are known.
@@ -637,7 +641,7 @@ Several outcomes are already constrained by approved cross-cutting strategies:
 - Under F-10 and F-16/F-18, a workspace-owned custom template is installed as an explicit active-suite artifact with its own discoverable ID, purpose, and contract. It is not tunneled through a generic artifact call.
 - Under Fail-Fast and the one-contract invariant, a missing specialized template fails instead of silently producing a different generic artifact.
 - Under F-14, the portable package type cannot force project layers, responsibilities, or logging. Logging remains an available shared pattern for artifact types whose own contract selects it; it is not a generic-class default.
-- Under F-17, any retained type receives a language-qualified identity. The scaffold-envelope naming and representation warning approved for DTO applies equally to a Python class symbol and file target.
+- Under F-17, any retained type receives a language-qualified identity. The DTO caller-input correction applies equally: a Python class symbol belongs to explicit artifact context, while the exact file target remains a separate operation concern.
 
 **Recorded responsibility summary:** retain and adapt a bounded, language-qualified plain Python class skeleton for concrete classes that do not match a more specialized artifact contract.
 
@@ -709,8 +713,8 @@ Design must determine how the chosen JSON Schema validator preserves omitted key
 
 Scaffolding has two legitimate input-validation boundaries:
 
-1. The static MCP tool envelope validates artifact_type, name, output_path, and the fact that context is an object.
-2. After artifact_type resolves the contract, dynamic artifact-context validation checks the caller-owned context against that suite-owned schema.
+1. The static MCP tool envelope validates `artifact_type`, exact `file_name`, optional directory-valued `target_path`, `force_target`, and the fact that `context` is an object.
+2. After `artifact_type` resolves the contract, dynamic artifact-context validation checks the caller-owned content unchanged against that suite-owned schema.
 
 These boundaries serve different purposes and must remain separate. The outer tool schema cannot contain every artifact-specific field; the selected artifact schema is the authority for those fields.
 
@@ -725,21 +729,21 @@ The current implementation mixes caller-owned artifact context with tool- and se
 
 The first-time-right contract requires error visibility. Silent loss is not supported compatibility behavior and is more damaging than an actionable validation failure.
 
-#### Historical Decision Rationale (2026-08-23)
+#### Superseded Historical Decision Rationale and Current Correction
 
 - Preserve the two-stage validation model: the static tool envelope remains generic, and the resolved artifact schema validates artifact-specific context.
-- Validate the original caller-owned context without pre-filtering or silent key removal.
+- Validate the original caller-owned context without pre-filtering, silent key removal, or pre-render formatting.
 - Closed schema objects reject undeclared properties with actionable path context. Deliberately open maps remain possible only when the suite-owned schema explicitly defines that openness.
-- Keep validated tool-envelope values such as name and output_path, and server-owned provenance or timestamp values, outside caller-owned artifact context during artifact validation.
-- Add those values only after artifact-context validation through an explicit render-context boundary.
-- Treat ownership semantically rather than lexically: a content field is not redundant merely because it is also called `name` or `title` elsewhere.
-- A renderer may derive a symbol, file stem, display form, or other name representation from envelope identity only through a deterministic artifact/language naming profile, such as case conversion, normalization, or a declared artifact-specific prefix/suffix.
-- If the required value needs business interpretation, combines independently meaningful inputs, loses caller intent, or cannot be validated as one deterministic representation, expose it as an explicit suite-owned artifact-content field. Do not force inference merely to avoid similarly named values.
-- Do not introduce a compatibility bridge for silently ignored keys; silent acceptance was not a reliable contract.
+- Keep caller-authored operation controls—package selection, exact file name, target selection, and an explicit target-policy override—outside caller-owned artifact context. They control the operation and never become template content.
+- Compose server-authored provenance only after artifact-context validation and expose it only to the declared artifact-metadata consumer.
+- Treat ownership semantically rather than lexically: a content field is not redundant merely because an independent operation value also names a file or target.
+- Every caller-authored value consumed by a renderer, including a class symbol, document title, subject, or label, is declared by the selected artifact schema, validated in its required representation, and rendered as supplied.
+- The 2026-08-24 allowance for deriving symbol, file-stem, display, prefix, suffix, or case representations from an envelope `name` is explicitly superseded by human decision on 2026-09-03. Determinism did not make that cross-boundary propagation discoverable through `scaffold_schema`.
+- Do not introduce a compatibility bridge for silently ignored keys or the removed generic `name`; silent acceptance was not a reliable contract.
 
 #### Design hand-off
 
-Design must define the typed boundary and deterministic merge rules between caller-owned artifact context, validated tool-envelope input, and server-owned render metadata. It must specify collision handling, which values are visible to templates, and the finite naming profiles that may derive artifact/language representations from envelope identity. Each artifact schema audit must distinguish a pure representation from a semantically independent name or title; the latter remains explicit context. The exact classes and pipeline arrangement belong to Design; template-specific field names and composition rules must not leak into generic pgmcp code.
+Design must define three typed, collision-free inputs: validated caller-owned artifact content, validated operation controls, and server-owned provenance. Templates may receive caller content and the narrowly declared provenance metadata namespace; they never receive operation controls. DI-03 must give every rendered caller name a semantic artifact-local field, while DI-04 owns exact file-name and target controls without transforming either into content. The exact classes and pipeline arrangement belong to Design; template-specific field names and composition rules must not leak into generic pgmcp code.
 
 ### F-04 — DTO introspection and DTO runtime selection are split
 
@@ -857,8 +861,9 @@ The current artifact schemas mix body or file content with values belonging to t
 
 The artifact context exposed by scaffold_schema contains only caller-owned values intentionally rendered as artifact content. It is not a transport for a later tool's envelope.
 
-- The scaffold tool envelope validates values such as name and output_path separately. A resolved renderer may receive them only after artifact-context validation where they have a legitimate render use. Name representations may be derived only through an explicit deterministic naming profile; semantically independent titles, subjects, labels, or symbols remain artifact content.
-- Server-owned artifact type, timestamps, version identity, and provenance are injected separately.
+- The scaffold tool envelope validates operation controls such as artifact selection, exact file name, target selection, and an explicit target-policy override. A resolved renderer never receives these values and cannot use them as hidden content sources.
+- Every caller-authored rendered value—including symbols, titles, subjects, and body labels—is declared by the selected artifact context schema and rendered as supplied after validation.
+- Server-owned package identity, version identity, and provenance are injected separately only for the agreed artifact-metadata consumer; generic lifecycle timestamps remain outside the approved target.
 - Downstream GitHub title, labels, milestone, assignees, branch, base, draft, and similar operation inputs remain governed by their own tool schemas and do not travel through an issue or PR body context.
 - If a concept genuinely belongs in the body, its concrete template defines a content field and renders an explicit section. It does not reuse an identically named downstream API field as implicit metadata.
 - Template routing is declarative artifact configuration, not a hidden context key or Python dispatch table.
@@ -871,7 +876,7 @@ The artifact context exposed by scaffold_schema contains only caller-owned value
 | PR tracking_state | Remove; deferred_work remains the rendered contract |
 | Architecture constraints | Retain as content and render explicitly |
 | Reference purpose | Expose as caller content |
-| TypeScript DTO layer, dependencies, responsibilities | Expose as inherited caller content; keep name in the tool envelope |
+| TypeScript DTO layer, dependencies, responsibilities, and rendered class symbol | Expose every retained rendered value as explicit artifact context; keep only exact file name and target controls in the operation envelope |
 | Service service_type override | Remove hidden routing and nonexistent variants; use the declaratively registered renderer |
 | Research references and related_docs | Preserve both distinct content concepts and render both without fallback shadowing |
 | Issue/PR title | Remove from body context; downstream tool envelope owns the external title |
@@ -888,7 +893,7 @@ No compatibility bridge is required because the agent is the only relevant runti
 
 #### Startup coherence
 
-The F-05 startup resolver compares suite-owned context properties with variables read across the resolved Jinja graph and with explicitly available scaffold-envelope or server metadata. A caller-content property that is not rendered, or a renderer content variable with no valid source, fails startup. Downstream tool arguments are not valid sources for artifact rendering.
+The F-05 startup resolver compares suite-owned context properties with caller-content variables read across the resolved Jinja graph and treats the separately declared provenance namespace as the only permitted server render source. An exposed caller-content property that is not rendered, a renderer content variable with no schema source, or any renderer dependency on an operation-control field fails startup. Downstream tool arguments are not valid sources for artifact rendering.
 
 #### Design hand-off
 
@@ -1028,83 +1033,161 @@ Design must identify the active references that currently duplicate exact contra
 
 ### F-10 — renewal can split paired assets
 
-Release packaging copies both templates and their contract configuration as assets. Workspace renewal treats configuration paths as preserve-worthy while renewing template files.
+Release packaging copies both templates and their contract configuration as assets. Workspace renewal currently treats configuration paths as preserve-worthy while renewing template files.
 
-Because template contract files live below a path containing config, renewal can preserve an older contract while installing newer Jinja content. This defeats atomic versioning of the independently maintained suite.
+Because template contract files live below a path containing config, renewal can preserve an older contract while installing newer Jinja content. The current heuristic can therefore create a schema/renderer combination that existed in neither the previous active suite nor the packaged candidate.
 
-The current heuristic preserves any existing YAML file whose path contains config and renews other assets. It does not compare versions or ownership. A release that changes both templates/config/adapter.yaml and concrete/adapter.py.jinja2 can therefore leave the old contract beside the new renderer, reproducing the F-01 mismatch in an upgraded workspace even though the packaged release itself is coherent.
+#### Reopened decision boundary — 2026-09-03
 
-#### Ownership model
+The earlier complete-suite-only renewal strategy is superseded. Preserving every actual component whenever any customization exists avoids overwrite, but unnecessarily blocks independent upstream changes. Replacing the whole actual root when only some components are unchanged destroys external ownership. File-by-file merging is also unsafe because a manifest-owned package and the shared support it consumes are semantic units rather than arbitrary files.
 
-One active template root remains the sole runtime authority and is intentionally user-extensible. A separately staged packaged candidate is a distribution source only; the template engine and catalog never read it implicitly. This distinction permits user modification without requiring package overlays, precedence rules, or semantic merge analysis.
+Renewal now performs component-wise three-way selection over:
 
-The active root is compared with the last officially installed suite baseline, not with the incoming candidate. A content manifest must identify the complete official baseline through stable suite identity and deterministic file-content evidence. Runtime artifact provenance in template_registry.json is usage-dependent and cannot serve as that installation baseline.
+- **adopted** — the single current upstream component checkpoint previously accepted for comparison;
+- **actual** — the component state in the sole active runtime root;
+- **candidate** — the component state supplied by the current non-authoritative candidate suite.
 
-#### Renewal decision model
+The checkpoint is current operational renewal state. It contains one state per component, including an explicit absent state, with no history and no per-file versions. It is not a provenance registry, source archive, compatibility matrix, artifact-lifecycle record, or second runtime root.
 
-| Active target state | Required renewal behavior |
-|---|---|
-| Missing on clean initialization | Install the packaged suite atomically and record it as the official baseline |
-| Byte-equivalent to the recorded baseline; packaged suite unchanged | Do nothing |
-| Byte-equivalent to the recorded baseline; packaged suite changed | Atomically fast-forward the complete active suite and record the new baseline |
-| Added, removed, or modified relative to the baseline | Preserve the complete active suite and stage the complete packaged candidate separately |
-| Legacy workspace without trustworthy baseline evidence | Preserve the active suite and stage the candidate; never infer that it is safe to overwrite |
-| Active suite made byte-equivalent to the candidate by the user | Recognize deliberate adoption and record that official baseline |
-| Explicit external template root | Treat as user-owned and never overwrite automatically |
+#### Bootstrap when no component checkpoint exists
 
-A server release that does not change the packaged suite causes no template copy or resolution work. A customized user only resolves a candidate when choosing to adopt upstream template changes.
+The three-way classifier may run only after an adopted component state has been established without guessing away local ownership. `adopted = actual` is not a safe default: if actual contains unrecognized local changes, that assumption would make the next candidate difference look upstream-only and permit overwrite. `adopted = candidate` is likewise not an automatic default because it classifies every actual difference as local and can suppress the current upstream renewal. Bootstrap is therefore an explicit migration boundary.
+
+| Workspace condition | Initial adopted source | Permitted automatic behavior | Guaranteed content behavior |
+|---|---|---|---|
+| Fresh managed install with no active suite | Fully validated candidate | Install the complete candidate and persist its component states as the checkpoint in the same authoritative operation | Candidate becomes the first actual suite; no pre-existing content exists to preserve |
+| Existing managed workspace; a trustworthy persisted fingerprint of the previously installed or accepted official suite exactly matches the computed actual suite | Proven-equal actual suite | Derive adopted component states from actual and continue normal three-way renewal | Equality evidence proves that treating actual as adopted does not hide local divergence |
+| Existing managed workspace; computed actual exactly equals the fully validated candidate | Proven-equal candidate/actual suite | Establish the candidate component states as checkpoint without changing content | Actual bytes remain unchanged |
+| Existing managed workspace; owner supplies a trusted complete prior suite | Owner-supplied validated prior suite | Derive adopted component states from that suite and continue normal three-way renewal | Actual remains the independently compared local state |
+| Existing managed workspace; no reliable source above is available | None | Stage the candidate non-authoritatively and return actionable `checkpoint_required`; do not classify, compose, or activate | Every actual byte and the active-root authority remain unchanged |
+| Existing external workspace without a checkpoint | None until explicit owner action | Never infer a baseline or activate content automatically; stage only when requested | External actual content and activation authority remain owner-controlled |
+
+A trustworthy fingerprint is used only as equality evidence for a suite already present at the upgrade boundary. It does not change the approved fingerprint meaning, require historical lookup, or prove semantic compatibility. If its referenced source is absent, mismatched, or untrusted, the automatic path is unavailable rather than guessed.
+
+A checkpoint-blocked owner has exactly two non-destructive ways to establish adopted state:
+
+1. supply a trusted complete prior suite, which is validated and decomposed into the approved components;
+2. explicitly acknowledge the fully validated candidate as the upstream comparison basis.
+
+Candidate acknowledgement is checkpoint-only reconciliation: it leaves the complete actual root byte-for-byte unchanged, does not activate candidate content, and intentionally causes actual/candidate differences to remain visible as local state on the next comparison. This safety-first consequence is an explicit owner choice, not an inferred compatibility decision.
+
+Fresh installation must make its installed tree and checkpoint authoritative together. A managed renewal that bootstraps from a supplied or proven baseline must not make a changed result tree authoritative unless the resulting checkpoint and complete-tree activation succeed together. A checkpoint-only bootstrap or acknowledgement changes only checkpoint authority after the referenced suite has been validated; failure leaves both prior content and prior checkpoint state unchanged. External bootstrap occurs only through the same explicit owner choices and never grants PGMCP authority over the external root.
+
+No historical baseline is required to be retained or discovered. Its absence causes the bounded `checkpoint_required` result; it does not create a history store, lookup service, reconstruction promise, or permission to infer adopted state.
+
+#### Indivisible comparison components
+
+Exactly two component forms exist for renewal comparison:
+
+1. the complete shared/ tree as one indivisible component;
+2. each concrete manifest ID and all suite content owned by that manifest as one indivisible component.
+
+A component is selected or preserved whole. Renewal never merges individual files, never takes only a manifest or only its renderer, and never divides shared/ into paths. Additions and removals are modeled by the same component comparison through the explicit absent state.
+
+The existing resolved-package and source-suite fingerprints retain their approved meanings and encodings. Artifact metadata remains unchanged. The component checkpoint is a separate operational renewal input and must not be inserted into generated artifacts or repurpose either existing fingerprint.
+
+#### Three-way selection rules
+
+| Adopted versus actual | Adopted versus candidate | Actual versus candidate | Classification | Selected component |
+|---|---|---|---|---|
+| Equal | Equal | Equal | Unchanged | Actual |
+| Equal | Different | Different | Upstream-only change | Candidate |
+| Different | Equal | Different | Local-only change | Actual |
+| Different | Different | Equal | Converged independently | Actual/candidate identical state |
+| Different | Different | Different | Conflict | Actual |
+
+The same rules cover absence:
+
+- candidate-only addition: adopted absent, actual absent, candidate present — select candidate;
+- local-only addition: adopted absent, actual present, candidate absent — retain actual;
+- upstream-only removal: actual equals adopted and candidate is absent — select candidate absence;
+- local-only removal: candidate equals adopted and actual is absent — retain actual absence;
+- different dual additions, local modification versus upstream removal, and local removal versus upstream modification are conflicts — retain actual state or absence.
+
+Only upstream-only and converged candidate changes are taken automatically. Local-only state is preserved. Conflict never causes an overwrite and does not trigger semantic or file-level merge logic.
+
+#### Complete-suite construction and activation
+
+Component selection produces a complete proposed suite outside the active root. The proposal may contain candidate components for non-conflicting upstream changes and actual components for local-only or conflicting changes. It is a component-composed complete tree, not a partially written runtime overlay.
+
+The complete proposal must pass the full resolved-suite validation boundary, including manifest uniqueness, schema/template pairing, graph resolution, dependency direction, required shared contributors, public schema coherence, output-profile coherence, and all other startup-owned suite invariants. No SemVer ordering, inferred compatibility, or compatibility matrix may substitute for this validation.
+
+Validation failure preserves the prior actual root and its checkpoint unchanged. Successful validation permits one recoverable complete-tree activation. Activation changes the sole runtime root as one transaction and must retain enough immediate recovery state to restore the prior complete tree if replacement or restart completion fails. Runtime never resolves the staging tree, candidate tree, checkpoint, or a component overlay.
+
+For a managed root, successful activation advances the checkpoint only for candidate states that were selected or already converged. Conflicting components retain their previous adopted checkpoint until explicit reconciliation. Checkpoint persistence and complete-tree activation succeed together or neither becomes authoritative.
+
+For an external root, PGMCP may compare and stage a complete proposal, but it does not automatically overwrite or activate owner-controlled content. The external owner controls adoption and activation.
+
+#### Explicit reconciliation without content overwrite
+
+After a human or agent resolves a conflict in actual content, reconciliation must be able to acknowledge the current candidate as the new upstream comparison basis without replacing the locally merged actual component.
+
+That operation:
+
+- explicitly advances selected checkpoint entries from their prior adopted state to the corresponding candidate state;
+- leaves every byte of the active actual root unchanged;
+- does not claim that actual equals candidate;
+- does not alter artifact metadata, resolved-package fingerprints, or source-suite fingerprints;
+- creates no checkpoint history, merge record, provenance entry, or per-file version;
+- requires the complete actual suite to remain valid before the new checkpoint becomes authoritative.
+
+A later renewal therefore compares the next candidate against the acknowledged upstream basis while continuing to recognize the locally merged actual component as local state.
 
 #### Boundary and consumer blast radius
 
 | Boundary | F-10 impact |
 |---|---|
-| Release build | Produces one coherent suite candidate plus deterministic suite identity/content evidence |
-| Workspace initialization | Installs the candidate into the default active root and records the baseline |
-| Workspace renewal | Replaces only an unchanged official baseline, otherwise stages without mutating active content |
-| Template settings | Custom or external roots remain user-owned; only the configured active root is authoritative at runtime |
-| Startup catalog | Validates the selected active suite and its supported contract format; it does not combine active and staged content |
-| Upgrade result DTO/presentation | Reports active, baseline, and candidate identity plus bounded added/removed/modified path evidence and an actionable candidate location |
-| State and recovery | Installation-baseline metadata is distinct from usage provenance; existing workspace backup remains emergency recovery rather than the normal customization workflow |
-| Tests | Protect clean install, unchanged fast-forward, customized preservation, legacy preservation, external-root safety, and no mixed-version writes |
-| Documentation | Explains the active/candidate distinction and manual adoption without presenting the staged copy as a second authority |
+| Release build | Supplies one complete valid candidate suite; package SemVer remains authored and is not interpreted as a renewal compatibility signal |
+| Workspace initialization | Fresh managed install validates and atomically establishes the candidate tree plus checkpoint; existing checkpoint-less workspaces use only the approved evidence-gated or owner-explicit bootstrap paths |
+| Workspace renewal | Requires an adopted checkpoint before classification; otherwise preserves actual, stages candidate non-authoritatively, and returns `checkpoint_required`. With a checkpoint, compares adopted/actual/candidate per indivisible component, constructs one complete proposal, validates it fully, and activates it recoverably only on success |
+| Reconciliation | Can advance checkpoint component states to candidate without overwriting locally merged actual content |
+| Template settings | One configured active root remains the sole runtime authority; external roots retain owner-controlled activation |
+| Startup catalog | Validates the complete selected active suite and never composes runtime content from staging or checkpoint state |
+| Candidate staging | Holds complete non-authoritative candidate/proposal content outside the runtime root and may be replaced by a newer candidate |
+| Installation state | Stores one current component checkpoint only, including an explicitly bootstrapped basis; no history, per-file versions, compatibility matrix, source archive, provenance registry, or implicit `adopted = actual` fallback |
+| Artifact provenance | Unchanged: existing artifact metadata and resolved-package/source-suite fingerprints retain their approved semantics |
+| Recovery | Activates and restores complete trees; no partially updated active suite is observable |
+| Documentation and results | Report component classifications, preserved conflicts, selected candidate components, validation outcome, activation outcome, and required reconciliation without claiming semantic compatibility |
 
-#### Historical Preservation Rationale
+#### Explicit exclusions
 
-- Preserve direct user development and extension within the active template root.
-- Preserve automatic upgrades for workspaces that still use the unchanged official baseline.
-- Preserve a complete inspectable packaged candidate for customized workspaces.
-- Do not overwrite, partially merge, or semantically reinterpret user-modified suites.
-- Do not require recovery from backup after ordinary server upgrades.
-- Do not build a package manager, overlay-precedence system, or automatic semantic merge engine.
-- A renewal operation never creates a config/template combination that was absent from both the active suite and packaged candidate.
+F-10 authorizes none of the following:
 
-#### Reconciliation option analysis
+- implicit `adopted = actual` or `adopted = candidate`, or renewal classification before an adopted checkpoint exists;
+- automatic file merge, textual merge, or semantic merge;
+- runtime overlay or more than one authoritative runtime root;
+- partial active-tree writes;
+- SemVer inference, version-order selection, or automatic bump classification;
+- compatibility matrices between shared and manifest components;
+- checkpoint history, per-file versions, source retention, or a provenance registry;
+- changes to generated-artifact metadata or to the approved resolved-package/source-suite fingerprint meanings;
+- automatic overwrite or activation of an external root.
 
-| Option | Cost, risk, consumer impact, and migration consequence |
-|---|---|
-| Overwrite the complete active suite on every package upgrade | Always installs a coherent official suite, but destroys supported workspace customization |
-| Preserve the complete existing suite indefinitely | Protects customization and coherence, but prevents automatic adoption of safe official updates |
-| Distinguish an unchanged official installation from a customized/legacy root and offer the complete candidate separately when replacement is unsafe | Preserves both coherent fast-forward and user ownership; requires Design-owned baseline evidence, comparison, staging, and adoption behavior |
-| Compose packaged and workspace files through overlays or automatic merge | Can reduce duplicated files, but introduces precedence, semantic merge, partial-version, and recovery complexity |
+#### Superseded and retained rationale
 
-Research selects the observable renewal outcomes: no mixed suite, safe complete fast-forward only when official ownership is proven, complete preservation otherwise, and an inspectable non-authoritative candidate. Managed-baseline/candidate mechanics remain a Design hypothesis rather than a prescribed metadata format or staging algorithm.
+Superseded:
 
-#### Historical Decision Rationale (2026-08-23)
+- complete preservation of the actual root whenever any component differs;
+- complete-candidate promotion as the only automatic route for adopting upstream changes;
+- deferral of component-level adoption to a future issue;
+- one complete-suite checkpoint as sufficient renewal comparison state.
 
-- Use a managed-baseline plus staged-candidate model with one active runtime template root.
-- Fast-forward the active suite only when deterministic content comparison proves it is byte-equivalent to the recorded official baseline.
-- If any file was added, removed, or modified, preserve the active suite completely and stage the new packaged suite outside the active root.
-- Keep staged candidates outside documentation paths and make them non-authoritative by construction.
-- Record sufficient per-file content evidence to identify local-only, upstream-only, and overlapping changed paths without attempting automatic merge or semantic compatibility decisions.
-- Treat missing legacy baseline evidence and externally configured template roots conservatively as user-owned.
-- Recognize exact adoption of the staged official candidate without requiring manual baseline editing.
-- Separate suite-version changes from server-version changes so unrelated minor releases do not touch templates.
-- Rely on startup catalog validation for active-suite integrity and supported contract-format compatibility.
-- Reject file-by-file path heuristics, implicit overlays, package-manager behavior, and a compatibility bridge that preserves mixed versions.
+Retained:
+
+- one active runtime root;
+- non-authoritative candidate staging;
+- external ownership and conservative overwrite authority;
+- content-preserving `checkpoint_required` refusal when checkpoint bootstrap lacks trustworthy evidence or explicit owner direction;
+- complete-tree validation before runtime authority changes;
+- recoverable activation;
+- no automatic file merge, SemVer inference, compatibility matrix, or provenance registry;
+- no change to artifact metadata or the existing resolved-package/source-suite fingerprints.
 
 #### Design hand-off
 
-Design must choose the managed baseline metadata format and location, deterministic directory-digest algorithm, non-document staging location, atomic replace/stage procedure, legacy adoption flow, and bounded upgrade reporting. It must define the relationship between suite identity and the supported contract-format version without using template_registry.json as installation authority. It must preserve the single configured runtime root and may not load staged content automatically.
+DI-06 must define the immutable component-state comparison value, current checkpoint serialization, manifest-to-component ownership resolution, absence representation, trustworthy-equality evidence representation, fresh-install bootstrap, managed/external no-checkpoint decision flow, actionable `checkpoint_required` result, owner-supplied baseline ingestion, candidate acknowledgement, comparison/result DTOs, proposal builder, full-suite validation transaction, recoverable complete-tree activation, external-root command boundary, checkpoint advancement command, failure recovery, and bounded user-facing reporting.
+
+Design may choose concrete interfaces, storage filenames, directory names, locking, and atomic replacement mechanics. It may not weaken component indivisibility, infer `adopted = actual` without approved equality evidence, continue renewal after `checkpoint_required`, advance conflicting checkpoints implicitly, activate before full validation, treat staged content as runtime authority, or introduce any excluded compatibility, merge, version, history, or provenance mechanism.
 
 ### F-11 — metadata and version identity omit semantic contributors
 
@@ -1149,11 +1232,11 @@ Exact historical reconstruction is possible only when the relevant suite owner h
 | Version authority | One human SemVer lives in each concrete package manifest; shared templates, patterns, definitions, and individual package files have no independent authored versions |
 | Artifact contract | Contributes the selected package's complete local caller contract and rendering semantics to resolved package identity |
 | Shared support | Contributes only when transitively reachable from the selected concrete package; a shared change affects only packages that reach it |
-| F-10 suite management identity | The complete-suite fingerprint identifies the managed snapshot for baseline/candidate/renewal and is reused in persisted artifact metadata solely as source-suite provenance, never as package semantic identity |
+| F-10 suite/source identity | The unchanged complete source-suite fingerprint identifies a supplied complete snapshot and is reused in persisted artifact metadata solely as source-suite provenance; it is not the operational component checkpoint and never becomes package semantic identity |
 | Generated artifact metadata | Compactly reports template-package/artifact identity, human package version, resolved package fingerprint, and source suite fingerprint; existing artifacts are never mutated or marked stale |
 | Package-directed non-artifact tool evidence | Suite-identity exposure is not implied by artifact provenance; Design admits it only for a demonstrated consumer under YAGNI |
 | Historical snapshot authority | The external/workspace suite owner exclusively decides whether and how sources, versions, tags/releases, indexes, and reconstruction remain available; PGMCP only verifies equality when a candidate snapshot is already supplied and promises no discovery |
-| Upgrade management | Compares already available managed baseline/candidate suite fingerprints for whole-snapshot identity and resolved package fingerprints for precise affected-package analysis; no separate persisted base fingerprint or general history-retention guarantee is required |
+| Upgrade management | Retains complete source-suite and resolved-package fingerprints as unchanged factual identities while F-10 separately compares the current adopted component checkpoint with actual/candidate states; no additional provenance base fingerprint or general history-retention guarantee is introduced |
 | template_registry.json | Is removed without a replacement provenance registry or per-artifact contributor/version ledger |
 | ArtifactManager/bootstrap/upgrade | Remove registry persistence, lookup, migration, injection, and dynamic-state preservation while retaining the two computed identities at their narrow consumers |
 | Tests | Protect deterministic resolved-package and complete-suite fingerprints from currently supplied content plus the four persisted provenance facts. Ordinary fixtures require no historical source setup; legacy mutable-registry assertions are removed rather than replaced by negative architecture tests |
@@ -1236,7 +1319,7 @@ Independent QA identified one overstatement in the second amendment: it turned o
 |---|---|
 | External/workspace suite history | The concrete suite owner exclusively owns source retention, package/suite release-version policy, Git tags/releases, lookup/indexing, and reconstruction availability |
 | PGMCP current-suite handling | Validate and load the currently supplied suite contract; compute deterministic resolved-package and complete-suite fingerprints; persist the four approved provenance facts in newly scaffolded artifacts |
-| Managed upgrade comparison | Compare baseline/candidate snapshots already available at the approved F-10 boundary for whole-suite equality and affected-package analysis; do not expand this into general historical retention |
+| Managed upgrade comparison | Compare currently available complete snapshots with the unchanged source-suite/resolved-package fingerprints for factual identity and affected-package analysis; F-10 separately owns adopted/actual/candidate component selection and must not expand that operational checkpoint into historical retention |
 | Historical verification | When an owner supplies candidate historical sources, the source-suite fingerprint can prove equality; it does not locate sources or promise their availability |
 | Persisted artifact independence | The artifact remains valid, independent, unmodified, and not stale when matching historical sources are unavailable; reconstruction remains conditional on owner-retained sources |
 
@@ -1246,7 +1329,7 @@ This correction explicitly prohibits Design and Planning from adding Git/release
 
 #### Design hand-off
 
-Following the targeted independent QA confirmation reported by the user on 2026-08-30, Design must define canonical inputs/serialization for both computed fingerprints, compact persisted artifact metadata syntax and size, dependency-edge and affected-package comparison mechanics over already available managed snapshots, registry-removal blast radius, and the side-by-side candidate safety contract. It must decide package-directed non-artifact suite-identity exposure only for demonstrated consumers, without treating the source suite fingerprint as package semantic identity. It may not introduce authored file/shared versions, a separate base fingerprint, filesystem immutability machinery, a replacement provenance or Git/release association registry, retention validation, snapshot archival/lookup, historical scans, absent-history evidence/control states, external SemVer-history enforcement, automatic SemVer severity inference, or an artifact update/staleness mechanism.
+Following the targeted independent QA confirmation reported by the user on 2026-08-30, Design must define canonical inputs/serialization for both computed fingerprints, compact persisted artifact metadata syntax and size, dependency-edge and affected-package comparison mechanics over already available managed snapshots, registry-removal blast radius, and the side-by-side candidate safety contract. It must decide package-directed non-artifact suite-identity exposure only for demonstrated consumers, without treating the source suite fingerprint as package semantic identity. It may not introduce authored file/shared versions, a separate provenance or source-suite base fingerprint, filesystem immutability machinery, a replacement provenance or Git/release association registry, retention validation, snapshot archival/lookup, historical scans, absent-history evidence/control states, external SemVer-history enforcement, automatic SemVer severity inference, or an artifact update/staleness mechanism. This provenance prohibition does not prohibit the separate F-10 operational checkpoint containing one current adopted state per renewal component; that checkpoint has no artifact-metadata role, history, or per-file versions.
 
 ### F-12 — the PR defects are suite-level contract symptoms
 
@@ -1342,7 +1425,7 @@ Every successful probe starts with the absolute output path, including drive let
 
 The persistence target and artifact content have different ownership:
 
-- output_path remains a validated scaffold-tool envelope value used to resolve the write target and reported through result information;
+- exact `file_name`, optional directory-valued `target_path`, and `force_target` are validated scaffold-operation controls used to resolve the write target, while `output_path` is reported only as result information;
 - selected template-package identity, version, and resolved package fingerprint can describe the initial scaffold source under F-11;
 - the target path does not belong in generic rendered content.
 
@@ -1350,7 +1433,7 @@ Absolute paths make identical inputs differ across machines, disclose local dire
 
 A concrete artifact may render a path only when that path has domain meaning and is declared explicitly by its own schema and template. It must not receive the generic persistence target implicitly.
 
-**Historical decision rationale (2026-08-23):** omit filesystem paths from generic artifact bodies. Retain output_path for target resolution and result evidence only; retain source provenance independently through the F-11 suite/type/graph identity. No compatibility bridge is required for the development-only header convention.
+**Historical decision rationale (2026-08-23), input contract corrected 2026-09-03:** omit filesystem paths from generic artifact bodies. The original dual-role `output_path` is superseded: callers provide an exact `file_name` plus optional directory-valued `target_path`, and the operation reports the resolved `output_path` only as result evidence. Retain source provenance independently through F-11. No compatibility bridge is required for the development-only header or the former input field.
 
 
 **2026-08-29 amendment note:** the path-removal decision remains unchanged. The historical `suite/type/graph identity` phrase is superseded only for provenance scope: package-directed evidence uses selected-package version and resolved package fingerprint, not F-10 complete-suite management identity.
@@ -1420,6 +1503,8 @@ Issue 460 originally treated rendered-output validation as part of first-time-ri
 
 `ValidationService` owns artifact/extension dispatch and issue aggregation through a mutable validator registry. `QAManager` owns configured gate execution, parsing, scopes, lifecycle state, diagnostics, and optional fixing. `PythonSyntaxValidator` already delegates its full-QA route to `QAManager`, but only by writing proposed content to a temporary file and translating a manager-specific dictionary. `ArtifactManager` and `SafeEditTool` construct validation dependencies separately while bootstrap composes the quality manager elsewhere. These observations prove duplicated authority and wiring; they do not make either current top-level class the preferred universal service.
 
+**F-20 supersession (2026-09-04):** F-19 remains the evidence and decision basis for the check role. Its historical `quality gate`, `provider`, and `autofix` wording below explains the path by which the duplicate check authority was found, but does not preserve those names or boundaries. The canonical PGMCP 3.0 public/configuration and extension strategy is F-20 plus the Approved Strategy in `research.md`.
+
 #### Responsibility boundary
 
 The reconciliation applies only where the two paths share executable facts and factual outcomes. It does not collapse every validation-like responsibility.
@@ -1462,7 +1547,7 @@ On 2026-08-25 the human owner explicitly retained this reconciliation inside iss
 - rendered-output validation and quality gates share one injected, config-first executable-capability authority and one side-effect-free normalized factual-result seam;
 - output profiles and quality gate sets remain separate selectors and policy consumers;
 - scaffolding and safe edit validate complete proposed content before mutation without acquiring quality-state, baseline, diagnostics/presentation, scope lifecycle, or autofix side effects;
-- `run_quality_gates` remains a distinct public operation and retains those quality-specific responsibilities;
+- **Historical wording superseded by F-20:** the explicit quality operation was then expected to retain scope, lifecycle, diagnostics/presentation, and optional fixing; the current decision instead removes `run_quality_gates`, assigns explicit check orchestration to `run_checks`, and gives fixes their own `apply_fixes` contract;
 - strictness changes only whether proposed content may persist; it never rewrites failed, unavailable, or not-executed evidence as passed;
 - no third provider, command, parsing, or availability authority may be introduced as an interim issue-460 implementation;
 - exact config decomposition, Pydantic models, interfaces, adapters, path/staging mechanics, and composition topology remain Design-owned.
@@ -1484,6 +1569,153 @@ This is a binding evidence obligation, not a selected dual-run, bootstrap, or te
 #### Design hand-off
 
 Design must treat F-19 as one coherent package, whether or not it later chooses to subdivide implementation work. It must define the single loaded capability authority, selectors, normalized factual result contract, dependency injection and composition ownership, pre-mutation sequence, public-result and status migration, incompatible-configuration startup failures, on-use provider unavailability, and independent/self-hosting evidence. It must preserve the distinct consumer policies above and demonstrate that no artifact-, extension-, language-, or workspace-specific dispatch becomes a new generic-code authority.
+
+**Canonical decision/status:** see the [Research decision register](research.md#approved-strategy-and-decision-status).
+
+### F-20 — executable tooling is split into language-bound check, test, and fix paths
+
+Design investigation exposed that F-19 is too narrow for a language-agnostic PGMCP 3.0 product. It reconciles rendered-output validation and quality gates, but leaves behavioral tests and fixes behind independent Python-oriented execution paths. That would remove duplicate check authority while preserving three incompatible extension models across the public execution surface.
+
+#### Current evidence
+
+The current implementation divides executable tooling as follows:
+
+| Role | Current authority | Language/tool coupling | Observable consequence |
+|---|---|---|---|
+| Output and quality checks | `.pgmcp/config/quality.yaml`, `QAManager`, validation registry/service, and violation parsers | Commands, Python file extensions, parsing strategies, exit codes, and Ruff/Mypy/Pyright assumptions are distributed across configuration and Python | Output validation and quality checks can disagree and require server/config changes for a new execution model |
+| Behavioral tests | `RunTestsTool`, `IPytestRunner`, and `PytestRunner` | The public input exposes Pytest markers, last-failed, coverage, and collection concepts; the tool builds `sys.executable -m pytest`; the parser owns Pytest exit codes and output syntax | `run_tests` is named generically but cannot execute a non-Python test framework without server-code and public-contract changes |
+| Fixes | `AutoFixTool` and `QAManager.run_auto_fix` | A quality gate carries `supports_autofix` and a second tool command; QAManager executes it directly against resolved workspace files | Fix is modeled as a Boolean property of a check rather than a separately authorized mutation contract |
+| Composition | `bootstrap.py` | QAManager and PytestRunner are separately constructed and wired | The server composition root has no single language-agnostic extension boundary |
+| Presentation and guidance | `presentation.yaml`, workflow contracts, agent instructions, and tool references | Public names and recovery guidance encode `run_quality_gates`, `run_tests`, `auto_fix`, gate, Pytest, and quality-specific meanings | Configuration, tools, DTOs, and documentation do not share one precise vocabulary |
+
+The current fix path starts each configured `fix_command` in the authoritative workspace and then compares Git status before and after execution to infer modified files. It does not receive an explicit proposed changeset from the fixer and cannot establish from its output alone that only authorized targets changed. This is materially different from the side-effect-free factual executor required by F-19.
+
+Prior issue-402 Research deliberately introduced an explicit `fix_command` and a separate `auto_fix` command to improve CQS over implicit command rewriting. That was a valid local improvement for the then-current QAManager architecture. It is historical evidence, not authority for retaining a quality-gate-owned fix contract after the wider extension boundary has become visible.
+
+#### Product and architecture impact
+
+Keeping only F-19 would produce a split product:
+
+- template output and quality checks could become extensible through one capability seam;
+- behavioral tests would remain a Pytest subsystem;
+- fixes would remain secondary commands attached to check gates;
+- adding a language could still require server edits in one or more of those paths;
+- tool, config, DTO, presentation, and documentation names would continue to describe implementation history rather than current responsibility.
+
+This is not a speculative request for every possible future language. The currently retained template suite already contains Python, TypeScript, Markdown, and plain-text outputs, while the product publicly claims generic testing and fixing operations. A server-code change for each additional language, framework, or tool would violate the Config-First and OCP boundaries already binding on issue 460.
+
+#### Responsibility boundary
+
+The extension architecture unifies distribution and invocation without collapsing role semantics:
+
+| Responsibility | Research boundary |
+|---|---|
+| Resolved adapter extension suite | One immutable startup-loaded catalog contains distribution-owned official adapter packages and workspace-owned packages from `.pgmcp/adapter_suite/`; duplicate manifest IDs or incompatible contract declarations fail before tool exposure |
+| Adapter extension package | One self-contained package has a manifest-owned `adapter_id`, one human-readable package version, declared contract versions, capabilities, and one or more executable entry points; a package may implement any combination of check, test, and fix |
+| Check contract | Reports side-effect-free factual analysis for proposed content or selected existing files; output-profile validation and public check execution remain separate policy consumers of those facts |
+| Test contract | Executes behavioral tests and returns suite/framework-aware evidence; it does not become an ordinary static check or inherit check-result semantics merely because process transport is shared |
+| Fix contract | Produces an explicitly bounded proposed changeset for authorized targets; PGMCP owns validation and controlled application to the authoritative workspace |
+| Generic process runtime | Owns process start, protocol transport, timeouts, scratch allocation, stdout/stderr capture, and malformed/crashed/unavailable execution facts without knowing languages, file extensions, frameworks, commands, or parser formats |
+| Consumer configuration | `checks.yaml`, `tests.yaml`, and `fixes.yaml` select capabilities, scopes, suites, and consumer policy; they do not duplicate adapter commands, tool-output parsers, or tool-specific exit semantics |
+| Template suite | May select stable check capabilities through output profiles; it cannot install, trust, or name executable commands and cannot register test or fix implementations |
+| Trust and ownership | PGMCP owns and versions its official adapter packages; a workspace owner explicitly owns, trusts, retains, versions, and provisions dependencies for packages under `.pgmcp/adapter_suite/` |
+| Provenance | Each invoked package contributes its adapter ID, version, computed package fingerprint, contract version, and discovered external-tool identity/version to structured run evidence; unrelated adapter packages do not alter that evidence and adapter provenance does not enter scaffolded-artifact source metadata |
+
+The shared boundary is therefore execution infrastructure and extension packaging, not one universal result object. Check, test, and fix remain separate contracts because they have different inputs, outcomes, side effects, and consumers.
+
+#### Naming and public-contract correction
+
+PGMCP 3.0 uses the contract roles as the vocabulary across public operations and configuration:
+
+| Current surface | PGMCP 3.0 responsibility |
+|---|---|
+| `run_quality_gates` | `run_checks` |
+| `run_tests` | `run_tests` |
+| `auto_fix` | `apply_fixes` |
+| `quality.yaml` | `checks.yaml` plus the separately owned `fixes.yaml` |
+| implicit Pytest configuration inside the tool contract | framework-neutral suites in `tests.yaml` |
+| `supports_autofix` and `fix_command` on a gate | explicit fix capabilities and their declared relation to addressed checks |
+
+The retained `run_tests` spelling is not a compatibility exception: it already states the selected role without naming a framework. Its input, output, configuration, and implementation contracts still require explicit migration.
+
+“Quality gate” remains valid only for a workflow or policy decision that consumes evidence. It is not the name of an executable capability, adapter contract, configuration authority, or public execution tool.
+
+#### Option analysis
+
+| Option | Cost, risk, consumer impact, and migration consequence |
+|---|---|
+| Retain F-19 for checks and defer tests/fixes | Smallest issue-local change, but leaves generic tool names backed by Python/Pytest and quality-gate-specific behavior; each new language can still require server changes and the PGMCP 3.0 product remains internally contradictory |
+| Generalize `quality.yaml` into a command/parser DSL for checks, tests, and fixes | Avoids adapter packages initially, but creates a server-owned mini-language for every CLI transport, result dialect, capability, and mutation model; configuration becomes executable implementation and a second tool-authority |
+| Add language/framework plugins inside the server process | Can reuse Python implementation details efficiently, but makes Python the privileged extension language, requires dynamic code loading in the server trust boundary, preserves multiple call paths, and does not isolate crashes or timeouts coherently |
+| Use one process-based adapter extension suite with separate check/test/fix contracts | Gives every language and framework the same extension route without server changes, centralizes trust/discovery/versioning, and preserves role-specific semantics; requires a deliberate PGMCP 3.0 migration of current tools, configuration, DTOs, docs, tests, and official implementations |
+
+The human owner selected the final option on 2026-09-04 and explicitly rejected deferral because it would leave a split product.
+
+#### Approved compatibility and migration strategy
+
+This boundary is a PGMCP 3.0 clean break:
+
+- remove `run_quality_gates` and `auto_fix`; do not retain aliases or wrapper tools;
+- introduce `run_checks`, retain the semantically correct `run_tests` name with a framework-neutral contract, and introduce `apply_fixes`;
+- replace `quality.yaml` with role-specific `checks.yaml`, `tests.yaml`, and `fixes.yaml`;
+- remove gate-owned commands, parser strategies, `supports_autofix`, and `fix_command` after their selected semantics have migrated to adapter packages and role configuration;
+- treat old PGMCP 2 configuration as an actionable migration error rather than translating it indefinitely at runtime;
+- migrate current Python/Ruff/Mypy/Pyright behavior to official check/fix adapters where the final retained check/fix profiles require it;
+- migrate Pytest behavior to an official test adapter and make a full test run mean all configured active workspace test suites rather than one hardcoded framework;
+- require the PGMCP distribution to supply adapter packages for every retained official capability it advertises, while an unavailable underlying language toolchain remains truthful on-use unavailability rather than an unrelated startup failure;
+- allow new languages, tools, and mixed-language workspaces by adding or selecting adapter packages and role configuration without modifying generic server code;
+- keep adapter execution read-only for check, behavior-executing but not source-mutating for test, and explicitly mutation-authorized for fix;
+- have fix adapters return bounded proposed changes and leave authoritative application, stale-input detection, allowed-path enforcement, and failure atomicity with PGMCP;
+- preserve existing template-package/source-suite fingerprint semantics. Adapter package provenance is execution evidence, not scaffolded-artifact source metadata.
+
+A package can implement several roles, but every declared role must independently satisfy its versioned contract. Shared packaging never permits a check call to mutate, a test result to masquerade as a check, or a fix completion to claim that the resulting content passes its addressed checks.
+
+#### Version and fingerprint boundary
+
+No adapter file receives an authored version. Each adapter package has:
+
+- one manifest-owned human-readable version;
+- one automatically computed package fingerprint over its manifest and executable/package-owned semantic inputs;
+- explicit supported check/test/fix contract versions.
+
+The structured result records only adapters actually invoked. A whole-suite fingerprint is not persisted in each run because a change to an unused adapter must not change the provenance of another adapter's evidence. External tool versions are discovered and reported when used; hashing every external executable or retaining its binary is not a PGMCP obligation without a separate integrity consumer.
+
+Official adapter packages follow the PGMCP distribution lifecycle unless later distributed independently. Workspace packages and their external dependencies remain under workspace Git, package-manager, retention, and version-policy ownership.
+
+#### Blast radius
+
+The direct production and configuration surface includes:
+
+- `.pgmcp/config/quality.yaml` and `.pgmcp/config/presentation.yaml`;
+- quality config models and exports;
+- `QAManager`, quality-state models/repository, violation parsing, and quality interfaces;
+- `RunQualityGatesTool`, `AutoFixTool`, `RunTestsTool`, their inputs and public result DTOs;
+- `IPytestRunner`, `PytestRunner`, bootstrap composition, tool exports/registration, response caching, and presentation;
+- output-profile selection, `ValidationService`, Python/Markdown validators, artifact/scaffold and safe-edit consumers;
+- workflow contracts, agent tool matrices, QA permissions, manuals, references, setup guidance, and generated instruction variants;
+- the tests, fixtures, fake runners, output fixtures, config builders, and private-parser tests coupled to those surfaces.
+
+The Template Suite Work Catalog owns the exact added rows and dispositions. Existing tests that prove durable public scope, status, diagnostics, mutation, test-result, caching, or presentation behavior remain preservation evidence; tests coupled only to QAManager internals, private parsers, Pytest-specific generic-tool assumptions, or old names require replacement or removal.
+
+#### Independent and self-hosting evidence
+
+The F-19 self-hosting risk now applies to the complete extension boundary. The migrated `run_checks`, `run_tests`, and `apply_fixes` paths cannot be their own sole proof. Design and Planning must preserve independent evidence that:
+
+- protocol schemas reject malformed requests and responses without relying only on the adapter being tested;
+- official adapters pass a shared contract/conformance suite plus tool-specific behavior tests;
+- a non-Python fixture adapter demonstrates extension through files/configuration alone and no generic-server language branch;
+- Pytest preservation is compared across the old and new boundaries where behavior is intentionally retained;
+- fix authorization and failure evidence prove that out-of-scope or stale changes do not reach authoritative files;
+- old tool/config names and duplicate command/parser authorities are absent after cutover;
+- active documentation, workflow contracts, and generated agent variants use the new role vocabulary consistently.
+
+These are proof obligations, not a selected test framework, implementation cycle, or permanent compatibility path.
+
+#### Design hand-off
+
+Design must treat the adapter extension suite as one cohesive package boundary with mandatory internal separation between check, test, and fix. It must define the versioned role contracts, loaded catalog and trust boundary, package manifest and fingerprint inputs, official/workspace source resolution, configuration schemas, public tool inputs/results, scope semantics, fix transaction, presentation/cache behavior, restart behavior, composition topology, v2 removal, and conformance evidence.
+
+Exact JSON Schema shapes, entrypoint layout, suite discovery/index mechanism, scratch topology, process batching, result-field optionality, concurrency, locking, and class/module topology remain Design-owned.
 
 **Canonical decision/status:** see the [Research decision register](research.md#approved-strategy-and-decision-status).
 
@@ -1626,7 +1858,7 @@ The option analysis below preserves historical rationale only. Current approval 
 | B. Classify fields as content, external envelope, routing, or internal metadata in scaffold_schema | Preserves valid non-rendering inputs such as external titles | Requires machine-readable role metadata |
 | C. Remove all non-rendered values from artifact context | Smallest render contract | May push necessary API envelope data into a separate call surface |
 
-**Historical decision rationale (2026-08-23):** combine A and C at the correct boundary. scaffold_schema exposes only rendered caller content; every such field has a visible effect and every caller-supplied render variable is exposed. Scaffold-envelope and server values are sourced separately, downstream tool-envelope values stay in their own tool contracts, hidden routing is removed, and values without a consumer are deleted.
+**Historical decision rationale (2026-08-23), corrected 2026-09-03:** combine A and C at the correct boundary. `scaffold_schema` exposes every caller-authored rendered value and only artifact content; every exposed field has a visible effect. Operation controls stay in the scaffold envelope and are never renderer inputs. Server provenance is sourced separately only for the declared metadata consumer. Downstream tool-envelope values stay in their own contracts, hidden routing is removed, and values without a consumer are deleted. This correction supersedes the former envelope-name projection exception.
 
 **Canonical decision/status:** see the [Research decision register](research.md#approved-strategy-and-decision-status).
 
@@ -1658,12 +1890,19 @@ The option analysis below preserves historical rationale only. Current approval 
 
 | Option | Benefits | Costs and risks |
 |---|---|---|
-| A. Replace the complete target suite on every server upgrade | Very simple renewal | Repeatedly overwrites user extensions and makes backup recovery routine |
-| B. Compare the active suite with its recorded official baseline; fast-forward only unchanged targets and otherwise stage a complete candidate | One active authority, safe automatic updates, direct customization, and no partial merges | Customized users adopt upstream suite changes manually |
-| C. Compose official and user packages or overlays at runtime | Automatic base updates alongside custom content | Requires identity, precedence, dependency, compatibility, and conflict semantics |
-| D. Preserve config paths while replacing template paths | Minimal current change | Creates invalid mixed-version installations |
+| A. Replace the complete target suite on every server upgrade | Simple and always official | Overwrites local and external ownership |
+| B. Preserve the complete actual suite whenever any customization exists | Never overwrites local content | Blocks unrelated non-conflicting upstream components indefinitely |
+| C. Compare adopted, actual, and candidate per indivisible component; assemble and validate one complete result before recoverable activation | Adopts independent upstream changes, preserves conflicts, retains one runtime root, and avoids file merge | Requires one current component checkpoint, component ownership resolution, complete proposal construction, and transactional activation |
+| D. Merge changed files automatically | Fine-grained adoption | Splits semantic components and requires merge/conflict policy |
+| E. Compose official and local overlays at runtime | Avoids copying a result tree | Creates multiple authorities, precedence, compatibility, and recovery complexity |
 
-**Historical decision rationale (2026-08-23):** choose B. Use deterministic installed-baseline evidence, one user-extensible active root, and a non-authoritative packaged candidate. Unchanged official targets fast-forward atomically; customized, legacy-unknown, and external targets remain untouched and receive targeted difference evidence. Do not introduce runtime overlays, automatic merging, or per-path renewal heuristics.
+**Human-approved amendment (2026-09-03):** choose C and supersede the historical choice of B. Use shared/ and each manifest ID as indivisible comparison components. Compare one current adopted checkpoint with actual and candidate component states, treating absence as a state. Select candidate only for upstream-only or converged non-conflicting components; preserve actual for local-only and conflicting components. Assemble the selection as a complete off-root suite, validate the complete resolved suite, and activate only through recoverable complete-tree replacement. Candidate staging is non-authoritative and runtime retains one active root.
+
+The checkpoint stores only current adopted component states, with no history or per-file versions. Conflicting checkpoint entries advance only through explicit reconciliation, which must not overwrite locally merged actual content. External roots remain owner-controlled and are never automatically activated or overwritten. Do not infer SemVer compatibility, create a compatibility matrix, merge files automatically, or introduce a provenance registry. Artifact metadata and the existing resolved-package/source-suite fingerprints remain unchanged.
+
+**Human-approved bootstrap remediation (2026-09-03):** a fresh managed install validates and establishes candidate content and checkpoint together. An existing managed workspace without a checkpoint may bootstrap automatically only when a trustworthy persisted fingerprint proves that actual exactly equals the previously installed or accepted official suite, or when actual exactly equals the fully validated candidate. An owner may instead supply a trusted complete prior suite. Without one of those reliable bases, renewal preserves actual byte-for-byte, keeps candidate non-authoritative, returns `checkpoint_required`, and performs no component selection or activation. An existing external workspace never infers a checkpoint or activates candidate content automatically. Its owner must supply a trusted prior suite or explicitly acknowledge the validated candidate as checkpoint basis; acknowledgement never copies candidate content into actual. Missing history creates no retention or lookup obligation.
+
+**Close-out status:** independent QA issued a targeted NOGO because the initial amendment omitted checkpoint-less bootstrap policy. The blocker is addressed by the human-approved remediation above. On 2026-09-03 the human owner explicitly authorized Design continuation and Research close-out. No independent QA re-review verdict is claimed.
 
 **Canonical decision/status:** see the [Research decision register](research.md#approved-strategy-and-decision-status).
 
@@ -1701,7 +1940,7 @@ The option analysis below preserves historical rationale only. Current approval 
 | B. Emit a workspace-relative path | Repository context without host disclosure | Still redundant, becomes stale after moves, and creates content diffs |
 | C. Keep absolute paths | Direct local traceability | Machine-specific output, noisy diffs, stale metadata, and local path disclosure |
 
-**Historical decision rationale (2026-08-23):** choose A. Keep output_path in the scaffold envelope and result DTO, not the artifact body. A concrete artifact may expose a domain-significant path only through its own explicit content schema.
+**Historical decision rationale (2026-08-23), input contract corrected 2026-09-03:** choose A. Keep persistence targeting outside artifact content. The caller supplies exact `file_name` and optional directory-valued `target_path`; the resolved `output_path` exists only in the result DTO. A concrete artifact may expose a domain-significant path only through its own explicit content schema.
 
 **Canonical decision/status:** see the [Research decision register](research.md#approved-strategy-and-decision-status).
 

@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-24 -->
 # Issue 460 Deferred Work
 
-**Status:** APPROVED  
-**Version:** 1.3  
-**Last Updated:** 2026-08-26  
+**Status:** APPROVED — F-20 EXECUTION ADAPTER SCOPE IS NOT DEFERRED  
+**Version:** 1.9  
+**Last Updated:** 2026-09-04  
 **Originating Issue:** 460
 
 ## Purpose
@@ -13,7 +13,9 @@ Preserve all work explicitly deferred from issue 460 in one durable, non-authori
 
 ## Status and Authority
 
-The five deferrals below are closed issue-460 Research decisions. Their inventories and any ordering recommendations are inputs to future Research, not future Design or implementation authorization. `APPROVED` confirms their exclusion and ownership; it does not authorize the deferred work.
+The five original deferrals below remain closed issue-460 Research decisions. Their inventories and any ordering recommendations are inputs to future Research, not future Design or implementation authorization. `APPROVED` confirms their exclusion and ownership; it does not authorize the deferred work or reject its possible future value. The 2026-08-31 component-level renewal deferral was explicitly superseded by the human-directed F-10/S-10 amendment on 2026-09-03 and is no longer deferred work.
+
+The 2026-09-04 F-20 language-agnostic adapter extension suite is also explicitly retained inside issue 460. Check, test, and fix extensibility cannot be deferred without producing incompatible language-specific product paths. This does not authorize unlimited future roles: a new tool or language within the three approved contracts is extension work; a genuinely new product role still requires its own evidenced consumer and contract decision.
 
 The Generic Python class responsibility is approved in [Research](research.md) as a bounded body-free plain-class skeleton. That artifact-local boundary does not decide method-content policy for specialized Python templates.
 
@@ -152,7 +154,7 @@ The future Research phase may split, merge, reprioritize, or reject candidates w
 For every artifact responsibility selected by future Research, the following inherited constraints and hypotheses require validation; they are not a preselected Design:
 
 - one discoverable, language-qualified ID must have one concise purpose and one finite context contract;
-- symbol-name and file-target representations must be explicit rather than blindly reusing the scaffold-envelope name;
+- every rendered symbol name must be explicit artifact context, while the exact file name and target remain separate operation controls; no value is derived across that boundary;
 - artifact descriptions and valid Python docstrings apply at the relevant module, class, member, or field boundaries;
 - declarations and signatures are structured; each specialized artifact's future Research must decide independently whether any caller-supplied implementation content belongs to its finite contract;
 - an empty skeleton is supported only where the empty form has legitimate scaffolding value;
@@ -195,12 +197,23 @@ Future Research must establish:
 
 No exact IDs, schemas, inheritance structure, or renderer topology are approved here.
 
+## Component-Level Template-Suite Renewal — Returned to Issue 460
+
+The 2026-08-31 decision to defer automatic component-level adoption is superseded by the human-directed F-10/S-10 amendment dated 2026-09-03. This boundary is active issue-460 Research and belongs to DI-06, not to a future issue.
+
+The approved amendment does not create file-level merging or a package manager. It compares one current adopted checkpoint, actual, and candidate for whole components only: shared/ is one component and each manifest ID is one component. Non-conflicting candidate components may be selected; local-only and conflicting actual components are preserved. The result is built as one complete off-root suite, validated completely, and only then activated recoverably as the sole runtime root.
+
+Explicit reconciliation may advance the current upstream checkpoint to candidate component states without overwriting locally merged actual content. For existing workspaces without a checkpoint, automatic bootstrap requires trustworthy equality evidence; otherwise actual remains byte-for-byte unchanged, candidate remains non-authoritative, and renewal returns `checkpoint_required` until the owner supplies a trusted prior suite or explicitly acknowledges the validated candidate as comparison basis. External workspaces never infer or activate a baseline automatically. The checkpoint has no history or per-file versions, and no missing-baseline path creates a retention or lookup obligation. The amendment adds no SemVer inference, compatibility matrix, automatic file merge, or provenance registry. Artifact metadata and the existing resolved-package/source-suite fingerprints remain unchanged.
+
+The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-and-decision-status), with evidence and exact comparison rules in [Research Findings](research-findings.md#f-10--renewal-can-split-paired-assets) and Design ownership in [DI-06](design-intake-map.md#di-06--distribution-renewal-and-deployment-migration).
+
 ## Related Documentation
 
 - [Issue 460 Research](research.md)
 - [Issue 460 Research Findings](research-findings.md)
 - [Issue 460 Template-Suite Catalog](template-suite-catalog.md)
 - [Issue 460 Design Intake Map](design-intake-map.md)
+- [Issue 460 Distribution Design](design-distribution.md)
 - [Documentation Standard](../../coding_standards/DOCUMENTATION_STANDARD.md)
 - [Architecture Principles](../../coding_standards/ARCHITECTURE_PRINCIPLES.md)
 
@@ -210,6 +223,12 @@ No exact IDs, schemas, inheritance structure, or renderer topology are approved 
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.9 | 2026-09-04 | State explicitly that the F-20 check/test/fix adapter extension suite remains in issue 460 and is not a deferred language-feature, while future new product roles still require separate evidence and approval |
+| 1.8 | 2026-09-03 | Align deferred portable-Python guidance with the corrected F-03/F-07 boundary: explicit rendered symbols, independent exact file/target operation controls, and no cross-boundary naming derivation |
+| 1.7 | 2026-09-03 | Record the human-approved checkpoint-less bootstrap remediation while retaining component renewal inside issue 460 and outside deferred work |
+| 1.6 | 2026-09-03 | Remove component-level suite adoption from deferred work and route the superseding F-10/S-10 three-way component renewal amendment back into issue 460 and DI-06 |
+| 1.5 | 2026-08-31 | Align deferred component adoption with DI-06: selective reconciliation persists no acknowledgement or component state, and only exact complete candidate promotion updates installed-suite evidence |
+| 1.4 | 2026-08-31 | Defer automatic component-level template-suite adoption without rejecting future extension; retain package-aware reporting and agent reconciliation while issue 460 mutates only complete suites |
 | 1.3 | 2026-08-26 | Mark the five deferrals as closed approved Research exclusions and link their Design coverage authority without granting implementation authorization |
 | 1.2 | 2026-08-24 | Defer any explicit command/query service artifact family after approving removal of the current broad Service and hidden subtype routing |
 | 1.1 | 2026-08-24 | Add deferred F-18 runtime discovery, reconcile the approved Generic boundary, and remove any implied suite-wide method-body rule |
