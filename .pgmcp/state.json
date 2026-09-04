@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -69,6 +69,14 @@
       "human_approval_message": "Mee eens, ik wil nu dat jij expliciet naar de rol van research agent overschakelt, naar de research phase terug gaat en deze expliciete scopeverbreding vast legt. Daarna vraag je mij om externe qa, voordat we verder gaan met design.",
       "forced": true,
       "skip_reason": "Reopen Research because Design uncovered a mandatory PGMCP 3.0 scope expansion: one language-agnostic adapter extension suite with distinct check, test, and fix contracts, replacing Python-specific and semantically inconsistent execution paths before Design may continue."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-04T21:33:59.808405+00:00",
+      "human_approval_message": "Formal Design GO confirmed on 2026-09-04 with binding manageability conditions: Research frozen; dedicated DI-05 Design document; independently provable cycles; conformance before legacy removal; separate check/test/fix proof; separate F-10 activation and F-20 fix-application cycles; internal proof before public V3 cutover; bounded rollback-ready cycles; concrete ownership for all 126 consumers and 151 tests/helpers.",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
