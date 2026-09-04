@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** DEFINITIVE EVIDENCE — F-20 QA CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED  
-**Version:** 1.16  
+**Status:** DEFINITIVE EVIDENCE — F-20 WORKSPACE-ROOT CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED  
+**Version:** 1.17  
 **Last Updated:** 2026-09-04  
 **Issue:** 460
 
@@ -15,7 +15,9 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 
 This document is an evidence companion, not a decision authority. Research was reopened on 2026-09-04 by explicit human direction after Design investigation exposed the wider executable-tooling boundary recorded in F-20. F-20 supersedes only those F-19 clauses that preserve `run_quality_gates`, attach fixing to quality-gate orchestration, or place behavioral tests outside the shared extension architecture. F-19 remains the authority for side-effect-free check facts shared by output-profile validation and explicit check execution. Check, test, and fix remain separate contracts and consumers despite sharing adapter packaging, discovery, trust, and process infrastructure.
 
-Independent QA reviewed F-20 on commit `5e465868d6779838929dd1f9b16a1d97306515d4`. It accepted the substantive check/test/fix separation, clean break, fix-authorization boundary, adapter package provenance, DI-05 routing, and self-hosting direction, but returned NOGO because the claimed 117-consumer/143-test census was incomplete and lacked a reproducible counting rule. A producer repeat sweep using both obsolete names and semantic consumer terms found six additional active consumer/reference paths and eight additional test/helper paths. The catalog now records 123 consumers plus two separately excluded governing-standard sources and 151 tests/helpers under an explicit counting rule. This is remediation evidence, not an inferred QA approval.
+Independent QA reviewed F-20 on commit `5e465868d6779838929dd1f9b16a1d97306515d4`. It accepted the substantive check/test/fix separation, clean break, fix-authorization boundary, adapter package provenance, DI-05 routing, and self-hosting direction, but returned NOGO because the claimed 117-consumer/143-test census was incomplete and lacked a reproducible counting rule. A producer repeat sweep added six active consumer/reference paths and eight test/helper paths and declared the counting rule.
+
+Targeted QA on commit `d92a2ca4dbe1ba2b8523389e051fc1179191318f` confirmed those corrections and preserved the complete positive substantive assessment. It returned a second census-only NOGO because the enumerated search roots omitted root-level project/package configuration, specifically `pyproject.toml`. Repeating the unchanged old-name and semantic-consumer term sets from repository root with hidden source paths exposed three exact uncatalogued paths: `pyproject.toml`, root `README.md`, and `docs/agents/vscode/copilot/.github/agents/co.agent.md`. They now have explicit DI-05 or DI-07 dispositions. The catalog records 126 consumers plus two separately excluded governing-standard sources and 151 tests/helpers. This is remediation evidence, not an inferred QA approval.
 
 F-11 provenance, template-suite fingerprints, artifact metadata, renewal, and unrelated findings remain unchanged.
 
@@ -92,7 +94,7 @@ Render probes were used as diagnostic observations of content behavior, not as t
 
 The durable evidence authorities for the reopened audit are:
 
-- [Template Suite Work Catalog](template-suite-catalog.md) — complete inventory of all 22 public artifacts, all 79 suite files, example surfaces, 123 active runtime/setup/agent/resource/documentation consumers plus two separately identified governing-standard sources, and 151 candidate test/helper files.
+- [Template Suite Work Catalog](template-suite-catalog.md) — complete inventory of all 22 public artifacts, all 79 suite files, example surfaces, 126 active runtime/setup/project-configuration/agent/resource/documentation consumers plus two separately identified governing-standard sources, and 151 candidate test/helper files.
 - [Probe Evidence](probe-evidence.yaml) — exact minimal and property-complete contexts plus normalized schema, render, output-validation, and error outcomes for all 44 calls.
 
 Cached MCP resources and ignored files below `.pgmcp/temp/issue460/` are supplementary diagnostics only. Research claims must remain reproducible from the committed evidence and live public tools without relying on a machine-local temporary path.

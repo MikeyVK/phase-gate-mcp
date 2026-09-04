@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
-**Status:** QA CENSUS BLOCKER REMEDIATED — INDEPENDENT RE-REVIEW REQUIRED  
-**Version:** 1.21  
+**Status:** QA WORKSPACE-ROOT CENSUS BLOCKER REMEDIATED — SHORT INDEPENDENT RE-REVIEW REQUIRED  
+**Version:** 1.22  
 **Last Updated:** 2026-09-04  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -17,7 +17,7 @@ The catalog covers:
 - every configured or embedded example surface found in that tree;
 - the runtime engine and setup boundaries that load, validate, render, persist, or upgrade the suite;
 - 151 candidate behavioral test/helper files after the QA-directed repeated F-20 execution-boundary sweep added eight further direct test/helper paths;
-- 123 active runtime, setup, agent, manual, resource, and reference consumers, plus two separately identified binding-standard source rows;
+- 126 active runtime, setup, project/package-configuration, agent, manual, resource, and reference consumers, plus two separately identified binding-standard source rows;
 - active agent instructions and references that describe the public contract.
 
 ## Census
@@ -32,7 +32,7 @@ The catalog covers:
 | Unreachable Jinja templates | 4 | Explicit retain/connect/remove decision required |
 | Probe calls | 44 | 34 PASS, 10 FAIL; exact inputs and outcomes in durable evidence |
 | Candidate tests/helpers | 151 | Existing 105 rows plus 46 direct or adjacent check/test/fix consumers added by the original and QA-directed repeated F-20 sweeps; every unique path row counts once |
-| Active consumers/references | 123 | Existing 102 rows plus 21 direct runtime/configuration/agent/resource/documentation consumers added by F-20; the two governing-standard source rows at the start of the runtime ledger are explicitly excluded |
+| Active consumers/references | 126 | Existing 102 rows plus 24 direct runtime/project-configuration/agent/resource/documentation consumers added by F-20 and its workspace-root QA sweep; the two governing-standard source rows at the start of the runtime ledger are explicitly excluded |
 
 ## Public Artifact Ledger
 
@@ -167,10 +167,9 @@ Candidate status is intentionally broad: Research must not omit a consumer merel
 
 Every runtime/setup row is audited against the complete [Architecture Principles](../../coding_standards/ARCHITECTURE_PRINCIPLES.md), not merely searched for direct template imports. The record must explicitly detect artifact IDs, field names, workflow/phase names, template paths, output profiles, provider mappings, install rules, or presentation text hardcoded in generic Python. It must also cover SRP, OCP, ISP, DIP, DRY/SSOT, Config-First, Fail-Fast, CQS, Law of Demeter, dependency injection/composition-root ownership, import-time side effects, Explicit-over-Implicit, YAGNI, presentation separation, and package cohesion. A file may be marked unaffected only with a boundary reason.
 
-**Census rule:** the `ARCHITECTURE_PRINCIPLES.md` and `DOCUMENTATION_STANDARD.md` rows below are governing sources used to judge all consumers; they are not themselves consumers and are excluded from the active-consumer census. Every other unique path row in this section counts exactly once, including a reviewed-unaffected active reference. The ledger therefore contains 125 unique existing paths: two governing sources plus 123 active consumers. Every unique path row in the Behavioral Test and Helper Ledger counts exactly once toward its 151-file census.
+**Census rule:** the `ARCHITECTURE_PRINCIPLES.md` and `DOCUMENTATION_STANDARD.md` rows below are governing sources used to judge all consumers; they are not themselves consumers and are excluded from the active-consumer census. Every other unique path row in this section counts exactly once, including a reviewed-unaffected active reference. The ledger therefore contains 128 unique existing paths: two governing sources plus 126 active consumers. Every unique path row in the Behavioral Test and Helper Ledger counts exactly once toward its 151-file census.
 
-
-**Repeat-search rule:** search case-insensitively across `.pgmcp`, `.agents`, `.github/agents`, `.github/prompts`, `mcp_server`, `docs/coding_standards`, `docs/manuals`, `docs/reference`, `docs/setup`, `docs/agents`, and `tests`, excluding archived prompts and issue-local development documents. The old-name set is `quality.yaml`, `quality_gates`, `active_gates`, `run_quality_gates`, `auto_fix`, `supports_autofix`, and `fix_command`. The semantic-consumer set is `quality_config`, `qa_manager`, `quality_state`, `pytest_runner`, `test_tools`, `quality_tools`, `violation_parser`, `RunQualityGates`, `AutoFix`, `IPytestRunner`, `PytestRunner`, `GateResultDTO`, `RunQualityGatesOutput`, `RunTestsOutput`, `project_scope`, `failed_files`, and `baseline_commit`. The 2026-09-04 repetition returned 110 unique active paths and zero paths absent from the appropriate ledger.
+**Repeat-search rule:** search case-insensitively from repository root `.` with hidden source paths included and normal ignore rules preserved. Exclude `.git/**`, archived prompts under `.github/prompts/archive/**`, and issue-local work products under `docs/development/**`. The old-name set is `quality.yaml`, `quality_gates`, `active_gates`, `run_quality_gates`, `auto_fix`, `supports_autofix`, and `fix_command`. The semantic-consumer set is `quality_config`, `qa_manager`, `quality_state`, `pytest_runner`, `test_tools`, `quality_tools`, `violation_parser`, `RunQualityGates`, `AutoFix`, `IPytestRunner`, `PytestRunner`, `GateResultDTO`, `RunQualityGatesOutput`, `RunTestsOutput`, `project_scope`, `failed_files`, and `baseline_commit`. The workspace-root repetition on 2026-09-04 returned 71 old-name paths, 82 semantic-consumer paths, and 115 unique active paths. Every one is now an exact path row in the appropriate ledger; substring matches do not count as catalog coverage.
 
 | Path | Category | Research obligation |
 |---|---|---|
@@ -183,6 +182,8 @@ Every runtime/setup row is audited against the complete [Architecture Principles
 
 | [.pgmcp/config/artifacts.yaml](../../../.pgmcp/config/artifacts.yaml) | registry index | **Design decision required — DI-02** — decide whether to adapt or remove this redundant shell. It currently contains no artifact definitions while package-owned modular configs are authoritative. Preserve it only for a distinct fail-fast package/index responsibility; never create a second manually synchronized artifact inventory |
 | [.pgmcp/config/quality.yaml](../../../.pgmcp/config/quality.yaml) | legacy quality/check/test/fix configuration | **Remove through PGMCP 3.0 clean break** — migrate retained selection and policy to `checks.yaml`, `tests.yaml`, and `fixes.yaml`; move executable entry points and parser/exit semantics into adapter packages. Reject obsolete config with actionable migration guidance; no dual read or alias |
+
+| [pyproject.toml](../../../pyproject.toml) | root project, tool, build, and package configuration | **Adapt — Owner: DI-05** — remove the `quality.yaml` and numbered-gate authority, preserve intentional Pytest/Ruff/Mypy/Pyright/coverage behavior behind the relevant official role adapters, make adapter dependency ownership explicit, and include official adapter packages/manifests/assets in the built distribution without teaching generic server code their tool semantics |
 | [.pgmcp/config/scaffold_metadata.yaml](../../../.pgmcp/config/scaffold_metadata.yaml) | legacy source-header config | **Remove** — legacy extension/comment/tier/path presentation remains rejected and duplicates file-type knowledge. Compact required source provenance derives from resolved package/suite identities and does not justify a configurable global header registry |
 | [.agents/AGENTS.md](../../../.agents/AGENTS.md) | agent/instruction | **Major adapt canonical guidance** — remove `validate_template` and V2 quality/autofix names; map quality/testing/fixing tool rules to `run_checks`, framework-neutral `run_tests`, and `apply_fixes`; retain runtime artifact discovery and normal refinement without duplicating schemas or adapter facts |
 | [.agents/reboot.md](../../../.agents/reboot.md) | agent/instruction | **Reviewed — unaffected** — it requires use of `scaffold_artifact` but carries no artifact IDs, schema facts, validation ownership, or completion claim |
@@ -192,8 +193,12 @@ Every runtime/setup row is audited against the complete [Architecture Principles
 
 | [.github/agents/qa.agent.md](../../../.github/agents/qa.agent.md) | agent/instruction | **Adapt QA tool allowlist and vocabulary** — remove `validate_template`, replace executable quality/autofix names with `run_checks` and `apply_fixes`, retain framework-neutral `run_tests`, and preserve QA read-only mutation authority |
 | [docs/agents/vscode/copilot/.github/agents/qa.agent.md](../../../docs/agents/vscode/copilot/.github/agents/qa.agent.md) | agent/instruction | **Regenerate from the canonical QA agent source** after its tool allowlist changes |
+
+| [docs/agents/vscode/copilot/.github/agents/co.agent.md](../../../docs/agents/vscode/copilot/.github/agents/co.agent.md) | generated agent instruction | **Regenerate — Owner: DI-07** — derive it from the canonical coordination-agent source after replacing the `run_quality_gates` allowlist entry; do not preserve an independently maintained V2 tool name |
 | [.github/prompts/create-issue.prompt.md](../../../.github/prompts/create-issue.prompt.md) | agent/instruction | **Retain/adapt with the create-issue workflow projection** — preserve schema discovery, human inspection, and adjustment; consume the resolved Issue schema instead of copied contract facts |
 | [AGENTS.md](../../../AGENTS.md) | agent/instruction | **Major adapt authoritative workspace guidance** — replace obsolete validation/quality/autofix tools and configs with check/test/fix vocabulary, preserve QA mutation restrictions, define runtime artifact and adapter catalogs as separate authorities, and retain scaffold-basis plus review/refinement guidance |
+
+| [README.md](../../../README.md) | active root project reference | **Adapt — Owner: DI-07** — replace the `quality.yaml` configuration claim with the PGMCP 3.0 check/test/fix and workflow-evidence distinction; retain concise project guidance without duplicating adapter or executable inventories |
 | [docs/agents/antigravity/AGENTS.md](../../../docs/agents/antigravity/AGENTS.md) | agent/instruction | **Regenerate from the authoritative agent source** after scaffolding and check/test/fix tool/config guidance changes; do not hand-maintain separate artifact or adapter inventories |
 | [docs/agents/antigravity/workflows/create-issue.md](../../../docs/agents/antigravity/workflows/create-issue.md) | agent/instruction | **Regenerate from the canonical create-issue workflow** after Issue-schema alignment; preserve its inspect-and-adjust step |
 | [docs/agents/codex/AGENTS.md](../../../docs/agents/codex/AGENTS.md) | agent/instruction | **Regenerate from the authoritative agent source** after validation, check/test/fix naming, adapter discovery, artifact discovery, example, and scaffold-basis guidance changes |
@@ -500,13 +505,14 @@ Research is complete only when:
 
 ## Current Gate
 
-The catalog now covers all 22 public artifact types and 79 template-suite files. Its runtime ledger contains 125 unique active paths: two governing-standard sources, which the declared census rule excludes, plus 123 consumers and references. Its Behavioral Test and Helper Ledger contains 151 unique paths. The QA-directed repeat search used both obsolete names and semantic consumer terms across the declared active roots; every resulting active path is now present in the appropriate ledger.
+The catalog now covers all 22 public artifact types and 79 template-suite files. Its runtime ledger contains 128 unique active paths: two governing-standard sources, which the declared census rule excludes, plus 126 consumers and references. Its Behavioral Test and Helper Ledger contains 151 unique paths. The QA-directed workspace-root repeat search used both obsolete names and semantic consumer terms, included hidden source paths, compared exact paths rather than substrings, and now has zero uncatalogued hits.
 
-The independent QA review of commit `5e465868d6779838929dd1f9b16a1d97306515d4` returned NOGO solely because the former 117/143 census was incomplete and its counting rule was not reproducible. The cited omissions and the additional omissions found by the producer's broader repeat sweep are now catalogued, the counts are recalculated, and the exclusion rule is explicit. This records remediation, not QA approval: Research remains open and Design remains paused pending an independent targeted re-review. Earlier catalog dispositions remain binding unless F-20 explicitly supersedes quality-gate/autofix names, Pytest-shaped generic testing, or duplicated command/parser authority.
+The independent QA review of commit `d92a2ca4dbe1ba2b8523389e051fc1179191318f` confirmed the prior census correction and all substantive F-20 boundaries, but returned NOGO because the declared roots excluded root-level project/package configuration. The corrected repository-root search found three uncatalogued direct hits: `pyproject.toml`, root `README.md`, and the hidden generated VS Code/Copilot coordination-agent variant. Each now has an explicit disposition and primary owner. This records producer remediation, not QA approval: Research remains open and Design remains paused pending a short independent re-review. Earlier catalog dispositions remain binding unless F-20 explicitly supersedes quality-gate/autofix names, Pytest-shaped generic testing, or duplicated command/parser authority.
 
 ## Version History
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.22 | 2026-09-04 | `@imp researcher` | Address the workspace-root QA blocker: replace the enumerated-root search with a hidden-aware repository-root search, add `pyproject.toml`, root `README.md`, and the generated VS Code/Copilot coordination-agent variant with owners, and correct the totals to 126 consumers plus two governing sources and 151 tests/helpers without inferring QA approval. |
 | 1.21 | 2026-09-04 | `@imp researcher` | Address the independent QA census blocker: declare the exact counting rule, add six missed active consumers/references and eight missed tests/helpers found by a repeated old-name and semantic-consumer sweep, and correct the totals to 123 consumers plus two governing sources and 151 tests/helpers without inferring QA approval. |
 | 1.20 | 2026-09-04 | `@imp researcher` | Expand the census to 117 active consumers and 143 test/helper files for F-20; route current check/test/fix tools, config, state, parsing, presentation, Pytest, documentation, and tests into one adapter-suite boundary with separate role contracts and a PGMCP 3.0 clean break. |

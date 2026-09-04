@@ -2,18 +2,18 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-25T14:44Z updated=2026-08-25 -->
 # Issue #460 Research-to-Design QA Audit
 
-**Status:** DEFINITIVE REVIEW HISTORY — F-20 CENSUS NOGO REMEDIATED; TARGETED RE-REVIEW REQUIRED  
-**Version:** 1.7  
+**Status:** DEFINITIVE REVIEW HISTORY — F-20 WORKSPACE-ROOT CENSUS NOGO REMEDIATED; SHORT RE-REVIEW REQUIRED  
+**Version:** 1.8  
 **Last Updated:** 2026-09-04  
 **Review Authority:** Independent `@qa design-reviewer`  
 **Recorded By:** `@imp researcher`, without substantive alteration of the historical QA verdict  
-**Current Applicability:** Independent QA substantively accepted the 2026-09-04 F-20 boundaries but returned NOGO on commit `5e465868d6779838929dd1f9b16a1d97306515d4` for an incomplete and non-reproducible consumer/test census; producer remediation awaits targeted independent re-review
+**Current Applicability:** Independent QA twice preserved its substantive acceptance of the 2026-09-04 F-20 boundaries; the latest NOGO on `d92a2ca4dbe1ba2b8523389e051fc1179191318f` found that the reproducible search omitted repository-root project/package configuration, and the workspace-root producer remediation awaits short targeted re-review
 
 ---
 
 ## Supersession Notice
 
-This audit preserves the independent point-in-time NOGO issued before the original Research reconciliation and records both later independent GO decisions. On 2026-09-04 the human owner reopened Research for F-20 after Design exposed a wider language-agnostic check/test/fix execution boundary. Independent QA subsequently reviewed that amendment and returned NOGO only for the catalog census and its reproducibility. The producer has corrected that evidence, but Research and Design remain gated on targeted independent `@qa design-reviewer` re-review.
+This audit preserves the independent point-in-time NOGO issued before the original Research reconciliation and records both later independent GO decisions. On 2026-09-04 the human owner reopened Research for F-20 after Design exposed a wider language-agnostic check/test/fix execution boundary. Independent QA subsequently returned two census-only NOGOs while preserving its substantive acceptance: first for incomplete rows and an undeclared count rule, then for search roots that omitted active repository-root configuration. Both producer remediations are recorded, but Research and Design remain gated on short targeted independent `@qa design-reviewer` re-review.
 
 The historical record below is unchanged in substance. The original remediation was closed on 2026-08-27. Design then exposed an unsound F-10/F-11 identity boundary, Research was reopened for that boundary only, and fresh independent QA granted an unconditional GO on 2026-08-29. Those verdicts remain historical evidence for the boundaries they reviewed. On 2026-09-03, the user reopened only F-10/S-10 and replaced complete-suite-only renewal with component-wise three-way selection. Independent QA reviewed that amendment and issued one targeted NOGO: existing managed and external workspaces without a component checkpoint had no approved bootstrap policy. The user subsequently approved the bounded Research remediation recorded below and then explicitly authorized Design continuation and Research close-out. [Research](research.md) and the [Design Intake Map](design-intake-map.md) own the closed mandate. No new QA verdict is inferred.
 
@@ -275,7 +275,29 @@ Beyond the three QA-cited omissions, it found one canonical QA-rule source, the 
 
 The corrected totals replace the former 117/143 claim; they do not attempt to make that old number fit. Research, Findings, the Design Intake Map, and the documentation contract now use the same totals. This producer remediation does not infer PASS or GO.
 
-**Current review status:** targeted independent re-review is required. Design remains paused.
+**Current review status:** this first remediation was independently confirmed by the next review; that review produced the narrower workspace-root finding below.
+
+### QA-460-10 — [P1] Reproducible search roots are not workspace-complete
+
+Targeted QA reviewed commit `d92a2ca4dbe1ba2b8523389e051fc1179191318f`. It reproduced 66 old-name paths, 82 semantic-consumer paths, 110 unique paths, zero uncatalogued paths within the declared roots, 125 unique runtime rows minus two governing sources, and 151 unique test/helper rows. It confirmed every prior cited and producer-found correction and preserved the complete positive substantive F-20 assessment.
+
+The remaining blocker was the search boundary: the enumerated roots excluded active repository-root project and packaging configuration. `pyproject.toml` directly references `quality.yaml`, numbered Gate 6 and separate coverage execution, owns current Pytest/Ruff/Mypy/Pyright/coverage dependencies and tool configuration, and controls package discovery/package-data inclusion needed to ship official adapter packages. Without a catalog row and owner, Design could leave V2 vocabulary behind or omit new adapter assets from the wheel.
+
+**QA outcome:** NOGO for Design continuation on commit `d92a2ca4dbe1ba2b8523389e051fc1179191318f`. The previous census correction and the substantive check/test/fix boundaries remain accepted. QA requested root-level active project/package configuration, a `pyproject.toml` disposition and owner, recalculation to at least 124 consumers plus two governing sources, and repetition of the same searches.
+
+### Workspace-root producer remediation
+
+The search now starts at repository root `.`, includes hidden source paths, preserves normal ignore rules, and excludes only Git internals, archived prompts, and issue-local development work products. It retains exactly the same old-name and semantic-consumer terms and compares complete normalized paths rather than substring containment.
+
+The expanded search returns 71 old-name paths, 82 semantic-consumer paths, and 115 unique active paths. It exposes three—not one—previously uncatalogued paths:
+
+- `pyproject.toml`, owned by DI-05 for the V2 reference, executable-tool configuration/dependencies, and official adapter distribution/package-data boundary;
+- root `README.md`, owned by DI-07 for its active `quality.yaml` configuration claim;
+- `docs/agents/vscode/copilot/.github/agents/co.agent.md`, owned by DI-07 as a hidden generated variant containing a V2 tool allowlist entry.
+
+The catalog now contains 128 unique runtime-ledger paths: two explicitly excluded governing sources plus 126 counted consumers/references. The test/helper ledger remains 151 unique paths. All 115 search results exactly match a catalog path; no substring match is accepted as coverage. This producer remediation does not infer PASS or GO.
+
+**Current review status:** short targeted independent re-review is required. Design remains paused.
 
 ## Evidence Reviewed
 
@@ -294,6 +316,7 @@ No production tests or quality gates were used as substantive evidence for this 
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.8 | 2026-09-04 | Independent QA finding recorded and remediated by `@imp researcher` | Record the workspace-root NOGO on `d92a2ca4`, preserve the confirmed prior correction and substantive assessment, replace enumerated roots with an exact-path hidden-aware repository-root search, correct the inventory to 126 consumers plus two governing sources and 151 tests/helpers, and request short re-review without inferring approval. |
 | 1.7 | 2026-09-04 | Independent QA finding recorded and remediated by `@imp researcher` | Record the F-20 census-only NOGO on `5e465868`, preserve the substantively accepted boundaries, correct the inventory to 123 consumers plus two governing sources and 151 tests/helpers through a repeated semantic sweep, and request targeted re-review without inferring approval. |
 | 1.6 | 2026-09-04 | `@imp researcher` | Mark every existing verdict as historical and out of scope for the new F-20 adapter-suite amendment; request a fresh independent review without altering prior QA findings. |
 | 1.5 | 2026-09-03 | Human owner decision recorded by `@imp researcher` | Close Research after explicit human Design authorization while preserving QA-460-08 as historical evidence and claiming no independent re-review verdict. |

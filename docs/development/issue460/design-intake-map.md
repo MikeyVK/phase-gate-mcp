@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** AMENDED — F-20 QA CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED; DESIGN PAUSED  
-**Version:** 1.20  
+**Status:** AMENDED — F-20 WORKSPACE-ROOT CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED; DESIGN PAUSED  
+**Version:** 1.21  
 **Last Updated:** 2026-09-04  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -12,7 +12,7 @@
 
 This document is the authoritative Research-to-Design scope index for issue 460. It proves that every Research obligation has one primary Design destination without selecting target mechanisms, method bodies, patch sequences, or implementation cycles.
 
-Research was reopened on 2026-09-04 for F-20 after Design investigation showed that the earlier F-19 package would leave checks, behavioral tests, and fixes behind incompatible extension paths. DI-05 now owns one cohesive language-agnostic adapter extension suite with separate versioned check/test/fix contracts, the PGMCP 3.0 public/configuration clean break, fix authorization, adapter ownership/trust/version/fingerprinting, and independent conformance evidence. F-20 does not move scaffold/safe-edit persistence into DI-05, collapse tests into checks, or alter template-suite/package provenance and renewal. Independent QA accepted that substantive direction but returned a census-only NOGO on commit `5e465868d6779838929dd1f9b16a1d97306515d4`. The omitted paths and reproducibility rule are now corrected; Design remains paused until targeted independent re-review closes the blocker.
+Research was reopened on 2026-09-04 for F-20 after Design investigation showed that the earlier F-19 package would leave checks, behavioral tests, and fixes behind incompatible extension paths. DI-05 now owns one cohesive language-agnostic adapter extension suite with separate versioned check/test/fix contracts, the PGMCP 3.0 public/configuration clean break, fix authorization, adapter ownership/trust/version/fingerprinting, and independent conformance evidence. F-20 does not move scaffold/safe-edit persistence into DI-05, collapse tests into checks, or alter template-suite/package provenance and renewal. Independent QA has twice preserved that substantive assessment. Its latest NOGO on `d92a2ca4` found that the otherwise-correct census search omitted repository-root configuration. The workspace-root correction routes `pyproject.toml` to DI-05 and root `README.md` plus the hidden generated VS Code/Copilot coordination-agent variant to DI-07. Design remains paused until short targeted independent re-review closes the blocker.
 
 [Research](research.md) remains the sole authority for approved strategy, invariants, expected results, and the Research gate. [Research Findings](research-findings.md) owns evidence and rationale. The [Template Suite Work Catalog](template-suite-catalog.md) owns per-component dispositions. The [Pre-Implementation Documentation Contract](README.md) governs the form and navigation of the full set. This map owns only Design coverage and primary responsibility.
 
@@ -352,7 +352,7 @@ All 44 strategy rows from [Research](research.md#approved-strategy-and-decision-
 
 ## Consumer-Family Coverage Matrix
 
-The [Template Suite Work Catalog](template-suite-catalog.md) remains authoritative for all 79 suite files, 123 active consumers/references plus two separately identified governing-standard sources, and 151 test/helper dispositions. This matrix assigns those rows by consumer family without duplicating the per-file ledger.
+The [Template Suite Work Catalog](template-suite-catalog.md) remains authoritative for all 79 suite files, 126 active consumers/references plus two separately identified governing-standard sources, and 151 test/helper dispositions. This matrix assigns those rows by consumer family without duplicating the per-file ledger.
 
 | Consumer family | Primary destination | Material dependent packages |
 |---|---|---|
@@ -360,9 +360,9 @@ The [Template Suite Work Catalog](template-suite-catalog.md) remains authoritati
 | Jinja graph, loader, runtime catalog, package-manifest version authority, resolved package provenance, compact persisted artifact provenance, package-impact diagnostics, package-owned tests, and obsolete graph/registry surfaces | DI-02 | DI-03, DI-04, DI-06, DI-08, XC-02 |
 | Concrete artifact config/schema instances, retained/removed templates, macros, examples, output-profile assignments, and package-owned tests | DI-03 | DI-01, DI-02, DI-05, DI-07, DI-08, XC-02 |
 | Scaffold and safe-edit tools, `artifacts.yaml` location policy, `project_structure.yaml` field/consumer migration, mutation orchestration, mutation-operation DTOs, target resolution, strict/interactive policy, atomicity, persistence, package-owned tests, active documentation, and superseded helpers | DI-04 | DI-01, DI-02, DI-05, DI-08, XC-02 |
-| Adapter package/catalog resolution, generic process runtime, separate check/test/fix contracts, output-profile check selection, explicit check/test/fix orchestration, config/state/DTO/cache/presentation migration, fix authorization/application, Pytest and retained check/fix adapters, package-owned conformance/behavior tests, and legacy quality/validation/test/fix surfaces | DI-05 | DI-04, DI-07, DI-08, XC-02 |
+| Adapter package/catalog resolution, generic process runtime, separate check/test/fix contracts, output-profile check selection, explicit check/test/fix orchestration, root project/build/package configuration, config/state/DTO/cache/presentation migration, official adapter distribution/dependency ownership, fix authorization/application, Pytest and retained check/fix adapters, package-owned conformance/behavior tests, and legacy quality/validation/test/fix surfaces | DI-05 | DI-04, DI-07, DI-08, XC-02 |
 | CLI/init/upgrade, package assets, sole active-root resolution, `shared/` and manifest `template_id` component ownership, current adopted checkpoint, fresh and checkpoint-less bootstrap, trustworthy equality evidence, explicit owner baseline/acknowledgement, `checkpoint_required`, actual/candidate comparison, complete proposal construction, full-suite validation, recoverable activation, explicit checkpoint reconciliation, managed release procedures, package-owned evidence, and obsolete distribution residues; external history, release policy, and activation authority remain owner-owned | DI-06 | DI-02, DI-03, DI-08, XC-02 |
-| Contracts, phase instructions, agent variants, manuals, active references, package-owned tests, and stale instruction/documentation consumers | DI-07 | DI-01–DI-06, DI-08, XC-02 |
+| Contracts, phase instructions, canonical and generated agent variants including hidden source paths, root and subordinate manuals/references, package-owned tests, and stale instruction/documentation consumers | DI-07 | DI-01–DI-06, DI-08, XC-02 |
 | Cross-package legacy-removal routing and integration constraint | XC-02 | DI-01–DI-08 |
 | Shared test architecture, fixtures/helpers, cross-package regression/integration evidence, ownerless obsolete tests, and removal-completeness audit | DI-08 | DI-01–DI-07, XC-01, XC-02 |
 | Current-owner deployment and external workspace migration | DI-06 | RC-01 |
@@ -395,7 +395,7 @@ Design cannot claim complete intake while any coverage matrix entry lacks a corr
 
 ## Coverage Audit
 
-The 2026-09-04 amendment adds one finding, one Approved Strategy row, one invariant, and one expected result, all owned by DI-05. The initial F-20 sweep added fifteen direct consumers and thirty-eight tests/helpers. The QA-directed repeated old-name and semantic-consumer search added six further active consumer/reference paths and eight further test/helper paths, producing 123 consumers plus two separately excluded governing-standard sources and 151 tests/helpers. No existing finding, strategy, invariant, expected result, or consumer family loses its primary destination. F-20 explicitly supersedes only the narrower F-19 public-name, autofix-ownership, and behavioral-test-exclusion clauses. DI-04 still owns scaffold/safe-edit persistence; DI-06 still owns template-suite renewal; DI-02 still owns template artifact/source provenance. Independent targeted re-review remains the active gate.
+The 2026-09-04 amendment adds one finding, one Approved Strategy row, one invariant, and one expected result, all owned by DI-05. The initial F-20 sweep added fifteen direct consumers and thirty-eight tests/helpers. The first QA-directed repeat added six further active consumer/reference paths and eight further test/helper paths. The second QA-directed workspace-root repeat added three more consumers—one DI-05 project/build/package configuration and two DI-07 documentation/generated-agent consumers—producing 126 consumers plus two separately excluded governing-standard sources and 151 tests/helpers. No existing finding, strategy, invariant, expected result, or consumer family loses its primary destination. F-20 explicitly supersedes only the narrower F-19 public-name, autofix-ownership, and behavioral-test-exclusion clauses. DI-04 still owns scaffold/safe-edit persistence; DI-06 still owns template-suite renewal; DI-02 still owns template artifact/source provenance. Short independent targeted re-review remains the active gate.
 
 | Research authority | Expected | Mapped | Primary-ownership result |
 |---|---:|---:|---|
@@ -403,7 +403,7 @@ The 2026-09-04 amendment adds one finding, one Approved Strategy row, one invari
 | Approved Strategy rows | 44 | 44 | Exactly one destination each; F-20 supersession is explicit |
 | Core invariants | 19 | 19 | Exactly one destination each; I-19 is DI-05-owned |
 | Expected results | 23 | 23 | Exactly one destination each; E-23 is DI-05-owned |
-| Active consumer families | 10 | 10 | Exactly one destination each; per-file authority remains in the 123-consumer catalog with two separately identified governing-source rows |
+| Active consumer families | 10 | 10 | Exactly one destination each; per-file authority remains in the 126-consumer catalog with two separately identified governing-source rows |
 | Catalog disposition questions | 4 | 4 | Exactly one owning Design package or explicit DI-02 → DI-04 handoff each |
 
 ## Explicit Exclusions and Deferred Work
@@ -436,6 +436,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.21 | 2026-09-04 | `@imp researcher` | Record the workspace-root QA NOGO, route `pyproject.toml` to DI-05 and root/generated documentation consumers to DI-07, correct the census to 126 plus two / 151, and require short targeted re-review before Design resumes. |
 | 1.20 | 2026-09-04 | `@imp researcher` | Record the census-only independent QA NOGO, preserve the accepted DI-05 direction, route six further consumers/references and eight further tests/helpers without changing primary ownership, and require targeted re-review of the corrected 123-plus-two / 151 inventory before Design resumes. |
 | 1.19 | 2026-09-04 | `@imp researcher` | Route F-20 to DI-05; add check/test/fix boundaries, clean-break vocabulary, adapter ownership/version/fingerprint and fix-safety obligations, expand the consumer/test census, pause Design pending independent QA, and leave any detailed-document topology change for explicit post-QA human agreement. |
 | 1.18 | 2026-09-03 | `@imp designer` | Record strict shallow package discovery, make manifest `template_id` the canonical cross-config reference, hand the freed `artifacts.yaml` filename from DI-02 to DI-04 location policy, and route the exhaustive `project_structure.yaml` field/consumer migration without changing Research coverage. |
