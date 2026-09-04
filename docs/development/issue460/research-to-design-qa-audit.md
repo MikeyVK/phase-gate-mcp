@@ -2,18 +2,18 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-25T14:44Z updated=2026-08-25 -->
 # Issue #460 Research-to-Design QA Audit
 
-**Status:** DEFINITIVE REVIEW HISTORY — F-20 WORKSPACE-ROOT CENSUS NOGO REMEDIATED; SHORT RE-REVIEW REQUIRED  
-**Version:** 1.8  
+**Status:** DEFINITIVE REVIEW HISTORY — FORMAL DESIGN GO CONFIRMED  
+**Version:** 1.9  
 **Last Updated:** 2026-09-04  
 **Review Authority:** Independent `@qa design-reviewer`  
 **Recorded By:** `@imp researcher`, without substantive alteration of the historical QA verdict  
-**Current Applicability:** Independent QA twice preserved its substantive acceptance of the 2026-09-04 F-20 boundaries; the latest NOGO on `d92a2ca4dbe1ba2b8523389e051fc1179191318f` found that the reproducible search omitted repository-root project/package configuration, and the workspace-root producer remediation awaits short targeted re-review
+**Current Applicability:** The two F-20 census NOGOs and their remediations remain point-in-time review history. Following closure of the targeted gate, the human owner formally authorized Design on 2026-09-04 with binding manageability conditions and froze Research content.
 
 ---
 
 ## Supersession Notice
 
-This audit preserves the independent point-in-time NOGO issued before the original Research reconciliation and records both later independent GO decisions. On 2026-09-04 the human owner reopened Research for F-20 after Design exposed a wider language-agnostic check/test/fix execution boundary. Independent QA subsequently returned two census-only NOGOs while preserving its substantive acceptance: first for incomplete rows and an undeclared count rule, then for search roots that omitted active repository-root configuration. Both producer remediations are recorded, but Research and Design remain gated on short targeted independent `@qa design-reviewer` re-review.
+This audit preserves the independent point-in-time NOGO issued before the original Research reconciliation and records both later independent GO decisions. On 2026-09-04 the human owner reopened Research for F-20 after Design exposed a wider language-agnostic check/test/fix execution boundary. Independent QA subsequently returned two census-only NOGOs while preserving its substantive acceptance: first for incomplete rows and an undeclared count rule, then for search roots that omitted active repository-root configuration. Both producer remediations remain historical evidence. The human owner subsequently confirmed formal Design GO and froze Research subject to the recorded manageability conditions; this audit does not invent or paraphrase an unrecorded independent verdict.
 
 The historical record below is unchanged in substance. The original remediation was closed on 2026-08-27. Design then exposed an unsound F-10/F-11 identity boundary, Research was reopened for that boundary only, and fresh independent QA granted an unconditional GO on 2026-08-29. Those verdicts remain historical evidence for the boundaries they reviewed. On 2026-09-03, the user reopened only F-10/S-10 and replaced complete-suite-only renewal with component-wise three-way selection. Independent QA reviewed that amendment and issued one targeted NOGO: existing managed and external workspaces without a component checkpoint had no approved bootstrap policy. The user subsequently approved the bounded Research remediation recorded below and then explicitly authorized Design continuation and Research close-out. [Research](research.md) and the [Design Intake Map](design-intake-map.md) own the closed mandate. No new QA verdict is inferred.
 
@@ -297,7 +297,13 @@ The expanded search returns 71 old-name paths, 82 semantic-consumer paths, and 1
 
 The catalog now contains 128 unique runtime-ledger paths: two explicitly excluded governing sources plus 126 counted consumers/references. The test/helper ledger remains 151 unique paths. All 115 search results exactly match a catalog path; no substring match is accepted as coverage. This producer remediation does not infer PASS or GO.
 
-**Current review status:** short targeted independent re-review is required. Design remains paused.
+**Current review status:** the human owner reports the targeted gate closed and formally authorizes Design. The 126-consumer-plus-two-governing-sources / 151-test catalog is definitive and frozen.
+
+## Formal Design GO and Human Manageability Conditions — 2026-09-04
+
+The human owner formally authorized Design after the targeted QA gate and froze Research content. This records human workflow authorization without fabricating additional independent QA wording. The authorization is conditional on a dedicated DI-05 Design document; independently provable Planning cycles; adapter contracts, catalog, and independent conformance evidence before legacy runner/parser removal; separate check/test/fix proof; separate F-10 renewal-activation and F-20 fix-application cycles; internal-route proof before public V3 cutover without supported aliases or dual reads; bounded per-cycle write sets, preserved behavior, rollback, and stop/go evidence; and concrete cycle ownership for all 126 consumers and 151 tests/helpers without a catch-all remainder.
+
+New product roles, compatibility choices, or consumer families are outside the frozen Research scope and require a separate issue.
 
 ## Evidence Reviewed
 
@@ -316,6 +322,7 @@ No production tests or quality gates were used as substantive evidence for this 
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.9 | 2026-09-04 | Human owner decision recorded by `@imp researcher` | Record the human-confirmed formal Design GO, freeze Research content, and preserve the nine binding Design/Planning manageability conditions without inventing additional independent QA wording. |
 | 1.8 | 2026-09-04 | Independent QA finding recorded and remediated by `@imp researcher` | Record the workspace-root NOGO on `d92a2ca4`, preserve the confirmed prior correction and substantive assessment, replace enumerated roots with an exact-path hidden-aware repository-root search, correct the inventory to 126 consumers plus two governing sources and 151 tests/helpers, and request short re-review without inferring approval. |
 | 1.7 | 2026-09-04 | Independent QA finding recorded and remediated by `@imp researcher` | Record the F-20 census-only NOGO on `5e465868`, preserve the substantively accepted boundaries, correct the inventory to 123 consumers plus two governing sources and 151 tests/helpers through a repeated semantic sweep, and request targeted re-review without inferring approval. |
 | 1.6 | 2026-09-04 | `@imp researcher` | Mark every existing verdict as historical and out of scope for the new F-20 adapter-suite amendment; request a fresh independent review without altering prior QA findings. |

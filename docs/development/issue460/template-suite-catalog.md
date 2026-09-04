@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
-**Status:** QA WORKSPACE-ROOT CENSUS BLOCKER REMEDIATED — SHORT INDEPENDENT RE-REVIEW REQUIRED  
-**Version:** 1.22  
+**Status:** DEFINITIVE AND FROZEN — DESIGN AND PLANNING INPUT  
+**Version:** 1.23  
 **Last Updated:** 2026-09-04  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -507,12 +507,15 @@ Research is complete only when:
 
 The catalog now covers all 22 public artifact types and 79 template-suite files. Its runtime ledger contains 128 unique active paths: two governing-standard sources, which the declared census rule excludes, plus 126 consumers and references. Its Behavioral Test and Helper Ledger contains 151 unique paths. The QA-directed workspace-root repeat search used both obsolete names and semantic consumer terms, included hidden source paths, compared exact paths rather than substrings, and now has zero uncatalogued hits.
 
-The independent QA review of commit `d92a2ca4dbe1ba2b8523389e051fc1179191318f` confirmed the prior census correction and all substantive F-20 boundaries, but returned NOGO because the declared roots excluded root-level project/package configuration. The corrected repository-root search found three uncatalogued direct hits: `pyproject.toml`, root `README.md`, and the hidden generated VS Code/Copilot coordination-agent variant. Each now has an explicit disposition and primary owner. This records producer remediation, not QA approval: Research remains open and Design remains paused pending a short independent re-review. Earlier catalog dispositions remain binding unless F-20 explicitly supersedes quality-gate/autofix names, Pytest-shaped generic testing, or duplicated command/parser authority.
+The independent QA review of commit `d92a2ca4dbe1ba2b8523389e051fc1179191318f` confirmed the prior census correction and all substantive F-20 boundaries, but returned NOGO because the declared roots excluded root-level project/package configuration. The corrected repository-root search found three uncatalogued direct hits: `pyproject.toml`, root `README.md`, and the hidden generated VS Code/Copilot coordination-agent variant. Each now has an explicit disposition and primary owner. Following closure of the targeted gate, the human owner formally authorized Design on 2026-09-04. Research and this catalog are frozen; earlier dispositions remain binding unless F-20 explicitly supersedes quality-gate/autofix names, Pytest-shaped generic testing, or duplicated command/parser authority.
+
+Planning must assign every one of the 126 consumer/reference rows and 151 test/helper rows to a concrete implementation-cycle owner. `Implement DI-05`, `migrate all consumers`, and a catch-all `remaining consumers/tests` cycle are not sufficiently bounded. Each cycle needs an explicit write set, preserved behavior, rollback point, and independent stop/go evidence.
 
 ## Version History
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.23 | 2026-09-04 | `@imp researcher` | Freeze the complete 126-consumer / 151-test catalog after formal Design authorization and require concrete, independently provable Planning cycle ownership for every row without a catch-all remainder. |
 | 1.22 | 2026-09-04 | `@imp researcher` | Address the workspace-root QA blocker: replace the enumerated-root search with a hidden-aware repository-root search, add `pyproject.toml`, root `README.md`, and the generated VS Code/Copilot coordination-agent variant with owners, and correct the totals to 126 consumers plus two governing sources and 151 tests/helpers without inferring QA approval. |
 | 1.21 | 2026-09-04 | `@imp researcher` | Address the independent QA census blocker: declare the exact counting rule, add six missed active consumers/references and eight missed tests/helpers found by a repeated old-name and semantic-consumer sweep, and correct the totals to 123 consumers plus two governing sources and 151 tests/helpers without inferring QA approval. |
 | 1.20 | 2026-09-04 | `@imp researcher` | Expand the census to 117 active consumers and 143 test/helper files for F-20; route current check/test/fix tools, config, state, parsing, presentation, Pytest, documentation, and tests into one adapter-suite boundary with separate role contracts and a PGMCP 3.0 clean break. |

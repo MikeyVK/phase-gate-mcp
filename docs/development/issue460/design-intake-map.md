@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** AMENDED — F-20 WORKSPACE-ROOT CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED; DESIGN PAUSED  
-**Version:** 1.21  
+**Status:** DEFINITIVE AND FROZEN — DESIGN AUTHORIZED WITH BINDING MANAGEABILITY CONDITIONS  
+**Version:** 1.22  
 **Last Updated:** 2026-09-04  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -12,7 +12,7 @@
 
 This document is the authoritative Research-to-Design scope index for issue 460. It proves that every Research obligation has one primary Design destination without selecting target mechanisms, method bodies, patch sequences, or implementation cycles.
 
-Research was reopened on 2026-09-04 for F-20 after Design investigation showed that the earlier F-19 package would leave checks, behavioral tests, and fixes behind incompatible extension paths. DI-05 now owns one cohesive language-agnostic adapter extension suite with separate versioned check/test/fix contracts, the PGMCP 3.0 public/configuration clean break, fix authorization, adapter ownership/trust/version/fingerprinting, and independent conformance evidence. F-20 does not move scaffold/safe-edit persistence into DI-05, collapse tests into checks, or alter template-suite/package provenance and renewal. Independent QA has twice preserved that substantive assessment. Its latest NOGO on `d92a2ca4` found that the otherwise-correct census search omitted repository-root configuration. The workspace-root correction routes `pyproject.toml` to DI-05 and root `README.md` plus the hidden generated VS Code/Copilot coordination-agent variant to DI-07. Design remains paused until short targeted independent re-review closes the blocker.
+Research was reopened on 2026-09-04 for F-20 after Design investigation showed that the earlier F-19 package would leave checks, behavioral tests, and fixes behind incompatible extension paths. DI-05 now owns one cohesive language-agnostic adapter extension suite with separate versioned check/test/fix contracts, the PGMCP 3.0 public/configuration clean break, fix authorization, adapter ownership/trust/version/fingerprinting, and independent conformance evidence. F-20 does not move scaffold/safe-edit persistence into DI-05, collapse tests into checks, or alter template-suite/package provenance and renewal. Independent QA preserved that substantive assessment through the census reviews; the workspace-root correction routes `pyproject.toml` to DI-05 and root `README.md` plus the hidden generated VS Code/Copilot coordination-agent variant to DI-07. The human owner formally authorized Design on 2026-09-04. Research content and this intake scope are now frozen.
 
 [Research](research.md) remains the sole authority for approved strategy, invariants, expected results, and the Research gate. [Research Findings](research-findings.md) owns evidence and rationale. The [Template Suite Work Catalog](template-suite-catalog.md) owns per-component dispositions. The [Pre-Implementation Documentation Contract](README.md) governs the form and navigation of the full set. This map owns only Design coverage and primary responsibility.
 
@@ -165,7 +165,7 @@ flowchart LR
 | Dimension | Design intake |
 |---|---|
 | Required Research authority | Read [F-08](research-findings.md#f-08--schema-valid-rich-contexts-can-produce-invalid-source), [F-19](research-findings.md#f-19--output-validation-and-quality-gates-duplicate-executable-authority), [F-20](research-findings.md#f-20--executable-tooling-is-split-into-language-bound-check-test-and-fix-paths), their exact Approved Strategy rows, I-16/I-19, and E-13/E-20/E-23 as one binding input set. F-20 is canonical wherever older F-19 wording preserves quality-gate/autofix names or excludes tests from shared extension infrastructure |
-| Primary Design document | The current README maps DI-04 and DI-05 to `design-mutation-validation.md`, now paused. F-20 requires an explicit post-QA human topology decision: either split DI-05 into a dedicated execution-adapter document or prove the existing document remains navigable. This intake map does not pre-authorize that ownership change |
+| Primary Design document | `design-execution-adapters.md` exclusively owns DI-05. `design-mutation-validation.md` remains the DI-04 owner and consumes DI-05 factual check evidence without absorbing adapter catalog, execution, check/test/fix, conformance, or migration ownership |
 | Affected inputs and consumers | Output profiles; `quality.yaml` and its replacement `checks.yaml`/`tests.yaml`/`fixes.yaml`; presentation config; quality/test/fix config models; validation modules; `QAManager`; Pytest runner/interface; quality state/repository; violation parsing; `RunQualityGatesTool`, `RunTestsTool`, `AutoFixTool`; public DTOs/cache/presentation; bootstrap/exports/registration; scaffold and safe-edit consumers; workflow/agent/manual/reference consumers; all catalogued tests, fixtures, fake runners, and validation fixtures |
 | Design-owned decisions | One immutable startup-resolved adapter catalog; official and trusted workspace package sources; package manifest, `adapter_id`, one version, supported role-contract versions, capabilities, entry points, package fingerprint, dependency/trust/error policy, and restart semantics; generic process/scratch/timeout/stdout/stderr/malformed/crashed/unavailable transport; separate `check/v1`, `test/v1`, and `fix/v1` request/result contracts; `run_checks`, framework-neutral `run_tests`, and `apply_fixes` inputs/results/scopes/verbose behavior/cache/presentation; output-profile check selection; fix proposal, stale-input detection, path authorization, validation, controlled application, rollback/recovery, and final evidence; conformance and self-hosting proof |
 | Consumer-policy separation | Output profiles select required checks for complete proposed content. `run_checks` owns explicit scope and check-run reporting. `run_tests` owns behavioral suite/framework semantics. `apply_fixes` owns an explicitly requested mutation workflow around bounded adapter proposals. Workflow gates consume evidence but are not adapter capabilities. DI-04 alone decides scaffold/safe-edit persistence from unchanged factual check states |
@@ -395,7 +395,7 @@ Design cannot claim complete intake while any coverage matrix entry lacks a corr
 
 ## Coverage Audit
 
-The 2026-09-04 amendment adds one finding, one Approved Strategy row, one invariant, and one expected result, all owned by DI-05. The initial F-20 sweep added fifteen direct consumers and thirty-eight tests/helpers. The first QA-directed repeat added six further active consumer/reference paths and eight further test/helper paths. The second QA-directed workspace-root repeat added three more consumers—one DI-05 project/build/package configuration and two DI-07 documentation/generated-agent consumers—producing 126 consumers plus two separately excluded governing-standard sources and 151 tests/helpers. No existing finding, strategy, invariant, expected result, or consumer family loses its primary destination. F-20 explicitly supersedes only the narrower F-19 public-name, autofix-ownership, and behavioral-test-exclusion clauses. DI-04 still owns scaffold/safe-edit persistence; DI-06 still owns template-suite renewal; DI-02 still owns template artifact/source provenance. Short independent targeted re-review remains the active gate.
+The 2026-09-04 amendment adds one finding, one Approved Strategy row, one invariant, and one expected result, all owned by DI-05. The initial F-20 sweep added fifteen direct consumers and thirty-eight tests/helpers. The first QA-directed repeat added six further active consumer/reference paths and eight further test/helper paths. The second QA-directed workspace-root repeat added three more consumers—one DI-05 project/build/package configuration and two DI-07 documentation/generated-agent consumers—producing 126 consumers plus two separately excluded governing-standard sources and 151 tests/helpers. No existing finding, strategy, invariant, expected result, or consumer family loses its primary destination. F-20 explicitly supersedes only the narrower F-19 public-name, autofix-ownership, and behavioral-test-exclusion clauses. DI-04 still owns scaffold/safe-edit persistence; DI-06 still owns template-suite renewal; DI-02 still owns template artifact/source provenance. Formal human Design authorization closes the Research gate. Design must preserve the dedicated DI-05 document boundary. Planning must later assign all 126 consumers and 151 tests/helpers to concrete independently provable cycle owners; a catch-all remaining-consumers/tests cycle is prohibited.
 
 | Research authority | Expected | Mapped | Primary-ownership result |
 |---|---:|---:|---|
@@ -419,6 +419,16 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 - automatic file/text/semantic merge, runtime overlays, partial active-tree writes, checkpoint history, per-file versions, SemVer inference, compatibility matrices, or changes to artifact metadata and existing resolved-package/source-suite fingerprint semantics.
 
+## Binding Downstream Manageability Conditions
+
+- DI-05 remains a dedicated Design document and does not merge with DI-04 mutation/scaffolding ownership.
+- Adapter contracts, catalog resolution, and independent conformance evidence precede removal of legacy runners and parsers.
+- Check, test, and fix migration require separate proof.
+- F-10 renewal activation and F-20 fix application occur in separate implementation cycles.
+- Public PGMCP 3.0 cutover follows proven internal routes; temporary code coexistence creates no supported alias or dual-read contract.
+- Every planned cycle has a bounded write set, explicit preserved behavior, rollback point, and independent stop/go evidence.
+- Planning maps each of the 126 consumers and 151 tests/helpers to a concrete cycle owner; no catch-all remainder cycle is permitted.
+
 ## Related Documentation
 
 - [Pre-Implementation Documentation Contract](README.md)
@@ -436,6 +446,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.22 | 2026-09-04 | `@imp researcher` | Record formal human Design authorization, freeze the intake scope, assign DI-05 exclusively to `design-execution-adapters.md`, and bind downstream decomposition to independent evidence and complete 126/151 cycle ownership. |
 | 1.21 | 2026-09-04 | `@imp researcher` | Record the workspace-root QA NOGO, route `pyproject.toml` to DI-05 and root/generated documentation consumers to DI-07, correct the census to 126 plus two / 151, and require short targeted re-review before Design resumes. |
 | 1.20 | 2026-09-04 | `@imp researcher` | Record the census-only independent QA NOGO, preserve the accepted DI-05 direction, route six further consumers/references and eight further tests/helpers without changing primary ownership, and require targeted re-review of the corrected 123-plus-two / 151 inventory before Design resumes. |
 | 1.19 | 2026-09-04 | `@imp researcher` | Route F-20 to DI-05; add check/test/fix boundaries, clean-break vocabulary, adapter ownership/version/fingerprint and fix-safety obligations, expand the consumer/test census, pause Design pending independent QA, and leave any detailed-document topology change for explicit post-QA human agreement. |

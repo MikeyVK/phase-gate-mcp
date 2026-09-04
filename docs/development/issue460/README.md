@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-27T09:08Z updated=2026-08-27 -->
 # Issue 460 Pre-Implementation Documentation Contract
 
-**Status:** DEFINITIVE — F-20 WORKSPACE-ROOT CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED; DESIGN PAUSED  
-**Version:** 1.11  
+**Status:** DEFINITIVE — RESEARCH FROZEN; DESIGN AUTHORIZED WITH BINDING MANAGEABILITY CONDITIONS  
+**Version:** 1.12  
 **Last Updated:** 2026-09-04
 
 ---
@@ -62,7 +62,7 @@ source of truth.
 
 Research was reopened on 2026-09-04 by explicit human direction. Design investigation established that the approved F-19 validation/check boundary would still leave behavioral testing and fixing in separate Python-oriented extension architectures. F-20 therefore adds one language-agnostic adapter extension suite with separate versioned check/test/fix role contracts, clean-break PGMCP 3.0 tool/configuration vocabulary, bounded fix application, adapter ownership/trust/version/fingerprinting, and independent conformance evidence.
 
-This is an active Research amendment, not Design authority. Independent QA has twice accepted F-20's substantive direction. The first NOGO corrected incomplete rows and counting; targeted review of `d92a2ca4` confirmed that work but found that the enumerated search roots omitted active repository-root configuration. The corrected hidden-aware repository-root search now records 126 consumers plus two separately excluded governing-standard sources and 151 tests/helpers. It adds `pyproject.toml`, root `README.md`, and the generated VS Code/Copilot coordination-agent variant with DI-05 or DI-07 ownership. The existing Design package documents remain preserved but paused until short targeted independent re-review closes that blocker. All earlier QA verdicts remain historical and scope-bound.
+The F-20 Research amendment is complete. Independent QA preserved its substantive direction through two census-only NOGOs; the final hidden-aware repository-root correction records 126 consumers plus two separately excluded governing-standard sources and 151 tests/helpers, including explicit ownership for `pyproject.toml`, root `README.md`, and the generated VS Code/Copilot coordination-agent variant. Following closure of the targeted gate, the human owner formally authorized Design on 2026-09-04. Research is now content-frozen. New product roles, compatibility choices, or consumer families require a separate issue.
 
 | Document | Authority and Responsibility |
 |---|---|
@@ -73,7 +73,7 @@ This is an active Research amendment, not Design authority. Independent QA has t
 | [probe-evidence.yaml](probe-evidence.yaml) | Reproducible structured probe observations; evidence rather than policy |
 | [deferred-work.md](deferred-work.md) | Explicit exclusions and post-issue work that Design must not absorb |
 | [design-intake-map.md](design-intake-map.md) | Authoritative routing from findings, strategies, invariants, expected results, consumers, and removals into DI-01–DI-08, XC-01–XC-02, and RC-01 |
-| [research-to-design-qa-audit.md](research-to-design-qa-audit.md) | Independent point-in-time Research review history, including both F-20 census-only NOGOs and the latest workspace-root remediation awaiting short targeted re-review |
+| [research-to-design-qa-audit.md](research-to-design-qa-audit.md) | Independent point-in-time Research review history, both F-20 census-only NOGOs and remediations, and the later human-confirmed formal Design GO |
 | [validation-quality-gates-brainstorm-handover.md](validation-quality-gates-brainstorm-handover.md) | Historical exploratory input for the validation/quality boundary; not a current gate or Design authority |
 
 Research documents retain detailed ledgers. Design documents reference their stable IDs
@@ -90,12 +90,25 @@ corresponding workshop has produced a stable decision nucleus.
 | `design.md` | Thin Design hub: rationale, package register, dependency and decision indexes, whole-set coverage, integration risks, and Design hand-over | Planned |
 | `design-shared-contracts.md` | Exact interfaces, DTOs, configuration shapes, status vocabularies, and interaction rules genuinely shared by multiple package documents | Planned |
 | `design-suite-resolution.md` | DI-01 suite contract metamodel and public schema exposure; DI-02 resolved graph, runtime selection, introspection, and provenance | Planned |
-| `design-mutation-validation.md` | Current approved owner for DI-04 scaffold/safe-edit mutation and DI-05 factual output validation; paused. F-20 makes a separate DI-05 document a serious topology candidate, but ownership may change only after independent QA and explicit human agreement | Existing draft; paused |
+| `design-mutation-validation.md` | DI-04 scaffold/safe-edit mutation, persistence policy, atomicity, recovery, and consumption of unchanged DI-05 factual check evidence | Existing draft; resume in Design |
+| `design-execution-adapters.md` | DI-05 adapter package/catalog/process architecture; separate check, test, and fix contracts and operations; fix authorization; V3 cutover; conformance and migration evidence | Planned; dedicated owner |
 | `design-document-tracking-artifacts.md` | DI-03 contracts and renderer semantics for documentation, issue, PR, commit, planning, validation-report, and related tracking artifacts | Planned |
 | `design-code-test-artifacts.md` | DI-03 contracts and renderer semantics for production-code and public unit/integration-test artifact families | Planned |
 | `design-distribution.md` | DI-06 package distribution, renewal, customization, adoption, and owner-deployment migration | Planned |
 | `design-workflow-documentation.md` | DI-07 workflow semantics, phase-document carriers, agent-instruction alignment, and active documentation authority | Planned |
 | `design-test-architecture.md` | DI-08 shared repository test fixtures/helpers and cross-package assurance; XC-02 removal-completeness integration | Planned |
+
+### Binding Design and Planning Manageability Conditions
+
+1. Research is content-frozen; a new product role, compatibility choice, or consumer family requires a separate issue.
+2. DI-05 remains in `design-execution-adapters.md`; it is not merged into DI-04 scaffolding/mutation design.
+3. Planning decomposes DI-05 and consumer migration into multiple independently provable cycles; no DI-05 mega-cycle or catch-all remaining-consumers/tests cycle is permitted.
+4. Adapter contracts, catalog resolution, and independent conformance evidence exist before legacy runners and parsers are removed.
+5. Check, test, and fix migrations are proven separately.
+6. F-10 renewal activation and F-20 fix application occur in separate implementation cycles.
+7. Public V3 cutover follows proven internal routes. Intermediate new/legacy code coexistence creates no supported dual-read or alias contract.
+8. Every cycle has a bounded write set, explicit preserved behavior, its own rollback point, and independent stop/go evidence.
+9. Planning assigns each of the 126 consumers and 151 tests/helpers to a concrete cycle owner.
 
 ### Boundary Between the Two Test Concerns
 
@@ -215,14 +228,14 @@ or the entire Design set to be rewritten in every conversational step.
 
 The default order follows dependency pressure rather than filename order:
 
-1. Design hub skeleton and shared contract vocabulary.
-2. DI-01/DI-02 suite contract and resolved-graph design.
-3. DI-03 concrete artifact contracts, split across its two documents.
-4. After targeted independent F-20 re-review returns GO: DI-05 adapter package/catalog/process contract, then its separate check, test, and fix role contracts and public operations.
-5. Reconcile DI-04 mutation policy around DI-05 factual check evidence, then DI-08 shared test architecture and XC-02 assurance.
-6. DI-06 distribution and migration.
-7. DI-07 workflow/documentation alignment after public decisions stabilize.
-8. Cross-package integration and final Design hand-over.
+1. Reconcile the Design hub and shared contract vocabulary with the frozen F-20 intake.
+2. Complete DI-01/DI-02 suite contract and resolved-graph design.
+3. Complete DI-03 concrete artifact contracts across its two documents.
+4. Create and workshop the dedicated DI-05 execution-adapter document: package/catalog/process first, then separate check, test, and fix contracts, operations, conformance evidence, and migration boundaries.
+5. Reconcile DI-04 mutation policy around unchanged DI-05 factual check evidence, then complete DI-08 shared test architecture and XC-02 assurance.
+6. Complete DI-06 distribution and migration without combining F-10 renewal activation with F-20 fix application.
+7. Complete DI-07 workflow/documentation alignment after public decisions stabilize.
+8. Perform cross-package integration, verify the downstream Planning decomposition constraints, and prepare the final Design hand-over.
 
 The order may change when new evidence requires it, but ownership does not change
 implicitly.
@@ -270,6 +283,7 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.12 | 2026-09-04 | `@imp researcher` | Record formal human Design authorization, freeze Research, give DI-05 the dedicated `design-execution-adapters.md` owner, and make the nine manageability conditions part of the pre-implementation form contract. |
 | 1.11 | 2026-09-04 | `@imp researcher` | Record the workspace-root census NOGO on `d92a2ca4`, the three additional DI-05/DI-07 consumers, and the corrected 126-consumer-plus-two-standards / 151-test inventory; keep Research open and Design paused for short targeted re-review. |
 | 1.10 | 2026-09-04 | `@imp researcher` | Record the independent F-20 census NOGO and the corrected 123-consumer-plus-two-standards / 151-test inventory; keep Research open and Design paused for targeted independent re-review. |
 | 1.9 | 2026-09-04 | `@imp researcher` | Reopen Research for F-20, pause Design pending independent QA, flag the enlarged DI-05 document topology for explicit post-QA human agreement, and update coverage to 22 findings, 44 strategies, 19 invariants, and 23 expected results. |

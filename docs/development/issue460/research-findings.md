@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** DEFINITIVE EVIDENCE — F-20 WORKSPACE-ROOT CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED  
-**Version:** 1.17  
+**Status:** FROZEN EVIDENCE — FORMAL DESIGN GO RECORDED  
+**Version:** 1.18  
 **Last Updated:** 2026-09-04  
 **Issue:** 460
 
@@ -18,6 +18,8 @@ This document is an evidence companion, not a decision authority. Research was r
 Independent QA reviewed F-20 on commit `5e465868d6779838929dd1f9b16a1d97306515d4`. It accepted the substantive check/test/fix separation, clean break, fix-authorization boundary, adapter package provenance, DI-05 routing, and self-hosting direction, but returned NOGO because the claimed 117-consumer/143-test census was incomplete and lacked a reproducible counting rule. A producer repeat sweep added six active consumer/reference paths and eight test/helper paths and declared the counting rule.
 
 Targeted QA on commit `d92a2ca4dbe1ba2b8523389e051fc1179191318f` confirmed those corrections and preserved the complete positive substantive assessment. It returned a second census-only NOGO because the enumerated search roots omitted root-level project/package configuration, specifically `pyproject.toml`. Repeating the unchanged old-name and semantic-consumer term sets from repository root with hidden source paths exposed three exact uncatalogued paths: `pyproject.toml`, root `README.md`, and `docs/agents/vscode/copilot/.github/agents/co.agent.md`. They now have explicit DI-05 or DI-07 dispositions. The catalog records 126 consumers plus two separately excluded governing-standard sources and 151 tests/helpers. This is remediation evidence, not an inferred QA approval.
+
+Following closure of the targeted gate, the human owner formally authorized Design on 2026-09-04 and froze Research content. This evidence set may now be consumed by Design and Planning, but it may not be enlarged with a new product role, compatibility choice, or consumer family; such scope requires a separate issue.
 
 F-11 provenance, template-suite fingerprints, artifact metadata, renewal, and unrelated findings remain unchanged.
 
