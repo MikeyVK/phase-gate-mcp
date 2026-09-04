@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** DEFINITIVE EVIDENCE — F-20 AMENDMENT AWAITS INDEPENDENT QA  
-**Version:** 1.15  
+**Status:** DEFINITIVE EVIDENCE — F-20 QA CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED  
+**Version:** 1.16  
 **Last Updated:** 2026-09-04  
 **Issue:** 460
 
@@ -15,7 +15,9 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 
 This document is an evidence companion, not a decision authority. Research was reopened on 2026-09-04 by explicit human direction after Design investigation exposed the wider executable-tooling boundary recorded in F-20. F-20 supersedes only those F-19 clauses that preserve `run_quality_gates`, attach fixing to quality-gate orchestration, or place behavioral tests outside the shared extension architecture. F-19 remains the authority for side-effect-free check facts shared by output-profile validation and explicit check execution. Check, test, and fix remain separate contracts and consumers despite sharing adapter packaging, discovery, trust, and process infrastructure.
 
-Earlier QA decisions remain historical evidence only for the boundaries they reviewed. They do not approve F-20. F-11 provenance, template-suite fingerprints, artifact metadata, renewal, and unrelated findings remain unchanged.
+Independent QA reviewed F-20 on commit `5e465868d6779838929dd1f9b16a1d97306515d4`. It accepted the substantive check/test/fix separation, clean break, fix-authorization boundary, adapter package provenance, DI-05 routing, and self-hosting direction, but returned NOGO because the claimed 117-consumer/143-test census was incomplete and lacked a reproducible counting rule. A producer repeat sweep using both obsolete names and semantic consumer terms found six additional active consumer/reference paths and eight additional test/helper paths. The catalog now records 123 consumers plus two separately excluded governing-standard sources and 151 tests/helpers under an explicit counting rule. This is remediation evidence, not an inferred QA approval.
+
+F-11 provenance, template-suite fingerprints, artifact metadata, renewal, and unrelated findings remain unchanged.
 
 - [Research](research.md) owns the current decision status, Approved Strategy, expected results, open work, and Research gate.
 - [Template Suite Work Catalog](template-suite-catalog.md) owns inventory and per-component dispositions.
@@ -90,7 +92,7 @@ Render probes were used as diagnostic observations of content behavior, not as t
 
 The durable evidence authorities for the reopened audit are:
 
-- [Template Suite Work Catalog](template-suite-catalog.md) — complete inventory of all 22 public artifacts, all 79 suite files, example surfaces, 117 active runtime/setup/documentation consumers, and 143 candidate test/helper files.
+- [Template Suite Work Catalog](template-suite-catalog.md) — complete inventory of all 22 public artifacts, all 79 suite files, example surfaces, 123 active runtime/setup/agent/resource/documentation consumers plus two separately identified governing-standard sources, and 151 candidate test/helper files.
 - [Probe Evidence](probe-evidence.yaml) — exact minimal and property-complete contexts plus normalized schema, render, output-validation, and error outcomes for all 44 calls.
 
 Cached MCP resources and ignored files below `.pgmcp/temp/issue460/` are supplementary diagnostics only. Research claims must remain reproducible from the committed evidence and live public tools without relying on a machine-local temporary path.
@@ -399,7 +401,7 @@ The architecture sweep is proportional rather than ritualistic: principles irrel
 
 ##### Completed test/helper audit outcome
 
-All 105 candidates now have an explicit behavior-value and architecture disposition in the work catalog. The original broad-signal census contained 103 files; direct consumer tracing added `test_template_validation_tool.py` and `test_scaffold_metadata_config.py`, preventing obsolete public-validation and metadata-config coverage from escaping the migration:
+The pre-F-20 audit gave all 105 then-known candidates an explicit behavior-value and architecture disposition in the work catalog. Its original broad-signal census contained 103 files; direct consumer tracing added `test_template_validation_tool.py` and `test_scaffold_metadata_config.py`, preventing obsolete public-validation and metadata-config coverage from escaping that migration stage:
 
 - 9 adjacent modules are excluded from semantic issue-460 changes; only shared fixture wiring may move.
 - 24 modules/helpers are removed outright because their source responsibility, historical registry/provenance behavior, placeholder pattern, or duplicate claim is gone.
@@ -407,7 +409,7 @@ All 105 candidates now have an explicit behavior-value and architecture disposit
 - 21 modules are replaced wholly or through consolidation because their intent remains useful but their current boundary is wrong.
 - 37 modules are adapted, consolidated, renamed, split, or fixture-adjusted around retained public behavior.
 
-The counts are implementation workload evidence, not prescribed file arithmetic: Design may combine replacement coverage differently as long as every row's durable claim and architecture constraint remains traceable.
+Those five category counts describe the 105-row pre-F-20 audit and are retained as historical workload evidence, not as the current census. F-20 first expanded the candidate set by 38 and the QA-directed repeat sweep added eight more, producing the current authoritative 151-row test/helper ledger. Every added row has its own disposition and owner in the catalog. Design may combine replacement coverage differently as long as every row's durable claim and architecture constraint remains traceable.
 
 Five systemic test-architecture findings explain the breadth:
 

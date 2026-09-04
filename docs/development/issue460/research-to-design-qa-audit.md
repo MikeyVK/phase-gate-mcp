@@ -2,18 +2,18 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-25T14:44Z updated=2026-08-25 -->
 # Issue #460 Research-to-Design QA Audit
 
-**Status:** DEFINITIVE REVIEW HISTORY — F-20 NOT YET REVIEWED  
-**Version:** 1.6  
+**Status:** DEFINITIVE REVIEW HISTORY — F-20 CENSUS NOGO REMEDIATED; TARGETED RE-REVIEW REQUIRED  
+**Version:** 1.7  
 **Last Updated:** 2026-09-04  
 **Review Authority:** Independent `@qa design-reviewer`  
 **Recorded By:** `@imp researcher`, without substantive alteration of the historical QA verdict  
-**Current Applicability:** Historical QA outcomes remain scoped to what they reviewed; none covers the 2026-09-04 F-20 check/test/fix adapter-suite amendment, which awaits a new independent verdict
+**Current Applicability:** Independent QA substantively accepted the 2026-09-04 F-20 boundaries but returned NOGO on commit `5e465868d6779838929dd1f9b16a1d97306515d4` for an incomplete and non-reproducible consumer/test census; producer remediation awaits targeted independent re-review
 
 ---
 
 ## Supersession Notice
 
-This audit preserves the independent point-in-time NOGO issued before the original Research reconciliation and records both later independent GO decisions. On 2026-09-04 the human owner reopened Research for F-20 after Design exposed a wider language-agnostic check/test/fix execution boundary. That amendment is not reviewed by any verdict in this file; Research and Design remain gated on a new independent `@qa design-reviewer` assessment.
+This audit preserves the independent point-in-time NOGO issued before the original Research reconciliation and records both later independent GO decisions. On 2026-09-04 the human owner reopened Research for F-20 after Design exposed a wider language-agnostic check/test/fix execution boundary. Independent QA subsequently reviewed that amendment and returned NOGO only for the catalog census and its reproducibility. The producer has corrected that evidence, but Research and Design remain gated on targeted independent `@qa design-reviewer` re-review.
 
 The historical record below is unchanged in substance. The original remediation was closed on 2026-08-27. Design then exposed an unsound F-10/F-11 identity boundary, Research was reopened for that boundary only, and fresh independent QA granted an unconditional GO on 2026-08-29. Those verdicts remain historical evidence for the boundaries they reviewed. On 2026-09-03, the user reopened only F-10/S-10 and replaced complete-suite-only renewal with component-wise three-way selection. Independent QA reviewed that amendment and issued one targeted NOGO: existing managed and external workspaces without a component checkpoint had no approved bootstrap policy. The user subsequently approved the bounded Research remediation recorded below and then explicitly authorized Design continuation and Research close-out. [Research](research.md) and the [Design Intake Map](design-intake-map.md) own the closed mandate. No new QA verdict is inferred.
 
@@ -250,7 +250,32 @@ This close-out:
 - does not pre-approve the active Design artifacts or their eventual independent review;
 - requires Design to reconcile its complete-suite-only and checkpoint-bootstrap assumptions against the closed F-10/S-10 mandate.
 
-**Close-out outcome:** Research is closed; Design continuation is human-authorized; no independent QA re-review verdict is claimed.
+**Close-out outcome:** Research is closed for the 2026-09-03 F-10/S-10 scope; Design continuation was human-authorized at that point; no independent QA re-review verdict was claimed. The later F-20 reopening supersedes that gate state for the enlarged execution-boundary scope.
+
+## F-20 Amendment Review and Census Remediation — 2026-09-04
+
+### QA-460-09 — [P1] The 117/143 catalog claim is incomplete and not reproducible
+
+Independent QA reviewed commit `5e465868d6779838929dd1f9b16a1d97306515d4` and found one blocking defect. The runtime ledger contained 119 unique existing paths while claiming 117 consumers, without documenting whether its two governing-standard rows were excluded. It also omitted the direct `quality.yaml`/fixed-gate consumer `tests/mcp_server/unit/resources/test_standards.py` and the active generated Antigravity and Codex QA-rule variants. Those omissions could leave V2 configuration and gate identities active after an otherwise complete clean break.
+
+The required correction was to add explicit dispositions and owners for the missing files, recalculate both censuses, declare exactly which runtime rows count, and repeat the active search with both obsolete names and semantic gate/config consumer terms.
+
+**QA outcome:** NOGO for Design continuation on commit `5e465868d6779838929dd1f9b16a1d97306515d4`. QA explicitly accepted the check/test/fix contract separation, PGMCP 3.0 clean break, fix-authorization boundary, adapter versions/fingerprints, DI-05 routing, and self-hosting Research direction. The census was the only blocker.
+
+### Producer remediation
+
+The repeat sweep covered the declared active configuration, agent, runtime, standards, manuals, references, and test roots. It searched both obsolete public/configuration vocabulary and semantic consumers including quality configuration/state, gate selection, test execution, fix capability, parser/result DTOs, scope, payload presentation, and baseline state.
+
+Beyond the three QA-cited omissions, it found one canonical QA-rule source, the standards resource provider, two active references, and seven further parser/configuration/DTO/payload/scope-resolution tests. The catalog now records:
+
+- 125 unique runtime-ledger paths: two governing-standard sources, explicitly excluded by rule, plus 123 counted consumers/references;
+- 151 unique Behavioral Test and Helper Ledger paths;
+- one explicit disposition and Design owner for every newly added row;
+- an exact count-once rule for both ledgers.
+
+The corrected totals replace the former 117/143 claim; they do not attempt to make that old number fit. Research, Findings, the Design Intake Map, and the documentation contract now use the same totals. This producer remediation does not infer PASS or GO.
+
+**Current review status:** targeted independent re-review is required. Design remains paused.
 
 ## Evidence Reviewed
 
@@ -269,6 +294,7 @@ No production tests or quality gates were used as substantive evidence for this 
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.7 | 2026-09-04 | Independent QA finding recorded and remediated by `@imp researcher` | Record the F-20 census-only NOGO on `5e465868`, preserve the substantively accepted boundaries, correct the inventory to 123 consumers plus two governing sources and 151 tests/helpers through a repeated semantic sweep, and request targeted re-review without inferring approval. |
 | 1.6 | 2026-09-04 | `@imp researcher` | Mark every existing verdict as historical and out of scope for the new F-20 adapter-suite amendment; request a fresh independent review without altering prior QA findings. |
 | 1.5 | 2026-09-03 | Human owner decision recorded by `@imp researcher` | Close Research after explicit human Design authorization while preserving QA-460-08 as historical evidence and claiming no independent re-review verdict. |
 | 1.4 | 2026-09-03 | Independent QA finding recorded and remediated by `@imp researcher` | Record QA-460-08 checkpoint-bootstrap NOGO, the human-approved content-preserving migration policy, and the pending independent re-review without inferring an outcome. |

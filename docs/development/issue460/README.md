@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-27T09:08Z updated=2026-08-27 -->
 # Issue 460 Pre-Implementation Documentation Contract
 
-**Status:** DEFINITIVE — RESEARCH REOPENED; F-20 QA REQUIRED; DESIGN PAUSED  
-**Version:** 1.9  
+**Status:** DEFINITIVE — F-20 QA CENSUS BLOCKER REMEDIATED; RE-REVIEW REQUIRED; DESIGN PAUSED  
+**Version:** 1.10  
 **Last Updated:** 2026-09-04
 
 ---
@@ -62,7 +62,7 @@ source of truth.
 
 Research was reopened on 2026-09-04 by explicit human direction. Design investigation established that the approved F-19 validation/check boundary would still leave behavioral testing and fixing in separate Python-oriented extension architectures. F-20 therefore adds one language-agnostic adapter extension suite with separate versioned check/test/fix role contracts, clean-break PGMCP 3.0 tool/configuration vocabulary, bounded fix application, adapter ownership/trust/version/fingerprinting, and independent conformance evidence.
 
-This is an active Research amendment, not Design authority. The existing Design package documents remain preserved but paused. Independent QA must review F-20 before Research can close or Design can resume. All earlier QA verdicts remain historical and scope-bound.
+This is an active Research amendment, not Design authority. Independent QA reviewed F-20 on commit `5e465868d6779838929dd1f9b16a1d97306515d4`, accepted its substantive direction, and returned NOGO only because the 117-consumer/143-test catalog claim was incomplete and not reproducible. The repeated old-name and semantic-consumer sweep now records 123 consumers plus two separately excluded governing-standard sources and 151 tests/helpers under an explicit counting rule. The existing Design package documents remain preserved but paused until targeted independent re-review closes that blocker. All earlier QA verdicts remain historical and scope-bound.
 
 | Document | Authority and Responsibility |
 |---|---|
@@ -73,7 +73,7 @@ This is an active Research amendment, not Design authority. The existing Design 
 | [probe-evidence.yaml](probe-evidence.yaml) | Reproducible structured probe observations; evidence rather than policy |
 | [deferred-work.md](deferred-work.md) | Explicit exclusions and post-issue work that Design must not absorb |
 | [design-intake-map.md](design-intake-map.md) | Authoritative routing from findings, strategies, invariants, expected results, consumers, and removals into DI-01–DI-08, XC-01–XC-02, and RC-01 |
-| [research-to-design-qa-audit.md](research-to-design-qa-audit.md) | Independent point-in-time Research review history; F-20 is explicitly outside prior verdict scope and awaits a new independent review |
+| [research-to-design-qa-audit.md](research-to-design-qa-audit.md) | Independent point-in-time Research review history, including the F-20 census-only NOGO and the producer remediation now awaiting targeted re-review |
 | [validation-quality-gates-brainstorm-handover.md](validation-quality-gates-brainstorm-handover.md) | Historical exploratory input for the validation/quality boundary; not a current gate or Design authority |
 
 Research documents retain detailed ledgers. Design documents reference their stable IDs
@@ -218,7 +218,7 @@ The default order follows dependency pressure rather than filename order:
 1. Design hub skeleton and shared contract vocabulary.
 2. DI-01/DI-02 suite contract and resolved-graph design.
 3. DI-03 concrete artifact contracts, split across its two documents.
-4. After independent F-20 QA: DI-05 adapter package/catalog/process contract, then its separate check, test, and fix role contracts and public operations.
+4. After targeted independent F-20 re-review returns GO: DI-05 adapter package/catalog/process contract, then its separate check, test, and fix role contracts and public operations.
 5. Reconcile DI-04 mutation policy around DI-05 factual check evidence, then DI-08 shared test architecture and XC-02 assurance.
 6. DI-06 distribution and migration.
 7. DI-07 workflow/documentation alignment after public decisions stabilize.
@@ -270,6 +270,7 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.10 | 2026-09-04 | `@imp researcher` | Record the independent F-20 census NOGO and the corrected 123-consumer-plus-two-standards / 151-test inventory; keep Research open and Design paused for targeted independent re-review. |
 | 1.9 | 2026-09-04 | `@imp researcher` | Reopen Research for F-20, pause Design pending independent QA, flag the enlarged DI-05 document topology for explicit post-QA human agreement, and update coverage to 22 findings, 44 strategies, 19 invariants, and 23 expected results. |
 | 1.8 | 2026-09-03 | `@imp researcher` | Record explicit human Design authorization, close Research, and preserve the distinction from an independent QA re-review verdict. |
 | 1.7 | 2026-09-03 | `@imp researcher` | Index the targeted QA checkpoint-bootstrap NOGO, human-approved remediation, I-18/E-22 coverage, and pending independent re-review. |

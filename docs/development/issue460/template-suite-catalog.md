@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
-**Status:** DEFINITIVE INVENTORY — F-20 AMENDMENT AWAITS INDEPENDENT QA  
-**Version:** 1.20  
+**Status:** QA CENSUS BLOCKER REMEDIATED — INDEPENDENT RE-REVIEW REQUIRED  
+**Version:** 1.21  
 **Last Updated:** 2026-09-04  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -16,8 +16,8 @@ The catalog covers:
 - all 79 files below `.pgmcp/templates/`;
 - every configured or embedded example surface found in that tree;
 - the runtime engine and setup boundaries that load, validate, render, persist, or upgrade the suite;
-- 143 candidate behavioral test/helper files after the F-20 execution-boundary sweep added thirty-eight previously unlisted check/test/fix consumers;
-- 117 active runtime, setup, agent, standards, manual, and reference consumers, including fifteen rows added by F-20;
+- 151 candidate behavioral test/helper files after the QA-directed repeated F-20 execution-boundary sweep added eight further direct test/helper paths;
+- 123 active runtime, setup, agent, manual, resource, and reference consumers, plus two separately identified binding-standard source rows;
 - active agent instructions and references that describe the public contract.
 
 ## Census
@@ -31,8 +31,8 @@ The catalog covers:
 | Reachable Jinja templates | 53 | Audited through at least one public artifact graph |
 | Unreachable Jinja templates | 4 | Explicit retain/connect/remove decision required |
 | Probe calls | 44 | 34 PASS, 10 FAIL; exact inputs and outcomes in durable evidence |
-| Candidate tests/helpers | 143 | Existing 105 rows plus 38 direct or adjacent check/test/fix consumers added by the F-20 sweep; behavior value and architecture disposition decided explicitly |
-| Active consumers/references | 117 | Existing 102 rows plus 15 direct runtime/configuration/documentation consumers added by [F-20](research-findings.md#f-20--executable-tooling-is-split-into-language-bound-check-test-and-fix-paths) |
+| Candidate tests/helpers | 151 | Existing 105 rows plus 46 direct or adjacent check/test/fix consumers added by the original and QA-directed repeated F-20 sweeps; every unique path row counts once |
+| Active consumers/references | 123 | Existing 102 rows plus 21 direct runtime/configuration/agent/resource/documentation consumers added by F-20; the two governing-standard source rows at the start of the runtime ledger are explicitly excluded |
 
 ## Public Artifact Ledger
 
@@ -167,6 +167,11 @@ Candidate status is intentionally broad: Research must not omit a consumer merel
 
 Every runtime/setup row is audited against the complete [Architecture Principles](../../coding_standards/ARCHITECTURE_PRINCIPLES.md), not merely searched for direct template imports. The record must explicitly detect artifact IDs, field names, workflow/phase names, template paths, output profiles, provider mappings, install rules, or presentation text hardcoded in generic Python. It must also cover SRP, OCP, ISP, DIP, DRY/SSOT, Config-First, Fail-Fast, CQS, Law of Demeter, dependency injection/composition-root ownership, import-time side effects, Explicit-over-Implicit, YAGNI, presentation separation, and package cohesion. A file may be marked unaffected only with a boundary reason.
 
+**Census rule:** the `ARCHITECTURE_PRINCIPLES.md` and `DOCUMENTATION_STANDARD.md` rows below are governing sources used to judge all consumers; they are not themselves consumers and are excluded from the active-consumer census. Every other unique path row in this section counts exactly once, including a reviewed-unaffected active reference. The ledger therefore contains 125 unique existing paths: two governing sources plus 123 active consumers. Every unique path row in the Behavioral Test and Helper Ledger counts exactly once toward its 151-file census.
+
+
+**Repeat-search rule:** search case-insensitively across `.pgmcp`, `.agents`, `.github/agents`, `.github/prompts`, `mcp_server`, `docs/coding_standards`, `docs/manuals`, `docs/reference`, `docs/setup`, `docs/agents`, and `tests`, excluding archived prompts and issue-local development documents. The old-name set is `quality.yaml`, `quality_gates`, `active_gates`, `run_quality_gates`, `auto_fix`, `supports_autofix`, and `fix_command`. The semantic-consumer set is `quality_config`, `qa_manager`, `quality_state`, `pytest_runner`, `test_tools`, `quality_tools`, `violation_parser`, `RunQualityGates`, `AutoFix`, `IPytestRunner`, `PytestRunner`, `GateResultDTO`, `RunQualityGatesOutput`, `RunTestsOutput`, `project_scope`, `failed_files`, and `baseline_commit`. The 2026-09-04 repetition returned 110 unique active paths and zero paths absent from the appropriate ledger.
+
 | Path | Category | Research obligation |
 |---|---|---|
 | [docs/coding_standards/ARCHITECTURE_PRINCIPLES.md](../../coding_standards/ARCHITECTURE_PRINCIPLES.md) | binding standard | Apply the complete architecture/hardcoding sweep to every runtime/setup disposition; do not treat passing tooling as architectural proof |
@@ -298,6 +303,12 @@ Every runtime/setup row is audited against the complete [Architecture Principles
 | [docs/manuals/user-guide.md](../../../docs/manuals/user-guide.md) | primary user manual | **Rewrite affected execution guidance** — explain `run_checks`, framework-neutral `run_tests`, `apply_fixes`, profiles, scopes, verbose evidence, availability, and restart after adapter-suite changes |
 | [docs/reference/server-configuration.md](../../../docs/reference/server-configuration.md) | active configuration reference | **Rewrite execution configuration** — replace `quality.yaml` with role-specific selectors, adapter package/trust/catalog rules, actionable V2 rejection, and no duplicate command/parser definitions |
 | [docs/setup/dev-isolation.md](../../../docs/setup/dev-isolation.md) | development setup consumer | **Adapt** — align isolated development instructions with adapter dependencies, official/workspace ownership, new commands/config, and restart-loaded catalog behavior |
+| [.agents/rules/qa.agent.md](../../../.agents/rules/qa.agent.md) | canonical QA role instruction | **Adapt canonical source** — preserve the no-global-suppression audit and evidence bar while replacing the hardcoded `gate1_formatting`/`quality.yaml` implementation claim with the selected check capability and structured `run_checks` evidence; generated variants derive from this source; **Owner: DI-07** |
+| [docs/agents/antigravity/rules/qa.agent.md](../../../docs/agents/antigravity/rules/qa.agent.md) | generated QA role instruction | **Regenerate from the canonical QA rule** after its F-20 vocabulary/config correction; no independently maintained V2 path or gate ID; **Owner: DI-07** |
+| [docs/agents/codex/rules/qa.agent.md](../../../docs/agents/codex/rules/qa.agent.md) | generated QA role instruction | **Regenerate from the canonical QA rule** after its F-20 vocabulary/config correction; no independently maintained V2 path or gate ID; **Owner: DI-07** |
+| [mcp_server/resources/standards.py](../../../mcp_server/resources/standards.py) | standards resource consumer | **Adapt** — stop reading legacy `QualityConfig.active_gates`; expose only demonstrated standards/check-policy facts from the new authority without fixed gate counts, V2 identifiers, adapter commands, or parser details; **Owner: DI-05** |
+| [docs/reference/copilot-agent-instructions-model.md](../../../docs/reference/copilot-agent-instructions-model.md) | active instruction-model reference | **Reviewed — no semantic migration** — it links to the binding quality-gates standard but copies no executable tool/config/gate identity; retain the link while the standard itself adopts check/test/fix vocabulary; **Owner: DI-07** |
+| [docs/reference/resources.md](../../../docs/reference/resources.md) | active resource reference | **Adapt affected resource contracts/examples** — distinguish workflow quality-gate status from executable check evidence, align the standards-resource view with its retained consumer need, and remove fixed gate counts or V2 config implications; **Owner: DI-05** |
 
 ## Behavioral Test and Helper Ledger
 
@@ -460,6 +471,14 @@ Test code is first-class code. Applicable checks include public-boundary behavio
 | [tests/mcp_server/unit/tools/test_tool_result_contract.py](../../../tests/mcp_server/unit/tools/test_tool_result_contract.py) | unit | shared tool result/cache contract | Direct | **Adapt** — ensure check/test/fix outputs follow the common tool envelope/cache contract while retaining distinct role payloads |
 | [tests/mcp_server/unit/validation/test_python_validator.py](../../../tests/mcp_server/unit/validation/test_python_validator.py) | unit | Python check implementation | Direct | **Move/split into official Python check-adapter tests and output-profile consumer tests** — remove temporary-file QAManager and extension-dispatch assumptions |
 | [tests/mcp_server/validation_fixtures/violations.py](../../../tests/mcp_server/validation_fixtures/violations.py) | fixture | Python violation fixtures | Direct | **Move to owning first-party check-adapter fixtures or remove unused cases** — generic server tests must not own Ruff/Mypy/Pyright output truth |
+| [tests/mcp_server/unit/config/test_json_violations_parsing.py](../../../tests/mcp_server/unit/config/test_json_violations_parsing.py) | unit | server-owned Ruff/Pyright parser config | Direct | **Move to first-party check-adapter suites or remove** — JSON paths, field maps, offsets, and fixability rules are adapter-owned tool semantics, not generic consumer configuration; **Owner: DI-05** |
+| [tests/mcp_server/unit/config/test_quality_config_scope.py](../../../tests/mcp_server/unit/config/test_quality_config_scope.py) | unit | legacy gate-scope config | Direct | **Replace/adapt** — preserve generic `run_checks` selector/scope behavior through role-specific config, remove gate terminology and Python-shaped example paths, and avoid coupling scope filtering to adapter facts; **Owner: DI-05** |
+| [tests/mcp_server/unit/config/test_text_violations_parsing_defaults_validator.py](../../../tests/mcp_server/unit/config/test_text_violations_parsing_defaults_validator.py) | unit | server-owned text parser config | Direct | **Move to owning check-adapter conformance/tool tests or remove** — regex placeholder validation is not generic-server check selection; **Owner: DI-05** |
+| [tests/mcp_server/unit/config/test_text_violations_parsing.py](../../../tests/mcp_server/unit/config/test_text_violations_parsing.py) | unit | server-owned Mypy/Pylint parser config | Direct | **Move to first-party check-adapter suites or remove** — tool-output regexes, severity defaults, and parser options belong to adapters; **Owner: DI-05** |
+| [tests/mcp_server/unit/config/test_violation_dto.py](../../../tests/mcp_server/unit/config/test_violation_dto.py) | unit | legacy cross-gate violation DTO | Direct | **Replace with check-role factual-result contract tests** — preserve required diagnostic facts only when selected by `check/v1`; remove quality-config ownership and gate-wide fixability assumptions; **Owner: DI-05** |
+| [tests/mcp_server/unit/managers/test_compact_payload_builder.py](../../../tests/mcp_server/unit/managers/test_compact_payload_builder.py) | unit | legacy quality-gate presentation payload | Direct | **Replace with `run_checks` DTO/presentation tests** — preserve compact user evidence and debug-field separation without QAManager, gate dictionaries, fixed Ruff names, or conflated skipped/pass semantics; **Owner: DI-05** |
+| [tests/mcp_server/unit/managers/test_scope_resolution.py](../../../tests/mcp_server/unit/managers/test_scope_resolution.py) | unit | QAManager scope and Python filtering | Direct | **Replace/adapt through public check orchestration** — preserve branch/project scope semantics and deleted-file handling while removing QAManager/private subprocess coupling, implicit main fallback, and hardcoded `.py` filtering; **Owner: DI-05** |
+| [tests/mcp_server/unit/resources/test_standards.py](../../../tests/mcp_server/unit/resources/test_standards.py) | unit | standards-resource quality config consumer | Direct | **Adapt** — prove the retained standards/check-policy resource contract through its public resource boundary; remove direct `quality.yaml`, `quality_gates.active_gates`, fixed count seven, and fixed gate-name assertions; **Owner: DI-05** |
 
 ## Completion Invariants
 
@@ -481,12 +500,13 @@ Research is complete only when:
 
 ## Current Gate
 
-The catalog now covers all 22 public artifact types, 79 template-suite files, 117 active runtime/setup/agent/documentation consumers, and 143 affected test/helper files. F-20 adds the explicit adapter package, Pytest, test-tool, fix-tool, state, parser, presentation, configuration, documentation, fixture, and migration consumers that the earlier F-19-only census did not include.
+The catalog now covers all 22 public artifact types and 79 template-suite files. Its runtime ledger contains 125 unique active paths: two governing-standard sources, which the declared census rule excludes, plus 123 consumers and references. Its Behavioral Test and Helper Ledger contains 151 unique paths. The QA-directed repeat search used both obsolete names and semantic consumer terms across the declared active roots; every resulting active path is now present in the appropriate ledger.
 
-Research remains open pending independent QA of the F-20 scope amendment. Design may not treat these dispositions as reviewed or resume implementation-oriented design until the external `@qa design-reviewer` returns its evidence-backed verdict. Earlier catalog dispositions remain binding unless F-20 explicitly supersedes quality-gate/autofix names, Pytest-shaped generic testing, or duplicated command/parser authority.
+The independent QA review of commit `5e465868d6779838929dd1f9b16a1d97306515d4` returned NOGO solely because the former 117/143 census was incomplete and its counting rule was not reproducible. The cited omissions and the additional omissions found by the producer's broader repeat sweep are now catalogued, the counts are recalculated, and the exclusion rule is explicit. This records remediation, not QA approval: Research remains open and Design remains paused pending an independent targeted re-review. Earlier catalog dispositions remain binding unless F-20 explicitly supersedes quality-gate/autofix names, Pytest-shaped generic testing, or duplicated command/parser authority.
 
 ## Version History
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.21 | 2026-09-04 | `@imp researcher` | Address the independent QA census blocker: declare the exact counting rule, add six missed active consumers/references and eight missed tests/helpers found by a repeated old-name and semantic-consumer sweep, and correct the totals to 123 consumers plus two governing sources and 151 tests/helpers without inferring QA approval. |
 | 1.20 | 2026-09-04 | `@imp researcher` | Expand the census to 117 active consumers and 143 test/helper files for F-20; route current check/test/fix tools, config, state, parsing, presentation, Pytest, documentation, and tests into one adapter-suite boundary with separate role contracts and a PGMCP 3.0 clean break. |
