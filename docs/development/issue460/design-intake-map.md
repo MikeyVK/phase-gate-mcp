@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** DEFINITIVE AND FROZEN — DESIGN AUTHORIZED WITH BINDING MANAGEABILITY CONDITIONS  
-**Version:** 1.22  
-**Last Updated:** 2026-09-04  
+**Status:** NARROW F-20 ROUTING AMENDMENT — DESIGN PAUSED FOR QA; REST FROZEN  
+**Version:** 1.24  
+**Last Updated:** 2026-09-05  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
 
@@ -17,6 +17,28 @@ Research was reopened on 2026-09-04 for F-20 after Design investigation showed t
 [Research](research.md) remains the sole authority for approved strategy, invariants, expected results, and the Research gate. [Research Findings](research-findings.md) owns evidence and rationale. The [Template Suite Work Catalog](template-suite-catalog.md) owns per-component dispositions. The [Pre-Implementation Documentation Contract](README.md) governs the form and navigation of the full set. This map owns only Design coverage and primary responsibility.
 
 A Design package is a cohesive grouping tool, not a mandatory wrapper around every obligation. Complete coverage is mandatory. A standalone or already-resolved obligation is not forced into an artificial package.
+
+## Bounded Retesting Amendment Routing — 2026-09-05
+
+Current authority is the [narrow F-20 amendment](research.md#narrow-check-retesting-amendment--2026-09-05).
+Design is paused for independent QA; previous freeze/GO statements below describe the
+earlier baseline, except for this explicitly authorized amendment. No finding, strategy,
+invariant, expected-result, or census total is added or removed.
+
+| Boundary | Primary owner | Required disposition |
+|---|---|---|
+| Auto selection/default, baseline advancement, failed-file replay, state DTO/repository and composition | DI-05 | Retire through clean break; expose explicit branch/project/path selection without an auto alias or silent replacement default |
+| Native optimization and fresh intent | DI-05 | Honor native configuration normally; define fresh support and truthful unsupported behavior per check capability; no generic reuse/state/session protocol |
+| Public result/cache/presentation | DI-05 | Keep report DTO/resource caching and invoked provenance; no cached report substitutes for new execution; remove only obsolete auto-state recovery mappings |
+| Workflow registration and PR integration | DI-05 | Remove quality_state.json registration and auto-only wiring; preserve unrelated phase/PR/branch-local artifact behavior; DI-07 aligns guidance |
+| Active manuals/references and agent consumers | DI-07 | Remove auto/default/state claims and describe fresh versus scope without creating another parameter SSOT |
+| Retained scopes, state-removal, and native fresh proof | DI-05 | Own package-local positive/negative evidence; DI-08 checks complete cross-package removal using the unchanged catalog |
+| Existing Design experiments | DI-05 after QA | Reconcile D-ADAPTER-13/14/15 and sections 7.10-7.12 with this authority; no obligation to preserve rejected reuse/session mechanisms |
+
+No change is made to DI-02 template provenance, DI-04 persistence, DI-06 renewal, the
+health-diagnostics deferral, or separate test/fix semantics. Concrete fresh flags,
+transport, scope defaults, config/DTO shapes and cycle decomposition remain later-phase
+work. The catalog owns exact file dispositions; this map does not create duplicate rows.
 
 ## Coverage Contract
 
@@ -169,7 +191,7 @@ flowchart LR
 | Affected inputs and consumers | Output profiles; `quality.yaml` and its replacement `checks.yaml`/`tests.yaml`/`fixes.yaml`; presentation config; quality/test/fix config models; validation modules; `QAManager`; Pytest runner/interface; quality state/repository; violation parsing; `RunQualityGatesTool`, `RunTestsTool`, `AutoFixTool`; public DTOs/cache/presentation; bootstrap/exports/registration; scaffold and safe-edit consumers; workflow/agent/manual/reference consumers; all catalogued tests, fixtures, fake runners, and validation fixtures |
 | Design-owned decisions | One immutable startup-resolved adapter catalog; official and trusted workspace package sources; package manifest, `adapter_id`, one version, supported role-contract versions, capabilities, entry points, package fingerprint, dependency/trust/error policy, and restart semantics; generic process/scratch/timeout/stdout/stderr/malformed/crashed/unavailable transport; separate `check/v1`, `test/v1`, and `fix/v1` request/result contracts; `run_checks`, framework-neutral `run_tests`, and `apply_fixes` inputs/results/scopes/verbose behavior/cache/presentation; output-profile check selection; fix proposal, stale-input detection, path authorization, validation, controlled application, rollback/recovery, and final evidence; conformance and self-hosting proof |
 | Consumer-policy separation | Output profiles select required checks for complete proposed content. `run_checks` owns explicit scope and check-run reporting. `run_tests` owns behavioral suite/framework semantics. `apply_fixes` owns an explicitly requested mutation workflow around bounded adapter proposals. Workflow gates consume evidence but are not adapter capabilities. DI-04 alone decides scaffold/safe-edit persistence from unchanged factual check states |
-| Compatibility, migration, removal | PGMCP 3.0 clean break: remove `run_quality_gates`, `auto_fix`, and `quality.yaml`; introduce `run_checks`, `apply_fixes`, `checks.yaml`, `tests.yaml`, and `fixes.yaml`; keep only the semantically correct `run_tests` name while replacing its Pytest-shaped contract. No aliases, wrapper tools, or dual-read config. Obsolete config fails with actionable migration guidance. Migrate retained Pytest, Ruff, Mypy, Pyright, syntax, parser, and fix behavior into official packages where justified by current consumers |
+| Compatibility, migration, removal | PGMCP 3.0 clean break: remove `run_quality_gates`, `auto_fix`, and `quality.yaml`; introduce `run_checks`, `apply_fixes`, `checks.yaml`, `tests.yaml`, and `fixes.yaml`; keep only the semantically correct `run_tests` name while replacing its Pytest-shaped contract. No aliases, wrapper tools, or dual-read config. Obsolete config fails with actionable migration guidance. Migrate retained Pytest, Ruff, Mypy, Pyright, syntax, parser, and fix behavior into official packages where justified by current consumers The 2026-09-05 refinement also removes auto and its baseline/replay state and excludes PGMCP execution-result reuse; preserve report caching and provide fresh intent without a hidden native-settings layer |
 | Provenance and ownership | Each adapter package has one authored manifest version and one computed package fingerprint over its semantic package inputs; files have no authored versions. Per-run evidence records only invoked adapter ID/version/package fingerprint/role-contract version and discovered external-tool ID/version. Do not add a whole adapter-suite fingerprint to runs or adapter provenance to scaffold-artifact source metadata. PGMCP owns official packages; workspace owners own trust, dependencies, retention, and version policy for `.pgmcp/adapter_suite/` packages |
 | Required proof | Check and output-profile consumers receive identical factual check evidence; check calls cannot mutate; tests remain behavior-specific; fix adapters cannot directly authorize workspace writes; stale or out-of-scope proposals do not reach authoritative files; Pytest behavior intentionally retained is compared across old/new boundaries; official adapters pass shared role conformance plus tool-specific tests; a non-Python fixture package adds a supported language/tool without generic server-code changes; duplicate IDs, invalid manifests/contracts, unavailable tools, timeouts, crashes, malformed output, verbose capture, and restart loading are explicit; old public/config names and duplicate command/parser authorities are absent |
 | Exclusions | No universal result object across roles; no language/file-extension/framework/command/parser dispatch in generic server code; no template-suite authority to install or trust executables; no adapter-owned scaffold persistence or workflow-gate decision; no whole-suite run fingerprint, binary retention/integrity promise, external package history enforcement, or new fourth product role without a separately justified consumer/contract |
@@ -262,7 +284,7 @@ This is a cross-cutting routing and integration obligation, not a removal subsys
 
 ### RC-01 — Approved Strategy Fidelity
 
-Research has approved compatibility and migration per boundary, including the human-approved F-20 clean break dated 2026-09-04. Independent QA accepted the substantive F-20 boundaries and returned a census-only NOGO; that blocker is producer-remediated and awaits targeted re-review. This map is complete intake but does not authorize Design continuation. After a QA GO, Design owns no new choice to preserve versus bridge versus clean break unless new evidence makes an approved strategy unsound.
+Research has approved compatibility and migration per boundary, including the F-20 clean break dated 2026-09-04. The human owner subsequently confirmed formal Design GO with binding manageability conditions; Research and this intake scope are frozen. This paragraph's former pending-review wording was an administrative remnant superseded by that recorded authorization. Design may define mechanisms within the approved strategies. A new product role, compatibility choice, or consumer family requires a separate issue; contradictory evidence stops the affected design for an explicit human decision.
 
 | Obligation | Consequence |
 |---|---|
@@ -446,6 +468,8 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.24 | 2026-09-05 | `@imp researcher` | Route narrow auto-retirement/native-fresh amendment to existing DI-05/DI-07/DI-08 owners; pause Design for QA and retain all census/coverage totals. |
+| 1.23 | 2026-09-05 | `@imp designer` | Correct only the stale RC-01 pending-review paragraph to the already recorded formal Design GO and Research freeze; no finding, strategy, consumer, disposition, or ownership changes. |
 | 1.22 | 2026-09-04 | `@imp researcher` | Record formal human Design authorization, freeze the intake scope, assign DI-05 exclusively to `design-execution-adapters.md`, and bind downstream decomposition to independent evidence and complete 126/151 cycle ownership. |
 | 1.21 | 2026-09-04 | `@imp researcher` | Record the workspace-root QA NOGO, route `pyproject.toml` to DI-05 and root/generated documentation consumers to DI-07, correct the census to 126 plus two / 151, and require short targeted re-review before Design resumes. |
 | 1.20 | 2026-09-04 | `@imp researcher` | Record the census-only independent QA NOGO, preserve the accepted DI-05 direction, route six further consumers/references and eight further tests/helpers without changing primary ownership, and require targeted re-review of the corrected 123-plus-two / 151 inventory before Design resumes. |

@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** FROZEN EVIDENCE — FORMAL DESIGN GO RECORDED  
-**Version:** 1.18  
-**Last Updated:** 2026-09-04  
+**Status:** NARROW F-20 AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
+**Version:** 1.19  
+**Last Updated:** 2026-09-05  
 **Issue:** 460
 
 ## Purpose
@@ -12,6 +12,9 @@
 Preserve detailed factual findings, option analysis, blast-radius evidence, and observed behavior for the issue-460 scaffolding schema-template contract audit without enlarging the primary Research artifact.
 
 ## Authority
+
+The current 2026-09-05 amendment is limited to bounded retesting/native optimization
+below; the earlier Research closure remains historical outside that exception.
 
 This document is an evidence companion, not a decision authority. Research was reopened on 2026-09-04 by explicit human direction after Design investigation exposed the wider executable-tooling boundary recorded in F-20. F-20 supersedes only those F-19 clauses that preserve `run_quality_gates`, attach fixing to quality-gate orchestration, or place behavioral tests outside the shared extension architecture. F-19 remains the authority for side-effect-free check facts shared by output-profile validation and explicit check execution. Check, test, and fix remain separate contracts and consumers despite sharing adapter packaging, discovery, trust, and process infrastructure.
 
@@ -1724,6 +1727,90 @@ Design must treat the adapter extension suite as one cohesive package boundary w
 Exact JSON Schema shapes, entrypoint layout, suite discovery/index mechanism, scratch topology, process batching, result-field optionality, concurrency, locking, and class/module topology remain Design-owned.
 
 **Canonical decision/status:** see the [Research decision register](research.md#approved-strategy-and-decision-status).
+
+### F-20 Narrow Amendment — Bounded Retesting and Native Optimization
+
+**Scope and authority:** human-directed Research amendment dated 2026-09-05. Decision
+authority remains [Research](research.md#narrow-check-retesting-amendment--2026-09-05).
+No new finding ID, strategy row, consumer family, or template-suite responsibility.
+
+#### Observed Current Behavior
+
+- [RunQualityGatesInput](../../../mcp_server/tools/quality_tools.py) defaults to
+  `scope=auto`; branch/project/files are alternatives. Its tool description and
+  scope validator expose the same contract.
+- [QAManager](../../../mcp_server/managers/qa_manager.py) resolves auto from
+  baseline-to-HEAD Python paths plus persisted failed files, falling back to project
+  scope without a baseline. Only auto-lifecycle runs update this state. A passing auto
+  run advances HEAD and clears failed files; failing auto runs accumulate failures.
+- [QualityState](../../../mcp_server/state/quality_state.py) and its
+  [repository](../../../mcp_server/managers/quality_state_repository.py) own baseline
+  and failed-file persistence, locking, corruption/version handling, and backup behavior.
+  This is selection history, not a general dependency-validity proof.
+- [Bootstrap](../../../mcp_server/bootstrap.py) constructs/injects the repository.
+  [Quality interfaces](../../../mcp_server/core/interfaces/quality.py), tool error
+  paths, test helpers, and native presentation consume this state boundary.
+- [Workflow contracts](../../../.pgmcp/config/contracts.yaml) register
+  `.pgmcp/quality_state.json` as a branch-local artifact. The relevant
+  [submit-PR integration tests](../../../tests/mcp_server/integration/test_submit_pr_atomic_flow.py)
+  assert that registration. Removing only the state class would leave lifecycle
+  obligations behind; general PR atomicity and other branch-local artifacts remain.
+- The catalog previously explicitly required retention of auto-scope behavior. Its
+  changed disposition is intentional breakage approved by the owner, not test cleanup.
+
+#### Alternatives and Trade-offs
+
+| Alternative | Benefit | Cost, risk, and affected consumers | Human disposition |
+|---|---|---|---|
+| Retain auto as changed-plus-failed selection without a validity promise | Retains existing caller convenience | Keeps default, baseline, failure replay, state cleanup and documentation obligations; still cannot prove unaffected code correct | Not selected |
+| Generic PGMCP cross-scope evidence reuse | Could skip complete tool invocations | Requires native context/dependency validity, concurrent-input semantics, state, and complex adapter obligations; file hashes alone are insufficient | Rejected for issue 460 |
+| Explicit scopes with native optimization and fresh intent | Small caller/adapter boundary; native tools retain their own analysis knowledge | Removes auto convenience; native performance and bypass support vary; full coverage can still require a broader authorized run | Selected by human |
+
+#### External Evidence and Limits
+
+[Mypy](https://mypy.readthedocs.io/en/stable/command_line.html#incremental-mode) caches
+type information and supports disabling incremental reads; that option alone does not
+disable cache writes. [TypeScript](https://www.typescriptlang.org/tsconfig/incremental.html)
+can persist project-graph information. [Ruff](https://docs.astral.sh/ruff/configuration/)
+exposes cache-read controls. These support investigating native optimization rather
+than duplicating it in PGMCP; they do not prove uniform semantics across tool versions.
+[Pytest](https://docs.pytest.org/en/stable/how-to/cache.html) distinguishes last-failed
+selection from failed-first execution of the rest. Neither known failures nor changed
+source paths constitute complete affected-test selection.
+
+No native command was executed for this documentation amendment; no speedup is claimed.
+Design must demonstrate fresh semantics per retained official check capability,
+including unsupported/native-cache-write cases, without a destructive cache purge.
+The test/fix contracts and their independent proof obligations remain unchanged.
+
+#### Preserved Behavior and Expected Outcomes
+
+- Explicit branch/project/path selection remains usable with accurate coverage.
+- Normal invocations respect native settings; fresh is an explicit per-call override
+  of analysis reuse, not another workspace rule configuration or scope selector.
+- A fresh request is honored or truthfully rejected for the affected capability before
+  its check; it is never silently downgraded. The exact input/schema/result projection,
+  mixed-profile admission, and replacement default remain Design-owned.
+- Completed run reports/resources remain available; no PGMCP cache supplies old
+  success as the outcome of a new check request.
+- Existing automatic failed-file replay and baseline advancement cease; historical
+  failures do not become passes simply because their selection mechanism retires.
+- Remove obsolete auto state wiring and recovery presentation while preserving other
+  state, generic locking/atomic helpers, workflow evidence, and fix/renewal recovery.
+- Keep the rejected work-id/session machinery out of the adapter contract.
+
+#### Targeted Blast-Radius Verification
+
+A repository-root, hidden-aware, case-insensitive search using
+`quality_state|baseline_sha|failed_files|baseline_commit|auto.scope|scope.{0,12}auto`,
+normal ignore rules, and exclusions `.git/**`, `.github/prompts/archive/**`, and
+`docs/development/**` found 27 paths. Twenty-six are already exact catalog entries.
+The remaining `.pgmcp/state.json` is generated branch-local workflow/audit data, not
+a new source consumer; it remains tooling-owned and is not edited by this amendment.
+The catalog records dispositions for direct hits and preserves test-only/fixture
+references in their existing owners. No active source hit is silently omitted.
+The established 126-plus-two/151 census is unchanged; findings and strategy totals
+are unchanged because this refines F-20 rather than adding a new product boundary.
 
 ## Per-Artifact Semantic Audit
 

@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-27T09:08Z updated=2026-08-27 -->
 # Issue 460 Pre-Implementation Documentation Contract
 
-**Status:** DEFINITIVE — RESEARCH FROZEN; DESIGN AUTHORIZED WITH BINDING MANAGEABILITY CONDITIONS  
-**Version:** 1.12  
-**Last Updated:** 2026-09-04
+**Status:** DEFINITIVE — NARROW RESEARCH AMENDMENT; DESIGN PAUSED FOR EXTERNAL QA  
+**Version:** 1.19  
+**Last Updated:** 2026-09-05  
 
 ---
 
@@ -14,6 +14,14 @@ This issue-local contract defines the required structure, ownership, traceabilit
 lifecycle of the Research and Design documentation for issue #460. It exists to keep a
 large pre-implementation evidence and decision set navigable without creating a
 monolithic Design document or duplicating authority across files.
+
+## Current Review Boundary
+
+The human owner authorized only the [2026-09-05 check-retesting Research amendment](research.md#narrow-check-retesting-amendment--2026-09-05):
+remove auto and PGMCP execution-result reuse, retain native optimization with fresh
+intent, and correct directly affected consumer/test dispositions. Other Research stays
+frozen. Independent QA is requested before Design resumes. Earlier Design GO statements
+below describe the prior baseline; no new Design mechanism is authorized by this update.
 
 ## Scope
 
@@ -31,6 +39,7 @@ monolithic Design document or duplicating authority across files.
 - Planning cycles, commit boundaries, and task estimates;
 - repeating evidence inventories already owned by the Research documents;
 - deferred feature work excluded by [Deferred Work](deferred-work.md);
+- [startup health and recovery](deferred-work.md#deferred-work-notice-agent-facing-startup-health-and-recovery) explicitly deferred during Design: no health logic, health-first policy, or new health-driven blockades in issue 460; complete availability-aware check/test/fix inputs remain in scope, independently of that future issue;
 - repository-wide documentation conventions beyond issue #460.
 
 ## Contract Position
@@ -91,7 +100,7 @@ corresponding workshop has produced a stable decision nucleus.
 | `design-shared-contracts.md` | Exact interfaces, DTOs, configuration shapes, status vocabularies, and interaction rules genuinely shared by multiple package documents | Planned |
 | `design-suite-resolution.md` | DI-01 suite contract metamodel and public schema exposure; DI-02 resolved graph, runtime selection, introspection, and provenance | Planned |
 | `design-mutation-validation.md` | DI-04 scaffold/safe-edit mutation, persistence policy, atomicity, recovery, and consumption of unchanged DI-05 factual check evidence | Existing draft; resume in Design |
-| `design-execution-adapters.md` | DI-05 adapter package/catalog/process architecture; separate check, test, and fix contracts and operations; fix authorization; V3 cutover; conformance and migration evidence | Planned; dedicated owner |
+| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 adapter package/catalog/process architecture; separate check, test, and fix contracts and operations; fix authorization; V3 cutover; conformance and migration evidence | Drafting; manifest nucleus decided; shared check binding/profile workshop open; complete launch contracts and migration open |
 | `design-document-tracking-artifacts.md` | DI-03 contracts and renderer semantics for documentation, issue, PR, commit, planning, validation-report, and related tracking artifacts | Planned |
 | `design-code-test-artifacts.md` | DI-03 contracts and renderer semantics for production-code and public unit/integration-test artifact families | Planned |
 | `design-distribution.md` | DI-06 package distribution, renewal, customization, adoption, and owner-deployment migration | Planned |
@@ -283,6 +292,13 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.19 | 2026-09-05 | `@imp researcher` | Navigate the narrowly reopened check-retesting amendment and external QA stop; preserve unrelated document topology and Research freeze. |
+| 1.18 | 2026-09-05 | `@imp designer` | Link the startup-health deferred-work notice and distinguish it from the retained complete check/test/fix input contracts. |
+| 1.17 | 2026-09-05 | `@imp designer` | Record manifest-nucleus agreement in navigation and identify the shared check binding/profile workshop as open. |
+| 1.16 | 2026-09-05 | `@imp designer` | Point DI-05 navigation to the role-organized manifest workshop; preserve document topology, existing decisions, and frozen Research. |
+| 1.15 | 2026-09-05 | `@imp designer` | Update DI-05 navigation after discovery agreement and native tool-configuration ownership decision; topology and frozen Research remain unchanged. |
+| 1.14 | 2026-09-05 | `@imp designer` | Update DI-05 workshop navigation after human agreement on package grouping; document topology and frozen Research scope are unchanged. |
+| 1.13 | 2026-09-05 | `@imp designer` | Link the scaffolded DI-05 document and record its first workshop status; document topology and frozen Research scope are unchanged. |
 | 1.12 | 2026-09-04 | `@imp researcher` | Record formal human Design authorization, freeze Research, give DI-05 the dedicated `design-execution-adapters.md` owner, and make the nine manageability conditions part of the pre-implementation form contract. |
 | 1.11 | 2026-09-04 | `@imp researcher` | Record the workspace-root census NOGO on `d92a2ca4`, the three additional DI-05/DI-07 consumers, and the corrected 126-consumer-plus-two-standards / 151-test inventory; keep Research open and Design paused for short targeted re-review. |
 | 1.10 | 2026-09-04 | `@imp researcher` | Record the independent F-20 census NOGO and the corrected 123-consumer-plus-two-standards / 151-test inventory; keep Research open and Design paused for targeted independent re-review. |

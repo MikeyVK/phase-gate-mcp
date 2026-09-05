@@ -1,8 +1,8 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
-**Status:** CLOSED AND FROZEN — FORMAL DESIGN GO WITH BINDING MANAGEABILITY CONDITIONS  
-**Version:** 3.25  
-**Last Updated:** 2026-09-04  
+**Status:** NARROW RESEARCH AMENDMENT — INDEPENDENT QA REQUESTED; DESIGN PAUSED  
+**Version:** 3.26  
+**Last Updated:** 2026-09-05  
 **Issue:** 460  
 **Workflow:** Refactor / Research
 
@@ -15,6 +15,9 @@ The public caller contract is the output of `scaffold_schema`. Template configur
 This document is the sole authority for issue-460 decision status, Approved Strategy, expected results, open work, and the Research gate. Detailed evidence is retained in [Research Findings](research-findings.md). The [Design Intake Map](design-intake-map.md) is the subordinate authority for complete primary Design coverage; it cannot change Research decisions. The [Pre-Implementation Documentation Contract](README.md) governs the form, topology, and navigation of the Research and Design set without changing this document's content authority.
 
 ## Current Status and Gate
+
+The 2026-09-05 narrow check-retesting amendment below is the current gate authority.
+All other Research remains frozen; the following 2026-09-04 account is historical.
 
 Research was explicitly reopened by the human owner on 2026-09-04 after Design investigation showed that the approved F-19 boundary was too narrow. Sharing executable check facts between rendered-output validation and quality-gate orchestration while leaving behavioral tests in a Pytest-specific subsystem and fixes as secondary quality-gate commands would create three incompatible extension models and preserve language knowledge in generic server code.
 
@@ -32,6 +35,57 @@ This amendment supersedes only F-19 wording that preserved `run_quality_gates`, 
 - The workspace-root, hidden-aware repetition found and routed three further direct hits—`pyproject.toml`, root `README.md`, and the generated VS Code/Copilot coordination-agent variant—raising the active-consumer census to 126 while leaving the test census unchanged.
 - The final targeted QA gate is reported closed, and the human owner formally authorized Design on 2026-09-04.
 - Research is now content-frozen. The approved direction and complete catalog remain binding Design input; any newly proposed product role, compatibility choice, or consumer family requires a separate issue.
+
+## Narrow Check-Retesting Amendment — 2026-09-05
+
+**Human authority:** the owner explicitly approved removal of `auto`, no PGMCP
+execution-result reuse, native optimization with an explicit `fresh` request, and a
+bounded return to Research followed by independent QA. The rest of Research remains
+frozen. This amends the existing F-20 strategy, not the issue's product roles or census.
+
+### Approved Strategy Refinement
+
+- Remove `auto` from `run_checks`, including its implicit default, baseline advancement,
+  and automatic failed-file replay. Keep branch, project, and explicitly selected
+  path coverage. Do not alias `auto` to another scope or silently choose a replacement
+  default. Design must settle and expose the replacement default/required-selection rule.
+- Do not build PGMCP execution-result reuse, cross-scope validity tracking, adapter
+  reuse keys, or prepared-work/session protocols for that purpose. Cached operation
+  DTOs/resources, logs, presentation and invoked adapter provenance remain supported:
+  storing a report is not skipping execution based on an old result.
+- Normally respect native configuration for caching/incremental analysis. Do not
+  force caching on through a second hidden PGMCP tool-settings layer.
+- Provide explicit `fresh` input intent: inspect the selected check scope without
+  reusing earlier analysis results. A full-project fresh run requires both project
+  scope and fresh intent. Fresh does not enlarge scope, authorize source writes, or
+  authorize deletion of shared cache directories. A tool that never reuses analysis
+  already satisfies the intent. Unsupported fresh semantics must be identified before
+  the affected substantive check and must never be reported as fulfilled.
+- Preserve transparent requested/actual coverage, current working-tree branch selection,
+  explicit expansion permission, and separation of failed/unavailable/non-executed
+  evidence. A limited run does not certify unexamined code or discover all affected tests.
+- Retire only the auto-specific state responsibility and its consumers. Keep unrelated
+  workflow/phase state, report resources, fix recovery, test state, and template-suite
+  renewal checkpoints. Existing obsolete check-state data is not migrated into a new
+  validity cache; Design must specify its safe inert-data cleanup disposition.
+- Keep adapters language-agnostic and practical to author. This amendment does not
+  impose prepare/execute sessions or a dependency-validity oracle on extension authors.
+
+This expressly supersedes the former catalog requirement to retain public auto-scope
+behavior and the conditional preservation of auto baseline/failed-file state.
+[Detailed evidence and alternatives](research-findings.md#f-20-narrow-amendment--bounded-retesting-and-native-optimization)
+and [catalog dispositions](template-suite-catalog.md#bounded-retesting-amendment--2026-09-05)
+record the exact affected boundary. DI-05 owns contracts/state removal; DI-07 owns
+active guidance; DI-08 owns cross-package evidence. F-10 and all unrelated decisions
+remain unchanged. Counts remain 22 findings, 44 strategy rows, 19 invariants, 23
+expected results, 126 consumers plus two governing sources, and 151 tests/helpers.
+
+### Gate and Review
+
+Independent QA is requested for this amendment. The prior Design GO remains historical
+approval for the earlier baseline, not approval of this change. Do not resume Design
+until the targeted review has been completed and progression is authorized. No
+production, test, active-config, or Design implementation is performed by this amendment.
 
 ## Human Design Authorization and Binding Manageability Conditions
 
@@ -201,7 +255,7 @@ The table below is the canonical strategy and status register. Supporting ration
 | F-07 / S-07 input ownership and consumption | Approved 2026-08-23; clarified 2026-09-03 | Artifact context contains every caller-authored rendered value and only artifact content; operation controls never tunnel into rendering, downstream tool envelopes never tunnel through bodies, server provenance is a separate declared metadata source, and hidden routing or unconsumed values are removed |
 | F-08 / S-14 output validation and strictness | Approved 2026-08-23 | Applicable output evidence is declared per artifact/profile; passed, failed, and unavailable remain distinct; strict persistence requires executed passing evidence; dormant artifacts impose no provider availability requirement. Provider discovery, injection, and call topology remain Design-owned |
 | F-19 shared output-validation and check authority | Approved scope expansion 2026-08-25; narrowed and superseded in part by F-20 on 2026-09-04 | Retain one injected, config-first, side-effect-free authority for executable check facts and normalized factual check results, shared by artifact output profiles and explicit check execution. Scaffold and safe-edit consumers validate complete proposed content before mutation without check-run lifecycle or presentation side effects. F-20 supersedes the former promises that `run_quality_gates` remains public, that autofix belongs to quality orchestration, and that behavioral tests sit outside the shared extension architecture. F-19 still owns check facts and check-result semantics; it does not collapse input-schema, startup-graph, behavioral-test, fix, workflow-gate, or persistence policy responsibilities |
-| F-20 check/test/fix adapter extension suite | Formal Design GO recorded 2026-09-04 after substantive QA acceptance and remediation of two census-only NOGOs; Research frozen | Introduce one startup-resolved language-agnostic adapter extension suite. Self-contained packages declare manifest-owned `adapter_id`, one package version, supported `check/v1`, `test/v1`, and/or `fix/v1` contracts, capabilities, and executable entry points. Official packages ship with PGMCP; explicitly trusted workspace packages live under `.pgmcp/adapter_suite/`. Generic infrastructure owns discovery, trust, process transport, scratch space, timeouts, stdout/stderr capture, malformed/crashed/unavailable facts, and package fingerprints; it contains no language, extension, framework, command, or parser branches. Public/configuration vocabulary is a PGMCP 3.0 clean break: `run_checks` with `checks.yaml`, framework-neutral `run_tests` with `tests.yaml`, and `apply_fixes` with `fixes.yaml`; remove `run_quality_gates`, `auto_fix`, and `quality.yaml` without aliases or dual reads, and return actionable migration errors for obsolete config. Check is side-effect-free factual analysis, test returns framework-aware behavioral evidence, and fix returns a bounded proposed changeset that PGMCP stale-checks, authorizes, validates, and applies. A package may implement several roles but each role independently satisfies its versioned contract. Run evidence records only invoked adapter ID/version/package fingerprint/contract version and external tool identity/version; no whole-suite fingerprint or scaffold-artifact provenance is added. External/workspace owners retain their own package history, dependencies, and version policy. A new language/tool within these three roles requires adapter/config changes, not generic server code; a genuinely new product role may require a new consumer and contract |
+| F-20 check/test/fix adapter extension suite | Prior Design GO; narrow 2026-09-05 check-retesting refinement human-approved and awaiting independent QA | Introduce one startup-resolved language-agnostic adapter extension suite. Self-contained packages declare manifest-owned `adapter_id`, one package version, supported `check/v1`, `test/v1`, and/or `fix/v1` contracts, capabilities, and executable entry points. Official packages ship with PGMCP; explicitly trusted workspace packages live under `.pgmcp/adapter_suite/`. Generic infrastructure owns discovery, trust, process transport, scratch space, timeouts, stdout/stderr capture, malformed/crashed/unavailable facts, and package fingerprints; it contains no language, extension, framework, command, or parser branches. Public/configuration vocabulary is a PGMCP 3.0 clean break: `run_checks` with `checks.yaml`, framework-neutral `run_tests` with `tests.yaml`, and `apply_fixes` with `fixes.yaml`; remove `run_quality_gates`, `auto_fix`, and `quality.yaml` without aliases or dual reads, and return actionable migration errors for obsolete config. Check is side-effect-free factual analysis, test returns framework-aware behavioral evidence, and fix returns a bounded proposed changeset that PGMCP stale-checks, authorizes, validates, and applies. A package may implement several roles but each role independently satisfies its versioned contract. Run evidence records only invoked adapter ID/version/package fingerprint/contract version and external tool identity/version; no whole-suite fingerprint or scaffold-artifact provenance is added. External/workspace owners retain their own package history, dependencies, and version policy. A new language/tool within these three roles requires adapter/config changes, not generic server code; a genuinely new product role may require a new consumer and contract The [2026-09-05 refinement](#narrow-check-retesting-amendment--2026-09-05) additionally removes auto and PGMCP execution-result reuse, preserves native optimization, and requires explicit fresh intent; report caching and all other F-20 boundaries remain unchanged |
 | Safe-edit post-edit validation | Approved 2026-08-25 | Every `safe_edit_file` operation validates the complete resulting artifact content through the same injected, configured output-profile boundary used by scaffolding. In strict mode, failed or unavailable required validation leaves the original file unchanged; interactive mode may persist but returns structured findings. Exact staging, atomic-write, or rollback mechanics remain Design-owned |
 | F-09 / S-15 documentation authority | Approved 2026-08-23 | Live schema and catalog own exact facts; handwritten docs explain semantics and discovery, duplicate inventories are removed, and generation remains YAGNI-driven |
 | F-10 / S-10 distribution and customization | Human-approved amendment and bootstrap remediation 2026-09-03; unchanged by F-20 | Replace complete-suite-only renewal with component-wise three-way selection. Compare one current adopted checkpoint, the actual active root, and the supplied candidate for each indivisible component: shared/ is one component and every concrete manifest ID is one component. Select candidate content only for upstream-only or converged non-conflicting component changes; retain actual content or absence for local-only and conflicting changes. Component absence is a first-class state, so candidate additions and removals follow the same three-way rules. Build the selected result as a complete off-root suite, validate the entire resolved suite, and activate it only through a recoverable complete-tree replacement; validation or activation failure leaves the prior actual root authoritative. Candidate staging remains non-authoritative and runtime resolves exactly one active root. Persist one current component checkpoint with no history and no per-file versions. For a fresh managed install, install the validated candidate and establish its component states as the checkpoint in the same authoritative operation. For an existing managed workspace without a checkpoint, automatic bootstrap is permitted only when a trustworthy persisted fingerprint of the previously installed or accepted official suite exactly matches the computed actual suite, or when actual exactly equals the fully validated candidate; derive the checkpoint from that proven-equal suite. An owner-supplied trusted complete prior suite may instead be validated and used to derive adopted component states. If none of those bases is reliably available, preserve every actual byte, stage the candidate non-authoritatively, return an actionable `checkpoint_required` outcome, and perform no component selection or activation. Existing external workspaces never infer a checkpoint or activate content automatically; their owner must supply a trusted prior suite or explicitly acknowledge the validated candidate as the upstream comparison basis. Candidate acknowledgement advances only checkpoint state and leaves actual content unchanged. Explicit reconciliation may likewise advance candidate checkpoint components without copying or overwriting locally merged actual content. Bootstrap creates no history, lookup, retention, SemVer, compatibility-matrix, automatic-merge, or provenance-registry obligation. Artifact metadata and the existing resolved-package and source-suite fingerprints remain unchanged and are not repurposed as the renewal checkpoint. Exact checkpoint encoding, comparison DTOs, staging path, validation transaction, and recoverable activation mechanics remain DI-06 Design-owned. |
@@ -280,7 +334,7 @@ The approved Generic Python class responsibility remains bounded to a body-free 
 
 ## Design-Owned Questions After the F-20 Amendment
 
-Research is closed and content-frozen after formal human Design authorization. Both census remediations and the exact repository-root search remain durable evidence. Existing approved boundaries remain binding except where F-20 explicitly supersedes F-19 vocabulary and extension ownership. The questions below are authorized Design inputs; answering them may refine mechanisms within those boundaries but may not introduce a new product role, compatibility choice, or consumer family:
+Research is frozen except for the authorized 2026-09-05 check-retesting amendment, which pauses Design pending independent QA. Both census remediations and the exact repository-root search remain durable evidence. Existing approved boundaries remain binding except where F-20 explicitly supersedes F-19 vocabulary and extension ownership. The questions below are authorized Design inputs; answering them may refine mechanisms within those boundaries but may not introduce a new product role, compatibility choice, or consumer family:
 
 1. Which standard JSON Schema draft and composition form produce one resolved reference-free public artifact contract, and how do typed caller-content, operation-control, and server-provenance inputs remain collision-free?
 2. How are template schema/Jinja dependency edges resolved, ordered, validated, fingerprinted, and compared without authored file-level versions?
@@ -293,7 +347,9 @@ Research is closed and content-frozen after formal human Design authorization. B
 9. How do package discovery, trust, dependencies, one package version, computed package fingerprint, restart loading, and official-versus-workspace ownership work without a whole-suite run fingerprint or PGMCP-owned external history?
 10. Which independent/conformance evidence proves Pytest preservation, non-Python extensibility, contract failure behavior, fix safety, and complete removal of old tool/config names?
 
-### Refactor / Research Amendment Hand-over
+### Historical Refactor / Research Amendment Hand-over — 2026-09-04
+
+This historical hand-over does not close the new targeted review requested above.
 
 #### Scope
 
@@ -357,6 +413,7 @@ Research is closed and content-frozen after formal human Design authorization. B
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.26 | 2026-09-05 | Amend F-20 only: remove auto and PGMCP execution-result reuse, retain native configuration and fresh intent, route directly affected consumers, and request independent QA before resuming Design |
 | 3.25 | 2026-09-04 | Record formal human Design authorization, freeze Research content, require a dedicated DI-05 Design document, and bind Design/Planning to independently provable migration, cutover, rollback, and complete 126/151 cycle-ownership conditions |
 | 3.24 | 2026-09-04 | Record the workspace-root QA NOGO on `d92a2ca4`, replace the enumerated-root search with a hidden-aware exact-path repository-root search, add three direct consumers, correct the inventory to 126 consumers plus two governing sources and 151 tests/helpers, and request short targeted re-review without claiming Design authorization |
 | 3.23 | 2026-09-04 | Record the independent F-20 QA census NOGO, repeat the sweep with old names and semantic consumer terms, correct the inventory to 123 consumers plus two governing sources and 151 tests/helpers, and request targeted independent re-review without claiming Design authorization |
