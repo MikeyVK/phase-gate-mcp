@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
 **Status:** NARROW RETESTING DISPOSITION AMENDMENT — QA REQUESTED; REST FROZEN  
-**Version:** 1.24  
+**Version:** 1.25  
 **Last Updated:** 2026-09-05  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -174,7 +174,11 @@ data in `.pgmcp/state.json`. That generated file is tooling-owned evidence, not 
 runtime source consumer. Existing counts stay 126 consumers plus two governing sources
 and 151 tests/helpers; no row is silently dropped when its responsibility is retired.
 The former 2026-09-04 sweep counts remain dated historical evidence, not a fresh claim.
-Independent QA of this amendment is pending; Design must not resume yet.
+The owner subsequently authorized Design resumption and the
+[V3 workspace terminology correction](research.md#human-approved-scope-terminology-clarification).
+Existing DI-05 scope/schema/test owners replace the public project value with workspace
+without alias or changed coverage; DI-07 owns V3 guidance. Historical source names
+remain evidence, and this clarification adds no catalog path or owner.
 
 ## Runtime and Active Consumer Ledger
 
@@ -533,6 +537,7 @@ Planning must assign every one of the 126 consumer/reference rows and 151 test/h
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.25 | 2026-09-05 | `@imp designer` | Route authorized V3 workspace scope rename through existing DI-05/DI-07 owners without census changes; record Design resumption. |
 | 1.24 | 2026-09-05 | `@imp researcher` | Replace auto preservation with explicit retirement; route state/config/PR/test/reference fallout and native fresh intent without changing census; request targeted QA. |
 | 1.23 | 2026-09-04 | `@imp researcher` | Freeze the complete 126-consumer / 151-test catalog after formal Design authorization and require concrete, independently provable Planning cycle ownership for every row without a catch-all remainder. |
 | 1.22 | 2026-09-04 | `@imp researcher` | Address the workspace-root QA blocker: replace the enumerated-root search with a hidden-aware repository-root search, add `pyproject.toml`, root `README.md`, and the generated VS Code/Copilot coordination-agent variant with owners, and correct the totals to 126 consumers plus two governing sources and 151 tests/helpers without inferring QA approval. |

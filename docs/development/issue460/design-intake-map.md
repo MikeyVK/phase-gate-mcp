@@ -3,7 +3,7 @@
 # Issue #460 Research-to-Design Intake Map
 
 **Status:** NARROW F-20 ROUTING AMENDMENT — DESIGN PAUSED FOR QA; REST FROZEN  
-**Version:** 1.25  
+**Version:** 1.26  
 **Last Updated:** 2026-09-05  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -27,7 +27,7 @@ invariant, expected-result, or census total is added or removed.
 
 | Boundary | Primary owner | Required disposition |
 |---|---|---|
-| Auto selection/default, baseline advancement, failed-file replay, state DTO/repository and composition | DI-05 | Retire through clean break; require explicit scope for run_checks with branch/project/path selection. Omission is an input validation error before check/adapter execution; no auto alias, implicit fallback, or scope inferred from profile/fresh |
+| Auto selection/default, baseline advancement, failed-file replay, state DTO/repository and composition | DI-05 | Retire through clean break; require explicit scope for run_checks with branch/workspace/path selection. V3 workspace replaces project without alias or coverage change. Omission is an input validation error before check/adapter execution; no auto alias, implicit fallback, or scope inferred from profile/fresh |
 | Native optimization and fresh intent | DI-05 | Honor native configuration normally; define fresh support and truthful unsupported behavior per check capability; no generic reuse/state/session protocol |
 | Public result/cache/presentation | DI-05 | Keep report DTO/resource caching and invoked provenance; no cached report substitutes for new execution; remove only obsolete auto-state recovery mappings |
 | Workflow registration and PR integration | DI-05 | Remove quality_state.json registration and auto-only wiring; preserve unrelated phase/PR/branch-local artifact behavior; DI-07 aligns guidance |
@@ -41,6 +41,12 @@ transport, config/DTO shapes and cycle decomposition remain later-phase work. Re
 scope and rejection on omission are human-approved Research constraints, not open Design
 choices. DI-05 must expose and prove that behavior; DI-07 must align caller guidance.
 The catalog owns exact file dispositions; this map does not create duplicate rows.
+The owner authorized Design continuation and the surgical
+[workspace terminology clarification](research.md#human-approved-scope-terminology-clarification).
+Earlier QA-pause wording records the previous hand-over. DI-05 must reject the obsolete
+project scope value, and DI-07 must use workspace in V3 guidance while preserving
+historical source evidence. No PGMCP subproject model or special language-profile type
+is introduced; existing owners and counts remain unchanged.
 
 ## Coverage Contract
 
@@ -470,6 +476,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.26 | 2026-09-05 | `@imp designer` | Route explicitly authorized V3 workspace rename and obsolete project rejection without coverage/census changes; record continuation and no subproject model. |
 | 1.25 | 2026-09-05 | `@imp researcher` | Bind DI-05 to required run_checks scope and pre-execution rejection on omission; remove scope-default deferral following human decision on the QA blocker. |
 | 1.24 | 2026-09-05 | `@imp researcher` | Route narrow auto-retirement/native-fresh amendment to existing DI-05/DI-07/DI-08 owners; pause Design for QA and retain all census/coverage totals. |
 | 1.23 | 2026-09-05 | `@imp designer` | Correct only the stale RC-01 pending-review paragraph to the already recorded formal Design GO and Research freeze; no finding, strategy, consumer, disposition, or ownership changes. |

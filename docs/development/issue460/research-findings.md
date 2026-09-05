@@ -3,7 +3,7 @@
 # Issue 460 Research Findings
 
 **Status:** NARROW F-20 AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
-**Version:** 1.20  
+**Version:** 1.21  
 **Last Updated:** 2026-09-05  
 **Issue:** 460
 
@@ -1785,11 +1785,14 @@ The test/fix contracts and their independent proof obligations remain unchanged.
 
 #### Preserved Behavior and Expected Outcomes
 
-- Explicit branch/project/path selection remains usable with accurate coverage.
+- Explicit branch/workspace/path selection remains usable with accurate coverage.
+  The human-approved [terminology clarification](research.md#human-approved-scope-terminology-clarification)
+  renames the V3 project scope to workspace without alias or coverage change;
+  existing-source references above intentionally retain their historical vocabulary.
 - Following the QA omission finding, the owner approved required `scope` for
   `run_checks`: omission yields an input validation error before check/adapter execution.
-  No profile, fresh request, or implicit branch/project fallback supplies it. Requiring
-  scope avoids unexpected project-wide cost or unexpectedly limited branch coverage.
+  No profile, fresh request, or implicit branch/workspace fallback supplies it. Requiring
+  scope avoids unexpected workspace-wide cost or unexpectedly limited branch coverage.
   This is binding Research behavior, not a default choice delegated to Design.
 - Normal invocations respect native settings; fresh is an explicit per-call override
   of analysis reuse, not another workspace rule configuration or scope selector.

@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
 **Status:** NARROW RESEARCH AMENDMENT — INDEPENDENT QA REQUESTED; DESIGN PAUSED  
-**Version:** 3.27  
+**Version:** 3.28  
 **Last Updated:** 2026-09-05  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -46,13 +46,13 @@ frozen. This amends the existing F-20 strategy, not the issue's product roles or
 ### Approved Strategy Refinement
 
 - Remove `auto` from `run_checks`, including its implicit default, baseline advancement,
-  and automatic failed-file replay. Keep branch, project, and explicitly selected
+  and automatic failed-file replay. Keep branch, workspace, and explicitly selected
   path coverage. `scope` is required on every `run_checks` call. Omitting it produces
   an input validation error before any check or adapter execution; there is no implicit
-  branch/project fallback or auto alias. The owner explicitly approved this omission
+  branch/workspace fallback or auto alias. The owner explicitly approved this omission
   behavior after QA identified the missing caller decision. A profile selects checks,
   not scope; `fresh` controls analysis reuse, not scope, and neither supplies a default.
-  Requiring selection avoids unexpectedly broad project work or unexpectedly limited
+  Requiring selection avoids unexpectedly broad workspace work or unexpectedly limited
   branch coverage. Design owns the concrete schema/error presentation, not this decision.
 - Do not build PGMCP execution-result reuse, cross-scope validity tracking, adapter
   reuse keys, or prepared-work/session protocols for that purpose. Cached operation
@@ -61,7 +61,7 @@ frozen. This amends the existing F-20 strategy, not the issue's product roles or
 - Normally respect native configuration for caching/incremental analysis. Do not
   force caching on through a second hidden PGMCP tool-settings layer.
 - Provide explicit `fresh` input intent: inspect the selected check scope without
-  reusing earlier analysis results. A full-project fresh run requires both project
+  reusing earlier analysis results. A full-workspace fresh run requires both workspace
   scope and fresh intent. Fresh does not enlarge scope, authorize source writes, or
   authorize deletion of shared cache directories. A tool that never reuses analysis
   already satisfies the intent. Unsupported fresh semantics must be identified before
@@ -85,7 +85,26 @@ active guidance; DI-08 owns cross-package evidence. F-10 and all unrelated decis
 remain unchanged. Counts remain 22 findings, 44 strategy rows, 19 invariants, 23
 expected results, 126 consumers plus two governing sources, and 151 tests/helpers.
 
+### Human-Approved Scope Terminology Clarification
+
+The owner explicitly authorized this surgical Research correction and continuation
+of Design: the V3 `run_checks` scope value is `workspace`, replacing `project` without
+an alias. It denotes the whole workspace selection under the applicable inclusion,
+exclusion and check-applicability rules; the rename does not expand its coverage.
+File/directory selection and branch selection remain independent of check/profile
+selection. Ordinary profiles may select only one language's checks or mix languages;
+this adds no language selector, special profile type, or PGMCP subproject model.
+Native tools may retain their own project/configuration concepts. Historical evidence
+using the existing `project` value is not rewritten as if V2 already used `workspace`.
+DI-05 owns the V3 schema/rejection contract and DI-07 the terminology migration;
+the existing catalog owners and all census/strategy totals remain unchanged.
+
 ### Gate and Review
+
+The owner subsequently authorized Design resumption after commit `12665147`, and
+explicitly authorized the terminology-only clarification above while continuing
+Design. The review-request account below is the historical pre-resumption hand-over,
+not a renewed pause or a producer-issued QA verdict. Other Research remains frozen.
 
 The latest independent QA verdict was NOGO with one blocker: unspecified behavior when
 scope is omitted. The human-approved required-scope rule above addresses that gap;
@@ -422,6 +441,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.28 | 2026-09-05 | Apply explicitly authorized project-to-workspace V3 scope rename without alias or coverage change; distinguish native project concepts and ordinary language-specific profiles; record Design continuation |
 | 3.27 | 2026-09-05 | Record human-approved required run_checks scope and pre-execution validation error on omission; remove deferred default decision in response to QA; request recheck |
 | 3.26 | 2026-09-05 | Amend F-20 only: remove auto and PGMCP execution-result reuse, retain native configuration and fresh intent, route directly affected consumers, and request independent QA before resuming Design |
 | 3.25 | 2026-09-04 | Record formal human Design authorization, freeze Research content, require a dedicated DI-05 Design document, and bind Design/Planning to independently provable migration, cutover, rollback, and complete 126/151 cycle-ownership conditions |

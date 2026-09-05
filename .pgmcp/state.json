@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -85,6 +85,14 @@
       "human_approval_message": "User answered 'Ja' to the explicit request to perform a narrowly bounded Research amendment removing auto, excluding PGMCP result reuse, defining native optimization/fresh intent, updating directly affected consumer/test dispositions, and stopping for external QA while all other Research remains frozen.",
       "forced": true,
       "skip_reason": "Return from Design for explicitly authorized narrow amendment: frozen catalog currently mandates auto-scope preservation. No new product roles or consumer families; Design remains paused pending independent QA."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-05T19:37:49.949757+00:00",
+      "human_approval_message": "Go voor hervatten van design.",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,
