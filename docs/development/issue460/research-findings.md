@@ -3,7 +3,7 @@
 # Issue 460 Research Findings
 
 **Status:** NARROW F-20 AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
-**Version:** 1.19  
+**Version:** 1.20  
 **Last Updated:** 2026-09-05  
 **Issue:** 460
 
@@ -1786,11 +1786,17 @@ The test/fix contracts and their independent proof obligations remain unchanged.
 #### Preserved Behavior and Expected Outcomes
 
 - Explicit branch/project/path selection remains usable with accurate coverage.
+- Following the QA omission finding, the owner approved required `scope` for
+  `run_checks`: omission yields an input validation error before check/adapter execution.
+  No profile, fresh request, or implicit branch/project fallback supplies it. Requiring
+  scope avoids unexpected project-wide cost or unexpectedly limited branch coverage.
+  This is binding Research behavior, not a default choice delegated to Design.
 - Normal invocations respect native settings; fresh is an explicit per-call override
   of analysis reuse, not another workspace rule configuration or scope selector.
 - A fresh request is honored or truthfully rejected for the affected capability before
-  its check; it is never silently downgraded. The exact input/schema/result projection,
-  mixed-profile admission, and replacement default remain Design-owned.
+  its check; it is never silently downgraded. The exact input/schema/result projection
+  and mixed-profile admission remain Design-owned; scope omission behavior is fixed
+  by the [canonical amendment](research.md#narrow-check-retesting-amendment--2026-09-05).
 - Completed run reports/resources remain available; no PGMCP cache supplies old
   success as the outcome of a new check request.
 - Existing automatic failed-file replay and baseline advancement cease; historical

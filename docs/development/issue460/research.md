@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
 **Status:** NARROW RESEARCH AMENDMENT — INDEPENDENT QA REQUESTED; DESIGN PAUSED  
-**Version:** 3.26  
+**Version:** 3.27  
 **Last Updated:** 2026-09-05  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -47,8 +47,13 @@ frozen. This amends the existing F-20 strategy, not the issue's product roles or
 
 - Remove `auto` from `run_checks`, including its implicit default, baseline advancement,
   and automatic failed-file replay. Keep branch, project, and explicitly selected
-  path coverage. Do not alias `auto` to another scope or silently choose a replacement
-  default. Design must settle and expose the replacement default/required-selection rule.
+  path coverage. `scope` is required on every `run_checks` call. Omitting it produces
+  an input validation error before any check or adapter execution; there is no implicit
+  branch/project fallback or auto alias. The owner explicitly approved this omission
+  behavior after QA identified the missing caller decision. A profile selects checks,
+  not scope; `fresh` controls analysis reuse, not scope, and neither supplies a default.
+  Requiring selection avoids unexpectedly broad project work or unexpectedly limited
+  branch coverage. Design owns the concrete schema/error presentation, not this decision.
 - Do not build PGMCP execution-result reuse, cross-scope validity tracking, adapter
   reuse keys, or prepared-work/session protocols for that purpose. Cached operation
   DTOs/resources, logs, presentation and invoked adapter provenance remain supported:
@@ -81,6 +86,10 @@ remain unchanged. Counts remain 22 findings, 44 strategy rows, 19 invariants, 23
 expected results, 126 consumers plus two governing sources, and 151 tests/helpers.
 
 ### Gate and Review
+
+The latest independent QA verdict was NOGO with one blocker: unspecified behavior when
+scope is omitted. The human-approved required-scope rule above addresses that gap;
+independent confirmation is still requested. No Design GO is inferred from this edit.
 
 Independent QA is requested for this amendment. The prior Design GO remains historical
 approval for the earlier baseline, not approval of this change. Do not resume Design
@@ -413,6 +422,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.27 | 2026-09-05 | Record human-approved required run_checks scope and pre-execution validation error on omission; remove deferred default decision in response to QA; request recheck |
 | 3.26 | 2026-09-05 | Amend F-20 only: remove auto and PGMCP execution-result reuse, retain native configuration and fresh intent, route directly affected consumers, and request independent QA before resuming Design |
 | 3.25 | 2026-09-04 | Record formal human Design authorization, freeze Research content, require a dedicated DI-05 Design document, and bind Design/Planning to independently provable migration, cutover, rollback, and complete 126/151 cycle-ownership conditions |
 | 3.24 | 2026-09-04 | Record the workspace-root QA NOGO on `d92a2ca4`, replace the enumerated-root search with a hidden-aware exact-path repository-root search, add three direct consumers, correct the inventory to 126 consumers plus two governing sources and 151 tests/helpers, and request short targeted re-review without claiming Design authorization |
