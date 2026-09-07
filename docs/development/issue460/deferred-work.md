@@ -3,8 +3,8 @@
 # Issue 460 Deferred Work
 
 **Status:** APPROVED — F-20 EXECUTION ADAPTER SCOPE IS NOT DEFERRED  
-**Version:** 1.9  
-**Last Updated:** 2026-09-04  
+**Version:** 1.15  
+**Last Updated:** 2026-09-07  
 **Originating Issue:** 460
 
 ## Purpose
@@ -24,8 +24,160 @@ The Generic Python class responsibility is approved in [Research](research.md) a
 | S1mpleTrader-local specialization | Remove consumer-specific behavior from the portable PGMCP suite; perform no cross-repository edits | A later S1mpleTrader repository-local issue |
 | Complete YAML artifact subset | Remove two incomplete unreachable seeds now; do not restore them piecemeal | A future PGMCP issue |
 | Portable Python artifact coverage | Add no new Python artifact types in issue 460 | A future PGMCP issue with fresh consumer validation |
-| Purpose-aware runtime artifact discovery | Add no new MCP tool or overloaded introspection mode in issue 460 | A future PGMCP feature issue |
+| Purpose-aware runtime artifact discovery | Add no new MCP tool or overloaded introspection mode in issue 460; use the approved 50-template design threshold below to trigger the separate follow-up | A future PGMCP feature issue |
 | Command/query service artifact family | Remove broad Service and hidden subtype routing; add no replacement in issue 460 | A future PGMCP issue after concrete consumer validation |
+| Agent-facing startup health and recovery | Retain configuration-based input contracts and on-use dependency failures; add no startup adapter probes, health-check changes, health-first policy, or health-driven tool blockade | A separate future PGMCP issue; Design-stage exclusion dated 2026-09-05, retained-scope correction 2026-09-07 |
+| Removal of safe-edit `verify_only` | **No longer deferred** — human scope expansion brings retirement into issue 460 together with validation-policy alignment | DI-04; narrow Research amendment dated 2026-09-07, independent QA requested |
+
+## Deferred Work Notice: Safe-Edit Verify-Only Removal
+
+**Status: SUPERSEDED.** The initial deferral on 2026-09-07 was withdrawn later in the
+same workshop by explicit human scope expansion. The owner rejected retaining a
+temporary policy boundary only for functionality already nominated for removal.
+
+The [narrow Research amendment](research.md#narrow-safe-edit-policy-amendment--2026-09-07)
+now owns validation=enforce/report alignment, retirement of mode/verify_only and rejection
+of aliases or replacement dry-run APIs. DI-04 owns this work in issue 460. Independent
+QA is requested on the delta. No separate removal issue is required by this notice.
+
+The mode already exists in [SafeEditInput and execution](../../../mcp_server/tools/safe_edit_tool.py):
+it validates proposed content without writing the target. The
+[unit test](../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py) checks that no
+writer call occurs, and the [public reference](../../reference/tools/editing.md) exposes
+the mode. Repository inspection found implementation, tests and documentation, but no
+concrete non-test invocation in the inspected source/configuration/instruction roots.
+This is not telemetry and does not establish that external agents never use it.
+
+The earlier preserve/no-further-design instructions are historical and no longer bind
+the changed policy boundary. Removal is explicit loss of proposed-edit preview, not
+an inference that the mode was unused. All unrelated deferrals and frozen scope remain.
+
+## Deferred Work Notice: Server and Subprocess Security Isolation
+
+**Decision:** explicitly deferred by the human owner during Design on 2026-09-06.  
+**Future owner:** a separate PGMCP security issue, not yet created.  
+**Suggested issue title:** Define and enforce security isolation for the PGMCP server and tool subprocesses.
+
+### Limited Current Evidence
+
+The user wants a security boundary for the complete server and its tools. This brief
+source inspection is not a security audit or an assessment of actual host/container
+permissions. No credentials or environment values were inspected and no escape attempt
+was performed. Virtual environments, cwd selection and temporary directories are not
+OS security boundaries; admitted code is not necessarily technically confined.
+
+| Source | Observed behavior | Consequence / uncertainty |
+|---|---|---|
+| [ServerProxy](../../../mcp_server/core/proxy.py), `_spawn_server_in_context` | Ordinary subprocess.Popen; startup copies the environment | The inspected launcher establishes no OS filesystem/network sandbox; an external deployment could still impose one |
+| [QAManager](../../../mcp_server/managers/qa_manager.py), gate subprocess invocation | subprocess.run with timeout, output capture and cwd, no restricted environment argument at this call | Lifecycle controls are not access restrictions; host permissions and inherited environment require review |
+| [PytestRunner](../../../mcp_server/managers/pytest_runner.py), `_execute` | Copies os.environ and adjusts virtual-environment/PATH settings | Dependency isolation is not security isolation; actual credential exposure was not investigated |
+| [FilesystemAdapter](../../../mcp_server/adapters/filesystem.py), `resolve_path` | Resolves paths, then compares string startswith against the root | Only protects calls routed through this adapter; lexical prefixes do not prove path-component containment, including sibling names sharing a prefix. Prioritize focused correctness evidence; no public exploit path was exercised |
+
+Absolute paths identify locations, not permissions. Relative paths cannot prevent a
+process from constructing other paths. Actual access depends on host permissions and
+enforced policies, not the representation sent to an adapter.
+
+### Future Issue Scope and Evidence
+
+- Define the threat model for server, admitted adapters, external tools, workspace/test
+  code and executable plugins/configuration; distinguish trusted-but-buggy integrations
+  from untrusted execution without promising support for the latter.
+- Inventory required filesystem, child-process, environment/credential and network
+  access, including Git/GitHub, installed toolchains and authorized workspace mutations.
+- Evaluate whole-server isolation separately from per-role subprocess restrictions:
+  a workspace writable by the server does not make a check process read-only.
+- Select supported-platform enforcement/deployment and native-path mappings, with
+  explicit portability, cost and unavailable-enforcement behavior. No sandbox or
+  container technology is selected by this notice.
+- Review component-aware containment, symlink/junction behavior and environment
+  inheritance. Route immediate correctness defects separately if warranted.
+- Prove both allowed workflows and denied reads/writes/network access, including
+  descendants and check-versus-fix authority. Document limits; no silent weakening.
+
+### Issue-460 Boundary and Interim Promise
+
+No sandbox implementation, security manifest DSL, container packaging, credential
+broker, platform matrix or security monitoring is added to issue 460. Frozen Research
+and the approved consumer catalog remain unchanged. This future work does not block
+continuing Design under the human-approved deferral.
+
+Issue 460 retains application-level package trust/admission, path validation, bounded
+mutation, role responsibilities and controlled temporary-file ownership. Read-only
+checks are an integration contract, not a claim of OS-enforced confinement. No safe
+execution of untrusted adapters is promised. Public workspace-relative presentation
+remains separate from internal paths and enforcement. Exact adapter input fields
+remain Design work; this notice does not approve an absolute-host-path-only protocol.
+Residual validation-file maintenance stays manual; no temp monitoring or sweeping.
+
+## Deferred Work Notice: Agent-Facing Startup Health and Recovery
+
+**Decision:** explicitly deferred by the human owner during Design on 2026-09-05.  
+**Future owner:** a separate PGMCP issue, not yet created.  
+**Suggested issue title:** Agent-facing startup health, diagnostics, and recovery guidance.
+
+The preferred future presentation route for startup availability problems is
+`health_check`, not diagnostic prose embedded in tool input schemas. This direction
+does not authorize health implementation inside issue 460. The work has its own
+consumer, policy, presentation, and failure-recovery boundaries and must not enlarge
+the already expanded adapter refactor. The future issue is **not a prerequisite for
+issue-460 completion or public V3 cutover**.
+
+**Retained-scope correction (2026-09-07):** the human owner removed startup adapter
+dependency preflight and availability-based schema filtering. The health deferral
+remains; it must not implicitly retain that superseded execution obligation. A future
+issue must establish its own diagnostic evidence sources rather than assume that
+issue 460 produces adapter-readiness facts or an availability report.
+
+### Retained in Issue 460
+
+- A coherent startup-bound contract view based on validated declarations and references,
+  without invoking adapters or native tools to check dependency availability.
+- Complete input contracts for check/test/fix consumers, exposing valid configured
+  selections, with matching invocation validation and consistent lazy exposure.
+- Full profile obligations: no silent removal of missing checks or weaker fallback.
+- Explicit consumer-specific defaults and no-configured-choice behavior. These
+  remain Design work in issue 460, not an excuse for a general health-based blockade.
+- Existing scaffold `report` semantics and ordinary per-call invalid-input or
+  runtime `unavailable` outcomes, including absent dependencies on first use or later
+  dependency loss; inability to start the adapter remains a generic invocation failure.
+- Existing operation-result presentation, structured evidence, and cache/attachment
+  responsibilities under issues 456/459. Deferring startup diagnostics does not
+  suppress relevant operation failures.
+
+Input schemas describe inputs, constraints, defaults, and valid configured choices only.
+They do not explain omitted dependencies or carry startup diagnoses. Moving that
+diagnosis into dynamic tool descriptions is not an alternative within issue 460.
+
+### Excluded from Issue 460
+
+- Changes to `health_check` logic, output contracts, or presentation to report
+  startup availability, health aggregation, or a new degraded status.
+- New health-driven tool filtering/blockades, a health-only mode, or an obligation
+  to call `health_check` before other calls are admitted.
+- Health-first instructions in `AGENTS.md` or changed `restart_server` guidance.
+- New agent-facing startup reports, diagnostic log/resource exposure, or recovery
+  recommendations. No startup diagnostic store or speculative health DTO is required.
+
+Existing health/admin behavior and the existing emergency server fallback are
+preserved; this exclusion introduces no new policy for them. Frozen Research and
+the approved 126/151 consumer/test catalog remain unchanged.
+
+### Follow-Up Research and Evidence
+
+The future issue must establish its evidence sources, the exact healthy/degraded/unhealthy meanings,
+agent-visible summary and detail route, recovery guidance, and whether any tool
+blocking is justified. It must assess startup instructions and restart verification
+together, and prove behavior with lazy discovery and direct tool calls. Diagnostic
+availability when normal configuration, presentation, or cache initialization fails
+needs its own evidence; do not promise a report URI before it exists.
+
+Read the existing [health tool](../../../mcp_server/tools/health_tools.py),
+[server fallback](../../../mcp_server/server.py),
+[admin tools](../../../mcp_server/tools/admin_tools.py), and
+[agent protocol](../../../AGENTS.md) as current behavior, not as permission to modify
+them. The issue-460 [adapter Design](design-execution-adapters.md#77-configuration-based-exposure-and-on-use-availability)
+owns the retained configuration/on-use-availability boundary. This notice is follow-up
+input, not approval of a future health schema or implementation plan.
 
 ---
 
@@ -73,6 +225,43 @@ Issue-460 Research classified F-18 as a feature request and compared three futur
 F-16 remains in issue 460 because it preserves an existing suite-owned purpose description through selected-artifact introspection. It does not by itself create pre-selection catalog discovery.
 
 **Deferred Strategy (human-approved 2026-08-24):** introduce no new discovery tool or overloaded introspection mode in issue 460. A future feature issue must revalidate the consumer need and compare all three options; the previously proposed single MCP tool is retained only as a non-binding hypothesis.
+
+### Design Escalation Threshold — 50 Template IDs
+
+**Human-approved Design guardrail (2026-09-07):** use 50 distinct loaded concrete
+template IDs as the pragmatic threshold for enum-only discovery. This is a product
+design decision, not a measured model limit, protocol limit, or maximum suite size.
+Shared support files and repetitions of the same catalog in several tool schemas do
+not count as additional templates.
+
+| Situation | Design consequence |
+|---|---|
+| Up to and including 50 loaded template IDs | Retain complete catalog-derived enums as the simple ID-discovery route; this is not a blanket client-compatibility guarantee |
+| Concrete need for more than 50 loaded template IDs | Take up the separate F-18 discovery issue before treating the large-catalog agent experience as complete |
+| Earlier evidence of schema-size, exposure or selection problems | Bring the follow-up forward; ID length, repeated schema content and host/model behavior also matter |
+
+No runtime cap, counter-driven warning, configuration field, startup rejection, enum
+truncation or automatic switch of schema/tool behavior is introduced. Template 51 and
+later must never disappear from a still-enum-based contract. A 300-template workspace
+does not become invalid because of this guardrail. Dependency absence does not reduce
+the catalog count or its exposed choices. Issue 460 retains its existing boundary;
+the threshold is not an unconditional new V3-cutover gate or authorization to implement
+discovery in this issue.
+
+The inspected [MCP tool specification](https://modelcontextprotocol.io/specification/2026-07-28/server/tools)
+and [JSON Schema enum definition](https://json-schema.org/draft/2020-12/json-schema-validation#section-6.1.2)
+give no fixed enum-count maximum; the inspected MCP tool definition also gives no
+fixed schema-byte ceiling. This does not establish a universal client/provider limit
+or prove usable model selection at any particular count. Lazy tool exposure does not
+shrink the enum when the containing tool schema is eventually exposed.
+
+The preferred follow-up direction must address discovery and invocation together:
+bounded search/browsing results with manifest-owned purpose descriptions, compact
+template-ID inputs without a full-catalog enum, and exact server-side membership
+validation against the same loaded catalog. Merely adding a discovery tool beside
+unchanged full enums would retain their size cost. Exact tool names, query/pagination
+contracts, transitions, supported-client evidence and presentation remain decisions
+for the separate issue; no new catalog or duplicate template registration is implied.
 
 ---
 
@@ -223,6 +412,12 @@ The canonical decision is [F-10/S-10 in Research](research.md#approved-strategy-
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.15 | 2026-09-07 | Supersede verify_only deferral after explicit human scope expansion; route removal and full validation-policy alignment into the narrow Research amendment |
+| 1.14 | 2026-09-07 | Defer verify_only removal to a separate issue; exclude further mode-specific Design from issue 460 except for evidenced conflicts introduced by its new functionality |
+| 1.13 | 2026-09-07 | Record the human-approved 50-template Design escalation threshold for F-18, without runtime caps or enum truncation; require the follow-up to address discovery and compact invocation schemas together |
+| 1.12 | 2026-09-07 | Align retained Design scope with no startup adapter probes and configuration-based choices; preserve health deferral without assuming future readiness evidence from issue 460 |
+| 1.11 | 2026-09-06 | Record bounded source evidence and deferred server/subprocess isolation; distinguish application contracts from OS enforcement without expanding issue 460 |
+| 1.10 | 2026-09-05 | Record the explicit Design-stage startup-health deferral; retain complete availability-aware check/test/fix inputs and ordinary operation outcomes without making future diagnostics a V3 prerequisite |
 | 1.9 | 2026-09-04 | State explicitly that the F-20 check/test/fix adapter extension suite remains in issue 460 and is not a deferred language-feature, while future new product roles still require separate evidence and approval |
 | 1.8 | 2026-09-03 | Align deferred portable-Python guidance with the corrected F-03/F-07 boundary: explicit rendered symbols, independent exact file/target operation controls, and no cross-boundary naming derivation |
 | 1.7 | 2026-09-03 | Record the human-approved checkpoint-less bootstrap remediation while retaining component renewal inside issue 460 and outside deferred work |

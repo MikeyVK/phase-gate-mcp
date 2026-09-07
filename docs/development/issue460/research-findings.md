@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** NARROW F-20 AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
-**Version:** 1.21  
-**Last Updated:** 2026-09-05  
+**Status:** NARROW SAFE-EDIT AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
+**Version:** 1.22  
+**Last Updated:** 2026-09-07  
 **Issue:** 460
 
 ## Purpose
@@ -13,8 +13,35 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 
 ## Authority
 
-The current 2026-09-05 amendment is limited to bounded retesting/native optimization
-below; the earlier Research closure remains historical outside that exception.
+The current 2026-09-07 exception is limited to the safe-edit policy amendment below.
+Prior approved retesting/native-optimization and other Research boundaries remain frozen.
+
+### Safe-Edit Policy Alignment Amendment — 2026-09-07
+
+This is additional evidence for the existing Safe-edit post-edit validation strategy,
+not a new finding ID or adapter role. The human requested full alignment with scaffold
+validation and rejected preserving an intermediate boundary solely for verify_only.
+
+| Direct evidence | Observed responsibility / impact |
+|---|---|
+| [SafeEditInput and execution](../../../mcp_server/tools/safe_edit_tool.py) | One mode field combines strict/interactive write policy with verify_only, which returns after validation without calling the writer |
+| [SafeEditOutput](../../../mcp_server/schemas/tool_outputs.py) and [presentation.yaml](../../../.pgmcp/config/presentation.yaml) | Both expose mode; the public output and declarative templates must move together without presenter-specific logic |
+| [Unit tests](../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py) | Passing/rejected strict edits, interactive persistence and verify_only no-write behavior are explicit tests; the last behavior is intentionally retired, not accidentally lost |
+| [Validation integration tests](../../../tests/mcp_server/integration/mcp_server/validation/test_safe_edit_validation_integration.py) | Explicit strict callers must use the new policy while preserving complete-content validation and no-write-on-rejection behavior |
+| [Editing reference](../../reference/tools/editing.md) | Publishes all three modes; external callers must migrate. No invocation telemetry establishes that verify_only is unused |
+
+| Strategy option | Cost / risk / benefit | Human disposition |
+|---|---|---|
+| Rename values but preserve mode and verify_only | Retains functionality, but keeps two public policy field names and a boundary scheduled for removal | Rejected on 2026-09-07 |
+| Split dry-run from validation or retain aliases | Preserves preview at the cost of new combinations/compatibility behavior and work around deferred functionality | Not selected; no demonstrated need for a replacement |
+| Align validation contracts and retire verify_only now | Small additional public break and caller/test/docs migration; removes a real preview capability but avoids temporary compatibility machinery | Selected by the human's bounded scope expansion; strategy authority is Research |
+
+Preservation evidence must cover default enforce, explicit enforce/report, passing and
+rejecting checks, unavailable required checks, unchanged original bytes on refusal,
+and report with retained findings. Rejected mode/old values/verify_only must not write;
+registered input/error schemas, typed output and configured presentation must agree.
+No test or implementation is executed here. Check/test/fix protocols, F-10 activation,
+F-11 provenance and unrelated runtime behavior are excluded from this amendment.
 
 This document is an evidence companion, not a decision authority. Research was reopened on 2026-09-04 by explicit human direction after Design investigation exposed the wider executable-tooling boundary recorded in F-20. F-20 supersedes only those F-19 clauses that preserve `run_quality_gates`, attach fixing to quality-gate orchestration, or place behavioral tests outside the shared extension architecture. F-19 remains the authority for side-effect-free check facts shared by output-profile validation and explicit check execution. Check, test, and fix remain separate contracts and consumers despite sharing adapter packaging, discovery, trust, and process infrastructure.
 
