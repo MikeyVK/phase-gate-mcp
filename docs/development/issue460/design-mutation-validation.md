@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.21  
+**Version:** 1.22  
 **Last Updated:** 2026-09-07  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -435,6 +435,7 @@ reader seam remain integration obligations, not newly completed work.
 | Existing operation success/error envelope | Success means the requested mutation completed under the chosen policy, not validation acceptance; retain the established framework boundary | Concise outcome and actual operation failure inline; complete structured facts cached |
 | Scaffold `output_path`; safe-edit `path` | Identify the operation's file without a new singleton wrapper; retain established path-safety/exposure requirements | Inline and cache, never treat the path alone as proof of a write |
 | `written` | Actual completed persistence for both consumers; true means create-only scaffold or completed safe-edit write, not necessarily changed bytes | Inline and cache; false on pre-write refusal |
+| Safe-edit `content_changed` | Required nullable boolean; after a completed write, compare original decoded text with the proposed text submitted to that successful write; null when no write completed | Inline and cache; prevents a successful no-change write being presented as a text modification |
 | `validation_policy` for both mutation tools | Mirror request `validation` as enforce/report, default enforce; safe-edit `mode` and its legacy values are not accepted | Inline and cache |
 | `validation_status` | Closed passed/failed/unavailable/not_executed status, independent of mutation success | Inline and cache; replace duplicate validation `passed` boolean |
 | `profile_id` | The selected current profile, null if none is established; no duplicated profile contents | Inline and cache |
@@ -550,6 +551,106 @@ Do not claim the complete mutation DTO integrated until those carriers, the V3 r
 boundary and lossless cache/inline conformance are resolved. Future workshops should
 cover coherent contract surfaces rather than one field or one status per turn.
 
+### 4.7 Safe-Edit Operations, No-Change Results and Failure Boundaries
+
+**Status:** human-approved workshop, 2026-09-07. This section adds only safe-edit
+consequences to the shared contract; it does not redesign adapter execution, validation
+policy, temporary storage or presentation infrastructure.
+
+#### Preserved operation semantics
+
+| Operation | Preserved behavior | Missing match |
+|---|---|---|
+| `replace` | Replace the first exact match, optionally within the existing 1-based inclusive search window | Reject the edit |
+| `append` | Append at EOF or insert before/after the first exact anchor; preserve existing newline behavior | Reject when an explicitly supplied anchor is absent |
+| `rewrite` | Use caller text as the complete replacement of an existing file | Not applicable; identical text is valid proposed content |
+| `pattern_replace` | Replace all matches using the existing regex/literal setting | Return unchanged proposed content, not an edit failure |
+
+Keep existing matching cardinality and newline behavior. No require-match switch,
+configurable replacement count, fuzzy replacement, or new dry-run operation is introduced.
+Similar-text suggestions remain diagnostic only and never authorize an approximate edit.
+
+Evidence: [SafeEditTool operation construction](../../../mcp_server/tools/safe_edit_tool.py)
+and [existing public-operation tests](../../../tests/mcp_server/unit/tools/test_safe_edit_tool.py)
+cover replacement windows, anchored insertion, full rewrites, regex replacement and
+failure feedback. The current no-match regex/literal path returns unchanged text;
+direct implementation evidence does not imply that all preservation cases already have tests.
+
+#### Text effect versus writing
+
+The safe-edit output adds required `content_changed: bool | None`, without a default,
+to its frozen, strict, extra-forbid contract. It is a direct scalar, not a new result wrapper.
+
+| Actual write outcome | written | content_changed |
+|---|---|---|
+| Completed write of text different from the original decoded text | true | true |
+| Completed write of text identical to the original decoded text | true | false |
+| No completed write | false | null |
+
+Enforce these combinations in the typed output model. The consumer manager owns the
+comparison and the completed-write fact; tools only transfer them. This compares text,
+not original filesystem bytes, encoding, line-ending representation on disk, timestamps,
+or later external changes. The evidence identifies the proposed text handed to the writer;
+it does not require a second post-write read.
+
+Agents use the field to distinguish a successful write from an effective text change;
+declarative presentation exposes that distinction inline and the complete resource
+retains it. Do not infer a match count or why the text remained unchanged from this boolean.
+Do not add diffs, before/after copies, match counters or another result registry merely
+to answer that question. Existing diff-related public surfaces require their already
+catalogued disposition; this decision does not reactivate diff production.
+
+Unchanged proposed text follows the same complete-content checks and persistence policy
+as other proposed text. No implicit skip-check or skip-write optimization is introduced.
+
+#### Safe-edit-specific failure meaning and feedback
+
+| Failure boundary | Required fact | Validation consequence |
+|---|---|---|
+| Missing target | Existing file could not be found; creation belongs to scaffolding | No proposed-content check is fabricated |
+| Unreadable target | Original text could not be obtained reliably | No proposed-content check is fabricated |
+| Missing replacement target | Exact target is absent from the applicable text/search window | Edit construction failed, not content validation |
+| Missing insertion anchor | Explicit insertion position cannot be located | Edit construction failed, not content validation |
+| Invalid regex operation | Pattern or replacement expression is invalid | Edit construction failed, not content validation |
+| Rejected proposed content | A complete proposed result exists but fails its selected checks | Preserve actual check verdicts and apply enforce/report |
+
+The first five boundaries block both enforce and report. Report cannot repair an
+invalid editing command. Use closed typed domain reasons, reusing an existing equivalent
+failure contract where available; exact carrier/code integration remains Q-MUT-03.
+Do not add these reasons to adapter enums or make the presenter classify exception text.
+Before checking begins, report not_executed rather than a fabricated failed check;
+retain an established profile selection if one already exists. Invalid outer tool input
+still follows the existing input-validation boundary.
+
+Retain useful similar-text/context feedback as structured domain facts; presentation
+configuration owns bounded rendering. Domain code must not concatenate Markdown previews.
+No new universal diagnostics collection is approved by this section.
+
+#### Meaning of validation and profile selection
+
+Checks assess the complete proposed content. A failure does not prove that this edit
+introduced the finding. Do not add original-content rechecking, before/after finding
+comparison or a claim that existing errors were caused by this edit.
+
+Resolve the profile from explicit input or original-file metadata/extension under §4.6.
+Edited metadata cannot change that same call's selection. An explicit template_id selects
+a current validation profile; it neither rewrites provenance nor makes an existing file
+a newly scaffolded artifact. Adapters own check facts; the consumer manager owns edit
+construction and persistence; tools transfer facts and declarative presentation renders them.
+
+#### Preservation evidence
+
+Adapt existing public-operation tests and add durable missing cases for first-versus-all
+replacement, window boundaries, missing target/anchor, invalid pattern/replacement,
+identical rewrite, same-text replacement, zero-match pattern replacement, and unchanged
+append newline behavior. Assert exact proposed text reaches checking and writing;
+construction failures never invoke a content adapter or writer. Verify content_changed
+null on rejection/write failure, false on successful same-text writes and true on
+successful differing-text writes. An unchanged proposal still receives required checks.
+Exercise existing-error findings without causal attribution, stable original-file profile
+selection and structured bounded suggestions. Prove real-config inline/cache projection
+without presenter logic changes. No runtime tests were executed for this Design workshop.
+
 ## 5. Consumer Flow
 
 ```mermaid
@@ -664,6 +765,7 @@ The policy table is a Design-owned behavioral specification, not production code
 |---|---|---|---|
 | 1.20 | 2026-09-07 | @imp designer | Record approval of the consolidated result contract except safe-edit policy names; mark old labels non-authoritative for V3 and retain integration obligations. |
 | 1.21 | 2026-09-07 | @imp designer | Resume after human-reported independent Research QA GO; integrate common validation/enforce/report contract, retire legacy safe-edit modes, and close policy-choice questions without claiming complete DTO integration. |
+| 1.22 | 2026-09-07 | @imp designer | Record approved safe-edit operation semantics, content_changed with closed write combinations, construction-versus-check failures, structured suggestions and consumer-specific preservation evidence. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |

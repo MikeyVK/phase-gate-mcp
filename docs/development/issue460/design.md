@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.49  
+**Version:** 1.50  
 **Last Updated:** 2026-09-07  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -358,7 +358,12 @@ records human agreement on direct fields, selection outcomes, check-record combi
 write policies and channel dispositions, now including the Research-approved common policy names.
 DI-05 integrates the required failed-decision message; the public record adds no origin
 field. Legacy safe-edit mode/strict/interactive/verify_only inputs are rejected without writes.
-Naming alignment is closed; diagnostic/provenance carrier integration is the next workshop.
+Naming alignment is closed. The [safe-edit-specific workshop](design-mutation-validation.md#47-safe-edit-operations-no-change-results-and-failure-boundaries)
+now fixes the four preserved operation behaviors, explicit content_changed/write combinations,
+construction-failure versus check-failure meaning and truthful complete-content validation claims.
+Do not reopen the general scaffold outcome contract to cover these consumer differences.
+The next integrated slice is the narrow V3 reader and read/check/write consistency;
+exact diagnostic/provenance carrier integration remains required before full DTO closure.
 Native evidence, execution provenance and internal responsibilities remain required.
 
 The discussed V3
@@ -466,6 +471,7 @@ No cycles or estimates are defined during Design.
 |---|---|---|---|
 | 1.48 | 2026-09-07 | `@imp researcher` | Mark the narrow human-authorized safe-edit alignment/verify_only retirement amendment and targeted QA pause; supersede old preservation notes without further Design work. |
 | 1.49 | 2026-09-07 | `@imp designer` | Record human-reported independent QA GO and Design resumption; integrate common mutation policy vocabulary and legacy-mode removal in DI-04/DI-05; retain open diagnostic/provenance integration. |
+| 1.50 | 2026-09-07 | `@imp designer` | Index approved safe-edit-specific operations, no-change result and failure boundaries; move the next workshop to V3 reader and read/check/write consistency. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |
 | 1.45 | 2026-09-07 | `@imp designer` | Index public mutation nesting audit and unresolved projection gaps while preserving decided semantics, internal protocols and deferred scope. |
