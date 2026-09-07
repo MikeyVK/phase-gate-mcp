@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
 **Status:** NARROW RESEARCH AMENDMENT — INDEPENDENT QA REQUESTED; DESIGN PAUSED  
-**Version:** 3.29  
+**Version:** 3.30  
 **Last Updated:** 2026-09-07  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -45,8 +45,11 @@ This document is the sole authority for issue-460 decision status, Approved Stra
 
 ## Current Status and Gate
 
-The 2026-09-05 narrow check-retesting amendment below is the current gate authority.
-All other Research remains frozen; the following 2026-09-04 account is historical.
+The [2026-09-07 narrow safe-edit policy amendment](#narrow-safe-edit-policy-amendment--2026-09-07)
+is the current Research gate authority; independent QA on that delta is required before
+Design resumes. The earlier check-retesting decisions remain binding but are not the
+current review gate. All other Research remains frozen; the following 2026-09-04
+account is historical.
 
 Research was explicitly reopened by the human owner on 2026-09-04 after Design investigation showed that the approved F-19 boundary was too narrow. Sharing executable check facts between rendered-output validation and quality-gate orchestration while leaving behavioral tests in a Pytest-specific subsystem and fixes as secondary quality-gate commands would create three incompatible extension models and preserve language knowledge in generic server code.
 
@@ -470,6 +473,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.30 | 2026-09-07 | Correct the stale current-gate reference after QA: the narrow safe-edit amendment owns the pending review; prior approved decisions remain binding |
 | 3.28 | 2026-09-05 | Apply explicitly authorized project-to-workspace V3 scope rename without alias or coverage change; distinguish native project concepts and ordinary language-specific profiles; record Design continuation |
 | 3.29 | 2026-09-07 | Amend only safe-edit policy strategy/E-18 after human scope expansion: unify validation=enforce/report, retire mode and verify_only without bridge/replacement, supersede deferral and request targeted independent QA |
 | 3.27 | 2026-09-05 | Record human-approved required run_checks scope and pre-execution validation error on omission; remove deferred default decision in response to QA; request recheck |
