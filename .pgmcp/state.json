@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -101,6 +101,14 @@
       "human_approval_message": "User explicitly authorized the narrow scope expansion on 2026-09-07: 'Nee we breiden de scope licht uit om dit gelijk te trekken. Dit vooruit schuiven introduceert ongewenste compact op een grens die op de nominatie staat om te verdwijnen. Dit is precies de juiste reden om het wel mee te nemen!'",
       "forced": true,
       "skip_reason": "Reopen only the human-requested safe-edit contract alignment: replace mode with scaffold-aligned validation policy and retire verify_only rather than build a temporary preservation boundary. Preserve all other approved issue460 scope."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-07T18:51:36.899880+00:00",
+      "human_approval_message": "User reports independent QA GO on the corrected safe-edit Research amendment: 'Go van qa, we gaan verder'.",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

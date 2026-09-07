@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** NARROW SAFE-EDIT ROUTING AMENDMENT — DESIGN PAUSED FOR QA; REST FROZEN  
-**Version:** 1.28  
+**Status:** FROZEN RESEARCH INTAKE — INDEPENDENT QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.29  
 **Last Updated:** 2026-09-07  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -16,8 +16,9 @@ validation=enforce/report input and validation_policy output, removal of mode an
 verify_only, and preserved mutation semantics. DI-05 retains unchanged check facts;
 DI-07 owns active reference/caller guidance and DI-08 removal assurance. The prior
 verify_only deferral is superseded. Existing strategy and E-18 coverage are amended
-in place; counts and primary ownership remain unchanged. Request independent QA on
-this delta before resuming Design; no approval is inferred from producer edits.
+in place; counts and primary ownership remain unchanged. On 2026-09-07 the human
+reported independent QA GO on the corrected delta (b5fc881a) and authorized Design
+resumption; this is reported review authority, not producer approval.
 
 This document is the authoritative Research-to-Design scope index for issue 460. It proves that every Research obligation has one primary Design destination without selecting target mechanisms, method bodies, patch sequences, or implementation cycles.
 
@@ -486,6 +487,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 | Version | Date | Author | Changes |
 |---|---|---|---|
 | 1.28 | 2026-09-07 | `@imp researcher` | Correct QA handover findings: bind the DI-04 table and consumer routing to enforce/report, default enforce, policy-mirror and legacy-input rejection evidence; policy selection is no longer Design-owned |
+| 1.29 | 2026-09-07 | `@imp designer` | Record human-reported independent QA GO and authorized Design resumption without changing intake scope or policy |
 | 1.26 | 2026-09-05 | `@imp designer` | Route explicitly authorized V3 workspace rename and obsolete project rejection without coverage/census changes; record continuation and no subproject model. |
 | 1.27 | 2026-09-07 | `@imp researcher` | Route the narrow human-approved safe-edit validation alignment and verify_only retirement within existing DI-04/DI-07 ownership; request targeted QA without census/coverage expansion. |
 | 1.25 | 2026-09-05 | `@imp researcher` | Bind DI-05 to required run_checks scope and pre-execution rejection on omission; remove scope-default deferral following human decision on the QA blocker. |

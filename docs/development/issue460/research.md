@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
-**Status:** NARROW RESEARCH AMENDMENT — INDEPENDENT QA REQUESTED; DESIGN PAUSED  
-**Version:** 3.30  
+**Status:** RESEARCH FROZEN — INDEPENDENT QA GO REPORTED; DESIGN RESUMED  
+**Version:** 3.31  
 **Last Updated:** 2026-09-07  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -12,8 +12,9 @@
 
 The human owner explicitly reopened this boundary after rejecting a temporary
 preservation boundary for the already-deferred `verify_only` mode. Earlier Design GO
-remains historical authority for all other scope; independent QA is requested for this
-delta before Design resumes. This exception does not reopen F-20 roles, template
+remains historical authority for all other scope. The human reported independent QA GO
+on the corrected delta (b5fc881a) on 2026-09-07 and authorized Design resumption.
+This exception does not reopen F-20 roles, template
 provenance/renewal, consumer families or the complete census.
 
 Amend the existing Safe-edit post-edit validation strategy, rather than adding another
@@ -46,8 +47,8 @@ This document is the sole authority for issue-460 decision status, Approved Stra
 ## Current Status and Gate
 
 The [2026-09-07 narrow safe-edit policy amendment](#narrow-safe-edit-policy-amendment--2026-09-07)
-is the current Research gate authority; independent QA on that delta is required before
-Design resumes. The earlier check-retesting decisions remain binding but are not the
+is the latest Research gate authority; the human reported independent QA GO on the
+corrected delta (b5fc881a) and Design resumed on 2026-09-07. The earlier check-retesting decisions remain binding but are not the
 current review gate. All other Research remains frozen; the following 2026-09-04
 account is historical.
 
@@ -474,6 +475,7 @@ This historical hand-over does not close the new targeted review requested above
 | Version | Date | Changes |
 |---|---|---|
 | 3.30 | 2026-09-07 | Correct the stale current-gate reference after QA: the narrow safe-edit amendment owns the pending review; prior approved decisions remain binding |
+| 3.31 | 2026-09-07 | Record human-reported independent QA GO on the corrected narrow safe-edit amendment and authorized Design resumption; no strategy change |
 | 3.28 | 2026-09-05 | Apply explicitly authorized project-to-workspace V3 scope rename without alias or coverage change; distinguish native project concepts and ordinary language-specific profiles; record Design continuation |
 | 3.29 | 2026-09-07 | Amend only safe-edit policy strategy/E-18 after human scope expansion: unify validation=enforce/report, retire mode and verify_only without bridge/replacement, supersede deferral and request targeted independent QA |
 | 3.27 | 2026-09-05 | Record human-approved required run_checks scope and pre-execution validation error on omission; remove deferred default decision in response to QA; request recheck |
