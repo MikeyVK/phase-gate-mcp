@@ -3,8 +3,8 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.65  
-**Last Updated:** 2026-09-07  
+**Version:** 0.66  
+**Last Updated:** 2026-09-08  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
 **Downstream Consumers:** DI-04 scaffold/safe-edit, public check/test/fix operations, DI-07 workflow/documentation, DI-08 assurance  
@@ -817,8 +817,10 @@ parent-directory and temporary-materialization changes do not alter selection, t
 more specific selected profile is not weakened after check failure, and that consumers
 which do not request extension selection retain their own profile authority.
 
-These decisions do not complete Q-MUT-04, introduce a provenance reader or authorize
-an automatic weaker-profile fallback. DI-04 owns the approved mutation-policy change.
+These extension decisions do not complete Q-MUT-04 or authorize automatic weaker-profile
+fallback. DI-04 §4.8 separately records the human-approved narrow V3 reader and
+read/check/write consistency; neither responsibility belongs to adapters. DI-04 owns
+the approved mutation-policy change.
 
 ### 7.6 Startup-bound tool schema lifecycle
 
@@ -2502,6 +2504,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.63 | 2026-09-07 | `@imp designer` | Route mutation nesting, union-collection admission and native-evidence inline gaps to DI-04 audit without changing approved internal contracts or assuming presenter support. |
 | 0.62 | 2026-09-07 | `@imp designer` | Limit ongoing safe-edit mode design to strict/interactive and reference the verify_only removal deferral and concrete-conflict-only boundary. |
 | 0.65 | 2026-09-07 | `@imp designer` | Reconcile DI-04 references after human-reported Research QA GO: common enforce/report policy, default enforce and legacy mode retirement; no adapter-contract change. |
+| 0.66 | 2026-09-08 | `@imp designer` | Reference DI-04's approved narrow V3 reader and original/proposed-content consistency; keep both outside adapter responsibility. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
 | 0.59 | 2026-09-07 | `@imp designer` | Supersede startup dependency preflight/filtering with configuration-based exposure and existing on-use failures; retain structural/path admission, stable schemas, defaults, full profiles, and health deferral without new protocol or Research changes. |

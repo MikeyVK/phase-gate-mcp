@@ -3,8 +3,8 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.22  
-**Last Updated:** 2026-09-07  
+**Version:** 1.23  
+**Last Updated:** 2026-09-08  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
 **Downstream Consumers:** Scaffold and safe-edit callers; DI-07; DI-08  
@@ -206,9 +206,9 @@ private `safe_edit_file` configuration section. This settles configuration owner
 not the complete selection contract: DI-05 now owns the approved
 [extension lookup](design-execution-adapters.md#extension-lookup-semantics); precedence
 between selection sources and the no-profile outcome are specified in §4.6; their complete typed integration remains open.
-The separately discussed V3 metadata-selection
-route still requires explicit reconciliation with the no-provenance-reader boundary
-above; this change neither restores the legacy parser nor claims that seam integrated.
+Section 4.8 now admits a narrow V3 reader for this demonstrated consumer and reconciles
+DI-02's conditional no-replacement rule. It does not restore the legacy parser;
+exact header recognition and typed reader/writer interfaces remain integration work.
 
 Research-approved scope, independent QA GO reported by the human on 2026-09-07:
 both mutation tools accept `validation: enforce|report`, default `enforce`, and return
@@ -466,8 +466,8 @@ the original file before constructing its proposed edit, not edited metadata or 
 temporary filename. Explicit input precedes approved automatic selection; no invalid
 explicit ID or recognized invalid/unresolvable V3 metadata silently downgrades to the
 extension route. Missing/V2 metadata uses the extension route without a legacy alias.
-The V3 reader integration caveat in §4.2 still requires explicit closure; this table
-does not reintroduce the retired parser. Invalid public input may be rejected before
+The bounded V3 reader responsibility is now approved in §4.8; exact header recognition
+still requires closure without restoring the retired parser. Invalid public input may be rejected before
 any operation DTO exists. Later selection failure retains its separate operation problem.
 
 #### One public check record with closed combinations
@@ -651,6 +651,89 @@ Exercise existing-error findings without causal attribution, stable original-fil
 selection and structured bounded suggestions. Prove real-config inline/cache projection
 without presenter logic changes. No runtime tests were executed for this Design workshop.
 
+### 4.8 V3 Metadata Selection and Read/Check/Write Consistency
+
+**Status:** human-approved, 2026-09-08. Safe edit is the demonstrated current consumer
+that justifies a narrow V3 metadata reader under DI-02's conditional replacement rule.
+This does not authorize legacy parsing, history lookup or source-provenance mutation.
+
+#### Reader and selection responsibilities
+
+The reader consumes original file text and recognizes only the current `pgmcp:v1`
+header contract, including its one-line and two-adjacent-line forms. It returns typed
+metadata, not a selected template or profile. DI-02 owns the one shared read/write
+header contract; DI-04 owns selection from its result. Do not duplicate metadata syntax
+inside safe edit or add a second configuration of the same fields.
+
+Validate the syntax of all four fields id/pv/pf/sf. Only id selects a current catalog
+template and its output_profile. Never require stored pv/pf/sf to equal the current
+catalog, fetch historical suites or recompute a fingerprint from edited content.
+Historical provenance is not a compatibility gate or a claim about current content.
+
+| Selection input | Required behavior |
+|---|---|
+| Explicit valid template_id | Use that current template's profile; automatic metadata selection does not override it |
+| No explicit selection; valid V3 header | Resolve its id in the current immutable catalog |
+| No current V3 header, including legacy V2 files | Use the approved extension route, without interpreting legacy metadata |
+| Recognized invalid V3 header or unresolved V3 id | Return a selection failure, not a silent extension fallback |
+
+Header recognition must distinguish the file's own header from examples in its body.
+Searching the entire file for the marker is rejected. Exact eligible header placement,
+comment framing, malformed/duplicate-record handling and typed reader-result declarations
+remain the next bounded contract task; do not claim arbitrary-language parsing solved.
+
+#### One original and one proposed content value
+
+Read the original target once for edit construction. Resolve the profile against that
+original text and explicit inputs, construct one complete proposed text, check that
+same proposed text and submit it unchanged for persistence. Do not re-render, repeat
+the replacement or select a new profile between checking and writing. The later
+pre-write consistency read below is only a guard, not a replacement source for editing.
+content_changed compares the same original/proposed text after a completed write.
+
+The consumer manager owns this orchestration. The adapter sees the proposed content
+under the selected check contract; it neither locks nor authorizes replacement of the
+authoritative target. Tools and presenters do not perform consistency decisions.
+
+#### Concurrent modification and bounded safety promise
+
+Preserve mutual exclusion for cooperating safe-edit calls. Immediately before replacing
+the target, verify that it still matches the original content used for this edit.
+A detected intervening modification blocks both enforce and report. Keep already
+obtained check evidence: the proposal can pass validation while replacement is refused
+because its original basis changed. Report no completed write and null content_changed;
+the caller must reread and reassess the requested edit.
+
+Do not automatically merge, retry, rebuild the edit or weaken the validation policy.
+Comparison evidence is invocation-local; add no persistent fingerprint registry or
+caller-supplied version token. Exact comparison representation and writer interface
+are still to be specified, without reducing the guard to modification timestamps alone.
+
+Atomic replacement prevents partial writes; it does not by itself prevent lost updates.
+The existing in-memory lock coordinates calls through one tool instance, not arbitrary
+external editors or other server processes. A check immediately before replacement
+still has a race window with non-cooperating writers. This design explicitly promises
+detection of observed intervening changes, not universal external-writer exclusion or
+an atomic compare-and-swap guarantee. No new cross-process lock protocol is approved.
+
+Direct evidence: [SafeEditTool](../../../mcp_server/tools/safe_edit_tool.py) owns per-instance
+asyncio locks; [IAtomicFileWriter](../../../mcp_server/core/interfaces/file_writer.py) has no
+expected-original input; [AtomicFileWriter](../../../mcp_server/utils/atomic_file_writer.py)
+performs temporary-file replacement. Those boundaries require explicit integration,
+not an assumption that the current writer already enforces this guard.
+
+#### Required evidence and remaining integration
+
+Prove valid one/two-line headers, absent/V2 headers, invalid V3 syntax and unknown ids,
+historical-but-well-formed versions/fingerprints, explicit selection precedence and
+body examples that are not header records. Prove an edit to metadata does not alter
+the current invocation's selected profile. Check original/proposed identity through
+adapter and writer seams, same-file cooperating calls, observed intervening changes,
+no automatic retries and retained passed-check evidence on refused replacement.
+Do not write tests claiming arbitrary external-writer exclusion. Header recognition,
+comparison representation and typed boundary/result declarations remain open; the
+approved responsibilities and policy are not open for redesign. No runtime tests were run.
+
 ## 5. Consumer Flow
 
 ```mermaid
@@ -702,7 +785,7 @@ The target and content paths meet only for output-profile evidence and final per
 | ID | Question | Owner |
 |---|---|---|
 | Q-MUT-03 | What complete immutable mutation result DTO retains operation diagnostics and execution provenance alongside §4.6's approved direct fields? | DI-04/DI-05; no template/artifact singleton grouping |
-| Q-MUT-04 | How does safe edit select the governing output profile for an existing file? | DI-04/DI-05 |
+| Q-MUT-04 | Selection policy and narrow V3-reader ownership are decided in §4.6/§4.8; finish header recognition and typed selection/read-check-write interfaces without reopening precedence | DI-02/DI-04/DI-05 |
 | Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
 | Q-MUT-06 | Which direct public fields and concrete check-record shape resolve §4.5 without duplicated facts, native-output normalization or presenter extensions? | DI-04/DI-05; includes actionable inline feedback for native JSON-only rejection |
 
@@ -766,6 +849,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.20 | 2026-09-07 | @imp designer | Record approval of the consolidated result contract except safe-edit policy names; mark old labels non-authoritative for V3 and retain integration obligations. |
 | 1.21 | 2026-09-07 | @imp designer | Resume after human-reported independent Research QA GO; integrate common validation/enforce/report contract, retire legacy safe-edit modes, and close policy-choice questions without claiming complete DTO integration. |
 | 1.22 | 2026-09-07 | @imp designer | Record approved safe-edit operation semantics, content_changed with closed write combinations, construction-versus-check failures, structured suggestions and consumer-specific preservation evidence. |
+| 1.23 | 2026-09-08 | @imp designer | Record approved narrow V3 reader, syntax-only historical provenance handling, stable original/proposed content and invocation-local pre-write change detection with an explicit external-writer race limitation. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |
