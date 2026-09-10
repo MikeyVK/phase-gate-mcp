@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
 **Status:** NARROW NATIVE-SELECTION DISPOSITION AMENDMENT — QA REQUESTED; REST FROZEN  
-**Version:** 1.29  
+**Version:** 1.30  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -502,7 +502,7 @@ Test code is first-class code. Applicable checks include public-boundary behavio
 | [tests/mcp_server/unit/managers/test_violation_path_normalization.py](../../../tests/mcp_server/unit/managers/test_violation_path_normalization.py) | unit | check evidence paths | Direct | **Adapt at factual result boundary** — preserve safe workspace-relative diagnostics without tool-specific parser coupling |
 | [tests/mcp_server/unit/schemas/test_structured_tool_output_migration.py](../../../tests/mcp_server/unit/schemas/test_structured_tool_output_migration.py) | unit | public DTO migration | Direct | **Adapt** — prove separate check/test/fix DTOs, invoked-adapter provenance, cacheability, and absence of legacy quality/autofix/Pytest-shaped generic fields |
 | [tests/mcp_server/unit/state/test_quality_state.py](../../../tests/mcp_server/unit/state/test_quality_state.py) | unit | quality/check lifecycle state | Direct | **Remove obsolete auto DTO tests** — no replacement reuse/history DTO is required. Owner: DI-05 |
-| [tests/mcp_server/unit/tools/test_autofix_tool.py](../../../tests/mcp_server/unit/tools/test_autofix_tool.py) | unit | public autofix tool | Direct | **Replace with `apply_fixes` tests** — prove explicit target/role authorization, ordered native mutation, partial/unknown change evidence on failure, no mandatory checks/copies/rollback/Git actions, and no V2 alias 2026-09-05 amendment: Remove incidental auto-state setup without changing independent apply_fixes safety obligations. Owner: DI-05. |
+| [tests/mcp_server/unit/tools/test_autofix_tool.py](../../../tests/mcp_server/unit/tools/test_autofix_tool.py) | unit | public autofix tool | Direct | **Replace with `apply_fixes` tests** — prove required scope=targets with concrete existing files, explicit fix order, stop-on-first-non-success, target/role authorization, partial/unknown change evidence on failure, no mandatory checks/copies/rollback/Git actions, and no V2 alias 2026-09-05 amendment: Remove incidental auto-state setup without changing independent apply_fixes safety obligations. Owner: DI-05. |
 | [tests/mcp_server/unit/tools/test_dev_tools.py](../../../tests/mcp_server/unit/tools/test_dev_tools.py) | unit | adjacent public tool references | Adjacent | **Adapt affected names/fixtures only** — unrelated developer-tool behavior remains outside DI-05 |
 | [tests/mcp_server/unit/tools/test_discovery_tools.py](../../../tests/mcp_server/unit/tools/test_discovery_tools.py) | unit | tool discovery/registry | Direct | **Adapt** — prove new execution tools are discoverable with coherent schemas and old tools are absent; do not expose adapter internals as static inventories |
 | [tests/mcp_server/unit/tools/test_quality_tools.py](../../../tests/mcp_server/unit/tools/test_quality_tools.py) | unit | public quality tools | Direct | **Replace/split** — cover `run_checks` and `apply_fixes` public contracts separately, including scopes, verbose evidence, unavailable/failure behavior, and injected consumers 2026-09-05 amendment: Replace auto/default expectations with explicit-scope/args input and zero-existing-target branch no-call evidence; retain no-alias, verbose and failure contracts. Owner: DI-05. |
@@ -539,7 +539,9 @@ Research is complete only when:
 
 ## Current Gate
 
-The current gate is the narrow 2026-09-05 Research amendment review above. The following
+The current gate is the [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
+and its human-approved explicit-files-only, caller-order and stop-on-first-non-success
+correction. Independent re-review is requested; Design is paused. The following
 2026-09-04 closure is historical; unrelated Research stays frozen.
 
 The catalog now covers all 22 public artifact types and 79 template-suite files. Its runtime ledger contains 128 unique active paths: two governing-standard sources, which the declared census rule excludes, plus 126 consumers and references. Its Behavioral Test and Helper Ledger contains 151 unique paths. The QA-directed workspace-root repeat search used both obsolete names and semantic consumer terms, included hidden source paths, compared exact paths rather than substrings, and now has zero uncatalogued hits.
@@ -552,6 +554,7 @@ Planning must assign every one of the 126 consumer/reference rows and 151 test/h
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.30 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 1.29 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 1.28 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 1.27 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |

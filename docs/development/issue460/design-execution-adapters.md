@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.78
+**Version:** 0.79
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -14,8 +14,8 @@
 
 The [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
 withdraws fix proposal/copy/verification/rollback machinery. Native source mutation
-and agent-controlled follow-up replace it. Exact W05 scopes, DTOs and stop policy remain
-proposals pending targeted review; prior selection QA GO does not approve this delta.
+and agent-controlled follow-up replace it. Research fixes explicit files-only scope=targets, caller fix order and stop-on-first-non-success.
+Exact W05 DTOs and implementation mechanisms remain open pending targeted review; prior selection QA GO does not approve this delta.
 
 Own the execution adapter Design for issue 460: package contracts, catalog resolution,
 generic process execution, separate check/test/fix contracts, consumer configuration,
@@ -101,7 +101,8 @@ The decided rows establish ownership and approved contracts. W02/W03 close packa
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
 Concrete DTO/schema integration and independent conformance remain required. Test
 results, remaining test configuration/transport, fix decisions, native-setting migration
-and fix transaction mechanics remain open Design work.
+and native fix authorization, ordering mechanisms, typed partial-mutation outcomes
+and external recovery guidance remain Design work; no fix transaction is required.
 
 ## 5. Responsibilities and Boundaries
 
@@ -3087,6 +3088,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.79 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 0.78 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 0.77 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 0.76 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |

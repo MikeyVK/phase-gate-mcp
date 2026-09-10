@@ -3,7 +3,7 @@
 # Issue #460 Research-to-Design Intake Map
 
 **Status:** BOUNDED NATIVE-FIX INTAKE AMENDMENT — QA REQUESTED  
-**Version:** 1.33  
+**Version:** 1.34  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -13,8 +13,10 @@
 Current delta: [lightweight native fixes](research.md#lightweight-native-fix-amendment--2026-09-10).
 DI-05 owns direct authorized native execution, typed per-call outcomes and sequencing;
 DI-07 agent-controlled checks/Git recovery guidance; DI-08 independent proof. Supersede
-proposal/stale-check/verification/rollback obligations only for fixes. Scope choices and
-stop/continue policy remain Design decisions. Prior selection QA GO is not this delta's
+proposal/stale-check/verification/rollback obligations only for fixes. Research fixes scope=targets only, required concrete existing files and explicit caller
+fix order, plus stop-on-first-non-success. No directory/broad/default selection or
+continue-on-error switch. Design implements these policies through schemas/DTOs;
+it does not choose them. Prior selection QA GO is not this delta's
 review. Counts, DI-04 persistence and F-10 renewal remain unchanged.
 
 The [2026-09-07 safe-edit amendment](research.md#narrow-safe-edit-policy-amendment--2026-09-07)
@@ -220,7 +222,7 @@ flowchart LR
 | Required Research authority | Read [F-08](research-findings.md#f-08--schema-valid-rich-contexts-can-produce-invalid-source), [F-19](research-findings.md#f-19--output-validation-and-quality-gates-duplicate-executable-authority), [F-20](research-findings.md#f-20--executable-tooling-is-split-into-language-bound-check-test-and-fix-paths), their exact Approved Strategy rows, I-16/I-19, and E-13/E-20/E-23 as one binding input set. F-20 is canonical wherever older F-19 wording preserves quality-gate/autofix names or excludes tests from shared extension infrastructure |
 | Primary Design document | `design-execution-adapters.md` exclusively owns DI-05. `design-mutation-validation.md` remains the DI-04 owner and consumes DI-05 factual check evidence without absorbing adapter catalog, execution, check/test/fix, conformance, or migration ownership |
 | Affected inputs and consumers | Output profiles; `quality.yaml` and its replacement `checks.yaml`/`tests.yaml`/`fixes.yaml`; presentation config; quality/test/fix config models; validation modules; `QAManager`; Pytest runner/interface; quality state/repository; violation parsing; `RunQualityGatesTool`, `RunTestsTool`, `AutoFixTool`; public DTOs/cache/presentation; bootstrap/exports/registration; scaffold and safe-edit consumers; workflow/agent/manual/reference consumers; all catalogued tests, fixtures, fake runners, and validation fixtures |
-| Design-owned decisions | One immutable startup-resolved adapter catalog; official and trusted workspace package sources; package manifest, `adapter_id`, one version, supported role-contract versions, capabilities, entry points, package fingerprint, dependency/trust/error policy, and restart semantics; generic process/scratch/timeout/stdout/stderr/malformed/crashed/unavailable transport; separate `check/v1`, `test/v1`, and `fix/v1` request/result contracts; `run_checks`, framework-neutral `run_tests`, and `apply_fixes` inputs/results/scopes/verbose behavior/cache/presentation; output-profile check selection; native fix target authorization, ordered execution, partial-failure/unknown-change reporting, explicit stop behavior, and agent-controlled recovery guidance; no generic proposals, copies, required verification or rollback; conformance and self-hosting proof |
+| Design-owned decisions | One immutable startup-resolved adapter catalog; official and trusted workspace package sources; package manifest, `adapter_id`, one version, supported role-contract versions, capabilities, entry points, package fingerprint, dependency/trust/error policy, and restart semantics; generic process/scratch/timeout/stdout/stderr/malformed/crashed/unavailable transport; separate `check/v1`, `test/v1`, and `fix/v1` request/result contracts; `run_checks`, framework-neutral `run_tests`, and `apply_fixes` inputs/results/scopes/verbose behavior/cache/presentation; output-profile check selection; native fix target authorization for the approved explicit concrete-files-only scope, caller-ordered execution and stop-on-first-non-success, partial-failure/unknown-change reporting, and agent-controlled recovery guidance; no generic proposals, copies, required verification or rollback; conformance and self-hosting proof |
 | Consumer-policy separation | Output profiles select required checks for complete proposed content. `run_checks` owns explicit scope and check-run reporting. `run_tests` owns behavioral suite/framework semantics. `apply_fixes` owns an explicitly requested native mutation workflow on authorized source targets, with agent-controlled verification/recovery. Workflow gates consume evidence but are not adapter capabilities. DI-04 alone decides scaffold/safe-edit persistence from unchanged factual check states |
 | Compatibility, migration, removal | PGMCP 3.0 clean break: remove `run_quality_gates`, `auto_fix`, and `quality.yaml`; introduce `run_checks`, `apply_fixes`, `checks.yaml`, `tests.yaml`, and `fixes.yaml`; keep only the semantically correct `run_tests` name while replacing its Pytest-shaped contract. No aliases, wrapper tools, or dual-read config. Obsolete config fails with actionable migration guidance. Migrate retained Pytest, Ruff, Mypy, Pyright, syntax, parser, and fix behavior into official packages where justified by current consumers The 2026-09-05 refinement also removes auto and its baseline/replay state and excludes PGMCP execution-result reuse; preserve report caching and use native configured/caller args without generic fresh/expansion controls; PGMCP alone resolves branch targets, and empty branch selection never invokes native configured discovery |
 | Provenance and ownership | Each adapter package has one authored manifest version and one computed package fingerprint over its semantic package inputs; files have no authored versions. Per-run evidence records only invoked adapter ID/version/package fingerprint/role-contract version and discovered external-tool ID/version. Do not add a whole adapter-suite fingerprint to runs or adapter provenance to scaffold-artifact source metadata. PGMCP owns official packages; workspace owners own trust, dependencies, retention, and version policy for `.pgmcp/adapter_suite/` packages |
@@ -499,6 +501,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.34 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 1.33 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 1.32 | 2026-09-10 | `@imp designer` | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |
 | 1.31 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |

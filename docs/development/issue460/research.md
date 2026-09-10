@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
 **Status:** BOUNDED NATIVE-FIX AMENDMENT — QA REQUESTED; REST FROZEN  
-**Version:** 3.35  
+**Version:** 3.36  
 **Last Updated:** 2026-09-10  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -39,10 +39,35 @@ consumer family, census row or compatibility bridge is introduced.
   native execution is not an OS sandbox or a guarantee against a misbehaving trusted
   extension. The separate sandbox deferral is unchanged.
 
+#### Approved fix scope and stop policy — human decision after QA
+
+These are binding Research product decisions, not Design-owned options.
+
+| Boundary | Approved behavior | V2 preservation or deliberate V3 break |
+|---|---|---|
+| Public scope | Require scope=targets on every apply_fixes call; reject omitted scope and auto, branch, project, workspace and configured | Removes implicit auto/default and broad selection through the approved clean break |
+| Target set | Require a nonempty list of concrete existing workspace files; no directories, globs, recursive expansion or "." workspace shorthand | Caller determines a visible bounded file set instead of bulk discovery |
+| Fix selection/order | Require an explicit nonempty ordered selection of fix bindings; execute in caller order | Replaces implicit all-fix-capable-gates/configuration order |
+| Stop | Stop before the next fix after the first non-success: failed, unavailable, invalid request, timeout, crash, malformed response, cancellation or unconfirmed termination | Deliberately replaces current continue-on-error |
+| Mutation after failure | Earlier changes remain; the failed attempted fix may also have changed source; report honestly | Retains native mutation, adds no rollback or no-write guarantee |
+| Follow-up | Agent decides checks, safe edits or targeted Git recovery | No mandatory prior-check token, automatic recheck or recovery loop |
+
+Non-success is the adapter's declared operation outcome or a generic execution fault,
+not a raw native exit code or the public success/isError flag. A native-successful
+no-change operation permits the next fix. Reject an invalid public request before
+starting any fix; remaining known obligations after a stop are reported as unstarted,
+not fabricated native failures. No continue-on-error switch is added.
+
+The human reports fixes normally follow identified fixable check findings. This is
+usage rationale, not measured telemetry or a required dependency on a prior check.
+Files-only admission trades bulk convenience for explicit mutation bounds; stopping
+trades automatic completion of independent later fixes for agent assessment of partial
+state. Broader scope and continue-on-error were considered and not selected for V3.
+
 Trade-off: this preserves native behavior and avoids copying/recovery machinery, but
-accepts partial mutations and external recovery decisions. DI-05 must design scope
-admission, typed outcomes, evidence limits and sequencing/stop behavior explicitly.
-Those details are not decided by this strategy amendment. DI-07 documents the agentic
+accepts partial mutations and external recovery decisions. The scope, explicitness,
+caller order and stop policy above are decided. DI-05 owns their schemas, typed outcomes,
+evidence representation and ordering mechanisms, not a new policy choice. DI-07 documents the agentic
 flow and limitations; DI-08 proves authorization and truthful failure reporting.
 F-10 renewal and DI-04 mutation policies remain unchanged, with separate evidence.
 
@@ -461,7 +486,7 @@ Issue 460 should be considered substantively resolved only when:
 
 21. Renewal compares one current adopted checkpoint with actual and candidate states for shared/ and each manifest-ID component, selects whole non-conflicting candidate components while preserving local/conflicting actual components, validates one complete off-root result, and activates it recoverably as the sole runtime root. Explicit reconciliation can advance candidate checkpoint state without overwriting locally merged content; external ownership and all prohibited merge/version/provenance mechanisms remain preserved.
 22. A fresh managed install creates its initial checkpoint with the installed candidate; an existing checkpoint-less workspace bootstraps automatically only from trusted equality evidence. Otherwise actual content remains byte-for-byte unchanged, candidate remains non-authoritative, and an actionable `checkpoint_required` outcome requires the owner to supply a trusted prior suite or acknowledge the validated candidate as comparison basis without activating or overwriting it.
-23. `run_checks`, `run_tests`, and `apply_fixes` consume one resolved adapter-package catalog and generic process runtime while preserving separate check/test/fix contracts; official Pytest and retained check/fix behavior migrate into adapters, one non-Python fixture proves configuration-only language extension, fix execution remains explicitly PGMCP-authorized, native mutations may remain after failure, and per-execution reporting supports explicit agent-controlled checks and Git recovery without a tool rollback guarantee, and obsolete V2 tool/config vocabulary is rejected rather than bridged.
+23. `run_checks`, `run_tests`, and `apply_fixes` consume one resolved adapter-package catalog and generic process runtime while preserving separate check/test/fix contracts; official Pytest and retained check/fix behavior migrate into adapters, one non-Python fixture proves configuration-only language extension, fix execution requires explicit scope=targets, concrete existing files and ordered fix selection, stops at the first non-success, and native mutations may remain after failure, and per-execution reporting supports explicit agent-controlled checks and Git recovery without a tool rollback guarantee, and obsolete V2 tool/config vocabulary is rejected rather than bridged.
 
 ## Deferred Work
 
@@ -488,7 +513,7 @@ Research is frozen except for the authorized 2026-09-05 check-retesting amendmen
 5. Which package-directed non-artifact DTOs, if any, have a demonstrated consumer for suite identity, and which omit it under YAGNI?
 6. How does DI-05 define one resolved adapter-package catalog and generic process runtime while giving `check`, `test`, and `fix` separate versioned inputs, results, policy consumers, and side-effect boundaries?
 7. How do `run_checks`, framework-neutral `run_tests`, and `apply_fixes` expose short coherent public contracts, configuration, cached evidence, presentation, verbose output, and actionable unavailability without leaking tool-specific concepts into generic server code?
-8. How are native fix calls path-authorized, ordered and honestly reported, including partial changes, unavailable steps and process failures, without automatic checks, copies, commits or rollback?
+8. How are the approved explicit files-only scope, caller order and stop-on-first-non-success rules represented in typed requests/results, including partial mutation and unstarted steps, without automatic checks, copies, commits or rollback?
 9. How do package discovery, trust, dependencies, one package version, computed package fingerprint, restart loading, and official-versus-workspace ownership work without a whole-suite run fingerprint or PGMCP-owned external history?
 10. Which independent/conformance evidence proves Pytest preservation, non-Python extensibility, contract failure behavior, fix safety, and complete removal of old tool/config names?
 
@@ -530,15 +555,15 @@ This historical hand-over does not close the new targeted review requested above
 
 #### Open Work
 
-- No Research blocker remains; Research is closed and content-frozen after formal human Design authorization.
+- Design remains paused for independent re-review of the lightweight native-fix amendment. Human scope and stop decisions are now recorded; no producer GO is claimed.
 - DI-05 must receive its own Design document and remain separate from DI-04 scaffold/safe-edit mutation ownership.
-- Exact role schemas, adapter manifest fields, discovery/index layout, process protocol, fix transaction, DTO shapes, and status mapping remain Design-owned within the approved boundaries.
+- Exact role schemas, adapter manifest fields, discovery/index layout, process protocol, authorized native fix execution, typed partial-mutation outcomes, external recovery guidance, DTO shapes, and status mapping remain Design-owned within the approved boundaries.
 - Implementation sequencing remains Planning-owned under the binding manageability conditions above, including separate check/test/fix proof, separate F-10 activation and F-20 fix-application cycles, and concrete cycle ownership for all 126 consumers and 151 tests/helpers.
 
 #### Review Request
 
-- Research review is complete; no further Research review is requested.
-- Formal human Design authorization is recorded with the binding manageability conditions above.
+- Review requested: verify the approved files-only explicit scope, caller order and stop-on-first-non-success policy; transaction supersession; and consistent current gate/hand-over.
+- Earlier Design authorizations remain historical for their reviewed boundaries; resume affected Design only after independent QA GO.
 - Independent Design review remains required at the Design phase gate; this close-out does not pre-approve Design mechanisms or later implementation cycles.
 
 ## References
@@ -558,6 +583,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.36 | 2026-09-10 | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 3.35 | 2026-09-10 | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 3.34 | 2026-09-10 | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |
 | 3.33 | 2026-09-10 | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |

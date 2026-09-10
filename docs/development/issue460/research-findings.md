@@ -3,7 +3,7 @@
 # Issue 460 Research Findings
 
 **Status:** BOUNDED NATIVE-FIX AMENDMENT — QA REQUESTED; REST FROZEN  
-**Version:** 1.25  
+**Version:** 1.26  
 **Last Updated:** 2026-09-10  
 **Issue:** 460
 
@@ -1702,6 +1702,14 @@ The human owner selected the final option on 2026-09-04 and explicitly rejected 
 
 #### Approved compatibility and migration strategy
 
+The human subsequently approved scope=targets only, explicit concrete existing files
+and explicit ordered fix selection, with stop-on-first-non-success. This replaces
+V2 broad/default selection and continue-on-error. See the exact policy in
+[Research](research.md#approved-fix-scope-and-stop-policy--human-decision-after-qa).
+The user's check-then-fix usage explains the choice; no prior-check runtime dependency
+is introduced. Schemas and typed results remain Design work, not these policies.
+
+
 The 2026-09-10 lightweight native-fix amendment revises the fix clauses in place.
 Evidence: QAManager.run_auto_fix invokes native commands sequentially against source,
 continues after reported failures, and infers modified files from Git dirty state.
@@ -1770,7 +1778,7 @@ These are proof obligations, not a selected test framework, implementation cycle
 
 #### Design hand-off
 
-Design must treat the adapter extension suite as one cohesive package boundary with mandatory internal separation between check, test, and fix. It must define the versioned role contracts, loaded catalog and trust boundary, package manifest and fingerprint inputs, official/workspace source resolution, configuration schemas, public tool inputs/results, scope semantics, fix transaction, presentation/cache behavior, restart behavior, composition topology, v2 removal, and conformance evidence.
+Design must treat the adapter extension suite as one cohesive package boundary with mandatory internal separation between check, test, and fix. It must define the versioned role contracts, loaded catalog and trust boundary, package manifest and fingerprint inputs, official/workspace source resolution, configuration schemas, public tool inputs/results, schemas implementing approved fix scope/order/stop policy, native execution and typed partial-mutation outcomes with external recovery, presentation/cache behavior, restart behavior, composition topology, v2 removal, and conformance evidence.
 
 Exact JSON Schema shapes, entrypoint layout, suite discovery/index mechanism, scratch topology, process batching, result-field optionality, concurrency, locking, and class/module topology remain Design-owned.
 
