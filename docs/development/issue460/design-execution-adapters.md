@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.73
+**Version:** 0.74
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -87,6 +87,8 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-20 | Consolidate run_checks selection, scope and result contracts; permit a positive per-invocation caller timeout override without changing the internal termination budget | Human-approved W03, 2026-09-10; §7.14; previous scope/profile decisions are not reopened |
 | D-ADAPTER-21 | run_tests exposes flat tests selection and addressed CLI args in one startup-built schema; adapters/native tools own switch interpretation; supersede test options_schema without extending other consumers | Human-approved W04 input/exposure, 2026-09-10; §7.15; test results and exact remaining integration stay open |
 | D-ADAPTER-22 | Public success is operational and inversely maps to MCP isError; correctly reported negative or unavailable domain results are not tool execution failures | Human-required correction, 2026-09-10; §7.14; applies across check/test/fix consumers, without deriving MCP errors from adapter exits |
+| D-ADAPTER-23 | Remove generic native verbose interpretation across check/test/fix consumers and adapter inputs; native switches retain their documented meaning through addressed args | Human-approved correction, 2026-09-10; §7.15; exact non-test argument routing remains separately owned |
+| D-ADAPTER-24 | run_tests requires configured or targets scope; configured preserves native selection, targets=["."] explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status or redundant workspace scope |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
@@ -324,7 +326,8 @@ PGMCP must not reimplement native configuration discovery/merging as a generic Y
 
 Adapters may set transport and role-safety options, such as machine-readable output,
 non-writing check mode, or bounded fix-proposal generation. They may translate explicit
-operation requests such as a selected test subset or supported verbose detail. Those
+operation requests such as a selected test subset. Native verbosity switches are passed
+through args without a generic boolean interpretation (D-ADAPTER-23). Those
 options must not silently replace native rules or grant extra mutation authority.
 A native setting that enables writing cannot turn a `check` into a `fix`; the adapter
 must uphold its role contract. Exact request-option schemas remain open, not an arbitrary
@@ -1059,7 +1062,7 @@ Presentation follows [issue 456](../issue456/design.md), its
 | Tool-response text | Declarative presentation renders the relevant outcome, affected selection, concise reason, and justified next action; existing item bounds and the configured final UTF-8 byte ceiling apply |
 | Complete operation evidence | The frozen operation DTO retains all relevant structured findings and diagnostics; publication precedes text projection so omission/truncation never removes cached evidence |
 | Validation schema attachment | Use the existing separate structured-attachment boundary when applicable; do not hide JSON Schema in a prose field or change the agreed scaffold schema-delivery rules |
-| Verbose/process diagnostics | Detailed process output remains resource-oriented; verbose does not bypass text limits or become the only way to see an actionable unavailability reason |
+| Native detail/process diagnostics | Detailed process output remains resource-oriented; native verbosity switches do not bypass text limits or become the only way to see an actionable unavailability reason |
 
 Schema exposure is not a tool-call response: the operation text limiter must not
 truncate an input schema or remove valid choices. The earlier proposal to explain
@@ -2500,14 +2503,19 @@ check decisions. W02/W03 approval is authoritative in §§7.4.1–7.4.3 and 7.14
 | Check | Integrate approved content/selection contracts into concrete typed declarations; prove profile admission, factual outcomes and registered schemas independently |
 | Test | Suite selection, all-active-suites meaning, framework options, collection/no-tests outcomes, coverage, and detailed evidence |
 | Fix | Proposal shape, authorized paths, stale-input checks, validation, application atomicity, and recovery |
-| Public operations | W03 fixes run_checks behavior; complete test/fix choices and shared DTO/cache/presentation integration without reopening approved diagnostic/verbose boundaries |
+| Public operations | Preserve approved diagnostic boundaries and D-ADAPTER-23 native-argument ownership; complete test/fix contracts and separate check/fix args routing |
 | Native configuration | Per-tool project/configuration context, explicit invocation controls versus native settings, and canonical values for current conflicting configurations |
 
-`verbose` must be designed across request, adapter behavior, diagnostic capture, and
-presentation. Current quality/test callers already pass it; the test caller changes
-Pytest traceback flags. A claim that it only changes presentation would lose existing
-behavior. A detailed output request must not silently change check/test selection or
-grant additional source-mutation authority.
+Human correction D-ADAPTER-23 supersedes generic verbose fields: native -v/-vv,
+traceback and reporter switches keep their own meanings and are never mapped from a
+PGMCP detail boolean. Current test_tools.py translates verbose into --tb=long/short
+and pytest_runner.py gates traceback extraction; that accidental interpretation is
+removed rather than preserved. Native configuration and explicit args own native detail.
+Cache/presentation limits remain independent, with available requested detail retained
+within bounds and any truncation explicit. No replacement detail flag or presenter
+native-option parser. Native reporter options incompatible with an adapter's result
+contract must be rejected honestly, not silently overridden. Check/fix recipient
+routing and mutation-profile argument admission remain their own open design work.
 
 ### 7.14 Approved run_checks Contract — W03, 2026-09-10
 
@@ -2518,6 +2526,12 @@ is the additional invocation control approved at this checkpoint. Test/fix contr
 official native capability inventory and independent conformance remain separate work.
 
 #### Configuration and selection
+
+D-ADAPTER-23 removes the old generic verbose field from this public request and the
+selection adapter request. Native arguments retain their own semantics. The exact
+addressed check-args and profile recipient contract remains a separate follow-up to
+W04; do not treat its absence here as a prohibition on native options or a completed
+argument-routing design. Existing targets/branch/workspace check scopes are unchanged.
 
 The required `checks.yaml` uses the existing resolved_config_root. Its closed root has
 `checks`, `profiles`, `profiles_by_extension`, and `run_checks` objects. Check bindings
@@ -2565,7 +2579,6 @@ run_checks:
 | checks | Nonempty unique ordered tuple of CheckId, or omitted | CheckRunManager; exact explicit obligations |
 | fresh | Strict bool, false | Adapter; avoid prior native analysis reuse or refuse honestly |
 | allow_expansion | Strict bool, false | Resolver/adapter; permit necessary related checked-content expansion inside workspace |
-| verbose | Strict bool, false | Adapter native detail request; no relaxed transport limit |
 | timeout_seconds | Positive strict int, or omitted | Manager; override each selected binding's invocation budget, not a whole-run deadline |
 
 No null substitutes for optional inputs. Neither profile nor checks uses only the
@@ -2593,7 +2606,7 @@ adapter invocation, not a passing certificate.
 SelectionCheckRequest is frozen, strict and extra-forbid, with these required fields:
 operation: CapabilityId; targets: tuple[AbsolutePath,...];
 removed_targets: tuple[AbsoluteFilePath,...]; expansion_root: AbsoluteDirectoryPath|null;
-fresh: bool; verbose: bool. At least one target collection is nonempty; existing paths
+fresh: bool. At least one target collection is nonempty; existing paths
 and actual Git deletions are separate. cwd is workspace root. expansion_root is that
 root iff expansion is authorized, otherwise null. There is no redundant scope label,
 workspace-root field, preparation token, resume session or generic native selector parser.
@@ -2703,10 +2716,9 @@ possibility behind a profile, capability or option schema.
 
 | Field | Type / default | Constraint and owner |
 |---|---|---|
-| scope | Required targets\|workspace | Explicit filesystem scope; no suites value or implicit full run |
-| targets | Nonempty tuple[WorkspaceRelativePath,...], or omitted | Required for targets; forbidden for workspace; retains file/directory selection |
+| scope | Required configured\|targets | Explicit native-configured selection or explicit filesystem targets; no implicit scope or workspace alias |
+| targets | Nonempty tuple[WorkspaceRelativePath,...], or omitted | Required for targets; forbidden for configured; "." denotes the workspace directory |
 | tests | Nonempty unique ordered tuple[TestId,...], or omitted | Select configured test bindings; omission uses the configured active test selection |
-| verbose | Strict bool, false | Native detail request under existing output bounds |
 | timeout_seconds | Positive strict int, or omitted | Per-invocation override; otherwise use each binding's budget |
 | args | Typed mapping TestId to tuple[StrictStr,...], omitted means empty mapping | Additional native argument tokens addressed to a selected execution |
 
@@ -2730,7 +2742,7 @@ native arguments rather than new PGMCP-specific option fields. For example:
 
 ```json
 {
-  "scope": "workspace",
+  "scope": "configured",
   "tests": ["python_tests"],
   "args": {"python_tests": ["-m", "not slow", "--collect-only"]}
 }
@@ -2769,7 +2781,7 @@ or generate adapter-specific options-schema alternatives. Example exposure fragm
 ```
 
 This is the properties fragment, not a complete standalone schema: the public schema
-also contains scope/targets/verbose/timeout_seconds and their required/combination rules.
+also contains scope/targets/timeout_seconds and their required/combination rules.
 IDs repeated in enum/properties are projections of one startup authority, not separately
 maintained lists. Both recipients are visible at once. Selecting one does not replace,
 hide or regenerate any part of the schema. Lazy exposure changes delivery timing only.
@@ -2779,6 +2791,22 @@ selection and fail direct/stale calls explicitly; never use an invalid empty enu
 silently successful default. Exact registered schema/validation evidence remains required.
 
 #### Transport and native interpretation
+
+Human-approved correction: configured supplies no explicit filesystem selector and
+uses the native tool's configured discovery, modified only by explicit native args.
+It does not promise to test every part of the workspace. targets supplies exact
+normalized files/directories; targets=["."] explicitly supplies the workspace root.
+Native explicit-target semantics may differ from default discovery (for example
+Pytest testpaths); do not merge or reimplement those native rules in PGMCP.
+Public scope remains mandatory. No branch scope or extra native-default/workspace
+mode is added. Adapters translate explicit targets to their native selector syntax;
+literal paths must not accidentally become broad regular expressions.
+
+No generic verbose field survives in public or adapter test inputs. Pass native
+-v/-vv/--tb options through args with their native meanings and precedence. Native
+evidence and diagnostic capture remain bounded independently of those options.
+Successful requested operations retain passed, including collection-only; do not add
+a completed/collected domain status or infer a mode by parsing argument tokens.
 
 TestRunManager resolves each binding and extracts only its args tuple; that tuple is
 carried to the selected test adapter as args, not as the public multi-recipient mapping.
@@ -2810,8 +2838,10 @@ The existing all-configured-active meaning from Research remains binding.
 
 Prove the registered/decorated schema's enum/recipient agreement, first-call behavior,
 default resolution, unknown/unselected recipient rejection, multi-recipient isolation,
-token order/whitespace/empty-value preservation, both scopes with args, native rejection
-with and without adapter prevalidation, and no change to other consumer contracts.
+token order/whitespace/empty-value preservation, configured versus explicit targets,
+targets=["."], both scopes with args, native rejection with and without adapter
+prevalidation, and native verbosity without hidden traceback overrides. Non-test
+consumers receive D-ADAPTER-23's correction, not a silently finalized args contract.
 The schema fragment is documentation, not executed conformance evidence. Shared native
 evidence, cache/presentation and process errors retain their existing owners; do not
 introduce generic native-output parsing to support this addition.
@@ -2900,7 +2930,7 @@ cutover follows proven internal routes.
 | Profile versus operation purpose | Adapt [validation policy coverage](../../../tests/mcp_server/integration/test_validation_policy_e2e.py); selecting a syntax profile must not run unrelated workspace checks or tests |
 | Check migration | Compare retained diagnostics/outcomes against direct known-input tool evidence; preserve mixed failure/unavailability and policy-independent facts |
 | Native configuration authority | Compare adapter and direct native-tool behavior for the same tool version, inputs, and purpose; change a native setting and prove it affects the adapter without changing package/PGMCP settings; cover logical-target configuration for scratch input |
-| Test migration | Adapt [Pytest behavior coverage](../../../tests/mcp_server/unit/managers/test_pytest_runner.py), preserving agreed collection, failures, skips, coverage, and verbose evidence through the adapter's public contract |
+| Test migration | Adapt [Pytest behavior coverage](../../../tests/mcp_server/unit/managers/test_pytest_runner.py), preserving collection, failures, skips, coverage and native-requested detail without the old generic verbose interpretation |
 | Fix migration | Compare authorized proposal/application results against before/after bytes, including already-dirty targets, stale inputs, out-of-scope proposals, and application interruption |
 | Distribution | Inspect a built distribution and execute a retained official adapter from an installed copy; a source-tree import is insufficient packaging evidence |
 
@@ -2916,7 +2946,7 @@ proposed conformance evidence is claimed as completed.
 |---|---|---|
 | Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check and public test-input behavior; test configuration/remaining transport/results and fix operations stay open; exact DTO integration/conformance is still required |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
-| Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, verbose behavior, and independent conformance |
+| Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, native-argument transport, and independent conformance |
 | Q-ADAPTER-05 | How are fixes authorized and recoverably applied? | Define the separate F-20 mutation contract and stale/proposal/application evidence |
 | Q-ADAPTER-06 | Which native values replace today's split tool-settings authorities? | DI-05 chooses retained per-tool settings and explicit request controls, records intentional changes, and supplies separate check/test/fix migration proof obligations |
 | Q-ADAPTER-07 | What completes each capability declaration and its consumer binding? | Define profile/check selection, applicability and input requirements, and explicit fix-to-check references without same-package or same-name assumptions |
@@ -2971,6 +3001,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.69 | 2026-09-10 | `@imp designer` | Record partial W02 approval for package sources, consumer-backed fields, file inventory, fingerprint scope and narrow interfaces; keep exact trust configuration and native provenance return amendment open. |
 | 0.70 | 2026-09-10 | `@imp designer` | Close W02-B/F: explicit adapters.yaml with central loading and typed external_tools in ordinary role results; amend existing closed scaffold payload and preserve minimal invalid_request; keep W03–W05 role work open. |
 | 0.71 | 2026-09-10 | `@imp designer` | Integrate approved W03 as consolidation of existing selection/scope/native decisions plus explicit caller timeout override; specify honest completion and early-error absence without reopening Research or test/fix choices. |
+| 0.74 | 2026-09-10 | `@imp designer` | Consolidate approved W04 configured/targets scope and passed vocabulary; remove generic native verbose interpretation across consumers, retaining separate check/fix argument-routing work and unapproved W04 configuration/output proposals. |
 | 0.73 | 2026-09-10 | `@imp designer` | Correct run_checks domain-derived success: restore operational success/inverse MCP isError, preserve negative domain evidence separately and require actual MCP-boundary regression evidence. |
 | 0.72 | 2026-09-10 | `@imp designer` | Record approved run_tests flat tests selection, addressed args and fixed startup exposure; supersede test options_schema only; preserve other consumers and leave test results/configuration/full transport open. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
