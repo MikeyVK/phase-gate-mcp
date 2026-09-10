@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.70  
+**Version:** 0.71
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -71,12 +71,12 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-04 | Discover manifest-owned adapter packages through shallow startup enumeration of official and workspace sources; consumer references use declared identity | Decided; human agreement 2026-09-05; exact admission/binding schemas open |
 | D-ADAPTER-05 | Native tool configuration owns tool settings; manifests describe packages and PGMCP configuration selects capabilities, scope, and execution policy without a second tool-settings layer | Decided; human direction 2026-09-05; concrete migration values open |
 | D-ADAPTER-06 | Organize manifest declarations by role, with an explicit role-contract version, entrypoint, and named capabilities under each role | Decided; human agreement 2026-09-05; not a complete manifest schema |
-| D-ADAPTER-07 | Define named check bindings once in `checks.yaml`; output profiles select those check IDs and explicit check operations reuse them | Proposed; W-ADAPTER-04; full configuration and operation schemas remain open |
+| D-ADAPTER-07 | Define named check bindings once in `checks.yaml`; output profiles select those check IDs and explicit check operations reuse them | Human-approved W03 consolidation, 2026-09-10; §§7.5 and 7.14 |
 | D-ADAPTER-08 | Construct configuration-derived public tool contracts during startup before publication; exposure, validation, defaults, and error-schema feedback use the same immutable startup contract | Decided lifecycle requirement; human direction 2026-09-05; exact interfaces and client evidence open |
 | D-ADAPTER-09 | Startup validates declarations and builds configured check/test/fix selections without invoking adapters; dependency availability is reported on use and never silently weakens profiles | Human-approved correction 2026-09-07; supersedes 2026-09-05 preflight/filtering direction; sections 7.6–7.7 |
 | D-ADAPTER-10 | Defer agent-facing startup health, health-first guidance, and new health-driven tool blockades to a separate issue; preserve current health/admin behavior | Explicit human scope decision 2026-09-05; see the [deferred-work notice](deferred-work.md#deferred-work-notice-agent-facing-startup-health-and-recovery); not a prerequisite for issue 460 |
-| D-ADAPTER-11 | Separate requested check scope from supporting read context; wider check execution requires explicit caller permission and truthful effective-scope reporting | Human-approved workshop nucleus; section 7.8; exact role transport and outcome fields remain open |
-| D-ADAPTER-12 | Branch selection includes committed branch changes, staged/unstaged changes, and non-ignored untracked files; checks inspect current working-tree content | Human-approved working-state scope refinement; section 7.9; input-consistency contract remains open |
+| D-ADAPTER-11 | Separate requested check scope from supporting read context; wider check execution requires explicit caller permission and truthful effective-scope reporting | Human-approved nucleus §7.8; W03 §7.14 completes selection transport and outcomes |
+| D-ADAPTER-12 | Branch selection includes committed branch changes, staged/unstaged changes, and non-ignored untracked files; checks inspect current working-tree content | Human-approved §7.9; W03 §7.14 records a selection view, not an immutable filesystem certificate |
 | D-ADAPTER-13 | Require run_checks scope; remove auto/default and auto-only state | Binding amended Research; section 7.10; previous auto design superseded |
 | D-ADAPTER-14 | Respect native optimization with explicit fresh intent; no PGMCP execution-result reuse | Binding amended Research; section 7.11; previous cross-scope reuse design superseded |
 | D-ADAPTER-15 | Internal prepare/execute protocol with prepared work and reuse-state machinery | Withdrawn following the human-directed step back; work_id/session machinery is rejected, not an optional extension; section 7.12 |
@@ -84,10 +84,12 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-17 | W02 package boundary is approved: source layout, consumer-backed fields, explicit files/fingerprint, restart limitation and narrow interfaces; trust/provenance follow D-ADAPTER-18/19 | Human-approved W02, 2026-09-10; §§7.4.1–7.4.3 |
 | D-ADAPTER-18 | Required adapters.yaml under resolved_config_root owns trusted_adapter_ids; ship empty, load centrally and inject into catalog admission; no second settings source or self-trust | Human-approved W02-B, 2026-09-10; §7.4.2 |
 | D-ADAPTER-19 | Role results carry typed external_tools as ordinary invoked-run evidence; invalid_request stays minimal; no new query tool, startup survey or result-decision consumer | Human-approved W02-F, 2026-09-10; §7.4.3 and amended scaffold response |
+| D-ADAPTER-20 | Consolidate run_checks selection, scope and result contracts; permit a positive per-invocation caller timeout override without changing the internal termination budget | Human-approved W03, 2026-09-10; §7.14; previous scope/profile decisions are not reopened |
 
-The decided rows establish ownership and the selected nuclei. Exact package layout,
-admission and capability binding, process protocol, role schemas, native-configuration
-context, and transaction mechanics remain open Design work.
+The decided rows establish ownership and approved contracts. W02/W03 close package
+and check behavior in §§7.4.1–7.4.3 and 7.14; concrete DTO/schema integration and
+independent conformance remain required. Test/fix role decisions, native-setting
+migration and fix transaction mechanics remain open Design work.
 
 ## 5. Responsibilities and Boundaries
 
@@ -807,7 +809,7 @@ Conformance covers missing field, wrong types, unknown keys, blank IDs/versions,
 explicit-null unknown version, zero/multiple identities, all role-result alternatives,
 unchanged invalid_request and real cached preservation. Role schemas remain independent.
 
-### 7.5 Proposed check bindings and profile selection
+### 7.5 Approved check bindings and profile selection
 
 Illustrative excerpt of `.pgmcp/config/checks.yaml`, not a complete configuration or a
 final official profile/check/adapter inventory:
@@ -817,6 +819,7 @@ checks:
   python_format:
     adapter_id: ruff
     capability: format
+    timeout_seconds: 60
 
 profiles:
   python_formatted:
@@ -838,8 +841,8 @@ performs the check using native tool settings. DI-04 consumes the resulting fact
 applies its already-decided persistence policy.
 
 An explicit `run_checks` request selecting `python_format` uses the same binding and
-check implementation for its requested existing-file scope. Its complete request DTO is
-not fixed by this excerpt. Defining a check does not automatically add it to every
+check implementation for its requested existing-file scope. Section 7.14 owns its
+approved public contract. Defining a check does not automatically add it to every
 profile or a default/full run. A real scaffold profile can select only syntax/preflight
 checks; the formatting-only illustration is not a default profile or a claim of full
 Python validity. Safe edit shares the profile boundary, but how it selects a profile
@@ -859,7 +862,7 @@ not automatic discovery fallback or proof of behavioral equivalence: the replace
 must actually provide the intended check, not merely speak `check/v1`.
 
 DI-02 already includes referenced profile identity and resolved semantics in the
-template provenance closure. Before this proposal is integrated, DI-02/DI-05 must
+template provenance closure. Before cross-package integration, DI-02/DI-05 must
 specify the exact projection of profile selections and bindings into that closure.
 Do not silently omit existing profile semantics or include executable adapter bytes,
 native tool configuration, or adapter execution fingerprints as template source inputs.
@@ -2481,14 +2484,17 @@ both passing and failing verdicts and proves consumer decisions remain unchanged
 
 #### Remaining surfaces
 
+This is an integration/proof inventory, not a reopening of the approved package and
+check decisions. W02/W03 approval is authoritative in §§7.4.1–7.4.3 and 7.14.
+
 | Surface | Exact design still required |
 |---|---|
 | Package/catalog | Manifest fields, source discovery, admission/trust, capability references, dependency availability, restart behavior, and official asset packaging |
 | Process transport | Request/response schemas, protocol framing, limits, cancellation, execution failures, scratch lifecycle, and external stdout/stderr handling |
-| Check | Proposed content versus existing files, logical paths, file materialization, profile selection, capability availability, diagnostics, and factual outcome types |
+| Check | Integrate approved content/selection contracts into concrete typed declarations; prove profile admission, factual outcomes and registered schemas independently |
 | Test | Suite selection, all-active-suites meaning, framework options, collection/no-tests outcomes, coverage, and detailed evidence |
 | Fix | Proposal shape, authorized paths, stale-input checks, validation, application atomicity, and recovery |
-| Public operations | Full inputs/results, verbose semantics, state, cache/presentation split, and migration of every retained observable field |
+| Public operations | W03 fixes run_checks behavior; complete test/fix choices and shared DTO/cache/presentation integration without reopening approved diagnostic/verbose boundaries |
 | Native configuration | Per-tool project/configuration context, explicit invocation controls versus native settings, and canonical values for current conflicting configurations |
 
 `verbose` must be designed across request, adapter behavior, diagnostic capture, and
@@ -2496,6 +2502,167 @@ presentation. Current quality/test callers already pass it; the test caller chan
 Pytest traceback flags. A claim that it only changes presentation would lose existing
 behavior. A detailed output request must not silently change check/test selection or
 grant additional source-mutation authority.
+
+### 7.14 Approved run_checks Contract — W03, 2026-09-10
+
+This closes the prepared W03 workshop, chiefly consolidating already approved profile,
+scope, native-first and single-invocation decisions in §§7.5–7.13. It does not reopen
+Research or imply those decisions originated here. The explicit caller timeout override
+is the additional invocation control approved at this checkpoint. Test/fix contracts,
+official native capability inventory and independent conformance remain separate work.
+
+#### Configuration and selection
+
+The required `checks.yaml` uses the existing resolved_config_root. Its closed root has
+`checks`, `profiles`, `profiles_by_extension`, and `run_checks` objects. Check bindings
+contain exactly adapter_id, capability and positive strict integer timeout_seconds.
+Profiles contain a nonempty ordered, duplicate-free list of check IDs; nested profiles
+are forbidden. The run_checks object has only optional default_profile. Empty maps are
+allowed, but dangling check/profile/template/extension/default references fail admission.
+The existing extension lookup contract remains unchanged. Template/extension-referenced
+profiles require content-capable checks; run-only profiles may use selection-only checks.
+Selection for run_checks requires selection support; it never invokes a content-only
+capability through a guessed request conversion. Configuration and input schemas use
+the same admitted catalog, without adapter startup execution or dependency probing.
+
+Illustrative composition (IDs and timeout values do not approve a shipped inventory):
+
+```yaml
+checks:
+  python_syntax:
+    adapter_id: python_syntax
+    capability: syntax
+    timeout_seconds: 30
+  markdown_structure:
+    adapter_id: markdown
+    capability: structure
+    timeout_seconds: 30
+profiles:
+  python_preflight:
+    checks: [python_syntax]
+  markdown_preflight:
+    checks: [markdown_structure]
+  workspace_review:
+    checks: [python_syntax, markdown_structure]
+profiles_by_extension:
+  ".py": python_preflight
+  ".md": markdown_preflight
+run_checks:
+  default_profile: workspace_review
+```
+
+| Public field | Closed type / default | Consumer and constraint |
+|---|---|---|
+| scope | Required targets\|branch\|workspace | ScopeResolver; no auto/project aliases or implicit scope |
+| targets | Nonempty tuple of WorkspaceRelativePath, or omitted | Required only for targets; mixed files/directories; forbidden otherwise |
+| profile | ProfileId, or omitted | CheckRunManager; mutually exclusive with checks |
+| checks | Nonempty unique ordered tuple of CheckId, or omitted | CheckRunManager; exact explicit obligations |
+| fresh | Strict bool, false | Adapter; avoid prior native analysis reuse or refuse honestly |
+| allow_expansion | Strict bool, false | Resolver/adapter; permit necessary related checked-content expansion inside workspace |
+| verbose | Strict bool, false | Adapter native detail request; no relaxed transport limit |
+| timeout_seconds | Positive strict int, or omitted | Manager; override each selected binding's invocation budget, not a whole-run deadline |
+
+No null substitutes for optional inputs. Neither profile nor checks uses only the
+configured default_profile; absent default is default_profile_missing, never all checks.
+No configured choices yields no_configured_checks, never empty success. Published input
+remains a valid object schema admitting no usable selection, with no new health blockade
+or removed tool. Final registered-schema evidence remains required. Old quality.yaml,
+gate-command keys and unknown fields are migration errors, not supported dual reads.
+
+The override does not alter the shared internal five-second termination budget. One
+caller value applies independently to each selected check; omission preserves each
+binding's budget. It is an execution control, not a native tool-settings authority.
+
+#### Resolved request and truthful native scope
+
+ScopeResolver normalizes/deduplicates overlapping targets, checks workspace containment
+after link resolution and never traverses escaping symlinks/junctions. Missing explicit
+targets are input errors. Workspace means the whole workspace; native tools own their
+selection/exclusions, not hidden Python include_globs. Branch uses merge-base changes
+plus current staged/unstaged and nonignored untracked content. Missing parent/merge-base
+is an operation error. Actual Git deletions remain removed targets; rename is old removal
+plus current new content. Empty branch/workspace input produces empty_selection without
+adapter invocation, not a passing certificate.
+
+SelectionCheckRequest is frozen, strict and extra-forbid, with these required fields:
+operation: CapabilityId; targets: tuple[AbsolutePath,...];
+removed_targets: tuple[AbsoluteFilePath,...]; expansion_root: AbsoluteDirectoryPath|null;
+fresh: bool; verbose: bool. At least one target collection is nonempty; existing paths
+and actual Git deletions are separate. cwd is workspace root. expansion_root is that
+root iff expansion is authorized, otherwise null. There is no redundant scope label,
+workspace-root field, preparation token, resume session or generic native selector parser.
+
+The adapter establishes whether requested work fits before substantive checking.
+Supporting reads do not expand checked scope. Necessary related expansion within an
+authorized ceiling is allowed and reported; unrelated expansion violates conformance.
+Generic code does not claim to prove semantic relatedness or per-file participation.
+
+#### Selection outcome and consumer summary
+
+Selection role results retain the approved decision, native evidence and external_tools
+baseline. They add required nullable coverage and required required_targets (empty unless
+scope expansion is refused). CheckedCoverage contains workspace-relative targets naming
+the native execution boundary, not an exhaustive file census, and expanded: bool.
+The selection-only not_executed variant has a closed reason enum
+scope_restricted|fresh_unsupported|not_applicable and a required factual message.
+Scope refusal has required_targets and null coverage; fresh refusal precedes substantive
+analysis. Do not infer not_applicable from quiet output or missing findings. A native
+passed result asserts native semantics, not that every supplied file participated.
+
+| Selection response | Exit | Constraint |
+|---|---|---|
+| passed | 0 | Native completed success |
+| failed | 1 | Native negative verdict with evidence |
+| invalid_request | 2 | Existing minimal rejection; no invented role fields |
+| unavailable | 3 | Existing unavailable reason and factual message |
+| not_executed | 3 | Selection-only reason; no trustworthy verdict |
+
+These selection fields do not widen the approved scaffold-only response. This completes
+the role-specific exit matching table, not a new shared process exit category.
+
+RunChecksOutput contains success, run_status, requested_scope, requested_targets,
+required nullable selected_profile, fresh, allow_expansion, ordered results and direct
+required nullable error_code/error_details. Each SelectionCheckResult identifies check_id
+and preserves the factual outcome, coverage/required_targets and shared invocation facts.
+RunChecksErrorCode is closed: no_configured_checks, selection_invalid,
+default_profile_missing, branch_basis_unavailable, scope_resolution_failed,
+adapter_request_rejected, operation_interrupted, termination_unconfirmed. Detail records
+are code-matched frozen closed types, never free dictionaries. Native negative verdicts
+and ordinary unavailability remain check facts, not invented operation errors.
+
+Run status is passed|failed|incomplete|empty_selection when a selection-derived summary
+exists. For an early operation error before one exists it is required null, paired with
+error_code/error_details and success=false; this represents absence, not a fifth verdict.
+Outer MCP input rejection may produce no RunChecksOutput. Do not manufacture check rows
+for a selection that never completed. Empty selected input means empty_selection.
+For a nonempty known obligation set, any unavailable/not_executed makes incomplete;
+otherwise any failed makes failed; otherwise all passed makes passed. Explicit
+not_applicable therefore makes incomplete, including mixed-language profiles. Preserve
+negative facts when failed plus unavailable aggregates to incomplete. DI-04's different
+validation-summary precedence is unchanged. success=true requires a nonempty complete
+passing set and no blocking operation error.
+
+Initially invoke sequentially in selected binding order; independent checks continue
+after ordinary failure/unavailability. Interruption or an independent blocker stops work;
+remaining known obligations get consumer-owned not_executed with not_started|interrupted,
+message, null native evidence and invocation only if attempted. These are not adapter
+reasons. Retain original causes and termination problems under the shared runtime rules.
+
+This is a selection view and observed native run, not an immutable filesystem snapshot.
+Subsequent edits require relevant evidence to be rerun; there is no PGMCP verdict reuse.
+Retire quality_state runtime readership, baseline advancement/replay and its branch-local
+registration; leave old history inert for owner cleanup, without touching other state.
+
+#### Integration and evidence still required
+
+DI-05 owns concrete frozen DTO declarations and all code-matched detail variants;
+shared capture/null-preserving serialization and registered schema proof remain integration
+obligations. Prove defaults/exclusivity/role-input admission, empty versus not_applicable,
+every response/exit pair, Git working state, expansion denial/permission, native fresh
+refusal, repeated execution and cached evidence independently from run_checks itself.
+W06 still owns the declarative profile projection into template fingerprints; W09 owns
+native settings and shipped capabilities. No tests, runtime code or Planning cycles are
+implemented or authorized by this documentation checkpoint.
 
 ## 8. Control, Data, and State Flow
 
@@ -2595,7 +2762,7 @@ proposed conformance evidence is claimed as completed.
 
 | ID | Open Design question | Decision needed |
 |---|---|---|
-| Q-ADAPTER-02 | What completes role-specific bindings after W02 approval? | §§7.4.1–7.4.3 fix source/file/identity/trust and native provenance; checks/tests/fixes configuration and operations remain W03–W05-owned |
+| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 approval? | §§7.4.1–7.4.3 and 7.14 close package/check behavior; test/fix configuration and operations remain W04/W05-owned; exact DTO integration/conformance is still required |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, verbose behavior, and independent conformance |
 | Q-ADAPTER-05 | How are fixes authorized and recoverably applied? | Define the separate F-20 mutation contract and stale/proposal/application evidence |
@@ -2651,6 +2818,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.68 | 2026-09-10 | `@imp designer` | Link approved W01 operation-result projection while retaining generic process ownership and the separate W02 native provenance return decision. |
 | 0.69 | 2026-09-10 | `@imp designer` | Record partial W02 approval for package sources, consumer-backed fields, file inventory, fingerprint scope and narrow interfaces; keep exact trust configuration and native provenance return amendment open. |
 | 0.70 | 2026-09-10 | `@imp designer` | Close W02-B/F: explicit adapters.yaml with central loading and typed external_tools in ordinary role results; amend existing closed scaffold payload and preserve minimal invalid_request; keep W03–W05 role work open. |
+| 0.71 | 2026-09-10 | `@imp designer` | Integrate approved W03 as consolidation of existing selection/scope/native decisions plus explicit caller timeout override; specify honest completion and early-error absence without reopening Research or test/fix choices. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
 | 0.59 | 2026-09-07 | `@imp designer` | Supersede startup dependency preflight/filtering with configuration-based exposure and existing on-use failures; retain structural/path admission, stable schemas, defaults, full profiles, and health deferral without new protocol or Research changes. |

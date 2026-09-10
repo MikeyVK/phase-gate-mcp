@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.60  
+**Version:** 1.61
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -229,7 +229,7 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-ART-DOC-* | `design-document-tracking-artifacts.md` | Not started | DI-06, DI-07, DI-08 |
 | D-ART-CODE-* | `design-code-test-artifacts.md` | Not started | DI-06, DI-07, DI-08 |
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
-| D-ADAPTER-01–D-ADAPTER-15 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | Drafting resumed; required scope, auto retirement, native fresh and no PGMCP execution-result reuse now follow amended Research; simple scope-admission contract remains open; health work remains deferred | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
+| D-ADAPTER-01–D-ADAPTER-20 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W02 package and W03 check contracts approved; test/fix decisions and concrete DTO/schema/conformance integration remain open; health work remains deferred | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
 | D-DIST-01–D-DIST-24 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Decided | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
@@ -498,8 +498,12 @@ W02 is approved in
 explicit adapters.yaml trust under the existing configroot and typed native-tool identity
 inside ordinary cached run evidence complete the package boundary. The existing scaffold
 response is explicitly amended; no new query tool or runtime config is implemented here.
-Review advances to W03 run_checks. Later workshop proposals, actual conformance and
-the independent Design review remain open; Research and template/artifact authority are unchanged.
+W03 is approved in [DI-05 §7.14](design-execution-adapters.md#714-approved-run_checks-contract--w03-2026-09-10).
+It consolidates prior scope/profile/native decisions and adds the explicit caller timeout
+override; no internal termination-budget change. Review advances to W04 run_tests,
+focusing on test-specific selection/options/results rather than reopening shared decisions.
+Later proposals, concrete DTO integration, actual conformance and independent Design
+review remain open; Research and template/artifact authority are unchanged.
 
 ## Version History
 
@@ -517,6 +521,7 @@ the independent Design review remain open; Research and template/artifact author
 | 1.58 | 2026-09-10 | `@imp designer` | Index approved W01-A–E, distinguish remaining integration obligations and move human review to prepared W02 without approving its package/provenance choices. |
 | 1.59 | 2026-09-10 | `@imp designer` | Index partial W02 approval, preserve separate trust/provenance review and unchanged template discovery/artifact-location configuration authority. |
 | 1.60 | 2026-09-10 | `@imp designer` | Index W02 closure and explicit scaffold payload amendment; advance human review to W03 without approving its selection/scope/result proposals. |
+| 1.61 | 2026-09-10 | `@imp designer` | Index approved W03 consolidation and caller timeout override; advance review to test-specific W04 decisions without approving test/fix proposals or reopening Research. |
 | 1.56 | 2026-09-10 | `@imp designer` | Index approved original-value and controlled-replacement contract; close consistency responsibility choices and route final typed mutation facts/cache/presentation into the next integrated workshop. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |
