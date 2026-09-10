@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.29  
+**Version:** 1.30  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -409,7 +409,7 @@ introduce JSONPath/mapping DSLs, disguise singleton objects as one-item lists, o
 the presenter to accommodate proposed packaging. It does not settle safe-edit policy
 combinations; the subsequent Research amendment and §4.6 own that decision.
 
-Agree the direct public field inventory and typed check record next. Later conformance
+Sections 4.6 and 4.10 fix the public inventory and concrete check-record route. Later conformance
 must prove real-config alignment/rendering for success, rejection, missing profile,
 unavailable adapter, runtime failure and persistence failure; preserve origin/reason,
 ownership/order, cache completeness and text bounds. Adapt existing
@@ -425,8 +425,9 @@ and channel dispositions below are accepted. This section supersedes §4.4's sin
 `validation.*` serialization, not its factual or persistence semantics. Both mutation
 tools use `validation: enforce|report`, default `enforce`, and `validation_policy` output.
 The legacy safe-edit mode field and values, including `verify_only`, are removed without
-a compatibility bridge or replacement preview. Final diagnostic/provenance carriers and the V3
-reader seam remain integration obligations, not newly completed work.
+a compatibility bridge or replacement preview. Section 4.10 completes the approved
+operation-result integration; §§4.8–4.9 and DI-02 own the approved V3 reader seam.
+Cross-workshop provenance/recovery dependencies remain explicitly bounded below.
 
 #### Direct operation fields and their consumers
 
@@ -549,8 +550,8 @@ Keep DI-05's existing capture ceilings, truncation facts and ownership. Reuse th
 cache-before-presentation route; add no diagnostic-ID-only replacement, private log
 route, disk archive, exposure flag, automatic cleanup or presenter-specific sanitizer.
 Native messages/evidence need not be falsified to satisfy the superseded blanket ban.
-This approval closes only W01-F; exact remaining mutation DTO integration stays open
-under Q-MUT-03/Q-MUT-06, and later workshop proposals are not implicitly approved.
+This disclosure approval closed only W01-F. The subsequent W01-A–E approval is recorded
+separately in §4.10; later workshop proposals are not implicitly approved.
 
 #### Persistence outcomes reviewed together
 
@@ -950,6 +951,96 @@ delay proves a race. Do not write tests claiming arbitrary external-writer exclu
 that a successful read/replace sequence is atomic compare-and-swap. Runtime tests were
 not run for this documentation-only Design recording.
 
+### 4.10 Complete Mutation Operation Result — approved 2026-09-10
+
+Human approval of W01-A–E selects completion of the existing normal scaffold/safe-edit
+result graph for expected failures. Retain §4.6's direct fields and one concrete public
+check-record type; successful checks and completed persistence remain separate facts.
+Do not replace this result with a new exception DTO or result/status envelope. Outer
+malformed input, enforcement and unexpected framework errors keep their own boundaries.
+
+| Added field | Closed type and presence | Producer / consumer |
+|---|---|---|
+| error_code | Required MutationErrorCode or explicit null | Mutation manager's primary blocking consequence; configured text and cache |
+| error_details | Required closed typed detail variant or explicit null; consistent with error_code | Observing boundary supplies facts; manager retains them in the complete cache |
+| housekeeping | Immutable tuple of HousekeepingIssue, empty when none | Write-stage cleanup only; bounded text and complete cache |
+| Safe-edit selection_reason | Required MetadataFallbackReason or explicit null | Original-header fallback explanation, never an invented failed check |
+| checks[].invocation | Required InvocationEvidence or explicit null | Generic invocation provenance/capture; complete cache |
+| checks[].termination_problem | Existing TerminationProblem or explicit null | Original runtime-owned additional stop fact; scalar text and cache |
+| checks[].housekeeping | Immutable tuple of HousekeepingIssue, empty when none | That check's validation-input cleanup; child collection and cache |
+
+MutationErrorCode is a closed enum: context_invalid, target_invalid, target_exists,
+original_unreadable, edit_invalid, render_failed, preparation_failed, validation_blocked,
+original_changed, original_missing, persistence_failed, adapter_request_rejected,
+termination_unconfirmed, operation_interrupted. The primary code is the first
+authoritative operation blocker in the actual flow. Additional process/cleanup facts
+retain their own records rather than replacing it. A successful completed mutation has
+error_code/error_details null. Operation errors never become fabricated check verdicts.
+
+Closed detail alternatives retain context issues (JSON Pointer, schema keyword and
+factual message), target/write facts (relative affected path and the owning boundary's
+typed cause), edit problems (missing_match/missing_anchor/invalid_pattern/invalid_replacement),
+and adapter request issues (existing RequestValidationIssue records and check ID).
+Reuse equivalent inward-owned types, not arbitrary dictionaries, free-string reason
+categories, whole inputs, proposed file contents or duplicate complete results.
+The selected detail type must match the primary code.
+
+HousekeepingIssue has required purpose enum validation_input or write_staging,
+workspace-relative path and factual message. It never changes a verdict or completed
+write. Termination-unconfirmed is blocking lifecycle evidence, not housekeeping.
+MetadataFallbackReason is absent, invalid or unknown_template; null means metadata
+fallback was not evaluated, for example because explicit input won. All three retain
+the same approved extension/no-profile fallback. Do not expose invalid-header fragments
+or prominently render routine absence.
+
+InvocationEvidence retains admitted adapter identity, package version/fingerprint,
+role-contract version and bounded process capture under DI-05 ownership. It exists for
+an attempted invocation, including failed launch, never a not-started check. Capture
+retains observed exit code or null, stream byte-count/truncation facts and bounded raw
+diagnostics under the existing DI-05 ceilings. Do not duplicate accepted response bytes.
+The exact native-tool external_tools return field remains W02's explicit proposal;
+final DI-05 carrier declarations must realize these facts without changing ownership.
+
+All records are frozen, strict and extra-forbid, using closed enums and immutable
+sequences. Required nullable fields remain present as null in the complete serialized
+V3 result. The current [cache provider](../../../mcp_server/resources/cache.py) uses
+exclude_none=True: object-level checks alone therefore do not prove this wire contract.
+Shared delivery integration must preserve declared required fields and prove actual
+resource round-trips without mutation-specific serialization or presenter dispatch.
+
+| Observable situation | Preserved public facts | Operation consequence |
+|---|---|---|
+| Checks pass; original bytes changed before replace | validation_status=passed; original_changed; written=false; content_changed=null | Refuse replacement |
+| Report permits adapter-rejected content | Original failed check/message/evidence; error_code=null | Write allowed; success/written true only after completion |
+| Safe-edit lookup finds no profile | selected_source=none; empty checks; validation_status=not_executed | Enforce blocks with validation_blocked; report permits an otherwise safe write |
+| Timeout and unconfirmed termination | Original runtime failure plus termination_problem | Refuse under either policy |
+| Write completes; cleanup fails | Actual success/written plus separate housekeeping | Do not undo or report failed persistence |
+| Adapter rejects PGMCP's request | Typed request issues; no invented content verdict | adapter_request_rejected blocks operation |
+
+Managers construct domain outcomes through injected dependencies; filesystem/runtime
+boundaries own observations. No manager imports outward tool-output models. Tools
+transfer structure without interpreting runtime failures or formulating manager-detected
+problems. Native diagnostic messages remain factual source data.
+
+Use existing declarative error-code fallback with constant configured explanations
+and normal scalar/collection projections. Remove static per-tool failure templates that
+would hide the chosen code. Optional-enum enum_cases admission and global placeholder
+inventories cannot be assumed to support new shapes; do not extend presenter logic to
+accommodate these errors. New reasons require typed data, YAML and conformance, not
+concrete error-class dispatch. No NoteContext or parallel diagnostic authority.
+
+Preservation evidence exercises real decorated tools, actual presentation declarations
+and resource reads: the cases above, JSON-only rejection with factual message, strict
+and nullable combinations, retained check order, both cleanup owners, context-only
+schema attachments and post-write publication failure. Reuse existing safe-edit,
+scaffold and issue-459 collection/config tests. No runtime proof is claimed here.
+
+W01's decision nucleus is closed. W02 owns the native provenance return amendment;
+W05's recovery store, overlap reader and recovery_pending/recovery_state_invalid codes
+remain unapproved and absent from the accepted enum. Final DI-05 carrier declarations,
+shared serialization and independent conformance remain explicit integration obligations,
+not renewed W01 product decisions. No implementation cycles or Research changes here.
+
 ## 5. Consumer Flow
 
 ```mermaid
@@ -996,15 +1087,16 @@ The target and content paths meet only for output-profile evidence and final per
 | D-MUT-18 | The eight policy/status combinations in §4.4.3 govern scaffold persistence; report permits failed/unavailable evidence, never skipped or aborted operations | Decided |
 | D-MUT-19 | Operation errors and committed creation remain independent of validation status; response delivery problems cannot turn a committed artifact into a claimed non-creation | Decided; §4.4.4 |
 | D-MUT-20 | Existing on-demand cached diagnostics may retain incidental absolute paths; routine summaries and typed operation paths stay relative; cache is agent-accessible, not private storage; no extra archive, flag or generic sanitizer | Human-approved 2026-09-10; §4.6; supersedes the earlier blanket cache-path prohibition |
+| D-MUT-21 | Expected operation failures retain the normal result, earlier checks and actual write facts; typed error_code/error_details, separately owned housekeeping and selection_reason; declarative presentation without error-specific renderer logic | Human-approved W01-A–E, 2026-09-10; §4.10; W02/W05 dependencies remain separate |
 
 ## 7. Open Questions
 
 | ID | Question | Owner |
 |---|---|---|
-| Q-MUT-03 | What complete immutable mutation result DTO retains operation diagnostics and execution provenance alongside §4.6's approved direct fields? | DI-04/DI-05; no template/artifact singleton grouping |
-| Q-MUT-04 | Header recognition is closed by DI-02; §4.9 fixes original bytes/text, narrow checked replacement, lock/deadline separation and per-retry guards. Integrate the final typed operation carriers under Q-MUT-03/Q-MUT-06 without reopening these responsibilities or precedence | DI-02/DI-04/DI-05 |
+| Q-MUT-03 | Shape/ownership decided in §4.10. Remaining integration: DI-05 final invocation/capture declarations, W02 native provenance return field and preservation of required nulls through resource reads | DI-04/DI-05/Shared Contracts; no new presenter framework |
+| Q-MUT-04 | Decision closed: DI-02 header recognition, §4.9 original bytes/text and checked replacement, and §4.10 operation facts. Independent evidence remains required | DI-02/DI-04/DI-05 |
 | Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
-| Q-MUT-06 | Which direct public fields and concrete check-record shape resolve §4.5 without duplicated facts, native-output normalization or presenter extensions? | DI-04/DI-05; includes actionable inline feedback for native JSON-only rejection |
+| Q-MUT-06 | Decision closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and existing declarative failure route. Real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts |
 
 ## 8. Acceptance Evidence
 
@@ -1075,6 +1167,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.27 | 2026-09-10 | @imp designer | Consume the approved integrated text-only header reader contract; close framing/result design while retaining original-file consistency, persistence and final operation-result integration as the next combined workshop. |
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
+| 1.30 | 2026-09-10 | @imp designer | Record human-approved W01-A–E operation-result integration; close result-shape/ownership decisions, preserve explicit W02/W05 dependencies and route required-null serialization and independent evidence. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |

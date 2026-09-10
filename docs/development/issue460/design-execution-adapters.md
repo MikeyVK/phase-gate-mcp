@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.67  
+**Version:** 0.68  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -992,6 +992,14 @@ a separate top-level exception DTO merely because a failure is operation-blockin
 Do not use NoteContext as the authoritative or alternative channel for these facts.
 Existing outer input-validation, enforcement and unexpected-error handling retain
 their boundaries; their continued existence does not require redesigning their taxonomy.
+
+Human-approved W01-A–E integration (2026-09-10):
+[DI-04 §4.10](design-mutation-validation.md#410-complete-mutation-operation-result--approved-2026-09-10)
+fixes the direct operation error/detail fields, separately owned housekeeping, metadata
+fallback explanation and concrete public check record. Invocation/capture facts stay
+DI-05-owned; mutation managers decide their operation consequence and tools transfer it.
+W02's native-tool provenance return field and W05's recovery additions remain separate
+proposals. The existing role payload is not expanded by W01 approval.
 
 The proposed new per-layer response registration, response identities and variant
 dispatcher are withdrawn as prerequisites. Preserve existing runtime derivation from
@@ -2517,6 +2525,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.65 | 2026-09-07 | `@imp designer` | Reconcile DI-04 references after human-reported Research QA GO: common enforce/report policy, default enforce and legacy mode retirement; no adapter-contract change. |
 | 0.66 | 2026-09-08 | `@imp designer` | Reference DI-04's approved narrow V3 reader and original/proposed-content consistency; keep both outside adapter responsibility. |
 | 0.67 | 2026-09-10 | `@imp designer` | Apply human-approved shared diagnostic disclosure: retain bounded incidental host paths in on-demand cached diagnostics without a private-log substitute; preserve relative public operation fields, process bounds and role payloads. |
+| 0.68 | 2026-09-10 | `@imp designer` | Link approved W01 operation-result projection while retaining generic process ownership and the separate W02 native provenance return decision. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
 | 0.59 | 2026-09-07 | `@imp designer` | Supersede startup dependency preflight/filtering with configuration-based exposure and existing on-use failures; retain structural/path admission, stable schemas, defaults, full profiles, and health deferral without new protocol or Research changes. |

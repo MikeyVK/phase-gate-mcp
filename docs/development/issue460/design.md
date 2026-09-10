@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.57  
+**Version:** 1.58  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -348,10 +348,9 @@ approved clean break: remove the mode without a replacement proposed-edit previe
 The [public mutation nesting audit](design-mutation-validation.md#45-public-mutation-response-nesting-audit)
 now qualifies earlier serialization sketches: singleton validation/selection wrappers
 cannot be assumed to render through the existing presenter. Direct summary fields and
-meaningful collections are proposed, not yet a replacement approved wire contract.
-Q-MUT-06 owns concrete public record shape and native JSON-only actionable-feedback gaps;
-no presenter extension, duplicated field graph, internal protocol change or Research
-amendment is authorized. Settle that bounded projection before further DTO integration.
+meaningful collections are now approved through §§4.6/4.10 of DI-04. Q-MUT-06's shape
+decision is closed; real presentation/resource conformance remains required. No presenter
+extension, duplicated field graph or Research amendment is authorized.
 
 The [consolidated public result workshop](design-mutation-validation.md#46-consolidated-public-result-workshop)
 records human agreement on direct fields, selection outcomes, check-record combinations,
@@ -385,9 +384,11 @@ now fixes one original bytes/text value, manager-owned orchestration, late compa
 before every replacement attempt, lock-wait/adapter-timeout separation and independent
 check/write/cleanup facts over the existing atomic writer mechanics. It retains the
 external-writer race limitation without adding a general transaction or history layer.
-The next integrated workshop closes concrete mutation result/error/provenance carriers
-against actual cache and declarative-presentation support; full DTO integration remains open.
-Native evidence, execution provenance and internal responsibilities remain required.
+The [approved W01 integration](design-mutation-validation.md#410-complete-mutation-operation-result--approved-2026-09-10)
+fixes the normal operation-result route for expected failures, typed error/detail fields,
+separate housekeeping and selection explanation. Remaining integration is explicitly
+DI-05's final invocation/capture declarations, W02's native provenance return proposal,
+required-null serialization and independent evidence; W05 recovery is not approved.
 
 DI-02's conditional no-replacement boundary now admits this demonstrated V3-reader
 consumer. Legacy parsing, historical lookup and automatic provenance mutation stay removed.
@@ -488,10 +489,11 @@ No cycles or estimates are defined during Design.
 ---
 
 The [approved diagnostic disclosure boundary](design-mutation-validation.md#diagnostic-disclosure--approved-2026-09-10)
-closes W01-F only: preserve relative operation fields and portable artifacts while using
+closed W01-F: preserve relative operation fields and portable artifacts while using
 existing on-demand cached native diagnostics, with no private-log replacement or claim
 that resource retrieval is local-only. DI-05 applies the same boundary to check/test/fix.
-Research remains frozen; remaining mutation DTO and later workshop decisions stay open.
+The subsequent W01-A–E approval is recorded in DI-04 §4.10. Research remains frozen;
+W02 adapter-package choices and later workshop proposals remain open.
 
 ## Version History
 
@@ -506,6 +508,7 @@ Research remains frozen; remaining mutation DTO and later workshop decisions sta
 | 1.54 | 2026-09-10 | `@imp designer` | Index human-confirmed equivalence of absent/invalid headers and invalid/unknown metadata IDs for consumer profile selection; remove the exceptional unresolved-metadata-ID failure. |
 | 1.55 | 2026-09-10 | `@imp designer` | Close the approved integrated header utility Design nucleus and Q-SUITE-03; route remaining original-file comparison, atomic writing and operation presentation into one DI-04 workshop. |
 | 1.57 | 2026-09-10 | `@imp designer` | Index human-approved W01-F diagnostic disclosure; refine the earlier blanket cache-path prohibition without changing Research, operation paths or remaining workshop approval status. |
+| 1.58 | 2026-09-10 | `@imp designer` | Index approved W01-A–E, distinguish remaining integration obligations and move human review to prepared W02 without approving its package/provenance choices. |
 | 1.56 | 2026-09-10 | `@imp designer` | Index approved original-value and controlled-replacement contract; close consistency responsibility choices and route final typed mutation facts/cache/presentation into the next integrated workshop. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |
