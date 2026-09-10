@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.17  
+**Version:** 1.18  
 **Last Updated:** 2026-09-10  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -107,7 +107,7 @@ scan, archive, or provenance-lookup service is retained or introduced.
 | D-SUITE-28 | PGMCP computes and compares identities only from supplied or already available managed snapshots; external/workspace suite owners own historical retention, release versioning, lookup, and reconstruction availability | Decided |
 | D-SUITE-29 | No replacement provenance registry, Git/release association registry, retention validator, archive/lookup service, history scan, or missing-history control/evidence state is introduced | Decided |
 | D-SUITE-30 | Both identities use domain-separated canonical version-1 records, SHA-256 truncated to 96 bits, and unpadded Base64url as one 16-character representation across all consumers | Decided |
-| D-SUITE-31 | Persisted provenance uses `pgmcp:v1` with exactly `id`, `pv`, `pf`, and `sf`; it occupies one physical comment line up to 100 characters or two adjacent comment lines split after `pv`, and generic `created`/`updated` fields are removed | Decided |
+| D-SUITE-31 | Persisted provenance uses `pgmcp:v1` with exactly `id`, `pv`, `pf`, and `sf` on the first physical line, at most 100 characters including native comment framing; template IDs are at most 24 characters and package SemVer labels at most 11; no wrapping or generic lifecycle fields | Decided; human refinement 2026-09-10 supersedes two-line fallback |
 | D-SUITE-32 | When a consumer already holds two supplied resolved package records, equality of `version` and fingerprint yields four factual relations—both equal, content-only change, version-only change, or both changed—without a generic comparison service, warning, block, persisted history, or external version-policy enforcement | Decided |
 | D-SUITE-33 | Startup performs one deterministic shallow enumeration of direct package directories; no authored `templates.yaml` or other central package inventory is admitted beside package manifests | Decided |
 
@@ -250,8 +250,8 @@ not create a second configuration authority.
 
 | Field | Semantic fact | Primary consumer | Startup coherence | Resolved-package provenance | Why it cannot be derived |
 |---|---|---|---|---|---|
-| `template_id` | Public template-package identity and artifact-contract selector | Discovery, catalog, and tool selection | Non-empty, unique, and stable independent of directory name | Yes | Directory naming is non-semantic storage |
-| `version` | Human-authored template-package release identity | Metadata and affected-package comparison | Valid SemVer | Reported and compared beside the fingerprint; not its content authority | Intentional compatibility/release meaning is not content-derivable |
+| `template_id` | Public template-package identity and artifact-contract selector | Discovery, catalog, and tool selection | Non-empty, at most 24 characters, unique, and stable independent of directory name | Yes | Directory naming is non-semantic storage |
+| `version` | Human-authored template-package release identity | Metadata and affected-package comparison | Valid SemVer, at most 11 characters including any prerelease/build suffix | Reported and compared beside the fingerprint; not its content authority | Intentional compatibility/release meaning is not content-derivable |
 | `purpose` | Human-readable artifact capability | Selected-artifact introspection | Non-empty normalized text | Yes | Neither ID nor renderer content is an adequate public description |
 | `output_profile` | Applicable output-evidence selector | DI-05 profile resolution and per-operation output validation | Reference exists and resolves to a coherent evidence selector; compatible exact file names are checked when an operation supplies one | Yes, including resolved semantics | File extension alone cannot express applicable evidence |
 | `persistence` | Intended target lifetime, `workspace` or `temporary` | DI-04 target and persistence policy | Known enum value | Yes | Both modes create files, so lifetime cannot be inferred from the output |
@@ -333,7 +333,8 @@ The manifest's required `version` is the single human-authored SemVer release la
 concrete template package. Individual package files and shared contributors carry no
 authored versions. The resolved package fingerprint is machine-computed equality identity
 for the selected package's effective semantic closure. Neither replaces or aliases the
-other, and PGMCP validates only the version's SemVer syntax rather than its release policy.
+other, and PGMCP validates SemVer syntax and the 11-character representation limit,
+not release policy or historical bump correctness.
 
 A separately computed complete-suite fingerprint identifies the currently supplied
 managed suite snapshot. The same value serves F-10 comparison and is persisted in newly
@@ -425,27 +426,39 @@ The logical provenance record has exactly four fields under the `pgmcp:v1` marke
 - `pf`: the 16-character resolved package fingerprint;
 - `sf`: the 16-character source suite fingerprint.
 
-The applicable shared tier base renders the record using the artifact representation's
-native comment syntax. `output_profile` validates the resulting content but does not own
-comment formatting. When the complete physical comment line is at most 100 characters,
-the base emits one line, for example:
+Human refinement, 2026-09-10: the applicable shared tier base emits this record on the
+first physical line, always as one complete native comment of at most 100 characters
+(excluding the line terminator). `output_profile` validates resulting content but does
+not own comment formatting. For example, with an illustrative ID, not a DI-03 inventory
+decision:
 
 ```text
-<!-- pgmcp:v1 id=typescript-integration-test pv=1.0.0 pf=u7V2q9JmW4cK8nXa sf=A3dP0rT6yN2mQ8kL -->
+<!-- pgmcp:v1 id=example-template pv=1.0.0 pf=u7V2q9JmW4cK8nXa sf=A3dP0rT6yN2mQ8kL -->
 ```
 
-When that line would exceed 100 characters, the base emits exactly two adjacent complete
-comment lines with a fixed split after `pv`:
+The shared typed manifest contract enforces the following constraints, reused by the
+resolved catalog and typed provenance record rather than redefined by each consumer:
 
-```text
-<!-- pgmcp:v1 id=an-incidental-long-template-package-id pv=1.0.0-rc.1 -->
-<!-- pgmcp:v1 pf=u7V2q9JmW4cK8nXa sf=A3dP0rT6yN2mQ8kL -->
-```
+| Canonical value type | Required constraints | Manifest / provenance use |
+|---|---|---|
+| `TemplateId` | Strict string, non-empty, maximum 24 characters; an unescaped single header token, with no whitespace, control characters, `=` or comment delimiter sequences | `template_id` / `id` |
+| `TemplatePackageVersion` | Strict string, valid SemVer, maximum 11 characters over the entire value including prerelease/build suffixes | `version` / `pv` |
+| Existing compact fingerprint type | Exactly 16 unpadded Base64url characters, preserving the approved SHA-256/96 representation | `pf` and `sf` |
 
-Each physical line must itself fit the 100-character budget; the resolved package fails
-startup admission if its ID and version cannot satisfy that budget even in the two-line
-form. This is a presentation coherence rule derived from an actual artifact consumer,
-not an independent manifest fact.
+Manifest loading rejects violations before admitting a package at startup or admitting
+a renewal candidate/proposal. The typed manifest's generated schema exposes these same
+constraints. Catalog, render provenance and reader reuse the canonical types; Jinja
+does not independently normalize, shorten or validate identity/version values. Public
+template-selection inputs reuse the identity constraints when their schemas are built.
+No extra authored field or independently versioned suite SemVer is introduced: `pv`
+remains the concrete package's manifest version, while `sf` is computed suite identity.
+
+Markdown's existing `<!-- ... -->` framing costs 65 characters for fixed text plus the
+two fingerprints. ID and version together add at most 24 + 11 = 35, yielding at most
+100. Existing `#` and `//` framing costs less. The full-line bound remains a writer
+conformance requirement for every supported framing; a future framing cannot silently
+relax it. No truncation, alias generation, overflow wrapping or two-line reader dialect
+is supported. This explicitly supersedes the earlier exceptional two-line decision.
 
 Generic `created` and `updated` provenance fields are removed. They predate Git-owned
 history, have no retained production consumer, and describe lifecycle events rather than
@@ -457,9 +470,14 @@ now demonstrates a read requirement (2026-09-08), admitting only a narrow reader
 V3 header contract. Reading and writing share the same dialect authority; no legacy
 bridge, timestamp lifecycle or history lookup is restored. The reader validates the
 four fields syntactically; DI-04 uses id alone for current template/profile selection,
-without requiring pv/pf/sf equality with today's catalog. Exact header placement and
-framing recognition remain joint DI-02/DI-04 integration work, including rejection of
-body examples as file-owned metadata.
+without requiring pv/pf/sf equality with today's catalog. Only the first physical line
+of original file text is eligible. Do not skip blank lines or a shebang, search the body,
+or join lines. A marker elsewhere is not file-owned metadata. Recognize a complete
+comment in the file representation's native framing, not a bare marker substring.
+Missing or invalid header content establishes no template identity; DI-04 continues
+its explicit-input/metadata/extension selection contract rather than failing merely
+because recognition failed. Input decoding/BOM handling and the shared source of framing
+recognition remain bounded integration work; they do not authorize moving the header.
 
 #### Joint internal header utility
 
@@ -475,14 +493,18 @@ orchestration and its filesystem boundary. The utility neither computes package/
 fingerprints, invents provenance, resolves profiles nor updates existing-file lifecycle
 metadata. It owns no resource publication or user-facing tool-response presentation.
 
-Reader and writer must share field grammar, marker/version interpretation and the
-one/two-line rule. Native comment framing and eligible placement must be designed jointly
-with the shared template bases; do not leave a second independent Jinja serialization
-beside a Python reader. Exact template integration, framing source and placement rules
-remain open, without pre-authorizing a new manifest field or configuration file.
+Reader and writer share field grammar, marker/version interpretation, canonical value
+types and the first-line-only rule. Header production remains in the existing shared
+Jinja tier route; do not introduce a parallel Python serializer or redesign the tier
+architecture. Native comment framing recognition must align with that route. Exact
+template integration and framing source remain open, without pre-authorizing a new
+manifest field, styles registry or configuration file. A rejected header yields no
+provenance value, never a partially parsed id; selection fallback belongs to DI-04,
+not to the utility. The reason for rejected recognition must remain distinguishable
+from absence for factual feedback, without making it an operation failure by itself.
 
 Required evidence includes reading the header emitted by the writer without losing
-id/pv/pf/sf, both supported line forms and invalid-header rejection. Round-trip tests
+id/pv/pf/sf, native comment forms, first-line-only recognition and invalid-header rejection. Round-trip tests
 alone are insufficient: independent valid/invalid fixtures must prevent a shared writer
 and reader mistake from passing unnoticed. No new public tool, adapter role, header-edit
 command or supported legacy metadata bridge is introduced.
@@ -567,8 +589,8 @@ full digest was also rejected because it would create two representations of one
 
 The selected SHA-256/96 representation preserves one deterministic identity value across
 runtime, comparison, diagnostics, and artifact metadata while fitting the four required
-facts on one line for normal package identifiers. The fixed two-line fallback handles
-incidental overflow without truncating package identity or version. This trade-off is
+facts on one line for every admitted package. Human-approved ID/version length bounds
+replace overflow wrapping without truncating package identity or version. This trade-off is
 appropriate because the fingerprint proves equality of supplied canonical sources and is
 not a security signature.
 
@@ -796,9 +818,13 @@ Package-owned evidence must prove:
 - prohibited package-to-package or shared-to-package edges fail at startup;
 - generated artifact metadata carries exactly `id`, `pv`, `pf`, and `sf` under
   `pgmcp:v1`, using the precomputed package and source-suite fingerprints;
-- metadata occupies one native comment line when the complete line is at most 100
-  characters and otherwise two adjacent native comment lines split after `pv`, with each
-  physical line remaining within the same budget;
+- manifest schema and typed loading accept 24-character IDs and 11-character valid
+  SemVer labels, reject the respective 25/12-character values, and reject invalid syntax;
+- metadata occupies the first physical line as one complete native comment of at most
+  100 characters, including the combined maximum ID/version case; no wrap or truncation;
+- the reader rejects partial, duplicate-field, extra-field, incorrectly framed and
+  overflow/two-line records as metadata, ignores body markers and reuses the canonical
+  ID/version/fingerprint constraints; rejection does not expose a partial template id;
 - generic provenance contains no `created` or `updated` lifecycle fields and requires no
   retained metadata-history parser;
 - package-directed non-artifact operation evidence carries suite identity only if a
@@ -837,7 +863,7 @@ Planning must later respect these deliverable boundaries:
 - JSON Schema loading, validation, and flattened exposure;
 - parser-supported graph resolution and frozen catalog composition;
 - domain-separated canonical SHA-256/96 fingerprinting, compact `pgmcp:v1`
-  `id`/`pv`/`pf`/`sf` artifact provenance with deterministic line wrapping, independent
+  `id`/`pv`/`pf`/`sf` first-line artifact provenance with bounded ID/version types, independent
   version/fingerprint facts, and graph-derived affected-package evidence over available
   snapshots without bump-policy enforcement;
 - removal of generic provenance timestamps and the old registry, metadata-history parser,
@@ -891,6 +917,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.14 | 2026-09-03 | `@imp designer` | Clarify the authored identifier as `template_id`, keep compact persisted `id` only as provenance syntax, and fix strict shallow direct-child package discovery without an authored `templates.yaml` inventory. |
 | 1.16 | 2026-09-08 | `@imp designer` | Admit the demonstrated safe-edit V3-reader consumer under the conditional replacement rule; retain a shared read/write dialect, syntax-only historical facts and no legacy/history revival. |
 | 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
+| 1.18 | 2026-09-10 | `@imp designer` | Supersede overflow wrapping with 24-character template IDs, 11-character package SemVer labels and first-line-only native comments; propagate canonical typed constraints through admission/render/read contracts and route invalid recognition to DI-04 fallback without redesigning Jinja tiers. |
 | 1.13 | 2026-09-03 | `@imp designer` | Remove premature Worker/package naming examples so illustrative values cannot pre-empt DI-03 artifact identities, DI-03 content fields, or DI-05 profile IDs; preserve the abstract five-field manifest and explicit input boundary. |
 | 1.12 | 2026-09-03 | `@imp designer` | Reconcile the human-approved F-03/F-07 correction: remove manifest naming and the generic naming resolver, require exact file-name operation input and explicit artifact-local rendered names, isolate server provenance, and supersede the input `output_path`/envelope-name derivation model. |
 | 1.11 | 2026-09-03 | `@imp designer` | Close package-version policy: validate SemVer syntax only, use resolved fingerprints for content equality, preserve four factual version/fingerprint relations, derive shared impact from the current graph, and introduce no bump enforcement, warning service, or history. |

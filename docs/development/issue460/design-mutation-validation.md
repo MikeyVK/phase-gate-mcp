@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.24  
+**Version:** 1.25  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -463,11 +463,16 @@ This is a frozen, closed public model with explicit nulls and cross-field valida
 not an unconstrained bag. IDs are nonblank references to the immutable runtime catalog.
 No profile contents or hashes are used to infer a current selection. Resolve against
 the original file before constructing its proposed edit, not edited metadata or a
-temporary filename. Explicit input precedes approved automatic selection; no invalid
-explicit ID or recognized invalid/unresolvable V3 metadata silently downgrades to the
-extension route. Missing/V2 metadata uses the extension route without a legacy alias.
-The bounded V3 reader responsibility is now approved in §4.8; exact header recognition
-still requires closure without restoring the retired parser. Invalid public input may be rejected before
+temporary filename. Explicit input precedes approved automatic selection; an invalid
+explicit ID remains an input error, not a request to try the extension route. Human
+refinement, 2026-09-10: missing, V2 or invalid first-line V3 metadata establishes no
+automatic template identity and uses the configured extension route without a legacy
+alias. Report the actual selected_source, not metadata when recognition was rejected;
+retain the rejection reason as factual selection feedback through the existing
+structured/declarative presentation boundary, not a synthetic check failure. A valid
+header with an id absent from the current catalog remains the separate unresolved-ID
+selection failure; changing that case is not inferred from the invalid-header decision.
+The bounded V3 reader responsibility is approved in §4.8. Invalid public input may be rejected before
 any operation DTO exists. Later selection failure retains its separate operation problem.
 
 #### One public check record with closed combinations
@@ -666,7 +671,7 @@ formatting. Neither interface is the atomic file writer, and safe edit does not 
 automatic provenance-update behavior from their shared ownership.
 
 The reader consumes original file text and recognizes only the current `pgmcp:v1`
-header contract, including its one-line and two-adjacent-line forms. It returns typed
+header contract on the first physical line, as one complete native comment. It returns typed
 metadata, not a selected template or profile. DI-02 owns the one shared read/write
 header contract; DI-04 owns selection from its result. Do not duplicate metadata syntax
 inside safe edit or add a second configuration of the same fields.
@@ -680,13 +685,29 @@ Historical provenance is not a compatibility gate or a claim about current conte
 |---|---|
 | Explicit valid template_id | Use that current template's profile; automatic metadata selection does not override it |
 | No explicit selection; valid V3 header | Resolve its id in the current immutable catalog |
-| No current V3 header, including legacy V2 files | Use the approved extension route, without interpreting legacy metadata |
-| Recognized invalid V3 header or unresolved V3 id | Return a selection failure, not a silent extension fallback |
+| No current first-line V3 header, including legacy V2 files or a marker only on a later line | Use the approved extension route, without interpreting legacy metadata or searching later lines |
+| Invalid first-line V3 header, including invalid field values, length overflow or framing | Reject template recognition as a whole and use the extension route; retain factual rejection feedback, not a blocking metadata error |
+| Valid first-line V3 header with unresolved id | Retain the existing selection failure; this is catalog resolution, not invalid header syntax |
 
 Header recognition must distinguish the file's own header from examples in its body.
-Searching the entire file for the marker is rejected. Exact eligible header placement,
-comment framing, malformed/duplicate-record handling and typed reader-result declarations
-remain the next bounded contract task; do not claim arbitrary-language parsing solved.
+Searching the entire file, skipping blank/shebang lines and joining an overflow line
+are rejected. Reuse DI-02's canonical 24-character TemplateId, 11-character SemVer
+TemplatePackageVersion and 16-character compact fingerprint types. All four fields
+must be valid before any metadata identity is exposed; never salvage a valid-looking
+id from an otherwise invalid header. Comment delimiters must match the native framing
+contract, not merely enclose a marker-looking substring. Exact framing-source and
+typed reader-result declarations remain bounded integration work, not a new style config.
+
+Human refinement, 2026-09-10, supersedes the earlier Design-only invalid-header failure
+rule. A file's header is optional recognition evidence, not required workspace config.
+Fallback is explicit and preserves the existing selection outcomes: a matching extension
+profile yields selected_source=extension, otherwise selected_source=none. It never
+means validation passed, never authorizes a write by itself and never relaxes enforce
+or report. Missing profiles and failed/unavailable checks retain their existing policy
+effects. Do not catch filesystem/decoding errors, invalid explicit inputs or broken
+catalog/profile configuration and reclassify them as invalid optional metadata.
+The internal reader remains reusable, but no new check-tool consumer or public input
+is introduced for a hypothetical future use.
 
 #### One original and one proposed content value
 
@@ -730,13 +751,17 @@ not an assumption that the current writer already enforces this guard.
 
 #### Required evidence and remaining integration
 
-Prove valid one/two-line headers, absent/V2 headers, invalid V3 syntax and unknown ids,
+Prove valid first-line native headers, absent/V2 headers, invalid V3 syntax and unknown ids,
 historical-but-well-formed versions/fingerprints, explicit selection precedence and
-body examples that are not header records. Prove an edit to metadata does not alter
+body examples that are not header records. Prove length-boundary rejection and that
+two-line/partially valid metadata cannot supply an id. Invalid metadata must take the
+extension or no-profile route with truthful selection feedback under both policies;
+unknown explicit IDs and unresolved IDs from valid headers retain their separate
+failure behavior. Prove an edit to metadata does not alter
 the current invocation's selected profile. Check original/proposed identity through
 adapter and writer seams, same-file cooperating calls, observed intervening changes,
 no automatic retries and retained passed-check evidence on refused replacement.
-Do not write tests claiming arbitrary external-writer exclusion. Header recognition,
+Do not write tests claiming arbitrary external-writer exclusion. Framing integration,
 comparison representation and typed boundary/result declarations remain open; the
 approved responsibilities and policy are not open for redesign. No runtime tests were run.
 
@@ -857,6 +882,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.22 | 2026-09-07 | @imp designer | Record approved safe-edit operation semantics, content_changed with closed write combinations, construction-versus-check failures, structured suggestions and consumer-specific preservation evidence. |
 | 1.23 | 2026-09-08 | @imp designer | Record approved narrow V3 reader, syntax-only historical provenance handling, stable original/proposed content and invocation-local pre-write change detection with an explicit external-writer race limitation. |
 | 1.24 | 2026-09-10 | @imp designer | Reference jointly designed internal header utility; separate safe-edit reading, scaffold formatting and filesystem persistence without public tools or provenance updates. |
+| 1.25 | 2026-09-10 | @imp designer | Apply human-approved first-line-only bounded metadata recognition and explicit invalid-header fallback; preserve explicit-input and valid-but-unresolved-ID failures, validation policy and filesystem safety boundaries. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |
