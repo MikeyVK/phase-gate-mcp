@@ -3,7 +3,7 @@
 # Issue #460 Research-to-Design Intake Map
 
 **Status:** BOUNDED NATIVE-SELECTION INTAKE AMENDMENT — TARGETED QA REQUESTED  
-**Version:** 1.30  
+**Version:** 1.31  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -42,11 +42,11 @@ invariant, expected-result, or census total is added or removed.
 
 | Boundary | Primary owner | Required disposition |
 |---|---|---|
-| Auto selection/default, baseline advancement, failed-file replay, state DTO/repository and composition | DI-05 | Retire through clean break; require explicit scope for run_checks with configured/targets/branch selection. Explicit targets=["."] selects the workspace; project/workspace scope aliases are rejected. Omission is an input validation error before check/adapter execution; no auto alias, implicit fallback, or scope inferred from profile/args |
+| Auto selection/default, baseline advancement, failed-file replay, state DTO/repository and composition | DI-05 | Retire through clean break; require explicit scope for run_checks with configured/workspace/targets/branch selection. scope=workspace explicitly selects the workspace; public "." targets and the project alias are rejected. Omission is an input validation error before check/adapter execution; no auto alias, implicit fallback, or scope inferred from profile/args |
 | Native optimization and selection | DI-05 | Native config/effective args own caching and deliberate broader native behavior; default narrow, no generic fresh/expansion fields or reuse/state/session protocol; Git resolution stays PGMCP-only, with zero-existing-target branch no-call evidence |
 | Public result/cache/presentation | DI-05 | Keep report DTO/resource caching and invoked provenance; no cached report substitutes for new execution; remove only obsolete auto-state recovery mappings |
 | Workflow registration and PR integration | DI-05 | Remove quality_state.json registration and auto-only wiring; preserve unrelated phase/PR/branch-local artifact behavior; DI-07 aligns guidance |
-| Active manuals/references and agent consumers | DI-07 | Remove auto/default/state claims and describe configured/targets/branch and native args without creating another parameter SSOT |
+| Active manuals/references and agent consumers | DI-07 | Remove auto/default/state claims and describe configured/workspace/targets/branch and native args without creating another parameter SSOT |
 | Retained scopes, state-removal, and native-argument/selection proof | DI-05 | Own package-local positive/negative evidence; DI-08 checks complete cross-package removal using the unchanged catalog |
 | Existing Design experiments | DI-05 after QA | Reconcile D-ADAPTER-13/14/15 and sections 7.10-7.12 with this authority; no obligation to preserve rejected reuse/session mechanisms |
 
@@ -59,7 +59,7 @@ The catalog owns exact file dispositions; this map does not create duplicate row
 The owner authorized Design continuation and the surgical
 [workspace terminology clarification](research.md#human-approved-scope-terminology-clarification).
 Earlier QA-pause wording records the previous hand-over. DI-05 must reject the obsolete
-project scope value, and DI-07 must describe targets=["."] for workspace selection in V3 guidance while preserving
+project scope value, and DI-07 must describe scope=workspace for workspace selection in V3 guidance while preserving
 historical source evidence. No PGMCP subproject model or special language-profile type
 is introduced; existing owners and counts remain unchanged.
 
@@ -491,6 +491,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.31 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 1.30 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 1.28 | 2026-09-07 | `@imp researcher` | Correct QA handover findings: bind the DI-04 table and consumer routing to enforce/report, default enforce, policy-mirror and legacy-input rejection evidence; policy selection is no longer Design-owned |
 | 1.29 | 2026-09-07 | `@imp designer` | Record human-reported independent QA GO and authorized Design resumption without changing intake scope or policy |

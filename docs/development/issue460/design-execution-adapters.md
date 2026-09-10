@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.76
+**Version:** 0.77
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -88,7 +88,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-21 | run_tests exposes flat tests selection and addressed CLI args in one startup-built schema; adapters/native tools own switch interpretation; supersede test options_schema without extending other consumers | Human-approved W04 input/exposure, 2026-09-10; §7.15; test results and exact remaining integration stay open |
 | D-ADAPTER-22 | Public success is operational and inversely maps to MCP isError; correctly reported negative or unavailable domain results are not tool execution failures | Human-required correction, 2026-09-10; §7.14; applies across check/test/fix consumers, without deriving MCP errors from adapter exits |
 | D-ADAPTER-23 | Remove generic native verbose interpretation across check/test/fix consumers and adapter inputs; native switches retain their documented meaning through addressed args | Human-approved correction, 2026-09-10; §7.15; exact non-test argument routing remains separately owned |
-| D-ADAPTER-24 | run_tests requires configured or targets scope; configured preserves native selection, targets=["."] explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status or redundant workspace scope |
+| D-ADAPTER-24 | run_tests requires configured, workspace or targets scope; configured preserves native selection, workspace explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status; explicit workspace correction supersedes the dot convention |
 | D-ADAPTER-26 | PGMCP resolves Git and public scopes; selection adapters receive only operation, targets and args; remove removed_targets, fresh and generic expansion controls | Human-approved 2026-09-10; §7.17 and the bounded Research amendment; default narrow |
 | D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
 
@@ -1236,8 +1236,8 @@ before check/adapter execution. There is no default, auto alias, or scope inferr
 from check/profile selection or args. The startup-built schema and runtime
 validation must enforce the same requirement, including lazy exposure.
 
-Public run_checks scopes are configured, targets and branch. Explicit targets=["."]
-selects the workspace directory without a workspace alias. Section 7.9 governs branch
+Public run_checks scopes are configured, workspace, targets and branch. workspace
+explicitly selects the workspace directory; "." is not a public target convention. Section 7.9 governs branch
 working-state selection; §7.17 keeps that resolution outside adapter requests.
 
 Retire auto selection, baseline advancement, automatic failed-file replay, and their
@@ -1310,8 +1310,8 @@ the absence of substantive execution on refusal, not merely inspect a claimed st
 
 The [human-approved Research clarification](research.md#human-approved-scope-terminology-clarification)
 established workspace rather than project vocabulary. The later §7.17 amendment
-represents explicit whole-workspace selection with targets=["."]; both scope aliases
-project and workspace are rejected. Coverage retains applicable inclusion/exclusion and check applicability.
+represents explicit whole-workspace selection with scope=workspace; the project alias
+and public "." workspace-target shorthand are rejected. Coverage retains applicable inclusion/exclusion and check applicability.
 Explicit files/directories and branch selection bound where checks are requested.
 Profiles independently select which checks run and may be language-specific or mixed.
 Adapters determine applicability; there is no extra language-selector field or special
@@ -1324,9 +1324,9 @@ public consumer cases without imposing a server-owned language taxonomy.
 
 The human owner selected `targets` rather than `paths` to name the files and
 directories requested for checking. The V3 scope values are `targets`, `branch`,
-and `configured`; scope remains required. Only `scope: targets` accepts and requires
+`workspace`, and `configured`; scope remains required. Only `scope: targets` accepts and requires
 a non-empty `targets` list of workspace-relative file/directory paths. The list must
-be omitted for branch/configured requests. File and directory entries may be mixed;
+be omitted for branch/workspace/configured requests. File and directory entries may be mixed;
 directory selection is recursive and overlapping selections are deduplicated.
 A missing explicit target is an input error, not an empty successful selection.
 
@@ -1335,7 +1335,7 @@ input. It does not add named subprojects, a language filter, or expansion permis
 Startup schemas, runtime validation and scope resolution consume this contract;
 profiles continue to select checks independently. Public-boundary evidence must cover
 mixed file/directory input, recursive and overlapping selection, missing targets,
-empty lists, and forbidden targets with branch/configured. Interaction with exclusions,
+empty lists, and forbidden targets with branch/workspace/configured. Interaction with exclusions,
 symlink containment, and concurrent filesystem changes remains explicit Design work.
 
 #### Approved native exclusion boundary
@@ -2487,7 +2487,7 @@ official native capability inventory and independent conformance remain separate
 D-ADAPTER-23 removes the old generic verbose field from this public request and the
 selection adapter request. Section 7.16 owns the approved addressed check-args/default
 contract. Section 7.17 separately records the later human-approved scope alignment:
-configured/targets/branch, with Git resolution owned by PGMCP.
+configured/workspace/targets/branch, with Git resolution owned by PGMCP.
 
 The required `checks.yaml` uses the existing resolved_config_root. Its closed root has
 `checks`, `profiles`, `profiles_by_extension`, and `run_checks` objects. Check bindings
@@ -2532,7 +2532,7 @@ run_checks:
 
 | Public field | Closed type / default | Consumer and constraint |
 |---|---|---|
-| scope | Required configured\|targets\|branch | ScopeResolver; no auto/project aliases or implicit scope |
+| scope | Required configured\|workspace\|targets\|branch | ScopeResolver; no auto/project aliases or implicit scope |
 | targets | Nonempty tuple of WorkspaceRelativePath, or omitted | Required only for targets; mixed files/directories; forbidden otherwise |
 | profile | ProfileId, or omitted | CheckRunManager; mutually exclusive with checks |
 | checks | Nonempty unique ordered tuple of CheckId, or omitted | CheckRunManager; exact explicit obligations |
@@ -2554,7 +2554,9 @@ binding's budget. It is an execution control, not a native tool-settings authori
 
 ScopeResolver normalizes/deduplicates overlapping targets, checks workspace containment
 after link resolution and never traverses escaping symlinks/junctions. Missing explicit
-targets are input errors. targets=["."] becomes the absolute workspace root.
+targets are input errors. scope=workspace supplies the absolute workspace root.
+Public "." targets are rejected with guidance to use scope=workspace; they are not
+silently rewritten. Equivalent root-only path spellings must not bypass this rule.
 configured supplies no explicit native targets. Native tools own discovery/exclusions.
 Branch uses merge-base changes plus staged/unstaged and nonignored untracked content.
 Missing parent/merge-base is an operation error, not empty_selection.
@@ -2678,8 +2680,8 @@ possibility behind a profile, capability or option schema.
 
 | Field | Type / default | Constraint and owner |
 |---|---|---|
-| scope | Required configured\|targets | Explicit native-configured selection or explicit filesystem targets; no implicit scope or workspace alias |
-| targets | Nonempty tuple[WorkspaceRelativePath,...], or omitted | Required for targets; forbidden for configured; "." denotes the workspace directory |
+| scope | Required configured\|workspace\|targets | Native-configured selection, explicit workspace directory or explicit files/directories; no implicit scope |
+| targets | Nonempty tuple[WorkspaceRelativePath,...], or omitted | Required only for targets; forbidden for configured/workspace; "." is rejected, use scope=workspace |
 | tests | Nonempty unique ordered tuple[TestId,...], or omitted | Select configured test bindings; omission uses the configured active test selection |
 | timeout_seconds | Positive strict int, or omitted | Per-invocation override; otherwise use each binding's budget |
 | args | Optional mapping TestId to tuple[StrictStr,...] | Explicit recipient list replaces default_args; omission uses configured defaults under §7.16 |
@@ -2758,11 +2760,12 @@ silently successful default. Exact registered schema/validation evidence remains
 Human-approved correction: configured supplies required adapter targets=[] and
 uses the native tool's configured discovery, modified only by explicit native args.
 It does not promise to test every part of the workspace. targets supplies exact
-normalized files/directories; targets=["."] explicitly supplies the workspace root.
+normalized files/directories; scope=workspace supplies the resolved workspace root.
+PGMCP does not send "." as an adapter sentinel or reinterpret it as configured discovery.
 Native explicit-target semantics may differ from default discovery (for example
 Pytest testpaths); do not merge or reimplement those native rules in PGMCP.
-Public scope remains mandatory. No branch scope or extra native-default/workspace
-mode is added. Adapters translate explicit targets to their native selector syntax;
+Public scope remains mandatory. No branch scope or extra native-default alias is
+added to run_tests. Adapters translate explicit targets to their native selector syntax;
 literal paths must not accidentally become broad regular expressions.
 
 No generic verbose field survives in public or adapter test inputs. Pass native
@@ -2803,7 +2806,7 @@ The existing all-configured-active meaning from Research remains binding.
 Prove the registered/decorated schema's enum/recipient agreement, first-call behavior,
 default resolution, unknown/unselected recipient rejection, multi-recipient isolation,
 token order/whitespace/empty-value preservation, configured versus explicit targets,
-targets=["."], both scopes with args, native rejection with and without adapter
+workspace selection, public "." rejection, all three scopes with args, native rejection with and without adapter
 prevalidation, and native verbosity without hidden traceback overrides. Non-test
 consumers follow D-ADAPTER-23 and §7.16's explicit mutation-versus-interactive distinction.
 The schema fragment is documentation, not executed conformance evidence. Shared native
@@ -2898,7 +2901,8 @@ shape, not result semantics, by check/v1 and test/v1.
 | Public intent | PGMCP responsibility | Adapter receives |
 |---|---|---|
 | configured | Resolve bindings/defaults; preserve native configured selection | targets=[] and effective args |
-| targets | Validate and resolve existing files/directories; "." becomes workspace root | Nonempty absolute targets and effective args |
+| workspace | Resolve the workspace root; public targets is forbidden | One absolute workspace-directory target and effective args |
+| targets | Validate and resolve existing files/directories; reject "." workspace shorthand | Nonempty absolute targets and effective args |
 | branch (run_checks only) | Resolve Git working state; remove deleted paths from execution selection | Only remaining existing absolute targets and effective args |
 | branch with no remaining existing targets | Return empty_selection and PGMCP-owned removed_targets evidence | No invocation |
 
@@ -2909,7 +2913,13 @@ was checked. The caller may explicitly request configured or broader targets lat
 
 No missing/null targets synonym is accepted. The former W04 presence-discriminated
 request union is replaced by this one required-list shape. The public scope is still
-required; an empty public targets list remains invalid. "." is not an adapter sentinel.
+required; an empty public targets list remains invalid. Public "." targets are rejected;
+workspace selection requires scope=workspace, including equivalent root-only path spellings.
+This is a public intent boundary, not a restriction on native argument tokens.
+Adapters still receive only operation, targets and args; no workspace discriminator.
+RunChecksOutput.requested_scope admits configured/workspace/targets/branch;
+RunTestsOutput.requested_scope admits configured/workspace/targets. Echo the actual
+public intent, not the normalized adapter target shape.
 
 Default checking stays narrow; deliberately configured binding args selected by a
 profile/use, or explicit replacement args on another call, may request broader native
@@ -3071,6 +3081,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.77 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 0.76 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 0.64 | 2026-09-07 | `@imp designer` | Require approved factual failed-decision message while preserving native evidence and exit codes; omit extra public origin and route the consolidated mutation-result proposal. |
 | 0.63 | 2026-09-07 | `@imp designer` | Route mutation nesting, union-collection admission and native-evidence inline gaps to DI-04 audit without changing approved internal contracts or assuming presenter support. |

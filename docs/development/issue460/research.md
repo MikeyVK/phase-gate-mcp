@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
 **Status:** BOUNDED NATIVE-SELECTION AMENDMENT — TARGETED QA REQUESTED; REST FROZEN  
-**Version:** 3.32  
+**Version:** 3.33  
 **Last Updated:** 2026-09-10  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -25,9 +25,11 @@ selection. If branch resolution leaves no existing targets, do not invoke adapte
 return an empty selection with PGMCP-owned deletion evidence, not a configured run or
 a passing certificate. Git resolution failure remains distinct from empty selection.
 
-Keep scope mandatory for run_checks. Its choices are configured, targets and branch;
-run_tests retains configured and targets. Explicit targets=["."] selects the workspace
-directory; no project/workspace scope alias or subproject model is retained.
+Keep scope mandatory for run_checks. Its choices are configured, workspace, targets and branch;
+run_tests uses configured, workspace and targets. workspace explicitly selects the
+workspace directory; public targets must not encode that intent as ".". PGMCP supplies
+the resolved root as an ordinary adapter target. configured still supplies targets=[].
+No project alias or subproject model is retained.
 Scaffold/safe-edit retain fixed configured proposed-content validation, without caller
 native args or selection controls. Native configuration remains the tool-settings SSOT.
 
@@ -149,7 +151,8 @@ expected results, 126 consumers plus two governing sources, and 151 tests/helper
 ### Human-Approved Scope Terminology Clarification
 
 Historical terminology decision, refined by the 2026-09-10 amendment: explicit
-workspace selection is now targets=["."], not a separate workspace scope value.
+workspace selection uses scope=workspace, not targets=["."]. The human rejected the
+intermediate dot-as-workspace proposal and approved explicit public workspace selection.
 The no-subproject and orthogonal-profile boundaries below remain unchanged.
 
 The owner explicitly authorized this surgical Research correction and continuation
@@ -506,6 +509,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.33 | 2026-09-10 | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 3.32 | 2026-09-10 | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 3.30 | 2026-09-07 | Correct the stale current-gate reference after QA: the narrow safe-edit amendment owns the pending review; prior approved decisions remain binding |
 | 3.31 | 2026-09-07 | Record human-reported independent QA GO on the corrected narrow safe-edit amendment and authorized Design resumption; no strategy change |
