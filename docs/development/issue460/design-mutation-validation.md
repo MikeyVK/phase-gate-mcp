@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.28  
+**Version:** 1.29  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -81,7 +81,7 @@ The current implementation does not satisfy that separation. Directory policy li
 | validation | `enforce` by default, or explicit `report`; the output-validation persistence policy defined in §4.4 | mutation-policy evaluator consuming factual evidence | selecting fewer checks, changing their outcomes, bypassing input/path/render safety, or artifact content |
 | context | Complete caller-authored render data | selected JSON Schema and renderer | target selection |
 
-`output_path` is not an input alias. It is the canonical workspace-relative path returned as factual operation evidence. The public tool result and its cached MCP resource never expose the absolute workspaceroot.
+`output_path` is not an input alias. It is the canonical workspace-relative path returned as factual operation evidence, including in the cached DTO. Incidental absolute paths in bounded native diagnostics follow the separate approved disclosure policy in §4.6; they do not change this operation-field contract.
 
 ### 2.2 Resolved catalog input
 
@@ -97,7 +97,7 @@ The renderer receives the unchanged schema-validated caller context and a separa
 
 ### 3.1 Agreed behavior
 
-All configured roots, `target_path` inputs, and `output_path` results use one normalized workspace-relative representation with `/` separators and no drive, root, or escaping `..` prefix. The server resolves an absolute native path internally for containment proof and filesystem I/O, but that physical path is not part of the scaffold tool contract, cached resource, or normal validation feedback. Absolute input is rejected as the wrong contract shape before force policy is considered.
+All configured roots, `target_path` inputs, and `output_path` results use one normalized workspace-relative representation with `/` separators and no drive, root, or escaping `..` prefix. The server resolves an absolute native path internally for containment proof and filesystem I/O; it does not substitute that physical path into the public operation fields or routine path summary. Absolute input is rejected as the wrong contract shape before force policy is considered. This representation rule is not a blanket ban on incidental paths inside diagnostic content; §4.6 owns that distinction.
 
 The target decision is deterministic and visible to the caller:
 
@@ -385,7 +385,7 @@ Unrendered nested data can still be serialized into the complete cached DTO.
 | Write facts and operation errors | Existing direct `mode`/`written` and result envelope distinguish writing from validation | Keep direct operation facts; no new `result`/`output` singleton or duplicate `passed` beside validation status |
 | Per-check decision and process failures, DI-05 | Internal `decision.status` and `failure.reason` wrappers are not automatically inline-renderable public records | Define concrete public check records with direct identity/status/reason facts, preserving origin and meaning; no tool-side inference or presenter DTO dispatch |
 | Check-owned findings/diagnostics collections | Nesting preserves which check owns an observation; typed child collections are supported | Retain meaningful ownership nesting where records exist; no unrelated root lists or invented findings parsed from native output |
-| Collections of closed variant DTOs | Internal union typing does not prove renderer admission of `tuple[VariantA | VariantB, ...]` | Resolve the public concrete record and its constraints before integration; no generic union-renderer project |
+| Collections of closed variant DTOs | Internal union typing does not prove renderer admission of `tuple[VariantA \| VariantB, ...]` | Resolve the public concrete record and its constraints before integration; no generic union-renderer project |
 | Native JSON/text evidence and process details, DI-05 | Exhaustive evidence belongs in the cache; arbitrary JSON is not a declarative finding collection | Preserve native structure and cache-only detail; separately resolve minimum actionable inline feedback. JSON-only rejection does not yet prove native reasons can be shown inline |
 | Context failure diagnostics and schema attachments, shared contract §7.4 | Bounded location/error facts plus the complete recovery schema serve distinct consumers | Direct typed diagnostic collection where needed; retain the separate embedded schema and cache ownership, without flattening schema properties into operation fields |
 
@@ -508,6 +508,49 @@ remain in the full cached operation result under their existing owners. Their fi
 public carrier types must be audited with this record, not silently dropped or copied
 into parallel authoritative result graphs. This workshop adds no alternative retention
 system and does not relocate native settings into PGMCP config.
+
+#### Diagnostic disclosure — approved 2026-09-10
+
+Human-approved W01-F replaces the earlier blanket exclusion of host paths from cached
+diagnostics. This is a shared disclosure boundary for check/test/fix execution and its
+consumers, not a scaffold-only exception or a new adapter role.
+
+| Surface | Contract and consumer rationale |
+|---|---|
+| Public operation fields, inline and cached | Keep `target_path`, `output_path` and safe-edit `path` workspace-relative; callers need stable operation locations, not the physical host root |
+| Generated artifacts | PGMCP adds no host-specific paths; preserve Research E-11 portability and the approved metadata contract |
+| Routine inline response | Use existing bounded, declarative summaries; do not automatically dump raw streams or stack traces or expand relative operation paths |
+| On-demand cached diagnostics | Retain bounded process capture and native evidence through the existing result cache, even when they incidentally contain absolute paths; troubleshooting may require the actual runtime, dependency or file location |
+
+The current [response cache](../../../mcp_server/state/response_cache.py) is bounded
+in-process storage, and its [resource provider](../../../mcp_server/resources/cache.py)
+returns retained DTO data to the requesting client. It is not a private local archive,
+durable log or separate security boundary. Retrieval can expose the content to an agent,
+model provider or client logging; clients may retrieve/include resources automatically.
+An opaque resource URI is not a secrecy or authorization guarantee. This follows the
+[MCP application-controlled resource model](https://modelcontextprotocol.io/specification/2025-11-25/server/resources),
+not a promise of user confirmation before every read.
+
+In the intended cooperative development workspace, the diagnostic value justifies this
+limited host-location disclosure. Paths can reveal usernames or environment layout, so
+the risk is accepted, not denied. No generic native-report rewriting or path scrubber is
+required merely to eliminate incidental absolute paths. Structured operation locations
+must remain truthful: a physical scratch path is not the user's intended target.
+
+This permission does not authorize deliberate collection of credentials, tokens, full
+environment dumps or unrelated sensitive data. It is not a universal secret-redaction
+guarantee for arbitrary third-party output. The distinction between useful contextual
+paths and sensitive diagnostic data is consistent with
+[CWE-209](https://cwe.mitre.org/data/definitions/209.html) and
+[OWASP logging guidance](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude).
+Multi-tenant isolation, access controls and sandboxing remain separately scoped work.
+
+Keep DI-05's existing capture ceilings, truncation facts and ownership. Reuse the
+cache-before-presentation route; add no diagnostic-ID-only replacement, private log
+route, disk archive, exposure flag, automatic cleanup or presenter-specific sanitizer.
+Native messages/evidence need not be falsified to satisfy the superseded blanket ban.
+This approval closes only W01-F; exact remaining mutation DTO integration stays open
+under Q-MUT-03/Q-MUT-06, and later workshop proposals are not implicitly approved.
 
 #### Persistence outcomes reviewed together
 
@@ -934,7 +977,7 @@ The target and content paths meet only for output-profile evidence and final per
 | ID | Decision | Status |
 |---|---|---|
 | D-MUT-01 | Scaffold input separates package selection, exact file_name, optional normalized workspace-relative directory-valued target_path, force_target, output-validation policy, and unchanged caller context | Decided |
-| D-MUT-02 | output_path is result evidence only and uses the canonical workspace-relative representation; absolute workspace paths are internal and absent from the tool result and cached resource | Decided |
+| D-MUT-02 | output_path is result evidence only and remains workspace-relative in text and cached DTO fields; bounded diagnostic content follows D-MUT-20 | Decided; disclosure boundary refined 2026-09-10 |
 | D-MUT-03 | Manifest persistence declares normal workspace or temporary intent; artifacts.yaml owns workspace target policy by template_id; a central resolver derives temp/artifacts from the configured server root, without a temporary_root field | Decided; path-authority refinement approved 2026-09-06 |
 | D-MUT-04 | Temporary persistence is configured, with shipped default `.pgmcp/temp/artifacts` | Decided |
 | D-MUT-05 | force_target permits only an otherwise disallowed target inside the workspace | Decided |
@@ -947,11 +990,12 @@ The target and content paths meet only for output-profile evidence and final per
 | D-MUT-12 | Artifact-location keys are exact references to `manifest.yaml:template_id`; no workspace config defines or aliases template identities | Decided |
 | D-MUT-13 | Artifact-location registration is optional in the package-to-config direction, but every configured key must resolve to one loaded package; an unmapped package without target_path safely persists under the global temporary root without force_target | Decided |
 | D-MUT-14 | An explicit target_path outside a package's configured roots—including every explicit workspace target for an unmapped package—requires force_target; force_target without target_path is rejected as meaningless | Decided |
-| D-MUT-15 | Configured roots, target_path, and output_path are canonical workspace-relative values; absolute input is rejected and normal scaffold tool output, cached evidence, and validation feedback do not expose the physical workspace root | Decided |
+| D-MUT-15 | Configured roots, target_path, and output_path are canonical workspace-relative values; absolute input is rejected and routine operation summaries do not expand the physical workspace root; incidental diagnostic paths follow D-MUT-20 | Decided; disclosure boundary refined 2026-09-10 |
 | D-MUT-16 | Both mutation tools accept `validation` as default `enforce` or explicit `report`; direct result `validation_policy` mirrors it without changing profile/check execution; remove safe-edit mode and verify_only without replacement preview | Research-approved; §4.2 and §4.6 |
 | D-MUT-17 | Validation summaries preserve all per-check evidence and use deterministic failed, unavailable, not-executed, then all-passed reduction; empty evidence cannot prove validity | Decided; §4.4.2; DI-05 adapters remain open |
 | D-MUT-18 | The eight policy/status combinations in §4.4.3 govern scaffold persistence; report permits failed/unavailable evidence, never skipped or aborted operations | Decided |
 | D-MUT-19 | Operation errors and committed creation remain independent of validation status; response delivery problems cannot turn a committed artifact into a claimed non-creation | Decided; §4.4.4 |
+| D-MUT-20 | Existing on-demand cached diagnostics may retain incidental absolute paths; routine summaries and typed operation paths stay relative; cache is agent-accessible, not private storage; no extra archive, flag or generic sanitizer | Human-approved 2026-09-10; §4.6; supersedes the earlier blanket cache-path prohibition |
 
 ## 7. Open Questions
 
@@ -986,7 +1030,9 @@ Design-owned behavioral evidence must later prove:
 - independent context/render/target/internal errors and interrupted evidence collection prevent creation under both policies;
 - a late collision or write failure preserves the earlier validation result and never reports creation success; a post-commit reporting failure never claims the artifact was not created;
 - created artifacts with failed/unavailable report-mode evidence are visibly distinguished from validated creations in text and cached operation data;
-- a successful result reports the canonical workspace-relative output_path and does not expose the physical workspace root;
+- a successful result reports the canonical workspace-relative output_path, also in the cached DTO; safe-edit path follows the same operation-field boundary;
+- bounded native diagnostics containing an incidental absolute path remain retrievable in the existing cached result without changing the operation location, verdict or write outcome; no raw stream or stack trace is automatically embedded or dumped inline;
+- path disclosure uses existing cache/presentation ownership and DI-05 capture limits, with no private-log substitute, diagnostic-ID-only result or presenter-specific sanitizer;
 - absolute target_path input and relative traversal outside the workspace fail even with force_target;
 - artifact-location map keys resolve only against `manifest.yaml:template_id` values;
 - removal of `project_structure.yaml` leaves no production import, bootstrap input, legacy policy dependency, test fixture, or active documentation claim unresolved.
@@ -1028,6 +1074,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.26 | 2026-09-10 | @imp designer | Supersede unresolved metadata ID failures: absent/invalid headers and invalid/unknown metadata IDs are equivalent for applicable-profile selection; preserve independent parsing, catalog lookup and operation safety responsibilities. |
 | 1.27 | 2026-09-10 | @imp designer | Consume the approved integrated text-only header reader contract; close framing/result design while retaining original-file consistency, persistence and final operation-result integration as the next combined workshop. |
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
+| 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |

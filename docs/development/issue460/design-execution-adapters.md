@@ -3,8 +3,8 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.66  
-**Last Updated:** 2026-09-08  
+**Version:** 0.67  
+**Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
 **Downstream Consumers:** DI-04 scaffold/safe-edit, public check/test/fix operations, DI-07 workflow/documentation, DI-08 assurance  
@@ -2308,6 +2308,17 @@ actual evidence. Add no automatic disk spill, report store, new temp directory o
 retention service. Native evidence inside the formal response uses the stdout ceiling,
 not the stderr retention policy.
 
+Human-approved disclosure boundary (2026-09-10): apply
+[DI-04's shared diagnostic disclosure policy](design-mutation-validation.md#diagnostic-disclosure--approved-2026-09-10)
+across check/test/fix consumers. Bounded raw capture and native evidence may retain
+incidental absolute paths in the existing on-demand resource cache; typed public
+operation paths remain workspace-relative. That cache is client/agent-accessible output,
+not private local storage or a secret-redaction guarantee. Do not rewrite arbitrary
+native reports merely to strip paths, expose scratch locations as intended targets, or
+automatically dump raw diagnostics inline. Keep existing capture bounds and declarative
+presentation; add no private log route or diagnostic-ID-only replacement. This changes
+the disclosure promise, not the adapter role payload, process limits or error ownership.
+
 Conformance covers exact/one-byte-over boundaries, large single lines, simultaneous
 streams, unchanged short output, head/tail and multibyte boundaries, visible truncation,
 valid responses with excessive error diagnostics on stderr, and oversized responses with confirmed and
@@ -2505,6 +2516,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.62 | 2026-09-07 | `@imp designer` | Limit ongoing safe-edit mode design to strict/interactive and reference the verify_only removal deferral and concrete-conflict-only boundary. |
 | 0.65 | 2026-09-07 | `@imp designer` | Reconcile DI-04 references after human-reported Research QA GO: common enforce/report policy, default enforce and legacy mode retirement; no adapter-contract change. |
 | 0.66 | 2026-09-08 | `@imp designer` | Reference DI-04's approved narrow V3 reader and original/proposed-content consistency; keep both outside adapter responsibility. |
+| 0.67 | 2026-09-10 | `@imp designer` | Apply human-approved shared diagnostic disclosure: retain bounded incidental host paths in on-demand cached diagnostics without a private-log substitute; preserve relative public operation fields, process bounds and role payloads. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
 | 0.59 | 2026-09-07 | `@imp designer` | Supersede startup dependency preflight/filtering with configuration-based exposure and existing on-use failures; retain structural/path admission, stable schemas, defaults, full profiles, and health deferral without new protocol or Research changes. |
