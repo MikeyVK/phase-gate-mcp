@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.26  
+**Version:** 1.27  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -696,9 +696,13 @@ Searching the entire file, skipping blank/shebang lines and joining an overflow 
 are rejected. Reuse DI-02's canonical 24-character TemplateId, 11-character SemVer
 TemplatePackageVersion and 16-character compact fingerprint types. All four fields
 must be valid before any metadata identity is exposed; never salvage a valid-looking
-id from an otherwise invalid header. Comment delimiters must match the native framing
-contract, not merely enclose a marker-looking substring. Exact framing-source and
-typed reader-result declarations remain bounded integration work, not a new style config.
+id from an otherwise invalid header. Consume the DI-02
+[integrated header contract](design-suite-resolution.md#integrated-header-production-reading-and-selection-contract):
+the text-only reader returns the closed recognized/absent/invalid result, recognizes
+the supported complete protocol comment forms without an extension-to-language mapping,
+and tolerates a leading BOM solely for recognition. It never changes original text.
+Content checks, not metadata reading, determine language-specific content correctness.
+Do not duplicate the reader's result model, syntax or framing inside safe edit.
 
 Human refinement, 2026-09-10, supersedes the earlier Design-only invalid-header and
 unknown-metadata-ID failure rules. For consumer profile selection, an invalid or unknown
@@ -772,8 +776,9 @@ Unknown explicit IDs retain their input-contract failure behavior. Prove an edit
 the current invocation's selected profile. Check original/proposed identity through
 adapter and writer seams, same-file cooperating calls, observed intervening changes,
 no automatic retries and retained passed-check evidence on refused replacement.
-Do not write tests claiming arbitrary external-writer exclusion. Framing integration,
-comparison representation and typed boundary/result declarations remain open; the
+Do not write tests claiming arbitrary external-writer exclusion. Header utility design
+is closed by the integrated DI-02 contract; actual conformance evidence is still required.
+Original-file comparison representation and final mutation boundary/result declarations remain open; the
 approved responsibilities and policy are not open for redesign. No runtime tests were run.
 
 ## 5. Consumer Flow
@@ -895,6 +900,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.24 | 2026-09-10 | @imp designer | Reference jointly designed internal header utility; separate safe-edit reading, scaffold formatting and filesystem persistence without public tools or provenance updates. |
 | 1.25 | 2026-09-10 | @imp designer | Apply human-approved first-line-only bounded metadata recognition and explicit invalid-header fallback; preserve explicit-input and valid-but-unresolved-ID failures, validation policy and filesystem safety boundaries. |
 | 1.26 | 2026-09-10 | @imp designer | Supersede unresolved metadata ID failures: absent/invalid headers and invalid/unknown metadata IDs are equivalent for applicable-profile selection; preserve independent parsing, catalog lookup and operation safety responsibilities. |
+| 1.27 | 2026-09-10 | @imp designer | Consume the approved integrated text-only header reader contract; close framing/result design while retaining original-file consistency, persistence and final operation-result integration as the next combined workshop. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |

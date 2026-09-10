@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.54  
+**Version:** 1.55  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -374,7 +374,13 @@ wrapping. Absent/invalid headers and invalid/unknown metadata template IDs are e
 for applicable-profile selection: all take the explicit extension/no-profile route
 without weakening validation policy or swallowing independent failures. Research
 remains unchanged: exact metadata representation and this selection realization are
-Design-owned. Shared-template/framing integration and typed reader-result declarations are next;
+Design-owned. The human-approved
+[integrated header contract](design-suite-resolution.md#integrated-header-production-reading-and-selection-contract)
+now closes shared-tier production, text-only recognized/absent/invalid reader results,
+protocol framing and recognition-only BOM handling, together with real-render and
+independent conformance obligations. Q-SUITE-03 is closed at Design level, not claimed
+implemented. The next combined DI-04 workshop owns original-file in-memory evidence,
+pre-replacement comparison, atomic persistence and final operation-error presentation;
 exact diagnostic/provenance carrier integration remains required before full DTO closure.
 Native evidence, execution provenance and internal responsibilities remain required.
 
@@ -487,6 +493,7 @@ No cycles or estimates are defined during Design.
 | 1.52 | 2026-09-10 | `@imp designer` | Index human-confirmed joint internal header utility with separate reader/formatter consumers; retain shared-template integration and header recognition as the next bounded design slice. |
 | 1.53 | 2026-09-10 | `@imp designer` | Index bounded manifest/provenance types, first-line-only metadata and human-authorized invalid-header fallback; preserve Research scope and explicit-input/catalog failure boundaries. |
 | 1.54 | 2026-09-10 | `@imp designer` | Index human-confirmed equivalence of absent/invalid headers and invalid/unknown metadata IDs for consumer profile selection; remove the exceptional unresolved-metadata-ID failure. |
+| 1.55 | 2026-09-10 | `@imp designer` | Close the approved integrated header utility Design nucleus and Q-SUITE-03; route remaining original-file comparison, atomic writing and operation presentation into one DI-04 workshop. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |
 | 1.45 | 2026-09-07 | `@imp designer` | Index public mutation nesting audit and unresolved projection gaps while preserving decided semantics, internal protocols and deferred scope. |

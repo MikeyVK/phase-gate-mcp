@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.19  
+**Version:** 1.20  
 **Last Updated:** 2026-09-10  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -473,14 +473,14 @@ four fields syntactically; DI-04 uses id alone for current template/profile sele
 without requiring pv/pf/sf equality with today's catalog. Only the first physical line
 of original file text is eligible. Do not skip blank lines or a shebang, search the body,
 or join lines. A marker elsewhere is not file-owned metadata. Recognize a complete
-comment in the file representation's native framing, not a bare marker substring.
+comment in a supported protocol framing, not a bare marker substring. Recognition
+does not validate that framing against a filename extension or programming language.
 Missing or invalid header content establishes no template identity. A syntactically
 valid header may identify a template that is absent from the current catalog; that
 lookup miss likewise supplies no applicable template profile. DI-04 continues the same
 extension/no-profile route in all these cases rather than failing recognition or lookup.
 The reader owns syntax, not catalog existence; it must not acquire a catalog dependency.
-Input decoding/BOM handling and the shared source of framing
-recognition remain bounded integration work; they do not authorize moving the header.
+The integrated contract below fixes framing and BOM recognition without moving the header.
 
 #### Joint internal header utility
 
@@ -499,12 +499,101 @@ metadata. It owns no resource publication or user-facing tool-response presentat
 Reader and writer share field grammar, marker/version interpretation, canonical value
 types and the first-line-only rule. Header production remains in the existing shared
 Jinja tier route; do not introduce a parallel Python serializer or redesign the tier
-architecture. Native comment framing recognition must align with that route. Exact
-template integration and framing source remain open, without pre-authorizing a new
-manifest field, styles registry or configuration file. A rejected header yields no
-provenance value, never a partially parsed id; selection fallback belongs to DI-04,
-not to the utility. The reason for rejected recognition must remain distinguishable
-from absence for factual feedback, without making it an operation failure by itself.
+architecture. A rejected header yields no provenance value, never a partially parsed
+id; selection fallback belongs to DI-04, not to the utility. Rejected recognition remains
+distinguishable from absence for factual feedback, without becoming an operation failure.
+
+#### Integrated header production, reading and selection contract
+
+Human-approved as one workshop, 2026-09-10. This closes the header utility design nucleus,
+not all DI-02/DI-04 integration or implementation evidence.
+
+| Boundary | Responsibility | Explicit exclusions |
+|---|---|---|
+| Typed manifest admission | Enforce canonical ID/version constraints before package admission | No renderer-only length validation |
+| Immutable resolved catalog | Supply selected package identity/version and precomputed package/source-suite fingerprints | No fingerprint recomputation by reader or Jinja |
+| Scaffold manager | Assemble typed provenance separately from caller content in RenderInput | No caller provenance override or post-render header injection |
+| Shared Jinja root/bases | Emit the first-line record through one shared field-formatting fragment using existing native framing | No parallel Python formatter, second rendering pass, independent header render process or new header-style registry |
+| Internal reader | Interpret original text into the closed result below | No path, extension, filesystem, catalog or profile dependency |
+| Consumer selector | Resolve recognized provenance against today's catalog or continue the existing fallback | No historical lookup or mutation of original provenance |
+| Existing persistence boundary | Persist the complete proposed content under operation policy | No header-specific file writer |
+
+The approved template_suite/shared/templates/bases/tier0_root.jinja2 is the target
+owner of header production. Factor the four-field formatting once within the shared
+template basis; the framing variants reuse it rather than each restating id/pv/pf/sf.
+Keep the existing inheritance route, with native framing owned by the applicable shared
+bases. The write/format responsibility is fulfilled by that template route, not by adding
+a new standalone Python writer API without a consumer. The full artifact is rendered
+once; no mandatory production read-back pass is introduced merely to prove the header.
+
+The protocol recognizes the complete forms `# pgmcp:v1 ...`, `// pgmcp:v1 ...` and
+`<!-- pgmcp:v1 ... -->`. These are protocol comment forms, not an extension-to-language
+registry. The reader does not decide whether `//` is valid Python; the applicable content
+check owns language/content correctness. Unknown comment forms are not automatically
+supported. No arbitrary-language comment detection or legacy scaffold_metadata.yaml
+extension mapping is retained. The writer's forward format and the reader's inverse
+recognition are independently checked against this one contract; they are not duplicate
+configuration sources or two competing serializers.
+
+Reading rules:
+
+- Only the first physical line is eligible; do not search, skip or join lines.
+- LF and CRLF terminate the line and do not count toward its 100-character budget.
+- Ignore one leading U+FEFF encoding marker solely for recognition and its character
+  budget; do not strip it from original content or change file decoding/persistence.
+  Scaffolding need not add a BOM. No general encoding detection is introduced.
+- Require the complete framing, exact marker and four fields in the writer's fixed
+  id/pv/pf/sf order, with the agreed separators. Missing, duplicate or extra fields,
+  unsupported marker versions, invalid values or overflow yield no provenance.
+- Validate every value through the canonical types before exposing the record.
+- Do not normalize values, salvage a partial ID or treat parse rejection as an exception.
+
+The internal type contract is deliberately small (names describe the designed boundary;
+final module/class naming remains implementation-owned):
+
+```python
+class HeaderReadStatus(StrEnum):
+    RECOGNIZED = "recognized"
+    ABSENT = "absent"
+    INVALID = "invalid"
+
+
+class HeaderReadResult(BaseModel):
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    status: HeaderReadStatus
+    provenance: ArtifactProvenance | None
+
+
+class IArtifactHeaderReader(Protocol):
+    def read(self, content: str) -> HeaderReadResult: ...
+```
+
+| Status | Provenance | Consumer meaning |
+|---|---|---|
+| recognized | Required, complete immutable typed record | Selector may resolve id; unknown catalog ID still takes fallback |
+| absent | Explicit None | No metadata header on the eligible line; fallback |
+| invalid | Explicit None | Header-like input violates the contract; same fallback |
+
+Enforce these combinations in the result type; status is not a free string and provenance
+has no permissive default. No separate exception taxonomy, reason inventory, raw-header
+payload, public MCP DTO or tool is required. This status distinguishes absence from
+rejection for existing factual feedback; it is not a check verdict or write policy.
+Filesystem/decoding errors belong to the caller's file boundary, outside this text reader.
+
+#### Integrated preservation evidence
+
+Adapt the existing test_metadata_e2e.py scaffold/write/read test purpose instead of
+retaining its legacy path-line, second-line parser, eight-hex hash and timestamp assertions.
+Use the actual selected template graph and reader, not a simplified copy of the template.
+Evidence covers manifest 24/25 and SemVer 11/12 boundaries, actual retained base output
+and maximum line length, unchanged four-field round trips, all supported framings,
+LF/CRLF, a leading BOM and no input mutation, first-line-only recognition, independently
+authored valid/invalid records, and the closed reader-result combinations. Prove that
+framing recognition does not depend on filename extension or catalog presence.
+Consumer evidence compares absent/invalid/unknown metadata with identical extensions
+and proposed edits under both validation policies. Editing/removing metadata must not
+reselect a profile or cause automatic provenance repair during the same safe-edit call.
+No new test framework or per-call verification service is introduced.
 
 Required evidence includes reading the header emitted by the writer without losing
 id/pv/pf/sf, native comment forms, first-line-only recognition and invalid-header rejection. Round-trip tests
@@ -851,7 +940,7 @@ Suite Resolution choices.
 
 | ID | Item | Owner | Resolution |
 |---|---|---|---|
-| Q-SUITE-03 | Complete the shared V3 header-recognition contract for DI-04's approved reader; profile configuration/selection remain with DI-04/DI-05 | DI-02/DI-04/DI-05 | No duplicate dialect, extension hardcoding or legacy metadata/history parser revival |
+| Q-SUITE-03 | Shared V3 header-recognition contract | DI-02/DI-04 | Closed by the human-approved integrated header contract, 2026-09-10; implementation/conformance evidence remains required, profile configuration/selection stays with DI-04/DI-05 |
 | R-SUITE-01 | Fingerprint input accidentally includes machine-specific state | DI-02 | Canonicalization tests across independent roots and machines |
 | R-SUITE-02 | Flattening changes JSON Schema semantics | DI-01 | Reference-resolution tests cover nested, recursive, and shared definitions |
 | R-SUITE-03 | `shared/` recreates an unowned global authority | DI-01/DI-02 | Admit only resolved bases, patterns, and definitions with named consumers and graph edges |
@@ -922,6 +1011,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
 | 1.18 | 2026-09-10 | `@imp designer` | Supersede overflow wrapping with 24-character template IDs, 11-character package SemVer labels and first-line-only native comments; propagate canonical typed constraints through admission/render/read contracts and route invalid recognition to DI-04 fallback without redesigning Jinja tiers. |
 | 1.19 | 2026-09-10 | `@imp designer` | Align with consumer selection equivalence: unknown metadata IDs yield no applicable template, like absent/invalid headers; keep syntax-only reading independent from catalog lookup. |
+| 1.20 | 2026-09-10 | `@imp designer` | Close the integrated header utility nucleus: retain shared-tier writing, define text-only typed reader outcomes and framing/BOM rules, separate selection/persistence, and specify real-render plus independent conformance evidence. |
 | 1.13 | 2026-09-03 | `@imp designer` | Remove premature Worker/package naming examples so illustrative values cannot pre-empt DI-03 artifact identities, DI-03 content fields, or DI-05 profile IDs; preserve the abstract five-field manifest and explicit input boundary. |
 | 1.12 | 2026-09-03 | `@imp designer` | Reconcile the human-approved F-03/F-07 correction: remove manifest naming and the generic naming resolver, require exact file-name operation input and explicit artifact-local rendered names, isolate server provenance, and supersede the input `output_path`/envelope-name derivation model. |
 | 1.11 | 2026-09-03 | `@imp designer` | Close package-version policy: validate SemVer syntax only, use resolved fingerprints for content equality, preserve four factual version/fingerprint relations, derive shared impact from the current graph, and introduce no bump enforcement, warning service, or history. |
