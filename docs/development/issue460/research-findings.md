@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** BOUNDED NATIVE-FIX AMENDMENT — QA REQUESTED; REST FROZEN  
-**Version:** 1.26  
+**Status:** RESEARCH FROZEN — NATIVE-FIX QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.27  
 **Last Updated:** 2026-09-10  
 **Issue:** 460
 
@@ -14,7 +14,8 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 ## Authority
 
 The [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
-is the latest human-authorized delta, awaiting independent review. It replaces only
+is the latest reviewed delta; the human supplied independent QA GO and authorized
+Design continuation. The catalog-status P3 is corrected; no new policy is added. It replaces only
 F-20's proposal/application/verification/recovery promises. The next paragraph records
 the prior reviewed selection boundary, not approval of the new fix amendment.
 

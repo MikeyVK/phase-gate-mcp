@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** BOUNDED NATIVE-FIX INTAKE AMENDMENT — QA REQUESTED  
-**Version:** 1.34  
+**Status:** RESEARCH FROZEN — NATIVE-FIX QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.35  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -16,8 +16,8 @@ DI-07 agent-controlled checks/Git recovery guidance; DI-08 independent proof. Su
 proposal/stale-check/verification/rollback obligations only for fixes. Research fixes scope=targets only, required concrete existing files and explicit caller
 fix order, plus stop-on-first-non-success. No directory/broad/default selection or
 continue-on-error switch. Design implements these policies through schemas/DTOs;
-it does not choose them. Prior selection QA GO is not this delta's
-review. Counts, DI-04 persistence and F-10 renewal remain unchanged.
+it does not choose them. The human has now supplied independent QA GO for this fix delta and authorized
+Design continuation; the catalog-heading P3 is corrected. Counts, DI-04 persistence and F-10 renewal remain unchanged.
 
 The [2026-09-07 safe-edit amendment](research.md#narrow-safe-edit-policy-amendment--2026-09-07)
 is a prior reviewed exception to the freeze. The later
@@ -501,6 +501,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.35 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 1.34 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 1.33 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 1.32 | 2026-09-10 | `@imp designer` | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |

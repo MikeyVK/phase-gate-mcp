@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.70
+**Version:** 1.71
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -29,8 +29,8 @@ The human requested the [lightweight native-fix amendment](research.md#lightweig
 W05's copy/proposal/check/rollback design is withdrawn as the default. Native source
 mutation and agent-controlled verification/recovery are the new bounded strategy;
 Research now fixes explicit concrete-files-only scope=targets, caller fix order and
-stop-on-first-non-success. Independent QA of the corrected delta remains open; affected
-Design stays paused. W05 may specify DTOs/mechanisms, not reopen those product choices. Prior QA GO covers
+stop-on-first-non-success. The human supplied independent QA GO for the corrected delta; Design resumes.
+The catalog status P3 is corrected. W05 may specify DTOs/mechanisms, not reopen those product choices. Prior QA GO covers
 selection only. No implementation or new recovery subsystem is authorized here.
 
 Design resumed on explicit human GO after the narrow F-20 Research correction in
@@ -527,6 +527,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.71 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 1.70 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 1.69 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 1.68 | 2026-09-10 | `@imp designer` | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |

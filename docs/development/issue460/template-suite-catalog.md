@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
-**Status:** NARROW NATIVE-SELECTION DISPOSITION AMENDMENT — QA REQUESTED; REST FROZEN  
-**Version:** 1.30  
+**Status:** RESEARCH FROZEN — NATIVE-FIX QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.31  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -541,7 +541,8 @@ Research is complete only when:
 
 The current gate is the [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
 and its human-approved explicit-files-only, caller-order and stop-on-first-non-success
-correction. Independent re-review is requested; Design is paused. The following
+correction. The human supplied independent QA GO and authorized Design resumption.
+The nonblocking P3 on this document's former status heading is corrected. The following
 2026-09-04 closure is historical; unrelated Research stays frozen.
 
 The catalog now covers all 22 public artifact types and 79 template-suite files. Its runtime ledger contains 128 unique active paths: two governing-standard sources, which the declared census rule excludes, plus 126 consumers and references. Its Behavioral Test and Helper Ledger contains 151 unique paths. The QA-directed workspace-root repeat search used both obsolete names and semantic consumer terms, included hidden source paths, compared exact paths rather than substrings, and now has zero uncatalogued hits.
@@ -554,6 +555,7 @@ Planning must assign every one of the 126 consumer/reference rows and 151 test/h
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.31 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 1.30 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 1.29 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 1.28 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
