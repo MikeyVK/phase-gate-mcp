@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.69  
+**Version:** 0.70  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -81,7 +81,9 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-14 | Respect native optimization with explicit fresh intent; no PGMCP execution-result reuse | Binding amended Research; section 7.11; previous cross-scope reuse design superseded |
 | D-ADAPTER-15 | Internal prepare/execute protocol with prepared work and reuse-state machinery | Withdrawn following the human-directed step back; work_id/session machinery is rejected, not an optional extension; section 7.12 |
 | D-ADAPTER-16 | Declare proposed-content execution needs through required boolean requires_file; PGMCP owns the direct-content and controlled temporary-file routes, adapters own native translation; no target-location pre-write | Human-approved ownership and boolean field 2026-09-06; section 7.13 |
-| D-ADAPTER-17 | W02 source layout, consumer-backed capability fields, explicit package file inventory, fingerprint coverage/restart limitation and narrow shared runtime interfaces are approved; exact trust configuration and native provenance return amendment remain open | Partial W02 approval, 2026-09-10; §7.4.1 |
+| D-ADAPTER-17 | W02 package boundary is approved: source layout, consumer-backed fields, explicit files/fingerprint, restart limitation and narrow interfaces; trust/provenance follow D-ADAPTER-18/19 | Human-approved W02, 2026-09-10; §§7.4.1–7.4.3 |
+| D-ADAPTER-18 | Required adapters.yaml under resolved_config_root owns trusted_adapter_ids; ship empty, load centrally and inject into catalog admission; no second settings source or self-trust | Human-approved W02-B, 2026-09-10; §7.4.2 |
+| D-ADAPTER-19 | Role results carry typed external_tools as ordinary invoked-run evidence; invalid_request stays minimal; no new query tool, startup survey or result-decision consumer | Human-approved W02-F, 2026-09-10; §7.4.3 and amended scaffold response |
 
 The decided rows establish ownership and the selected nuclei. Exact package layout,
 admission and capability binding, process protocol, role schemas, native-configuration
@@ -253,8 +255,8 @@ schemas remain open. Profile placement also requires the DI-02 integration check
 Official adapters ship with PGMCP. Workspace-owned adapters live under
 `.pgmcp/adapter_suite/` and require explicit owner trust. Startup forms one catalog
 without duplicate `adapter_id` values or incompatible contract declarations. Finding a
-package is distinct from authorizing its code to execute; the trust representation and
-detailed admission rules are unresolved.
+package is distinct from authorizing its code to execute; §7.4.2 fixes the explicit
+trust configuration and its admission ownership.
 
 One package has one authored version and one computed fingerprint over its manifest
 and package-owned semantic implementation inputs. Runs record only invoked package
@@ -262,8 +264,8 @@ identities and external-tool identity/version. No adapter-suite hash is added to
 and adapter evidence does not enter scaffolded-artifact source metadata.
 
 Section 7.4.1 now records the approved source layout, file inventory, role-field additions
-and fingerprint boundary. Trust configuration and the native provenance return amendment
-remain open; role-specific binding/operation contracts retain their own workshop owners.
+and fingerprint boundary. Sections 7.4.2–7.4.3 complete trust and the native provenance
+return amendment; role-specific binding/operation contracts keep their workshop owners.
 The package declaration filename is `manifest.yaml`, as selected in W-ADAPTER-02.
 The approved `template_suite/` layout does not automatically define `adapter_suite/`.
 
@@ -688,11 +690,11 @@ flag. Do not copy role/capability declarations into a second package index. Conc
 identifier grammar, version syntax, and capability descriptor
 schemas remain open; no free-form extension bag is selected here.
 
-### 7.4.1 W02 Package Contract — partial approval 2026-09-10
+### 7.4.1 W02 Package Contract — approved 2026-09-10
 
-The human approved W02 except the trust configuration location and the native-tool
-provenance return proposal. Those two questions remain open; no implicit approval of
-ServerSettings trust fields, a new configuration filename or external_tools is recorded.
+The human first approved W02's source/file/capability/fingerprint/interface boundary,
+then explicitly approved trust configuration and ordinary native-tool run provenance.
+Sections 7.4.2–7.4.3 complete those two decisions; no runtime conformance is claimed.
 
 | Approved boundary | Contract |
 |---|---|
@@ -725,22 +727,85 @@ Restart after package edits; no monitoring, per-call rehashing or shadow-copy me
 Workspace owners retain dependency installation and history/version policy.
 
 Trust remains an explicit workspace decision, not a manifest self-grant or fingerprint
-security check. The initial optional PGMCP_CONFIG_PATH proposal is under reconsideration
-because it supplies no fixed workspace filename. An adapter-wide config under the
-existing resolved_config_root is a proposal only. Do not put adapter trust into
-artifacts.yaml, which owns produced-artifact locations, or recreate templates.yaml as
-a duplicate manifest registry. The latter is explicitly excluded by D-SUITE-33.
-
-External-tool provenance is existing F-20 run evidence, not a new tool or independent
-query. The proposed typed transport field remains unapproved pending clarification.
-It would live with the invoked adapter evidence in the existing cached operation result,
-not a new resource/log store or persisted artifact header. No startup version survey,
-automatic dependency installation or inferred compatibility decision is introduced.
+security check. Section 7.4.2 supersedes the unnamed optional settings-file proposal.
+artifacts.yaml still owns produced-artifact locations; D-SUITE-33 still prohibits a
+duplicate templates.yaml inventory. Section 7.4.3 exposes native-tool provenance through
+the existing run result, never a new query tool, registry or persisted artifact header.
 
 Preservation evidence must cover moved roots, unchanged unrelated packages, changed
 declared files, manifest/file constraints, narrow reader injection, configuration-only
 non-Python extension and no startup execution. Shared process/role conformance and
 check/test/fix migration remain independently proven obligations, not completed evidence.
+
+### 7.4.2 Explicit Adapter Trust Configuration
+
+Human-approved W02-B (2026-09-10): resolved_config_root/adapters.yaml is the sole
+workspace adapter-trust policy. Its default location is .pgmcp/config/adapters.yaml;
+existing config_root/server-root resolution remains authoritative. No new path setting,
+server.yaml, trust environment variable or duplicate trust field under ServerSettings,
+checks.yaml, tests.yaml or fixes.yaml is introduced.
+
+```yaml
+trusted_adapter_ids: []
+```
+
+The closed immutable config has exactly one required field: a unique tuple of strict
+AdapterId values. Empty explicitly trusts no workspace adapters; official packages
+remain distribution-owned. Managed V3 installation supplies the file with this empty
+list. Missing/invalid config follows normal required-config failure, never implicit
+trust. ConfigLoader loads it once and injects the pure immutable policy into catalog
+admission; the config value has no path knowledge, loader method or import-time work.
+The list references manifest IDs, not package paths, aliases or a second inventory.
+
+A discovered untrusted package is not offered; a consumer configuration referencing
+one is an actionable admission error. Owner trust authorizes content under that ID,
+not a digest, signature or safety certification. A manifest cannot trust itself.
+No automatic installation, native settings override, dependency probe or sandbox claim.
+DI-06 must include this config in managed V3 installation/distribution inventory;
+adapter-package/template renewal must not silently replace owner trust.
+
+Independent evidence covers empty/explicit policy, untrusted-reference failure,
+default/overridden configroot, missing/malformed file, duplicate values and no second
+trust authority. This is a Design contract, not a created runtime configuration file.
+
+### 7.4.3 Native Tool Identity in Ordinary Run Evidence
+
+Human-approved W02-F (2026-09-10): every check/test/fix role-result response includes
+required external_tools: tuple[ExternalToolIdentity, ...]. This is part of the ordinary
+invocation result, not a separate query operation or mandatory extra MCP call.
+
+```python
+class ExternalToolIdentity(BaseModel):
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    tool_id: NonBlankText
+    version: NonBlankText | None
+```
+
+Both fields are required; unknown version is explicit null. An entry describes a native
+tool/library actually selected or observed during that invocation. An empty tuple means
+no identity was obtained, for example before a missing dependency prevented native work;
+it does not claim the package has no dependencies. Do not invent a version from the
+manifest or enumerate unrelated installed tools. The adapter supplies observations;
+generic PGMCP does not parse native reports or learn tool-specific version commands.
+No startup version survey, new query protocol or automatic install is introduced.
+
+Generic invocation evidence retains these records alongside its admitted package
+ID/version/fingerprint/contract version. DI-04 and the separate check/test/fix consumers
+carry them into the existing cached operation result. Normal concise text need not
+print them. No extra resource store, registry or artifact metadata is added. The
+human/agent diagnosing a run is the consumer: identical adapter bytes may invoke
+different native tool versions. This is context, not proof of causality, complete
+environment reproduction, compatibility, pass/fail or fix authorization.
+
+This explicitly amends the earlier closed scaffold payload below. Passed, failed and
+unavailable role results require external_tools; W03–W05 retain it in their role-result
+variants. Shared invalid_request is unchanged and forbids external_tools, decision and
+evidence. Generic launch/timeout/protocol failures invent no adapter response or native
+version. Accepted response bytes are not duplicated as raw process capture.
+
+Conformance covers missing field, wrong types, unknown keys, blank IDs/versions,
+explicit-null unknown version, zero/multiple identities, all role-result alternatives,
+unchanged invalid_request and real cached preservation. Role schemas remain independent.
 
 ### 7.5 Proposed check bindings and profile selection
 
@@ -1055,8 +1120,8 @@ Human-approved W01-A–E integration (2026-09-10):
 fixes the direct operation error/detail fields, separately owned housekeeping, metadata
 fallback explanation and concrete public check record. Invocation/capture facts stay
 DI-05-owned; mutation managers decide their operation consequence and tools transfer it.
-W02's native-tool provenance return field and W05's recovery additions remain separate
-proposals. The existing role payload is not expanded by W01 approval.
+W01 did not expand the role payload. W02-F now explicitly approves external_tools under
+§7.4.3; W05's recovery additions remain separate proposals.
 
 The proposed new per-layer response registration, response identities and variant
 dispatcher are withdrawn as prerequisites. Preserve existing runtime derivation from
@@ -1717,8 +1782,9 @@ failure reported by an adapter and a failure to obtain a valid adapter response.
 
 #### Native evidence and scaffold response shape
 
-Human-approved evidence contract (2026-09-06): a scaffold-facing role-result response has
-a required `decision` and a conditionally present `evidence`. These are separate:
+Human-approved evidence contract (2026-09-06), amended by W02-F on 2026-09-10: a
+scaffold-facing role result has required `decision` and `external_tools` plus conditional
+`evidence`. The provenance field follows §7.4.3. These are separate:
 scaffolding consumes the decision for policy; agent-facing presentation and full
 structured evidence consume native findings. No common rule/line/severity structure
 is imposed on native payloads.
@@ -1756,7 +1822,7 @@ Exact immutable collection implementation remains implementation-owned.
 | failed | Required | Required decision.message supplies a concrete rejection explanation; native evidence supplies its supporting detail, not only an exit code or empty report |
 | unavailable | Optional; omit when absent | Mandatory decision reason/message already explain inability; evidence may add native detail |
 
-The outer response is closed: only decision/evidence in this scaffold payload, no
+The outer response is closed: only decision, evidence and external_tools, with no
 unknown fields. If present, evidence must match one of the closed shapes; null is not
 an absent evidence object (JSON data itself may legally be null). The decision/evidence
 combination is validated as a cross-field rule. Evidence significance is an adapter
@@ -1772,7 +1838,7 @@ not a request for a second persistence/resource system: existing presentation, c
 path-exposure and output-bound policies continue to govern consumer-facing delivery.
 This defines the scaffold role-result payload only, not all check/test/fix consumer
 outputs. The standard response also admits invalid_request, as defined below; that
-variant does not contain decision/evidence.
+variant contains none of decision/evidence/external_tools.
 
 Conformance covers each format, unknown format values, wrong data types, unknown
 wrapper fields, nested JSON immutability, missing failed evidence/message, blank messages,
@@ -1891,15 +1957,15 @@ outer status, success flag, role label, exit_code field or second error channel.
 
 | Alternative | Required root fields | Optional root fields | Exit |
 |---|---|---|---|
-| Passed | decision: ScaffoldCheckPassed | evidence: NativeEvidence | 0 |
-| Failed | decision: ScaffoldCheckFailed; evidence: NativeEvidence | None | 1 |
+| Passed | decision: ScaffoldCheckPassed; external_tools: tuple[ExternalToolIdentity, ...] | evidence: NativeEvidence | 0 |
+| Failed | decision: ScaffoldCheckFailed; evidence: NativeEvidence; external_tools: tuple[ExternalToolIdentity, ...] | None | 1 |
 | Invalid request | reason: Literal["invalid_request"]; details: non-empty tuple of RequestValidationIssue | None | 2 |
-| Unavailable | decision: ScaffoldCheckUnavailable | evidence: NativeEvidence | 3 |
+| Unavailable | decision: ScaffoldCheckUnavailable; external_tools: tuple[ExternalToolIdentity, ...] | evidence: NativeEvidence | 3 |
 
 All alternatives are closed: fields outside the applicable row are forbidden, and
 explicit null is not an omitted optional evidence field. NativeEvidence and the three
 decision types retain the exact definitions and cross-field obligations above. The
-invalid-request shape has neither decision nor evidence. Its reason distinguishes it
+invalid-request shape has none of decision, evidence or external_tools. Its reason distinguishes it
 from role results without adding redundant fields to all responses.
 
 ```python
@@ -2529,7 +2595,7 @@ proposed conformance evidence is claimed as completed.
 
 | ID | Open Design question | Decision needed |
 |---|---|---|
-| Q-ADAPTER-02 | What completes admission and bindings after partial W02 approval? | §7.4.1 fixes source/file/identity boundaries; exact trust configuration remains under human review, role bindings remain W03–W05-owned |
+| Q-ADAPTER-02 | What completes role-specific bindings after W02 approval? | §§7.4.1–7.4.3 fix source/file/identity/trust and native provenance; checks/tests/fixes configuration and operations remain W03–W05-owned |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, verbose behavior, and independent conformance |
 | Q-ADAPTER-05 | How are fixes authorized and recoverably applied? | Define the separate F-20 mutation contract and stale/proposal/application evidence |
@@ -2584,6 +2650,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.67 | 2026-09-10 | `@imp designer` | Apply human-approved shared diagnostic disclosure: retain bounded incidental host paths in on-demand cached diagnostics without a private-log substitute; preserve relative public operation fields, process bounds and role payloads. |
 | 0.68 | 2026-09-10 | `@imp designer` | Link approved W01 operation-result projection while retaining generic process ownership and the separate W02 native provenance return decision. |
 | 0.69 | 2026-09-10 | `@imp designer` | Record partial W02 approval for package sources, consumer-backed fields, file inventory, fingerprint scope and narrow interfaces; keep exact trust configuration and native provenance return amendment open. |
+| 0.70 | 2026-09-10 | `@imp designer` | Close W02-B/F: explicit adapters.yaml with central loading and typed external_tools in ordinary role results; amend existing closed scaffold payload and preserve minimal invalid_request; keep W03–W05 role work open. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
 | 0.59 | 2026-09-07 | `@imp designer` | Supersede startup dependency preflight/filtering with configuration-based exposure and existing on-use failures; retain structural/path admission, stable schemas, defaults, full profiles, and health deferral without new protocol or Research changes. |

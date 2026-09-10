@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.59  
+**Version:** 1.60  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -387,8 +387,8 @@ external-writer race limitation without adding a general transaction or history 
 The [approved W01 integration](design-mutation-validation.md#410-complete-mutation-operation-result--approved-2026-09-10)
 fixes the normal operation-result route for expected failures, typed error/detail fields,
 separate housekeeping and selection explanation. Remaining integration is explicitly
-DI-05's final invocation/capture declarations, W02's native provenance return proposal,
-required-null serialization and independent evidence; W05 recovery is not approved.
+DI-05's final capture declarations, required-field/null serialization and independent
+evidence; W02 native provenance is approved and W05 recovery remains unapproved.
 
 DI-02's conditional no-replacement boundary now admits this demonstrated V3-reader
 consumer. Legacy parsing, historical lookup and automatic provenance mutation stay removed.
@@ -493,10 +493,13 @@ closed W01-F: preserve relative operation fields and portable artifacts while us
 existing on-demand cached native diagnostics, with no private-log replacement or claim
 that resource retrieval is local-only. DI-05 applies the same boundary to check/test/fix.
 The subsequent W01-A–E approval is recorded in DI-04 §4.10. Research remains frozen;
-W02 source/file/capability/fingerprint boundaries are now partially approved in
-[DI-05 §7.4.1](design-execution-adapters.md#741-w02-package-contract--partial-approval-2026-09-10).
-Exact trust configuration and the native provenance return field remain open, as do
-later workshop proposals. Template discovery and artifacts.yaml ownership are unchanged.
+W02 is approved in
+[DI-05 §§7.4.1–7.4.3](design-execution-adapters.md#741-w02-package-contract--approved-2026-09-10):
+explicit adapters.yaml trust under the existing configroot and typed native-tool identity
+inside ordinary cached run evidence complete the package boundary. The existing scaffold
+response is explicitly amended; no new query tool or runtime config is implemented here.
+Review advances to W03 run_checks. Later workshop proposals, actual conformance and
+the independent Design review remain open; Research and template/artifact authority are unchanged.
 
 ## Version History
 
@@ -513,6 +516,7 @@ later workshop proposals. Template discovery and artifacts.yaml ownership are un
 | 1.57 | 2026-09-10 | `@imp designer` | Index human-approved W01-F diagnostic disclosure; refine the earlier blanket cache-path prohibition without changing Research, operation paths or remaining workshop approval status. |
 | 1.58 | 2026-09-10 | `@imp designer` | Index approved W01-A–E, distinguish remaining integration obligations and move human review to prepared W02 without approving its package/provenance choices. |
 | 1.59 | 2026-09-10 | `@imp designer` | Index partial W02 approval, preserve separate trust/provenance review and unchanged template discovery/artifact-location configuration authority. |
+| 1.60 | 2026-09-10 | `@imp designer` | Index W02 closure and explicit scaffold payload amendment; advance human review to W03 without approving its selection/scope/result proposals. |
 | 1.56 | 2026-09-10 | `@imp designer` | Index approved original-value and controlled-replacement contract; close consistency responsibility choices and route final typed mutation facts/cache/presentation into the next integrated workshop. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |

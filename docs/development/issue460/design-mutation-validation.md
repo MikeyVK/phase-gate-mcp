@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.30  
+**Version:** 1.31  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -998,8 +998,8 @@ role-contract version and bounded process capture under DI-05 ownership. It exis
 an attempted invocation, including failed launch, never a not-started check. Capture
 retains observed exit code or null, stream byte-count/truncation facts and bounded raw
 diagnostics under the existing DI-05 ceilings. Do not duplicate accepted response bytes.
-The exact native-tool external_tools return field remains W02's explicit proposal;
-final DI-05 carrier declarations must realize these facts without changing ownership.
+W02-F now approves the native-tool external_tools return field under DI-05 §7.4.3;
+retain it in invocation evidence. Final shared capture declarations preserve ownership.
 
 All records are frozen, strict and extra-forbid, using closed enums and immutable
 sequences. Required nullable fields remain present as null in the complete serialized
@@ -1035,7 +1035,7 @@ and nullable combinations, retained check order, both cleanup owners, context-on
 schema attachments and post-write publication failure. Reuse existing safe-edit,
 scaffold and issue-459 collection/config tests. No runtime proof is claimed here.
 
-W01's decision nucleus is closed. W02 owns the native provenance return amendment;
+W01's decision nucleus is closed and W02's native provenance amendment is approved.
 W05's recovery store, overlap reader and recovery_pending/recovery_state_invalid codes
 remain unapproved and absent from the accepted enum. Final DI-05 carrier declarations,
 shared serialization and independent conformance remain explicit integration obligations,
@@ -1093,7 +1093,7 @@ The target and content paths meet only for output-profile evidence and final per
 
 | ID | Question | Owner |
 |---|---|---|
-| Q-MUT-03 | Shape/ownership decided in §4.10. Remaining integration: DI-05 final invocation/capture declarations, W02 native provenance return field and preservation of required nulls through resource reads | DI-04/DI-05/Shared Contracts; no new presenter framework |
+| Q-MUT-03 | Shape/ownership and W02 native provenance return are decided. Remaining integration: final shared capture declarations and preservation of required fields/nulls through actual resource reads | DI-04/DI-05/Shared Contracts; no new presenter framework |
 | Q-MUT-04 | Decision closed: DI-02 header recognition, §4.9 original bytes/text and checked replacement, and §4.10 operation facts. Independent evidence remains required | DI-02/DI-04/DI-05 |
 | Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
 | Q-MUT-06 | Decision closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and existing declarative failure route. Real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts |
@@ -1168,6 +1168,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
 | 1.30 | 2026-09-10 | @imp designer | Record human-approved W01-A–E operation-result integration; close result-shape/ownership decisions, preserve explicit W02/W05 dependencies and route required-null serialization and independent evidence. |
+| 1.31 | 2026-09-10 | @imp designer | Consume the approved W02 native provenance return field while retaining existing result placement and shared capture/resource conformance obligations. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |
