@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.67
+**Version:** 1.68
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -34,8 +34,9 @@ product decision. Research otherwise remains frozen. The human-approved
 removes generic fresh/expansion controls and adapter Git knowledge; DI-05 §7.17 owns
 operation/targets/args and empty-branch guarding. Public workspace intent now uses
 scope=workspace; the intermediate targets=["."] convention is rejected. configured
-remains distinct and passes an empty adapter target list. Targeted independent review of this
-delta is requested; earlier QA GO does not claim to cover it.
+remains distinct and passes an empty adapter target list. The human supplied independent
+QA GO for this delta and authorized Design continuation. The nonblocking P2 authority
+paragraph in Research Findings is corrected; W05 fix-specific proposals remain unapproved.
 
 **In Scope:**
 
@@ -518,6 +519,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.68 | 2026-09-10 | `@imp designer` | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |
 | 1.67 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 1.66 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 1.48 | 2026-09-07 | `@imp researcher` | Mark the narrow human-authorized safe-edit alignment/verify_only retirement amendment and targeted QA pause; supersede old preservation notes without further Design work. |

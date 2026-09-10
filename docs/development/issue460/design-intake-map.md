@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** BOUNDED NATIVE-SELECTION INTAKE AMENDMENT — TARGETED QA REQUESTED  
-**Version:** 1.31  
+**Status:** FROZEN RESEARCH INTAKE — INDEPENDENT QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.32  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -13,7 +13,8 @@
 The [2026-09-07 safe-edit amendment](research.md#narrow-safe-edit-policy-amendment--2026-09-07)
 is a prior reviewed exception to the freeze. The later
 [2026-09-10 native-selection amendment](research.md#narrow-native-selection-amendment--2026-09-10)
-is the current bounded human-approved delta, with targeted independent review requested.
+is the current reviewed delta. The human supplied independent QA GO and authorized
+Design continuation; the sole nonblocking P2 authority correction is in Research Findings.
 DI-05 owns PGMCP-only Git resolution and adapter operation/targets/args, removal of generic
 fresh/expansion controls, and configured-versus-empty-branch semantics; DI-07 aligns
 public guidance and DI-08 verifies those boundaries. Counts/ownership remain unchanged. DI-04 owns scaffold-aligned
@@ -491,6 +492,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.32 | 2026-09-10 | `@imp designer` | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |
 | 1.31 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 1.30 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 1.28 | 2026-09-07 | `@imp researcher` | Correct QA handover findings: bind the DI-04 table and consumer routing to enforce/report, default enforce, policy-mirror and legacy-input rejection evidence; policy selection is no longer Design-owned |

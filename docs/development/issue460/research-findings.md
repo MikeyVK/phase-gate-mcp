@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** NARROW NATIVE-SELECTION AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
-**Version:** 1.23  
+**Status:** RESEARCH FROZEN — INDEPENDENT QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.24  
 **Last Updated:** 2026-09-10  
 **Issue:** 460
 
@@ -13,8 +13,16 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 
 ## Authority
 
-The current 2026-09-07 exception is limited to the safe-edit policy amendment below.
-Prior approved retesting/native-optimization and other Research boundaries remain frozen.
+Research decision and gate authority belongs to [Research](research.md), not this
+evidence document. Its [2026-09-10 native-selection amendment](research.md#narrow-native-selection-amendment--2026-09-10)
+is the latest reviewed refinement, including explicit public workspace scope. It
+supersedes the earlier generic fresh/expansion promises; the amended F-20 evidence
+below supports that decision. The 2026-09-07 safe-edit amendment is a prior reviewed
+boundary, not the current exception. All other Research remains frozen.
+
+The human supplied independent QA GO for Design resumption, with one nonblocking P2
+finding on this authority paragraph. This correction addresses that stale routing;
+it adds no product decision and does not claim an independent re-review of the edit.
 
 ### Safe-Edit Policy Alignment Amendment — 2026-09-07
 
