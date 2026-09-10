@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.74
+**Version:** 0.75
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -89,6 +89,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-22 | Public success is operational and inversely maps to MCP isError; correctly reported negative or unavailable domain results are not tool execution failures | Human-required correction, 2026-09-10; §7.14; applies across check/test/fix consumers, without deriving MCP errors from adapter exits |
 | D-ADAPTER-23 | Remove generic native verbose interpretation across check/test/fix consumers and adapter inputs; native switches retain their documented meaning through addressed args | Human-approved correction, 2026-09-10; §7.15; exact non-test argument routing remains separately owned |
 | D-ADAPTER-24 | run_tests requires configured or targets scope; configured preserves native selection, targets=["."] explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status or redundant workspace scope |
+| D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
@@ -333,7 +334,11 @@ A native setting that enables writing cannot turn a `check` into a `fix`; the ad
 must uphold its role contract. Exact request-option schemas remain open, not an arbitrary
 command-line override bag. The later W04 approval in §7.15 specifically permits
 addressed native CLI arguments for run_tests without a native option schema or mandatory
-switch prevalidation. It does not add that route to check/fix or relax role boundaries.
+switch prevalidation. Section 7.16 extends that route to explicit check/fix calls and
+adds use-specific default_args without relaxing role boundaries. Native configuration
+still owns native rules; these defaults are a declared invocation recipe, not a second
+generic representation of the tool's configuration. Mutation consumers use only their
+selected check bindings' configured arguments, never public caller overrides.
 
 For proposed content, the relevant configuration belongs to the intended project and
 logical target, not accidentally to the scratch directory. Native path-relative rules
@@ -829,6 +834,7 @@ checks:
     adapter_id: ruff
     capability: format
     timeout_seconds: 60
+    default_args: []
 
 profiles:
   python_formatted:
@@ -1661,18 +1667,23 @@ inventory for safe edit, run_checks, tests or fixes:
 ```python
 class ScaffoldTextRequest(ScaffoldTextInput):
     operation: NonBlankText
+    args: tuple[StrictStr, ...]
 
 
 class ScaffoldFileRequest(ScaffoldFileInput):
     operation: NonBlankText
+    args: tuple[StrictStr, ...]
 
 
 ScaffoldCheckRequest = ScaffoldTextRequest | ScaffoldFileRequest
 ```
 
 The inherited frozen/strict/extra-forbid contract remains in force. The wire schema
-is exactly one of the closed objects {operation, target_path, content} and
-{operation, target_path, input_path}. Every listed field is required. The selected
+is exactly one of the closed objects {operation, target_path, content, args} and
+{operation, target_path, input_path, args}. Every listed field is required. The args
+tuple comes exclusively from configured default_args under §7.16; it is not public
+scaffold input. Safe-edit proposed-content checks use the same argument ownership.
+The selected
 operation must be a declared capability of the invoked role, and its requires_file
 declaration determines the permitted input alternative. This selected-contract
 constraint is not a new server-side revalidation pass over its constructed request.
@@ -1691,7 +1702,8 @@ Direct content (requires_file=false):
 {
   "operation": "format",
   "target_path": "C:/work/demo/src/example.py",
-  "content": "value = 1\n"
+  "content": "value = 1\n",
+  "args": []
 }
 ```
 
@@ -1702,7 +1714,8 @@ C:/work/demo/.pgmcp, with a separately allocated invocation directory):
 {
   "operation": "format",
   "target_path": "C:/work/demo/src/example.py",
-  "input_path": "C:/work/demo/.pgmcp/temp/validation/7f8bd0fe64624c4ea28c0186a3ef17b4/example.py"
+  "input_path": "C:/work/demo/.pgmcp/temp/validation/7f8bd0fe64624c4ea28c0186a3ef17b4/example.py",
+  "args": []
 }
 ```
 
@@ -2528,14 +2541,14 @@ official native capability inventory and independent conformance remain separate
 #### Configuration and selection
 
 D-ADAPTER-23 removes the old generic verbose field from this public request and the
-selection adapter request. Native arguments retain their own semantics. The exact
-addressed check-args and profile recipient contract remains a separate follow-up to
-W04; do not treat its absence here as a prohibition on native options or a completed
-argument-routing design. Existing targets/branch/workspace check scopes are unchanged.
+selection adapter request. Section 7.16 owns the approved addressed check-args/default
+contract. Existing targets/branch/workspace check scopes are unchanged by that
+argument decision; the separate scope-alignment proposal is not silently approved here.
 
 The required `checks.yaml` uses the existing resolved_config_root. Its closed root has
 `checks`, `profiles`, `profiles_by_extension`, and `run_checks` objects. Check bindings
-contain exactly adapter_id, capability and positive strict integer timeout_seconds.
+contain exactly adapter_id, capability, positive strict integer timeout_seconds and
+default_args: tuple[StrictStr,...] (required; [] is a deliberate empty default).
 Profiles contain a nonempty ordered, duplicate-free list of check IDs; nested profiles
 are forbidden. The run_checks object has only optional default_profile. Empty maps are
 allowed, but dangling check/profile/template/extension/default references fail admission.
@@ -2553,10 +2566,12 @@ checks:
     adapter_id: python_syntax
     capability: syntax
     timeout_seconds: 30
+    default_args: []
   markdown_structure:
     adapter_id: markdown
     capability: structure
     timeout_seconds: 30
+    default_args: []
 profiles:
   python_preflight:
     checks: [python_syntax]
@@ -2577,6 +2592,7 @@ run_checks:
 | targets | Nonempty tuple of WorkspaceRelativePath, or omitted | Required only for targets; mixed files/directories; forbidden otherwise |
 | profile | ProfileId, or omitted | CheckRunManager; mutually exclusive with checks |
 | checks | Nonempty unique ordered tuple of CheckId, or omitted | CheckRunManager; exact explicit obligations |
+| args | Optional mapping CheckId to tuple[StrictStr,...] | Per selected binding replacement of default_args; §7.16 owns omission/empty semantics |
 | fresh | Strict bool, false | Adapter; avoid prior native analysis reuse or refuse honestly |
 | allow_expansion | Strict bool, false | Resolver/adapter; permit necessary related checked-content expansion inside workspace |
 | timeout_seconds | Positive strict int, or omitted | Manager; override each selected binding's invocation budget, not a whole-run deadline |
@@ -2606,7 +2622,7 @@ adapter invocation, not a passing certificate.
 SelectionCheckRequest is frozen, strict and extra-forbid, with these required fields:
 operation: CapabilityId; targets: tuple[AbsolutePath,...];
 removed_targets: tuple[AbsoluteFilePath,...]; expansion_root: AbsoluteDirectoryPath|null;
-fresh: bool. At least one target collection is nonempty; existing paths
+fresh: bool; args: tuple[StrictStr,...]. At least one target collection is nonempty; existing paths
 and actual Git deletions are separate. cwd is workspace root. expansion_root is that
 root iff expansion is authorized, otherwise null. There is no redundant scope label,
 workspace-root field, preparation token, resume session or generic native selector parser.
@@ -2705,10 +2721,10 @@ implemented or authorized by this documentation checkpoint.
 
 ### 7.15 Approved run_tests Input and Exposure — W04, 2026-09-10
 
-Preserve the existing check architecture and shared adapter runtime. This approval is
-limited to run_tests public input/exposure and addressed CLI argument ownership. It does
-not add args to scaffold_artifact, safe_edit_file, run_checks or apply_fixes. Revisit
-run_checks only after the test contract is agreed; do not redesign the entire pipeline.
+Preserve the existing check architecture and shared adapter runtime. W04 is closed by
+the human; its detailed configuration/output integration follows the accepted workshop
+contract. The later §7.16 amendment is authoritative for argument defaults and consumers:
+explicit check/test/fix tools may override them; scaffold/safe-edit never expose args.
 The agent may use native tool knowledge instead of requiring PGMCP to hide every native
 possibility behind a profile, capability or option schema.
 
@@ -2720,14 +2736,15 @@ possibility behind a profile, capability or option schema.
 | targets | Nonempty tuple[WorkspaceRelativePath,...], or omitted | Required for targets; forbidden for configured; "." denotes the workspace directory |
 | tests | Nonempty unique ordered tuple[TestId,...], or omitted | Select configured test bindings; omission uses the configured active test selection |
 | timeout_seconds | Positive strict int, or omitted | Per-invocation override; otherwise use each binding's budget |
-| args | Typed mapping TestId to tuple[StrictStr,...], omitted means empty mapping | Additional native argument tokens addressed to a selected execution |
+| args | Optional mapping TestId to tuple[StrictStr,...] | Explicit recipient list replaces default_args; omission uses configured defaults under §7.16 |
 
 The request is closed and immutable after validation. Unknown fields and null substitutes
 for omitted fields are rejected. TestId denotes a configured execution binding, not a
 native test case, adapter ID or public tool name. The native operation is resolved from
 that binding's capability; it is not inferred from the spelling tests. The JSON args
 object uses the same configured TestId set as tests. Its arrays may be empty; an empty
-mapping or omitted recipient means no extra arguments. Preserve token order and string
+mapping or omitted recipient uses that binding's default_args, while an explicit empty
+recipient array replaces its defaults with no extra tokens. Preserve token order and string
 values; do not whitespace-split, join into a shell string, or impose a flag/value grammar.
 
 After resolving explicit/default selection, every args key must identify a selected
@@ -2808,7 +2825,7 @@ evidence and diagnostic capture remain bounded independently of those options.
 Successful requested operations retain passed, including collection-only; do not add
 a completed/collected domain status or infer a mode by parsing argument tokens.
 
-TestRunManager resolves each binding and extracts only its args tuple; that tuple is
+TestRunManager resolves each binding and selects its effective args tuple under §7.16; that tuple is
 carried to the selected test adapter as args, not as the public multi-recipient mapping.
 The shared invoker still starts the manifest entrypoint and controls the process budget.
 It does not splice these tokens into the adapter entrypoint command or interpret them.
@@ -2824,16 +2841,17 @@ Its exact typed test result/exit classification belongs to the next result works
 Regardless of when native option validity is established, adapters must retain their
 role, authorized scope and result-reporting obligations. Native arguments cannot grant
 source mutation to tests or bypass shared safety controls. The analogous check/fix
-obligations remain in force, but no CLI-argument input is approved for those roles here.
-Native configuration stays the default settings authority; explicit caller arguments
-are invocation input, not a second persisted PGMCP native-settings configuration layer.
+obligations remain in force. Section 7.16 now owns the explicit check/fix argument route.
+Native configuration stays the tool-settings authority; configured default_args and
+explicit replacement arguments describe the execution use, not a duplicate native-rule DSL.
 
 #### Remaining integration and independent evidence
 
 The former test options_schema/SuiteRequest/options/test_ids design is superseded for
 public test invocation. Do not preserve it as an alias alongside args. Exact tests.yaml
-root spelling/records and the full test/v1 request/result DTO graph still require their
-own completion; this section does not approve the old temporary suite configuration.
+records and the full test/v1 request/result DTO graph accepted at W04 closure still
+require detailed canonical integration; apply §7.16's later default_args amendment,
+not the superseded temporary suite/options configuration.
 The existing all-configured-active meaning from Research remains binding.
 
 Prove the registered/decorated schema's enum/recipient agreement, first-call behavior,
@@ -2841,10 +2859,86 @@ default resolution, unknown/unselected recipient rejection, multi-recipient isol
 token order/whitespace/empty-value preservation, configured versus explicit targets,
 targets=["."], both scopes with args, native rejection with and without adapter
 prevalidation, and native verbosity without hidden traceback overrides. Non-test
-consumers receive D-ADAPTER-23's correction, not a silently finalized args contract.
+consumers follow D-ADAPTER-23 and §7.16's explicit mutation-versus-interactive distinction.
 The schema fragment is documentation, not executed conformance evidence. Shared native
 evidence, cache/presentation and process errors retain their existing owners; do not
 introduce generic native-output parsing to support this addition.
+
+### 7.16 Configured Arguments and Consumer Ownership — approved 2026-09-10
+
+This amendment is the single authority for argument selection across consumers. It
+supersedes omission-means-no-arguments wording in W04 and rejects public args for
+scaffold/safe-edit. A native adapter request still carries one args tuple, regardless
+of how the consumer obtained it. No native flag parsing, merging, rewriting or verbose
+interpretation is introduced.
+
+| Consumer | Argument source | Public override |
+|---|---|---|
+| scaffold_artifact | Selected output profile's check bindings | None; no args or verbose input |
+| safe_edit_file | Selected template/metadata/extension profile's check bindings | None; no args or verbose input |
+| run_checks | Each selected check binding's default_args | Optional args keyed by selected CheckId |
+| run_tests | Each selected test binding's default_args | Optional args keyed by selected TestId |
+| apply_fixes | Each selected fix binding's default_args | Optional args keyed by selected FixId; fix authority unchanged |
+
+Each check/test/fix binding declares required default_args: tuple[StrictStr,...].
+An explicit [] means no extra native options. The role config reader owns strict,
+immutable loading and rejects null, non-string items and unknown fields; native
+option validity remains adapter/tool-owned, not startup native probing. The field
+lives beside adapter_id/capability/timeout_seconds, never in the adapter manifest,
+artifact context, profile override bag or global server config. Distinct uses can bind
+the same adapter/capability under different execution IDs with different defaults.
+Profiles select those IDs; they do not carry another argument-override layer.
+
+| Caller entry for a selected execution | Effective list | args_source |
+|---|---|---|
+| Omitted, including an omitted/empty public args mapping | Binding default_args | configured |
+| Present nonempty array | Exact caller array replacing the whole default list | caller |
+| Present [] | Empty tuple; native configuration still applies | caller |
+
+Resolve the selected IDs before validating all argument recipients. An unknown or
+unselected recipient is rejected before any launch, even with []. Omitted recipients
+use their own defaults, never another recipient's values. No concatenation, per-flag
+merge, fallback after native rejection or automatic broadcast. Explicit replacement
+equal to the default list still has source caller. One complete startup schema exposes
+the applicable configured execution IDs as optional args properties with string-array
+values; the manager checks actual profile/default selection on use. No conditional
+schema exposure or extra CLI-discovery tool. Mutation input schemas expose no args map.
+
+The manager sends the effective list as required args in the role request; the adapter
+does not read role YAML, resolve defaults or echo provenance. The public operation's
+per-execution record gains direct args_source: Literal["configured","caller"] and
+effective_args: tuple[StrictStr,...], authored by the manager. Until arguments have
+actually been resolved, both are required null; after resolution neither is null,
+and [] is a known empty list. The record's invocation state independently identifies
+whether native work occurred. These fields describe supplied extra options, not the
+whole native argv, native merged configuration, hidden environment or command history.
+Scaffold/safe-edit check records can only have source configured when resolved.
+Do not introduce a nested source object or DTO-specific presenter logic. Report source
+in concise feedback and retain the effective list in the existing cached DTO under
+the established presentation/disclosure rules; it remains available without rerunning.
+
+Mutation profiles remain fixed preflight validations of the complete candidate text.
+Neither call-specific native tuning nor filesystem scope selection is added to those
+tools. requires_file materialization, intended path, cleanup, policy, atomicity and
+profile selection stay unchanged. The generic content request gains only args from
+its selected binding. apply_fixes caller args apply only to selected fix executions,
+not implicitly to their verification checks; those use configured check defaults.
+Native role/scope/input-source requirements cannot be bypassed by defaults or caller
+args. Incompatible native options must be reported, not silently replaced.
+
+No changes to native rule config or fingerprints are implemented here. W06's still-open
+profile-projection proposal must account explicitly for use-specific default_args;
+do not silently treat the prior adapter_id/capability-only projection as exhaustive.
+Native config and adapter bytes remain distinct from this authored binding input.
+
+Required evidence: omitted mapping/recipient, explicit [] and replacement, equal-value
+caller provenance, token order/whitespace/empty values, selected-profile routing,
+unselected-recipient rejection, no mutation override field, fixed content/file variants,
+source/effective list preservation across negative results and bounded invocation
+failures, no argument merge, no fix-to-verification broadcast, unchanged native
+settings, and success/isError independence. Tests are design obligations, not executed
+conformance. This amendment does not approve the separate run_checks scope proposal
+or complete the remaining W05 recovery/output design.
 
 ## 8. Control, Data, and State Flow
 
@@ -3001,6 +3095,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.69 | 2026-09-10 | `@imp designer` | Record partial W02 approval for package sources, consumer-backed fields, file inventory, fingerprint scope and narrow interfaces; keep exact trust configuration and native provenance return amendment open. |
 | 0.70 | 2026-09-10 | `@imp designer` | Close W02-B/F: explicit adapters.yaml with central loading and typed external_tools in ordinary role results; amend existing closed scaffold payload and preserve minimal invalid_request; keep W03–W05 role work open. |
 | 0.71 | 2026-09-10 | `@imp designer` | Integrate approved W03 as consolidation of existing selection/scope/native decisions plus explicit caller timeout override; specify honest completion and early-error absence without reopening Research or test/fix choices. |
+| 0.75 | 2026-09-10 | `@imp designer` | Record default_args per execution binding, configured-only mutation checks, selected caller replacement for check/test/fix and direct args_source/effective_args evidence; amend prior empty-argument semantics and closed content requests. |
 | 0.74 | 2026-09-10 | `@imp designer` | Consolidate approved W04 configured/targets scope and passed vocabulary; remove generic native verbose interpretation across consumers, retaining separate check/fix argument-routing work and unapproved W04 configuration/output proposals. |
 | 0.73 | 2026-09-10 | `@imp designer` | Correct run_checks domain-derived success: restore operational success/inverse MCP isError, preserve negative domain evidence separately and require actual MCP-boundary regression evidence. |
 | 0.72 | 2026-09-10 | `@imp designer` | Record approved run_tests flat tests selection, addressed args and fixed startup exposure; supersede test options_schema only; preserve other consumers and leave test results/configuration/full transport open. |

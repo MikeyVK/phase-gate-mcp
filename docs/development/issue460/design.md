@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.64
+**Version:** 1.65
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -229,7 +229,7 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-ART-DOC-* | `design-document-tracking-artifacts.md` | Not started | DI-06, DI-07, DI-08 |
 | D-ART-CODE-* | `design-code-test-artifacts.md` | Not started | DI-06, DI-07, DI-08 |
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
-| D-ADAPTER-01–D-ADAPTER-24 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 uses configured/targets and native args without generic verbose; passed remains the domain outcome, success stays operational. W04 configuration/output/internal wire proposal awaits total review; check/fix args routing and conformance remain separate | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
+| D-ADAPTER-01–D-ADAPTER-25 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 closed by human; D25 adds binding default_args, configured-only mutation checks, caller replacement for explicit check/test/fix and argument evidence. Detailed W04 canonical integration, check scope alignment and W05 conformance/recovery remain separately tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
 | D-DIST-01–D-DIST-24 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Decided | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
@@ -525,6 +525,7 @@ review remain open; Research and template/artifact authority are unchanged.
 | 1.59 | 2026-09-10 | `@imp designer` | Index partial W02 approval, preserve separate trust/provenance review and unchanged template discovery/artifact-location configuration authority. |
 | 1.60 | 2026-09-10 | `@imp designer` | Index W02 closure and explicit scaffold payload amendment; advance human review to W03 without approving its selection/scope/result proposals. |
 | 1.61 | 2026-09-10 | `@imp designer` | Index approved W03 consolidation and caller timeout override; advance review to test-specific W04 decisions without approving test/fix proposals or reopening Research. |
+| 1.65 | 2026-09-10 | `@imp designer` | Index D25/D-MUT-22: fixed configured mutation validation, execution defaults with explicit caller replacement and argument evidence; acknowledge W04 closure without conflating remaining integration with new approval. |
 | 1.64 | 2026-09-10 | `@imp designer` | Consolidate approved W04 configured/targets, passed and native-option ownership corrections; index D23/D24 without approving remaining configuration/output proposals or non-test args routing. |
 | 1.63 | 2026-09-10 | `@imp designer` | Index D-ADAPTER-22: correct run_checks success/isError conflation with domain verdicts; preserve negative results as correctly reported tool output. |
 | 1.62 | 2026-09-10 | `@imp designer` | Index W04 public test input/exposure approval and scoped supersession of native options_schema; keep other consumers and remaining W04 result/configuration/transport choices separate. |

@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.31  
+**Version:** 1.32  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -84,6 +84,14 @@ The current implementation does not satisfy that separation. Directory policy li
 `output_path` is not an input alias. It is the canonical workspace-relative path returned as factual operation evidence, including in the cached DTO. Incidental absolute paths in bounded native diagnostics follow the separate approved disclosure policy in §4.6; they do not change this operation-field contract.
 
 ### 2.2 Resolved catalog input
+
+Human-approved consumer distinction: scaffold and safe-edit expose neither native args
+nor verbose. They are fixed-profile mutation consumers, not interactive run_checks
+facades. Each selected check uses default_args from its configured check binding under
+[DI-05 §7.16](design-execution-adapters.md#716-configured-arguments-and-consumer-ownership--approved-2026-09-10).
+Different preflight uses select different bindings/profiles; the caller cannot tune
+their native parameters for one write. Render context never supplies adapter options.
+This does not change template/metadata/extension selection or enforce/report policy.
 
 The selected package supplies its `template_id`, persistence value, output-profile reference, validated renderer/schema graph, package version, resolved package fingerprint, and current source-suite fingerprint. DI-04 consumes these immutable facts; it does not rediscover templates or calculate package policy from file extensions.
 
@@ -444,6 +452,14 @@ Cross-workshop provenance/recovery dependencies remain explicitly bounded below.
 | Safe-edit `template_id` or `extension` | The actual selector behind that outcome; no populated unrelated selector | Inline when needed to explain selection, always retained when applicable |
 | Scaffold package identity/version/resolved fingerprint | Preserve the shared-contract package facts directly, not under template/artifact wrappers; no source-suite fingerprint in this DTO | Identity inline; version/fingerprint cache by default, without unnecessary routine text |
 | `checks` | Ordered tuple of one concrete public check-record model | Bounded records inline, complete ordered records cached |
+
+Each resolved check record also carries direct args_source="configured" and
+effective_args as the exact configured tuple of native argument strings. Before
+resolution both are null; an empty resolved tuple is not unknown. DI-05 §7.16 owns
+the types and common reporting rules. These are manager facts, not adapter echoes,
+and do not assert execution merely because arguments were resolved. The content/file
+adapter request receives the list as args; persistence and input-source ownership
+remain unchanged. No public mutation args field or new presentation nesting is added.
 
 Not every consumer receives every field. No top-level `validation`, `selection`,
 `template`, `artifact` or `output` singleton is introduced for grouping alone. The
@@ -1088,6 +1104,7 @@ The target and content paths meet only for output-profile evidence and final per
 | D-MUT-19 | Operation errors and committed creation remain independent of validation status; response delivery problems cannot turn a committed artifact into a claimed non-creation | Decided; §4.4.4 |
 | D-MUT-20 | Existing on-demand cached diagnostics may retain incidental absolute paths; routine summaries and typed operation paths stay relative; cache is agent-accessible, not private storage; no extra archive, flag or generic sanitizer | Human-approved 2026-09-10; §4.6; supersedes the earlier blanket cache-path prohibition |
 | D-MUT-21 | Expected operation failures retain the normal result, earlier checks and actual write facts; typed error_code/error_details, separately owned housekeeping and selection_reason; declarative presentation without error-specific renderer logic | Human-approved W01-A–E, 2026-09-10; §4.10; W02/W05 dependencies remain separate |
+| D-MUT-22 | Mutation checks use configured default_args only; no public args/verbose, direct configured source/effective-list evidence per check | Human-approved 2026-09-10; DI-05 §7.16 owns shared argument semantics |
 
 ## 7. Open Questions
 
@@ -1168,6 +1185,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
 | 1.30 | 2026-09-10 | @imp designer | Record human-approved W01-A–E operation-result integration; close result-shape/ownership decisions, preserve explicit W02/W05 dependencies and route required-null serialization and independent evidence. |
+| 1.32 | 2026-09-10 | @imp designer | Fix mutation consumer argument ownership: configured binding defaults only, no public native tuning, direct per-check source/effective-list evidence through existing presentation. |
 | 1.31 | 2026-09-10 | @imp designer | Consume the approved W02 native provenance return field while retaining existing result placement and shared capture/resource conformance obligations. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
