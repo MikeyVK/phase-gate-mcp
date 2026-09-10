@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.75
+**Version:** 0.76
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -75,10 +75,10 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-08 | Construct configuration-derived public tool contracts during startup before publication; exposure, validation, defaults, and error-schema feedback use the same immutable startup contract | Decided lifecycle requirement; human direction 2026-09-05; exact interfaces and client evidence open |
 | D-ADAPTER-09 | Startup validates declarations and builds configured check/test/fix selections without invoking adapters; dependency availability is reported on use and never silently weakens profiles | Human-approved correction 2026-09-07; supersedes 2026-09-05 preflight/filtering direction; sections 7.6–7.7 |
 | D-ADAPTER-10 | Defer agent-facing startup health, health-first guidance, and new health-driven tool blockades to a separate issue; preserve current health/admin behavior | Explicit human scope decision 2026-09-05; see the [deferred-work notice](deferred-work.md#deferred-work-notice-agent-facing-startup-health-and-recovery); not a prerequisite for issue 460 |
-| D-ADAPTER-11 | Separate requested check scope from supporting read context; wider check execution requires explicit caller permission and truthful effective-scope reporting | Human-approved nucleus §7.8; W03 §7.14 completes selection transport and outcomes |
+| D-ADAPTER-11 | Separate requested check scope from supporting read context; wider check execution requires explicit configured-use or caller-native intent and truthful effective-scope reporting | Human-approved nucleus §7.8; W03 §7.14 completes selection transport and outcomes |
 | D-ADAPTER-12 | Branch selection includes committed branch changes, staged/unstaged changes, and non-ignored untracked files; checks inspect current working-tree content | Human-approved §7.9; W03 §7.14 records a selection view, not an immutable filesystem certificate |
 | D-ADAPTER-13 | Require run_checks scope; remove auto/default and auto-only state | Binding amended Research; section 7.10; previous auto design superseded |
-| D-ADAPTER-14 | Respect native optimization with explicit fresh intent; no PGMCP execution-result reuse | Binding amended Research; section 7.11; previous cross-scope reuse design superseded |
+| D-ADAPTER-14 | Respect native optimization and native args; no generic fresh control or PGMCP execution-result reuse | Binding amended Research; section 7.11; previous cross-scope reuse design superseded |
 | D-ADAPTER-15 | Internal prepare/execute protocol with prepared work and reuse-state machinery | Withdrawn following the human-directed step back; work_id/session machinery is rejected, not an optional extension; section 7.12 |
 | D-ADAPTER-16 | Declare proposed-content execution needs through required boolean requires_file; PGMCP owns the direct-content and controlled temporary-file routes, adapters own native translation; no target-location pre-write | Human-approved ownership and boolean field 2026-09-06; section 7.13 |
 | D-ADAPTER-17 | W02 package boundary is approved: source layout, consumer-backed fields, explicit files/fingerprint, restart limitation and narrow interfaces; trust/provenance follow D-ADAPTER-18/19 | Human-approved W02, 2026-09-10; §§7.4.1–7.4.3 |
@@ -89,6 +89,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-22 | Public success is operational and inversely maps to MCP isError; correctly reported negative or unavailable domain results are not tool execution failures | Human-required correction, 2026-09-10; §7.14; applies across check/test/fix consumers, without deriving MCP errors from adapter exits |
 | D-ADAPTER-23 | Remove generic native verbose interpretation across check/test/fix consumers and adapter inputs; native switches retain their documented meaning through addressed args | Human-approved correction, 2026-09-10; §7.15; exact non-test argument routing remains separately owned |
 | D-ADAPTER-24 | run_tests requires configured or targets scope; configured preserves native selection, targets=["."] explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status or redundant workspace scope |
+| D-ADAPTER-26 | PGMCP resolves Git and public scopes; selection adapters receive only operation, targets and args; remove removed_targets, fresh and generic expansion controls | Human-approved 2026-09-10; §7.17 and the bounded Research amendment; default narrow |
 | D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
@@ -1170,59 +1171,25 @@ adapter unavailability from runtime failure, while internal responsibility remai
 See the [consolidated DI-04 workshop](design-mutation-validation.md#46-consolidated-public-result-workshop)
 for the remaining proposed public field combinations and presentation dispositions.
 
-### 7.8 Requested scope, supporting context, and authorized expansion
+### 7.8 Requested scope and supporting context
 
-The human owner approved this boundary for `run_checks`. A mixed-language profile
-selects checks, not a universal file-type filter. Generic scope resolution supplies
-candidate paths without Python or other language branches; adapters own their
-capability's applicability and required native project context. This does not copy
-native tool configuration into `checks.yaml`.
+D-ADAPTER-26 supersedes the earlier allow_expansion permission mechanism.
+Profiles select checks; targets select the requested files/directories. Adapters own
+native applicability and configuration, without a PGMCP language filter.
 
-| Situation | Required behavior |
-|---|---|
-| A check can inspect the requested files independently | Execute within the requested scope |
-| A check needs imports, configuration, or other supporting context to inspect those files | Read necessary context within existing access/trust boundaries; supporting reads do not claim those files were checked |
-| The tool can only execute a broader project check | Obtain explicit caller permission before broader execution; report the actual checked scope |
-| Broader execution is necessary but not authorized | Do not execute that check; report the scope restriction, not success or non-applicability |
-| No selected input is applicable to a check | Keep non-applicability distinct from missing tooling and denied expansion; exact result vocabulary remains open |
+Default execution stays narrow. Reading imports or configuration as supporting context
+does not mean those files were checked. If the native operation cannot honor the
+requested target boundary, report not_executed/scope_restricted with a factual message;
+do not silently run a wider check or discard outside findings to pretend it was narrow.
+A deliberately configured use/profile may select binding default_args for broader
+native behavior; an interactive caller may explicitly replace args on a subsequent call.
+Selecting an ordinary profile alone is not expansion permission. No generic flag parser,
+permission token, scope negotiation, or automatic wider retry is introduced.
 
-The accepted request-control nucleus is `allow_expansion: boolean`, default `false`.
-Its consumer is PGMCP's check-execution admission boundary, not the adapter's native
-rule configuration. `true` permits only necessary related scope expansion within
-the workspace, not arbitrary additional paths. Its exact bounds remain Design work;
-it does not introduce named PGMCP subprojects.
-An adapter identifies the required scope; PGMCP owns authorization. Permission to
-expand checks grants neither source mutation nor additional filesystem access.
-
-Illustrative use: an agent selects `frontend/order.ts`. A capable adapter may read
-its native configuration and imports while checking that file. If its underlying
-tool instead requires checking the containing `frontend/` tree, it needs expansion
-permission before that execution. The directory is not a PGMCP project or the
-`workspace` scope. Discarding findings outside `order.ts` afterwards does not turn a
-broader execution into a file-only check. This example describes alternative
-adapter capabilities, not a verified promise about a particular TypeScript tool.
-
-The operation result must distinguish requested scope from actual checked scope per
-check where they differ. These are ordinary operation facts, not the deferred startup
-health diagnosis. Exact DTO fields and inline/cache projections remain to be designed.
-
-Rejected alternatives: silently widen execution, infer permission from profile
-selection, or hide expansion by filtering the returned findings. None gives the caller
-a truthful account of requested work, execution cost, and achieved coverage.
-
-Before integration, define how the adapter communicates required project scope before
-check execution, how PGMCP validates its bounds, and how mismatches are reported.
-Do not invent an additional product role or unapproved protocol operation here.
-Prove independent-file checks, context-only reads, denied expansion with no broader
-check execution, authorized related-project expansion, rejection of unrelated scope,
-and truthful mixed-profile results through the public adapter/consumer boundary.
-
-The retained explicit-path, `branch`, and `workspace` purposes remain the scope-design
-starting point. Research removes `auto` and requires explicit scope. Exact path-selector
-naming and expansion bounds remain open; section 7.9 owns the approved
-working-state selection boundary. In particular, a successful formatting-only run must not clear an
-unrechecked type-check failure. No new history model or automatic adoption of these
-scope rules by `run_tests`, scaffolding, safe edit, or fixes is approved here.
+Adapters own native-option interpretation and conformance. PGMCP neither promises a
+universal per-file coverage census nor treats args as extra filesystem or mutation
+authority. Native evidence and existing coverage fields describe what actually ran.
+Section 7.17 owns the simplified transport and its preservation obligations.
 
 ### 7.9 Branch selection includes current working state
 
@@ -1242,8 +1209,9 @@ files does not discard changes to already tracked files.
 Deleted paths remain relevant change information but cannot be submitted as existing
 file content. A deletion can require a related project check, for example to detect a
 remaining import. It neither proves a passing check nor authorizes scope expansion.
-Exact rename/deletion transport, parent-resolution failure behavior, and project
-context routing must be completed in the scope/adapter contract before integration.
+PGMCP alone resolves renames/deletions and retains deletion evidence in its run result.
+Adapters receive only existing targets, never Git metadata. Section 7.17 defines the
+empty-selection guard; a deletion-only branch is not a configured native run.
 
 Concurrent edits must not be credited as checked solely because a path was selected;
 the precise input-consistency guarantee remains part of the execution contract.
@@ -1265,12 +1233,12 @@ Design resumption after the required-scope correction in Research commit `126651
 
 Every `run_checks` call requires `scope`. Omission is an input validation error
 before check/adapter execution. There is no default, auto alias, or scope inferred
-from check/profile selection or fresh intent. The startup-built schema and runtime
+from check/profile selection or args. The startup-built schema and runtime
 validation must enforce the same requirement, including lazy exposure.
 
-Branch, workspace, and explicit path selection remain; section 7.9 governs branch
-working-state coverage. Profiles select checks, scope selects coverage, and fresh
-controls native analysis reuse. These are separate caller decisions.
+Public run_checks scopes are configured, targets and branch. Explicit targets=["."]
+selects the workspace directory without a workspace alias. Section 7.9 governs branch
+working-state selection; §7.17 keeps that resolution outside adapter requests.
 
 Retire auto selection, baseline advancement, automatic failed-file replay, and their
 exclusive state DTO/repository, wiring, workflow registration, and recovery messages.
@@ -1279,24 +1247,17 @@ owns exact file dispositions. Do not migrate old state into a new validity cache
 Safe cleanup of existing inert state files remains a bounded Design question.
 Unrelated workflow/test state, report caching, fix recovery and F-10 checkpoints remain.
 
-### 7.11 Native optimization and explicit fresh intent
+### 7.11 Native optimization and native arguments
 
-Each admitted check request reaches its adapter; PGMCP does not substitute previous
-execution results or maintain cross-scope validity state. Native configuration remains
-the authority for ordinary caching/incremental analysis. PGMCP does not force caching
-on or duplicate native settings in its own configuration.
+Each admitted nonempty selection, or explicitly configured run, reaches its adapter;
+PGMCP does not substitute previous execution results. Native configuration and effective
+args own caching/incremental behavior. There is no generic fresh input, guarantee,
+fresh_unsupported reason, destructive cache purge or hidden cache policy.
 
-An explicit `fresh` request requires analysis without reuse of earlier analysis
-results for the selected scope. It does not expand scope or authorize source writes
-or shared-cache deletion. Workspace-wide fresh checking requires workspace scope as well.
-A check that never reuses analysis already meets this intent. Unsupported fresh
-semantics must be identified before that substantive check and never reported as met.
-Concrete boolean/default projection and mixed-profile handling are still workshop work.
-
-Cached operation reports, logs and invoked adapter provenance remain supported.
-They describe completed runs; they are not permission to skip new execution.
-A formatting-only result cannot certify syntax or erase an earlier syntax failure.
-PGMCP does not build an unresolved-failure registry to enforce that reporting boundary.
+Configured default_args provide repeatable execution without requiring caller switches.
+Interactive callers may replace those args explicitly; scaffold/safe-edit cannot.
+Cached reports/logs remain evidence of past calls, not permission to skip a new call.
+A limited or formatting-only run cannot certify unexamined code or erase other findings.
 
 ### 7.12 Rejected structures and preservation evidence
 
@@ -1309,51 +1270,33 @@ The supporting investigation and alternatives remain in
 
 Required public-boundary evidence:
 
-- missing scope and obsolete auto input reject before adapter execution, including
-  requests based on stale client metadata; profile/fresh cannot supply missing scope;
-- retained branch/workspace/path selection and expansion authorization remain truthful;
-- repeating a request invokes the adapter again, while report resources remain readable;
-- normal execution respects native configuration; supported fresh is honored and
-  unsupported fresh is not silently downgraded;
-- auto-only state responsibilities disappear without affecting unrelated state/recovery.
+- Required scope and rejection of retired inputs in the registered schema and runtime.
+- Native configured selection versus explicit targets, including the workspace root.
+- PGMCP-only branch resolution and no invocation for zero remaining existing targets.
+- Narrow execution by default, factual scope refusal, and deliberately selected native args.
+- Repeated calls reach adapters; report caching never becomes execution-result reuse.
+- Auto-only state disappears without affecting unrelated state/recovery.
 
-Scope authorization before substantive checking remains necessary. The next workshop
-must settle a simple bounded request/response contract for that purpose without
-reintroducing the rejected preparation/session machinery. Native cache-write policy,
-concurrent input changes, mixed-profile outcomes and precise result projection remain
-explicit open contracts, not guarantees inferred from a successful process exit.
+Section 7.17 owns the amended transport. Native evidence remains native-owned;
+no generic dependency oracle, native-switch parser or per-file coverage census is added.
 
 ### 7.13 Contract work to complete
 
 #### Approved single-invocation responsibility split
 
-The human owner approved a single bounded check request/response as the default
-interaction, without preparation sessions or persisted intermediate results.
-PGMCP supplies the selected input, fresh intent and bounded execution permission.
-The adapter determines what its native tool requires and checks that requirement
-against the supplied permission before substantive execution. It executes only when
-the requirement fits, then reports actual checked scope. Otherwise it does not run
-the substantive check and reports the required expansion. A caller can authorize a
-new request; the earlier response is not a retained execution plan or authorization.
-
-PGMCP owns permission; the adapter owns native-tool requirements. Supporting context
-reads retain section 7.8's distinction from broader checking. These are contractual
-obligations of trusted adapters, not a claim that response validation can undo an
-unauthorized subprocess execution. Generic bounds validation, conformance evidence,
-and the exact request/result shapes remain to be completed before integration.
-
-Required evidence covers execution within permission, denied expansion with no
-substantive execution, truthful actual coverage, and a new authorized invocation
-re-evaluating current inputs rather than consuming a stale prepared plan.
+PGMCP supplies the selected input and effective args in one bounded request. The adapter
+owns native translation, preserves its role and narrow-target obligations, and reports
+the native outcome. An unsupported narrow request can return a factual scope refusal;
+a caller can make a new explicit request. There is no retained plan or permission token.
+Sections 7.8 and 7.17 supersede the former fresh/expansion-permission transport.
 
 #### Approved scope-refusal outcome
 
 When a check requires expansion that the caller has not authorized, its outcome is
 `not_executed`, with a distinct scope-restriction reason, not `failed` or `unavailable`.
 The response identifies the affected check, the required scope, and a short factual
-explanation. PGMCP uses check identity for result association and the scope for generic
-bounds validation; the agent uses the reason and required scope to request informed
-authorization. Exact field names and reason codes remain part of the complete result
+explanation. PGMCP uses check identity for result association; the agent uses the reason and
+required scope to choose an explicit subsequent target/args request. Exact field names and reason codes remain part of the complete result
 contract, not independently fixed by this semantic agreement.
 
 No substantive check has run in this refusal case. The reported required scope is
@@ -1366,13 +1309,14 @@ the absence of substantive execution on refusal, not merely inspect a claimed st
 #### Workspace vocabulary and orthogonal profile selection
 
 The [human-approved Research clarification](research.md#human-approved-scope-terminology-clarification)
-names the whole-workspace scope `workspace`; V3 rejects `project` rather than treating
-it as an alias. Coverage retains applicable inclusion/exclusion and check applicability.
+established workspace rather than project vocabulary. The later §7.17 amendment
+represents explicit whole-workspace selection with targets=["."]; both scope aliases
+project and workspace are rejected. Coverage retains applicable inclusion/exclusion and check applicability.
 Explicit files/directories and branch selection bound where checks are requested.
 Profiles independently select which checks run and may be language-specific or mixed.
 Adapters determine applicability; there is no extra language-selector field or special
 profile type. Neither directory selection nor a native tool's configuration boundary
-creates a named PGMCP subproject. Prove workspace vocabulary and project rejection
+creates a named PGMCP subproject. Prove explicit workspace-root selection and obsolete alias rejection
 through startup schemas and runtime validation, and profile/scope independence through
 public consumer cases without imposing a server-owned language taxonomy.
 
@@ -1380,9 +1324,9 @@ public consumer cases without imposing a server-owned language taxonomy.
 
 The human owner selected `targets` rather than `paths` to name the files and
 directories requested for checking. The V3 scope values are `targets`, `branch`,
-and `workspace`; scope remains required. Only `scope: targets` accepts and requires
+and `configured`; scope remains required. Only `scope: targets` accepts and requires
 a non-empty `targets` list of workspace-relative file/directory paths. The list must
-be omitted for branch/workspace requests. File and directory entries may be mixed;
+be omitted for branch/configured requests. File and directory entries may be mixed;
 directory selection is recursive and overlapping selections are deduplicated.
 A missing explicit target is an input error, not an empty successful selection.
 
@@ -1391,7 +1335,7 @@ input. It does not add named subprojects, a language filter, or expansion permis
 Startup schemas, runtime validation and scope resolution consume this contract;
 profiles continue to select checks independently. Public-boundary evidence must cover
 mixed file/directory input, recursive and overlapping selection, missing targets,
-empty lists, and forbidden targets with branch/workspace. Interaction with exclusions,
+empty lists, and forbidden targets with branch/configured. Interaction with exclusions,
 symlink containment, and concurrent filesystem changes remains explicit Design work.
 
 #### Approved native exclusion boundary
@@ -2542,8 +2486,8 @@ official native capability inventory and independent conformance remain separate
 
 D-ADAPTER-23 removes the old generic verbose field from this public request and the
 selection adapter request. Section 7.16 owns the approved addressed check-args/default
-contract. Existing targets/branch/workspace check scopes are unchanged by that
-argument decision; the separate scope-alignment proposal is not silently approved here.
+contract. Section 7.17 separately records the later human-approved scope alignment:
+configured/targets/branch, with Git resolution owned by PGMCP.
 
 The required `checks.yaml` uses the existing resolved_config_root. Its closed root has
 `checks`, `profiles`, `profiles_by_extension`, and `run_checks` objects. Check bindings
@@ -2588,13 +2532,11 @@ run_checks:
 
 | Public field | Closed type / default | Consumer and constraint |
 |---|---|---|
-| scope | Required targets\|branch\|workspace | ScopeResolver; no auto/project aliases or implicit scope |
+| scope | Required configured\|targets\|branch | ScopeResolver; no auto/project aliases or implicit scope |
 | targets | Nonempty tuple of WorkspaceRelativePath, or omitted | Required only for targets; mixed files/directories; forbidden otherwise |
 | profile | ProfileId, or omitted | CheckRunManager; mutually exclusive with checks |
 | checks | Nonempty unique ordered tuple of CheckId, or omitted | CheckRunManager; exact explicit obligations |
 | args | Optional mapping CheckId to tuple[StrictStr,...] | Per selected binding replacement of default_args; §7.16 owns omission/empty semantics |
-| fresh | Strict bool, false | Adapter; avoid prior native analysis reuse or refuse honestly |
-| allow_expansion | Strict bool, false | Resolver/adapter; permit necessary related checked-content expansion inside workspace |
 | timeout_seconds | Positive strict int, or omitted | Manager; override each selected binding's invocation budget, not a whole-run deadline |
 
 No null substitutes for optional inputs. Neither profile nor checks uses only the
@@ -2612,25 +2554,25 @@ binding's budget. It is an execution control, not a native tool-settings authori
 
 ScopeResolver normalizes/deduplicates overlapping targets, checks workspace containment
 after link resolution and never traverses escaping symlinks/junctions. Missing explicit
-targets are input errors. Workspace means the whole workspace; native tools own their
-selection/exclusions, not hidden Python include_globs. Branch uses merge-base changes
-plus current staged/unstaged and nonignored untracked content. Missing parent/merge-base
-is an operation error. Actual Git deletions remain removed targets; rename is old removal
-plus current new content. Empty branch/workspace input produces empty_selection without
-adapter invocation, not a passing certificate.
+targets are input errors. targets=["."] becomes the absolute workspace root.
+configured supplies no explicit native targets. Native tools own discovery/exclusions.
+Branch uses merge-base changes plus staged/unstaged and nonignored untracked content.
+Missing parent/merge-base is an operation error, not empty_selection.
+PGMCP handles deletions and renames and sends only existing current targets.
+A branch with no remaining existing targets returns empty_selection without invocation.
 
-SelectionCheckRequest is frozen, strict and extra-forbid, with these required fields:
-operation: CapabilityId; targets: tuple[AbsolutePath,...];
-removed_targets: tuple[AbsoluteFilePath,...]; expansion_root: AbsoluteDirectoryPath|null;
-fresh: bool; args: tuple[StrictStr,...]. At least one target collection is nonempty; existing paths
-and actual Git deletions are separate. cwd is workspace root. expansion_root is that
-root iff expansion is authorized, otherwise null. There is no redundant scope label,
-workspace-root field, preparation token, resume session or generic native selector parser.
+SelectionCheckRequest is frozen, strict and extra-forbid. Exact required fields:
+operation: CapabilityId; targets: tuple[AbsolutePath,...]; args: tuple[StrictStr,...].
+targets=[] means native configured selection; omission/null is invalid. PGMCP may
+construct [] only for explicitly configured scope, never as branch-resolution fallback.
+cwd remains workspace root. No scope label, removed_targets, expansion_root, fresh,
+allow_expansion, Git refs, workspace-root field, or native-selector parser is included.
+The same selection shape applies to test/v1; proposed-content check requests remain
+the separate existing content contract. Section 7.17 owns these semantics.
 
-The adapter establishes whether requested work fits before substantive checking.
-Supporting reads do not expand checked scope. Necessary related expansion within an
-authorized ceiling is allowed and reported; unrelated expansion violates conformance.
-Generic code does not claim to prove semantic relatedness or per-file participation.
+Default narrow behavior and deliberate native expansion follow §7.8; supporting reads
+are not additional checked targets. Native outcome/coverage remains factual, not a
+PGMCP guarantee of exhaustive per-file participation.
 
 #### Selection outcome and consumer summary
 
@@ -2639,9 +2581,8 @@ baseline. They add required nullable coverage and required required_targets (emp
 scope expansion is refused). CheckedCoverage contains workspace-relative targets naming
 the native execution boundary, not an exhaustive file census, and expanded: bool.
 The selection-only not_executed variant has a closed reason enum
-scope_restricted|fresh_unsupported|not_applicable and a required factual message.
-Scope refusal has required_targets and null coverage; fresh refusal precedes substantive
-analysis. Do not infer not_applicable from quiet output or missing findings. A native
+scope_restricted|not_applicable and a required factual message.
+Scope refusal has required_targets and null coverage. Do not infer not_applicable from quiet output or missing findings. A native
 passed result asserts native semantics, not that every supplied file participated.
 
 | Selection response | Exit | Constraint |
@@ -2656,7 +2597,7 @@ These selection fields do not widen the approved scaffold-only response. This co
 the role-specific exit matching table, not a new shared process exit category.
 
 RunChecksOutput contains success, run_status, requested_scope, requested_targets,
-required nullable selected_profile, fresh, allow_expansion, ordered results and direct
+required nullable selected_profile, removed_targets, ordered results and direct
 required nullable error_code/error_details. Each SelectionCheckResult identifies check_id
 and preserves the factual outcome, coverage/required_targets and shared invocation facts.
 RunChecksErrorCode is closed: no_configured_checks, selection_invalid,
@@ -2670,7 +2611,11 @@ exists. For an early operation error before one exists it is required null, pair
 error_code/error_details; this represents absence, not a fifth verdict. Neither a null
 run_status nor the presence of domain error details determines success or MCP isError.
 Outer MCP input rejection may produce no RunChecksOutput. Do not manufacture check rows
-for a selection that never completed. Empty selected input means empty_selection.
+for a selection that never completed. Zero existing branch targets means empty_selection; configured adapter targets=[]
+intentionally requests native discovery and is not itself an empty run. The required
+removed_targets: tuple[WorkspaceRelativePath,...] is PGMCP-owned result evidence only:
+actual Git deletions for branch scope, [] otherwise. It distinguishes deletion-only
+selection from no changes without inventing adapter executions.
 For a nonempty known obligation set, any unavailable/not_executed makes incomplete;
 otherwise any failed makes failed; otherwise all passed makes passed. Explicit
 not_applicable therefore makes incomplete, including mixed-language profiles. Preserve
@@ -2708,8 +2653,9 @@ registration; leave old history inert for owner cleanup, without touching other 
 DI-05 owns concrete frozen DTO declarations and all code-matched detail variants;
 shared capture/null-preserving serialization and registered schema proof remain integration
 obligations. Prove defaults/exclusivity/role-input admission, empty versus not_applicable,
-every response/exit pair, Git working state, expansion denial/permission, native fresh
-refusal, repeated execution and cached evidence independently from run_checks itself.
+every response/exit pair, Git working state, narrow refusal/explicit native arguments,
+zero-target branch guarding, repeated execution and cached evidence independently
+from run_checks itself.
 Prove the decorated MCP boundary, not only DTO construction: correctly reported failed,
 ordinary unavailable/not_executed and empty selections retain success=true/isError=false;
 an actual tool execution fault uses success=false/isError=true. Mixed negative and
@@ -2768,7 +2714,7 @@ native arguments rather than new PGMCP-specific option fields. For example:
 The example assumes that configured binding; it does not declare a shipped inventory.
 Existing generic path safety and adapter-owned native target interpretation still apply.
 No branch affected-test inference, native-option allowlist or implicit execution-result
-reuse is introduced. Fresh/expansion controls are not silently copied from run_checks.
+reuse is introduced. Generic fresh/expansion controls are absent from both routes.
 
 #### One startup schema, all configured choices visible
 
@@ -2809,7 +2755,7 @@ silently successful default. Exact registered schema/validation evidence remains
 
 #### Transport and native interpretation
 
-Human-approved correction: configured supplies no explicit filesystem selector and
+Human-approved correction: configured supplies required adapter targets=[] and
 uses the native tool's configured discovery, modified only by explicit native args.
 It does not promise to test every part of the workspace. targets supplies exact
 normalized files/directories; targets=["."] explicitly supplies the workspace root.
@@ -2939,6 +2885,46 @@ failures, no argument merge, no fix-to-verification broadcast, unchanged native
 settings, and success/isError independence. Tests are design obligations, not executed
 conformance. This amendment does not approve the separate run_checks scope proposal
 or complete the remaining W05 recovery/output design.
+
+
+### 7.17 Selection-only Adapter Requests — approved 2026-09-10
+
+The [bounded Research amendment](research.md#narrow-native-selection-amendment--2026-09-10)
+governs this correction to W03/W04. Remove removed_targets from adapter inputs and
+remove fresh, allow_expansion and expansion_root, without aliases or hidden replacement
+controls. Required operation, targets and args form the selection request shared in
+shape, not result semantics, by check/v1 and test/v1.
+
+| Public intent | PGMCP responsibility | Adapter receives |
+|---|---|---|
+| configured | Resolve bindings/defaults; preserve native configured selection | targets=[] and effective args |
+| targets | Validate and resolve existing files/directories; "." becomes workspace root | Nonempty absolute targets and effective args |
+| branch (run_checks only) | Resolve Git working state; remove deleted paths from execution selection | Only remaining existing absolute targets and effective args |
+| branch with no remaining existing targets | Return empty_selection and PGMCP-owned removed_targets evidence | No invocation |
+
+Adapters have no Git responsibility: no merge-base, branch, diff, deletion or rename
+interpretation. A rename contributes the existing new path to targets and the actual
+old deletion to PGMCP evidence. A deletion-only result does not claim dependent code
+was checked. The caller may explicitly request configured or broader targets later.
+
+No missing/null targets synonym is accepted. The former W04 presence-discriminated
+request union is replaced by this one required-list shape. The public scope is still
+required; an empty public targets list remains invalid. "." is not an adapter sentinel.
+
+Default checking stays narrow; deliberately configured binding args selected by a
+profile/use, or explicit replacement args on another call, may request broader native
+behavior. No automatic expansion/fallback or generic parsing of native flags is added.
+Existing coverage/required_targets remain factual native evidence, not an authorization
+handshake. An adapter unable to honor a narrow request reports scope_restricted.
+Scaffold/safe-edit remain fixed configured-content consumers with no public args/scope.
+
+Preservation evidence must independently prove configured [] versus branch no-call,
+deletion-only versus unchanged branch, rename and mixed changes, path containment,
+no Git fields in serialized requests, exact args forwarding, narrow refusal, explicit
+native expansion, and obsolete-field rejection. Reporting negative/domain outcomes
+continues to use success=true/isError=false when the tool operated correctly.
+No new census, role, fingerprint policy, health route, or native cache promise is added.
+
 
 ## 8. Control, Data, and State Flow
 
@@ -3085,6 +3071,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.76 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 0.64 | 2026-09-07 | `@imp designer` | Require approved factual failed-decision message while preserving native evidence and exit codes; omit extra public origin and route the consolidated mutation-result proposal. |
 | 0.63 | 2026-09-07 | `@imp designer` | Route mutation nesting, union-collection admission and native-evidence inline gaps to DI-04 audit without changing approved internal contracts or assuming presenter support. |
 | 0.62 | 2026-09-07 | `@imp designer` | Limit ongoing safe-edit mode design to strict/interactive and reference the verify_only removal deferral and concrete-conflict-only boundary. |

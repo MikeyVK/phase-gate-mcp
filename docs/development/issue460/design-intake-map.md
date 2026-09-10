@@ -2,16 +2,21 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** FROZEN RESEARCH INTAKE — INDEPENDENT QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.29  
-**Last Updated:** 2026-09-07  
+**Status:** BOUNDED NATIVE-SELECTION INTAKE AMENDMENT — TARGETED QA REQUESTED  
+**Version:** 1.30  
+**Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
 
 ## Purpose and Authority
 
 The [2026-09-07 safe-edit amendment](research.md#narrow-safe-edit-policy-amendment--2026-09-07)
-is the sole current exception to the freeze. DI-04 owns scaffold-aligned
+is a prior reviewed exception to the freeze. The later
+[2026-09-10 native-selection amendment](research.md#narrow-native-selection-amendment--2026-09-10)
+is the current bounded human-approved delta, with targeted independent review requested.
+DI-05 owns PGMCP-only Git resolution and adapter operation/targets/args, removal of generic
+fresh/expansion controls, and configured-versus-empty-branch semantics; DI-07 aligns
+public guidance and DI-08 verifies those boundaries. Counts/ownership remain unchanged. DI-04 owns scaffold-aligned
 validation=enforce/report input and validation_policy output, removal of mode and
 verify_only, and preserved mutation semantics. DI-05 retains unchanged check facts;
 DI-07 owns active reference/caller guidance and DI-08 removal assurance. The prior
@@ -30,23 +35,23 @@ A Design package is a cohesive grouping tool, not a mandatory wrapper around eve
 
 ## Bounded Retesting Amendment Routing — 2026-09-05
 
-Current authority is the [narrow F-20 amendment](research.md#narrow-check-retesting-amendment--2026-09-05).
+Historical routing, amended in place by the 2026-09-10 decision: the [narrow F-20 amendment](research.md#narrow-check-retesting-amendment--2026-09-05).
 Design is paused for independent QA; previous freeze/GO statements below describe the
 earlier baseline, except for this explicitly authorized amendment. No finding, strategy,
 invariant, expected-result, or census total is added or removed.
 
 | Boundary | Primary owner | Required disposition |
 |---|---|---|
-| Auto selection/default, baseline advancement, failed-file replay, state DTO/repository and composition | DI-05 | Retire through clean break; require explicit scope for run_checks with branch/workspace/path selection. V3 workspace replaces project without alias or coverage change. Omission is an input validation error before check/adapter execution; no auto alias, implicit fallback, or scope inferred from profile/fresh |
-| Native optimization and fresh intent | DI-05 | Honor native configuration normally; define fresh support and truthful unsupported behavior per check capability; no generic reuse/state/session protocol |
+| Auto selection/default, baseline advancement, failed-file replay, state DTO/repository and composition | DI-05 | Retire through clean break; require explicit scope for run_checks with configured/targets/branch selection. Explicit targets=["."] selects the workspace; project/workspace scope aliases are rejected. Omission is an input validation error before check/adapter execution; no auto alias, implicit fallback, or scope inferred from profile/args |
+| Native optimization and selection | DI-05 | Native config/effective args own caching and deliberate broader native behavior; default narrow, no generic fresh/expansion fields or reuse/state/session protocol; Git resolution stays PGMCP-only, with zero-existing-target branch no-call evidence |
 | Public result/cache/presentation | DI-05 | Keep report DTO/resource caching and invoked provenance; no cached report substitutes for new execution; remove only obsolete auto-state recovery mappings |
 | Workflow registration and PR integration | DI-05 | Remove quality_state.json registration and auto-only wiring; preserve unrelated phase/PR/branch-local artifact behavior; DI-07 aligns guidance |
-| Active manuals/references and agent consumers | DI-07 | Remove auto/default/state claims and describe fresh versus scope without creating another parameter SSOT |
-| Retained scopes, state-removal, and native fresh proof | DI-05 | Own package-local positive/negative evidence; DI-08 checks complete cross-package removal using the unchanged catalog |
+| Active manuals/references and agent consumers | DI-07 | Remove auto/default/state claims and describe configured/targets/branch and native args without creating another parameter SSOT |
+| Retained scopes, state-removal, and native-argument/selection proof | DI-05 | Own package-local positive/negative evidence; DI-08 checks complete cross-package removal using the unchanged catalog |
 | Existing Design experiments | DI-05 after QA | Reconcile D-ADAPTER-13/14/15 and sections 7.10-7.12 with this authority; no obligation to preserve rejected reuse/session mechanisms |
 
 No change is made to DI-02 template provenance, DI-04 persistence, DI-06 renewal, the
-health-diagnostics deferral, or separate test/fix semantics. Concrete fresh flags,
+health-diagnostics deferral, or separate test/fix semantics. Concrete native-argument forwarding,
 transport, config/DTO shapes and cycle decomposition remain later-phase work. Required
 scope and rejection on omission are human-approved Research constraints, not open Design
 choices. DI-05 must expose and prove that behavior; DI-07 must align caller guidance.
@@ -54,7 +59,7 @@ The catalog owns exact file dispositions; this map does not create duplicate row
 The owner authorized Design continuation and the surgical
 [workspace terminology clarification](research.md#human-approved-scope-terminology-clarification).
 Earlier QA-pause wording records the previous hand-over. DI-05 must reject the obsolete
-project scope value, and DI-07 must use workspace in V3 guidance while preserving
+project scope value, and DI-07 must describe targets=["."] for workspace selection in V3 guidance while preserving
 historical source evidence. No PGMCP subproject model or special language-profile type
 is introduced; existing owners and counts remain unchanged.
 
@@ -209,7 +214,7 @@ flowchart LR
 | Affected inputs and consumers | Output profiles; `quality.yaml` and its replacement `checks.yaml`/`tests.yaml`/`fixes.yaml`; presentation config; quality/test/fix config models; validation modules; `QAManager`; Pytest runner/interface; quality state/repository; violation parsing; `RunQualityGatesTool`, `RunTestsTool`, `AutoFixTool`; public DTOs/cache/presentation; bootstrap/exports/registration; scaffold and safe-edit consumers; workflow/agent/manual/reference consumers; all catalogued tests, fixtures, fake runners, and validation fixtures |
 | Design-owned decisions | One immutable startup-resolved adapter catalog; official and trusted workspace package sources; package manifest, `adapter_id`, one version, supported role-contract versions, capabilities, entry points, package fingerprint, dependency/trust/error policy, and restart semantics; generic process/scratch/timeout/stdout/stderr/malformed/crashed/unavailable transport; separate `check/v1`, `test/v1`, and `fix/v1` request/result contracts; `run_checks`, framework-neutral `run_tests`, and `apply_fixes` inputs/results/scopes/verbose behavior/cache/presentation; output-profile check selection; fix proposal, stale-input detection, path authorization, validation, controlled application, rollback/recovery, and final evidence; conformance and self-hosting proof |
 | Consumer-policy separation | Output profiles select required checks for complete proposed content. `run_checks` owns explicit scope and check-run reporting. `run_tests` owns behavioral suite/framework semantics. `apply_fixes` owns an explicitly requested mutation workflow around bounded adapter proposals. Workflow gates consume evidence but are not adapter capabilities. DI-04 alone decides scaffold/safe-edit persistence from unchanged factual check states |
-| Compatibility, migration, removal | PGMCP 3.0 clean break: remove `run_quality_gates`, `auto_fix`, and `quality.yaml`; introduce `run_checks`, `apply_fixes`, `checks.yaml`, `tests.yaml`, and `fixes.yaml`; keep only the semantically correct `run_tests` name while replacing its Pytest-shaped contract. No aliases, wrapper tools, or dual-read config. Obsolete config fails with actionable migration guidance. Migrate retained Pytest, Ruff, Mypy, Pyright, syntax, parser, and fix behavior into official packages where justified by current consumers The 2026-09-05 refinement also removes auto and its baseline/replay state and excludes PGMCP execution-result reuse; preserve report caching and provide fresh intent without a hidden native-settings layer |
+| Compatibility, migration, removal | PGMCP 3.0 clean break: remove `run_quality_gates`, `auto_fix`, and `quality.yaml`; introduce `run_checks`, `apply_fixes`, `checks.yaml`, `tests.yaml`, and `fixes.yaml`; keep only the semantically correct `run_tests` name while replacing its Pytest-shaped contract. No aliases, wrapper tools, or dual-read config. Obsolete config fails with actionable migration guidance. Migrate retained Pytest, Ruff, Mypy, Pyright, syntax, parser, and fix behavior into official packages where justified by current consumers The 2026-09-05 refinement also removes auto and its baseline/replay state and excludes PGMCP execution-result reuse; preserve report caching and use native configured/caller args without generic fresh/expansion controls; PGMCP alone resolves branch targets, and empty branch selection never invokes native configured discovery |
 | Provenance and ownership | Each adapter package has one authored manifest version and one computed package fingerprint over its semantic package inputs; files have no authored versions. Per-run evidence records only invoked adapter ID/version/package fingerprint/role-contract version and discovered external-tool ID/version. Do not add a whole adapter-suite fingerprint to runs or adapter provenance to scaffold-artifact source metadata. PGMCP owns official packages; workspace owners own trust, dependencies, retention, and version policy for `.pgmcp/adapter_suite/` packages |
 | Required proof | Check and output-profile consumers receive identical factual check evidence; check calls cannot mutate; tests remain behavior-specific; fix adapters cannot directly authorize workspace writes; stale or out-of-scope proposals do not reach authoritative files; Pytest behavior intentionally retained is compared across old/new boundaries; official adapters pass shared role conformance plus tool-specific tests; a non-Python fixture package adds a supported language/tool without generic server-code changes; duplicate IDs, invalid manifests/contracts, unavailable tools, timeouts, crashes, malformed output, verbose capture, and restart loading are explicit; old public/config names and duplicate command/parser authorities are absent |
 | Exclusions | No universal result object across roles; no language/file-extension/framework/command/parser dispatch in generic server code; no template-suite authority to install or trust executables; no adapter-owned scaffold persistence or workflow-gate decision; no whole-suite run fingerprint, binary retention/integrity promise, external package history enforcement, or new fourth product role without a separately justified consumer/contract |
@@ -486,6 +491,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.30 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 1.28 | 2026-09-07 | `@imp researcher` | Correct QA handover findings: bind the DI-04 table and consumer routing to enforce/report, default enforce, policy-mirror and legacy-input rejection evidence; policy selection is no longer Design-owned |
 | 1.29 | 2026-09-07 | `@imp designer` | Record human-reported independent QA GO and authorized Design resumption without changing intake scope or policy |
 | 1.26 | 2026-09-05 | `@imp designer` | Route explicitly authorized V3 workspace rename and obsolete project rejection without coverage/census changes; record continuation and no subproject model. |

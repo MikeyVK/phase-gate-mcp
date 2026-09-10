@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.65
+**Version:** 1.66
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -26,10 +26,14 @@ The [Design Intake Map](design-intake-map.md) remains authoritative for package 
 ## Scope
 
 Design resumed on explicit human GO after the narrow F-20 Research correction in
-commit `12665147`. The required-scope, auto-retirement and native-fresh constraints in
+commit `12665147`. The required-scope and auto-retirement constraints in
 [Research](research.md#narrow-check-retesting-amendment--2026-09-05) now govern DI-05;
 earlier Research review-request text records the pre-resumption hand-over, not a new
-product decision. Research content remains frozen.
+product decision. Research otherwise remains frozen. The human-approved
+[2026-09-10 selection amendment](research.md#narrow-native-selection-amendment--2026-09-10)
+removes generic fresh/expansion controls and adapter Git knowledge; DI-05 §7.17 owns
+operation/targets/args and empty-branch guarding. Targeted independent review of this
+delta is requested; earlier QA GO does not claim to cover it.
 
 **In Scope:**
 
@@ -512,6 +516,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.66 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 1.48 | 2026-09-07 | `@imp researcher` | Mark the narrow human-authorized safe-edit alignment/verify_only retirement amendment and targeted QA pause; supersede old preservation notes without further Design work. |
 | 1.49 | 2026-09-07 | `@imp designer` | Record human-reported independent QA GO and Design resumption; integrate common mutation policy vocabulary and legacy-mode removal in DI-04/DI-05; retain open diagnostic/provenance integration. |
 | 1.50 | 2026-09-07 | `@imp designer` | Index approved safe-edit-specific operations, no-change result and failure boundaries; move the next workshop to V3 reader and read/check/write consistency. |

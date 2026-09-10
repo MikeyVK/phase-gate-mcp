@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** NARROW SAFE-EDIT AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
-**Version:** 1.22  
-**Last Updated:** 2026-09-07  
+**Status:** NARROW NATIVE-SELECTION AMENDMENT — OTHER EVIDENCE FROZEN; QA REQUESTED  
+**Version:** 1.23  
+**Last Updated:** 2026-09-10  
 **Issue:** 460
 
 ## Purpose
@@ -1791,7 +1791,7 @@ No new finding ID, strategy row, consumer family, or template-suite responsibili
 |---|---|---|---|
 | Retain auto as changed-plus-failed selection without a validity promise | Retains existing caller convenience | Keeps default, baseline, failure replay, state cleanup and documentation obligations; still cannot prove unaffected code correct | Not selected |
 | Generic PGMCP cross-scope evidence reuse | Could skip complete tool invocations | Requires native context/dependency validity, concurrent-input semantics, state, and complex adapter obligations; file hashes alone are insufficient | Rejected for issue 460 |
-| Explicit scopes with native optimization and fresh intent | Small caller/adapter boundary; native tools retain their own analysis knowledge | Removes auto convenience; native performance and bypass support vary; full coverage can still require a broader authorized run | Selected by human |
+| Explicit scopes with native optimization and native args (2026-09-10 refinement) | Small caller/adapter boundary; native tools retain their own analysis knowledge | Removes auto convenience; native performance and bypass support vary; full coverage can still require a broader authorized run | Selected by human |
 
 #### External Evidence and Limits
 
@@ -1806,8 +1806,9 @@ selection from failed-first execution of the rest. Neither known failures nor ch
 source paths constitute complete affected-test selection.
 
 No native command was executed for this documentation amendment; no speedup is claimed.
-Design must demonstrate fresh semantics per retained official check capability,
-including unsupported/native-cache-write cases, without a destructive cache purge.
+The human-approved [2026-09-10 amendment](research.md#narrow-native-selection-amendment--2026-09-10)
+withdraws generic fresh semantics. Prove native argument forwarding, default narrow
+selection and PGMCP-only branch resolution instead; no destructive cache purge.
 The test/fix contracts and their independent proof obligations remain unchanged.
 
 #### Preserved Behavior and Expected Outcomes
@@ -1818,15 +1819,15 @@ The test/fix contracts and their independent proof obligations remain unchanged.
   existing-source references above intentionally retain their historical vocabulary.
 - Following the QA omission finding, the owner approved required `scope` for
   `run_checks`: omission yields an input validation error before check/adapter execution.
-  No profile, fresh request, or implicit branch/workspace fallback supplies it. Requiring
+  No profile, native args, or implicit branch/workspace fallback supplies it. Requiring
   scope avoids unexpected workspace-wide cost or unexpectedly limited branch coverage.
   This is binding Research behavior, not a default choice delegated to Design.
-- Normal invocations respect native settings; fresh is an explicit per-call override
-  of analysis reuse, not another workspace rule configuration or scope selector.
-- A fresh request is honored or truthfully rejected for the affected capability before
-  its check; it is never silently downgraded. The exact input/schema/result projection
-  and mixed-profile admission remain Design-owned; scope omission behavior is fixed
-  by the [canonical amendment](research.md#narrow-check-retesting-amendment--2026-09-05).
+- Native config and effective args own caching and explicit wider native behavior.
+  Default narrow checking and native factual results remain; no generic fresh or
+  expansion-permission protocol survives the 2026-09-10 refinement.
+- PGMCP resolves branch changes into existing targets. Deletion evidence stays in its
+  result, not adapter requests. Zero existing branch targets must not invoke the native
+  configured-selection route. No Git resolution is delegated to adapters.
 - Completed run reports/resources remain available; no PGMCP cache supplies old
   success as the outcome of a new check request.
 - Existing automatic failed-file replay and baseline advancement cease; historical
