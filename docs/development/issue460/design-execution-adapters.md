@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.68  
+**Version:** 0.69  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -81,6 +81,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-14 | Respect native optimization with explicit fresh intent; no PGMCP execution-result reuse | Binding amended Research; section 7.11; previous cross-scope reuse design superseded |
 | D-ADAPTER-15 | Internal prepare/execute protocol with prepared work and reuse-state machinery | Withdrawn following the human-directed step back; work_id/session machinery is rejected, not an optional extension; section 7.12 |
 | D-ADAPTER-16 | Declare proposed-content execution needs through required boolean requires_file; PGMCP owns the direct-content and controlled temporary-file routes, adapters own native translation; no target-location pre-write | Human-approved ownership and boolean field 2026-09-06; section 7.13 |
+| D-ADAPTER-17 | W02 source layout, consumer-backed capability fields, explicit package file inventory, fingerprint coverage/restart limitation and narrow shared runtime interfaces are approved; exact trust configuration and native provenance return amendment remain open | Partial W02 approval, 2026-09-10; §7.4.1 |
 
 The decided rows establish ownership and the selected nuclei. Exact package layout,
 admission and capability binding, process protocol, role schemas, native-configuration
@@ -260,8 +261,9 @@ and package-owned semantic implementation inputs. Runs record only invoked packa
 identities and external-tool identity/version. No adapter-suite hash is added to runs,
 and adapter evidence does not enter scaffolded-artifact source metadata.
 
-The official on-disk asset location, manifest shape, capability identifiers, binding
-configuration, fingerprint encoding, and implementation filenames are deliberately open.
+Section 7.4.1 now records the approved source layout, file inventory, role-field additions
+and fingerprint boundary. Trust configuration and the native provenance return amendment
+remain open; role-specific binding/operation contracts retain their own workshop owners.
 The package declaration filename is `manifest.yaml`, as selected in W-ADAPTER-02.
 The approved `template_suite/` layout does not automatically define `adapter_suite/`.
 
@@ -289,7 +291,8 @@ decision based on this fingerprint. Check/test/fix execution does not require a 
 comparison to perform its role. No role-level hash, new history registry, configuration
 hash, binary retention, or reproduction guarantee is introduced. Exact fingerprint
 inputs, encoding, and computation lifecycle remain to be designed; package content
-identity must not be presented as a complete execution-environment identity.
+identity must not be presented as a complete execution-environment identity. The subsequent
+partial W02 approval in §7.4.1 fixes coverage, compact encoding and restart assumptions.
 
 ### 7.3 Manifest and native tool configuration authority
 
@@ -684,6 +687,60 @@ native tool-rule settings, parser recipes, `supports_autofix`, or a self-granted
 flag. Do not copy role/capability declarations into a second package index. Concrete
 identifier grammar, version syntax, and capability descriptor
 schemas remain open; no free-form extension bag is selected here.
+
+### 7.4.1 W02 Package Contract — partial approval 2026-09-10
+
+The human approved W02 except the trust configuration location and the native-tool
+provenance return proposal. Those two questions remain open; no implicit approval of
+ServerSettings trust fields, a new configuration filename or external_tools is recorded.
+
+| Approved boundary | Contract |
+|---|---|
+| Sources and identity | Official distributed packages under assets/adapter_suite; workspace extensions under resolved_server_root/adapter_suite. Shallow manifest discovery, manifest-owned adapter_id and duplicate-ID rejection; no override by directory name |
+| Package files | Required nonempty unique files inventory, relative to the package. manifest.yaml is included implicitly and must not be repeated; reject missing/escaping/duplicate paths. Include package-owned entrypoints, schemas, dependency-contribution files and required runtime imports/data |
+| Check capability fields | Nonempty unique inputs tuple of content or selection; requires_file is required boolean when content is supported and forbidden otherwise. Profile admission and input preparation are the consumers |
+| Test capability field | Optional package-local options_schema, only when extra invocation choices exist; tool-schema construction and adapter input validation consume it, not native rule configuration |
+| Fix capability field | Nonempty addresses references, each adapter_id plus check capability; may reference a different package. Fix/check configuration coherence is the consumer; exact fix application remains W05-owned |
+| Generic composition | One immutable startup catalog, narrow CheckCatalogReader/TestCatalogReader/FixCatalogReader and one shared AdapterInvoker. Fix orchestration explicitly receives its separate verification-check reader; no consumer gets install/trust mutation APIs |
+
+Use strict, immutable, extra-forbid declarations and exact case-sensitive IDs. Package
+and capability IDs follow [a-z][a-z0-9_]{0,63}; adapter version is valid SemVer without
+the template-header length cap. Role contract_version remains integer 1. Test option
+schemas have no remote references; local references stay within declared package files.
+They describe call options, not duplicated native tool rules or arbitrary argv.
+
+Fingerprint the canonical manifest including version, plus sorted package-relative file
+names and exact declared file bytes using length-delimited records. Use domain
+pgmcp:adapter-package:v1 and SHA-256 truncated to 96 bits, encoded as 16-character
+unpadded Base64url. This reuses the compact value representation, not template graph
+semantics. Native installations/configuration, other packages, outer directory location
+and incidental runtime files are excluded. No generic import scanner or per-file versions.
+Final canonical byte-record conformance belongs to DI-05, not each adapter author.
+
+The explicit inventory has a consciously accepted maintenance cost: authors must keep
+package-owned dependencies complete. Conformance proves that obligation; generic PGMCP
+cannot prove arbitrary language imports through source scanning. The fingerprint labels
+the admitted package snapshot, not safety, compatibility or full execution equivalence.
+Restart after package edits; no monitoring, per-call rehashing or shadow-copy mechanism.
+Workspace owners retain dependency installation and history/version policy.
+
+Trust remains an explicit workspace decision, not a manifest self-grant or fingerprint
+security check. The initial optional PGMCP_CONFIG_PATH proposal is under reconsideration
+because it supplies no fixed workspace filename. An adapter-wide config under the
+existing resolved_config_root is a proposal only. Do not put adapter trust into
+artifacts.yaml, which owns produced-artifact locations, or recreate templates.yaml as
+a duplicate manifest registry. The latter is explicitly excluded by D-SUITE-33.
+
+External-tool provenance is existing F-20 run evidence, not a new tool or independent
+query. The proposed typed transport field remains unapproved pending clarification.
+It would live with the invoked adapter evidence in the existing cached operation result,
+not a new resource/log store or persisted artifact header. No startup version survey,
+automatic dependency installation or inferred compatibility decision is introduced.
+
+Preservation evidence must cover moved roots, unchanged unrelated packages, changed
+declared files, manifest/file constraints, narrow reader injection, configuration-only
+non-Python extension and no startup execution. Shared process/role conformance and
+check/test/fix migration remain independently proven obligations, not completed evidence.
 
 ### 7.5 Proposed check bindings and profile selection
 
@@ -2472,7 +2529,7 @@ proposed conformance evidence is claimed as completed.
 
 | ID | Open Design question | Decision needed |
 |---|---|---|
-| Q-ADAPTER-02 | What are the exact admission and binding contracts under the selected discovery and manifest nuclei? | Discuss W-ADAPTER-04 shared bindings; then fix trust configuration, exact reference schemas, detailed source rules, and startup versus use-time failures |
+| Q-ADAPTER-02 | What completes admission and bindings after partial W02 approval? | §7.4.1 fixes source/file/identity boundaries; exact trust configuration remains under human review, role bindings remain W03–W05-owned |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, verbose behavior, and independent conformance |
 | Q-ADAPTER-05 | How are fixes authorized and recoverably applied? | Define the separate F-20 mutation contract and stale/proposal/application evidence |
@@ -2526,6 +2583,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.66 | 2026-09-08 | `@imp designer` | Reference DI-04's approved narrow V3 reader and original/proposed-content consistency; keep both outside adapter responsibility. |
 | 0.67 | 2026-09-10 | `@imp designer` | Apply human-approved shared diagnostic disclosure: retain bounded incidental host paths in on-demand cached diagnostics without a private-log substitute; preserve relative public operation fields, process bounds and role payloads. |
 | 0.68 | 2026-09-10 | `@imp designer` | Link approved W01 operation-result projection while retaining generic process ownership and the separate W02 native provenance return decision. |
+| 0.69 | 2026-09-10 | `@imp designer` | Record partial W02 approval for package sources, consumer-backed fields, file inventory, fingerprint scope and narrow interfaces; keep exact trust configuration and native provenance return amendment open. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
 | 0.59 | 2026-09-07 | `@imp designer` | Supersede startup dependency preflight/filtering with configuration-based exposure and existing on-use failures; retain structural/path admission, stable schemas, defaults, full profiles, and health deferral without new protocol or Research changes. |

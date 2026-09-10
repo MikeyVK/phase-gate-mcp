@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.58  
+**Version:** 1.59  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -493,7 +493,10 @@ closed W01-F: preserve relative operation fields and portable artifacts while us
 existing on-demand cached native diagnostics, with no private-log replacement or claim
 that resource retrieval is local-only. DI-05 applies the same boundary to check/test/fix.
 The subsequent W01-A–E approval is recorded in DI-04 §4.10. Research remains frozen;
-W02 adapter-package choices and later workshop proposals remain open.
+W02 source/file/capability/fingerprint boundaries are now partially approved in
+[DI-05 §7.4.1](design-execution-adapters.md#741-w02-package-contract--partial-approval-2026-09-10).
+Exact trust configuration and the native provenance return field remain open, as do
+later workshop proposals. Template discovery and artifacts.yaml ownership are unchanged.
 
 ## Version History
 
@@ -509,6 +512,7 @@ W02 adapter-package choices and later workshop proposals remain open.
 | 1.55 | 2026-09-10 | `@imp designer` | Close the approved integrated header utility Design nucleus and Q-SUITE-03; route remaining original-file comparison, atomic writing and operation presentation into one DI-04 workshop. |
 | 1.57 | 2026-09-10 | `@imp designer` | Index human-approved W01-F diagnostic disclosure; refine the earlier blanket cache-path prohibition without changing Research, operation paths or remaining workshop approval status. |
 | 1.58 | 2026-09-10 | `@imp designer` | Index approved W01-A–E, distinguish remaining integration obligations and move human review to prepared W02 without approving its package/provenance choices. |
+| 1.59 | 2026-09-10 | `@imp designer` | Index partial W02 approval, preserve separate trust/provenance review and unchanged template discovery/artifact-location configuration authority. |
 | 1.56 | 2026-09-10 | `@imp designer` | Index approved original-value and controlled-replacement contract; close consistency responsibility choices and route final typed mutation facts/cache/presentation into the next integrated workshop. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |
