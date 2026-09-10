@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.18  
+**Version:** 1.19  
 **Last Updated:** 2026-09-10  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -474,9 +474,12 @@ without requiring pv/pf/sf equality with today's catalog. Only the first physica
 of original file text is eligible. Do not skip blank lines or a shebang, search the body,
 or join lines. A marker elsewhere is not file-owned metadata. Recognize a complete
 comment in the file representation's native framing, not a bare marker substring.
-Missing or invalid header content establishes no template identity; DI-04 continues
-its explicit-input/metadata/extension selection contract rather than failing merely
-because recognition failed. Input decoding/BOM handling and the shared source of framing
+Missing or invalid header content establishes no template identity. A syntactically
+valid header may identify a template that is absent from the current catalog; that
+lookup miss likewise supplies no applicable template profile. DI-04 continues the same
+extension/no-profile route in all these cases rather than failing recognition or lookup.
+The reader owns syntax, not catalog existence; it must not acquire a catalog dependency.
+Input decoding/BOM handling and the shared source of framing
 recognition remain bounded integration work; they do not authorize moving the header.
 
 #### Joint internal header utility
@@ -918,6 +921,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.16 | 2026-09-08 | `@imp designer` | Admit the demonstrated safe-edit V3-reader consumer under the conditional replacement rule; retain a shared read/write dialect, syntax-only historical facts and no legacy/history revival. |
 | 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
 | 1.18 | 2026-09-10 | `@imp designer` | Supersede overflow wrapping with 24-character template IDs, 11-character package SemVer labels and first-line-only native comments; propagate canonical typed constraints through admission/render/read contracts and route invalid recognition to DI-04 fallback without redesigning Jinja tiers. |
+| 1.19 | 2026-09-10 | `@imp designer` | Align with consumer selection equivalence: unknown metadata IDs yield no applicable template, like absent/invalid headers; keep syntax-only reading independent from catalog lookup. |
 | 1.13 | 2026-09-03 | `@imp designer` | Remove premature Worker/package naming examples so illustrative values cannot pre-empt DI-03 artifact identities, DI-03 content fields, or DI-05 profile IDs; preserve the abstract five-field manifest and explicit input boundary. |
 | 1.12 | 2026-09-03 | `@imp designer` | Reconcile the human-approved F-03/F-07 correction: remove manifest naming and the generic naming resolver, require exact file-name operation input and explicit artifact-local rendered names, isolate server provenance, and supersede the input `output_path`/envelope-name derivation model. |
 | 1.11 | 2026-09-03 | `@imp designer` | Close package-version policy: validate SemVer syntax only, use resolved fingerprints for content equality, preserve four factual version/fingerprint relations, derive shared impact from the current graph, and introduce no bump enforcement, warning service, or history. |

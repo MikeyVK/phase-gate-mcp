@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.25  
+**Version:** 1.26  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -465,13 +465,15 @@ No profile contents or hashes are used to infer a current selection. Resolve aga
 the original file before constructing its proposed edit, not edited metadata or a
 temporary filename. Explicit input precedes approved automatic selection; an invalid
 explicit ID remains an input error, not a request to try the extension route. Human
-refinement, 2026-09-10: missing, V2 or invalid first-line V3 metadata establishes no
-automatic template identity and uses the configured extension route without a legacy
+refinement, 2026-09-10: missing, V2 or invalid first-line V3 metadata, including an
+invalid or unknown metadata template id, establishes no applicable template and uses
+the configured extension route without a legacy
 alias. Report the actual selected_source, not metadata when recognition was rejected;
 retain the rejection reason as factual selection feedback through the existing
 structured/declarative presentation boundary, not a synthetic check failure. A valid
-header with an id absent from the current catalog remains the separate unresolved-ID
-selection failure; changing that case is not inferred from the invalid-header decision.
+header with an id absent from the current catalog has the same selection outcome as
+an absent header. Catalog lookup miss is not a broken catalog and is not an operation
+failure. This supersedes the earlier separate unresolved-metadata-ID failure rule.
 The bounded V3 reader responsibility is approved in §4.8. Invalid public input may be rejected before
 any operation DTO exists. Later selection failure retains its separate operation problem.
 
@@ -684,10 +686,10 @@ Historical provenance is not a compatibility gate or a claim about current conte
 | Selection input | Required behavior |
 |---|---|
 | Explicit valid template_id | Use that current template's profile; automatic metadata selection does not override it |
-| No explicit selection; valid V3 header | Resolve its id in the current immutable catalog |
+| No explicit selection; valid V3 header with a known id | Use that current template's profile |
 | No current first-line V3 header, including legacy V2 files or a marker only on a later line | Use the approved extension route, without interpreting legacy metadata or searching later lines |
 | Invalid first-line V3 header, including invalid field values, length overflow or framing | Reject template recognition as a whole and use the extension route; retain factual rejection feedback, not a blocking metadata error |
-| Valid first-line V3 header with unresolved id | Retain the existing selection failure; this is catalog resolution, not invalid header syntax |
+| Valid first-line V3 header with unknown id | No applicable template: use the same extension route as for an absent header, not a selection failure |
 
 Header recognition must distinguish the file's own header from examples in its body.
 Searching the entire file, skipping blank/shebang lines and joining an overflow line
@@ -698,14 +700,22 @@ id from an otherwise invalid header. Comment delimiters must match the native fr
 contract, not merely enclose a marker-looking substring. Exact framing-source and
 typed reader-result declarations remain bounded integration work, not a new style config.
 
-Human refinement, 2026-09-10, supersedes the earlier Design-only invalid-header failure
-rule. A file's header is optional recognition evidence, not required workspace config.
+Human refinement, 2026-09-10, supersedes the earlier Design-only invalid-header and
+unknown-metadata-ID failure rules. For consumer profile selection, an invalid or unknown
+metadata template ID is equivalent to no header. A file's header is optional source
+evidence, not required workspace config or a promise that its template is installed now.
+Parsing and lookup remain separate responsibilities: the reader can return a valid
+provenance record whose id is not in today's catalog; the selector then finds no
+applicable template and continues. Do not make the reader depend on the catalog merely
+to implement this equivalence. Reasons can differ in factual feedback, but never select
+a different fallback, validation policy or write permission.
 Fallback is explicit and preserves the existing selection outcomes: a matching extension
 profile yields selected_source=extension, otherwise selected_source=none. It never
 means validation passed, never authorizes a write by itself and never relaxes enforce
 or report. Missing profiles and failed/unavailable checks retain their existing policy
 effects. Do not catch filesystem/decoding errors, invalid explicit inputs or broken
-catalog/profile configuration and reclassify them as invalid optional metadata.
+catalog/profile configuration and reclassify them as invalid optional metadata. An
+ordinary lookup miss for a metadata id is explicitly not such a configuration failure.
 The internal reader remains reusable, but no new check-tool consumer or public input
 is introduced for a hypothetical future use.
 
@@ -756,8 +766,9 @@ historical-but-well-formed versions/fingerprints, explicit selection precedence 
 body examples that are not header records. Prove length-boundary rejection and that
 two-line/partially valid metadata cannot supply an id. Invalid metadata must take the
 extension or no-profile route with truthful selection feedback under both policies;
-unknown explicit IDs and unresolved IDs from valid headers retain their separate
-failure behavior. Prove an edit to metadata does not alter
+unknown metadata IDs must produce the same selected source, profile, validation policy
+and write eligibility as absent/invalid headers for the same extension and proposal.
+Unknown explicit IDs retain their input-contract failure behavior. Prove an edit to metadata does not alter
 the current invocation's selected profile. Check original/proposed identity through
 adapter and writer seams, same-file cooperating calls, observed intervening changes,
 no automatic retries and retained passed-check evidence on refused replacement.
@@ -883,6 +894,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.23 | 2026-09-08 | @imp designer | Record approved narrow V3 reader, syntax-only historical provenance handling, stable original/proposed content and invocation-local pre-write change detection with an explicit external-writer race limitation. |
 | 1.24 | 2026-09-10 | @imp designer | Reference jointly designed internal header utility; separate safe-edit reading, scaffold formatting and filesystem persistence without public tools or provenance updates. |
 | 1.25 | 2026-09-10 | @imp designer | Apply human-approved first-line-only bounded metadata recognition and explicit invalid-header fallback; preserve explicit-input and valid-but-unresolved-ID failures, validation policy and filesystem safety boundaries. |
+| 1.26 | 2026-09-10 | @imp designer | Supersede unresolved metadata ID failures: absent/invalid headers and invalid/unknown metadata IDs are equivalent for applicable-profile selection; preserve independent parsing, catalog lookup and operation safety responsibilities. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |

@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.53  
+**Version:** 1.54  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -370,7 +370,8 @@ external-writer exclusion. Human clarification on 2026-09-10 fixes a jointly des
 not MCP tools; header formatting is separate from file persistence. The subsequent
 human refinement fixes 24-character template IDs, 11-character package SemVer labels
 and a single native-comment record on the first physical line; it supersedes overflow
-wrapping. Invalid header recognition now takes the explicit extension/no-profile route
+wrapping. Absent/invalid headers and invalid/unknown metadata template IDs are equivalent
+for applicable-profile selection: all take the explicit extension/no-profile route
 without weakening validation policy or swallowing independent failures. Research
 remains unchanged: exact metadata representation and this selection realization are
 Design-owned. Shared-template/framing integration and typed reader-result declarations are next;
@@ -485,6 +486,7 @@ No cycles or estimates are defined during Design.
 | 1.51 | 2026-09-08 | `@imp designer` | Index approved V3-reader responsibility and bounded pre-write consistency guard; reconcile DI-02/04/05 references and retain explicit header/interface integration work. |
 | 1.52 | 2026-09-10 | `@imp designer` | Index human-confirmed joint internal header utility with separate reader/formatter consumers; retain shared-template integration and header recognition as the next bounded design slice. |
 | 1.53 | 2026-09-10 | `@imp designer` | Index bounded manifest/provenance types, first-line-only metadata and human-authorized invalid-header fallback; preserve Research scope and explicit-input/catalog failure boundaries. |
+| 1.54 | 2026-09-10 | `@imp designer` | Index human-confirmed equivalence of absent/invalid headers and invalid/unknown metadata IDs for consumer profile selection; remove the exceptional unresolved-metadata-ID failure. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |
 | 1.45 | 2026-09-07 | `@imp designer` | Index public mutation nesting audit and unresolved projection gaps while preserving decided semantics, internal protocols and deferred scope. |
