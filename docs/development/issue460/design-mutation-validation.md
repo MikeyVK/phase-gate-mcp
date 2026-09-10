@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.27  
+**Version:** 1.28  
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -745,10 +745,11 @@ obtained check evidence: the proposal can pass validation while replacement is r
 because its original basis changed. Report no completed write and null content_changed;
 the caller must reread and reassess the requested edit.
 
-Do not automatically merge, retry, rebuild the edit or weaken the validation policy.
+Do not automatically merge, rebuild or rerun the edit, or weaken the validation policy.
 Comparison evidence is invocation-local; add no persistent fingerprint registry or
-caller-supplied version token. Exact comparison representation and writer interface
-are still to be specified, without reducing the guard to modification timestamps alone.
+caller-supplied version token. The integrated replacement contract below fixes original
+bytes as comparison evidence and distinguishes bounded mechanical replacement retries
+from forbidden automatic edit reconstruction/revalidation retries.
 
 Atomic replacement prevents partial writes; it does not by itself prevent lost updates.
 The existing in-memory lock coordinates calls through one tool instance, not arbitrary
@@ -778,8 +779,133 @@ adapter and writer seams, same-file cooperating calls, observed intervening chan
 no automatic retries and retained passed-check evidence on refused replacement.
 Do not write tests claiming arbitrary external-writer exclusion. Header utility design
 is closed by the integrated DI-02 contract; actual conformance evidence is still required.
-Original-file comparison representation and final mutation boundary/result declarations remain open; the
+The integrated replacement contract below closes comparison representation and
+replacement responsibilities. Final mutation result/error carrier declarations remain open; the
 approved responsibilities and policy are not open for redesign. No runtime tests were run.
+
+### 4.9 Integrated Original-File and Controlled-Replacement Contract
+
+**Status:** human-approved as one workshop, 2026-09-10. This completes the DI-04
+original-file consistency and replacement design nucleus using the existing atomic
+writer mechanics. It does not create a general transaction service, backup/history
+feature, cross-process locking protocol or stronger external-writer guarantee.
+
+#### One invocation-local original value
+
+The file-read boundary supplies an immutable original value with two required fields:
+
+| Field | Type | Consumer and invariant |
+|---|---|---|
+| original_bytes | bytes | Exact content basis for the final change guard; no hash, timestamp or size substitution |
+| original_text | str | UTF-8-decoded text for metadata selection, edit construction and checks; derived from those same bytes, preserving the current text-reading/newline semantics |
+
+Both fields come from one read, not two independently sampled filesystem views. The
+second read at replacement time is a guard only; it never replaces this original value.
+Keep this value internal and invocation-local, not in the public DTO, resource cache,
+manifest, persistent registry or a caller-supplied concurrency token. The header reader's
+BOM tolerance does not strip the marker from original_text or change write encoding.
+
+Byte equality and content_changed answer different questions. The replacement guard
+asks whether today's target still contains the exact original bytes; content_changed
+retains §4.7's original/proposed decoded-text comparison after successful writing.
+A line-ending-only external change can therefore invalidate the original basis even
+when text normalization would hide it. Do not silently change content_changed to a
+byte/encoding/timestamp comparison or add an encoding-preservation feature here.
+
+#### Manager-owned operation, narrow filesystem operation
+
+The consumer manager owns the whole logical edit: acquire cooperating-call exclusion,
+read the original value, select the profile, construct one proposal, check that proposal,
+apply enforce/report and, when permitted, request controlled replacement. The tool
+transfers structural facts; neither tool nor presenter owns locking, consistency,
+profile selection, exception-text classification or persistence decisions.
+
+Expose only the needed filesystem capability to that manager: replace an existing
+target with supplied proposed text if it still contains supplied expected original
+bytes. This is a narrow checked-replacement operation, not an optional mode on every
+generic writer call. Implement it using the existing unique same-directory temporary
+file and atomic-replacement mechanics. Keep general write_text/write_json consumers
+and scaffold create-only semantics separate; do not globally alter them or reuse a
+replacement primitive as permission to overwrite a scaffold target.
+
+The filesystem boundary stages the proposed text and compares target bytes as late as
+possible, immediately before each actual replacement attempt. An observed mismatch or
+missing target refuses replacement. Do not recreate a disappeared target or its parent
+directories, copy staged content over the target as a fallback, or rebase the operation
+on newly observed contents. Return the observed outcome to the manager through typed
+facts; the manager owns its operation/validation meaning. Exact final result/error
+carriers remain part of Q-MUT-03/Q-MUT-06, not presenter-specific dispatch.
+
+This conditional replacement is still a check followed by replacement, not an atomic
+filesystem compare-and-swap. The §4.8 race limitation remains explicit: non-cooperating
+writers can change/remove a path between the last check and replacement. Promise
+refusal of observed changes/disappearance, not detection of every intervening event,
+permanent file identity or a universal no-lost-update guarantee.
+
+#### Lock waiting, adapter deadlines and mechanical retry
+
+Current SafeEditTool.execute wraps lock acquisition and the entire edit/check/write
+body in asyncio.timeout(0.01), then reports TimeoutError as a busy-file condition.
+Do not carry that conflation forward. The lock-wait timeout applies only to acquiring
+cooperating-call exclusion; once acquired, exclusion covers the logical operation and
+is released on every exit. Existing adapter-call deadlines remain owned by generic
+adapter execution. A validation timeout must not become a false lock failure. This
+workshop introduces no new configurable timeout or replacement value for the current
+lock-wait setting; it fixes responsibility and timeout scope.
+
+Preserve bounded technical retry for transient Windows replacement PermissionError
+through the existing writer mechanism. Each actual retry must recheck expected original
+bytes, including when an earlier attempt failed before replacement. Changed or missing
+content stops the retry. A mechanical retry keeps the same original basis, proposed text
+and check evidence; it never reruns selection, edit construction or validation. The
+existing replacement retry count/delay is not a new consumer-level retry policy.
+
+#### Independent outcome facts and cleanup
+
+| Observed outcome | Persistence fact | Check facts and recovery boundary |
+|---|---|---|
+| Original read or proposal construction fails | written=false; content_changed=null | No fabricated adapter verdict; operational failure |
+| Required checks block under enforce | written=false; content_changed=null | Preserve actual check results; do not invoke replacement |
+| Target observed changed or missing before replacement | written=false; content_changed=null | Preserve existing check results, including passed; caller rereads/reassesses |
+| Staging or replacement fails before commit | written=false; content_changed=null | Preserve check evidence and original target as far as this operation's uncommitted writes are concerned; do not overwrite another writer's current contents |
+| Replacement completes | written=true; content_changed follows §4.7 | Preserve actual checks even if report permitted a failed/unavailable result |
+| Cleanup alone fails | Preserve the already established write/content_changed facts | Report housekeeping separately; do not undo a committed write or relabel a valid check |
+
+Clean up only the temporary files owned by this attempt; cleanup cannot erase the
+primary failure or turn an uncommitted attempt into a success. If replacement completed,
+later cleanup, cache or presentation problems cannot honestly report that nothing was
+written. No backup, historical recovery record, automatic rollback over a committed
+target, temp monitoring or automated periodic housekeeping is introduced.
+
+Manager-owned outcome facts follow the existing complete frozen DTO -> resource cache ->
+declarative presentation route. presentation.yaml owns wording/projection; generic
+presenter code gains no knowledge of new error reasons, DTO classes or tool identities.
+Filesystem defects are not adapter check failures, and tools do not formulate domain
+problems detected by the manager. The final typed carriers are the next integrated
+result-contract task; no universal diagnostics collection is pre-authorized here.
+
+#### Preservation and integration evidence
+
+Adapt the existing safe-edit concurrency, file-error and atomic-writer coverage. Prove:
+
+- original bytes and text describe one sampled content value, not racing reads;
+- selection, checks and writing use the same original/proposed pair, including BOM and
+  existing newline semantics, while content_changed retains its decoded-text definition;
+- changed bytes or observed disappearance before replacement block both policies and
+  preserve the external writer's state, without recreating targets/parents;
+- staging/replacement failures leave no partial proposed content in the target;
+- each transient replacement retry rechecks the original basis without recomputing the
+  proposal or repeating adapters; a change during the retry interval stops replacement;
+- lock-wait failure, adapter timeout and filesystem failure remain distinct, and the
+  lock is released for all completion/failure paths;
+- passed check evidence remains passed when replacement is refused or fails;
+- cleanup failure preserves both the primary operation outcome and any completed write;
+- cache/inline projection preserves actual operation facts without presenter branches.
+
+Use controlled seams/barriers for concurrency evidence rather than assuming a scheduling
+delay proves a race. Do not write tests claiming arbitrary external-writer exclusion or
+that a successful read/replace sequence is atomic compare-and-swap. Runtime tests were
+not run for this documentation-only Design recording.
 
 ## 5. Consumer Flow
 
@@ -832,7 +958,7 @@ The target and content paths meet only for output-profile evidence and final per
 | ID | Question | Owner |
 |---|---|---|
 | Q-MUT-03 | What complete immutable mutation result DTO retains operation diagnostics and execution provenance alongside §4.6's approved direct fields? | DI-04/DI-05; no template/artifact singleton grouping |
-| Q-MUT-04 | Selection policy and narrow V3-reader ownership are decided in §4.6/§4.8; finish header recognition and typed selection/read-check-write interfaces without reopening precedence | DI-02/DI-04/DI-05 |
+| Q-MUT-04 | Header recognition is closed by DI-02; §4.9 fixes original bytes/text, narrow checked replacement, lock/deadline separation and per-retry guards. Integrate the final typed operation carriers under Q-MUT-03/Q-MUT-06 without reopening these responsibilities or precedence | DI-02/DI-04/DI-05 |
 | Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
 | Q-MUT-06 | Which direct public fields and concrete check-record shape resolve §4.5 without duplicated facts, native-output normalization or presenter extensions? | DI-04/DI-05; includes actionable inline feedback for native JSON-only rejection |
 
@@ -901,6 +1027,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.25 | 2026-09-10 | @imp designer | Apply human-approved first-line-only bounded metadata recognition and explicit invalid-header fallback; preserve explicit-input and valid-but-unresolved-ID failures, validation policy and filesystem safety boundaries. |
 | 1.26 | 2026-09-10 | @imp designer | Supersede unresolved metadata ID failures: absent/invalid headers and invalid/unknown metadata IDs are equivalent for applicable-profile selection; preserve independent parsing, catalog lookup and operation safety responsibilities. |
 | 1.27 | 2026-09-10 | @imp designer | Consume the approved integrated text-only header reader contract; close framing/result design while retaining original-file consistency, persistence and final operation-result integration as the next combined workshop. |
+| 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |
