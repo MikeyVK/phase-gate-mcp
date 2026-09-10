@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.71
+**Version:** 1.72
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -30,8 +30,10 @@ W05's copy/proposal/check/rollback design is withdrawn as the default. Native so
 mutation and agent-controlled verification/recovery are the new bounded strategy;
 Research now fixes explicit concrete-files-only scope=targets, caller fix order and
 stop-on-first-non-success. The human supplied independent QA GO for the corrected delta; Design resumes.
-The catalog status P3 is corrected. W05 may specify DTOs/mechanisms, not reopen those product choices. Prior QA GO covers
-selection only. No implementation or new recovery subsystem is authorized here.
+The catalog status P3 is corrected. The human has now approved W05's Design contract,
+consolidated in [DI-05 §7.18](design-execution-adapters.md#718-apply_fixes--approved-w05-contract).
+Research QA GO and human Design approval are separate; independent Design/conformance
+review remains outstanding. No implementation or recovery subsystem is authorized here.
 
 Design resumed on explicit human GO after the narrow F-20 Research correction in
 commit `12665147`. The required-scope and auto-retirement constraints in
@@ -44,7 +46,8 @@ operation/targets/args and empty-branch guarding. Public workspace intent now us
 scope=workspace; the intermediate targets=["."] convention is rejected. configured
 remains distinct and passes an empty adapter target list. The human supplied independent
 QA GO for this delta and authorized Design continuation. The nonblocking P2 authority
-paragraph in Research Findings is corrected; W05 fix-specific proposals remain unapproved.
+paragraph in Research Findings is corrected. W05 is now human-approved and consolidated;
+its local closure does not mark DI-05 Integrated.
 
 **In Scope:**
 
@@ -207,7 +210,7 @@ test impacts have been reconciled in this hub.
 | `design-document-tracking-artifacts.md` | DI-03 document and tracking artifacts | Not started | Await DI-01/DI-02 contracts |
 | `design-code-test-artifacts.md` | DI-03 code and public test artifacts | Not started | Await DI-01/DI-02 contracts |
 | [design-mutation-validation.md](design-mutation-validation.md) | DI-04 | Drafting | Location, no-overwrite, and scaffold enforce/report outcomes decided; full scaffold result and safe-edit mapping consume the separate DI-05 check boundary |
-| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Drafting | Role-organized manifest nucleus decided; shared named check bindings and profile selections proposed; complete capability/launch contracts, profile-provenance integration, and migration values open |
+| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Drafting | Package/check and W05 native-fix local contracts decided; W04 canonical integration, profile-provenance/shared serialization, native migration values and independent conformance remain open |
 | `design-test-architecture.md` | DI-08 and XC-02 integration assurance | Not started | Await package proof seams |
 | [design-distribution.md](design-distribution.md) | DI-06 | Decided | Component-aware renewal, trustworthy bootstrap, owner-intent CLI, immutable result/presenter split, recoverable same-filesystem activation, timestamped force backup, runtime/startup coexistence, and conditional restart hint decided |
 | `design-workflow-documentation.md` | DI-07 | Not started | Await stable public decisions |
@@ -244,7 +247,7 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-ART-DOC-* | `design-document-tracking-artifacts.md` | Not started | DI-06, DI-07, DI-08 |
 | D-ART-CODE-* | `design-code-test-artifacts.md` | Not started | DI-06, DI-07, DI-08 |
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
-| D-ADAPTER-01–D-ADAPTER-25 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 closed by human; D25 adds binding default_args, configured-only mutation checks, caller replacement for explicit check/test/fix and argument evidence. Detailed W04 canonical integration, check scope alignment and W05 conformance/recovery remain separately tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
+| D-ADAPTER-01–D-ADAPTER-27 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 human-closed; D25/D26 align defaults and thin scope transport; D27/§7.18 consolidates W05 native-fix contracts. Remaining W04 canonical integration, shared serialization, native migration and independent conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
 | D-DIST-01–D-DIST-24 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Decided | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
@@ -403,7 +406,10 @@ The [approved W01 integration](design-mutation-validation.md#410-complete-mutati
 fixes the normal operation-result route for expected failures, typed error/detail fields,
 separate housekeeping and selection explanation. Remaining integration is explicitly
 DI-05's final capture declarations, required-field/null serialization and independent
-evidence; W02 native provenance is approved and W05 recovery remains unapproved.
+evidence; W02 native provenance and W05's lightweight native-fix contract are approved.
+W05 introduces no recovery subsystem: DI-07 documents agent-controlled recovery, DI-08
+owns independent partial-write and stop-first evidence, and W09 owns native-settings
+migration. The next workshop is W06 suite/shared contract integration.
 
 DI-02's conditional no-replacement boundary now admits this demonstrated V3-reader
 consumer. Legacy parsing, historical lookup and automatic provenance mutation stay removed.
@@ -527,6 +533,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.72 | 2026-09-10 | `@imp designer` | Record W05 human approval and DI-05 §7.18 consolidation; route native migration, presentation and conformance follow-through without Research or implementation changes. |
 | 1.71 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 1.70 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 1.69 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |

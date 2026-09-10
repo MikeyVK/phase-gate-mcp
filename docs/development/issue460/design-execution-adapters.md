@@ -3,20 +3,21 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.80
+**Version:** 0.81
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
 **Downstream Consumers:** DI-04 scaffold/safe-edit, public check/test/fix operations, DI-07 workflow/documentation, DI-08 assurance  
-**Lifecycle Status:** Drafting; manifest nucleus decided; shared check binding and profile-selection proposal open
+**Lifecycle Status:** Drafting; W05 native-fix contract decided; cross-package integration and independent conformance remain open
 
 ## 1. Purpose and Authority
 
 The [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
 withdraws fix proposal/copy/verification/rollback machinery. Native source mutation
 and agent-controlled follow-up replace it. Research fixes explicit files-only scope=targets, caller fix order and stop-on-first-non-success.
-The human supplied independent QA GO for this Research delta. Exact W05 DTOs and
-mechanisms remain Design proposals; the Research GO does not pre-approve them.
+The human supplied independent QA GO for this Research delta and subsequently approved
+W05's Design contract. Section 7.18 consolidates that distinct human Design decision;
+independent Design review and conformance evidence remain outstanding.
 
 Own the execution adapter Design for issue 460: package contracts, catalog resolution,
 generic process execution, separate check/test/fix contracts, consumer configuration,
@@ -97,13 +98,13 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-24 | run_tests requires configured, workspace or targets scope; configured preserves native selection, workspace explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status; explicit workspace correction supersedes the dot convention |
 | D-ADAPTER-26 | PGMCP resolves Git and public scopes; selection adapters receive only operation, targets and args; remove removed_targets, fresh and generic expansion controls | Human-approved 2026-09-10; §7.17 and the bounded Research amendment; default narrow |
 | D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
+| D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, role/public result unions and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; independent conformance and cross-package integration remain required |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
-Concrete DTO/schema integration and independent conformance remain required. Test
-results, remaining test configuration/transport, fix decisions, native-setting migration
-and native fix authorization, ordering mechanisms, typed partial-mutation outcomes
-and external recovery guidance remain Design work; no fix transaction is required.
+W05 §7.18 closes native-fix input, binding, response, sequencing and result contracts.
+Remaining W04 canonical integration, native-setting migration, shared serialization,
+external recovery documentation and independent conformance remain required.
 
 ## 5. Responsibilities and Boundaries
 
@@ -2894,8 +2895,8 @@ unselected-recipient rejection, no mutation override field, fixed content/file v
 source/effective list preservation across negative results and bounded invocation
 failures, no argument merge, no automatic fix verification, unchanged native
 settings, and success/isError independence. Tests are design obligations, not executed
-conformance. This amendment does not approve the separate run_checks scope proposal
-or complete the remaining W05 recovery/output design.
+conformance. Section 7.17 subsequently consolidates scope alignment and section 7.18
+consolidates W05's results and external-recovery boundary; neither adds automatic recovery.
 
 
 ### 7.17 Selection-only Adapter Requests — approved 2026-09-10
@@ -2944,16 +2945,283 @@ continues to use success=true/isError=false when the tool operated correctly.
 No new census, role, fingerprint policy, health route, or native cache promise is added.
 
 
+### 7.18 apply_fixes — approved W05 contract
+
+Human-approved and consolidated on 2026-09-10. Implements the frozen
+[files-only and stop-first strategy](research.md#approved-fix-scope-and-stop-policy--human-decision-after-qa).
+This closes W05's local contract, not independent conformance or whole-package integration.
+
+#### Public input
+
+| Field | Type | Meaning |
+|---|---|---|
+| scope | Required Literal["targets"] | Only approved scope; omission and other values reject |
+| targets | Nonempty tuple[WorkspaceRelativeFilePath,...] | Concrete existing files only; no directories, glob/recursive selection or "." root shorthand |
+| fixes | Nonempty unique ordered tuple[FixId,...] | Explicit fix choice and order; no automatic choice from previous findings |
+| args | Optional mapping[FixId,tuple[StrictStr,...]] | Missing recipient uses binding defaults; supplied list replaces them; [] clears extras |
+| timeout_seconds | Optional positive StrictInt | Existing per-invocation budget override |
+
+Research approves files-only scope=targets and explicit ordered fixes. No configured,
+branch or workspace scope, no implicit default, no directory recursion. This is a
+deliberate V3 break from broad/default V2 selection. PGMCP resolves and validates the
+explicit files; adapters do not discover a wider write set or perform Git selection.
+
+One startup schema exposes configured FixIds for fixes and addressed args. Recipient
+membership is checked against the resolved selection. No native flag enumeration or
+generic CLI interpretation; no public verbose, fresh or allow_expansion.
+
+#### Binding configuration
+
+```yaml
+fixes:
+  python_format:
+    adapter_id: ruff
+    capability: format
+    timeout_seconds: 60
+    default_args: []
+  python_lint:
+    adapter_id: ruff
+    capability: lint
+    timeout_seconds: 60
+    default_args: []
+```
+
+Illustrative bindings, not a new shipped inventory. Exact fields are adapter_id,
+capability, timeout_seconds and default_args. Remove mandatory verification checks
+from this file. Existing manifest fix/check relations support discovery only; do not
+automatically execute checks or equate fixability with guaranteed complete repair.
+
+#### Ownership and adapter request
+
+Tool: validates public shape, delegates and presents existing manager-produced facts.
+FixManager: resolves explicit bindings/targets, effective args and order; invokes the
+shared managed runtime; associates results and unstarted obligations.
+Adapter: translates native targets/args, invokes native fixing within authorized scope
+and reports tool-specific outcomes without teaching the manager native semantics.
+
+Accepted fix/v1 request, frozen/strict/extra-forbid:
+operation: CapabilityId; targets: nonempty tuple[AbsoluteFilePath,...];
+args: tuple[StrictStr,...].
+No content copy, hash, Git fields, proposal, check request or recovery token.
+The three field names match selection check/test transport; mutation permission is
+provided by the selected fix role, not by a native argument or extra generic flag.
+
+Native args cannot broaden authorized write scope or make check/test calls mutate.
+Adapters must enforce their role and admitted-target contract. This is trusted-extension
+conformance, not an OS sandbox guarantee. Unsupported safe routing must refuse honestly.
+
+
+The selected role entrypoint establishes fixing authority. operation is the selected
+manifest capability ID, not the role name: capability: lint yields operation: lint.
+Public paths are workspace-relative; the manager resolves absolute internal file targets,
+consistent with selection check/test requests. This introduces no public host-path exposure.
+
+#### Admission and exposure
+
+The public object is closed and strict. scope/targets/fixes are required; args and
+timeout_seconds may be omitted, never replaced by null. Keep explicit scope=targets
+even though it has one allowed value: Research requires it. fixes and targets are
+nonempty; duplicate fix IDs reject. Resolve all bindings/args recipients and all target
+paths before the first invocation, so invalid later selection does not cause earlier writes.
+Resolve workspace containment using the existing path authority; reject directories,
+glob syntax, escaping paths and ".". Canonical duplicate target aliases become one
+target, preserving first occurrence; this does not expand the selection.
+Recheck file existence/containment before each invocation; a disappeared or escaped
+target stops execution, not a skip-and-continue. No byte hash, snapshot or CAS guarantee.
+Native input can still race with external writers; admission is not OS isolation.
+
+At startup, derive the FixId enum and optional args recipient properties from the
+same catalog. No native switches in inputSchema, no lazy-exposure-specific variation.
+A no-bindings workspace receives an explicit selection error, not an empty passing run.
+
+Example public call (binding IDs illustrative):
+```json
+{
+  "scope": "targets",
+  "targets": ["src/example.py"],
+  "fixes": ["python_lint", "python_format"],
+  "args": {"python_lint": ["--select", "I"]}
+}
+```
+
+Each selected adapter receives exactly operation, nonempty absolute file targets and
+effective args. The command entrypoint is unchanged; native args travel inside JSON.
+The next fix sees the current on-disk content, not a preserved original.
+
+#### fix/v1 response alternatives
+
+Reuse NativeEvidence, ExternalToolIdentity, AdapterInvalidRequest and the managed
+process protocol. Separate Fix decision types share shape, not scaffold persistence
+semantics. All models are frozen, strict and extra-forbid.
+
+| Variant | decision fields | Other response fields | Adapter exit |
+|---|---|---|---|
+| FixPassed | status: Literal["passed"] | external_tools required; evidence optional | 0 |
+| FixFailed | status: Literal["failed"]; message: NonBlankText | external_tools and evidence required | 1 |
+| FixUnavailable | status: Literal["unavailable"]; reason: AdapterUnavailableReason; message: NonBlankText | external_tools required; evidence optional | 3 |
+| AdapterInvalidRequest | No decision; existing reason/details only | No external_tools/evidence | 2 |
+
+Passed does not imply a write occurred; a successful no-op uses passed too.
+Failed does not imply no write occurred. Evidence is native text/JSON, not a generic
+mandatory changed-file inventory. No proposed/unchanged/rolled_back variants.
+
+The existing unavailable reasons have concrete fix consumers:
+dependency_unavailable (native dependency cannot be used), unsupported_input (authorized
+file selection cannot be handled), invalid_configuration (native settings reject),
+execution_error (native execution failed without trustworthy outcome), invalid_result
+(native output cannot be interpreted). These may not be used to hide known native
+negative outcomes. No adapter timeout reason: generic PGMCP owns its process timeout.
+Unknown/malformed adapter responses stay generic invocation failures.
+
+#### Public result types
+
+All fields below are required unless explicitly stated otherwise. Models are frozen,
+strict and extra-forbid; tuples are immutable in Python and serialize as JSON arrays.
+Reuse DI-05 shared types rather than introducing fix-specific copies. For standalone
+integration, AdapterRunIdentity has exactly adapter_id: AdapterId, version: SemVer,
+fingerprint: AdapterFingerprint and contract_version: Literal[1], all required. It is
+the same admitted-package snapshot used by other consumer results, not new identity logic.
+
+ApplyFixesOutput fields:
+
+| Field | Type | Consumer |
+|---|---|---|
+| success | StrictBool | Existing wrapper: inverse MCP isError, not fix verdict |
+| requested_scope | Literal["targets"] | Caller request interpretation |
+| requested_targets | nonempty tuple[WorkspaceRelativePath,...] | Requested authorization boundary, not changed-file census |
+| selected_fixes | unique ordered tuple[FixId,...] | Caller order; empty only when selection cannot resolve |
+| results | tuple[PublicFixResult,...] | Agent follow-up and existing presentation/cache |
+| error_code | ApplyFixesErrorCode or null | Manager-detected operation problem |
+| error_details | corresponding frozen detail type or null | Existing generic error presentation, no tool-authored domain message |
+
+Public schema rejection uses the existing validation route; it need not construct an
+ApplyFixesOutput. Do not fabricate valid requested fields for invalid input.
+
+Each PublicFixResult contains fix_id: FixId, args_source:
+Literal["configured","caller"]|null and effective_args: tuple[StrictStr,...]|null.
+The argument fields are both known after resolution, otherwise both null. Explicit
+caller [] is known and has source caller. Known defaults on an unstarted row do not
+claim those arguments were executed.
+
+The closed union adds exactly one of these mutually exclusive shapes:
+
+| Shape | Required additional fields | Owner |
+|---|---|---|
+| Role result | decision: FixDecision; evidence: NativeEvidence or null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity | Adapter supplies role facts; manager associates binding and shared invocation identity |
+| Invocation failure | invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem or null; adapter: AdapterRunIdentity | Generic process runtime supplies failure facts |
+| Internal request rejection | request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity | Adapter supplies typed rejection; manager classifies internal contract defect |
+| Not started | not_executed: Literal["not_started"] | Manager; no adapter invocation identity invented |
+| Interrupted invocation | not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity | Shared cancellation projected by manager; an attempt occurred, mutation is possible |
+
+No extra kind, origin or source envelope. FixDecision is the closed passed/failed/
+unavailable union from this section, not a free status string. AdapterRunIdentity is
+the existing admitted package identity (adapter_id, version, fingerprint,
+contract_version), not native-tool provenance. Native identity stays external_tools.
+The interrupted shape deliberately retains attempted adapter identity: unlike a never
+started fix it may already have mutated source. Any termination problem is retained
+at operation level. This is not a new adapter response or cancellation protocol.
+
+Once selection resolves, return one row per selected fix in caller order when a
+response can be delivered. Before selection resolves, results is empty. Preserve all
+completed evidence. Optional adapter evidence projects to explicit public null.
+
+#### Operation problems and transport success
+
+| ApplyFixesErrorCode | Typed details | success when correctly reported |
+|---|---|---|
+| no_configured_fixes | null | true |
+| selection_invalid | SelectionDetails(issues: nonempty tuple[SelectionIssue,...]); issue has field: Literal["fixes","args"], fix_id: FixId, reason: Literal["unknown_fix","unselected_args"] | true |
+| scope_resolution_failed | ScopeDetails(issues: nonempty tuple[ScopeIssue,...]); issue has target: WorkspaceRelativePath, reason: Literal["missing","not_file","outside_workspace","unresolvable"], message: NonBlankText | true |
+| adapter_request_rejected | RejectedRequestDetails(fix_id: FixId), referring to the rejection row | false: PGMCP constructed an invalid internal request |
+| operation_interrupted | null | true if lifecycle permits delivery |
+| termination_unconfirmed | TerminationDetails(fix_id: FixId, interrupted: StrictBool) | true for correctly reported safety stop |
+
+These enum/detail shapes specialize the established operation-error route, not a new
+presenter dispatcher. A null error_code requires null details; non-null codes require
+their exact matching detail except the two explicitly detail-free codes above.
+Scope details identify supplied relative targets, never resolved absolute escapes.
+Unknown selected IDs in diagnostics retain the supplied ID rather than requiring
+membership of the startup input-schema enum.
+
+Native failed/unavailable and captured invocation failures use their row, with no
+duplicated operation error. termination_unconfirmed takes precedence over interruption
+and adapter_request_rejected; any rejection details remain in the row and a genuine
+internal rejection still sets success=false. A generic PGMCP defect follows the
+existing operational error route, never a forged native decision. No native or adapter
+exit code directly sets success. Error precedence must not discard earlier evidence.
+
+#### Stop, partial mutation and presentation
+
+| Observation | Current row | Subsequent selected fixes |
+|---|---|---|
+| Valid passed, including no-op | Role result: passed | Start next fix on current on-disk contents |
+| Valid failed or unavailable | Corresponding role result | not_started |
+| Timeout, crash, malformed/oversized response or launch failure | Shared invocation failure | not_started |
+| Invalid internal request | Request rejection | not_started |
+| Cancellation during invocation | interrupted, retaining attempted identity | not_started |
+| Target admission fails before next invocation | Next and remaining rows not_started; scope error at root | No further calls |
+
+Cancellation before an invocation does not fabricate an interrupted adapter row;
+that binding remains not_started. No response is manufactured to a disconnected
+caller. Preserve termination uncertainty whenever the lifecycle can report it.
+
+The manager determines typed outcomes and sequencing. Tool code delegates and wraps;
+cache serializes the concrete DTO; existing configured presentation summarizes it.
+Presentation may warn that an attempted fix can have left changes, but neither native
+failure nor interrupted execution means unchanged source. No did_write, changed_files,
+automatic recovery, or post-check is introduced. Diagnostics may establish no launch;
+do not turn that into a guarantee about earlier successful fixes.
+
+
+No run_status, aggregate verdict or generic mutation count is added. Native failed,
+unavailable and captured invocation failures can be correctly reported with success=true;
+only operational PGMCP failures use success=false/inverse MCP isError. No exact
+changed-file census is inferred from Git. The source may have changed after an attempt,
+including one that returned no accepted response. A passed no-op allows the next fix.
+
+#### Preservation, removal and integration evidence
+
+- Schema and DTO serialization: reject mixed variants, unknown reasons, coercions and
+  extra fields; preserve explicit nulls and ordered rows through cache/presentation.
+- Passed/no-op continues; failed/unavailable and each shared execution-failure variant
+  stop before the next invocation; remaining rows are not_started.
+- Native failure and bounded invocation failure report success=true; internally
+  invalid requests and genuine PGMCP defects report success=false.
+- A fixture adapter mutates then fails/times out: earlier and attempted changes remain,
+  later adapters are not launched, and presentation makes no rollback claim.
+- Resolve the whole request before writes; recheck targets before subsequent calls;
+  show partial results when a later target check fails, without snapshot guarantees.
+- Cancellation distinguishes no attempt from interrupted attempt and retains
+  unconfirmed termination. Native text/JSON evidence is not reinterpreted as a census.
+
+
+Preserve V2's direct native mutation, not its implicit scope, all-gates selection,
+continue-on-error or dirty-file attribution. Retire AutoFixInput/AutoFixTool and
+QAManager.run_auto_fix only after replacement contract and independent adapter evidence
+exist; keep the public clean break without aliases or dual reads. Existing source seams
+and test owners remain indexed in sections 9–10 and the 126/151 catalog.
+
+| Integration owner | Required follow-through |
+|---|---|
+| DI-05 / W09 | Migrate retained native fix settings into native authorities; bind selected capabilities/default_args without a verification config or hidden native-rule layer |
+| Shared Contracts / W01 | Prove typed union/null serialization and configured presenter/cache support without DTO-specific branches; preserve relative public paths and bounded diagnostics |
+| DI-07 / W11 | Document explicit target/order selection and agent-controlled check/fix/recheck, optional Git checkpoints and targeted recovery; no automatic recovery claim |
+| DI-08 / W12 | Own reusable independent conformance fixtures and stop/partial-write/operational-success proof; prove check, test and fix migration separately |
+| DI-04 | No new fix consumer, automatic repair or rollback dependency; existing scaffold/safe-edit persistence remains unchanged |
+
+These obligations are not completed tests or implementation cycles. F-10 renewal and
+F-20 fix migration remain separately provable. No additional Research decision is implied.
+
 ## 8. Control, Data, and State Flow
 
 1. Startup reads package/configuration declarations, validates their structure and
    references, applies trust policy, and supplies an immutable catalog to consumers.
 2. A consumer selects a role capability for its purpose and provides the corresponding
    input. Output-profile selection remains separate from explicit check/test/fix scope.
-3. Generic infrastructure selects the declared proposed-content route (section 7.13)
-   and executes the adapter entry point. Only the file route materializes content in
-   controlled scratch space. The adapter preserves native intended-target context;
-   no route writes the authoritative target before the consumer's persistence decision.
+3. For proposed-content checks, generic infrastructure selects the route in section 7.13;
+   only its file route materializes scratch content, without writing the authoritative
+   target. Selection check/test calls use existing targets. Fix calls use section 7.18:
+   adapters mutate admitted source targets directly, without a staging/persistence step.
 4. The adapter returns role-specific execution evidence. Generic
    transport failure is distinguishable from a valid role response.
 5. The consumer applies its policy. DI-04 alone decides scaffold/edit persistence;
@@ -3029,7 +3297,7 @@ cutover follows proven internal routes.
 | Check migration | Compare retained diagnostics/outcomes against direct known-input tool evidence; preserve mixed failure/unavailability and policy-independent facts |
 | Native configuration authority | Compare adapter and direct native-tool behavior for the same tool version, inputs, and purpose; change a native setting and prove it affects the adapter without changing package/PGMCP settings; cover logical-target configuration for scratch input |
 | Test migration | Adapt [Pytest behavior coverage](../../../tests/mcp_server/unit/managers/test_pytest_runner.py), preserving collection, failures, skips, coverage and native-requested detail without the old generic verbose interpretation |
-| Fix migration | Observe actual native effects independently, including dirty inputs, failed calls leaving edits, target/role limits and interruption; no tool-wide rollback or exact mutation census is promised |
+| Fix migration | §7.18 defines the complete evidence obligations: observe actual native effects independently, files-only admission, caller order, stop-first and unstarted rows, partial writes, interruption, strict DTO/cache serialization and operational-success separation; no rollback or exact mutation census |
 | Distribution | Inspect a built distribution and execute a retained official adapter from an installed copy; a source-tree import is insufficient packaging evidence |
 
 DI-05 owns role behavior and conformance tests; DI-08 owns reusable fixtures/helpers.
@@ -3042,10 +3310,10 @@ proposed conformance evidence is claimed as completed.
 
 | ID | Open Design question | Decision needed |
 |---|---|---|
-| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check and public test-input behavior; test configuration/remaining transport/results and fix operations stay open; exact DTO integration/conformance is still required |
+| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check and public test-input behavior; remaining W04 canonical integration stays open; §7.18 closes W05 fix operations; shared DTO integration/conformance is still required |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, native-argument transport, and independent conformance |
-| Q-ADAPTER-05 | How are native fixes authorized and partial execution reported? | Define direct native mutation, honest outcomes, sequencing and explicit external recovery |
+| Q-ADAPTER-05 | Closed by W05: native fix admission, sequencing and results | §7.18 is authoritative; independent conformance, native-settings migration and external recovery documentation remain integration obligations, not reopened policy |
 | Q-ADAPTER-06 | Which native values replace today's split tool-settings authorities? | DI-05 chooses retained per-tool settings and explicit request controls, records intentional changes, and supplies separate check/test/fix migration proof obligations |
 | Q-ADAPTER-07 | What completes each capability declaration and its consumer binding? | Define profile/check selection, applicability and input requirements, and explicit fix-to-check references without same-package or same-name assumptions |
 | Q-ADAPTER-08 | How do centrally selected profiles/bindings participate in the existing template provenance closure? | DI-02/DI-05 define the exact declarative projection and affected-package proof before integration; preserve exclusion of executable adapter provenance and native tool settings |
@@ -3089,6 +3357,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.81 | 2026-09-10 | `@imp designer` | Consolidate human-approved W05 native-fix contract in §7.18; close input/configuration/results/stop ownership, preserve operational success and route independent integration evidence. |
 | 0.80 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 0.79 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 0.78 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
