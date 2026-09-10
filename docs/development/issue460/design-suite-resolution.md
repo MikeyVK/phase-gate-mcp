@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.20  
+**Version:** 1.21  
 **Last Updated:** 2026-09-10  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -11,6 +11,37 @@
 **Lifecycle Status:** Drafting
 
 ---
+
+## Current Research Amendment
+
+The human approved separating template generation sources, release labels and acceptance/
+persistence policy into distinct package files. This is a bounded amendment to F-11/S-16,
+I-03 and E-07 plus F-10 comparison safeguards; no new adapter role or consumer family.
+
+| Boundary | Approved strategy |
+|---|---|
+| Generation contract | manifest.yaml owns only template_id and purpose; context.schema.json and template.jinja2 retain caller-contract and rendering ownership |
+| Release label | One package-local .version file owns the existing human SemVer; this is a package version, not per-file versioning. Existing syntax/length and persisted pv semantics remain |
+| Acceptance/persistence policy | policy.yaml owns output_profile and persistence exclusively; profile selection/validation and enforce/report behavior remain unchanged |
+| Package fingerprint pf | Includes complete admitted generation-source/contract files and transitively reached shared support, including descriptive content/comments; excludes whole .version and policy.yaml files and all external validation config |
+| Suite fingerprint sf | Includes all admitted generation-source/contract files across the supplied suite, including shared support; applies the same whole-file exclusions. It no longer proves complete installed-suite equality |
+| Upgrade equality | Operational shared/package component fingerprints continue to compare ALL admitted component files, including .version and policy.yaml. Neither pf nor sf may authorize overwrite, checkpoint advancement or whole-installed-snapshot equality |
+| Metadata | id/pv/pf/sf and their first-line/length rules remain; pv comes from .version. Identifier metadata does not recursively enter fingerprint calculation |
+| Compatibility | V3 clean break: no old five-field manifest read, duplicate fields, fallback version source or compatibility alias. Existing V2 migration boundary remains |
+| Adapter packages | Unchanged: this amendment concerns template packages only, not adapter manifests, versions, fingerprints or default_args behavior |
+
+All included generation files contribute as a whole under the established deterministic
+normalization rules, including their descriptive comments. No per-field fingerprint
+filter, dead-code analysis, or comparison of example render output is introduced.
+Canonicalization must not silently discard comments in included manifest/schema sources;
+Design must reconcile the earlier semantic-only serialization description accordingly.
+policy.yaml cannot acquire rendering inputs/defaults/switches: that would violate its
+exclusion rationale. purpose is included as the description of the generation contract.
+Moving validation policy out of identity does not make that policy optional or bypass
+startup coherence, on-use checks, or the existing persistence decision.
+
+This is mechanical alignment to the human-approved Research boundary, not closure of W06.
+Independent Research QA remains requested; further Design is paused.
 
 ## 1. Purpose and Authority
 
@@ -86,14 +117,14 @@ scan, archive, or provenance-lookup service is retained or introduced.
 | D-SUITE-07 | Public schemas are complete and contain no unresolved `$ref` values | Decided |
 | D-SUITE-08 | F-11 produces one deterministic resolved package fingerprint per concrete package over its local semantic contract and transitively reachable shared contributors | Decided; D-SUITE-30 owns the algorithm |
 | D-SUITE-09 | Every persisted scaffolded artifact reports package/artifact identity, human package version, resolved package fingerprint, and source suite fingerprint | Decided; D-SUITE-31 owns the compact dialect |
-| D-SUITE-10 | F-10 complete-suite identity remains a DI-06 management fact and is reused in persisted artifact metadata solely as source-suite equality evidence; non-artifact tool-output exposure remains YAGNI-bound | Decided |
+| D-SUITE-10 | sf identifies all included suite generation sources, not complete installed state; DI-06 uses independent full operational component equality; non-artifact exposure remains YAGNI-bound | Human amendment 2026-09-10; targeted QA requested |
 | D-SUITE-11 | `manifest.yaml` is the semantic template-package SSOT; its physical directory name is non-semantic | Decided |
 | D-SUITE-12 | `context.schema.json` and `template.jinja2` are fixed template-package member names | Decided |
 | D-SUITE-13 | Each package requires one SemVer-syntax `version` as a human release label, while its computed resolved fingerprint alone establishes effective-content equality; PGMCP infers no bump, ordering, severity, or compatibility policy from either fact | Decided |
 | D-SUITE-14 | `output_profile` identifies a resolved evidence selector, not a validator/provider or persistence/quality policy | Decided nucleus; DI-04/DI-05 details open |
-| D-SUITE-15 | The minimum authored manifest consists only of `template_id`, `version`, `purpose`, `output_profile`, and `persistence` | Decided; identifier clarified 2026-09-03 |
+| D-SUITE-15 | The minimum authored manifest consists only of `template_id` and `purpose`; `.version` owns the release label and `policy.yaml` owns `output_profile`/`persistence` | Decided; identifier clarified 2026-09-03 |
 | D-SUITE-16 | The suite performs no caller-name projection: exact `file_name` is an operation control, while every caller-authored rendered name is an explicit artifact-context field validated in its final representation and rendered unchanged | Decided; supersedes the naming resolver on 2026-09-03 |
-| D-SUITE-17 | `persistence: workspace|temporary` replaces misleading `output_type`; DI-04 owns exact target and explicit-path policy | Decided nucleus; DI-04 path mechanics open |
+| D-SUITE-17 | `policy.yaml` owns `persistence: workspace\|temporary`, replacing misleading `output_type`; DI-04 owns exact target and explicit-path policy | Decided nucleus; policy file ownership amended 2026-09-10 |
 | D-SUITE-18 | The active distribution root is `template_suite/`; `shared/` is the only reserved direct child and every other direct child is one concrete template package that must contain `manifest.yaml` | Decided |
 | D-SUITE-19 | `shared/templates/bases/` retains tiered inheritance in one flat, responsibility-named file set headed by `tier0_root.jinja2` | Decided |
 | D-SUITE-20 | `shared/templates/patterns/` owns proven multi-template Jinja patterns; concrete packages receive no speculative private `patterns/` directory | Decided |
@@ -102,7 +133,7 @@ scan, archive, or provenance-lookup service is retained or introduced.
 | D-SUITE-23 | The unreachable YAML branch leaves the active suite but remains exactly recoverable through Git and the deferred-work trace | Decided |
 | D-SUITE-24 | Dependency direction is concrete package → shared support → shared support; concrete-package-to-concrete-package and shared-to-concrete-package edges are invalid startup state | Decided |
 | D-SUITE-25 | A package-local semantic change leaves every other package's version, resolved fingerprint, schema/rendering semantics, and affected-package diagnostics unchanged; newly scaffolded artifacts may still carry the new complete-suite fingerprint as truthful source context | Decided; DI-06 owns comparison/reporting consequences |
-| D-SUITE-26 | Concrete package manifests own the only authored template versions; individual package files and shared contributors have no authored versions | Decided |
+| D-SUITE-26 | Concrete package .version files own the only authored template versions; individual package files and shared contributors have no authored versions | Decided |
 | D-SUITE-27 | One automatically computed complete-suite fingerprint covers the currently supplied suite; DI-06 may persist separate distribution-only operational component checkpoints without changing either F-11 provenance identity | Decided; D-SUITE-30 owns only the existing provenance algorithms |
 | D-SUITE-28 | PGMCP computes and compares identities only from supplied or already available managed snapshots; external/workspace suite owners own historical retention, release versioning, lookup, and reconstruction availability | Decided |
 | D-SUITE-29 | No replacement provenance registry, Git/release association registry, retention validator, archive/lookup service, history scan, or missing-history control/evidence state is introduced | Decided |
@@ -143,15 +174,19 @@ template_suite/
 │       └── checklist-item.schema.json
 └── <non-semantic-storage-directory>/
     ├── manifest.yaml
+    ├── .version
+    ├── policy.yaml
     ├── context.schema.json
     └── template.jinja2
 ```
 
 `shared/` is the only reserved direct child. Startup enumerates direct children once, in deterministic order; every other direct child is a concrete template package and absence of its fixed `manifest.yaml` is invalid suite state. Enumeration is shallow rather than recursive. The physical package-directory name is not artifact identity, is not validated against `manifest.yaml:template_id`, and does not participate in the fingerprint. Moving or renaming it cannot change semantic identity. Duplicate `template_id` values fail at startup. An authored `templates.yaml` is rejected because it would duplicate package inventory, require coordinated registration beside a self-contained package, and still could not replace complete package loading, graph validation, and fingerprinting.
 
-Each concrete template package has exactly three fixed root members:
+Each concrete template package has exactly five fixed root members:
 
-- `manifest.yaml`: semantic package description and identity SSOT;
+- `manifest.yaml`: generation description and identity SSOT (template_id/purpose);
+- `.version`: the single human package release label, excluded from pf/sf;
+- `policy.yaml`: output_profile/persistence policy SSOT, excluded from pf/sf;
 - `context.schema.json`: caller JSON Schema authority;
 - `template.jinja2`: the single concrete Jinja template entry point.
 
@@ -161,7 +196,7 @@ rendering remains in `template.jinja2`. If DI-03 later proves that one concrete
 template requires private decomposition, that package must justify and name the
 dependency from an actual consumer rather than rely on a speculative generic folder.
 
-The agreed minimum manifest contains exactly five authored keys: `template_id`, `version`, `purpose`, `output_profile`, and `persistence`. Concrete example values are intentionally omitted here: DI-03 owns final artifact IDs and purposes, while DI-05 owns concrete profile identities. An illustrative value must not pre-empt either package decision. File naming is not package metadata: DI-04 receives an exact caller-supplied `file_name` as operation control.
+The agreed manifest contains only template_id and purpose. Package .version and policy.yaml are separately required; no duplicate/legacy field reads. The catalog validates and joins these facts once. DI-03 owns final IDs/purposes, DI-05 profile identities and DI-04 operation file_name.
 
 #### Shared tiered template foundation
 
@@ -251,10 +286,10 @@ not create a second configuration authority.
 | Field | Semantic fact | Primary consumer | Startup coherence | Resolved-package provenance | Why it cannot be derived |
 |---|---|---|---|---|---|
 | `template_id` | Public template-package identity and artifact-contract selector | Discovery, catalog, and tool selection | Non-empty, at most 24 characters, unique, and stable independent of directory name | Yes | Directory naming is non-semantic storage |
-| `version` | Human-authored template-package release identity | Metadata and affected-package comparison | Valid SemVer, at most 11 characters including any prerelease/build suffix | Reported and compared beside the fingerprint; not its content authority | Intentional compatibility/release meaning is not content-derivable |
+| `.version` (separate file) | Human-authored template-package release identity | Metadata and affected-package comparison | Valid SemVer, at most 11 characters including any prerelease/build suffix | Reported and compared beside the fingerprint; not its content authority | Intentional compatibility/release meaning is not content-derivable |
 | `purpose` | Human-readable artifact capability | Selected-artifact introspection | Non-empty normalized text | Yes | Neither ID nor renderer content is an adequate public description |
-| `output_profile` | Applicable output-evidence selector | DI-05 profile resolution and per-operation output validation | Reference exists and resolves to a coherent evidence selector; compatible exact file names are checked when an operation supplies one | Yes, including resolved semantics | File extension alone cannot express applicable evidence |
-| `persistence` | Intended target lifetime, `workspace` or `temporary` | DI-04 target and persistence policy | Known enum value | Yes | Both modes create files, so lifetime cannot be inferred from the output |
+| `policy.yaml:output_profile` | Applicable output-evidence selector | DI-05 profile resolution and per-operation output validation | Reference exists and resolves to a coherent evidence selector; compatible exact file names are checked when an operation supplies one | No; whole policy file and external profile excluded | File extension alone cannot express applicable evidence |
+| `policy.yaml:persistence` | Intended target lifetime, `workspace` or `temporary` | DI-04 target and persistence policy | Known enum value | No; whole policy file excluded | Both modes create files, so lifetime cannot be inferred from the output |
 
 No `naming` field, case vocabulary, affix policy, or generic naming resolver is admitted. Every caller-authored value rendered into content—including a class symbol, title, subject, or body label—belongs to the concrete `context.schema.json`, which validates its final representation. The renderer receives and uses that value unchanged. DI-04 owns the exact `file_name`, `target_path`, and explicit target-policy control as operation inputs; none is template-visible. DI-05 may validate whether the resulting file and content satisfy the selected output profile, but it never generates or rewrites a name.
 
@@ -329,7 +364,7 @@ and dependency direction are fixed here.
 
 ### 5.6 Template-Package Version and Dual Source Provenance
 
-The manifest's required `version` is the single human-authored SemVer release label for a
+The package's required `.version` release label is the single human-authored SemVer release label for a
 concrete template package. Individual package files and shared contributors carry no
 authored versions. The resolved package fingerprint is machine-computed equality identity
 for the selected package's effective semantic closure. Neither replaces or aliases the
@@ -337,22 +372,22 @@ other, and PGMCP validates SemVer syntax and the 11-character representation lim
 not release policy or historical bump correctness.
 
 A separately computed complete-suite fingerprint identifies the currently supplied
-managed suite snapshot. The same value serves F-10 comparison and is persisted in newly
-scaffolded artifacts only as source-suite equality evidence. It is not package semantic
+suite generation-source snapshot, excluding .version and policy.yaml. It is persisted
+in newly scaffolded artifacts as generation-source equality evidence, not full F-10 equality. It is not package semantic
 identity, a locator, or a promise that historical sources remain available.
 
 Each concrete package owns an isolated provenance closure containing:
 
-- its `manifest.yaml:template_id` and admitted semantic manifest facts other than the separately
-  reported human version;
+- its complete admitted manifest.yaml generation contract (template_id and purpose);
 - its canonical caller JSON Schema and exact resolved public schema semantics;
 - its `template.jinja2` source;
 - every transitively reachable shared base, pattern, definition, and typed dependency
   edge;
-- every referenced output-profile identity and resolved semantic configuration;
 - the logical relationships required to reproduce that selected package.
 
 The closure excludes:
+
+- whole package-local .version and policy.yaml files, and all external validation settings;
 
 - every other concrete package and its private schema, template, manifest, and graph;
 - shared files that are not transitively reachable from the selected package;
@@ -364,8 +399,8 @@ The closure excludes:
 Concrete-package-to-concrete-package and shared-to-concrete-package edges are invalid.
 A package-local change therefore changes only that package's version-impact and resolved
 fingerprint. A shared change changes the resolved fingerprints of exactly the concrete
-packages that reach it transitively. The complete-suite fingerprint changes whenever the
-managed suite snapshot changes; that difference is truthful source context in newly
+packages that reach it transitively. The suite-generation fingerprint changes whenever an included
+suite generation source changes; that difference is truthful source context in newly
 scaffolded artifacts and never reclassifies another package as semantically changed.
 
 Every persisted scaffolded artifact carries package/artifact identity, human package
@@ -395,19 +430,18 @@ retain or expose a parallel full-length digest. The distinct domain prefixes
 collapsing the two identity kinds.
 
 A record contains an explicit kind, stable logical identity, byte length, and value;
-records are ordered by kind and logical identity before hashing. JSON and YAML semantic
-inputs are parsed and serialized with deterministic object-key order while preserving
-array order and scalar values. Jinja and other admitted text sources are UTF-8 without a
+records are ordered by kind and logical identity before hashing. Included generation JSON/YAML sources retain their complete source content, including
+comments/descriptions, under BOM removal and LF normalization; do not discard them
+through semantic-only serialization. Syntax/contract validation is separate from hashing. Jinja and other admitted text sources are UTF-8 without a
 byte-order mark, use LF line endings, and otherwise preserve their source text. Absolute
 paths, modification times, enumeration order, and host state never enter either record.
 
-The resolved package record contains the admitted manifest facts except `version`, the
-canonical caller contract, normalized concrete and reachable shared template sources,
-reachable shared definitions, typed graph edges, and the resolved output-profile
-semantics. It uses logical identities rather than physical concrete-package directory
-names. The complete-suite record contains every admitted suite file under its normalized
-suite-relative POSIX path, including manifest versions and packages outside the selected
-closure. Consequently, a physical package-directory rename or formatting-only suite
+The resolved package record contains whole included generation files (manifest, caller
+schema, concrete and reachable shared generation sources) and typed graph edges. It
+uses logical identities rather than physical concrete-package directory names. The
+suite record covers all included generation files at normalized suite-relative paths,
+including packages outside the selected closure; neither record includes .version,
+policy.yaml or external validation settings. Consequently, a physical package-directory rename or formatting-only suite
 change may change `sf` while leaving an equivalent resolved package `pf` unchanged.
 Unknown or inadmissible suite files fail admission rather than being silently omitted.
 No per-file digest inventory is persisted.
@@ -451,7 +485,7 @@ constraints. Catalog, render provenance and reader reuse the canonical types; Ji
 does not independently normalize, shorten or validate identity/version values. Public
 template-selection inputs reuse the identity constraints when their schemas are built.
 No extra authored field or independently versioned suite SemVer is introduced: `pv`
-remains the concrete package's manifest version, while `sf` is computed suite identity.
+remains the concrete package's package .version label, while `sf` is computed suite identity.
 
 Markdown's existing `<!-- ... -->` framing costs 65 characters for fixed text plus the
 two fingerprints. ID and version together add at most 24 + 11 = 35, yielding at most
@@ -510,7 +544,7 @@ not all DI-02/DI-04 integration or implementation evidence.
 
 | Boundary | Responsibility | Explicit exclusions |
 |---|---|---|
-| Typed manifest admission | Enforce canonical ID/version constraints before package admission | No renderer-only length validation |
+| Typed package admission | Enforce manifest ID and .version constraints before package admission | No renderer-only length validation |
 | Immutable resolved catalog | Supply selected package identity/version and precomputed package/source-suite fingerprints | No fingerprint recomputation by reader or Jinja |
 | Scaffold manager | Assemble typed provenance separately from caller content in RenderInput | No caller provenance override or post-render header injection |
 | Shared Jinja root/bases | Emit the first-line record through one shared field-formatting fragment using existing native framing | No parallel Python formatter, second rendering pass, independent header render process or new header-style registry |
@@ -614,12 +648,12 @@ consumer already has two supplied resolved package records, their relation is ex
 This relation is not a compatibility or validation matrix. All four states are allowed.
 A repeated version never causes changed content to be treated as equal, because content
 equality uses the fingerprint. A version-only change leaves the package fingerprint
-unchanged but changes the complete-suite fingerprint because manifest versions are part
-of the source-suite record.
+and suite-generation fingerprints unchanged; operational package comparison changes
+because .version remains part of the complete installed component.
 
 A package-local semantic change affects only that package's resolved fingerprint. A
 shared change affects exactly the packages whose already resolved closures reach that
-shared contributor; their manifest versions need not be edited mechanically. The
+shared contributor; their package .version labels need not be edited mechanically. The
 resolver derives this affected set from the current graph and creates no persisted
 reverse-dependency index.
 
@@ -659,7 +693,7 @@ suite identities.
 ### Provenance Alternative — Root-Template Hash
 
 Rejected because it omits schema, imported/included templates, shared primitives,
-selection facts, and validation profile semantics. It is the defect underlying F-11,
+generation-contract descriptions and selection facts. It is the defect underlying F-11,
 not an acceptable optimization.
 
 ### Provenance Alternative — Complete-Suite Fingerprint as Sole Package Identity
@@ -693,19 +727,19 @@ not a security signature.
 | Fact | Authority | Authored or Derived | Primary Consumers |
 |---|---|---|---|
 | Template-package identity and artifact-contract selector | `manifest.yaml:template_id` | Authored once | Discovery, catalog, tools |
-| Template-package version | `manifest.yaml:version` | Authored SemVer | Humans, package metadata, affected-package comparison |
+| Template-package version | `.version` | Authored SemVer | Humans, package metadata, affected-package comparison |
 | Purpose | `manifest.yaml:purpose` | Authored | Selected-artifact introspection, resolved package provenance |
 | Caller shape | `context.schema.json` | Authored | Validation, schema exposure |
 | Concrete template selection | Fixed `template.jinja2` convention | Derived by template-package format | Resolver and runtime rendering |
 | Jinja dependency nodes/edges | Parser-supported resolver | Derived | Rendering, isolated package closure, diagnostics |
 | Contributors | No public authority | Derived internally only | Resolved package provenance and impact analysis |
-| Output profile | `manifest.yaml:output_profile` | Authored reference | Resolved output-evidence selection |
-| Persistence lifetime | `manifest.yaml:persistence` | Authored enum | DI-04 target and persistence policy |
+| Output profile | `policy.yaml:output_profile` | Authored reference | Resolved output-evidence selection |
+| Persistence lifetime | `policy.yaml:persistence` | Authored enum | DI-04 target and persistence policy |
 | Caller-authored rendered names | Concrete `context.schema.json` properties | Authored per artifact call in final form | Renderer only |
 | Exact file name and target controls | Scaffold operation envelope | Authored per operation | DI-04 target resolution only |
 | Physical template-package directory | Filesystem | Non-semantic | Discovery only |
 | Resolved package fingerprint | Selected package closure in the resolved catalog | Derived once per package | Persisted artifact metadata, package-directed operation evidence, affected-package comparison |
-| Complete/source-suite fingerprint | Currently supplied suite snapshot | Derived once per suite | Persisted artifact metadata plus DI-06 equality checks over available actual, candidate, proposal, or owner-supplied prior snapshots; never the component checkpoint itself |
+| Suite-generation fingerprint sf | Included generation sources across the supplied suite | Derived once per suite, excluding .version/policy.yaml | Persisted generation-source metadata and generation-impact comparison only; full installed-state equality uses operational component records |
 
 ### 7.2 JSON Schema Contract
 
@@ -725,12 +759,12 @@ persistence, quality scope, lifecycle, presentation, or autofix policy.
 
 The selected profile states which centrally configured executable capabilities are
 applicable or required. Scaffolding consumes the artifact's profile. Safe edit consumes
-the same profile boundary through DI-04's explicit/V3-metadata/extension selection.
+the same policy-selected profile boundary through DI-04's explicit/V3-metadata/extension selection.
 The narrow V3 reader above does not revive the legacy source-metadata parser or add
 hardcoded extension dispatch.
 Quality gates use a separate gate-set selector over the same capability authority.
 
-The physical profile configuration, concrete capability IDs, and normalized execution DTO remain DI-05 responsibilities. DI-04 owns the [scaffold validation policy and outcome contract](design-mutation-validation.md#44-scaffold-validation-request-and-result-contract), while the exact safe-edit mapping remains open. This package requires that the manifest reference resolves at startup and that profile identity and resolved semantics participate in every selected package closure that references the profile. At operation time the profile may reject an incompatible caller-supplied exact file name; it does not generate, normalize, prefix, suffix, or otherwise rewrite that name.
+The physical profile configuration, concrete capability IDs, and normalized execution DTO remain DI-05 responsibilities. DI-04 owns the [scaffold validation policy and outcome contract](design-mutation-validation.md#44-scaffold-validation-request-and-result-contract), while the exact safe-edit mapping remains open. This package requires that the policy.yaml reference resolves at startup, without including policy or external profile semantics in pf/sf. At operation time the profile may reject an incompatible caller-supplied exact file name; it does not generate, normalize, prefix, suffix, or otherwise rewrite that name.
 
 ### 7.4 Explicit Caller Naming Boundary
 
@@ -888,20 +922,20 @@ Package-owned evidence must prove:
 - runtime renderer selection matches catalog introspection;
 - equal selected-package closures under different absolute roots and platform line
   endings produce the same 16-character SHA-256/96 Base64url package fingerprint;
-- canonical object-key ordering is stable while ordered arrays and normalized Jinja source
-  remain content-significant;
+- complete included generation sources retain comments/descriptions and source ordering;
+  only the declared BOM/line-ending normalization is applied;
 - package and suite records use distinct version-1 domains and the same compact identity
   representation in every consumer;
-- manifest package versions reject invalid SemVer syntax, but all four version/fingerprint
+- package .version labels reject invalid SemVer syntax, but all four version/fingerprint
   relations are accepted and remain factually distinguishable when two supplied package
   records are compared;
-- a version-only package change leaves its resolved fingerprint unchanged while changing
-  the complete source-suite fingerprint;
+- a version-only or policy-only package change leaves pf and sf unchanged while changing
+  the full operational package fingerprint;
 - no startup, scaffolding, or renewal path requires package-version history, generates a
   bump warning, or infers compatibility or SemVer severity;
 - a package-local semantic change alters only that package's resolved fingerprint and
   package-semantic evidence; its human version changes only when the suite owner edits the
-  manifest, while newly scaffolded artifacts may truthfully carry the new source suite
+  .version file, while newly scaffolded artifacts may truthfully carry the new source suite
   fingerprint;
 - a shared semantic change alters exactly the resolved fingerprints of its transitive
   concrete-package consumers;
@@ -1011,6 +1045,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
 | 1.18 | 2026-09-10 | `@imp designer` | Supersede overflow wrapping with 24-character template IDs, 11-character package SemVer labels and first-line-only native comments; propagate canonical typed constraints through admission/render/read contracts and route invalid recognition to DI-04 fallback without redesigning Jinja tiers. |
 | 1.19 | 2026-09-10 | `@imp designer` | Align with consumer selection equivalence: unknown metadata IDs yield no applicable template, like absent/invalid headers; keep syntax-only reading independent from catalog lookup. |
+| 1.21 | 2026-09-10 | `@imp researcher` | Reconcile human-approved whole-file generation identity and manifest/.version/policy split; preserve upgrade comparison and pause for targeted QA. |
 | 1.20 | 2026-09-10 | `@imp designer` | Close the integrated header utility nucleus: retain shared-tier writing, define text-only typed reader outcomes and framing/BOM rules, separate selection/persistence, and specify real-render plus independent conformance evidence. |
 | 1.13 | 2026-09-03 | `@imp designer` | Remove premature Worker/package naming examples so illustrative values cannot pre-empt DI-03 artifact identities, DI-03 content fields, or DI-05 profile IDs; preserve the abstract five-field manifest and explicit input boundary. |
 | 1.12 | 2026-09-03 | `@imp designer` | Reconcile the human-approved F-03/F-07 correction: remove manifest naming and the generic naming resolver, require exact file-name operation input and explicit artifact-local rendered names, isolate server provenance, and supersede the input `output_path`/envelope-name derivation model. |

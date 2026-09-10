@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** RESEARCH FROZEN — NATIVE-FIX QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.27  
+**Status:** GENERATION IDENTITY AMENDMENT — RESEARCH QA REQUESTED  
+**Version:** 1.28  
 **Last Updated:** 2026-09-10  
 **Issue:** 460
 
@@ -13,22 +13,10 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 
 ## Authority
 
-The [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
-is the latest reviewed delta; the human supplied independent QA GO and authorized
-Design continuation. The catalog-status P3 is corrected; no new policy is added. It replaces only
-F-20's proposal/application/verification/recovery promises. The next paragraph records
-the prior reviewed selection boundary, not approval of the new fix amendment.
-
-Research decision and gate authority belongs to [Research](research.md), not this
-evidence document. Its [2026-09-10 native-selection amendment](research.md#narrow-native-selection-amendment--2026-09-10)
-is the latest reviewed refinement, including explicit public workspace scope. It
-supersedes the earlier generic fresh/expansion promises; the amended F-20 evidence
-below supports that decision. The 2026-09-07 safe-edit amendment is a prior reviewed
-boundary, not the current exception. All other Research remains frozen.
-
-The human supplied independent QA GO for Design resumption, with one nonblocking P2
-finding on this authority paragraph. This correction addresses that stale routing;
-it adds no product decision and does not claim an independent re-review of the edit.
+The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
+Human strategy approval is recorded; independent Research QA is requested before Design
+resumes. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
+remains frozen. Research.md is the sole gate authority.
 
 ### Safe-Edit Policy Alignment Amendment — 2026-09-07
 
@@ -1279,14 +1267,14 @@ Exact historical reconstruction is possible only when the relevant suite owner h
 |---|---|
 | Startup catalog | Automatically derives the selected package's resolved semantic closure/fingerprint and the complete managed-suite fingerprint without authored file-level versions |
 | Template graph analysis | Reuses the complete static dependency graph approved under F-05 and rejects concrete-package-to-concrete-package or shared-to-concrete-package edges |
-| Version authority | One human SemVer lives in each concrete package manifest; shared templates, patterns, definitions, and individual package files have no independent authored versions |
+| Version authority | One human SemVer lives in each concrete package .version file; shared templates, patterns, definitions, and individual package files have no independent authored versions |
 | Artifact contract | Contributes the selected package's complete local caller contract and rendering semantics to resolved package identity |
 | Shared support | Contributes only when transitively reachable from the selected concrete package; a shared change affects only packages that reach it |
-| F-10 suite/source identity | The unchanged complete source-suite fingerprint identifies a supplied complete snapshot and is reused in persisted artifact metadata solely as source-suite provenance; it is not the operational component checkpoint and never becomes package semantic identity |
+| F-10 suite/source identity | The narrowed source-suite fingerprint identifies supplied generation sources, excluding .version/policy.yaml and external validation and is reused in persisted artifact metadata solely as source-suite provenance; it is not the operational component checkpoint and never becomes package semantic identity |
 | Generated artifact metadata | Compactly reports template-package/artifact identity, human package version, resolved package fingerprint, and source suite fingerprint; existing artifacts are never mutated or marked stale |
 | Package-directed non-artifact tool evidence | Suite-identity exposure is not implied by artifact provenance; Design admits it only for a demonstrated consumer under YAGNI |
 | Historical snapshot authority | The external/workspace suite owner exclusively decides whether and how sources, versions, tags/releases, indexes, and reconstruction remain available; PGMCP only verifies equality when a candidate snapshot is already supplied and promises no discovery |
-| Upgrade management | Retains complete source-suite and resolved-package fingerprints as unchanged factual identities while F-10 separately compares the current adopted component checkpoint with actual/candidate states; no additional provenance base fingerprint or general history-retention guarantee is introduced |
+| Upgrade management | Retains sf/pf as generation-only identities under the 2026-09-10 amendment while F-10 separately compares the current adopted component checkpoint with actual/candidate states; no additional provenance base fingerprint or general history-retention guarantee is introduced |
 | template_registry.json | Is removed without a replacement provenance registry or per-artifact contributor/version ledger |
 | ArtifactManager/bootstrap/upgrade | Remove registry persistence, lookup, migration, injection, and dynamic-state preservation while retaining the two computed identities at their narrow consumers |
 | Tests | Protect deterministic resolved-package and complete-suite fingerprints from currently supplied content plus the four persisted provenance facts. Ordinary fixtures require no historical source setup; legacy mutable-registry assertions are removed rather than replaced by negative architecture tests |
@@ -1339,11 +1327,15 @@ The exact digest algorithm, canonical byte encoding, reverse-dependency mechanis
 
 #### Second Approved Strategy Amendment (2026-08-30)
 
+Historical rationale: the 2026-09-10 generation-identity amendment supersedes version
+location, whole-suite equality and validation-projection claims in this section. Current
+strategy is the Research amendment, not these earlier scope descriptions.
+
 The Design workshop established a legitimate second consumer for the existing F-10 complete-suite identity: compact provenance persisted in a newly scaffolded artifact can identify the exact suite snapshot from which that artifact originated. This supersedes the 2026-08-29 amendment only where it prohibited F-10 identity in generated-artifact provenance and classified every metadata-only suite-fingerprint change as forbidden lateral package impact. It does not weaken semantic package isolation.
 
 | Identity or authority | Consumer purpose | Authorship and scope |
 |---|---|---|
-| Human package version | Readable release and compatibility intent for one concrete package | Authored once in the concrete package manifest; no per-file or shared-contributor versions |
+| Human package version | Readable release and compatibility intent for one concrete package | Authored once in the concrete package .version file; no per-file or shared-contributor versions |
 | Resolved package fingerprint | Equality and affected-package analysis for one package's effective semantics | Computed from package-local semantic inputs plus exactly transitively reachable shared contributors |
 | Source suite fingerprint | Whole managed-snapshot equality and historical source-snapshot verification | Computed once for the complete suite; reused from F-10 in persisted artifact provenance, not as package semantic identity |
 | Historical sources (ownership correction below) | Conditionally enable reconstruction or equality verification when the owner makes matching content available | External/workspace owner responsibility; no PGMCP retention, association, lookup, validation, or availability guarantee |
@@ -1369,11 +1361,11 @@ Independent QA identified one overstatement in the second amendment: it turned o
 |---|---|
 | External/workspace suite history | The concrete suite owner exclusively owns source retention, package/suite release-version policy, Git tags/releases, lookup/indexing, and reconstruction availability |
 | PGMCP current-suite handling | Validate and load the currently supplied suite contract; compute deterministic resolved-package and complete-suite fingerprints; persist the four approved provenance facts in newly scaffolded artifacts |
-| Managed upgrade comparison | Compare currently available complete snapshots with the unchanged source-suite/resolved-package fingerprints for factual identity and affected-package analysis; F-10 separately owns adopted/actual/candidate component selection and must not expand that operational checkpoint into historical retention |
+| Managed upgrade comparison | Compare currently available complete snapshots using full operational component fingerprints for overwrite/conflict decisions, with generation fingerprints only for generation-impact analysis; F-10 separately owns adopted/actual/candidate component selection and must not expand that operational checkpoint into historical retention |
 | Historical verification | When an owner supplies candidate historical sources, the source-suite fingerprint can prove equality; it does not locate sources or promise their availability |
 | Persisted artifact independence | The artifact remains valid, independent, unmodified, and not stale when matching historical sources are unavailable; reconstruction remains conditional on owner-retained sources |
 
-Package SemVer remains authored once per concrete manifest and schema-valid. PGMCP does not inspect external history to police version-bump correctness. External/custom roots remain workspace-owned and preserved rather than automatically renewed.
+Package SemVer remains authored once per concrete package .version file and schema-valid. PGMCP does not inspect external history to police version-bump correctness. External/custom roots remain workspace-owned and preserved rather than automatically renewed.
 
 This correction explicitly prohibits Design and Planning from adding Git/release association or provenance registries, retention validators, snapshot archives, lookup services, historical scans, absent-history failure/evidence states, or other control code to satisfy provenance. No PGMCP archive or lookup service is approved. Fingerprints plus the existing managed available-snapshot comparison are the complete PGMCP mechanism in scope.
 

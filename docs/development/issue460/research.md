@@ -1,12 +1,77 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
-**Status:** RESEARCH FROZEN — NATIVE-FIX QA GO REPORTED; DESIGN RESUMED  
-**Version:** 3.37  
+**Status:** RESEARCH REOPENED — GENERATION IDENTITY AMENDMENT; QA REQUESTED  
+**Version:** 3.38  
 **Last Updated:** 2026-09-10  
 **Issue:** 460  
 **Workflow:** Refactor / Research
 
 ## Purpose
+
+### Generation Identity and Package File Ownership Amendment — 2026-09-10
+
+The human approved separating template generation sources, release labels and acceptance/
+persistence policy into distinct package files. This is a bounded amendment to F-11/S-16,
+I-03 and E-07 plus F-10 comparison safeguards; no new adapter role or consumer family.
+
+| Boundary | Approved strategy |
+|---|---|
+| Generation contract | manifest.yaml owns only template_id and purpose; context.schema.json and template.jinja2 retain caller-contract and rendering ownership |
+| Release label | One package-local .version file owns the existing human SemVer; this is a package version, not per-file versioning. Existing syntax/length and persisted pv semantics remain |
+| Acceptance/persistence policy | policy.yaml owns output_profile and persistence exclusively; profile selection/validation and enforce/report behavior remain unchanged |
+| Package fingerprint pf | Includes complete admitted generation-source/contract files and transitively reached shared support, including descriptive content/comments; excludes whole .version and policy.yaml files and all external validation config |
+| Suite fingerprint sf | Includes all admitted generation-source/contract files across the supplied suite, including shared support; applies the same whole-file exclusions. It no longer proves complete installed-suite equality |
+| Upgrade equality | Operational shared/package component fingerprints continue to compare ALL admitted component files, including .version and policy.yaml. Neither pf nor sf may authorize overwrite, checkpoint advancement or whole-installed-snapshot equality |
+| Metadata | id/pv/pf/sf and their first-line/length rules remain; pv comes from .version. Identifier metadata does not recursively enter fingerprint calculation |
+| Compatibility | V3 clean break: no old five-field manifest read, duplicate fields, fallback version source or compatibility alias. Existing V2 migration boundary remains |
+| Adapter packages | Unchanged: this amendment concerns template packages only, not adapter manifests, versions, fingerprints or default_args behavior |
+
+All included generation files contribute as a whole under the established deterministic
+normalization rules, including their descriptive comments. No per-field fingerprint
+filter, dead-code analysis, or comparison of example render output is introduced.
+Canonicalization must not silently discard comments in included manifest/schema sources;
+Design must reconcile the earlier semantic-only serialization description accordingly.
+policy.yaml cannot acquire rendering inputs/defaults/switches: that would violate its
+exclusion rationale. purpose is included as the description of the generation contract.
+Moving validation policy out of identity does not make that policy optional or bypass
+startup coherence, on-use checks, or the existing persistence decision.
+
+**Trade-off and rejected alternatives.** Keeping the five-field manifest requires opaque
+per-field exceptions. Hashing all of it conflates release/policy changes with generation.
+The accepted split adds two small authored files but gives each fact one visible owner.
+Equal pf/sf now means equal fingerprinted generation inputs, not equal complete workspace,
+validation results, package release labels or artifact bytes (caller data and pv vary).
+The suite label/source context does not promise retention, lookup or full reconstruction.
+Git/retained full sources remain owner responsibilities, not a new registry or proof service.
+
+**Preservation evidence.** Change only .version, only output_profile, only persistence,
+or external profile/default_args: pf and sf remain equal. The first three still change
+operational package comparison; external configuration remains outside suite-component
+ownership. Change an included comment/description/template/schema: the appropriate pf
+and sf change; unrelated packages keep pf. Shared generation changes affect exactly
+transitive package consumers. Prove policy/version-only local edits participate in
+adopted/actual/candidate conflict detection and cannot be lost through generation equality.
+Prove one source per field, V3 old-field rejection, unchanged profile consumers, and pv
+loaded from .version. This is required evidence, not an executed implementation test.
+
+**Direct evidence.** [version_hash.py](../../../mcp_server/scaffolding/version_hash.py)
+extracts template version labels with fallbacks and computes tier-based hashes;
+[template_registry.py](../../../mcp_server/scaffolding/template_registry.py) persists
+hash-to-tier/version mappings. [test_version_hash.py](../../../tests/mcp_server/test_version_hash.py)
+asserts version sensitivity and eight-character results. These are existing V2 seams,
+not proof of V3 generation or operational-component equality. Their already-catalogued
+replacement obligations must cover the new policy/version exclusions and upgrade guards.
+
+**Blast radius and ownership.** Existing loader/catalog/hash/header/introspection tests
+and source seams stay with DI-01/DI-02; DI-04 still consumes catalog policy; DI-05 resolves
+profiles but contributes no external validation projection to template identity; DI-06
+owns complete operational comparison; DI-07 guidance and DI-08 conformance follow through.
+The 126-consumer/151-test catalog is unchanged; this amendment changes dispositions, not
+the existing-source census. W06 default materialization is not approved by this amendment.
+
+**Current gate:** human strategy approved; independent targeted Research QA requested.
+Design is paused at this boundary. Earlier QA GO remains valid only for its earlier delta.
+No production/config files or implementation cycles are changed by this amendment.
 
 ### Lightweight Native-Fix Amendment — 2026-09-10
 
@@ -147,13 +212,12 @@ This document is the sole authority for issue-460 decision status, Approved Stra
 
 ## Current Status and Gate
 
-The [lightweight native-fix amendment](#lightweight-native-fix-amendment--2026-09-10)
-is the current reviewed delta; independent QA GO was supplied by the human, who
-authorized Design resumption. The nonblocking catalog-heading P3 is corrected. The following
-native-selection GO remains evidence for that earlier boundary, not this amendment.
+The [generation identity amendment](#generation-identity-and-package-file-ownership-amendment--2026-09-10)
+is the current gate. Human strategy approval is recorded; independent QA is requested
+before Design resumes. Prior native-fix and selection reviews do not approve this delta.
 
 The [2026-09-10 native-selection amendment](#narrow-native-selection-amendment--2026-09-10)
-is the latest reviewed delta: the human supplied independent QA GO and authorized
+is a prior reviewed delta: the human supplied independent QA GO and authorized
 Design resumption. Its nonblocking P2 authority-paragraph correction is recorded in
 Research Findings; no new product decision or producer-issued approval is added. The prior
 [2026-09-07 narrow safe-edit policy amendment](#narrow-safe-edit-policy-amendment--2026-09-07)
@@ -391,7 +455,7 @@ This matrix classifies the primary nature and issue-460 disposition of every fin
 
 1. Every renderer-consumed caller value is discoverable through `scaffold_schema`.
 2. Every exposed caller-content field has one declared meaning and an observable rendering effect.
-3. Each concrete package has one authored human SemVer in its manifest and no individual suite file or shared contributor has an independent authored version. A package-local change does not alter another package's definition, version, resolved package fingerprint, schema/rendering semantics, or affected-package diagnostics; shared changes affect only transitive consumers. Newly scaffolded artifacts may truthfully carry a different source-suite fingerprint when their complete source snapshot differs, while existing artifacts remain unchanged, are never marked stale, and remain valid even when matching historical sources are unavailable.
+3. Each concrete package has one authored human SemVer in its package-local .version file and no individual suite file or shared contributor has an independent authored version. A package-local change does not alter another package's definition, version, resolved package fingerprint, schema/rendering semantics, or affected-package diagnostics; shared changes affect only transitive consumers. Newly scaffolded artifacts may truthfully carry a different source-suite fingerprint when their fingerprinted suite generation sources differ, while existing artifacts remain unchanged, are never marked stale, and remain valid even when matching historical sources are unavailable.
 4. Caller context is the sole source of caller-authored rendered content and is validated unchanged; operation controls never enter content, while server-authored provenance is composed separately afterward.
 5. Public client schemas remain finite, self-contained, and reference-free.
 6. Optional, omitted, empty, null, and defaulted values remain semantically distinct.
@@ -431,7 +495,7 @@ The table below is the canonical strategy and status register. Supporting ration
 | Safe-edit post-edit validation | Approved 2026-08-25; narrow human amendment 2026-09-07, independent QA requested | Every safe edit validates complete proposed content through the shared configured output-profile boundary. Scaffold and safe edit expose validation=enforce/report (default enforce) and return validation_policy. Enforce preserves the original on failed/unavailable required validation; report may persist with structured findings, never bypassing independent safety/operation failures. V3 removes safe-edit mode, strict/interactive labels and verify_only without aliases or replacement dry-run functionality. Exact staging/atomic-write/rollback mechanics remain Design-owned |
 | F-09 / S-15 documentation authority | Approved 2026-08-23 | Live schema and catalog own exact facts; handwritten docs explain semantics and discovery, duplicate inventories are removed, and generation remains YAGNI-driven |
 | F-10 / S-10 distribution and customization | Human-approved amendment and bootstrap remediation 2026-09-03; unchanged by F-20 | Replace complete-suite-only renewal with component-wise three-way selection. Compare one current adopted checkpoint, the actual active root, and the supplied candidate for each indivisible component: shared/ is one component and every concrete manifest ID is one component. Select candidate content only for upstream-only or converged non-conflicting component changes; retain actual content or absence for local-only and conflicting changes. Component absence is a first-class state, so candidate additions and removals follow the same three-way rules. Build the selected result as a complete off-root suite, validate the entire resolved suite, and activate it only through a recoverable complete-tree replacement; validation or activation failure leaves the prior actual root authoritative. Candidate staging remains non-authoritative and runtime resolves exactly one active root. Persist one current component checkpoint with no history and no per-file versions. For a fresh managed install, install the validated candidate and establish its component states as the checkpoint in the same authoritative operation. For an existing managed workspace without a checkpoint, automatic bootstrap is permitted only when a trustworthy persisted fingerprint of the previously installed or accepted official suite exactly matches the computed actual suite, or when actual exactly equals the fully validated candidate; derive the checkpoint from that proven-equal suite. An owner-supplied trusted complete prior suite may instead be validated and used to derive adopted component states. If none of those bases is reliably available, preserve every actual byte, stage the candidate non-authoritatively, return an actionable `checkpoint_required` outcome, and perform no component selection or activation. Existing external workspaces never infer a checkpoint or activate content automatically; their owner must supply a trusted prior suite or explicitly acknowledge the validated candidate as the upstream comparison basis. Candidate acknowledgement advances only checkpoint state and leaves actual content unchanged. Explicit reconciliation may likewise advance candidate checkpoint components without copying or overwriting locally merged actual content. Bootstrap creates no history, lookup, retention, SemVer, compatibility-matrix, automatic-merge, or provenance-registry obligation. Artifact metadata and the existing resolved-package and source-suite fingerprints remain unchanged and are not repurposed as the renewal checkpoint. Exact checkpoint encoding, comparison DTOs, staging path, validation transaction, and recoverable activation mechanics remain DI-06 Design-owned. |
-| F-11 / S-16 source provenance | Approved 2026-08-23; human-approved amendments 2026-08-29 and 2026-08-30; ownership corrected 2026-08-30 | Each concrete template package owns one human-readable schema-valid SemVer in its manifest; individual package files and shared templates, patterns, and definitions have no authored versions unless a future independently distributed boundary demonstrates a consumer. Two identities are computed automatically: a resolved package fingerprint over package-local semantic inputs plus exactly its transitively reachable shared contributors, and the F-10 complete-suite fingerprint over the currently supplied managed suite snapshot. Every persisted scaffolded artifact carries compact source provenance comprising template-package/artifact identity, package version, resolved package fingerprint, and source suite fingerprint. The source suite fingerprint is equality evidence when matching sources are available, never package semantic identity or a lookup promise. A package-local change does not alter any other package's definition, version, resolved package fingerprint, schema/rendering semantics, or affected-package diagnostics; it may change only the source-suite fingerprint in newly scaffolded artifacts because their complete source snapshot differs. Existing artifacts remain valid and independent even when matching historical sources are unavailable; they are never mutated or marked stale, and exact reconstruction is conditional on the relevant owner retaining matching sources. Shared changes affect only transitive package consumers. Concrete packages cannot depend on one another; packages may depend on shared support, shared support may depend on shared support, and shared support cannot depend on a concrete package. Remove template_registry.json without a replacement provenance registry or per-artifact contributor/version ledger. PGMCP validates and loads the currently supplied suite contract, computes both deterministic identities, persists the four approved provenance facts, and compares snapshots already available at the managed upgrade boundary; it does not police historical SemVer-bump correctness for external suites or introduce history inspection, retention, lookup, archival, association validation, reconstruction, or absent-history failure/evidence code. Package-directed non-artifact tool-output exposure of suite identity remains Design-owned and YAGNI-bound rather than automatic. Exact digest, canonical encoding, metadata syntax/size, reverse-dependency mechanism, available-snapshot comparison policy, version-only-bump policy, and SemVer severity remain Design-owned without implying external-history enforcement |
+| F-11 / S-16 source provenance | Human-approved generation-identity amendment 2026-09-10; targeted QA requested | manifest.yaml owns template_id/purpose, .version owns the one bounded human SemVer, policy.yaml owns output_profile/persistence. pf includes selected generation files and transitive shared support; sf includes all suite generation files. Both exclude whole version/policy files and external validation configuration. Comments/descriptions in generation sources count. Preserve id/pv/pf/sf metadata, package isolation and owner-controlled history; no registry, lookup or retention service. Full operational component equality, not pf/sf, protects upgrades. No five-field-manifest alias or field-level exclusion; see the current amendment for trade-offs and required evidence |
 | F-12 / S-05 issue references | Approved 2026-08-23 | Positive integers carry issue identity; renderers own # and other presentation syntax |
 | F-12 / S-06 checklist items | Approved 2026-08-23 | Required text and explicit checked state form one structured item; primitive strings and bridges are rejected |
 | F-12 original-issue coverage | Covered 2026-08-23 | All four PR defects map to approved suite-wide boundaries; no PR-only strategy remains |
@@ -471,7 +535,7 @@ Issue 460 should be considered substantively resolved only when:
 4. Optionality, nullability, emptiness, and defaults have one declared meaning.
 5. Links, issue references, and checklist items each have one canonical representation.
 6. Every caller-authored rendered value is exposed in the selected context schema, every exposed field has an explicit role, and no operation-control value is an implicit render source.
-7. The system computes one complete source-suite fingerprint and one resolved fingerprint per concrete package without authored file-level versions; every persisted scaffolded artifact records package/artifact identity, package version, resolved package fingerprint, and source suite fingerprint. When the relevant owner supplies matching historical sources, the source suite fingerprint can verify equality; unavailable history neither invalidates the artifact nor creates a PGMCP discovery or reconstruction obligation. The 2026-09-03 F-10/S-10 amendment does not change this metadata or either fingerprint's meaning.
+7. The system computes one suite-generation fingerprint (sf) and one resolved generation fingerprint (pf) per concrete package without authored file-level versions; every persisted scaffolded artifact records package/artifact identity, package version, resolved package fingerprint, and source suite fingerprint. When the relevant owner supplies matching historical sources, the source suite fingerprint can verify equality; unavailable history neither invalidates the artifact nor creates a PGMCP discovery or reconstruction obligation. The 2026-09-10 generation-identity amendment narrows both identities; full operational component equality remains separate.
 8. pgmcp-server does not become the owner of template-specific content truth.
 9. Human documentation cannot contradict the live scaffold_schema field surface.
 10. Generic artifact names do not conceal consumer-project imports, lifecycle assumptions, or prerequisites.
@@ -557,7 +621,7 @@ This historical hand-over does not close the new targeted review requested above
 
 #### Open Work
 
-- The human supplied independent QA GO for the lightweight native-fix amendment and authorized Design resumption. The catalog-heading P3 is corrected; no Research blocker is reported.
+- Independent QA of the generation-identity/file-ownership amendment remains open; Design is paused for this boundary. Prior native-fix GO is unchanged.
 - DI-05 must receive its own Design document and remain separate from DI-04 scaffold/safe-edit mutation ownership.
 - Exact role schemas, adapter manifest fields, discovery/index layout, process protocol, authorized native fix execution, typed partial-mutation outcomes, external recovery guidance, DTO shapes, and status mapping remain Design-owned within the approved boundaries.
 - Implementation sequencing remains Planning-owned under the binding manageability conditions above, including separate check/test/fix proof, separate F-10 activation and F-20 fix-application cycles, and concrete cycle ownership for all 126 consumers and 151 tests/helpers.
@@ -565,7 +629,7 @@ This historical hand-over does not close the new targeted review requested above
 #### Review Request
 
 - Independent Research re-review returned GO as supplied by the human; approved scope/order/stop and transaction supersession are binding Design inputs.
-- Design resumption is now authorized; future Design contracts remain subject to human discussion and independent Design review.
+- Review requested for the generation-identity/file-ownership amendment; do not resume Design before the targeted independent verdict.
 - Independent Design review remains required at the Design phase gate; this close-out does not pre-approve Design mechanisms or later implementation cycles.
 
 ## References
@@ -585,6 +649,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.38 | 2026-09-10 | Record human-approved whole-file generation fingerprint boundaries and manifest/.version/policy ownership; retain full upgrade comparison and request targeted QA. |
 | 3.37 | 2026-09-10 | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 3.36 | 2026-09-10 | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 3.35 | 2026-09-10 | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |

@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.81
+**Version:** 0.82
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -11,6 +11,11 @@
 **Lifecycle Status:** Drafting; W05 native-fix contract decided; cross-package integration and independent conformance remain open
 
 ## 1. Purpose and Authority
+
+The [generation identity amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10)
+pauses further Design for targeted Research QA. Template policy.yaml owns output_profile;
+profile/check/default_args/native settings do not contribute to template pf or sf.
+Adapter package manifests/version/fingerprints and W05 decisions are unchanged.
 
 The [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
 withdraws fix proposal/copy/verification/rollback machinery. Native source mutation
@@ -885,13 +890,10 @@ reference. Rebinding a check to another adapter is explicit workspace configurat
 not automatic discovery fallback or proof of behavioral equivalence: the replacement
 must actually provide the intended check, not merely speak `check/v1`.
 
-DI-02 already includes referenced profile identity and resolved semantics in the
-template provenance closure. Before cross-package integration, DI-02/DI-05 must
-specify the exact projection of profile selections and bindings into that closure.
-Do not silently omit existing profile semantics or include executable adapter bytes,
-native tool configuration, or adapter execution fingerprints as template source inputs.
-The present workshop does not change any fingerprint algorithm or promise whole-run
-reproducibility.
+The human-approved generation-identity amendment excludes policy.yaml and external
+profile/binding configuration from template pf/sf. DI-02/DI-05 preserve startup reference
+coherence and actual validation evidence without a fingerprint projection. Adapter
+provenance stays separate; no whole-run reproducibility promise is added.
 
 #### Shared extension-to-profile assignment
 
@@ -2672,7 +2674,7 @@ ordinary unavailable/not_executed and empty selections retain success=true/isErr
 an actual tool execution fault uses success=false/isError=true. Mixed negative and
 unavailable facts retain run_status=incomplete without turning domain reporting into
 a tool failure. Verify that native and adapter nonzero exits do not directly set isError.
-W06 still owns the declarative profile projection into template fingerprints; W09 owns
+W06 reconciles exclusion of policy/profile data from template fingerprints; W09 owns
 native settings and shipped capabilities. No tests, runtime code or Planning cycles are
 implemented or authorized by this documentation checkpoint.
 
@@ -2884,10 +2886,10 @@ not to later agent-requested checks. apply_fixes invokes no verification checks 
 Native role/scope/input-source requirements cannot be bypassed by defaults or caller
 args. Incompatible native options must be reported, not silently replaced.
 
-No changes to native rule config or fingerprints are implemented here. W06's still-open
-profile-projection proposal must account explicitly for use-specific default_args;
-do not silently treat the prior adapter_id/capability-only projection as exhaustive.
-Native config and adapter bytes remain distinct from this authored binding input.
+The generation-identity amendment excludes default_args, all external profile/binding
+configuration and policy.yaml from template pf/sf. The prior W06 profile-projection
+proposal is withdrawn. Argument configuration still controls validation and is reported
+in operation evidence, without changing generation identity.
 
 Required evidence: omitted mapping/recipient, explicit [] and replacement, equal-value
 caller provenance, token order/whitespace/empty values, selected-profile routing,
@@ -3316,7 +3318,7 @@ proposed conformance evidence is claimed as completed.
 | Q-ADAPTER-05 | Closed by W05: native fix admission, sequencing and results | §7.18 is authoritative; independent conformance, native-settings migration and external recovery documentation remain integration obligations, not reopened policy |
 | Q-ADAPTER-06 | Which native values replace today's split tool-settings authorities? | DI-05 chooses retained per-tool settings and explicit request controls, records intentional changes, and supplies separate check/test/fix migration proof obligations |
 | Q-ADAPTER-07 | What completes each capability declaration and its consumer binding? | Define profile/check selection, applicability and input requirements, and explicit fix-to-check references without same-package or same-name assumptions |
-| Q-ADAPTER-08 | How do centrally selected profiles/bindings participate in the existing template provenance closure? | DI-02/DI-05 define the exact declarative projection and affected-package proof before integration; preserve exclusion of executable adapter provenance and native tool settings |
+| Q-ADAPTER-08 | Resolved by human generation-identity amendment | No profile/binding projection enters template pf/sf. Preserve startup reference coherence and runtime validation evidence independently; policy.yaml owns the selector |
 | Q-ADAPTER-09 | How do startup-built public contracts survive registration wrappers and lazy client exposure? | Define the contract holder and validation/presentation interfaces; prove the registered boundary and supported host reconnect/cache behavior without adding hot reload |
 | Q-ADAPTER-10 | How does each real consumer expose configured choices and handle on-use unavailability without weakening its contract? | Complete check/test/fix inputs, defaults, no-configured-choice behavior, no startup probes/filtering, full profile obligations, preserved scaffold report mode, and ordinary response projections under issues 456/459; startup health diagnostics and general blockades remain separately deferred |
 
@@ -3357,6 +3359,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.82 | 2026-09-10 | `@imp researcher` | Remove template-profile fingerprint projection obligation under the bounded generation identity amendment; adapter contracts unchanged. |
 | 0.81 | 2026-09-10 | `@imp designer` | Consolidate human-approved W05 native-fix contract in §7.18; close input/configuration/results/stop ownership, preserve operational success and route independent integration evidence. |
 | 0.80 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 0.79 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |

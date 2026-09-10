@@ -2,27 +2,29 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** RESEARCH FROZEN — NATIVE-FIX QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.35  
+**Status:** GENERATION IDENTITY AMENDMENT — RESEARCH QA REQUESTED  
+**Version:** 1.36  
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
 
 ## Purpose and Authority
 
-Current delta: [lightweight native fixes](research.md#lightweight-native-fix-amendment--2026-09-10).
-DI-05 owns direct authorized native execution, typed per-call outcomes and sequencing;
-DI-07 agent-controlled checks/Git recovery guidance; DI-08 independent proof. Supersede
-proposal/stale-check/verification/rollback obligations only for fixes. Research fixes scope=targets only, required concrete existing files and explicit caller
-fix order, plus stop-on-first-non-success. No directory/broad/default selection or
-continue-on-error switch. Design implements these policies through schemas/DTOs;
-it does not choose them. The human has now supplied independent QA GO for this fix delta and authorized
-Design continuation; the catalog-heading P3 is corrected. Counts, DI-04 persistence and F-10 renewal remain unchanged.
+The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
+Human strategy approval is recorded; independent Research QA is requested before Design
+resumes. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
+remains frozen. Research.md is the sole gate authority.
+
+DI-01/DI-02 own the human-approved manifest/.version/policy.yaml split and whole-file
+pf/sf inclusion rules. DI-04 preserves policy consumers; DI-05 removes external profile
+projection from template fingerprints; DI-06 compares every admitted component file,
+including excluded generation-policy/version files. DI-07/DI-08 own guidance and evidence.
+No new census row or automatic-default behavior is introduced.
 
 The [2026-09-07 safe-edit amendment](research.md#narrow-safe-edit-policy-amendment--2026-09-07)
 is a prior reviewed exception to the freeze. The later
 [2026-09-10 native-selection amendment](research.md#narrow-native-selection-amendment--2026-09-10)
-is the current reviewed delta. The human supplied independent QA GO and authorized
+is a prior reviewed delta. The human supplied independent QA GO and authorized
 Design continuation; the sole nonblocking P2 authority correction is in Research Findings.
 DI-05 owns PGMCP-only Git resolution and adapter operation/targets/args, removal of generic
 fresh/expansion controls, and configured-versus-empty-branch semantics; DI-07 aligns
@@ -186,7 +188,7 @@ flowchart LR
 |---|---|
 | Research inputs | F-04, F-05, F-11, F-16; strategy rows for DTO runtime selection, resolved template graph, source provenance, and artifact-purpose introspection |
 | Responsibilities and consumers | Modular suite loader, Jinja loader/analyzer, template engine, bootstrap composition, runtime catalog, deterministic shallow package discovery, persisted artifact source-provenance facts, package-directed non-artifact evidence where justified, and graph metadata |
-| Design-owned decisions | Dependency-edge model for inheritance/import/include and prohibited package edges; deterministic strict shallow package discovery under `template_suite/` without an authored central index; startup resolution and diagnostics; one declared runtime renderer; concise purpose carrier; automatic selected-package closure/fingerprint; one-manifest-version/no-file-version schema validation without external bump-history policing; compact persisted artifact provenance combining DI-02 package facts with the DI-06 source suite fingerprint; YAGNI admission of suite identity in non-artifact package-directed DTOs |
+| Design-owned decisions | Dependency-edge model for inheritance/import/include and prohibited package edges; deterministic strict shallow package discovery under `template_suite/` without an authored central index; startup resolution and diagnostics; one declared runtime renderer; concise purpose carrier; automatic selected-package closure/fingerprint; one-package-.version/no-independent-file-version schema validation without external bump-history policing; compact persisted artifact provenance combining DI-02 package facts with the DI-06 source suite fingerprint; YAGNI admission of suite identity in non-artifact package-directed DTOs |
 | Compatibility, migration, removal | Remove the implicit DTO override, historical registry/hash authority, and empty legacy artifact-registry facade without compatibility shells; public schemas remain self-contained; suite mutations become restart-stable |
 | Required proof | Missing, cyclic, duplicate, unreachable, prohibited, and incoherent current-suite graph states fail actionably; schema, renderer, purpose, output profile, version, and resolved fingerprint identify the same package; a package-local change leaves every other package's semantic facts and affected-package diagnostics unchanged while only newly scaffolded artifacts may receive a new source suite fingerprint; shared changes affect exactly their transitive consumers; repeated startup produces stable facts. Ordinary resolution, introspection, and scaffolding use only the currently supplied suite and require no historical setup |
 | Exclusions | No historical template or Git/release association registry, history inspection, retention validator, snapshot archive/lookup service, absent-history failure/evidence state, external version-policy enforcement, adopted-artifact update system, or runtime purpose-discovery feature |
@@ -317,7 +319,7 @@ This is a cross-cutting routing and integration obligation, not a removal subsys
 
 ### RC-01 — Approved Strategy Fidelity
 
-Research has approved compatibility and migration per boundary, including the F-20 clean break dated 2026-09-04. The human owner subsequently confirmed formal Design GO with binding manageability conditions; Research and this intake scope are frozen. This paragraph's former pending-review wording was an administrative remnant superseded by that recorded authorization. Design may define mechanisms within the approved strategies. A new product role, compatibility choice, or consumer family requires a separate issue; contradictory evidence stops the affected design for an explicit human decision.
+Research has approved compatibility and migration per boundary, including the F-20 clean break dated 2026-09-04. The human owner subsequently confirmed formal Design GO with binding manageability conditions; Research and this intake scope are frozen except the generation-identity amendment awaiting QA. This paragraph's former pending-review wording was an administrative remnant superseded by that recorded authorization. Design may define mechanisms within the approved strategies. A new product role, compatibility choice, or consumer family requires a separate issue; contradictory evidence stops the affected design for an explicit human decision.
 
 | Obligation | Consequence |
 |---|---|
@@ -378,7 +380,7 @@ All 44 strategy rows from [Research](research.md#approved-strategy-and-decision-
 | Primary destination | Core invariants | Count |
 |---|---|---:|
 | DI-01 | I-05 finite reference-free public schemas; I-06 distinct optional/null/empty/default states; I-08 no template truth in generic server code/prose | 3 |
-| DI-02 | I-03 one package-manifest version, no file/shared versions, coherent resolved package semantics, transitive shared impact, unchanged lateral package diagnostics, and truthful source-suite fingerprint changes only in newly scaffolded artifacts | 1 |
+| DI-02 | I-03 one package-local .version release label, no file/shared versions, coherent resolved package semantics, transitive shared impact, unchanged lateral package diagnostics, and truthful source-suite fingerprint changes only in newly scaffolded artifacts | 1 |
 | DI-03 | I-01 discoverable renderer values; I-02 one meaning/effect per field; I-07 no hidden consumer-project dependencies | 3 |
 | DI-04 | I-04 make unchanged caller context the sole caller-authored render source and keep operation controls out of content; I-09 portable body without persistence target; I-13 valid scaffold basis versus final completion | 3 |
 | DI-05 | I-16 one check capability/command/result authority; I-19 generic server code is language/tool-neutral while check/test/fix retain separate contracts | 2 |
@@ -412,7 +414,7 @@ The [Template Suite Work Catalog](template-suite-catalog.md) remains authoritati
 | Consumer family | Primary destination | Material dependent packages |
 |---|---|---|
 | Contract metamodel, shared schema primitives, artifact IDs, public schema resolution, package-owned tests, and superseded schema surfaces | DI-01 | DI-02, DI-03, DI-04, DI-07, DI-08 |
-| Jinja graph, loader, runtime catalog, package-manifest version authority, resolved package provenance, compact persisted artifact provenance, package-impact diagnostics, package-owned tests, and obsolete graph/registry surfaces | DI-02 | DI-03, DI-04, DI-06, DI-08, XC-02 |
+| Jinja graph, loader, runtime catalog, package-local .version authority, resolved package provenance, compact persisted artifact provenance, package-impact diagnostics, package-owned tests, and obsolete graph/registry surfaces | DI-02 | DI-03, DI-04, DI-06, DI-08, XC-02 |
 | Concrete artifact config/schema instances, retained/removed templates, macros, examples, output-profile assignments, and package-owned tests | DI-03 | DI-01, DI-02, DI-05, DI-07, DI-08, XC-02 |
 | Scaffold and safe-edit tools, `artifacts.yaml` location policy, `project_structure.yaml` field/consumer migration, mutation orchestration, mutation-operation DTOs, target resolution, Research-approved enforce/report policy (default enforce), atomicity, persistence, package-owned tests, active documentation, and superseded helpers | DI-04 | DI-01, DI-02, DI-05, DI-08, XC-02 |
 | Adapter package/catalog resolution, generic process runtime, separate check/test/fix contracts, output-profile check selection, explicit check/test/fix orchestration, root project/build/package configuration, config/state/DTO/cache/presentation migration, official adapter distribution/dependency ownership, fix authorization/application, Pytest and retained check/fix adapters, package-owned conformance/behavior tests, and legacy quality/validation/test/fix surfaces | DI-05 | DI-04, DI-07, DI-08, XC-02 |
@@ -501,6 +503,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.36 | 2026-09-10 | `@imp researcher` | Route whole-file generation identity and split package ownership; retain full operational upgrade equality and independent QA gate. |
 | 1.35 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
 | 1.34 | 2026-09-10 | `@imp researcher` | Resolve QA scope/stop blockers through human-approved files-only and stop-first policy; remove fix-transaction and stale gate handovers. |
 | 1.33 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
