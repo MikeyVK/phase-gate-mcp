@@ -3,8 +3,8 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.16  
-**Last Updated:** 2026-09-08  
+**Version:** 1.17  
+**Last Updated:** 2026-09-10  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
 **Downstream Consumers:** DI-03, DI-04, DI-06, DI-07, DI-08  
@@ -461,6 +461,32 @@ without requiring pv/pf/sf equality with today's catalog. Exact header placement
 framing recognition remain joint DI-02/DI-04 integration work, including rejection of
 body examples as file-owned metadata.
 
+#### Joint internal header utility
+
+Human clarification, 2026-09-10: design the header reader and writer together as an
+internal utility, not agent-callable MCP tools. DI-02 owns their shared dialect and
+round-trip contract; DI-04 consumes the narrow read interface for safe-edit selection.
+Scaffolding consumes the write/format interface for generated header content. Separate
+consumer-facing interfaces do not imply duplicate implementations of the format rules.
+
+Here header writing means producing header text from the server-supplied typed provenance
+record, not opening or replacing an artifact file. File persistence stays with mutation
+orchestration and its filesystem boundary. The utility neither computes package/suite
+fingerprints, invents provenance, resolves profiles nor updates existing-file lifecycle
+metadata. It owns no resource publication or user-facing tool-response presentation.
+
+Reader and writer must share field grammar, marker/version interpretation and the
+one/two-line rule. Native comment framing and eligible placement must be designed jointly
+with the shared template bases; do not leave a second independent Jinja serialization
+beside a Python reader. Exact template integration, framing source and placement rules
+remain open, without pre-authorizing a new manifest field or configuration file.
+
+Required evidence includes reading the header emitted by the writer without losing
+id/pv/pf/sf, both supported line forms and invalid-header rejection. Round-trip tests
+alone are insufficient: independent valid/invalid fixtures must prevent a shared writer
+and reader mistake from passing unnoticed. No new public tool, adapter role, header-edit
+command or supported legacy metadata bridge is introduced.
+
 Package version and resolved fingerprint remain independently observable facts. When a
 consumer already has two supplied resolved package records, their relation is exact:
 
@@ -864,6 +890,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.15 | 2026-09-03 | `@imp designer` | Reference the DI-04 scaffold validation policy/outcome authority and include validation in the operation-only boundary without copying its enumeration or changing the manifest. |
 | 1.14 | 2026-09-03 | `@imp designer` | Clarify the authored identifier as `template_id`, keep compact persisted `id` only as provenance syntax, and fix strict shallow direct-child package discovery without an authored `templates.yaml` inventory. |
 | 1.16 | 2026-09-08 | `@imp designer` | Admit the demonstrated safe-edit V3-reader consumer under the conditional replacement rule; retain a shared read/write dialect, syntax-only historical facts and no legacy/history revival. |
+| 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
 | 1.13 | 2026-09-03 | `@imp designer` | Remove premature Worker/package naming examples so illustrative values cannot pre-empt DI-03 artifact identities, DI-03 content fields, or DI-05 profile IDs; preserve the abstract five-field manifest and explicit input boundary. |
 | 1.12 | 2026-09-03 | `@imp designer` | Reconcile the human-approved F-03/F-07 correction: remove manifest naming and the generic naming resolver, require exact file-name operation input and explicit artifact-local rendered names, isolate server provenance, and supersede the input `output_path`/envelope-name derivation model. |
 | 1.11 | 2026-09-03 | `@imp designer` | Close package-version policy: validate SemVer syntax only, use resolved fingerprints for content equality, preserve four factual version/fingerprint relations, derive shared impact from the current graph, and introduce no bump enforcement, warning service, or history. |

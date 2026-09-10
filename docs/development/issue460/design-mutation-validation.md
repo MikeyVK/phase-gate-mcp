@@ -3,8 +3,8 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.23  
-**Last Updated:** 2026-09-08  
+**Version:** 1.24  
+**Last Updated:** 2026-09-10  
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
 **Downstream Consumers:** Scaffold and safe-edit callers; DI-07; DI-08  
@@ -659,6 +659,12 @@ This does not authorize legacy parsing, history lookup or source-provenance muta
 
 #### Reader and selection responsibilities
 
+The human clarified on 2026-09-10 that header reading and writing form one jointly
+designed [internal utility](design-suite-resolution.md#joint-internal-header-utility),
+not new MCP tools. Safe edit receives its read interface; scaffolding uses header
+formatting. Neither interface is the atomic file writer, and safe edit does not acquire
+automatic provenance-update behavior from their shared ownership.
+
 The reader consumes original file text and recognizes only the current `pgmcp:v1`
 header contract, including its one-line and two-adjacent-line forms. It returns typed
 metadata, not a selected template or profile. DI-02 owns the one shared read/write
@@ -850,6 +856,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.21 | 2026-09-07 | @imp designer | Resume after human-reported independent Research QA GO; integrate common validation/enforce/report contract, retire legacy safe-edit modes, and close policy-choice questions without claiming complete DTO integration. |
 | 1.22 | 2026-09-07 | @imp designer | Record approved safe-edit operation semantics, content_changed with closed write combinations, construction-versus-check failures, structured suggestions and consumer-specific preservation evidence. |
 | 1.23 | 2026-09-08 | @imp designer | Record approved narrow V3 reader, syntax-only historical provenance handling, stable original/proposed content and invocation-local pre-write change detection with an explicit external-writer race limitation. |
+| 1.24 | 2026-09-10 | @imp designer | Reference jointly designed internal header utility; separate safe-edit reading, scaffold formatting and filesystem persistence without public tools or provenance updates. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
 | 1.18 | 2026-09-07 | @imp designer | Record public mutation nesting audit, mark singleton validation projection unresolved, and propose direct fields plus meaningful collections while retaining native evidence and internal/deferred boundaries. |
 | 1.17 | 2026-09-07 | @imp designer | Exclude verify_only removal and further mode-specific Design; retain existing behavior and bound any new-functionality conflict to explicit human review. |

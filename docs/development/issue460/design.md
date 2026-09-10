@@ -3,8 +3,8 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.51  
-**Last Updated:** 2026-09-08  
+**Version:** 1.52  
+**Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
 **Role:** Design integration hub
@@ -365,7 +365,10 @@ Do not reopen the general scaffold outcome contract to cover these consumer diff
 The [V3 reader and read/check/write slice](design-mutation-validation.md#48-v3-metadata-selection-and-readcheckwrite-consistency)
 is human-approved on 2026-09-08: admit a narrow reader, preserve one original/proposed
 content pair, and refuse observed intervening changes without claiming universal
-external-writer exclusion. Header recognition and typed boundary declarations are next;
+external-writer exclusion. Human clarification on 2026-09-10 fixes a jointly designed
+[internal header reader/writer](design-suite-resolution.md#joint-internal-header-utility),
+not MCP tools; header formatting is separate from file persistence. Shared-template
+integration, header recognition and typed boundary declarations are next;
 exact diagnostic/provenance carrier integration remains required before full DTO closure.
 Native evidence, execution provenance and internal responsibilities remain required.
 
@@ -475,6 +478,7 @@ No cycles or estimates are defined during Design.
 | 1.49 | 2026-09-07 | `@imp designer` | Record human-reported independent QA GO and Design resumption; integrate common mutation policy vocabulary and legacy-mode removal in DI-04/DI-05; retain open diagnostic/provenance integration. |
 | 1.50 | 2026-09-07 | `@imp designer` | Index approved safe-edit-specific operations, no-change result and failure boundaries; move the next workshop to V3 reader and read/check/write consistency. |
 | 1.51 | 2026-09-08 | `@imp designer` | Index approved V3-reader responsibility and bounded pre-write consistency guard; reconcile DI-02/04/05 references and retain explicit header/interface integration work. |
+| 1.52 | 2026-09-10 | `@imp designer` | Index human-confirmed joint internal header utility with separate reader/formatter consumers; retain shared-template integration and header recognition as the next bounded design slice. |
 | 1.47 | 2026-09-07 | `@imp designer` | Record consolidated result agreement with explicit exception for safe-edit policy vocabulary; retain the deferred-mode boundary and integration work. |
 | 1.46 | 2026-09-07 | `@imp designer` | Index the consolidated mutation-result workshop and approved failed-message/no-public-origin correction; keep remaining proposal and integration boundaries explicit. |
 | 1.45 | 2026-09-07 | `@imp designer` | Index public mutation nesting audit and unresolved projection gaps while preserving decided semantics, internal protocols and deferred scope. |
