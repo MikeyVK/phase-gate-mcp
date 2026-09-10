@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.68
+**Version:** 1.69
 **Last Updated:** 2026-09-10  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -24,6 +24,12 @@ Design on 2026-09-04 after the F-20 amendment review and froze Research content 
 The [Design Intake Map](design-intake-map.md) remains authoritative for package routing.
 
 ## Scope
+
+The human requested the [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10).
+W05's copy/proposal/check/rollback design is withdrawn as the default. Native source
+mutation and agent-controlled verification/recovery are the new bounded strategy;
+independent QA of that delta and detailed W05 decisions remain open. Prior QA GO covers
+selection only. No implementation or new recovery subsystem is authorized here.
 
 Design resumed on explicit human GO after the narrow F-20 Research correction in
 commit `12665147`. The required-scope and auto-retirement constraints in
@@ -519,6 +525,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.69 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 1.68 | 2026-09-10 | `@imp designer` | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |
 | 1.67 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 1.66 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |

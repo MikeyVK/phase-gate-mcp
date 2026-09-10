@@ -1,12 +1,54 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
-**Status:** RESEARCH FROZEN — INDEPENDENT QA GO REPORTED; DESIGN RESUMED  
-**Version:** 3.34  
+**Status:** BOUNDED NATIVE-FIX AMENDMENT — QA REQUESTED; REST FROZEN  
+**Version:** 3.35  
 **Last Updated:** 2026-09-10  
 **Issue:** 460  
 **Workflow:** Refactor / Research
 
 ## Purpose
+
+### Lightweight Native-Fix Amendment — 2026-09-10
+
+The human explicitly requested developing the lightweight native-fix direction after
+rejecting mandatory fix/check interleaving and generic copy/transaction machinery.
+This amends only the existing F-20 fix application strategy and E-23; no new role,
+consumer family, census row or compatibility bridge is introduced.
+
+- apply_fixes is an explicitly requested source-mutation operation. PGMCP resolves
+  selected bindings/targets and invokes trusted fix adapters in a defined order.
+  Adapters invoke native fixers directly on authorized source targets.
+- Native configuration remains the settings SSOT. Binding default_args and addressed
+  caller replacement retain the approved rule; arguments do not grant additional
+  filesystem or role authority. Generic PGMCP does not parse native switches.
+- Do not require replacement proposals, generic workspace copies, pre-application
+  verification, stale-byte transactions, rollback journals or automatic restoration.
+  A failure, timeout or malformed result after launch may leave source changes.
+  No all-or-nothing, no-lost-update or failure-means-no-write guarantee is offered.
+- Agentic sequencing remains check, assess, fix, recheck and possibly safe_edit.
+  No automatic repair loop, required post-fix check, or safe-edit autofix mode is added.
+  A fix/check capability relation is discovery information, not an execution dependency.
+- Git checkpoints and targeted restoration are explicit agent/human actions using
+  existing tools, not hidden apply_fixes behavior. No required clean worktree, automatic
+  commit/stash/reset or private backup system. Only captured content is recoverable
+  from a checkpoint; later unrelated edits must not be discarded during recovery.
+- Report per-execution native outcomes and process diagnostics without certifying
+  check correctness. Do not invent an exact changed-file list from Git dirty state.
+  Operational success remains inverse MCP isError, independent of native exit/verdict.
+- Explicit target containment and adapter role conformance remain mandatory; direct
+  native execution is not an OS sandbox or a guarantee against a misbehaving trusted
+  extension. The separate sandbox deferral is unchanged.
+
+Trade-off: this preserves native behavior and avoids copying/recovery machinery, but
+accepts partial mutations and external recovery decisions. DI-05 must design scope
+admission, typed outcomes, evidence limits and sequencing/stop behavior explicitly.
+Those details are not decided by this strategy amendment. DI-07 documents the agentic
+flow and limitations; DI-08 proves authorization and truthful failure reporting.
+F-10 renewal and DI-04 mutation policies remain unchanged, with separate evidence.
+
+The preceding QA GO covers the earlier selection amendment, not this new change.
+Targeted independent review is requested before canonicalizing the affected W05 design.
+All other Research remains frozen.
 
 ### Narrow Native-Selection Amendment — 2026-09-10
 
@@ -79,6 +121,10 @@ This document is the sole authority for issue-460 decision status, Approved Stra
 
 ## Current Status and Gate
 
+The [lightweight native-fix amendment](#lightweight-native-fix-amendment--2026-09-10)
+is the current human-authorized delta and awaits independent QA. The following
+native-selection GO remains evidence for that earlier boundary, not this amendment.
+
 The [2026-09-10 native-selection amendment](#narrow-native-selection-amendment--2026-09-10)
 is the latest reviewed delta: the human supplied independent QA GO and authorized
 Design resumption. Its nonblocking P2 authority-paragraph correction is recorded in
@@ -136,7 +182,7 @@ frozen. This amends the existing F-20 strategy, not the issue's product roles or
   use or explicit caller args, not automatic scope fallback. PGMCP owns branch resolution
   and deletion evidence; adapters receive no Git metadata. See the 2026-09-10 amendment.
 - Retire only the auto-specific state responsibility and its consumers. Keep unrelated
-  workflow/phase state, report resources, fix recovery, test state, and template-suite
+  workflow/phase state, report resources, test state, and template-suite
   renewal checkpoints. Existing obsolete check-state data is not migrated into a new
   validity cache; Design must specify its safe inert-data cleanup disposition.
 - Keep adapters language-agnostic and practical to author. This amendment does not
@@ -354,7 +400,7 @@ The table below is the canonical strategy and status register. Supporting ration
 | F-07 / S-07 input ownership and consumption | Approved 2026-08-23; clarified 2026-09-03 | Artifact context contains every caller-authored rendered value and only artifact content; operation controls never tunnel into rendering, downstream tool envelopes never tunnel through bodies, server provenance is a separate declared metadata source, and hidden routing or unconsumed values are removed |
 | F-08 / S-14 output validation and strictness | Approved 2026-08-23 | Applicable output evidence is declared per artifact/profile; passed, failed, and unavailable remain distinct; strict persistence requires executed passing evidence; dormant artifacts impose no provider availability requirement. Provider discovery, injection, and call topology remain Design-owned |
 | F-19 shared output-validation and check authority | Approved scope expansion 2026-08-25; narrowed and superseded in part by F-20 on 2026-09-04 | Retain one injected, config-first, side-effect-free authority for executable check facts and normalized factual check results, shared by artifact output profiles and explicit check execution. Scaffold and safe-edit consumers validate complete proposed content before mutation without check-run lifecycle or presentation side effects. F-20 supersedes the former promises that `run_quality_gates` remains public, that autofix belongs to quality orchestration, and that behavioral tests sit outside the shared extension architecture. F-19 still owns check facts and check-result semantics; it does not collapse input-schema, startup-graph, behavioral-test, fix, workflow-gate, or persistence policy responsibilities |
-| F-20 check/test/fix adapter extension suite | Independent QA GO reported for the 2026-09-10 native-selection refinement; Design resumed | Introduce one startup-resolved language-agnostic adapter extension suite. Self-contained packages declare manifest-owned `adapter_id`, one package version, supported `check/v1`, `test/v1`, and/or `fix/v1` contracts, capabilities, and executable entry points. Official packages ship with PGMCP; explicitly trusted workspace packages live under `.pgmcp/adapter_suite/`. Generic infrastructure owns discovery, trust, process transport, scratch space, timeouts, stdout/stderr capture, malformed/crashed/unavailable facts, and package fingerprints; it contains no language, extension, framework, command, or parser branches. Public/configuration vocabulary is a PGMCP 3.0 clean break: `run_checks` with `checks.yaml`, framework-neutral `run_tests` with `tests.yaml`, and `apply_fixes` with `fixes.yaml`; remove `run_quality_gates`, `auto_fix`, and `quality.yaml` without aliases or dual reads, and return actionable migration errors for obsolete config. Check is side-effect-free factual analysis, test returns framework-aware behavioral evidence, and fix returns a bounded proposed changeset that PGMCP stale-checks, authorizes, validates, and applies. A package may implement several roles but each role independently satisfies its versioned contract. Run evidence records only invoked adapter ID/version/package fingerprint/contract version and external tool identity/version; no whole-suite fingerprint or scaffold-artifact provenance is added. External/workspace owners retain their own package history, dependencies, and version policy. A new language/tool within these three roles requires adapter/config changes, not generic server code; a genuinely new product role may require a new consumer and contract The [2026-09-05 refinement](#narrow-check-retesting-amendment--2026-09-05) additionally removes auto and PGMCP execution-result reuse, preserves native optimization, and uses native configured/caller args without generic fresh or expansion controls; PGMCP alone resolves branch targets; report caching and all other F-20 boundaries remain unchanged |
+| F-20 check/test/fix adapter extension suite | Native-selection QA GO retained; lightweight native-fix amendment human-authorized, targeted QA requested | Introduce one startup-resolved language-agnostic adapter extension suite. Self-contained packages declare manifest-owned `adapter_id`, one package version, supported `check/v1`, `test/v1`, and/or `fix/v1` contracts, capabilities, and executable entry points. Official packages ship with PGMCP; explicitly trusted workspace packages live under `.pgmcp/adapter_suite/`. Generic infrastructure owns discovery, trust, process transport, scratch space, timeouts, stdout/stderr capture, malformed/crashed/unavailable facts, and package fingerprints; it contains no language, extension, framework, command, or parser branches. Public/configuration vocabulary is a PGMCP 3.0 clean break: `run_checks` with `checks.yaml`, framework-neutral `run_tests` with `tests.yaml`, and `apply_fixes` with `fixes.yaml`; remove `run_quality_gates`, `auto_fix`, and `quality.yaml` without aliases or dual reads, and return actionable migration errors for obsolete config. Check is side-effect-free factual analysis, test returns framework-aware behavioral evidence, and fix adapters execute native mutation on PGMCP-authorized targets, without mandatory verification, proposal/copy staging or rollback; failures may leave changes and recovery is agent-controlled. A package may implement several roles but each role independently satisfies its versioned contract. Run evidence records only invoked adapter ID/version/package fingerprint/contract version and external tool identity/version; no whole-suite fingerprint or scaffold-artifact provenance is added. External/workspace owners retain their own package history, dependencies, and version policy. A new language/tool within these three roles requires adapter/config changes, not generic server code; a genuinely new product role may require a new consumer and contract The [2026-09-05 refinement](#narrow-check-retesting-amendment--2026-09-05) additionally removes auto and PGMCP execution-result reuse, preserves native optimization, and uses native configured/caller args without generic fresh or expansion controls; PGMCP alone resolves branch targets; report caching and all other F-20 boundaries remain unchanged |
 | Safe-edit post-edit validation | Approved 2026-08-25; narrow human amendment 2026-09-07, independent QA requested | Every safe edit validates complete proposed content through the shared configured output-profile boundary. Scaffold and safe edit expose validation=enforce/report (default enforce) and return validation_policy. Enforce preserves the original on failed/unavailable required validation; report may persist with structured findings, never bypassing independent safety/operation failures. V3 removes safe-edit mode, strict/interactive labels and verify_only without aliases or replacement dry-run functionality. Exact staging/atomic-write/rollback mechanics remain Design-owned |
 | F-09 / S-15 documentation authority | Approved 2026-08-23 | Live schema and catalog own exact facts; handwritten docs explain semantics and discovery, duplicate inventories are removed, and generation remains YAGNI-driven |
 | F-10 / S-10 distribution and customization | Human-approved amendment and bootstrap remediation 2026-09-03; unchanged by F-20 | Replace complete-suite-only renewal with component-wise three-way selection. Compare one current adopted checkpoint, the actual active root, and the supplied candidate for each indivisible component: shared/ is one component and every concrete manifest ID is one component. Select candidate content only for upstream-only or converged non-conflicting component changes; retain actual content or absence for local-only and conflicting changes. Component absence is a first-class state, so candidate additions and removals follow the same three-way rules. Build the selected result as a complete off-root suite, validate the entire resolved suite, and activate it only through a recoverable complete-tree replacement; validation or activation failure leaves the prior actual root authoritative. Candidate staging remains non-authoritative and runtime resolves exactly one active root. Persist one current component checkpoint with no history and no per-file versions. For a fresh managed install, install the validated candidate and establish its component states as the checkpoint in the same authoritative operation. For an existing managed workspace without a checkpoint, automatic bootstrap is permitted only when a trustworthy persisted fingerprint of the previously installed or accepted official suite exactly matches the computed actual suite, or when actual exactly equals the fully validated candidate; derive the checkpoint from that proven-equal suite. An owner-supplied trusted complete prior suite may instead be validated and used to derive adopted component states. If none of those bases is reliably available, preserve every actual byte, stage the candidate non-authoritatively, return an actionable `checkpoint_required` outcome, and perform no component selection or activation. Existing external workspaces never infer a checkpoint or activate content automatically; their owner must supply a trusted prior suite or explicitly acknowledge the validated candidate as the upstream comparison basis. Candidate acknowledgement advances only checkpoint state and leaves actual content unchanged. Explicit reconciliation may likewise advance candidate checkpoint components without copying or overwriting locally merged actual content. Bootstrap creates no history, lookup, retention, SemVer, compatibility-matrix, automatic-merge, or provenance-registry obligation. Artifact metadata and the existing resolved-package and source-suite fingerprints remain unchanged and are not repurposed as the renewal checkpoint. Exact checkpoint encoding, comparison DTOs, staging path, validation transaction, and recoverable activation mechanics remain DI-06 Design-owned. |
@@ -415,7 +461,7 @@ Issue 460 should be considered substantively resolved only when:
 
 21. Renewal compares one current adopted checkpoint with actual and candidate states for shared/ and each manifest-ID component, selects whole non-conflicting candidate components while preserving local/conflicting actual components, validates one complete off-root result, and activates it recoverably as the sole runtime root. Explicit reconciliation can advance candidate checkpoint state without overwriting locally merged content; external ownership and all prohibited merge/version/provenance mechanisms remain preserved.
 22. A fresh managed install creates its initial checkpoint with the installed candidate; an existing checkpoint-less workspace bootstraps automatically only from trusted equality evidence. Otherwise actual content remains byte-for-byte unchanged, candidate remains non-authoritative, and an actionable `checkpoint_required` outcome requires the owner to supply a trusted prior suite or acknowledge the validated candidate as comparison basis without activating or overwriting it.
-23. `run_checks`, `run_tests`, and `apply_fixes` consume one resolved adapter-package catalog and generic process runtime while preserving separate check/test/fix contracts; official Pytest and retained check/fix behavior migrate into adapters, one non-Python fixture proves configuration-only language extension, fix application remains PGMCP-authorized and recoverable, and obsolete V2 tool/config vocabulary is rejected rather than bridged.
+23. `run_checks`, `run_tests`, and `apply_fixes` consume one resolved adapter-package catalog and generic process runtime while preserving separate check/test/fix contracts; official Pytest and retained check/fix behavior migrate into adapters, one non-Python fixture proves configuration-only language extension, fix execution remains explicitly PGMCP-authorized, native mutations may remain after failure, and per-execution reporting supports explicit agent-controlled checks and Git recovery without a tool rollback guarantee, and obsolete V2 tool/config vocabulary is rejected rather than bridged.
 
 ## Deferred Work
 
@@ -442,7 +488,7 @@ Research is frozen except for the authorized 2026-09-05 check-retesting amendmen
 5. Which package-directed non-artifact DTOs, if any, have a demonstrated consumer for suite identity, and which omit it under YAGNI?
 6. How does DI-05 define one resolved adapter-package catalog and generic process runtime while giving `check`, `test`, and `fix` separate versioned inputs, results, policy consumers, and side-effect boundaries?
 7. How do `run_checks`, framework-neutral `run_tests`, and `apply_fixes` expose short coherent public contracts, configuration, cached evidence, presentation, verbose output, and actionable unavailability without leaking tool-specific concepts into generic server code?
-8. How are fix proposals bounded, stale-checked, path-authorized, validated, and recoverably applied without granting an adapter direct authority over workspace mutation?
+8. How are native fix calls path-authorized, ordered and honestly reported, including partial changes, unavailable steps and process failures, without automatic checks, copies, commits or rollback?
 9. How do package discovery, trust, dependencies, one package version, computed package fingerprint, restart loading, and official-versus-workspace ownership work without a whole-suite run fingerprint or PGMCP-owned external history?
 10. Which independent/conformance evidence proves Pytest preservation, non-Python extensibility, contract failure behavior, fix safety, and complete removal of old tool/config names?
 
@@ -456,7 +502,7 @@ This historical hand-over does not close the new targeted review requested above
 - Added F-20: one language-agnostic adapter extension suite with separate `check`, `test`, and `fix` role contracts.
 - Recorded the PGMCP 3.0 clean break from `run_quality_gates`/`auto_fix`/`quality.yaml` to `run_checks`/`run_tests`/`apply_fixes` and `checks.yaml`/`tests.yaml`/`fixes.yaml`.
 - Preserved consumer-specific policies: output-profile validation, explicit check execution, behavioral testing, controlled fix application, workflow evidence consumption, and scaffold/safe-edit persistence remain distinct.
-- Included adapter package ownership, trust, version, fingerprint, invoked-run provenance, restart loading, external ownership, bounded fix proposals, and independent/self-hosting evidence.
+- Included adapter package ownership, trust, version, fingerprint, invoked-run provenance, restart loading, external ownership, explicitly authorized native fixes, and independent/self-hosting evidence.
 - Preserved all unrelated template-suite, artifact provenance, renewal, and deferred-work decisions.
 - Excluded production/test implementation and did not modify the in-progress Design package documents.
 
@@ -512,6 +558,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.35 | 2026-09-10 | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 3.34 | 2026-09-10 | Correct QA P2 authority routing; record human-supplied independent QA GO and Design resumption without changing approved behavior. |
 | 3.33 | 2026-09-10 | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 3.32 | 2026-09-10 | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |

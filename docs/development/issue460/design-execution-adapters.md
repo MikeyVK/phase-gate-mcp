@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.77
+**Version:** 0.78
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -11,6 +11,11 @@
 **Lifecycle Status:** Drafting; manifest nucleus decided; shared check binding and profile-selection proposal open
 
 ## 1. Purpose and Authority
+
+The [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
+withdraws fix proposal/copy/verification/rollback machinery. Native source mutation
+and agent-controlled follow-up replace it. Exact W05 scopes, DTOs and stop policy remain
+proposals pending targeted review; prior selection QA GO does not approve this delta.
 
 Own the execution adapter Design for issue 460: package contracts, catalog resolution,
 generic process execution, separate check/test/fix contracts, consumer configuration,
@@ -31,7 +36,7 @@ does not yet specify complete executable interfaces or final per-tool migration 
 | Generic process execution | Opaque launch instructions, transport, bounded execution, scratch space, capture, and execution failures |
 | `check/v1` | Factual analysis used by output profiles and explicit checks |
 | `test/v1` | Behavioral execution and framework-aware evidence for configured suites |
-| `fix/v1` | Bounded proposals, PGMCP authorization, stale checks, application, and recovery |
+| `fix/v1` | PGMCP target authorization, native source mutation and factual execution reporting |
 | Consumer contracts | `run_checks`, `run_tests`, `apply_fixes`, `checks.yaml`, `tests.yaml`, `fixes.yaml`, results/cache/presentation, and migration |
 
 DI-04 owns scaffold/safe-edit persistence and its policy decisions. DI-06 owns template
@@ -108,7 +113,7 @@ and fix transaction mechanics remain open Design work.
 | Safe edit | Does the complete proposed replacement satisfy the applicable profile? | Replacement content, logical target, and selected checks | DI-04 applies validation=enforce/report and controls replacement |
 | `run_checks` | What do the requested checks report about the selected existing files? | Explicit check selection, scope, and relevant file content/context | DI-05 reports check evidence and owns the applicable run lifecycle |
 | `run_tests` | Do the configured behavioral tests meet their expectations? | Selected configured test suites and declared options | DI-05 reports framework-aware execution evidence |
-| `apply_fixes` | Can the requested changes be proposed and safely applied to these targets? | Authorized targets and selected fix capabilities | DI-05 validates proposals and controls authoritative mutation |
+| `apply_fixes` | What did the requested native fixes do on the authorized targets? | Authorized targets and selected fix capabilities | DI-05 admits and sequences native mutation; reports failures without rollback promises |
 | Workflow gates | Is the evidence sufficient for the configured workflow condition? | Relevant completed operation evidence | DI-07 preserves workflow/policy ownership |
 
 A scaffold profile selects checks appropriate to a first generated artifact. It does
@@ -155,7 +160,7 @@ Illustrative package contents, not final IDs or a final official adapter invento
 | Implementation package | Candidate role contents | Why grouped this way |
 |---|---|---|
 | Existing Python syntax implementation | A syntax check | Current `ast.parse` behavior can move behind the process contract without requiring a full lint/type run |
-| Ruff integration | Retained formatting/lint checks and separately declared formatting/lint fix proposals | The existing configuration already uses one tool for check and fix commands |
+| Ruff integration | Retained formatting/lint checks and separately declared formatting/lint native fixes | The existing configuration already uses one tool for check and fix commands |
 | Pytest integration | Behavioral test execution | Collection, markers, coverage, and framework result interpretation share one implementation |
 
 A capability that combines several tools may still justify one package when it has a
@@ -327,7 +332,7 @@ file per repository or a mandatory config file for an otherwise unconfigured too
 PGMCP must not reimplement native configuration discovery/merging as a generic YAML DSL.
 
 Adapters may set transport and role-safety options, such as machine-readable output,
-non-writing check mode, or bounded fix-proposal generation. They may translate explicit
+non-writing check mode, or explicitly authorized native fixing. They may translate explicit
 operation requests such as a selected test subset. Native verbosity switches are passed
 through args without a generic boolean interpretation (D-ADAPTER-23). Those
 options must not silently replace native rules or grant extra mutation authority.
@@ -690,7 +695,7 @@ Illustrative declarations, not final official IDs or a final capability inventor
 |---|---|---|---|
 | Ruff integration | `check` | `format` | Report whether the selected content satisfies formatting |
 | Ruff integration | `check` | `lint` | Report the selected content's native-configured lint findings |
-| Ruff integration | `fix` | `format` | Propose formatting changes for explicitly authorized targets |
+| Ruff integration | `fix` | `format` | Apply native formatting to explicitly authorized targets |
 
 Identical names do not create a check-to-fix relationship or grant mutation authority.
 F-20 still requires an explicit relation between fix capabilities and addressed checks;
@@ -719,7 +724,7 @@ Sections 7.4.2–7.4.3 complete those two decisions; no runtime conformance is c
 | Check capability fields | Nonempty unique inputs tuple of content or selection; requires_file is required boolean when content is supported and forbidden otherwise. Profile admission and input preparation are the consumers |
 | Test capability input | W04 §7.15 supersedes the earlier options_schema field: native CLI arguments use the fixed args transport; no per-capability CLI-option schema |
 | Fix capability field | Nonempty addresses references, each adapter_id plus check capability; may reference a different package. Fix/check configuration coherence is the consumer; exact fix application remains W05-owned |
-| Generic composition | One immutable startup catalog, narrow CheckCatalogReader/TestCatalogReader/FixCatalogReader and one shared AdapterInvoker. Fix orchestration explicitly receives its separate verification-check reader; no consumer gets install/trust mutation APIs |
+| Generic composition | One immutable startup catalog, narrow CheckCatalogReader/TestCatalogReader/FixCatalogReader and one shared AdapterInvoker. Fix/check relations support discovery, not mandatory verification execution; no consumer gets install/trust mutation APIs |
 
 Use strict, immutable, extra-forbid declarations and exact case-sensitive IDs. Package
 and capability IDs follow [a-z][a-z0-9_]{0,63}; adapter version is valid SemVer without
@@ -1140,7 +1145,7 @@ fixes the direct operation error/detail fields, separately owned housekeeping, m
 fallback explanation and concrete public check record. Invocation/capture facts stay
 DI-05-owned; mutation managers decide their operation consequence and tools transfer it.
 W01 did not expand the role payload. W02-F now explicitly approves external_tools under
-§7.4.3; W05's recovery additions remain separate proposals.
+§7.4.3; W05's former recovery additions are withdrawn by the native-fix amendment.
 
 The proposed new per-layer response registration, response identities and variant
 dispatcher are withdrawn as prerequisites. Preserve existing runtime derivation from
@@ -1245,7 +1250,8 @@ exclusive state DTO/repository, wiring, workflow registration, and recovery mess
 The [catalog](template-suite-catalog.md#bounded-retesting-amendment--2026-09-05)
 owns exact file dispositions. Do not migrate old state into a new validity cache.
 Safe cleanup of existing inert state files remains a bounded Design question.
-Unrelated workflow/test state, report caching, fix recovery and F-10 checkpoints remain.
+Unrelated workflow/test state, report caching and F-10 checkpoints remain. The later
+native-fix amendment withdraws the proposed fix recovery subsystem.
 
 ### 7.11 Native optimization and native arguments
 
@@ -2069,8 +2075,8 @@ class AdapterExitCode(IntEnum):
 Keep this numeric vocabulary shared by check/test/fix. Role response contracts bind
 their own existing outcomes to it; they must not copy scaffold-specific decision fields
 into test/fix payloads. Exact test/fix payload combinations remain owned by those role
-contracts, not invented here. In particular, successful fix proposal production does
-not assert that PGMCP has applied the proposal. Generic process management consumes the
+contracts, not invented here. In particular, successful native fix execution does
+not assert that all related checks pass. Generic process management consumes the
 selected contract's code/response validation; it does not interpret native evidence or
 introduce per-tool/language branches. The exit code is observed from the process, not
 duplicated as an authored JSON field or configurable manifest mapping.
@@ -2459,7 +2465,7 @@ check decisions. W02/W03 approval is authoritative in §§7.4.1–7.4.3 and 7.14
 | Process transport | Request/response schemas, protocol framing, limits, cancellation, execution failures, scratch lifecycle, and external stdout/stderr handling |
 | Check | Integrate approved content/selection contracts into concrete typed declarations; prove profile admission, factual outcomes and registered schemas independently |
 | Test | Suite selection, all-active-suites meaning, framework options, collection/no-tests outcomes, coverage, and detailed evidence |
-| Fix | Proposal shape, authorized paths, stale-input checks, validation, application atomicity, and recovery |
+| Fix | Authorized paths, native execution outcomes, partial mutation and agent-controlled recovery |
 | Public operations | Preserve approved diagnostic boundaries and D-ADAPTER-23 native-argument ownership; complete test/fix contracts and separate check/fix args routing |
 | Native configuration | Per-tool project/configuration context, explicit invocation controls versus native settings, and canonical values for current conflicting configurations |
 
@@ -2871,7 +2877,7 @@ Neither call-specific native tuning nor filesystem scope selection is added to t
 tools. requires_file materialization, intended path, cleanup, policy, atomicity and
 profile selection stay unchanged. The generic content request gains only args from
 its selected binding. apply_fixes caller args apply only to selected fix executions,
-not implicitly to their verification checks; those use configured check defaults.
+not to later agent-requested checks. apply_fixes invokes no verification checks itself.
 Native role/scope/input-source requirements cannot be bypassed by defaults or caller
 args. Incompatible native options must be reported, not silently replaced.
 
@@ -2884,7 +2890,7 @@ Required evidence: omitted mapping/recipient, explicit [] and replacement, equal
 caller provenance, token order/whitespace/empty values, selected-profile routing,
 unselected-recipient rejection, no mutation override field, fixed content/file variants,
 source/effective list preservation across negative results and bounded invocation
-failures, no argument merge, no fix-to-verification broadcast, unchanged native
+failures, no argument merge, no automatic fix verification, unchanged native
 settings, and success/isError independence. Tests are design obligations, not executed
 conformance. This amendment does not approve the separate run_checks scope proposal
 or complete the remaining W05 recovery/output design.
@@ -2946,7 +2952,7 @@ No new census, role, fingerprint policy, health route, or native cache promise i
    and executes the adapter entry point. Only the file route materializes content in
    controlled scratch space. The adapter preserves native intended-target context;
    no route writes the authoritative target before the consumer's persistence decision.
-4. The adapter returns role-specific evidence or a bounded fix proposal. Generic
+4. The adapter returns role-specific execution evidence. Generic
    transport failure is distinguishable from a valid role response.
 5. The consumer applies its policy. DI-04 alone decides scaffold/edit persistence;
    DI-05 controls explicit fix application. Workflow decisions consume the evidence.
@@ -3021,7 +3027,7 @@ cutover follows proven internal routes.
 | Check migration | Compare retained diagnostics/outcomes against direct known-input tool evidence; preserve mixed failure/unavailability and policy-independent facts |
 | Native configuration authority | Compare adapter and direct native-tool behavior for the same tool version, inputs, and purpose; change a native setting and prove it affects the adapter without changing package/PGMCP settings; cover logical-target configuration for scratch input |
 | Test migration | Adapt [Pytest behavior coverage](../../../tests/mcp_server/unit/managers/test_pytest_runner.py), preserving collection, failures, skips, coverage and native-requested detail without the old generic verbose interpretation |
-| Fix migration | Compare authorized proposal/application results against before/after bytes, including already-dirty targets, stale inputs, out-of-scope proposals, and application interruption |
+| Fix migration | Observe actual native effects independently, including dirty inputs, failed calls leaving edits, target/role limits and interruption; no tool-wide rollback or exact mutation census is promised |
 | Distribution | Inspect a built distribution and execute a retained official adapter from an installed copy; a source-tree import is insufficient packaging evidence |
 
 DI-05 owns role behavior and conformance tests; DI-08 owns reusable fixtures/helpers.
@@ -3037,7 +3043,7 @@ proposed conformance evidence is claimed as completed.
 | Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check and public test-input behavior; test configuration/remaining transport/results and fix operations stay open; exact DTO integration/conformance is still required |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, native-argument transport, and independent conformance |
-| Q-ADAPTER-05 | How are fixes authorized and recoverably applied? | Define the separate F-20 mutation contract and stale/proposal/application evidence |
+| Q-ADAPTER-05 | How are native fixes authorized and partial execution reported? | Define direct native mutation, honest outcomes, sequencing and explicit external recovery |
 | Q-ADAPTER-06 | Which native values replace today's split tool-settings authorities? | DI-05 chooses retained per-tool settings and explicit request controls, records intentional changes, and supplies separate check/test/fix migration proof obligations |
 | Q-ADAPTER-07 | What completes each capability declaration and its consumer binding? | Define profile/check selection, applicability and input requirements, and explicit fix-to-check references without same-package or same-name assumptions |
 | Q-ADAPTER-08 | How do centrally selected profiles/bindings participate in the existing template provenance closure? | DI-02/DI-05 define the exact declarative projection and affected-package proof before integration; preserve exclusion of executable adapter provenance and native tool settings |
@@ -3081,6 +3087,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.78 | 2026-09-10 | `@imp designer` | Record lightweight native-fix amendment; withdraw proposal/verification/rollback promises; preserve agent-controlled recovery and request independent review. |
 | 0.77 | 2026-09-10 | `@imp designer` | Correct public workspace intent: scope=workspace replaces dot target shorthand; configured remains native discovery; adapter transport unchanged. |
 | 0.76 | 2026-09-10 | `@imp designer` | Record bounded native-selection correction: PGMCP owns Git resolution; operation/targets/args adapter requests; no generic fresh/expansion controls; targeted review requested. |
 | 0.64 | 2026-09-07 | `@imp designer` | Require approved factual failed-decision message while preserving native evidence and exit codes; omit extra public origin and route the consolidated mutation-result proposal. |

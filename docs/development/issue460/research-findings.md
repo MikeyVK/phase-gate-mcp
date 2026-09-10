@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** RESEARCH FROZEN — INDEPENDENT QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.24  
+**Status:** BOUNDED NATIVE-FIX AMENDMENT — QA REQUESTED; REST FROZEN  
+**Version:** 1.25  
 **Last Updated:** 2026-09-10  
 **Issue:** 460
 
@@ -12,6 +12,11 @@
 Preserve detailed factual findings, option analysis, blast-radius evidence, and observed behavior for the issue-460 scaffolding schema-template contract audit without enlarging the primary Research artifact.
 
 ## Authority
+
+The [lightweight native-fix amendment](research.md#lightweight-native-fix-amendment--2026-09-10)
+is the latest human-authorized delta, awaiting independent review. It replaces only
+F-20's proposal/application/verification/recovery promises. The next paragraph records
+the prior reviewed selection boundary, not approval of the new fix amendment.
 
 Research decision and gate authority belongs to [Research](research.md), not this
 evidence document. Its [2026-09-10 native-selection amendment](research.md#narrow-native-selection-amendment--2026-09-10)
@@ -1658,7 +1663,7 @@ The extension architecture unifies distribution and invocation without collapsin
 | Adapter extension package | One self-contained package has a manifest-owned `adapter_id`, one human-readable package version, declared contract versions, capabilities, and one or more executable entry points; a package may implement any combination of check, test, and fix |
 | Check contract | Reports side-effect-free factual analysis for proposed content or selected existing files; output-profile validation and public check execution remain separate policy consumers of those facts |
 | Test contract | Executes behavioral tests and returns suite/framework-aware evidence; it does not become an ordinary static check or inherit check-result semantics merely because process transport is shared |
-| Fix contract | Produces an explicitly bounded proposed changeset for authorized targets; PGMCP owns validation and controlled application to the authoritative workspace |
+| Fix contract | Executes native fixes directly on explicitly authorized source targets; PGMCP owns admission, order and factual reporting, not mandatory verification or transactional application |
 | Generic process runtime | Owns process start, protocol transport, timeouts, scratch allocation, stdout/stderr capture, and malformed/crashed/unavailable execution facts without knowing languages, file extensions, frameworks, commands, or parser formats |
 | Consumer configuration | `checks.yaml`, `tests.yaml`, and `fixes.yaml` select capabilities, scopes, suites, and consumer policy; they do not duplicate adapter commands, tool-output parsers, or tool-specific exit semantics |
 | Template suite | May select stable check capabilities through output profiles; it cannot install, trust, or name executable commands and cannot register test or fix implementations |
@@ -1697,6 +1702,14 @@ The human owner selected the final option on 2026-09-04 and explicitly rejected 
 
 #### Approved compatibility and migration strategy
 
+The 2026-09-10 lightweight native-fix amendment revises the fix clauses in place.
+Evidence: QAManager.run_auto_fix invokes native commands sequentially against source,
+continues after reported failures, and infers modified files from Git dirty state.
+Retain native execution, but not the inference that dirty means modified by this call.
+Proposal/copy/verification transactions were considered and rejected as the standard:
+they add copying, native-context reconstruction and recovery state for an agentic flow.
+No new native execution probe was run for this amendment.
+
 This boundary is a PGMCP 3.0 clean break:
 
 - remove `run_quality_gates` and `auto_fix`; do not retain aliases or wrapper tools;
@@ -1709,7 +1722,7 @@ This boundary is a PGMCP 3.0 clean break:
 - require the PGMCP distribution to supply adapter packages for every retained official capability it advertises, while an unavailable underlying language toolchain remains truthful on-use unavailability rather than an unrelated startup failure;
 - allow new languages, tools, and mixed-language workspaces by adding or selecting adapter packages and role configuration without modifying generic server code;
 - keep adapter execution read-only for check, behavior-executing but not source-mutating for test, and explicitly mutation-authorized for fix;
-- have fix adapters return bounded proposed changes and leave authoritative application, stale-input detection, allowed-path enforcement, and failure atomicity with PGMCP;
+- have PGMCP explicitly authorize native fix calls and adapters perform direct source mutation; preserve target/role limits and truthful partial-failure reporting, without proposed changesets, mandatory post-checks, copy staging or rollback;
 - preserve existing template-package/source-suite fingerprint semantics. Adapter package provenance is execution evidence, not scaffolded-artifact source metadata.
 
 A package can implement several roles, but every declared role must independently satisfy its versioned contract. Shared packaging never permits a check call to mutate, a test result to masquerade as a check, or a fix completion to claim that the resulting content passes its addressed checks.
@@ -1749,7 +1762,7 @@ The F-19 self-hosting risk now applies to the complete extension boundary. The m
 - official adapters pass a shared contract/conformance suite plus tool-specific behavior tests;
 - a non-Python fixture adapter demonstrates extension through files/configuration alone and no generic-server language branch;
 - Pytest preservation is compared across the old and new boundaries where behavior is intentionally retained;
-- fix authorization and failure evidence prove that out-of-scope or stale changes do not reach authoritative files;
+- fix evidence proves admitted target/role limits, native in-place sequencing, honest possible-mutation reporting after failures, and absence of automatic checks/commits/rollback; do not claim sandbox enforcement or stale-byte transactional protection;
 - old tool/config names and duplicate command/parser authorities are absent after cutover;
 - active documentation, workflow contracts, and generated agent variants use the new role vocabulary consistently.
 
