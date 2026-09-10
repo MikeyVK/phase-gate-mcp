@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.72
+**Version:** 0.73
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -86,6 +86,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-19 | Role results carry typed external_tools as ordinary invoked-run evidence; invalid_request stays minimal; no new query tool, startup survey or result-decision consumer | Human-approved W02-F, 2026-09-10; §7.4.3 and amended scaffold response |
 | D-ADAPTER-20 | Consolidate run_checks selection, scope and result contracts; permit a positive per-invocation caller timeout override without changing the internal termination budget | Human-approved W03, 2026-09-10; §7.14; previous scope/profile decisions are not reopened |
 | D-ADAPTER-21 | run_tests exposes flat tests selection and addressed CLI args in one startup-built schema; adapters/native tools own switch interpretation; supersede test options_schema without extending other consumers | Human-approved W04 input/exposure, 2026-09-10; §7.15; test results and exact remaining integration stay open |
+| D-ADAPTER-22 | Public success is operational and inversely maps to MCP isError; correctly reported negative or unavailable domain results are not tool execution failures | Human-required correction, 2026-09-10; §7.14; applies across check/test/fix consumers, without deriving MCP errors from adapter exits |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
@@ -2637,15 +2638,30 @@ and ordinary unavailability remain check facts, not invented operation errors.
 
 Run status is passed|failed|incomplete|empty_selection when a selection-derived summary
 exists. For an early operation error before one exists it is required null, paired with
-error_code/error_details and success=false; this represents absence, not a fifth verdict.
+error_code/error_details; this represents absence, not a fifth verdict. Neither a null
+run_status nor the presence of domain error details determines success or MCP isError.
 Outer MCP input rejection may produce no RunChecksOutput. Do not manufacture check rows
 for a selection that never completed. Empty selected input means empty_selection.
 For a nonempty known obligation set, any unavailable/not_executed makes incomplete;
 otherwise any failed makes failed; otherwise all passed makes passed. Explicit
 not_applicable therefore makes incomplete, including mixed-language profiles. Preserve
 negative facts when failed plus unavailable aggregates to incomplete. DI-04's different
-validation-summary precedence is unchanged. success=true requires a nonempty complete
-passing set and no blocking operation error.
+validation-summary precedence is unchanged.
+
+Public success is an operational StrictBool, the inverse of MCP isError. It reports
+whether the PGMCP tool correctly handled the call and reported its result, not whether
+checks passed. Correctly reported failed checks have success=true and isError=false.
+The same holds for correctly reported ordinary unavailable/not_executed outcomes and
+empty_selection: none alone establishes a tool execution fault. Only an actual tool
+execution failure follows the existing operational error route with success=false and
+isError=true. Do not derive that route from run_status, a native exit code, an adapter
+protocol exit code, or the mere presence of error_code/error_details. Expected domain
+refusals remain structured results. Shared invocation fault classification keeps its
+existing owner; the presenter must not acquire domain-status interpretation.
+
+This corrects the former all-passing-set requirement; it is not a new product policy.
+run_status and ordered result evidence remain the authority for the check outcome.
+Consumers must not treat success=true as a quality verdict or a completed workflow gate.
 
 Initially invoke sequentially in selected binding order; independent checks continue
 after ordinary failure/unavailability. Interruption or an independent blocker stops work;
@@ -2665,6 +2681,11 @@ shared capture/null-preserving serialization and registered schema proof remain 
 obligations. Prove defaults/exclusivity/role-input admission, empty versus not_applicable,
 every response/exit pair, Git working state, expansion denial/permission, native fresh
 refusal, repeated execution and cached evidence independently from run_checks itself.
+Prove the decorated MCP boundary, not only DTO construction: correctly reported failed,
+ordinary unavailable/not_executed and empty selections retain success=true/isError=false;
+an actual tool execution fault uses success=false/isError=true. Mixed negative and
+unavailable facts retain run_status=incomplete without turning domain reporting into
+a tool failure. Verify that native and adapter nonzero exits do not directly set isError.
 W06 still owns the declarative profile projection into template fingerprints; W09 owns
 native settings and shipped capabilities. No tests, runtime code or Planning cycles are
 implemented or authorized by this documentation checkpoint.
@@ -2950,6 +2971,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.69 | 2026-09-10 | `@imp designer` | Record partial W02 approval for package sources, consumer-backed fields, file inventory, fingerprint scope and narrow interfaces; keep exact trust configuration and native provenance return amendment open. |
 | 0.70 | 2026-09-10 | `@imp designer` | Close W02-B/F: explicit adapters.yaml with central loading and typed external_tools in ordinary role results; amend existing closed scaffold payload and preserve minimal invalid_request; keep W03–W05 role work open. |
 | 0.71 | 2026-09-10 | `@imp designer` | Integrate approved W03 as consolidation of existing selection/scope/native decisions plus explicit caller timeout override; specify honest completion and early-error absence without reopening Research or test/fix choices. |
+| 0.73 | 2026-09-10 | `@imp designer` | Correct run_checks domain-derived success: restore operational success/inverse MCP isError, preserve negative domain evidence separately and require actual MCP-boundary regression evidence. |
 | 0.72 | 2026-09-10 | `@imp designer` | Record approved run_tests flat tests selection, addressed args and fixed startup exposure; supersede test options_schema only; preserve other consumers and leave test results/configuration/full transport open. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
