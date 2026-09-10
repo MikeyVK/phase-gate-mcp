@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.71
+**Version:** 0.72
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -85,11 +85,13 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-18 | Required adapters.yaml under resolved_config_root owns trusted_adapter_ids; ship empty, load centrally and inject into catalog admission; no second settings source or self-trust | Human-approved W02-B, 2026-09-10; §7.4.2 |
 | D-ADAPTER-19 | Role results carry typed external_tools as ordinary invoked-run evidence; invalid_request stays minimal; no new query tool, startup survey or result-decision consumer | Human-approved W02-F, 2026-09-10; §7.4.3 and amended scaffold response |
 | D-ADAPTER-20 | Consolidate run_checks selection, scope and result contracts; permit a positive per-invocation caller timeout override without changing the internal termination budget | Human-approved W03, 2026-09-10; §7.14; previous scope/profile decisions are not reopened |
+| D-ADAPTER-21 | run_tests exposes flat tests selection and addressed CLI args in one startup-built schema; adapters/native tools own switch interpretation; supersede test options_schema without extending other consumers | Human-approved W04 input/exposure, 2026-09-10; §7.15; test results and exact remaining integration stay open |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
-and check behavior in §§7.4.1–7.4.3 and 7.14; concrete DTO/schema integration and
-independent conformance remain required. Test/fix role decisions, native-setting
-migration and fix transaction mechanics remain open Design work.
+and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
+Concrete DTO/schema integration and independent conformance remain required. Test
+results, remaining test configuration/transport, fix decisions, native-setting migration
+and fix transaction mechanics remain open Design work.
 
 ## 5. Responsibilities and Boundaries
 
@@ -325,7 +327,9 @@ operation requests such as a selected test subset or supported verbose detail. T
 options must not silently replace native rules or grant extra mutation authority.
 A native setting that enables writing cannot turn a `check` into a `fix`; the adapter
 must uphold its role contract. Exact request-option schemas remain open, not an arbitrary
-command-line override bag.
+command-line override bag. The later W04 approval in §7.15 specifically permits
+addressed native CLI arguments for run_tests without a native option schema or mandatory
+switch prevalidation. It does not add that route to check/fix or relax role boundaries.
 
 For proposed content, the relevant configuration belongs to the intended project and
 logical target, not accidentally to the scratch directory. Native path-relative rules
@@ -703,15 +707,16 @@ Sections 7.4.2–7.4.3 complete those two decisions; no runtime conformance is c
 | Sources and identity | Official distributed packages under assets/adapter_suite; workspace extensions under resolved_server_root/adapter_suite. Shallow manifest discovery, manifest-owned adapter_id and duplicate-ID rejection; no override by directory name |
 | Package files | Required nonempty unique files inventory, relative to the package. manifest.yaml is included implicitly and must not be repeated; reject missing/escaping/duplicate paths. Include package-owned entrypoints, schemas, dependency-contribution files and required runtime imports/data |
 | Check capability fields | Nonempty unique inputs tuple of content or selection; requires_file is required boolean when content is supported and forbidden otherwise. Profile admission and input preparation are the consumers |
-| Test capability field | Optional package-local options_schema, only when extra invocation choices exist; tool-schema construction and adapter input validation consume it, not native rule configuration |
+| Test capability input | W04 §7.15 supersedes the earlier options_schema field: native CLI arguments use the fixed args transport; no per-capability CLI-option schema |
 | Fix capability field | Nonempty addresses references, each adapter_id plus check capability; may reference a different package. Fix/check configuration coherence is the consumer; exact fix application remains W05-owned |
 | Generic composition | One immutable startup catalog, narrow CheckCatalogReader/TestCatalogReader/FixCatalogReader and one shared AdapterInvoker. Fix orchestration explicitly receives its separate verification-check reader; no consumer gets install/trust mutation APIs |
 
 Use strict, immutable, extra-forbid declarations and exact case-sensitive IDs. Package
 and capability IDs follow [a-z][a-z0-9_]{0,63}; adapter version is valid SemVer without
-the template-header length cap. Role contract_version remains integer 1. Test option
-schemas have no remote references; local references stay within declared package files.
-They describe call options, not duplicated native tool rules or arbitrary argv.
+the template-header length cap. Role contract_version remains integer 1. The earlier
+test options_schema declaration is superseded by §7.15 and is not a supported parallel
+input route. Package file ownership and any independently needed schema assets remain
+unchanged; this amendment does not delete files or implement runtime admission.
 
 Fingerprint the canonical manifest including version, plus sorted package-relative file
 names and exact declared file bytes using length-delimited records. Use domain
@@ -2664,6 +2669,132 @@ W06 still owns the declarative profile projection into template fingerprints; W0
 native settings and shipped capabilities. No tests, runtime code or Planning cycles are
 implemented or authorized by this documentation checkpoint.
 
+### 7.15 Approved run_tests Input and Exposure — W04, 2026-09-10
+
+Preserve the existing check architecture and shared adapter runtime. This approval is
+limited to run_tests public input/exposure and addressed CLI argument ownership. It does
+not add args to scaffold_artifact, safe_edit_file, run_checks or apply_fixes. Revisit
+run_checks only after the test contract is agreed; do not redesign the entire pipeline.
+The agent may use native tool knowledge instead of requiring PGMCP to hide every native
+possibility behind a profile, capability or option schema.
+
+#### Caller fields and selection
+
+| Field | Type / default | Constraint and owner |
+|---|---|---|
+| scope | Required targets\|workspace | Explicit filesystem scope; no suites value or implicit full run |
+| targets | Nonempty tuple[WorkspaceRelativePath,...], or omitted | Required for targets; forbidden for workspace; retains file/directory selection |
+| tests | Nonempty unique ordered tuple[TestId,...], or omitted | Select configured test bindings; omission uses the configured active test selection |
+| verbose | Strict bool, false | Native detail request under existing output bounds |
+| timeout_seconds | Positive strict int, or omitted | Per-invocation override; otherwise use each binding's budget |
+| args | Typed mapping TestId to tuple[StrictStr,...], omitted means empty mapping | Additional native argument tokens addressed to a selected execution |
+
+The request is closed and immutable after validation. Unknown fields and null substitutes
+for omitted fields are rejected. TestId denotes a configured execution binding, not a
+native test case, adapter ID or public tool name. The native operation is resolved from
+that binding's capability; it is not inferred from the spelling tests. The JSON args
+object uses the same configured TestId set as tests. Its arrays may be empty; an empty
+mapping or omitted recipient means no extra arguments. Preserve token order and string
+values; do not whitespace-split, join into a shell string, or impose a flag/value grammar.
+
+After resolving explicit/default selection, every args key must identify a selected
+execution. Reject a mismatch before launching adapters, including an unselected key
+whose array is empty. Never broadcast a recipient's arguments to other executions.
+This is structural/routing validation, not validation of native option meaning. A missing
+usable active selection is an explicit selection failure, never an empty passing run.
+
+Native options work with either scope. The old markers/last_failed_only/coverage/
+collect_only purposes and native test-ID selection remain expressible through their
+native arguments rather than new PGMCP-specific option fields. For example:
+
+```json
+{
+  "scope": "workspace",
+  "tests": ["python_tests"],
+  "args": {"python_tests": ["-m", "not slow", "--collect-only"]}
+}
+```
+
+The example assumes that configured binding; it does not declare a shipped inventory.
+Existing generic path safety and adapter-owned native target interpretation still apply.
+No branch affected-test inference, native-option allowlist or implicit execution-result
+reuse is introduced. Fresh/expansion controls are not silently copied from run_checks.
+
+#### One startup schema, all configured choices visible
+
+Build one completed inputSchema for run_tests under §7.6. The tests item enum contains
+the configured binding IDs. The args object has an optional property for each same ID,
+each with type array and string items, and additionalProperties=false. Thus an agent
+can identify valid recipients without reading YAML. Do not enumerate native switches
+or generate adapter-specific options-schema alternatives. Example exposure fragment:
+
+```json
+{
+  "tests": {
+    "type": "array",
+    "items": {"type": "string", "enum": ["python_tests", "browser_tests"]},
+    "minItems": 1,
+    "uniqueItems": true
+  },
+  "args": {
+    "type": "object",
+    "properties": {
+      "python_tests": {"type": "array", "items": {"type": "string"}},
+      "browser_tests": {"type": "array", "items": {"type": "string"}}
+    },
+    "additionalProperties": false
+  }
+}
+```
+
+This is the properties fragment, not a complete standalone schema: the public schema
+also contains scope/targets/verbose/timeout_seconds and their required/combination rules.
+IDs repeated in enum/properties are projections of one startup authority, not separately
+maintained lists. Both recipients are visible at once. Selecting one does not replace,
+hide or regenerate any part of the schema. Lazy exposure changes delivery timing only.
+Configured exposure does not guarantee native dependencies are installed; availability
+remains on use. With no configured choices, publish a valid schema that admits no usable
+selection and fail direct/stale calls explicitly; never use an invalid empty enum or
+silently successful default. Exact registered schema/validation evidence remains required.
+
+#### Transport and native interpretation
+
+TestRunManager resolves each binding and extracts only its args tuple; that tuple is
+carried to the selected test adapter as args, not as the public multi-recipient mapping.
+The shared invoker still starts the manifest entrypoint and controls the process budget.
+It does not splice these tokens into the adapter entrypoint command or interpret them.
+The adapter decides how native arguments fit its native invocation. There is no new
+launcher, shell route, adapter discovery tool or CLI schema query tool.
+
+Structural adapter-request validation remains required at the process boundary. Native
+switch/combinations prevalidation is not mandatory: the adapter may invoke the native
+tool and report its rejection, or detect the problem earlier. A native usage error is
+not automatically malformed protocol JSON or evidence of a PGMCP construction defect.
+Its exact typed test result/exit classification belongs to the next result workshop.
+
+Regardless of when native option validity is established, adapters must retain their
+role, authorized scope and result-reporting obligations. Native arguments cannot grant
+source mutation to tests or bypass shared safety controls. The analogous check/fix
+obligations remain in force, but no CLI-argument input is approved for those roles here.
+Native configuration stays the default settings authority; explicit caller arguments
+are invocation input, not a second persisted PGMCP native-settings configuration layer.
+
+#### Remaining integration and independent evidence
+
+The former test options_schema/SuiteRequest/options/test_ids design is superseded for
+public test invocation. Do not preserve it as an alias alongside args. Exact tests.yaml
+root spelling/records and the full test/v1 request/result DTO graph still require their
+own completion; this section does not approve the old temporary suite configuration.
+The existing all-configured-active meaning from Research remains binding.
+
+Prove the registered/decorated schema's enum/recipient agreement, first-call behavior,
+default resolution, unknown/unselected recipient rejection, multi-recipient isolation,
+token order/whitespace/empty-value preservation, both scopes with args, native rejection
+with and without adapter prevalidation, and no change to other consumer contracts.
+The schema fragment is documentation, not executed conformance evidence. Shared native
+evidence, cache/presentation and process errors retain their existing owners; do not
+introduce generic native-output parsing to support this addition.
+
 ## 8. Control, Data, and State Flow
 
 1. Startup reads package/configuration declarations, validates their structure and
@@ -2762,7 +2893,7 @@ proposed conformance evidence is claimed as completed.
 
 | ID | Open Design question | Decision needed |
 |---|---|---|
-| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 approval? | §§7.4.1–7.4.3 and 7.14 close package/check behavior; test/fix configuration and operations remain W04/W05-owned; exact DTO integration/conformance is still required |
+| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check and public test-input behavior; test configuration/remaining transport/results and fix operations stay open; exact DTO integration/conformance is still required |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, verbose behavior, and independent conformance |
 | Q-ADAPTER-05 | How are fixes authorized and recoverably applied? | Define the separate F-20 mutation contract and stale/proposal/application evidence |
@@ -2819,6 +2950,7 @@ Exact cycle names and scheduling remain Planning-owned.
 | 0.69 | 2026-09-10 | `@imp designer` | Record partial W02 approval for package sources, consumer-backed fields, file inventory, fingerprint scope and narrow interfaces; keep exact trust configuration and native provenance return amendment open. |
 | 0.70 | 2026-09-10 | `@imp designer` | Close W02-B/F: explicit adapters.yaml with central loading and typed external_tools in ordinary role results; amend existing closed scaffold payload and preserve minimal invalid_request; keep W03–W05 role work open. |
 | 0.71 | 2026-09-10 | `@imp designer` | Integrate approved W03 as consolidation of existing selection/scope/native decisions plus explicit caller timeout override; specify honest completion and early-error absence without reopening Research or test/fix choices. |
+| 0.72 | 2026-09-10 | `@imp designer` | Record approved run_tests flat tests selection, addressed args and fixed startup exposure; supersede test options_schema only; preserve other consumers and leave test results/configuration/full transport open. |
 | 0.61 | 2026-09-07 | `@imp designer` | Record approved longest configured extension lookup, host-independent case matching and honest no-match behavior; bound suffix-only routing and identify preservation evidence and remaining schema/policy work. |
 | 0.60 | 2026-09-07 | `@imp designer` | Record root-level profiles_by_extension ownership and consumer boundaries; preserve manifest and explicit/default selections while leaving exact lookup and safe-edit policy open. |
 | 0.59 | 2026-09-07 | `@imp designer` | Supersede startup dependency preflight/filtering with configuration-based exposure and existing on-use failures; retain structural/path admission, stable schemas, defaults, full profiles, and health deferral without new protocol or Research changes. |
