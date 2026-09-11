@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.82
+**Version:** 1.83
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -274,6 +274,11 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
 | D-DIST-01–D-DIST-24 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Decided | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
+
+W09's concrete starting adapter and native-settings proposal is in
+[DI-05 §7.20](design-execution-adapters.md#720-w09--concrete-starting-adapters-and-migration-proposal).
+It is not a decided row: package selection, preservation trade-offs and proposed native
+settings require review before W09 closure.
 
 ---
 
@@ -616,6 +621,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.83 | 2026-09-11 | `@imp designer` | Index concrete W09 adapter/configuration proposal separately from approved decisions; retain bounded open settings work. |
 | 1.82 | 2026-09-11 | `@imp designer` | Index W09 configuration-only starting-set decision; retain exact native migration and integration work. |
 | 1.81 | 2026-09-11 | `@imp designer` | Record independent W07/W08 GO without findings; mark local contracts Decided and retain cross-package integration and whole-Design review. |
 | 1.80 | 2026-09-11 | `@imp designer` | Register source-led W07/W08 contracts and bounded independent review; preserve open whole-Design integration and Research authority. |

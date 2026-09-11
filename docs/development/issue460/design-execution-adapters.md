@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.84
+**Version:** 0.85
 **Last Updated:** 2026-09-11  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -3255,6 +3255,259 @@ references are rejected by the existing catalog contract. This is a proof obliga
 not a claim of executed tests. Policy changes remain excluded from generation fingerprints
 and included in operational upgrade comparison under the existing suite contracts.
 
+### 7.20 W09 — Concrete starting adapters and migration proposal
+
+**Status: PROPOSED, 2026-09-11.** The human requested concrete adapter-boundary design
+before W09 closure. This section supplies that proposal; it does not approve native
+setting changes, claim executed adapter conformance, or close W09. Section 7.19's
+configuration-only composition boundary is already decided. Earlier illustrative
+inventories are not a competing shipped inventory.
+
+#### A. Initial package and capability inventory
+
+Choose packages by cohesive implementation, not one package per language or profile.
+All use the existing role version 1, manifest/file inventory, entrypoint, trust and
+fingerprint contracts. IDs below are authored manifest/configuration values, never
+generic Python enum members. C means proposed content; S means selection requests.
+The table is a declaration contract, not invented manifest fields.
+
+| adapter_id | Roles and capabilities | Check inputs / requires_file | Concrete integration and boundary |
+|---|---|---|---|
+| python_syntax | check: syntax | C / false | Python ast.parse on the complete supplied text and intended filename; syntax only, no import, execution, model-example validation or compile-success claim |
+| markdown_preflight | check: document, body | C / false for both | Extract the existing MarkdownValidator's H1 and local-inline-file observations into an isolated adapter; document requires H1, body does not; preserve warning-only missing-file observations |
+| ruff | check: format, lint; fix: format, lint | S only; requires_file absent | Native Ruff format/check commands; read-only checking and separate direct native fixing; no scaffold assignment merely because Ruff handles Python |
+| mypy | check: types | S only; requires_file absent | Native Mypy command; retain its configuration/import behavior and text evidence, not generic violation-regex configuration |
+| pyright | check: types | S only; requires_file absent | Native Pyright command and native JSON/text output; independent of Mypy, no deduplication of their findings |
+| pytest | test: tests | No check declaration | Native Pytest command, arguments and result semantics; not a check capability |
+| typescript_syntax | check: syntax | C / false | Provisioned TypeScript Language Service getSyntacticDiagnostics for one in-memory source; no emit, semantic diagnostics or application build |
+| commitlint | check: message | C / false | Native commitlint on the message extracted from a saved commit artifact; no Git-history discovery or publication |
+| lychee | check: links | C / true; S also supported | Native link checking; content uses the existing scratch/base/self-remap route; initially an explicitly selected stronger check, not part of default mutation profiles |
+
+Content-only declarations are deliberate. run_checks must not invent a file-to-content
+loop for them or offer those profiles as selection-capable. This starting inventory
+does not promise all operations of every native tool. A workspace can compose existing
+admitted capabilities freely; adding a genuinely new input capability is adapter work.
+No test/fix roles are declared merely because a selected library could theoretically
+implement them. Ruff fix format addresses ruff/check/format; fix lint addresses
+ruff/check/lint through the existing explicit addresses records. No inferred name match.
+
+#### B. Native invocation and result contracts
+
+PGMCP starts the role entrypoint in workspace cwd. Python-authored packages declare
+python plus a package_file script; Node-authored packages declare node plus a package_file
+script. The workspace provisions those runtimes. Python packages use that adapter
+interpreter's native modules, not an independent search for .venv or server Python.
+Node integrations resolve provisioned modules from workspace context, not accidentally
+from the installed adapter directory; use Node's native module resolution facility.
+Lychee resolves its native executable from the inherited environment. Never invoke
+npx with installation fallback or rely on a Windows .cmd shell shim.
+
+Concrete wrapper choice: Python for python_syntax, markdown_preflight, ruff, mypy,
+pytest, lychee and commitlint; Node for typescript_syntax and pyright. The commitlint
+wrapper reuses DI-02's narrow, pure IArtifactHeaderReader and launches the provisioned
+Node CLI through an explicit executable/script path. Its dependency contribution must
+declare the installed header-reader library as well as native prerequisites; do not
+copy the grammar or add header stripping to generic check orchestration. DI-06 must
+prove this dependency from the installed distribution, not only a source checkout.
+
+| Adapter | Native request translation | Native result interpretation |
+|---|---|---|
+| python_syntax | Supply unchanged text and target_path to ast.parse; initial args=[]; unsupported options are rejected, not ignored | Successful parse -> passed; SyntaxError -> failed with location/message evidence; parser runtime version is provenance. Parsing does not prove executability |
+| markdown_preflight | Supply unchanged content and logical target to extracted checks; document/body operation chooses whether H1 is applicable; initial args=[] | Missing required H1 -> failed; missing local inline-link file -> passed with warning evidence unless an H1 error also exists; do not promote warnings or invent anchor checking |
+| ruff/check | format --check --diff or check --no-fix, followed by effective native args and literal selected targets; preserve safe transport/result options | Ordinary exit 0/1 -> passed/failed with native output; exit 2 is inability, classified from actual native diagnostics. Native flags changing exit semantics retain their documented meaning, not a second PGMCP rule count |
+| ruff/fix | format or check --fix on the exact authorized files, in the selected fix call | Native success -> passed; residual lint exit 1 -> failed with native evidence, even if some files changed; stop-first and partial mutation are W05 consequences, not rollback |
+| mypy | Invoke native Mypy with effective args and supplied targets; targets=[] supplies no positional roots and leaves native configured selection intact | Native negative type/syntax evidence -> failed; usage/configuration/integration failures -> the corresponding unavailable reason; preserve native notes as notes, not additional generic failures |
+| pyright | Invoke native Pyright with args/targets; default output is native JSON. Explicit native verbosity/output choices retain their native form | Exit 0/1 -> native passed/failed; native 2 -> execution_error, 3 -> invalid_configuration, 4 -> unsupported_input. No severity rewriting or synthetic cross-tool finding list |
+| pytest | Invoke the adapter interpreter's -m pytest with effective args and literal targets; no injected traceback or verbose policy | Native 0 -> passed; 1 -> failed; 5 -> passed with explicit no-tests message under accepted W04. Native interruption/internal/usage failures remain reported inability, not protocol-invalid requests |
+| typescript_syntax | Native Language Service receives an in-memory snapshot at target_path; obtain syntactic diagnostics only. Native config/options are read via TypeScript APIs where relevant; no emit method is called | Syntax diagnostics -> failed; none -> passed; invalid native config -> unavailable. Missing imported packages and unrelated semantic errors are not this capability's promised evidence |
+| commitlint | Remove only a structurally valid first-line PGMCP text header from the check view; otherwise submit the complete text. Feed stdin to native CLI with effective args and workspace-native config | Native acceptance/rejection -> passed/failed with native report. Missing config or dependency is unavailable; invalid supplied native options are unsupported_input, not malformed check/v1 |
+| lychee | Selection passes literal roots/files; configured [] leaves native selection or native usage rejection. Content passes input_path with full intended target URL as base and exact self-URL remap | Native accepted/rejected link report -> passed/failed. Do not convert broken links into warnings. Physical scratch input is not permission to write target_path |
+
+These are adapter responsibilities, not commands stored in checks.yaml. Source/role
+constraints win over conflicting arguments: refuse source-switching, native fixing in
+check/test, or output destinations outside the authorized contract; do not silently
+drop conflicting flags. Ordinary native option validation may remain native-owned.
+TypeScript and Python syntax APIs need no artificial full-compiler CLI: initial empty
+args is supported; nonempty unsupported options receive unsupported_input. Supporting
+an args transport does not require every capability to understand every native command.
+
+For selection adapters, passing exact roots does not claim imported/read dependencies
+were ignored or every file participated. Native configuration/discovery is authoritative;
+no adapter adds a second workspace scan or Git resolution. Honor the existing narrow
+selection/refusal and coverage contracts. Native flags that change what is observed
+must not be interpreted by generic PGMCP.
+
+The role result remains typed decision plus native evidence and external_tools; test
+and fix retain their own DTOs. Adapter exits remain 0/1/2/3, not native exit identity.
+Successfully reporting failed or unavailable remains public success=true/isError=false.
+Missing adapter launch, timeout, malformed protocol and unconfirmed termination remain
+generic invocation facts. Native output must be retained within the existing bounds;
+do not truncate a protocol object into apparently valid success. Exact native mappings
+must be conformance-tested against the declared supported dependency versions; unknown
+native outcomes must not be guessed from exit number alone.
+
+#### C. Markdown preservation versus stronger link checking
+
+The current [MarkdownValidator](../../../mcp_server/validation/markdown_validator.py)
+checks for an H1 anywhere and warns about absent local inline-link files. It skips pure
+anchors and is not a reference-style or fragment validator. Preserve those specific
+observations in markdown_preflight; remove the legacy registry, server dispatch and
+BaseValidator result adaptation rather than importing that old server subsystem from
+the adapter. Do not copy its score into the new public contract.
+
+Preservation also includes skipping http:, https:, mailto: and pgmcp: links and pure
+anchors; removing the fragment before a local-file existence check; matching inline
+images through the existing link expression; and resolving relative files from the
+intended target's parent, never the adapter package or scratch directory. Preserve
+these observed limits explicitly instead of claiming comprehensive Markdown coverage.
+
+This is a bounded extraction of existing behavior, not a new Markdown parser. Its
+document/body distinction is explicit adapter capability behavior selected by config,
+not an inference from template IDs. Body still performs the real local-link checks;
+an accepting result with warnings is not an always-pass placeholder. No new policy
+YAML is needed for these two fixed operations; different rules use another capability
+or adapter rather than a hidden server setting.
+
+Choose Lychee for optional stronger links using §7.13's existing positive/negative
+feasibility evidence. The initial links binding specifies offline, fragment checking
+and disabled caching explicitly using the supported native version's syntax. Do not
+activate it in all scaffold/safe-edit profiles: that would turn existing warnings into
+blocking failures and broaden coverage. A workspace may opt in by changing its profile;
+PGMCP must report Lychee's genuine result and let enforce/report decide persistence.
+This selection does not claim existing inline-link warnings certify generated reference
+links. DI-03 schema/Jinja conformance still proves its own reference-link construction.
+
+Rejected for the initial preflight: replace H1-anywhere with markdownlint MD041
+(first-content-heading), enable a general style preset, or downgrade Lychee failures.
+All would change behavior rather than only replace the execution boundary. Markdownlint
+remains a studied alternative, not an additional promised official adapter in this set.
+
+#### D. Concrete start configuration
+
+Bindings below use the existing four-field schema. Tables specify values without
+introducing a second config format. All are proposals for shipped workspace defaults,
+editable under §7.19, not immutable package/consumer categories.
+
+| CheckId | adapter_id / capability | timeout_seconds | default_args |
+|---|---|---:|---|
+| python_syntax | python_syntax / syntax | 30 | [] |
+| markdown_document | markdown_preflight / document | 30 | [] |
+| markdown_body | markdown_preflight / body | 30 | [] |
+| typescript_syntax | typescript_syntax / syntax | 30 | [] |
+| commit_message | commitlint / message | 30 | [] |
+| python_format | ruff / format | 60 | [] |
+| python_lint | ruff / lint | 60 | [] |
+| python_types | mypy / types | 120 | [] |
+| python_pyright | pyright / types | 120 | ["--level", "warning", "--warnings"] |
+| markdown_links | lychee / links | 60 | ["--offline", "--cache=false", "--include-fragments"]; initial native integration baseline Lychee 0.24.2, matching §7.13's executed probe |
+
+| ProfileId | Ordered checks | Assignment |
+|---|---|---|
+| python_preflight | [python_syntax] | All eight DI-03 Python/pytest templates |
+| typescript_preflight | [typescript_syntax] | typescript_dto |
+| markdown_document | [markdown_document] | architecture, research, design, planning, validation_report, reference, generic_doc |
+| markdown_body | [markdown_body] | issue, pr; extension fallback .md |
+| commit_preflight | [commit_message] | commit only; no blanket .txt fallback |
+| python_review | [python_format, python_lint, python_types, python_pyright] | run_checks.default_profile; not assigned to mutation merely by .py |
+| markdown_link_review | [markdown_links] | Explicit stronger selection; optional mutation-profile composition by owner |
+
+profiles_by_extension also maps .py to python_preflight and .ts to typescript_preflight.
+The .md fallback deliberately does not infer a document title requirement. A known or
+explicit full-document template still selects its document profile via existing DI-04
+precedence. The same profile/check ID in two separate namespaces above is a reference,
+not an additional definition.
+
+tests.yaml starts with one active python_tests binding: pytest/tests, 300 seconds,
+default_args=[]. Native addopts retain ordinary verbosity/scheduling; native coverage
+is not enabled by default. fixes.yaml starts with python_format -> ruff/format and
+python_lint -> ruff/lint, both 60 seconds and default_args=[]. There is no default fix
+selection/order. A caller must supply both explicit files and desired fix sequence.
+
+#### E. Native settings migration and deliberate changes
+
+The old [quality.yaml](../../../.pgmcp/config/quality.yaml),
+[pyproject.toml](../../../pyproject.toml) and [pyrightconfig.json](../../../pyrightconfig.json)
+are evidence, not three continuing settings authorities. Preserve native inheritance;
+do not store rule lists in adapter code. The following resolves the intended direction;
+rows marked decision still require human acceptance before W09 closes.
+
+| Surface | Proposed native owner and initial value | Preservation / decision |
+|---|---|---|
+| Ruff format | [tool.ruff], line-length=100, target-version=py311 | Drop --isolated; line length retained. Formatter previously lacked explicit target-version: record native-version/formatting comparison, not assumed byte identity |
+| Ruff lint | [tool.ruff.lint], existing selected families including E501 and PLC0415, global ignore=[]; tests per-file ignores only ANN and ARG | Preserve gate rule coverage while combining three lint invocations. Decision: remove IDE-only ANN401/ARG002 and test N806/SIM117/SIM105 exemptions from the effective workspace default |
+| Mypy | [tool.mypy], Python 3.11 and current strict settings; retain tests.* untyped override; files=["mcp_server"], ignore_missing_imports=false | The old MCP command also inherits strict=true, but overrides ignore_missing_imports=true. Decision: retain the visible native setting and remove that blanket suppression; this is stricter for MCP imports and requires explicit approval, not an equivalence claim. Do not invent exceptions; later owner-authored exceptions use native per-module config |
+| Mypy explicit scope | Supplied targets use native selection; native files=["mcp_server"] governs configured selection only | Decision: explicit tests or a workspace-root request may now analyze tests, whereas both legacy Mypy gates excluded them. Retaining the tests.* untyped override does not disable the other strict checks. Prove this observable widening; do not silently reintroduce a server-owned tests filter |
+| Pyright | pyrightconfig.json, retain diagnostic toggles/execution environments; pythonVersion=3.11 and existing Windows target; --warnings stays visible binding default | Preserve effective gate target/warning treatment. Decision: native editor view now uses 3.11 too; do not claim all current diagnostic disables are removed by choosing strict |
+| Duplicate Pyright TOML setting | pyrightconfig.json already owns reportFunctionMemberAccess=false | Remove duplicate [tool.pyright] authority after preserved-value proof |
+| Intentional validation fixtures | Native per-tool exclusions with explicit-target behavior documented | No generic filename ignore or Python-specific target filter; prove direct-target native semantics rather than promising universal exclusion |
+| Pytest | [tool.pytest.ini_options], existing testpaths/name patterns/markers/asyncio settings and addopts including -n auto | Preserve ordinary scheduling and native verbosity; remove server-generated --tb and boolean-mode interpretation |
+| Coverage | [tool.coverage.run] source=["mcp_server"], branch=true; [tool.coverage.report] fail_under=90; caller --cov enables it | Proposed self-hosting default follows the actual source tree: backend/ is absent. Do not create or retain a fictitious source root. No duplicate coverage test binding; native thresholds determine rejection |
+| Commit message | commitlint.config.cjs: explicit conventional parser preset; type-empty and subject-empty rejection; defaultIgnores=false; no enum/case/length or paired-breaking-marker rule | Preserve DI-03's arbitrary conventional type token, casing, multiline body/footer and marker-only breaking intent. No copy/read of git.yaml.commit_types: Git-tool admission and artifact framing are different consumers |
+
+Native result authority also removes the old QAManager rule that a parsed note can
+make an otherwise successful native invocation fail. Preserve native evidence and
+explicit Pyright warning policy; do not recreate a generic zero-diagnostics rule.
+This observable migration must be covered independently, not hidden in a new parser.
+
+The initial commit rules deliberately do not import a broad style preset. Only remove
+a header matching the already-designed metadata utility's syntax, without looking up
+template identity, modifying the source or broadening that utility into a new public
+tool. An invalid first line is not silently discarded. Negative evidence must identify
+the checked message view and retain the original native positions; no generic line
+rewriter or automatic downstream publication is introduced.
+
+#### F. Package maintenance and evidence boundaries
+
+Official package source/entrypoint/dependency-contribution/schema assets are included
+by the existing manifest files inventory and distribution rules; no separate adapter
+base-class hierarchy or runtime dependency installer. Version the adapter package
+independently from the native tool. Python integrations declare their native Python
+dependencies; integrations invoking Node declare TypeScript, Pyright or commitlint CLI/parser dependencies;
+Lychee declares the native executable prerequisite. Dependency versions/ranges must be
+bounded by independently exercised contract behavior before legacy removal, not guessed
+from these currently browsed reference pages. Changing native versions remains visible
+through external_tools; it does not imply a changed adapter package fingerprint.
+
+| Evidence family | Required independent observations |
+|---|---|
+| Preflight preservation | Python valid/invalid syntax without execution; Markdown H1-anywhere, H2-only body, local-file warnings, scheme/anchor skipping, fragment stripping, inline images and intended-parent resolution; malformed text remains distinguishable from inability |
+| New syntax/message integration | TypeScript valid/invalid syntax with absent imports, unchanged nonexistent target and no emit; commit valid/invalid subject, arbitrary type, marker-only breaking, valid/invalid provenance and native config overrides |
+| Selection/native config | Exact targets versus configured discovery, explicit Mypy test targets versus legacy exclusion, spaces/literal tokens, native exclusions/imports, role-safe args, missing dependencies and declared output modes |
+| Check/fix separation | Ruff check never edits; direct fix can partially mutate and fail; next fix remains unstarted; no post-fix check, Git command or rollback hidden in adapters |
+| Tests | Native success, failing tests, collection, no tests (exit 5), coverage rejection, native usage/error, --lf and -v/-vv/--tb without server reinterpretation; xdist descendants remain managed |
+| Stronger links | Repeat §7.13 self/TOC/neighbor valid and invalid cases against the selected supported Lychee release; native failures remain failures; target stays absent before persistence |
+| Configuration/distribution | Rename/recompose profile without code edits; real installed package entrypoints outside workspace; native dependencies missing/on-use; non-Python adapter without generic server branches |
+
+This is a design of evidence, not executed tests. Adapt useful existing public runner,
+severity and argument tests; do not preserve fixtures whose mocked native commands no
+longer match quality.yaml as evidence of real rule coverage. DI-08 owns shared fixtures;
+check/test/fix migrations retain separate evidence and rollback points in Planning.
+
+#### G. Source basis and closure limits
+
+Local evidence: PythonValidator syntax path; MarkdownValidator; QAManager command,
+parser and direct-fix paths; RunTestsTool/PytestRunner; root native configurations;
+DI-03's accepted contract corpus; §7.13's bounded link experiments. No adapters, native
+configs, templates or runtime code were changed or executed for this proposal.
+
+Primary references inspected on 2026-09-11:
+
+- [Python ast.parse](https://docs.python.org/3/library/ast.html#ast.parse): parsing scope and limits.
+- [Ruff linter](https://docs.astral.sh/ruff/linter/) and [formatter](https://docs.astral.sh/ruff/formatter/): native check/fix and exit behavior.
+- [Mypy integration API](https://mypy.readthedocs.io/en/stable/extending_mypy.html) and [import behavior](https://mypy.readthedocs.io/en/stable/running_mypy.html): native result/configuration ownership.
+- [Pyright CLI](https://github.com/microsoft/pyright/blob/main/docs/command-line.md): exits, warnings and native JSON.
+- [Pytest exits](https://docs.pytest.org/en/stable/reference/exit-codes.html): native outcomes, separate from the accepted W04 mapping.
+- [TypeScript Language Service](https://github.com/microsoft/typescript/wiki/using-the-language-service-api): syntax diagnostics without binding/type checking.
+- [Commitlint CLI](https://commitlint.js.org/reference/cli.html), [configuration](https://commitlint.js.org/reference/configuration.html) and [rules](https://commitlint.js.org/reference/rules.html): stdin, configuration and minimal rule selection.
+- [Lychee usage](https://github.com/lycheeverse/lychee/blob/master/README.md): version-sensitive native options; §7.13 remains the executed evidence.
+- [Node module resolution](https://nodejs.org/api/module.html#modulecreaterequirefilename): workspace-anchored native dependency loading.
+
+W09 remains open for human review of this concrete inventory/preservation approach
+and the marked settings decisions, especially the stricter visible Ruff/Mypy defaults.
+The proposed values are explicit; they are not already approved. Do not convert them into hidden implementation
+choices or claim a complete Design GO. Native adapter conformance is required before
+legacy removal, not a requirement to implement every adapter during Design.
+
 ## 8. Control, Data, and State Flow
 
 1. Startup reads package/configuration declarations, validates their structure and
@@ -3400,6 +3653,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.85 | 2026-09-11 | `@imp designer` | Propose concrete W09 adapter inventory, native request/result boundaries, configured startset, preservation and explicit unresolved settings decisions; no closure or runtime conformance claim. |
 | 0.84 | 2026-09-11 | `@imp designer` | Record W09 configurable starting-set boundary and no-hardcoded-profile requirement; preserve native integration and migration evidence work. |
 | 0.83 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 0.82 | 2026-09-10 | `@imp researcher` | Remove template-profile fingerprint projection obligation under the bounded generation identity amendment; adapter contracts unchanged. |
