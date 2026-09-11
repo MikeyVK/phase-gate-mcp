@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.23  
+**Version:** 1.24  
 **Last Updated:** 2026-09-11  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -751,6 +751,54 @@ constraints; it is not a summary or selected-property projection.
 The canonical authored schema remains the maintenance authority. A flattened schema is
 a derived runtime/exposure view and is never written back as a second source file.
 
+#### 7.2.1 Context presence and values — approved W06-B
+
+Human-approved 2026-09-11. Preserve caller key presence and JSON values through schema
+exposure, validation, context transfer and rendering. No generic default insertion,
+missing-to-null conversion, empty-value filtering, coercion or envelope injection.
+
+| Caller state | Validation and render contract |
+|---|---|
+| Present with a value | Validate the declared type/constraints; render its template-defined meaning |
+| Present with an empty string, array or object | Allow only when the concrete schema permits that empty value; preserve it and render the explicitly empty content/structure |
+| Absent optional field | Keep absent; omit its corresponding optional render component |
+| Absent required field | Context error before rendering |
+| false or zero | Ordinary non-empty semantic values, not missing; retain and render the field-defined meaning |
+| Explicit null | Only admitted when the concrete field schema permits it and the package defines a demonstrated meaning; no generic fourth render mode |
+| Unknown field in a closed object | Reject, never silently remove |
+
+Optionality means permission to omit, not permission to supply empty content. A field
+may be optional but require meaningful content when supplied (for example a link target).
+DI-03 owns those field-specific choices and their schema descriptions. This is not a
+blanket requirement to reject empty values or to allow null. Never infer requiredness,
+emptiness or nullability from Jinja truthiness.
+
+Templates must distinguish presence from truthiness wherever these states differ:
+false, zero and allowed empty values cannot disappear merely because a branch treats
+them as false. The same rules apply at nested properties and collection items; no absent
+parent object is synthesized. A schema default annotation does not cause generic PGMCP
+to add a value. Caller context remains unchanged even when immutable internal containers
+are used. Server provenance remains a separate established input.
+
+DI-01 owns validation/transfer semantics; DI-02 supplies the admitted renderer; DI-03
+owns concrete omission/empty/null rendering and conformance. DI-04 keeps existing
+render/check/persistence sequencing. A render failure for schema-valid omitted input
+is a template-contract defect, not a missing caller obligation. Safe edit does not
+reconstruct template context; adapter default_args is a separate unchanged contract.
+
+Rejected: automatic schema-default materialization, optional-to-null normalization,
+truthiness-based empty filtering and an additional normalization ledger. These obscure
+caller intent and add generic rules without a demonstrated consumer.
+
+Required evidence: authored and exposed schema accept/reject the same representative
+inputs; capture renderer input to prove absence remains absent and values retain types;
+render present/nonempty, allowed empty and absent cases distinctly; cover false/zero,
+allowed versus rejected null, nested omission and unknown properties. No default insert,
+silent filter or synthetic None text. Adapt existing F-02 regression seams and add
+package-owned DI-03 cases, not copied global schema authorities. These are Design proof
+obligations, not executed tests or a claim to have closed all of W06.
+
+
 ### 7.3 Output Profile Reference
 
 `output_profile` identifies a resolved declarative evidence selector for complete
@@ -1005,7 +1053,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 
 | Obligation | Design Coverage |
 |---|---|
-| F-02 optionality/nullability/defaults | Authored JSON Schema is the single caller-shape authority |
+| F-02 optionality/nullability/defaults | §7.2.1 preserves present/empty/absent, false/zero and explicitly justified null end-to-end without generic defaults; DI-03 owns concrete rendering evidence |
 | F-04 runtime renderer divergence | D-SUITE-05 and D-SUITE-06 select one resolved renderer authority |
 | F-05 incomplete graph | Parser-supported complete dependency resolution in §5.4 |
 | F-11 incomplete version hash | D-SUITE-08 through D-SUITE-10, D-SUITE-24–D-SUITE-32, and §5.6 |
@@ -1045,6 +1093,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
 | 1.18 | 2026-09-10 | `@imp designer` | Supersede overflow wrapping with 24-character template IDs, 11-character package SemVer labels and first-line-only native comments; propagate canonical typed constraints through admission/render/read contracts and route invalid recognition to DI-04 fallback without redesigning Jinja tiers. |
 | 1.19 | 2026-09-10 | `@imp designer` | Align with consumer selection equivalence: unknown metadata IDs yield no applicable template, like absent/invalid headers; keep syntax-only reading independent from catalog lookup. |
+| 1.24 | 2026-09-11 | `@imp designer` | Consolidate human-approved W06-B context presence/value contract and package-owned evidence; reject automatic default insertion. |
 | 1.23 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.22 | 2026-09-11 | `@imp researcher` | Clarify third identity kind and update active D-SUITE-27; generation provenance cannot authorize upgrade/checkpoint operations. |
 | 1.21 | 2026-09-10 | `@imp researcher` | Reconcile human-approved whole-file generation identity and manifest/.version/policy split; preserve upgrade comparison and pause for targeted QA. |
