@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
-**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
-**Version:** 3.41  
+**Status:** RESEARCH FROZEN — EXAMPLE-VALIDATION WITHDRAWAL QA GO REPORTED; DESIGN RESUMED  
+**Version:** 3.42  
 **Last Updated:** 2026-09-11  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -45,9 +45,9 @@ path; DI-08 proves ordinary schema/render preservation without runtime model exe
 DI-07 must not advertise certified examples. Existing 126-consumer/151-test census
 is unchanged. Runtime, test code, actual profiles and GitHub issue text are not edited.
 
-**Current gate:** bounded Research amendment, independent QA review requested.
-Earlier generation-identity QA GO covers that prior delta only. Design is paused
-until independent review and human authorization to resume.
+**Current gate:** the human reported independent QA clean GO on 2026-09-11 and
+authorized Design resumption. The example-validation withdrawal is frozen. This
+records external review authority, not producer approval of remaining Design.
 
 ### Generation Identity and Package File Ownership Amendment — 2026-09-10
 
@@ -288,8 +288,8 @@ This document is the sole authority for issue-460 decision status, Approved Stra
 ## Current Status and Gate
 
 The [example-validation withdrawal](#example-validation-withdrawal--2026-09-11) is the
-current gate. The strategy is human-approved; independent QA is requested before
-Design resumes. The generation-identity amendment retains its prior reported QA GO.
+current reviewed gate. The human reported independent QA clean GO on 2026-09-11
+and authorized Design resumption. The generation-identity amendment retains its prior GO.
 
 The [2026-09-10 native-selection amendment](#narrow-native-selection-amendment--2026-09-10)
 is a prior reviewed delta: the human supplied independent QA GO and authorized
@@ -645,7 +645,7 @@ The approved Generic Python class responsibility remains bounded to a body-free 
 
 ## Design-Owned Questions After the F-20 Amendment
 
-Research is frozen except for the authorized 2026-09-11 example-validation withdrawal, which pauses Design pending independent QA. Both census remediations and the exact repository-root search remain durable evidence. Existing approved boundaries remain binding except where F-20 explicitly supersedes F-19 vocabulary and extension ownership. The questions below are authorized Design inputs; answering them may refine mechanisms within those boundaries but may not introduce a new product role, compatibility choice, or consumer family:
+Research is frozen, including the 2026-09-11 example-validation withdrawal for which the human reported independent QA clean GO and authorized Design resumption. Both census remediations and the exact repository-root search remain durable evidence. Existing approved boundaries remain binding except where F-20 explicitly supersedes F-19 vocabulary and extension ownership. The questions below are authorized Design inputs; answering them may refine mechanisms within those boundaries but may not introduce a new product role, compatibility choice, or consumer family:
 
 1. Which standard JSON Schema draft and composition form produce one resolved reference-free public artifact contract, and how do typed caller-content, operation-control, and server-provenance inputs remain collision-free?
 2. How are template schema/Jinja dependency edges resolved, ordered, validated, fingerprinted, and compared without authored file-level versions?

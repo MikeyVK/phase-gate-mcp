@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
-**Version:** 1.31  
+**Status:** RESEARCH FROZEN — EXAMPLE-VALIDATION WITHDRAWAL QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.32  
 **Last Updated:** 2026-09-11  
 **Issue:** 460
 
@@ -20,8 +20,8 @@ F-10, DI-06 and catalog obligations are corrected; the human reported independen
 No implementation, literal byte-equality or new conformance result is claimed.
 
 The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
-Semantic DTO/configuration example validation is withdrawn by the human. Independent
-QA is requested before Design resumes; earlier GO covers earlier deltas only.
+Semantic DTO/configuration example validation is withdrawn by the human. The human
+reported independent QA clean GO on 2026-09-11 and authorized Design resumption.
 Research.md remains the sole gate authority. Other Research remains frozen.
 
 ### Safe-Edit Policy Alignment Amendment — 2026-09-07

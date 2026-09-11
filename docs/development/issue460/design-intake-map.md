@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
-**Version:** 1.39  
+**Status:** RESEARCH FROZEN — EXAMPLE-VALIDATION WITHDRAWAL QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.40  
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -11,8 +11,8 @@
 ## Purpose and Authority
 
 The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
-Independent QA is requested before Design resumes. Earlier GO covers earlier deltas
-only. All other Research remains frozen; research.md is the sole gate authority.
+The human reported independent QA clean GO on 2026-09-11 and authorized Design
+resumption. Research remains frozen; research.md is the sole gate authority.
 
 DI-01/DI-02 own the human-approved manifest/.version/policy.yaml split and whole-file
 pf/sf inclusion rules. DI-04 preserves policy consumers; DI-05 removes external profile

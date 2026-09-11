@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.78
+**Version:** 1.79
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -26,12 +26,13 @@ The [Design Intake Map](design-intake-map.md) remains authoritative for package 
 ## Scope
 
 Current override: [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11)
-is human-approved and awaiting independent Research QA. Design is paused. Example
+is human-approved; the human reported independent QA clean GO on 2026-09-11 and
+authorized Design resumption. Example
 authoring/rendering and context-schema checks remain; semantic model-example validation
 and its proposed adapter/profile obligations are removed. Earlier gates below are prior
-deltas, not authorization to resume this amendment.
+deltas; the current resumption does not pre-approve remaining Design mechanisms.
 
-Current gate: [generation identity/file ownership](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
+Prior gate: [generation identity/file ownership](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
 Human-approved Research amendment, with explicit third-identity clarification on
 2026-09-11. The supplied QA NOGO identified active F-10/DI-06/catalog contradictions;
 these are synchronized and the human reported independent QA GO on 2026-09-11.

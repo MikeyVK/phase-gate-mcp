@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
-**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
-**Version:** 1.35  
+**Status:** RESEARCH FROZEN — EXAMPLE-VALIDATION WITHDRAWAL QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.36  
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -9,7 +9,7 @@
 ## Authority and Use
 
 The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
-Independent QA is requested before Design resumes. Earlier GO covers earlier deltas.
+The human reported independent QA clean GO on 2026-09-11 and authorized Design resumption.
 The 126/151 census is unchanged. DTO/configuration dispositions retain example
 authoring and rendering, not semantic model-example validation. References to valid
 examples describe caller intent, not a runtime verification obligation.
@@ -551,7 +551,7 @@ Research is complete only when:
 ## Current Gate
 
 The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
-Independent QA is requested before Design resumes. Earlier GO covers earlier deltas;
+The human reported independent QA clean GO on 2026-09-11 and authorized Design resumption;
 research.md remains the sole gate authority.
 
 
