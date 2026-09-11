@@ -3,7 +3,7 @@
 # Issue 460 Template-Suite Distribution and Renewal Design
 
 **Status:** DRAFT  
-**Version:** 1.9  
+**Version:** 1.10  
 **Last Updated:** 2026-09-11  
 **Primary Package:** DI-06  
 **Upstream Dependencies:** Research Approved Strategy, DI-01/DI-02 suite validation and identities, final DI-03 package set  
@@ -23,7 +23,7 @@ The [Suite Resolution Design](design-suite-resolution.md) owns suite discovery,
 validation, resolved package graphs, package versions, resolved package fingerprints, and
 the generation-only source-suite fingerprint. The human clarification of 2026-09-11
 confirms operational component fingerprints as the separate third identity kind; Research
-QA re-review is pending. This document cannot use pf/sf for full installed-state equality. DI-06 separately owns operational component equality
+QA GO was reported by the human on 2026-09-11. This document cannot use pf/sf for full installed-state equality. DI-06 separately owns operational component equality
 for renewal; those checkpoint identities are not artifact metadata.
 
 The design nucleus is a three-way comparison of one current adopted checkpoint, the
@@ -935,6 +935,7 @@ active-tree writes.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.10 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.9 | 2026-09-11 | `@imp researcher` | Clarify operational fingerprint consumers, complete source coverage, bootstrap/recovery maps and generation-identity exclusion after QA; no new metadata or merge policy. |
 | 1.8 | 2026-09-10 | `@imp researcher` | Preserve full component equality including .version/policy.yaml while generation pf/sf excludes them; no change to three-way policy. |
 | 1.7 | 2026-09-03 | `@imp designer` | Align every distribution component and checkpoint key with the clarified `manifest.yaml:template_id` authority; compact persisted provenance retains `id` only as its versioned short-form dialect. |

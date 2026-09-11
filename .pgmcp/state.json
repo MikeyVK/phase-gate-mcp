@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "research",
+  "current_phase": "design",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -117,6 +117,14 @@
       "human_approval_message": "Akkoord! \u2014 approval to process the package manifest/.version/policy.yaml split and generation-only fingerprint boundary through Research and Design.",
       "forced": true,
       "skip_reason": "Reopen only the explicitly human-approved generation identity and file-ownership amendment; preserve other frozen strategy and require independent QA before Design resumes."
+    },
+    {
+      "from_phase": "research",
+      "to_phase": "design",
+      "timestamp": "2026-09-11T07:18:47.133744+00:00",
+      "human_approval_message": "Oke go van qa we gaan verder met design",
+      "forced": false,
+      "skip_reason": null
     }
   ],
   "reconstructed": false,

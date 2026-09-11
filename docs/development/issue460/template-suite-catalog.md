@@ -1,7 +1,7 @@
 # Template Suite Work Catalog
 
-**Status:** GENERATION IDENTITY AMENDMENT — RESEARCH QA REQUESTED  
-**Version:** 1.33  
+**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.34  
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
@@ -9,8 +9,8 @@
 ## Authority and Use
 
 The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-Human strategy approval is recorded; independent Research QA is requested before Design
-resumes. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
+The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
+This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
 remains frozen. Research.md is the sole gate authority.
 
 Existing DI-01/DI-02 loader/provenance and test dispositions now include manifest/.version/
@@ -550,8 +550,8 @@ Research is complete only when:
 ## Current Gate
 
 The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-Human strategy approval is recorded; independent Research QA is requested before Design
-resumes. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
+The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
+This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
 remains frozen. Research.md is the sole gate authority.
 
 
@@ -565,6 +565,7 @@ Planning must assign every one of the 126 consumer/reference rows and 151 test/h
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.34 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.33 | 2026-09-11 | `@imp researcher` | Correct provenance/hash test dispositions and operational upgrade safeguards after QA; census unchanged. |
 | 1.32 | 2026-09-10 | `@imp researcher` | Route generation identity/file split through existing dispositions and replace the current gate; census unchanged. |
 | 1.31 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |

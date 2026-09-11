@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** GENERATION IDENTITY AMENDMENT — RESEARCH QA REQUESTED  
-**Version:** 1.37  
+**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.38  
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
@@ -11,8 +11,8 @@
 ## Purpose and Authority
 
 The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-Human strategy approval is recorded; independent Research QA is requested before Design
-resumes. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
+The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
+This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
 remains frozen. Research.md is the sole gate authority.
 
 DI-01/DI-02 own the human-approved manifest/.version/policy.yaml split and whole-file
@@ -48,7 +48,7 @@ A Design package is a cohesive grouping tool, not a mandatory wrapper around eve
 ## Bounded Retesting Amendment Routing — 2026-09-05
 
 Historical routing, amended in place by the 2026-09-10 decision: the [narrow F-20 amendment](research.md#narrow-check-retesting-amendment--2026-09-05).
-Design is paused for independent QA; previous freeze/GO statements below describe the
+Design resumes after human-reported independent QA GO on 2026-09-11; earlier statements describe the
 earlier baseline, except for this explicitly authorized amendment. No finding, strategy,
 invariant, expected-result, or census total is added or removed.
 
@@ -319,7 +319,7 @@ This is a cross-cutting routing and integration obligation, not a removal subsys
 
 ### RC-01 — Approved Strategy Fidelity
 
-Research has approved compatibility and migration per boundary, including the F-20 clean break dated 2026-09-04. The human owner subsequently confirmed formal Design GO with binding manageability conditions; Research and this intake scope are frozen except the generation-identity amendment awaiting QA. This paragraph's former pending-review wording was an administrative remnant superseded by that recorded authorization. Design may define mechanisms within the approved strategies. A new product role, compatibility choice, or consumer family requires a separate issue; contradictory evidence stops the affected design for an explicit human decision.
+Research has approved compatibility and migration per boundary, including the F-20 clean break dated 2026-09-04. The human owner subsequently confirmed formal Design GO with binding manageability conditions; Research and this intake scope are frozen including the generation-identity amendment after human-reported QA GO. This paragraph's former pending-review wording was an administrative remnant superseded by that recorded authorization. Design may define mechanisms within the approved strategies. A new product role, compatibility choice, or consumer family requires a separate issue; contradictory evidence stops the affected design for an explicit human decision.
 
 | Obligation | Consequence |
 |---|---|
@@ -503,6 +503,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.38 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.37 | 2026-09-11 | `@imp researcher` | Synchronize every DI-06 row with generation identities, full operational comparison and safe bootstrap proof after QA. |
 | 1.36 | 2026-09-10 | `@imp researcher` | Route whole-file generation identity and split package ownership; retain full operational upgrade equality and independent QA gate. |
 | 1.35 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |

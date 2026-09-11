@@ -1,7 +1,7 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
-**Status:** RESEARCH REOPENED — GENERATION IDENTITY AMENDMENT; QA REQUESTED  
-**Version:** 3.39  
+**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
+**Version:** 3.40  
 **Last Updated:** 2026-09-11  
 **Issue:** 460  
 **Workflow:** Refactor / Research
@@ -69,8 +69,8 @@ owns complete operational comparison; DI-07 guidance and DI-08 conformance follo
 The 126-consumer/151-test catalog is unchanged; this amendment changes dispositions, not
 the existing-source census. W06 default materialization is not approved by this amendment.
 
-**Current gate:** human strategy approved; independent targeted Research QA requested.
-Design is paused at this boundary. Earlier QA GO remains valid only for its earlier delta.
+**Current gate:** the human reported independent QA GO on 2026-09-11 and authorized
+Design resumption. The generation-identity strategy is frozen; remaining Design is not pre-approved.
 No production/config files or implementation cycles are changed by this amendment.
 
 #### Fingerprint consumers and upgrade authority — human clarification 2026-09-11
@@ -104,7 +104,8 @@ source/policy field or descriptive comment may be dropped from operational cover
 
 **QA follow-up:** the supplied review returned NOGO for conflicting active F-10,
 DI-06 and catalog instructions. Those passages are synchronized with this clarification;
-independent re-review is requested. This records human strategy approval, not producer GO.
+the human subsequently reported independent QA GO and authorized Design on 2026-09-11.
+This records external review authority, not producer GO.
 
 ### Lightweight Native-Fix Amendment — 2026-09-10
 
@@ -246,8 +247,8 @@ This document is the sole authority for issue-460 decision status, Approved Stra
 ## Current Status and Gate
 
 The [generation identity amendment](#generation-identity-and-package-file-ownership-amendment--2026-09-10)
-is the current gate. Human strategy approval is recorded; independent QA is requested
-before Design resumes. Prior native-fix and selection reviews do not approve this delta.
+is the current reviewed gate. The human supplied independent QA GO on 2026-09-11
+and authorized Design resumption; this is not producer approval.
 
 The [2026-09-10 native-selection amendment](#narrow-native-selection-amendment--2026-09-10)
 is a prior reviewed delta: the human supplied independent QA GO and authorized
@@ -528,7 +529,7 @@ The table below is the canonical strategy and status register. Supporting ration
 | Safe-edit post-edit validation | Approved 2026-08-25; narrow human amendment 2026-09-07, independent QA requested | Every safe edit validates complete proposed content through the shared configured output-profile boundary. Scaffold and safe edit expose validation=enforce/report (default enforce) and return validation_policy. Enforce preserves the original on failed/unavailable required validation; report may persist with structured findings, never bypassing independent safety/operation failures. V3 removes safe-edit mode, strict/interactive labels and verify_only without aliases or replacement dry-run functionality. Exact staging/atomic-write/rollback mechanics remain Design-owned |
 | F-09 / S-15 documentation authority | Approved 2026-08-23 | Live schema and catalog own exact facts; handwritten docs explain semantics and discovery, duplicate inventories are removed, and generation remains YAGNI-driven |
 | F-10 / S-10 distribution and customization | Human-approved amendment and bootstrap remediation 2026-09-03; unchanged by F-20 | Replace complete-suite-only renewal with component-wise three-way selection. Compare one current adopted checkpoint, the actual active root, and the supplied candidate for each indivisible component: shared/ is one component and every concrete manifest ID is one component. Select candidate content only for upstream-only or converged non-conflicting component changes; retain actual content or absence for local-only and conflicting changes. Component absence is a first-class state, so candidate additions and removals follow the same three-way rules. Build the selected result as a complete off-root suite, validate the entire resolved suite, and activate it only through a recoverable complete-tree replacement; validation or activation failure leaves the prior actual root authoritative. Candidate staging remains non-authoritative and runtime resolves exactly one active root. Persist one current component checkpoint with no history and no per-file versions. For a fresh managed install, install the validated candidate and establish its component states as the checkpoint in the same authoritative operation. For an existing managed workspace without a checkpoint, automatic bootstrap is permitted only when trustworthy persisted full operational component evidence for the previously installed or accepted official suite matches actual in component presence and every complete component fingerprint (never pf/sf), or when actual equals the fully validated candidate under that same complete operational comparison; derive the checkpoint from that proven-equal suite. An owner-supplied trusted complete prior suite may instead be validated and used to derive adopted component states. If none of those bases is reliably available, preserve every actual byte, stage the candidate non-authoritatively, return an actionable `checkpoint_required` outcome, and perform no component selection or activation. Existing external workspaces never infer a checkpoint or activate content automatically; their owner must supply a trusted prior suite or explicitly acknowledge the validated candidate as the upstream comparison basis. Candidate acknowledgement advances only checkpoint state and leaves actual content unchanged. Explicit reconciliation may likewise advance candidate checkpoint components without copying or overwriting locally merged actual content. Bootstrap creates no history, lookup, retention, SemVer, compatibility-matrix, automatic-merge, or provenance-registry obligation. Artifact metadata retains id/pv/pf/sf, but pf/sf now have the generation-only meaning approved in the 2026-09-10 amendment. They are not renewal checkpoints and never authorize overwrite, bootstrap, advancement or full installed-state equality; operational component fingerprints alone supply that comparison. Exact checkpoint encoding, comparison DTOs, staging path, validation transaction, and recoverable activation mechanics remain DI-06 Design-owned. |
-| F-11 / S-16 source provenance | Human-approved generation-identity amendment 2026-09-10; targeted QA requested | manifest.yaml owns template_id/purpose, .version owns the one bounded human SemVer, policy.yaml owns output_profile/persistence. pf includes selected generation files and transitive shared support; sf includes all suite generation files. Both exclude whole version/policy files and external validation configuration. Comments/descriptions in generation sources count. Preserve id/pv/pf/sf metadata, package isolation and owner-controlled history; no registry, lookup or retention service. Full operational component equality, not pf/sf, protects upgrades. No five-field-manifest alias or field-level exclusion; see the current amendment for trade-offs and required evidence |
+| F-11 / S-16 source provenance | Human-approved generation-identity amendment 2026-09-10; independent QA GO reported 2026-09-11 | manifest.yaml owns template_id/purpose, .version owns the one bounded human SemVer, policy.yaml owns output_profile/persistence. pf includes selected generation files and transitive shared support; sf includes all suite generation files. Both exclude whole version/policy files and external validation configuration. Comments/descriptions in generation sources count. Preserve id/pv/pf/sf metadata, package isolation and owner-controlled history; no registry, lookup or retention service. Full operational component equality, not pf/sf, protects upgrades. No five-field-manifest alias or field-level exclusion; see the current amendment for trade-offs and required evidence |
 | F-12 / S-05 issue references | Approved 2026-08-23 | Positive integers carry issue identity; renderers own # and other presentation syntax |
 | F-12 / S-06 checklist items | Approved 2026-08-23 | Required text and explicit checked state form one structured item; primitive strings and bridges are rejected |
 | F-12 original-issue coverage | Covered 2026-08-23 | All four PR defects map to approved suite-wide boundaries; no PR-only strategy remains |
@@ -654,17 +655,17 @@ This historical hand-over does not close the new targeted review requested above
 
 #### Open Work
 
-- Independent QA of the generation-identity/file-ownership amendment remains open; Design is paused for this boundary. Prior native-fix GO is unchanged.
+- The human reported independent QA GO for the generation-identity/file-ownership amendment and authorized Design resumption. Remaining Design/conformance work is not pre-approved.
 - DI-05 must receive its own Design document and remain separate from DI-04 scaffold/safe-edit mutation ownership.
 - Exact role schemas, adapter manifest fields, discovery/index layout, process protocol, authorized native fix execution, typed partial-mutation outcomes, external recovery guidance, DTO shapes, and status mapping remain Design-owned within the approved boundaries.
 - Implementation sequencing remains Planning-owned under the binding manageability conditions above, including separate check/test/fix proof, separate F-10 activation and F-20 fix-application cycles, and concrete cycle ownership for all 126 consumers and 151 tests/helpers.
 
 #### Review Request
 
-- Review requested: verify synchronized F-10 strategy, every DI-06 intake row and the catalog provenance/hash dispositions against the 2026-09-11 three-identity clarification.
+- Targeted independent QA GO reported by the human on 2026-09-11 for synchronized F-10, DI-06 and catalog instructions.
 - Specifically review policy-only/version-only local changes versus changed candidate, bootstrap rejection of pf/sf or ambiguous hashes, complete operational recovery maps, and the documented source-normalization boundary.
 - Earlier independent Research review returned GO for native-fix scope/order/stop only; it is not approval of the current fingerprint amendment.
-- Review requested for the generation-identity/file-ownership amendment; do not resume Design before the targeted independent verdict.
+- Design resumption authorized by the human; retain independent review at the Design gate.
 - Independent Design review remains required at the Design phase gate; this close-out does not pre-approve Design mechanisms or later implementation cycles.
 
 ## References
@@ -684,6 +685,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.40 | 2026-09-11 | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 3.39 | 2026-09-11 | Clarify the three identity consumers and full operational upgrade/bootstrap authority; synchronize QA-requested active F-10 and request independent re-review. |
 | 3.38 | 2026-09-10 | Record human-approved whole-file generation fingerprint boundaries and manifest/.version/policy ownership; retain full upgrade comparison and request targeted QA. |
 | 3.37 | 2026-09-10 | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |

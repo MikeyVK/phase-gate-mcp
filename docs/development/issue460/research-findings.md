@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** GENERATION IDENTITY AMENDMENT — RESEARCH QA REQUESTED  
-**Version:** 1.29  
+**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
+**Version:** 1.30  
 **Last Updated:** 2026-09-11  
 **Issue:** 460
 
@@ -16,12 +16,12 @@ Preserve detailed factual findings, option analysis, blast-radius evidence, and 
 The 2026-09-11 human clarification explicitly confirms a third, distribution-only
 operational component fingerprint, separate from artifact pf/sf. The supplied QA NOGO
 identified contradictory active transfer instructions, not a rejected product direction.
-F-10, DI-06 and catalog obligations are corrected; independent re-review is requested.
+F-10, DI-06 and catalog obligations are corrected; the human reported independent QA GO.
 No implementation, literal byte-equality or new conformance result is claimed.
 
 The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-Human strategy approval is recorded; independent Research QA is requested before Design
-resumes. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
+The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
+This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
 remains frozen. Research.md is the sole gate authority.
 
 ### Safe-Edit Policy Alignment Amendment — 2026-09-07

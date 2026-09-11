@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.82
+**Version:** 0.83
 **Last Updated:** 2026-09-10  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -13,7 +13,7 @@
 ## 1. Purpose and Authority
 
 The [generation identity amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10)
-pauses further Design for targeted Research QA. Template policy.yaml owns output_profile;
+received human-reported independent QA GO on 2026-09-11; Design resumes. Template policy.yaml owns output_profile;
 profile/check/default_args/native settings do not contribute to template pf or sf.
 Adapter package manifests/version/fingerprints and W05 decisions are unchanged.
 
@@ -3359,6 +3359,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.83 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 0.82 | 2026-09-10 | `@imp researcher` | Remove template-profile fingerprint projection obligation under the bounded generation identity amendment; adapter contracts unchanged. |
 | 0.81 | 2026-09-10 | `@imp designer` | Consolidate human-approved W05 native-fix contract in §7.18; close input/configuration/results/stop ownership, preserve operational success and route independent integration evidence. |
 | 0.80 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |
