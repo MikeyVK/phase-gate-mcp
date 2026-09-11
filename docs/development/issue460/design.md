@@ -3,8 +3,8 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.73
-**Last Updated:** 2026-09-10  
+**Version:** 1.74
+**Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
 **Role:** Design integration hub
@@ -26,7 +26,9 @@ The [Design Intake Map](design-intake-map.md) remains authoritative for package 
 ## Scope
 
 Current gate: [generation identity/file ownership](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-Human-approved Research amendment; independent QA requested and further Design paused.
+Human-approved Research amendment, with explicit third-identity clarification on
+2026-09-11. The supplied QA NOGO identified active F-10/DI-06/catalog contradictions;
+these are synchronized for independent re-review. Further Design remains paused.
 manifest.yaml owns template_id/purpose, .version the release label, policy.yaml the
 output_profile/persistence choice. pf/sf exclude complete version/policy files and
 external validation; upgrade components include all files. Earlier whole-suite snapshot
@@ -540,6 +542,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.74 | 2026-09-11 | `@imp researcher` | Route explicit operational component identity clarification and QA corrections; keep Design paused for independent re-review. |
 | 1.73 | 2026-09-10 | `@imp researcher` | Route generation identity and package file split; mark targeted QA pending and preserve full operational upgrade equality. |
 | 1.72 | 2026-09-10 | `@imp designer` | Record W05 human approval and DI-05 §7.18 consolidation; route native migration, presentation and conformance follow-through without Research or implementation changes. |
 | 1.71 | 2026-09-10 | `@imp designer` | Correct catalog P3 and record human-supplied native-fix Research QA GO; resume Design without pre-approving W05 DTOs. |

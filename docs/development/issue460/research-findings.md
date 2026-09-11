@@ -3,8 +3,8 @@
 # Issue 460 Research Findings
 
 **Status:** GENERATION IDENTITY AMENDMENT — RESEARCH QA REQUESTED  
-**Version:** 1.28  
-**Last Updated:** 2026-09-10  
+**Version:** 1.29  
+**Last Updated:** 2026-09-11  
 **Issue:** 460
 
 ## Purpose
@@ -12,6 +12,12 @@
 Preserve detailed factual findings, option analysis, blast-radius evidence, and observed behavior for the issue-460 scaffolding schema-template contract audit without enlarging the primary Research artifact.
 
 ## Authority
+
+The 2026-09-11 human clarification explicitly confirms a third, distribution-only
+operational component fingerprint, separate from artifact pf/sf. The supplied QA NOGO
+identified contradictory active transfer instructions, not a rejected product direction.
+F-10, DI-06 and catalog obligations are corrected; independent re-review is requested.
+No implementation, literal byte-equality or new conformance result is claimed.
 
 The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
 Human strategy approval is recorded; independent Research QA is requested before Design

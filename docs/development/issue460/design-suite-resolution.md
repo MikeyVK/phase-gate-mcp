@@ -3,8 +3,8 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.21  
-**Last Updated:** 2026-09-10  
+**Version:** 1.22  
+**Last Updated:** 2026-09-11  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
 **Downstream Consumers:** DI-03, DI-04, DI-06, DI-07, DI-08  
@@ -134,7 +134,7 @@ scan, archive, or provenance-lookup service is retained or introduced.
 | D-SUITE-24 | Dependency direction is concrete package → shared support → shared support; concrete-package-to-concrete-package and shared-to-concrete-package edges are invalid startup state | Decided |
 | D-SUITE-25 | A package-local semantic change leaves every other package's version, resolved fingerprint, schema/rendering semantics, and affected-package diagnostics unchanged; newly scaffolded artifacts may still carry the new complete-suite fingerprint as truthful source context | Decided; DI-06 owns comparison/reporting consequences |
 | D-SUITE-26 | Concrete package .version files own the only authored template versions; individual package files and shared contributors have no authored versions | Decided |
-| D-SUITE-27 | One automatically computed complete-suite fingerprint covers the currently supplied suite; DI-06 may persist separate distribution-only operational component checkpoints without changing either F-11 provenance identity | Decided; D-SUITE-30 owns only the existing provenance algorithms |
+| D-SUITE-27 | sf covers supplied generation sources only; DI-06 owns a distinct operational component fingerprint kind covering every local source file including version/policy, persisted only in adopted checkpoint maps | Human clarification 2026-09-11; Research QA pending |
 | D-SUITE-28 | PGMCP computes and compares identities only from supplied or already available managed snapshots; external/workspace suite owners own historical retention, release versioning, lookup, and reconstruction availability | Decided |
 | D-SUITE-29 | No replacement provenance registry, Git/release association registry, retention validator, archive/lookup service, history scan, or missing-history control/evidence state is introduced | Decided |
 | D-SUITE-30 | Both identities use domain-separated canonical version-1 records, SHA-256 truncated to 96 bits, and unpadded Base64url as one 16-character representation across all consumers | Decided |
@@ -1045,6 +1045,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
 | 1.18 | 2026-09-10 | `@imp designer` | Supersede overflow wrapping with 24-character template IDs, 11-character package SemVer labels and first-line-only native comments; propagate canonical typed constraints through admission/render/read contracts and route invalid recognition to DI-04 fallback without redesigning Jinja tiers. |
 | 1.19 | 2026-09-10 | `@imp designer` | Align with consumer selection equivalence: unknown metadata IDs yield no applicable template, like absent/invalid headers; keep syntax-only reading independent from catalog lookup. |
+| 1.22 | 2026-09-11 | `@imp researcher` | Clarify third identity kind and update active D-SUITE-27; generation provenance cannot authorize upgrade/checkpoint operations. |
 | 1.21 | 2026-09-10 | `@imp researcher` | Reconcile human-approved whole-file generation identity and manifest/.version/policy split; preserve upgrade comparison and pause for targeted QA. |
 | 1.20 | 2026-09-10 | `@imp designer` | Close the integrated header utility nucleus: retain shared-tier writing, define text-only typed reader outcomes and framing/BOM rules, separate selection/persistence, and specify real-render plus independent conformance evidence. |
 | 1.13 | 2026-09-03 | `@imp designer` | Remove premature Worker/package naming examples so illustrative values cannot pre-empt DI-03 artifact identities, DI-03 content fields, or DI-05 profile IDs; preserve the abstract five-field manifest and explicit input boundary. |
