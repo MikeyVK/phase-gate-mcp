@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.86
+**Version:** 0.87
 **Last Updated:** 2026-09-11  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -106,6 +106,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, role/public result unions and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; independent conformance and cross-package integration remain required |
 | D-ADAPTER-28 | Initial profile composition, template assignments and binding defaults are configuration, not a server-owned taxonomy; extending combinations of existing capabilities requires no code change | Human-approved W09 starting-set boundary, 2026-09-11; §7.19; D-ADAPTER-29 separately records concrete settings, with independent evidence still required |
 | D-ADAPTER-29 | Nine initial adapter packages, explicit content/selection capabilities, native mappings and configured defaults; preserve light Markdown and separate Lychee; accept visible Ruff/Mypy strictness and native target-selection changes | Human-approved W09, 2026-09-11; §7.20; local workshop closed, independent QA and implementation conformance pending |
+| D-ADAPTER-30 | Official packages are authored and shipped under mcp_server/bundled_adapters; owner extensions live under resolved_server_root/workspace_adapters. Same manifest/role contracts, distinct source ownership, no old-path fallback | Human-approved W10 naming/location refinement, 2026-09-11; §7.4.1; DI-06 owns delivery evidence |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
@@ -198,7 +199,7 @@ field schemas remain follow-up work.
 Selected source and reference nucleus:
 
 - Official packages are resolved from the installed PGMCP distribution; workspace-owned
-  packages are resolved from `.pgmcp/adapter_suite/`. Both contribute to one catalog.
+  packages are resolved from `resolved_server_root/workspace_adapters/`. Both contribute to one catalog.
 - Each direct package directory contains `manifest.yaml`. Its `adapter_id` defines
   identity; the containing directory is a physical location only. Internal implementation
   folders are not scanned for additional packages.
@@ -277,7 +278,7 @@ schemas remain open. Profile placement also requires the DI-02 integration check
 ### 7.1 Established package obligations
 
 Official adapters ship with PGMCP. Workspace-owned adapters live under
-`.pgmcp/adapter_suite/` and require explicit owner trust. Startup forms one catalog
+`resolved_server_root/workspace_adapters/` and require explicit owner trust. Startup forms one catalog
 without duplicate `adapter_id` values or incompatible contract declarations. Finding a
 package is distinct from authorizing its code to execute; §7.4.2 fixes the explicit
 trust configuration and its admission ownership.
@@ -291,7 +292,7 @@ Section 7.4.1 now records the approved source layout, file inventory, role-field
 and fingerprint boundary. Sections 7.4.2–7.4.3 complete trust and the native provenance
 return amendment; role-specific binding/operation contracts keep their workshop owners.
 The package declaration filename is `manifest.yaml`, as selected in W-ADAPTER-02.
-The approved `template_suite/` layout does not automatically define `adapter_suite/`.
+The approved `template_suite/` layout does not define adapter store names or renewal policy.
 
 ### 7.2 Version, fingerprint, and their consumers
 
@@ -729,12 +730,24 @@ Sections 7.4.2–7.4.3 complete those two decisions; no runtime conformance is c
 
 | Approved boundary | Contract |
 |---|---|
-| Sources and identity | Official distributed packages under assets/adapter_suite; workspace extensions under resolved_server_root/adapter_suite. Shallow manifest discovery, manifest-owned adapter_id and duplicate-ID rejection; no override by directory name |
+| Sources and identity | Official packages under installed mcp_server/bundled_adapters; workspace extensions under resolved_server_root/workspace_adapters. Shallow manifest discovery, manifest-owned adapter_id and duplicate-ID rejection; no override by directory name |
 | Package files | Required nonempty unique files inventory, relative to the package. manifest.yaml is included implicitly and must not be repeated; reject missing/escaping/duplicate paths. Include package-owned entrypoints, schemas, dependency-contribution files and required runtime imports/data |
 | Check capability fields | Nonempty unique inputs tuple of content or selection; requires_file is required boolean when content is supported and forbidden otherwise. Profile admission and input preparation are the consumers |
 | Test capability input | W04 §7.15 supersedes the earlier options_schema field: native CLI arguments use the fixed args transport; no per-capability CLI-option schema |
 | Fix capability field | Nonempty addresses references, each adapter_id plus check capability; may reference a different package. Fix/check configuration coherence is the consumer; exact fix application remains W05-owned |
 | Generic composition | One immutable startup catalog, narrow CheckCatalogReader/TestCatalogReader/FixCatalogReader and one shared AdapterInvoker. Fix/check relations support discovery, not mandatory verification execution; no consumer gets install/trust mutation APIs |
+
+**Human-approved location clarification (W10, 2026-09-11).** The older
+`.pgmcp/adapter_suite/` label in frozen Research denotes the workspace extension
+source whose final Design name is `resolved_server_root/workspace_adapters/`.
+Ownership, explicit trust, shallow discovery and duplicate-ID rejection are unchanged.
+No alias, dual discovery or migration scanner for that not-yet-shipped V3 path is added.
+Official packages are authored directly in `mcp_server/bundled_adapters/` and packaged
+there; they are not generated workspace assets. `bundled` describes release ownership,
+whereas `mcp_adapters` would misleadingly suggest MCP-protocol adapters. Both sources
+contain the same language-agnostic package kind, not separate role implementations.
+The prior `assets/adapter_suite` destination and proposed `adapter_packages/` staging
+source are superseded. DI-06 §7.6 owns distribution and installed-package evidence.
 
 Use strict, immutable, extra-forbid declarations and exact case-sensitive IDs. Package
 and capability IDs follow [a-z][a-z0-9_]{0,63}; adapter version is valid SemVer without
@@ -3661,6 +3674,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.87 | 2026-09-11 | `@imp designer` | Record approved bundled_adapters/workspace_adapters source names and direct official authoring outside assets; preserve manifest, trust and role contracts. |
 | 0.86 | 2026-09-11 | `@imp designer` | Record human W09 approval, D-ADAPTER-29 and local closure; retain independent QA, cross-package integration and native conformance obligations. |
 | 0.85 | 2026-09-11 | `@imp designer` | Propose concrete W09 adapter inventory, native request/result boundaries, configured startset, preservation and explicit unresolved settings decisions; no closure or runtime conformance claim. |
 | 0.84 | 2026-09-11 | `@imp designer` | Record W09 configurable starting-set boundary and no-hardcoded-profile requirement; preserve native integration and migration evidence work. |

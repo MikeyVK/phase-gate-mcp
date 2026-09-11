@@ -3,12 +3,18 @@
 # Issue #460 Research-to-Design Intake Map
 
 **Status:** RESEARCH FROZEN — EXAMPLE-VALIDATION WITHDRAWAL QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.40  
+**Version:** 1.41  
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
 
 ## Purpose and Authority
+
+W10's human-approved location refinement (2026-09-11) names official packages
+`mcp_server/bundled_adapters/` and owner extensions
+`resolved_server_root/workspace_adapters/`. DI-05 §7.4.1 and DI-06 §7.6 own this
+Design clarification of Research's earlier adapter_suite label; ownership, trust,
+role contracts and Research gate decisions are unchanged. No old-path fallback is added.
 
 The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
 The human reported independent QA clean GO on 2026-09-11 and authorized Design
@@ -232,7 +238,7 @@ DI-07 must not advertise examples as certified valid instances.
 | Design-owned decisions | One immutable startup-resolved adapter catalog; official and trusted workspace package sources; package manifest, `adapter_id`, one version, supported role-contract versions, capabilities, entry points, package fingerprint, dependency/trust/error policy, and restart semantics; generic process/scratch/timeout/stdout/stderr/malformed/crashed/unavailable transport; separate `check/v1`, `test/v1`, and `fix/v1` request/result contracts; `run_checks`, framework-neutral `run_tests`, and `apply_fixes` inputs/results/scopes/verbose behavior/cache/presentation; output-profile check selection; native fix target authorization for the approved explicit concrete-files-only scope, caller-ordered execution and stop-on-first-non-success, partial-failure/unknown-change reporting, and agent-controlled recovery guidance; no generic proposals, copies, required verification or rollback; conformance and self-hosting proof |
 | Consumer-policy separation | Output profiles select required checks for complete proposed content. `run_checks` owns explicit scope and check-run reporting. `run_tests` owns behavioral suite/framework semantics. `apply_fixes` owns an explicitly requested native mutation workflow on authorized source targets, with agent-controlled verification/recovery. Workflow gates consume evidence but are not adapter capabilities. DI-04 alone decides scaffold/safe-edit persistence from unchanged factual check states |
 | Compatibility, migration, removal | PGMCP 3.0 clean break: remove `run_quality_gates`, `auto_fix`, and `quality.yaml`; introduce `run_checks`, `apply_fixes`, `checks.yaml`, `tests.yaml`, and `fixes.yaml`; keep only the semantically correct `run_tests` name while replacing its Pytest-shaped contract. No aliases, wrapper tools, or dual-read config. Obsolete config fails with actionable migration guidance. Migrate retained Pytest, Ruff, Mypy, Pyright, syntax, parser, and fix behavior into official packages where justified by current consumers The 2026-09-05 refinement also removes auto and its baseline/replay state and excludes PGMCP execution-result reuse; preserve report caching and use native configured/caller args without generic fresh/expansion controls; PGMCP alone resolves branch targets, and empty branch selection never invokes native configured discovery |
-| Provenance and ownership | Each adapter package has one authored manifest version and one computed package fingerprint over its semantic package inputs; files have no authored versions. Per-run evidence records only invoked adapter ID/version/package fingerprint/role-contract version and discovered external-tool ID/version. Do not add a whole adapter-suite fingerprint to runs or adapter provenance to scaffold-artifact source metadata. PGMCP owns official packages; workspace owners own trust, dependencies, retention, and version policy for `.pgmcp/adapter_suite/` packages |
+| Provenance and ownership | Each adapter package has one authored manifest version and one computed package fingerprint over its semantic package inputs; files have no authored versions. Per-run evidence records only invoked adapter ID/version/package fingerprint/role-contract version and discovered external-tool ID/version. Do not add a whole adapter-suite fingerprint to runs or adapter provenance to scaffold-artifact source metadata. PGMCP owns official packages; workspace owners own trust, dependencies, retention, and version policy for `resolved_server_root/workspace_adapters/` packages (human-approved W10 location refinement; DI-05 §7.4.1 / DI-06 §7.6) |
 | Required proof | Check and output-profile consumers receive identical factual check evidence; check calls cannot mutate; tests remain behavior-specific; PGMCP admits explicit fix scope and adapters honor it; failures may leave changes and must be reported honestly; no implied atomic rollback, automatic checks or Git actions; Pytest behavior intentionally retained is compared across old/new boundaries; official adapters pass shared role conformance plus tool-specific tests; a non-Python fixture package adds a supported language/tool without generic server-code changes; duplicate IDs, invalid manifests/contracts, unavailable tools, timeouts, crashes, malformed output, verbose capture, and restart loading are explicit; old public/config names and duplicate command/parser authorities are absent |
 | Exclusions | No universal result object across roles; no language/file-extension/framework/command/parser dispatch in generic server code; no template-suite authority to install or trust executables; no adapter-owned scaffold persistence or workflow-gate decision; no whole-suite run fingerprint, binary retention/integrity promise, external package history enforcement, or new fourth product role without a separately justified consumer/contract |
 
@@ -508,6 +514,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.41 | 2026-09-11 | `@imp designer` | Route the human-approved bundled_adapters/workspace_adapters naming refinement without changing frozen Research ownership, trust, roles or gate authority. |
 | 1.39 | 2026-09-11 | `@imp researcher` | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
 | 1.38 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.37 | 2026-09-11 | `@imp researcher` | Synchronize every DI-06 row with generation identities, full operational comparison and safe bootstrap proof after QA. |

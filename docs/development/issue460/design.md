@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.85
+**Version:** 1.86
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -270,9 +270,9 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-ART-DOC-01–D-ART-DOC-09 | [Document/tracking §4](design-document-tracking-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
 | D-ART-CODE-01–D-ART-CODE-10 | [Code/test §4](design-code-test-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
-| D-ADAPTER-01–D-ADAPTER-29 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04/W05 human-closed; D25/D26 align defaults/scope; D28/D29 close W09 configuration ownership and concrete native starting contracts. W09 independent QA, remaining role integration, shared serialization and native conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
+| D-ADAPTER-01–D-ADAPTER-30 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04/W05 human-closed; D25/D26 align defaults/scope; D28/D29 close W09 configuration ownership and concrete native starting contracts; D30 fixes bundled/workspace adapter locations. W09 independent QA, remaining role integration, shared serialization and native conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
-| D-DIST-01–D-DIST-24 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Decided | CLI/init/upgrade, owner migration, DI-07, DI-08 |
+| D-DIST-01–D-DIST-25 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Renewal decided; W10 adapter locations approved; configuration integration remains open | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
 
 W09's human-approved concrete adapter and native-settings contract is in
@@ -692,6 +692,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.86 | 2026-09-11 | `@imp designer` | Index approved bundled_adapters/workspace_adapters source and delivery boundaries; keep W10 configuration integration and combined QA open. |
 | 1.85 | 2026-09-11 | `@imp designer` | Record human-directed W10–W12 continuation and combined remaining-package QA timing; retain W09's unreviewed status and frozen Research. |
 | 1.84 | 2026-09-11 | `@imp designer` | Record human W09 closure and bounded independent QA hand-over; preserve open DI-05 and whole-Design integration. |
 | 1.83 | 2026-09-11 | `@imp designer` | Index concrete W09 adapter/configuration proposal separately from approved decisions; retain bounded open settings work. |

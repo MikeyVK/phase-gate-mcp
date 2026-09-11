@@ -3,12 +3,12 @@
 # Issue 460 Template-Suite Distribution and Renewal Design
 
 **Status:** DRAFT  
-**Version:** 1.10  
+**Version:** 1.11  
 **Last Updated:** 2026-09-11  
 **Primary Package:** DI-06  
-**Upstream Dependencies:** Research Approved Strategy, DI-01/DI-02 suite validation and identities, final DI-03 package set  
+**Upstream Dependencies:** Research Approved Strategy, DI-01/DI-02 suite validation and identities, final DI-03 package set, DI-05 adapter source contract  
 **Downstream Consumers:** DI-07, DI-08, CLI/init/upgrade, owner workspace migration  
-**Lifecycle Status:** Decided
+**Lifecycle Status:** Renewal decided; W10 adapter location/delivery boundary approved; W10 configuration integration open
 
 ---
 
@@ -112,6 +112,7 @@ provenance-history replacement registry, and no silent change to the Approved St
 | D-DIST-22 | Recovery derives the only safe action from recorded prior/target identities and the durable trees/checkpoint: restore the prior pair before checkpoint publication, finish a complete target pair after publication, and fail without guessing when neither state is proven | Decided |
 | D-DIST-23 | A running server keeps its already resolved immutable catalog; a new startup briefly takes the upgrade lock and rejects an unresolved recovery record; whenever actual changes, CLI presentation derives a restart hint from `actual_changed` without changing a successful exit code | Decided |
 | D-DIST-24 | Forced replacement retains the verified pre-force suite/checkpoint backup at `.pgmcp_template_backup_<UTC-timestamp>/`; the result exposes its path, while PGMCP creates no backup index, pruning policy, or checkpoint authority from it | Decided |
+| D-DIST-25 | Official adapters are authored and shipped directly in mcp_server/bundled_adapters, outside workspace assets; resolved_server_root/workspace_adapters remains owner-controlled. No separate adapter authoring-copy stage or adapter renewal mechanism | Human-approved W10 location boundary; remaining W10 configuration integration open |
 
 ## 5. Responsibilities and Boundaries
 
@@ -612,6 +613,42 @@ It is outside the active `.pgmcp/` root, is never scanned at runtime, and is not
 or pruned by PGMCP. Its timestamp prevents replacement of earlier owner recovery material;
 retention and deletion remain owner decisions.
 
+### 7.6 Bundled and Workspace Adapter Delivery
+
+**Human-approved W10 location decision, 2026-09-11.** This section implements
+DI-05 D-ADAPTER-30 without changing template renewal, adapter roles or trust policy.
+
+| Material | Authoring / distribution location | Workspace delivery |
+|---|---|---|
+| Official adapter packages | Authored directly in `mcp_server/bundled_adapters/`; retained there in the installed distribution | Never copied into the workspace extension store |
+| Workspace adapter packages | `resolved_server_root/workspace_adapters/` | Owner-managed, explicitly trusted; never collected as official build input or replaced by server asset renewal |
+| Template suite | `.pgmcp/template_suite/` to installed `mcp_server/assets/template_suite/` | Existing DI-06 coherent suite/checkpoint operations |
+
+The current CLI init copies the complete assets tree and WorkspaceUpgrader walks its
+files. Keeping bundled adapters outside that tree avoids an adapter-specific exclusion
+in both consumers. Selective asset copying could work but offers no benefit for code
+that never belongs in workspace installation material. Direct authoring also removes
+the proposed `adapter_packages/` to `assets/adapter_suite/` build-copy stage. This does
+not remove the already required distinction between template renewal and config delivery.
+
+`pyproject.toml` must include all declared bundled adapter files in the distribution,
+not only Python modules. Installed-package evidence must verify manifests, scripts,
+schemas and dependency contributions from outside the source checkout, including the
+commit adapter's shared header-reader dependency. No copied parser, source-path import
+fallback or native dependency auto-installer is introduced. DI-08 may provide a reusable
+built-wheel fixture; DI-06 owns its delivery assertions, DI-05 its adapter conformance.
+
+Both roots contain the same manifest-driven, language-agnostic package kind. Directory
+placement is excluded from package fingerprint inputs under DI-05; these source names
+do not create another version or fingerprint layer. Duplicate IDs remain errors, not
+overrides. Bundled packages change with the installed server release and are loaded
+into the next startup catalog; workspace packages remain independently owner-controlled.
+
+The older workspace `adapter_suite` label in frozen Research is concretized by this
+human-approved Design naming decision; no alias or dual discovery is supported.
+W10 configuration integration remains a separate open workshop item. No config merge,
+overwrite policy or whole-W10 approval is implied by this location decision.
+
 ## 8. Control, Data, and State Flow
 
 ### Fresh Managed Install
@@ -935,6 +972,7 @@ active-tree writes.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.11 | 2026-09-11 | `@imp designer` | Record approved bundled/workspace adapter delivery separation, direct authoring outside assets and installed-package evidence; leave W10 config integration open. |
 | 1.10 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.9 | 2026-09-11 | `@imp researcher` | Clarify operational fingerprint consumers, complete source coverage, bootstrap/recovery maps and generation-identity exclusion after QA; no new metadata or merge policy. |
 | 1.8 | 2026-09-10 | `@imp researcher` | Preserve full component equality including .version/policy.yaml while generation pf/sf excludes them; no change to three-way policy. |
