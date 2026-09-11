@@ -3,12 +3,12 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.85
+**Version:** 0.86
 **Last Updated:** 2026-09-11  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
 **Downstream Consumers:** DI-04 scaffold/safe-edit, public check/test/fix operations, DI-07 workflow/documentation, DI-08 assurance  
-**Lifecycle Status:** Drafting; W05 native-fix contract decided; cross-package integration and independent conformance remain open
+**Lifecycle Status:** Drafting; W05 and W09 locally decided by the human; W09 independent QA, cross-package integration and adapter conformance remain open
 
 ## 1. Purpose and Authority
 
@@ -104,7 +104,8 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-26 | PGMCP resolves Git and public scopes; selection adapters receive only operation, targets and args; remove removed_targets, fresh and generic expansion controls | Human-approved 2026-09-10; §7.17 and the bounded Research amendment; default narrow |
 | D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
 | D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, role/public result unions and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; independent conformance and cross-package integration remain required |
-| D-ADAPTER-28 | Initial profile composition, template assignments and binding defaults are configuration, not a server-owned taxonomy; extending combinations of existing capabilities requires no code change | Human-approved W09 starting-set boundary, 2026-09-11; §7.19; exact native settings and capability evidence remain W09 work |
+| D-ADAPTER-28 | Initial profile composition, template assignments and binding defaults are configuration, not a server-owned taxonomy; extending combinations of existing capabilities requires no code change | Human-approved W09 starting-set boundary, 2026-09-11; §7.19; D-ADAPTER-29 separately records concrete settings, with independent evidence still required |
+| D-ADAPTER-29 | Nine initial adapter packages, explicit content/selection capabilities, native mappings and configured defaults; preserve light Markdown and separate Lychee; accept visible Ruff/Mypy strictness and native target-selection changes | Human-approved W09, 2026-09-11; §7.20; local workshop closed, independent QA and implementation conformance pending |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
@@ -3243,8 +3244,9 @@ that configuration can implement an absent capability.
 
 The starting set still needs meaningful checks and independent evidence that its chosen
 adapters fulfil their contracts. An empty/no-op check is not a substitute for an unresolved
-capability. Exact native settings, concrete integrations and the Markdown extension
-fallback remain bounded W09 work; they are not approved by accepting this ownership rule.
+capability. Section 7.20 now records the separately human-approved native settings,
+concrete integrations and Markdown extension fallback. Their approval is not inferred
+from this earlier ownership rule; independent conformance remains required.
 Scaffold and safe edit remain configured-only consumers, while explicit check/test/fix
 tools retain their own selection and argument contracts. No additional roles or consumer
 families are introduced.
@@ -3255,13 +3257,16 @@ references are rejected by the existing catalog contract. This is a proof obliga
 not a claim of executed tests. Policy changes remain excluded from generation fingerprints
 and included in operational upgrade comparison under the existing suite contracts.
 
-### 7.20 W09 — Concrete starting adapters and migration proposal
+### 7.20 W09 — Concrete starting adapters and migration contract
 
-**Status: PROPOSED, 2026-09-11.** The human requested concrete adapter-boundary design
-before W09 closure. This section supplies that proposal; it does not approve native
-setting changes, claim executed adapter conformance, or close W09. Section 7.19's
-configuration-only composition boundary is already decided. Earlier illustrative
-inventories are not a competing shipped inventory.
+**Status: HUMAN-APPROVED; LOCAL WORKSHOP CLOSED; INDEPENDENT QA PENDING, 2026-09-11.**
+The human accepted the concrete adapter-boundary design, start configuration and the
+explicit native-settings trade-offs presented from this section. This includes visible
+Ruff strictness, removal of the Mypy blanket missing-import suppression, native selection
+of explicitly targeted tests, and Pyright's visible Python 3.11 target. No adapter
+conformance or whole-Design approval is claimed. Section 7.19 remains the configuration-
+only composition boundary. Earlier illustrative inventories are not a competing
+shipped inventory. Review scope and material inputs are indexed in design.md §11.
 
 #### A. Initial package and capability inventory
 
@@ -3385,7 +3390,7 @@ remains a studied alternative, not an additional promised official adapter in th
 #### D. Concrete start configuration
 
 Bindings below use the existing four-field schema. Tables specify values without
-introducing a second config format. All are proposals for shipped workspace defaults,
+introducing a second config format. All are human-approved shipped workspace defaults,
 editable under §7.19, not immutable package/consumer categories.
 
 | CheckId | adapter_id / capability | timeout_seconds | default_args |
@@ -3428,20 +3433,21 @@ selection/order. A caller must supply both explicit files and desired fix sequen
 The old [quality.yaml](../../../.pgmcp/config/quality.yaml),
 [pyproject.toml](../../../pyproject.toml) and [pyrightconfig.json](../../../pyrightconfig.json)
 are evidence, not three continuing settings authorities. Preserve native inheritance;
-do not store rule lists in adapter code. The following resolves the intended direction;
-rows marked decision still require human acceptance before W09 closes.
+do not store rule lists in adapter code. The following records the human-approved
+initial values and intentional behavior changes; implementation must not label those
+changes as exact preservation or silently choose different defaults.
 
-| Surface | Proposed native owner and initial value | Preservation / decision |
+| Surface | Native owner and initial value | Preservation / approved decision |
 |---|---|---|
 | Ruff format | [tool.ruff], line-length=100, target-version=py311 | Drop --isolated; line length retained. Formatter previously lacked explicit target-version: record native-version/formatting comparison, not assumed byte identity |
 | Ruff lint | [tool.ruff.lint], existing selected families including E501 and PLC0415, global ignore=[]; tests per-file ignores only ANN and ARG | Preserve gate rule coverage while combining three lint invocations. Decision: remove IDE-only ANN401/ARG002 and test N806/SIM117/SIM105 exemptions from the effective workspace default |
-| Mypy | [tool.mypy], Python 3.11 and current strict settings; retain tests.* untyped override; files=["mcp_server"], ignore_missing_imports=false | The old MCP command also inherits strict=true, but overrides ignore_missing_imports=true. Decision: retain the visible native setting and remove that blanket suppression; this is stricter for MCP imports and requires explicit approval, not an equivalence claim. Do not invent exceptions; later owner-authored exceptions use native per-module config |
+| Mypy | [tool.mypy], Python 3.11 and current strict settings; retain tests.* untyped override; files=["mcp_server"], ignore_missing_imports=false | The old MCP command also inherits strict=true, but overrides ignore_missing_imports=true. Approved decision: retain the visible native setting and remove that blanket suppression; this is stricter for MCP imports, not an equivalence claim. Do not invent exceptions; later owner-authored exceptions use native per-module config |
 | Mypy explicit scope | Supplied targets use native selection; native files=["mcp_server"] governs configured selection only | Decision: explicit tests or a workspace-root request may now analyze tests, whereas both legacy Mypy gates excluded them. Retaining the tests.* untyped override does not disable the other strict checks. Prove this observable widening; do not silently reintroduce a server-owned tests filter |
 | Pyright | pyrightconfig.json, retain diagnostic toggles/execution environments; pythonVersion=3.11 and existing Windows target; --warnings stays visible binding default | Preserve effective gate target/warning treatment. Decision: native editor view now uses 3.11 too; do not claim all current diagnostic disables are removed by choosing strict |
 | Duplicate Pyright TOML setting | pyrightconfig.json already owns reportFunctionMemberAccess=false | Remove duplicate [tool.pyright] authority after preserved-value proof |
 | Intentional validation fixtures | Native per-tool exclusions with explicit-target behavior documented | No generic filename ignore or Python-specific target filter; prove direct-target native semantics rather than promising universal exclusion |
 | Pytest | [tool.pytest.ini_options], existing testpaths/name patterns/markers/asyncio settings and addopts including -n auto | Preserve ordinary scheduling and native verbosity; remove server-generated --tb and boolean-mode interpretation |
-| Coverage | [tool.coverage.run] source=["mcp_server"], branch=true; [tool.coverage.report] fail_under=90; caller --cov enables it | Proposed self-hosting default follows the actual source tree: backend/ is absent. Do not create or retain a fictitious source root. No duplicate coverage test binding; native thresholds determine rejection |
+| Coverage | [tool.coverage.run] source=["mcp_server"], branch=true; [tool.coverage.report] fail_under=90; caller --cov enables it | Approved self-hosting default follows the actual source tree: backend/ is absent. Do not create or retain a fictitious source root. No duplicate coverage test binding; native thresholds determine rejection |
 | Commit message | commitlint.config.cjs: explicit conventional parser preset; type-empty and subject-empty rejection; defaultIgnores=false; no enum/case/length or paired-breaking-marker rule | Preserve DI-03's arbitrary conventional type token, casing, multiline body/footer and marker-only breaking intent. No copy/read of git.yaml.commit_types: Git-tool admission and artifact framing are different consumers |
 
 Native result authority also removes the old QAManager rule that a parsed note can
@@ -3488,7 +3494,7 @@ check/test/fix migrations retain separate evidence and rollback points in Planni
 Local evidence: PythonValidator syntax path; MarkdownValidator; QAManager command,
 parser and direct-fix paths; RunTestsTool/PytestRunner; root native configurations;
 DI-03's accepted contract corpus; §7.13's bounded link experiments. No adapters, native
-configs, templates or runtime code were changed or executed for this proposal.
+configs, templates or runtime code were changed or executed for this design.
 
 Primary references inspected on 2026-09-11:
 
@@ -3502,11 +3508,13 @@ Primary references inspected on 2026-09-11:
 - [Lychee usage](https://github.com/lycheeverse/lychee/blob/master/README.md): version-sensitive native options; §7.13 remains the executed evidence.
 - [Node module resolution](https://nodejs.org/api/module.html#modulecreaterequirefilename): workspace-anchored native dependency loading.
 
-W09 remains open for human review of this concrete inventory/preservation approach
-and the marked settings decisions, especially the stricter visible Ruff/Mypy defaults.
-The proposed values are explicit; they are not already approved. Do not convert them into hidden implementation
-choices or claim a complete Design GO. Native adapter conformance is required before
-legacy removal, not a requirement to implement every adapter during Design.
+The human has closed W09's local workshop decisions. Independent QA must still review
+the concrete inventory, native mappings, admitted input capabilities, configuration
+SSOT and preservation/intentional-change boundary. No W09 QA verdict has been supplied.
+DI-06 package/dependency delivery, DI-07 guidance, DI-08 test architecture and complete
+DI-05 role DTO integration retain their existing owners; local closure does not mark
+them Integrated. Native adapter conformance is required before legacy removal, not a
+requirement to implement every adapter during Design. No complete Design GO is claimed.
 
 ## 8. Control, Data, and State Flow
 
@@ -3610,7 +3618,7 @@ proposed conformance evidence is claimed as completed.
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, native-argument transport, and independent conformance |
 | Q-ADAPTER-05 | Closed by W05: native fix admission, sequencing and results | §7.18 is authoritative; independent conformance, native-settings migration and external recovery documentation remain integration obligations, not reopened policy |
-| Q-ADAPTER-06 | Which native values replace today's split tool-settings authorities? | DI-05 chooses retained per-tool settings and explicit request controls, records intentional changes, and supplies separate check/test/fix migration proof obligations |
+| Q-ADAPTER-06 | Native starting values and intentional changes are locally decided in W09 | §7.20 owns the human-approved adapter inventory, native settings/defaults and explicit preservation deltas; independent QA and separate check/test/fix conformance remain required |
 | Q-ADAPTER-07 | What completes each capability declaration and its consumer binding? | Define profile/check selection, applicability and input requirements, and explicit fix-to-check references without same-package or same-name assumptions |
 | Q-ADAPTER-08 | Resolved by human generation-identity amendment | No profile/binding projection enters template pf/sf. Preserve startup reference coherence and runtime validation evidence independently; policy.yaml owns the selector |
 | Q-ADAPTER-09 | How do startup-built public contracts survive registration wrappers and lazy client exposure? | Define the contract holder and validation/presentation interfaces; prove the registered boundary and supported host reconnect/cache behavior without adding hot reload |
@@ -3653,6 +3661,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.86 | 2026-09-11 | `@imp designer` | Record human W09 approval, D-ADAPTER-29 and local closure; retain independent QA, cross-package integration and native conformance obligations. |
 | 0.85 | 2026-09-11 | `@imp designer` | Propose concrete W09 adapter inventory, native request/result boundaries, configured startset, preservation and explicit unresolved settings decisions; no closure or runtime conformance claim. |
 | 0.84 | 2026-09-11 | `@imp designer` | Record W09 configurable starting-set boundary and no-hardcoded-profile requirement; preserve native integration and migration evidence work. |
 | 0.83 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |

@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.83
+**Version:** 1.84
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -270,15 +270,15 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-ART-DOC-01–D-ART-DOC-09 | [Document/tracking §4](design-document-tracking-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
 | D-ART-CODE-01–D-ART-CODE-10 | [Code/test §4](design-code-test-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
-| D-ADAPTER-01–D-ADAPTER-28 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 human-closed; D25/D26 align defaults and thin scope transport; D27/§7.18 consolidates W05 native-fix contracts; D28/§7.19 records W09 configuration-only profile composition and assignments. Remaining W04 canonical integration, shared serialization, native migration and independent conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
+| D-ADAPTER-01–D-ADAPTER-29 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04/W05 human-closed; D25/D26 align defaults/scope; D28/D29 close W09 configuration ownership and concrete native starting contracts. W09 independent QA, remaining role integration, shared serialization and native conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
 | D-DIST-01–D-DIST-24 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Decided | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
 
-W09's concrete starting adapter and native-settings proposal is in
-[DI-05 §7.20](design-execution-adapters.md#720-w09--concrete-starting-adapters-and-migration-proposal).
-It is not a decided row: package selection, preservation trade-offs and proposed native
-settings require review before W09 closure.
+W09's human-approved concrete adapter and native-settings contract is in
+[DI-05 §7.20](design-execution-adapters.md#720-w09--concrete-starting-adapters-and-migration-contract).
+The local workshop is closed; independent QA is requested in §11. This does not close
+DI-05 integration or the full Design phase.
 
 ---
 
@@ -462,7 +462,7 @@ This checkpoint does not mark any additional package Integrated or authorize Pla
 | R-HUB-02 | Package documents become locally correct but mutually inconsistent | Design hub | Dependency impact pass required before `Integrated` |
 | R-HUB-03 | Coverage counts hide semantic omissions | Design hub | Coverage requires an owned target decision or proof obligation, not a bare link |
 | Q-HUB-03 | How do the adapter package/catalog/process and three role contracts fit together? | DI-05 | Bounded workshops complete the contracts, independent evidence, and public migration mapping |
-| Q-HUB-04 | Removing duplicate tool configuration could silently alter the quality standard | DI-05 | Q-ADAPTER-06 selects canonical native settings and intentional changes before migration; preserve logical-target configuration for scratch checks |
+| Q-HUB-04 | Removing duplicate tool configuration could silently alter the quality standard | DI-05 | Q-ADAPTER-06 / §7.20 records human-approved native settings and intentional changes; independent QA/conformance must verify that distinction and preserve logical-target configuration for scratch checks |
 | Q-HUB-05 | Profile/binding placement must remain coherent with template provenance | DI-02/DI-05 | Resolve Q-ADAPTER-08 before integrating the check-binding proposal; preserve the distinction from adapter execution evidence |
 | Q-HUB-06 | A correct core-tool schema can be lost through wrappers or stale exposure | DI-05/DI-08 | Q-ADAPTER-09 proves startup construction, registered exposure, matching validation/defaults/error feedback, and supported client refresh behavior |
 | Q-HUB-07 | On-use dependency failures could weaken profiles, obscure defaults, or bypass presentation policy | DI-04/DI-05/DI-08 | Q-ADAPTER-10 retains configured selections/defaults without startup probes; proves full-profile evidence, consumer policy and field-level projection under issues 456/459 |
@@ -536,7 +536,7 @@ The earlier request below is retained as review scope/history; integration remai
 
 - Bounded independent W07/W08 review is complete as reported above; subsequent integration
   and whole-Design review remain open.
-- W09/DI-05 binds exact native profiles/checks; DI-07 aligns instructions and references;
+- W09/DI-05 now records human-approved native profiles/checks; its independent review is below. DI-07 aligns instructions and references;
   DI-08 assigns conformance evidence. These dependencies are not marked Integrated.
 - Whole-Design coverage, remaining packages and final hand-over remain open.
 
@@ -546,6 +546,70 @@ The earlier request below is retained as review scope/history; integration remai
   graph/catalog, optionality and shared records, no template-specific pgmcp logic, source
   validity claims, planning parity and all nineteen workflow variants. Identify any
   undocumented behavior loss; do not treat this producer's inventory as proof of completeness.
+
+### W09 Bounded Design Review — 2026-09-11
+
+#### Scope
+
+- Review DI-05's concrete initial adapter contracts, native settings migration and
+  configuration-only composition. The human accepted these local workshop decisions;
+  no independent W09 verdict or whole-Design approval is claimed.
+- No production, test, native config, schema or template implementation. Research
+  remains frozen; W07/W08's independent approval is a material input, not W09 approval.
+
+#### Deliverables
+
+- [Execution adapters §7.20](design-execution-adapters.md#720-w09--concrete-starting-adapters-and-migration-contract):
+  nine packages; exact content/selection declarations; native request/result boundaries;
+  initial bindings/profiles; settings and intentional changes; independent evidence.
+- Same document §§7.4.1–7.4.3 and §§7.13–7.19: package/role/provenance, content/scratch,
+  transport, args, selection, mutation authority and configuration ownership contracts.
+- [Research](research.md), [Findings F-08/F-19/F-20](research-findings.md),
+  [Design intake DI-05](design-intake-map.md), [consumer catalog](template-suite-catalog.md).
+- [Code/test contracts](design-code-test-artifacts.md),
+  [document/tracking contracts](design-document-tracking-artifacts.md),
+  [header reader and suite contracts](design-suite-resolution.md).
+- Existing seams: [PythonValidator](../../../mcp_server/validation/python_validator.py),
+  [MarkdownValidator](../../../mcp_server/validation/markdown_validator.py),
+  [QAManager](../../../mcp_server/managers/qa_manager.py),
+  [RunTestsTool](../../../mcp_server/tools/test_tools.py),
+  [PytestRunner](../../../mcp_server/managers/pytest_runner.py),
+  [quality.yaml](../../../.pgmcp/config/quality.yaml),
+  [pyproject.toml](../../../pyproject.toml), [Pyright config](../../../pyrightconfig.json).
+
+#### Evidence
+
+- Source inspection and primary native references informed the design; §7.20 G indexes
+  those references. Earlier executed Lychee feasibility is explicitly bounded in §7.13.
+  No new native probes, runtime tests or quality gates were run for W09.
+- Producer-delegated read-only preflight identified the Mypy test-target widening and
+  missing Markdown preservation cases; both were incorporated. This is findings-only
+  producer assistance, not independent review authority.
+- Local document checks verified section presence, table continuity and relative file
+  links. They do not establish adapter behavior or native-version conformance.
+
+#### Open Work
+
+- Independent bounded W09 review requested. DI-06 must prove installed package and
+  dependency delivery (including the commit adapter's shared header-reader dependency);
+  DI-07 owns accurate guidance; DI-08 owns reusable conformance architecture.
+- Full role DTO integration and whole-Design cross-package consistency remain open.
+  Check/test/fix implementation evidence must precede legacy runner/parser removal.
+- Existing deferred sandbox, startup-health presentation and unrelated extension work
+  remain outside this slice; no new deferred product decision is introduced.
+
+#### Review Request
+
+- Review requested: independently test the design against source behavior, not only
+  its own tables. Focus on role-safe native args, operational success versus domain
+  outcomes, content-only versus selection exposure, real native configuration authority,
+  warning-preserving Markdown versus explicitly stronger Lychee, metadata-aware commit
+  validation and dependency/distribution feasibility.
+- Distinguish approved stricter Ruff/Mypy defaults and explicit Mypy test-target
+  selection from accidental behavior loss. Check native settings completeness and
+  that no product decision is hidden as implementation detail.
+- Use committed canonical artifacts, not the untracked temporary workshop/probe tree,
+  as authority. Return bounded findings and GO/NOGO for W09, not the whole Design phase.
 
 ### Whole-Design Hand-over (still in progress)
 
@@ -621,6 +685,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.84 | 2026-09-11 | `@imp designer` | Record human W09 closure and bounded independent QA hand-over; preserve open DI-05 and whole-Design integration. |
 | 1.83 | 2026-09-11 | `@imp designer` | Index concrete W09 adapter/configuration proposal separately from approved decisions; retain bounded open settings work. |
 | 1.82 | 2026-09-11 | `@imp designer` | Index W09 configuration-only starting-set decision; retain exact native migration and integration work. |
 | 1.81 | 2026-09-11 | `@imp designer` | Record independent W07/W08 GO without findings; mark local contracts Decided and retain cross-package integration and whole-Design review. |
