@@ -2,8 +2,8 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-24 updated=2026-08-25 -->
 # Issue 460 Research Findings
 
-**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.30  
+**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
+**Version:** 1.31  
 **Last Updated:** 2026-09-11  
 **Issue:** 460
 
@@ -19,10 +19,10 @@ identified contradictory active transfer instructions, not a rejected product di
 F-10, DI-06 and catalog obligations are corrected; the human reported independent QA GO.
 No implementation, literal byte-equality or new conformance result is claimed.
 
-The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
-This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
-remains frozen. Research.md is the sole gate authority.
+The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
+Semantic DTO/configuration example validation is withdrawn by the human. Independent
+QA is requested before Design resumes; earlier GO covers earlier deltas only.
+Research.md remains the sole gate authority. Other Research remains frozen.
 
 ### Safe-Edit Policy Alignment Amendment — 2026-09-07
 
@@ -557,7 +557,7 @@ The current contract remains unusable when populated. It accepts primitive `"nam
 **Recorded responsibility summary:** retain and adapt one language- and framework-qualified Python/Pydantic configuration model for declarative external configuration.
 
 - The model owns a bounded, introspectable vocabulary for described fields, types, required/default/factory semantics, declarative constraints, explicit imports, strict extra handling, and explicit immutability.
-- Optional examples are JSON-compatible configuration instances, are never invented, and are validated where the selected output capability can do so. They are not universally required merely because fields exist.
+- Optional examples are caller-authored JSON-compatible configuration illustrations, never invented or semantically checked against the generated model. Ordinary context-schema shape checks remain. They are not universally required merely because fields exist.
 - The artifact remains separate from DTO and Generic even though all can render Python classes. Historical use of Schema provenance on output DTOs does not redefine the new responsibility or require rewriting independent production files.
 - Typed-ID generation, architecture-layer headers, automatic tests, and project-specific imports are not package behavior.
 - Complex validators, computed behavior, and the entire Pydantic API are not modeled as an unrestricted YAML programming language. Editing a valid scaffold remains normal.
@@ -659,12 +659,12 @@ Direct production blast radius includes the [DTO config](../../../.pgmcp/templat
 - A required artifact description, required descriptions for every supplied field, a valid Python module docstring, a concise class docstring, and Pydantic field descriptions form the portable self-documentation baseline. Documentation-generator dialects, extended Google/NumPy/Sphinx sections, project architecture headers, and domain-specific documentation policy remain workspace specialization.
 - The artifact is `frozen=True` with `extra="forbid"`. Declarative field constraints and defaults that describe the data contract are legitimate; free validator bodies, arbitrary methods, lifecycle behavior, typed-ID factories, project imports, and automatic test generation are not package behavior.
 - A schema-valid context with no fields produces a valid empty Pydantic skeleton class. It requires no example and emits no empty examples metadata. This supports workspace skeleton scaffolding before implementation details are known.
-- Once at least one concrete field is supplied, at least one caller-supplied example is required. Each example represents a JSON-compatible serialized DTO instance, includes every required field, may omit optional/defaulted fields, and is never invented by the template.
-- Where the selected output-validation capability can import or otherwise validate the generated DTO safely, examples are checked against it. Unavailable example validation remains explicit unavailable evidence rather than a silent pass.
+- Once at least one concrete field is supplied, at least one caller-supplied example is required. Each example is intended to illustrate a JSON-compatible DTO instance and is never invented by the template. The caller owns correctness; scaffolding does not certify field completeness or model acceptance.
+- The human-approved 2026-09-11 withdrawal removes semantic model-example validation, generated-model execution and an unavailable placeholder. Ordinary context shape validation and other source checks remain.
 - First-time-right means every schema-valid call yields a syntactically correct, structurally coherent, and—where the required capability is available—validatable artifact basis without repair. It does not mean the artifact is application-complete; editing after scaffolding is a normal, healthy workflow action.
 - The implicit `_v2` sibling selection is removed under F-04/S-08, the typed-ID dependency remains outside the portable suite under F-14, and primitive field strings receive no compatibility bridge under S-02.
 
-The exact language-qualified type ID, naming-profile representation, conditional JSON Schema, structured field/default/constraint vocabulary, docstring layout, example-validation provider, and renderer organization belong to Design. Design may not weaken the approved empty-skeleton behavior, conditional example obligation, self-documentation baseline, immutability, or one-identity invariant.
+The exact language-qualified type ID, naming-profile representation, conditional JSON Schema, structured field/default/constraint vocabulary, docstring layout, and renderer organization belong to Design. There is no example-validation provider obligation. Design may not weaken the approved empty-skeleton behavior, conditional example-authoring obligation, self-documentation baseline, immutability, or one-identity invariant. Successful scaffolding does not certify example acceptance by the model.
 
 #### Approved Generic Python class responsibility (2026-08-24)
 

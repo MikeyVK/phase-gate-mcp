@@ -3,7 +3,7 @@
   "branch": "refactor/460-audit-scaffolding-schema-template-contracts",
   "issue_number": 460,
   "workflow_name": "refactor",
-  "current_phase": "design",
+  "current_phase": "research",
   "current_cycle": null,
   "last_cycle": null,
   "cycle_history": [],
@@ -17,7 +17,7 @@
     "ready"
   ],
   "execution_mode": "interactive",
-  "skip_reason": "Reopen only the explicitly human-approved generation identity and file-ownership amendment; preserve other frozen strategy and require independent QA before Design resumes.",
+  "skip_reason": "Bounded human-directed withdrawal of generated DTO/config example validation; preserve example authoring/rendering and other validation contracts. Independent QA required before Design resumption.",
   "issue_title": "Audit scaffolding schema-template rendering contracts",
   "parent_branch": "main",
   "created_at": "2026-08-22T19:45:36.738143+00:00",
@@ -125,6 +125,14 @@
       "human_approval_message": "Oke go van qa we gaan verder met design",
       "forced": false,
       "skip_reason": null
+    },
+    {
+      "from_phase": "design",
+      "to_phase": "research",
+      "timestamp": "2026-09-11T08:46:33.473518+00:00",
+      "human_approval_message": "We gaan voorbeeldvalidatie helemaal niet invoeren, ik zie het al helemaal gebeuren, dit is te complex en risk reward is niet in balans!",
+      "forced": true,
+      "skip_reason": "Bounded human-directed withdrawal of generated DTO/config example validation; preserve example authoring/rendering and other validation contracts. Independent QA required before Design resumption."
     }
   ],
   "reconstructed": false,

@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.77
+**Version:** 1.78
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -24,6 +24,12 @@ Design on 2026-09-04 after the F-20 amendment review and froze Research content 
 The [Design Intake Map](design-intake-map.md) remains authoritative for package routing.
 
 ## Scope
+
+Current override: [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11)
+is human-approved and awaiting independent Research QA. Design is paused. Example
+authoring/rendering and context-schema checks remain; semantic model-example validation
+and its proposed adapter/profile obligations are removed. Earlier gates below are prior
+deltas, not authorization to resume this amendment.
 
 Current gate: [generation identity/file ownership](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
 Human-approved Research amendment, with explicit third-identity clarification on
@@ -549,6 +555,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.78 | 2026-09-11 | `@imp researcher` | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
 | 1.77 | 2026-09-11 | `@imp designer` | Index approved shared schema authority and distinguish completed consumer decision from remaining resolver/URI/conformance work. |
 | 1.76 | 2026-09-11 | `@imp designer` | Index approved W06-B unchanged-context and present/empty/absent behavior; remaining schema integration stays open. |
 | 1.75 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |

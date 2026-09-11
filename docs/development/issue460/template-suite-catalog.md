@@ -1,17 +1,18 @@
 # Template Suite Work Catalog
 
-**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.34  
+**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
+**Version:** 1.35  
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Purpose:** Durable, omission-resistant work catalog for the complete packaged template suite, its runtime engine, behavioral tests, helpers, and active consumers.
 
 ## Authority and Use
 
-The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
-This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
-remains frozen. Research.md is the sole gate authority.
+The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
+Independent QA is requested before Design resumes. Earlier GO covers earlier deltas.
+The 126/151 census is unchanged. DTO/configuration dispositions retain example
+authoring and rendering, not semantic model-example validation. References to valid
+examples describe caller intent, not a runtime verification obligation.
 
 Existing DI-01/DI-02 loader/provenance and test dispositions now include manifest/.version/
 policy.yaml ownership and whole-file generation identities. DI-06 operational comparison
@@ -80,7 +81,7 @@ A PASS means only that the current tool call completed. It does not approve pros
 | reference | [.pgmcp/templates/config/reference.yaml](../../../.pgmcp/templates/config/reference.yaml) | [.pgmcp/templates/concrete/reference.md.jinja2](../../../.pgmcp/templates/concrete/reference.md.jinja2) | 4 | `title`, `status`, `version`, `last_updated`, `source_file`, `test_file`, `api_reference`, `usage_examples`, `test_count` | PASS | PASS | **Retain/adapt** — implemented API/component reference with rich API shapes, language-aware examples, complete source/evidence links, exposed purpose, and no volatile test count |
 | research | [.pgmcp/templates/config/research.yaml](../../../.pgmcp/templates/config/research.yaml) | [.pgmcp/templates/concrete/research.md.jinja2](../../../.pgmcp/templates/concrete/research.md.jinja2) | 11 | `title`, `status`, `version`, `last_updated`, `problem_statement`, `goals`, `purpose`, `scope_in`, `scope_out`, `prerequisites`, `background`, `findings`, `questions_list`, `references`, `related_docs`, `approved_strategy`, `expected_results` | PASS | PASS | **Retain/adapt** — preserve the research evidence carrier; make stable field meaning discoverable and refer workflow-specific completeness to active phase instructions; exact schema belongs to Design |
 | resource | [.pgmcp/templates/config/resource.yaml](../../../.pgmcp/templates/config/resource.yaml) | [.pgmcp/templates/concrete/resource.py.jinja2](../../../.pgmcp/templates/concrete/resource.py.jinja2) | 5 | `name`, `description`, `resource_type`, `methods` | PASS | FAIL — UndefinedError: 'str object' has no attribute 'name' | **Remove — clean break** — no general Python resource construct, no evidenced scaffold consumer, duplicate of Generic after removal of inert/project assumptions, and generated output does not implement pgmcp `BaseResource`; runtime resource classes remain untouched |
-| schema | [.pgmcp/templates/config/schema.yaml](../../../.pgmcp/templates/config/schema.yaml) | [.pgmcp/templates/concrete/config_schema.py.jinja2](../../../.pgmcp/templates/concrete/config_schema.py.jinja2) | 6 | `name`, `description`, `layer`, `fields`, `frozen`, `examples` | PASS | FAIL — Generated schema artifact failed validation | **Retain/adapt** — language/framework-qualified Python/Pydantic configuration model, distinct from DTO and Generic, with an explicit caller-owned rendered class symbol, structured described fields, explicit defaults/factories/constraints/imports, strict extras, explicit immutability, and optional valid examples; no full Pydantic DSL |
+| schema | [.pgmcp/templates/config/schema.yaml](../../../.pgmcp/templates/config/schema.yaml) | [.pgmcp/templates/concrete/config_schema.py.jinja2](../../../.pgmcp/templates/concrete/config_schema.py.jinja2) | 6 | `name`, `description`, `layer`, `fields`, `frozen`, `examples` | PASS | FAIL — Generated schema artifact failed validation | **Retain/adapt** — language/framework-qualified Python/Pydantic configuration model, distinct from DTO and Generic, with an explicit caller-owned rendered class symbol, structured described fields, explicit defaults/factories/constraints/imports, strict extras, explicit immutability, and optional caller-authored JSON-compatible examples, without model-example validation; no full Pydantic DSL |
 | service | [.pgmcp/templates/config/service.yaml](../../../.pgmcp/templates/config/service.yaml) | [.pgmcp/templates/concrete/service_command.py.jinja2](../../../.pgmcp/templates/concrete/service_command.py.jinja2) | 9 | `name`, `description`, `layer`, `responsibilities`, `parameters`, `return_type` | PASS | FAIL — Generated service artifact failed validation | **Remove — clean break** — broad Service has no defensible structure beyond Generic; current command renderer is S1mpleTrader-derived and schema-invalid. Remove legacy scaffolder and hidden command/query/orchestrator routing; any explicit command/query family is separately deferred |
 | tool | [.pgmcp/templates/config/tool.yaml](../../../.pgmcp/templates/config/tool.yaml) | [.pgmcp/templates/concrete/tool.py.jinja2](../../../.pgmcp/templates/concrete/tool.py.jinja2) | 6 | `name`, `description`, `layer`, `responsibilities` | PASS | PASS | **Remove — clean break** — pgmcp tool architecture is repository-specific, MCP SDK forms are framework-specific, and a framework-neutral Python tool adds no structure beyond Generic; no replacement or deferred pgmcp/MCP tool artifact |
 | typescript_dto | [.pgmcp/templates/config/typescript_dto.yaml](../../../.pgmcp/templates/config/typescript_dto.yaml) | [.pgmcp/templates/concrete/typescript_dto.ts.jinja2](../../../.pgmcp/templates/concrete/typescript_dto.ts.jinja2) | 5 | `fields`, `implements` | PASS | PASS | **Retain/adapt** — framework-neutral TypeScript data-carrier class with an explicit caller-owned rendered class symbol, structured typed properties, explicit optionality/immutability, constructor initialization, and optional interface implementation; remove hidden envelope naming, string parsing, and project metadata |
@@ -549,10 +550,9 @@ Research is complete only when:
 
 ## Current Gate
 
-The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
-This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
-remains frozen. Research.md is the sole gate authority.
+The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
+Independent QA is requested before Design resumes. Earlier GO covers earlier deltas;
+research.md remains the sole gate authority.
 
 
 The catalog now covers all 22 public artifact types and 79 template-suite files. Its runtime ledger contains 128 unique active paths: two governing-standard sources, which the declared census rule excludes, plus 126 consumers and references. Its Behavioral Test and Helper Ledger contains 151 unique paths. The QA-directed workspace-root repeat search used both obsolete names and semantic consumer terms, included hidden source paths, compared exact paths rather than substrings, and now has zero uncatalogued hits.
@@ -565,6 +565,7 @@ Planning must assign every one of the 126 consumer/reference rows and 151 test/h
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.35 | 2026-09-11 | `@imp researcher` | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
 | 1.34 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.33 | 2026-09-11 | `@imp researcher` | Correct provenance/hash test dispositions and operational upgrade safeguards after QA; census unchanged. |
 | 1.32 | 2026-09-10 | `@imp researcher` | Route generation identity/file split through existing dispositions and replace the current gate; census unchanged. |

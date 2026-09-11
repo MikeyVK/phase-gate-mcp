@@ -2,18 +2,17 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-26 updated=2026-08-30 -->
 # Issue #460 Research-to-Design Intake Map
 
-**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.38  
+**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
+**Version:** 1.39  
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
 
 ## Purpose and Authority
 
-The current gate is the [generation identity and file-ownership amendment](research.md#generation-identity-and-package-file-ownership-amendment--2026-09-10).
-The human supplied independent QA GO on 2026-09-11 and authorized Design resumption.
-This closes the targeted Research gate, not the remaining Design decisions. Earlier native-fix/selection GO covers only earlier deltas. Research otherwise
-remains frozen. Research.md is the sole gate authority.
+The current gate is the [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
+Independent QA is requested before Design resumes. Earlier GO covers earlier deltas
+only. All other Research remains frozen; research.md is the sole gate authority.
 
 DI-01/DI-02 own the human-approved manifest/.version/policy.yaml split and whole-file
 pf/sf inclusion rules. DI-04 preserves policy consumers; DI-05 removes external profile
@@ -194,6 +193,12 @@ flowchart LR
 | Exclusions | No historical template or Git/release association registry, history inspection, retention validator, snapshot archive/lookup service, absent-history failure/evidence state, external version-policy enforcement, adopted-artifact update system, or runtime purpose-discovery feature |
 
 ### DI-03 — Concrete Artifact Contracts, Renderer Semantics, and Portability
+
+Binding delta: retain example authoring/rendering and context-schema shape checks, but
+remove semantic DTO/configuration example validation. DI-03/DI-05 must not design a
+model-example adapter, generated-model execution or unavailable placeholder. DI-04
+retains persistence policy and other checks; DI-08 proves rendering, not model acceptance.
+DI-07 must not advertise examples as certified valid instances.
 
 | Dimension | Design intake |
 |---|---|
@@ -503,6 +508,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.39 | 2026-09-11 | `@imp researcher` | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
 | 1.38 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.37 | 2026-09-11 | `@imp researcher` | Synchronize every DI-06 row with generation identities, full operational comparison and safe bootstrap proof after QA. |
 | 1.36 | 2026-09-10 | `@imp researcher` | Route whole-file generation identity and split package ownership; retain full operational upgrade equality and independent QA gate. |

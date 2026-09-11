@@ -1,12 +1,53 @@
 # Research: Issue 460 — Scaffolding Schema–Template Rendering Contract Audit
 
-**Status:** RESEARCH FROZEN — GENERATION IDENTITY QA GO REPORTED; DESIGN RESUMED  
-**Version:** 3.40  
+**Status:** BOUNDED RESEARCH AMENDMENT — EXAMPLE VALIDATION WITHDRAWN; QA REQUESTED  
+**Version:** 3.41  
 **Last Updated:** 2026-09-11  
 **Issue:** 460  
 **Workflow:** Refactor / Research
 
 ## Purpose
+
+### Example Validation Withdrawal — 2026-09-11
+
+**Human-approved strategy.** Do not introduce semantic validation of caller-supplied
+DTO or configuration-model examples. Its execution risk and source-interpretation
+complexity outweigh the benefit. This withdraws the earlier conditional validation
+promise; it is not a deferred implementation obligation or an unavailable check.
+
+- Preserve example authoring and faithful rendering: DTOs with concrete fields still
+  require at least one caller-authored JSON-compatible example; configuration examples
+  remain optional. Empty DTO skeletons still need no example.
+- Preserve ordinary context-schema validation of shape, presence and JSON values.
+  This is distinct from proving an example is accepted by the generated model.
+- Do not add a model-example adapter, import/execute generated models or factories,
+  reconstruct Pydantic semantics, or tunnel original context into check requests.
+- Do not register an example-validation check/profile requirement or emit unavailable
+  merely because example validation is intentionally absent. Existing source preflight,
+  other checks, enforce/report and operational success semantics remain unchanged.
+- Examples remain caller-owned illustrative content, not certified valid instances.
+  Successful scaffolding does not certify their agreement with generated model fields,
+  defaults, constraints or runtime behavior. No implicit repair or retry loop.
+- Issue #460's schema-example/conformance evidence remains: authored sample contexts
+  must satisfy their context schemas and representative renders remain tested. Those
+  are not runtime validation of examples embedded in the generated model.
+
+**Evidence and alternatives.** Research Findings' DTO/configuration responsibility
+sections contained a conditional model-validation promise. The current Python syntax
+validator uses ast.parse, not model-example validation. Native model execution needs
+execution authority; a non-executing source interpreter duplicates model semantics.
+The human rejected both as issue-460 requirements. Preserving only an unavailable
+placeholder would leave avoidable enforce-mode failures and is also rejected.
+
+**Ownership and expected results.** DI-03 retains schema/rendering/description ownership;
+DI-05 has no example-check delivery obligation; DI-04 adds no example-specific blocking
+path; DI-08 proves ordinary schema/render preservation without runtime model execution;
+DI-07 must not advertise certified examples. Existing 126-consumer/151-test census
+is unchanged. Runtime, test code, actual profiles and GitHub issue text are not edited.
+
+**Current gate:** bounded Research amendment, independent QA review requested.
+Earlier generation-identity QA GO covers that prior delta only. Design is paused
+until independent review and human authorization to resume.
 
 ### Generation Identity and Package File Ownership Amendment — 2026-09-10
 
@@ -69,7 +110,7 @@ owns complete operational comparison; DI-07 guidance and DI-08 conformance follo
 The 126-consumer/151-test catalog is unchanged; this amendment changes dispositions, not
 the existing-source census. W06 default materialization is not approved by this amendment.
 
-**Current gate:** the human reported independent QA GO on 2026-09-11 and authorized
+**Prior amendment gate:** the human reported independent QA GO on 2026-09-11 and authorized
 Design resumption. The generation-identity strategy is frozen; remaining Design is not pre-approved.
 No production/config files or implementation cycles are changed by this amendment.
 
@@ -246,9 +287,9 @@ This document is the sole authority for issue-460 decision status, Approved Stra
 
 ## Current Status and Gate
 
-The [generation identity amendment](#generation-identity-and-package-file-ownership-amendment--2026-09-10)
-is the current reviewed gate. The human supplied independent QA GO on 2026-09-11
-and authorized Design resumption; this is not producer approval.
+The [example-validation withdrawal](#example-validation-withdrawal--2026-09-11) is the
+current gate. The strategy is human-approved; independent QA is requested before
+Design resumes. The generation-identity amendment retains its prior reported QA GO.
 
 The [2026-09-10 native-selection amendment](#narrow-native-selection-amendment--2026-09-10)
 is a prior reviewed delta: the human supplied independent QA GO and authorized
@@ -551,7 +592,7 @@ The table below is the canonical strategy and status register. Supporting ration
 | Generic Python class responsibility | Approved 2026-08-24 | Retain/adapt a bounded language-qualified plain-class skeleton with required self-documentation, valid empty classes, optional structured imports, bases, and body-free method signatures; remove hidden routing, forced project behavior, and specialized fallbacks through a clean break. Caller-supplied method bodies are excluded only from Generic and this creates no suite-wide rule for specialized Python artifacts |
 | Python/pytest integration-test responsibility | Approved 2026-08-24 | Retain/adapt a language- and framework-qualified integration-test module for observable collaboration across concrete components or boundaries; do not equate integration with E2E, infer project imports, force async/classes/filesystem fixtures, or fabricate passing tests. Exact structured test-case and honest incomplete-test mechanics remain Design-owned |
 | Resource artifact responsibility | Approved 2026-08-24 | Remove through a clean break: Python has no general resource code construct, the current artifact duplicates Generic without durable semantics, no real scaffold consumer is evidenced, and its output does not implement the pgmcp `BaseResource` boundary. Existing runtime resource code remains unchanged |
-| Python/Pydantic configuration-model responsibility | Approved 2026-08-24 | Retain/adapt a language- and framework-qualified model for declarative external configuration, distinct from DTO and Generic; expose structured described fields, explicit defaults/factories/constraints/imports, strict extra handling, explicit immutability, and optional valid examples without building a complete Pydantic DSL. Exact ID and finite schema remain Design-owned |
+| Python/Pydantic configuration-model responsibility | Approved 2026-08-24 | Retain/adapt a language- and framework-qualified model for declarative external configuration, distinct from DTO and Generic; expose structured described fields, explicit defaults/factories/constraints/imports, strict extra handling, explicit immutability, and optional caller-authored JSON-compatible examples (not model-validated) without building a complete Pydantic DSL. Exact ID and finite schema remain Design-owned |
 | Service artifact responsibility | Approved 2026-08-24 | Remove the over-broad Service artifact, concrete command renderer, legacy scaffolder, and hidden command/query/orchestrator routing through a clean break; service is an architectural agreement rather than one defensible Python structure, and retained portable behavior is covered by Generic. Existing generated production files remain unchanged |
 | [Command/query service artifact family](deferred-work.md#commandquery-service-artifact-family) | Deferred 2026-08-24 | Add no replacement service templates in issue 460; a future issue may independently research explicit command and query responsibilities, consumer demand, and whether separate artifact contracts are justified |
 | Tool artifact responsibility | Approved 2026-08-24 | Remove through a clean break without a replacement or deferred pgmcp/MCP tool artifact: pgmcp `ICoreTool` is repository-specific, MCP SDK forms are framework-specific, and a framework-neutral Python tool has no structure beyond Generic. Existing production tools remain unchanged |
@@ -604,7 +645,7 @@ The approved Generic Python class responsibility remains bounded to a body-free 
 
 ## Design-Owned Questions After the F-20 Amendment
 
-Research is frozen except for the authorized 2026-09-05 check-retesting amendment, which pauses Design pending independent QA. Both census remediations and the exact repository-root search remain durable evidence. Existing approved boundaries remain binding except where F-20 explicitly supersedes F-19 vocabulary and extension ownership. The questions below are authorized Design inputs; answering them may refine mechanisms within those boundaries but may not introduce a new product role, compatibility choice, or consumer family:
+Research is frozen except for the authorized 2026-09-11 example-validation withdrawal, which pauses Design pending independent QA. Both census remediations and the exact repository-root search remain durable evidence. Existing approved boundaries remain binding except where F-20 explicitly supersedes F-19 vocabulary and extension ownership. The questions below are authorized Design inputs; answering them may refine mechanisms within those boundaries but may not introduce a new product role, compatibility choice, or consumer family:
 
 1. Which standard JSON Schema draft and composition form produce one resolved reference-free public artifact contract, and how do typed caller-content, operation-control, and server-provenance inputs remain collision-free?
 2. How are template schema/Jinja dependency edges resolved, ordered, validated, fingerprinted, and compared without authored file-level versions?
@@ -685,6 +726,7 @@ This historical hand-over does not close the new targeted review requested above
 
 | Version | Date | Changes |
 |---|---|---|
+| 3.41 | 2026-09-11 | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
 | 3.40 | 2026-09-11 | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 3.39 | 2026-09-11 | Clarify the three identity consumers and full operational upgrade/bootstrap authority; synchronize QA-requested active F-10 and request independent re-review. |
 | 3.38 | 2026-09-10 | Record human-approved whole-file generation fingerprint boundaries and manifest/.version/policy ownership; retain full upgrade comparison and request targeted QA. |
