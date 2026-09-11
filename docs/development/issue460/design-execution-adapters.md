@@ -3,8 +3,8 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.83
-**Last Updated:** 2026-09-10  
+**Version:** 0.84
+**Last Updated:** 2026-09-11  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
 **Downstream Consumers:** DI-04 scaffold/safe-edit, public check/test/fix operations, DI-07 workflow/documentation, DI-08 assurance  
@@ -104,6 +104,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-26 | PGMCP resolves Git and public scopes; selection adapters receive only operation, targets and args; remove removed_targets, fresh and generic expansion controls | Human-approved 2026-09-10; §7.17 and the bounded Research amendment; default narrow |
 | D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
 | D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, role/public result unions and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; independent conformance and cross-package integration remain required |
+| D-ADAPTER-28 | Initial profile composition, template assignments and binding defaults are configuration, not a server-owned taxonomy; extending combinations of existing capabilities requires no code change | Human-approved W09 starting-set boundary, 2026-09-11; §7.19; exact native settings and capability evidence remain W09 work |
 
 The decided rows establish ownership and approved contracts. W02/W03 close package
 and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
@@ -3214,6 +3215,46 @@ and test owners remain indexed in sections 9–10 and the 126/151 catalog.
 These obligations are not completed tests or implementation cycles. F-10 renewal and
 F-20 fix migration remain separately provable. No additional Research decision is implied.
 
+### 7.19 W09 — A configurable starting set, not a fixed taxonomy
+
+The human accepts a pragmatic initial grouping: Python preflight shared by the eight
+Python/pytest templates, TypeScript preflight, Markdown document checks, Markdown body
+checks, and commit-message preflight. These are initial configuration choices, not five
+permanent server categories. Design need not enumerate every future combination before
+shipping a useful starting set.
+
+| Concern | Configuration authority | Generic PGMCP responsibility |
+|---|---|---|
+| Template-to-profile assignment | Package `policy.yaml`: `output_profile` | Resolve the declared profile; no template-ID or language dispatch |
+| Check membership and order | `checks.yaml`: `checks` and `profiles` | Validate references/capabilities and execute the selected ordered bindings |
+| Extension fallback and explicit-check default | `checks.yaml`: `profiles_by_extension` and `run_checks` | Apply the already-designed consumer selection rules, without a code-owned fallback map |
+| Use-specific invocation defaults | Role bindings in `checks.yaml`, `tests.yaml`, and `fixes.yaml`: `default_args` | Apply §7.16 replacement rules and report effective arguments |
+| Native rules and exclusions | Each native tool's supported configuration | Leave native interpretation to the adapter/tool, per §7.3 |
+
+Renaming, splitting, recombining or reassigning profiles using existing admitted
+capabilities must require neither generic server changes nor adapter changes. Catalog
+validation and input-schema projection remain data-driven; profile IDs must not be
+duplicated in static Python enums, hardcoded dispatch tables or language-specific
+defaults. Existing startup/restart semantics apply; this introduces no hot-reload promise.
+
+A genuinely new native integration may require adapter code and dependency declarations.
+It must not require native-tool knowledge in generic PGMCP. This decision does not promise
+that configuration can implement an absent capability.
+
+The starting set still needs meaningful checks and independent evidence that its chosen
+adapters fulfil their contracts. An empty/no-op check is not a substitute for an unresolved
+capability. Exact native settings, concrete integrations and the Markdown extension
+fallback remain bounded W09 work; they are not approved by accepting this ownership rule.
+Scaffold and safe edit remain configured-only consumers, while explicit check/test/fix
+tools retain their own selection and argument contracts. No additional roles or consumer
+families are introduced.
+
+Conformance must demonstrate that a valid renamed/recomposed profile and changed package
+assignment are consumed from configuration without a server patch, and that invalid
+references are rejected by the existing catalog contract. This is a proof obligation,
+not a claim of executed tests. Policy changes remain excluded from generation fingerprints
+and included in operational upgrade comparison under the existing suite contracts.
+
 ## 8. Control, Data, and State Flow
 
 1. Startup reads package/configuration declarations, validates their structure and
@@ -3359,6 +3400,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.84 | 2026-09-11 | `@imp designer` | Record W09 configurable starting-set boundary and no-hardcoded-profile requirement; preserve native integration and migration evidence work. |
 | 0.83 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 0.82 | 2026-09-10 | `@imp researcher` | Remove template-profile fingerprint projection obligation under the bounded generation identity amendment; adapter contracts unchanged. |
 | 0.81 | 2026-09-10 | `@imp designer` | Consolidate human-approved W05 native-fix contract in §7.18; close input/configuration/results/stop ownership, preserve operational success and route independent integration evidence. |

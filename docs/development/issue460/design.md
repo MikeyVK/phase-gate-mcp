@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.81
+**Version:** 1.82
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -270,7 +270,7 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-ART-DOC-01–D-ART-DOC-09 | [Document/tracking §4](design-document-tracking-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
 | D-ART-CODE-01–D-ART-CODE-10 | [Code/test §4](design-code-test-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
-| D-ADAPTER-01–D-ADAPTER-27 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 human-closed; D25/D26 align defaults and thin scope transport; D27/§7.18 consolidates W05 native-fix contracts. Remaining W04 canonical integration, shared serialization, native migration and independent conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
+| D-ADAPTER-01–D-ADAPTER-28 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 human-closed; D25/D26 align defaults and thin scope transport; D27/§7.18 consolidates W05 native-fix contracts; D28/§7.19 records W09 configuration-only profile composition and assignments. Remaining W04 canonical integration, shared serialization, native migration and independent conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
 | D-DIST-01–D-DIST-24 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Decided | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
@@ -616,6 +616,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.82 | 2026-09-11 | `@imp designer` | Index W09 configuration-only starting-set decision; retain exact native migration and integration work. |
 | 1.81 | 2026-09-11 | `@imp designer` | Record independent W07/W08 GO without findings; mark local contracts Decided and retain cross-package integration and whole-Design review. |
 | 1.80 | 2026-09-11 | `@imp designer` | Register source-led W07/W08 contracts and bounded independent review; preserve open whole-Design integration and Research authority. |
 | 1.78 | 2026-09-11 | `@imp researcher` | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
