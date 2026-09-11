@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.24  
+**Version:** 1.25  
 **Last Updated:** 2026-09-11  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -799,6 +799,62 @@ package-owned DI-03 cases, not copied global schema authorities. These are Desig
 obligations, not executed tests or a claim to have closed all of W06.
 
 
+#### 7.2.2 One schema authority per input boundary — approved W06 integration
+
+Human-approved 2026-09-11 after the consumer-oriented explanation. The binding promise
+is that the rules shown to the caller are the rules used to accept its input. This
+does not combine tool-operation inputs and every template context into one huge schema.
+
+| Input boundary | Authoritative source | Consumers of the same prepared contract |
+|---|---|---|
+| Tool operation envelope | Existing typed tool input definition plus admitted catalog/config selections | Registered tool schema, input validation, whole-tool input-error feedback |
+| Selected template context | context.schema.json plus its admitted shared definitions | scaffold_schema, scaffold context validation, selected-context error attachment |
+
+The authored context schema remains the only maintained source. Its self-contained
+derived view includes complete referenced definitions and constraints. Removing schema
+references does not flatten caller data: nested objects and arrays retain their shape.
+There is no independent handwritten validation model for the selected context.
+Successful validation transfers caller keys and values unchanged under section 7.2.1.
+
+The composition root supplies an immutable prepared catalog. Tool registration and
+delayed/lazy exposure consume that same snapshot, including catalog-driven selections.
+The wrapper must not reconstruct a weaker schema from args_model alone, discarding
+tool-added constraints. Typed conversion must not introduce a second, divergent set of
+acceptance rules. Existing static tool definitions remain their authority; this is not
+a replacement manually maintained tool registry or permission for runtime file reload.
+
+| Scaffold outcome | Schema delivery |
+|---|---|
+| Successful scaffold_schema query | Complete selected context schema, through the existing schema-result/attachment route |
+| Invalid selected context | Typed issues plus the same complete schema as an embedded attachment; no extra discovery call required |
+| Valid context | Continue to rendering without defaults, coercion or envelope injection |
+| Successful scaffold or subsequent render/check/persistence failure | No context schema attached merely because scaffolding was attempted |
+
+An invalid whole-tool envelope remains distinct from invalid selected context. Error
+DTOs and schema attachments use the existing structured response composition boundary;
+managers supply facts, not presentation instructions. No new error-specific presenter
+dispatch or change to success/isError is authorized. Shared Contracts owns cache/text/
+attachment placement and URI details; this approval does not silently replace the
+existing whole-tool schema://validation identifier.
+
+Direct seams: InputValidationDecorator.input_schema currently reconstructs the model
+schema, while ScaffoldSchemaTool.input_schema adds registry choices on the tool itself.
+The current schema_utils.resolve_schema_refs also overwrites referenced constraints
+with siblings and substitutes an empty definition for a missing reference. These are
+replacement obligations, not accepted resolver behavior. Complete resolution must
+preserve combined constraints and reject unresolved references rather than weaken them.
+
+Required evidence belongs to DI-08 with DI-01/DI-02/DI-04 owners: exercise the registered,
+decorated tool rather than only its core property; compare exposed and accepted inputs;
+compare retrieval/error schema content; cover shared nested definitions, sibling
+constraints, missing references and unchanged caller values. Verify delayed exposure
+uses the admitted snapshot. Preserve existing whole-tool error tests. No runtime tests
+were executed for this Design decision. Concrete package cases, exact resolver keyword/
+format support and client integration evidence remain open; this is not full W06 closure.
+
+Rejected: separate exposure/validation schema authorities, summarized shared definitions,
+all-template context expansion in the scaffold tool schema, and implicit context repair.
+
 ### 7.3 Output Profile Reference
 
 `output_profile` identifies a resolved declarative evidence selector for complete
@@ -1093,6 +1149,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 | 1.17 | 2026-09-10 | `@imp designer` | Record human clarification: jointly designed internal header reader/writer, separate narrow consumer interfaces, no MCP exposure or filesystem-write authority, and shared-dialect plus independent conformance evidence. |
 | 1.18 | 2026-09-10 | `@imp designer` | Supersede overflow wrapping with 24-character template IDs, 11-character package SemVer labels and first-line-only native comments; propagate canonical typed constraints through admission/render/read contracts and route invalid recognition to DI-04 fallback without redesigning Jinja tiers. |
 | 1.19 | 2026-09-10 | `@imp designer` | Align with consumer selection equivalence: unknown metadata IDs yield no applicable template, like absent/invalid headers; keep syntax-only reading independent from catalog lookup. |
+| 1.25 | 2026-09-11 | `@imp designer` | Consolidate approved schema authority across exposure, validation and error feedback; preserve distinct operation/context boundaries and record wrapper/resolver evidence obligations. |
 | 1.24 | 2026-09-11 | `@imp designer` | Consolidate human-approved W06-B context presence/value contract and package-owned evidence; reject automatic default insertion. |
 | 1.23 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.22 | 2026-09-11 | `@imp researcher` | Clarify third identity kind and update active D-SUITE-27; generation provenance cannot authorize upgrade/checkpoint operations. |

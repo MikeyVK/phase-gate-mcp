@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.76
+**Version:** 1.77
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -31,8 +31,11 @@ Human-approved Research amendment, with explicit third-identity clarification on
 these are synchronized and the human reported independent QA GO on 2026-09-11.
 Design resumes. W06-B context presence/value semantics are human-approved in
 [DI-01/DI-02 §7.2.1](design-suite-resolution.md#721-context-presence-and-values--approved-w06-b).
-No automatic defaults; concrete schema fields/rendering remain DI-03-owned. Remaining
-W06 schema resolution, exposure/validation wiring and URI integration stay open.
+No automatic defaults; concrete schema fields/rendering remain DI-03-owned. The human
+also approved one schema authority per input boundary for exposure, validation and
+error feedback, consolidated in [DI-01/DI-02 §7.2.2](design-suite-resolution.md#722-one-schema-authority-per-input-boundary--approved-w06-integration).
+Concrete package cases, exact resolver support, URI integration and conformance remain
+open; this records the approved direction, not complete W06 or Design closure.
 manifest.yaml owns template_id/purpose, .version the release label, policy.yaml the
 output_profile/persistence choice. pf/sf exclude complete version/policy files and
 external validation; upgrade components include all files. Earlier whole-suite snapshot
@@ -546,6 +549,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.77 | 2026-09-11 | `@imp designer` | Index approved shared schema authority and distinguish completed consumer decision from remaining resolver/URI/conformance work. |
 | 1.76 | 2026-09-11 | `@imp designer` | Index approved W06-B unchanged-context and present/empty/absent behavior; remaining schema integration stays open. |
 | 1.75 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.74 | 2026-09-11 | `@imp researcher` | Route explicit operational component identity clarification and QA corrections; keep Design paused for independent re-review. |
