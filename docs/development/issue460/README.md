@@ -2,9 +2,9 @@
 <!-- template=generic_doc version=43c84181 created=2026-08-27T09:08Z updated=2026-08-27 -->
 # Issue 460 Pre-Implementation Documentation Contract
 
-**Status:** DEFINITIVE — NARROW RESEARCH AMENDMENT; DESIGN PAUSED FOR EXTERNAL QA  
-**Version:** 1.19  
-**Last Updated:** 2026-09-05  
+**Status:** DEFINITIVE — DOCUMENTATION CONTRACT; DESIGN ACTIVE  
+**Version:** 1.20  
+**Last Updated:** 2026-09-11  
 
 ---
 
@@ -17,11 +17,11 @@ monolithic Design document or duplicating authority across files.
 
 ## Current Review Boundary
 
-The human owner authorized only the [2026-09-05 check-retesting Research amendment](research.md#narrow-check-retesting-amendment--2026-09-05):
-remove auto and PGMCP execution-result reuse, retain native optimization with fresh
-intent, and correct directly affected consumer/test dispositions. Other Research stays
-frozen. Independent QA is requested before Design resumes. Earlier Design GO statements
-below describe the prior baseline; no new Design mechanism is authorized by this update.
+The current Research gate is the [2026-09-11 example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11).
+The human reported independent QA clean GO and authorized Design resumption. Research
+remains frozen. W07/W08 are now drafted together under delegated, source-led design;
+their independent review does not imply whole-Design completion. The [Design hub](design.md)
+owns current package status; earlier amendment statuses are historical, not active stops.
 
 ## Scope
 
@@ -101,8 +101,8 @@ corresponding workshop has produced a stable decision nucleus.
 | `design-suite-resolution.md` | DI-01 suite contract metamodel and public schema exposure; DI-02 resolved graph, runtime selection, introspection, and provenance | Planned |
 | `design-mutation-validation.md` | DI-04 scaffold/safe-edit mutation, persistence policy, atomicity, recovery, and consumption of unchanged DI-05 factual check evidence | Existing draft; resume in Design |
 | [design-execution-adapters.md](design-execution-adapters.md) | DI-05 adapter package/catalog/process architecture; separate check, test, and fix contracts and operations; fix authorization; V3 cutover; conformance and migration evidence | Drafting; manifest nucleus decided; shared check binding/profile workshop open; complete launch contracts and migration open |
-| `design-document-tracking-artifacts.md` | DI-03 contracts and renderer semantics for documentation, issue, PR, commit, planning, validation-report, and related tracking artifacts | Planned |
-| `design-code-test-artifacts.md` | DI-03 contracts and renderer semantics for production-code and public unit/integration-test artifact families | Planned |
+| [design-document-tracking-artifacts.md](design-document-tracking-artifacts.md) | DI-03 contracts and renderer semantics for documentation, issue, PR, commit, planning, validation-report, and related tracking artifacts | Drafted W08; independent review requested |
+| [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 contracts and renderer semantics for production-code and public unit/integration-test artifact families | Drafted W07; independent review requested |
 | `design-distribution.md` | DI-06 package distribution, renewal, customization, adoption, and owner-deployment migration | Planned |
 | `design-workflow-documentation.md` | DI-07 workflow semantics, phase-document carriers, agent-instruction alignment, and active documentation authority | Planned |
 | `design-test-architecture.md` | DI-08 shared repository test fixtures/helpers and cross-package assurance; XC-02 removal-completeness integration | Planned |
@@ -233,6 +233,12 @@ Design proceeds as a sequence of bounded workshops:
 This lets the user shape decisions hands-on without requiring the entire Research corpus
 or the entire Design set to be rewritten in every conversational step.
 
+For W07/W08 the human explicitly delegated bounded template/schema choices on 2026-09-11.
+The producer designs from Research plus correct existing behavior, records preservation
+and removal dispositions, and submits the two coordinated documents to independent QA.
+Field-by-field human approval is not required for this batch. This does not authorize
+new Research strategy, implementation, or producer-issued review approval.
+
 ## Recommended Workshop Order
 
 The default order follows dependency pressure rather than filename order:
@@ -292,6 +298,7 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.20 | 2026-09-11 | `@imp designer` | Correct current-gate navigation; register coordinated W07/W08 drafts and the human-delegated source-led review process. |
 | 1.19 | 2026-09-05 | `@imp researcher` | Navigate the narrowly reopened check-retesting amendment and external QA stop; preserve unrelated document topology and Research freeze. |
 | 1.18 | 2026-09-05 | `@imp designer` | Link the startup-health deferred-work notice and distinguish it from the retained complete check/test/fix input contracts. |
 | 1.17 | 2026-09-05 | `@imp designer` | Record manifest-nucleus agreement in navigation and identify the shared check binding/profile workshop as open. |
