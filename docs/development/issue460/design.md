@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.80
+**Version:** 1.81
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -230,8 +230,8 @@ test impacts have been reconciled in this hub.
 | `design.md` | Design integration, indexes, risks, and hand-over | Drafting | Hub nucleus established |
 | [design-shared-contracts.md](design-shared-contracts.md) | Genuinely cross-package interfaces, DTOs, configuration shapes, and status vocabulary | Drafting | Embedded schema delivery, operation/attachment cache boundary, and isolated package-provenance DTO boundary decided; stable URI audit open |
 | [design-suite-resolution.md](design-suite-resolution.md) | DI-01 and DI-02 | Drafting | `template_suite/`, strict shallow package discovery, canonical manifest `template_id`, shared topology, explicit caller-content/operation separation, package isolation, dual canonical SHA-256/96 identities, compact provenance, and syntax-only package-version policy decided; mutation mechanics and output-profile topology remain with DI-04/DI-05 |
-| [design-document-tracking-artifacts.md](design-document-tracking-artifacts.md) | DI-03 document and tracking artifacts | Drafting | W08 coordinated draft: ten families, preservation, typed records and nineteen workflow carriers; independent review requested |
-| [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 code and public test artifacts | Drafting | W07 coordinated draft: nine families, shared syntax/contracts and removal/preservation evidence; independent review requested |
+| [design-document-tracking-artifacts.md](design-document-tracking-artifacts.md) | DI-03 document and tracking artifacts | Decided | Ten families and nineteen workflow carriers; human-supplied independent QA GO without findings; profiles/workflow/assurance integration remains open |
+| [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 code and public test artifacts | Decided | Nine families and shared syntax/contracts; human-supplied independent QA GO without findings; profiles/distribution/assurance integration remains open |
 | [design-mutation-validation.md](design-mutation-validation.md) | DI-04 | Drafting | Location, no-overwrite, and scaffold enforce/report outcomes decided; full scaffold result and safe-edit mapping consume the separate DI-05 check boundary |
 | [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Drafting | Package/check and W05 native-fix local contracts decided; W04 canonical integration, policy-loading/shared serialization, native migration values and independent conformance remain open |
 | `design-test-architecture.md` | DI-08 and XC-02 integration assurance | Not started | Await package proof seams |
@@ -267,8 +267,8 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-HUB-01–D-HUB-06 | [Design hub §3.1](#31-key-design-decisions) | Decided | Entire Design set |
 | D-SHARED-01–D-SHARED-12 | [Shared Contracts Design §4](design-shared-contracts.md#4-owned-decisions) | Drafting | DI-01/DI-02, DI-04, DI-06, DI-07 |
 | D-SUITE-01–D-SUITE-33 | [Suite Resolution Design §4](design-suite-resolution.md#4-owned-decisions) | Drafting | DI-03, DI-04, DI-05, DI-06, DI-07, DI-08 |
-| D-ART-DOC-01–D-ART-DOC-09 | [Document/tracking §4](design-document-tracking-artifacts.md#4-owned-decisions) | Drafting; external review requested | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
-| D-ART-CODE-01–D-ART-CODE-10 | [Code/test §4](design-code-test-artifacts.md#4-owned-decisions) | Drafting; external review requested | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
+| D-ART-DOC-01–D-ART-DOC-09 | [Document/tracking §4](design-document-tracking-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
+| D-ART-CODE-01–D-ART-CODE-10 | [Code/test §4](design-code-test-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
 | D-ADAPTER-01–D-ADAPTER-27 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04 human-closed; D25/D26 align defaults and thin scope transport; D27/§7.18 consolidates W05 native-fix contracts. Remaining W04 canonical integration, shared serialization, native migration and independent conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
@@ -488,6 +488,14 @@ No cycles or estimates are defined during Design.
 
 ### W07/W08 Bounded Design Review — 2026-09-11
 
+**Review outcome supplied by the human:** independent QA reported no P0–P3 findings and
+GO for the two concrete-template contract documents at commit
+8b19e0e6ec0aa787854a915e800f837adf3e6067. QA explicitly excluded whole-Design approval.
+The reviewer independently checked family coverage, contract precision, architecture,
+honest validation guarantees, operational planning parity and nineteen workflow variants,
+including worker logging/export and pytest fixture counterexamples. No tests were run.
+The earlier request below is retained as review scope/history; integration remains open.
+
 #### Scope
 
 - Coordinated DI-03 design for nine retained code/test and ten document/tracking families,
@@ -521,14 +529,15 @@ No cycles or estimates are defined during Design.
 
 #### Open Work
 
-- Independent review of W07/W08 completeness and Research fidelity.
+- Bounded independent W07/W08 review is complete as reported above; subsequent integration
+  and whole-Design review remain open.
 - W09/DI-05 binds exact native profiles/checks; DI-07 aligns instructions and references;
   DI-08 assigns conformance evidence. These dependencies are not marked Integrated.
 - Whole-Design coverage, remaining packages and final hand-over remain open.
 
 #### Review Request
 
-- Review requested. Check every retained family and approved removal against the current
+- Historical review request (answered by the supplied verdict above): check every retained family and approved removal against the current
   graph/catalog, optionality and shared records, no template-specific pgmcp logic, source
   validity claims, planning parity and all nineteen workflow variants. Identify any
   undocumented behavior loss; do not treat this producer's inventory as proof of completeness.
@@ -607,6 +616,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.81 | 2026-09-11 | `@imp designer` | Record independent W07/W08 GO without findings; mark local contracts Decided and retain cross-package integration and whole-Design review. |
 | 1.80 | 2026-09-11 | `@imp designer` | Register source-led W07/W08 contracts and bounded independent review; preserve open whole-Design integration and Research authority. |
 | 1.78 | 2026-09-11 | `@imp researcher` | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
 | 1.77 | 2026-09-11 | `@imp designer` | Index approved shared schema authority and distinguish completed consumer decision from remaining resolver/URI/conformance work. |

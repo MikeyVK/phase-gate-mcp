@@ -2,8 +2,8 @@
 <!-- template=design version=5827e841 created=2026-09-11T10:31Z updated= -->
 # Document and Tracking Artifact Contracts
 
-**Status:** DRAFT — W08 design submitted for independent review  
-**Version:** 1.0  
+**Status:** DECIDED — bounded independent QA GO reported; integration pending  
+**Version:** 1.1  
 **Last Updated:** 2026-09-11  
 **Primary package:** DI-03 (document and tracking artifacts)  
 **Dependencies:** DI-01/DI-02; approved Research; active workflow content obligations  
@@ -14,6 +14,11 @@
 Complete W08 together with [W07](design-code-test-artifacts.md), under the human's 2026-09-11
 delegation to use Research and existing behavior rather than request every field decision.
 Independent QA assesses completeness; this draft is not producer approval.
+
+The human supplied the independent QA verdict on 2026-09-11: no P0–P3 findings and
+GO for these concrete template contracts at commit 8b19e0e6ec0aa787854a915e800f837adf3e6067.
+This records external review, not producer approval, implementation evidence or whole-Design
+completion. The reviewed contract is unchanged; remaining integration stays in §11.
 
 [Research](research.md) owns approved behavior, [Findings](research-findings.md) its evidence,
 [Catalog](template-suite-catalog.md) the path census, and [README](README.md) document form.
@@ -395,8 +400,9 @@ No runtime tests were executed for this documentation-only design work.
 
 ## 11. Integration Risks and Open Questions
 
-No additional family product choice awaits a human field workshop. External QA must assess the
-source-to-design preservation mappings, initial-scaffold requiredness and nineteen-variant coverage.
+No additional family product choice awaits a human field workshop. The supplied bounded external
+QA verdict assessed preservation mappings, initial-scaffold requiredness and nineteen-variant coverage
+without findings; subsequent integration still requires its own evidence.
 
 Pending integration work: DI-05/W09 binds exact profiles/checks (including saved tracking framing);
 DI-07 aligns instructions and operational planning references; DI-08 realizes independent evidence.
@@ -438,4 +444,5 @@ operational plan are distinct verification surfaces.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.1 | 2026-09-11 | Record human-supplied independent bounded QA GO; contract unchanged and integration remains open. |
 | 1.0 | 2026-09-11 | Consolidate delegated W08 with preservation dispositions, finite records, nineteen-variant coverage and proof obligations. |
