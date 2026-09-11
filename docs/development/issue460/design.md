@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.84
+**Version:** 1.85
 **Last Updated:** 2026-09-11  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -549,6 +549,13 @@ The earlier request below is retained as review scope/history; integration remai
 
 ### W09 Bounded Design Review — 2026-09-11
 
+**Review timing clarification — human direction, 2026-09-11:** Continue W10–W12
+before requesting the remaining independent Design review together. The following W09
+handover is a bounded review input, not a prerequisite for starting W10. W09 remains
+human-approved and independently unreviewed. The combined review must examine DI-05,
+DI-06, DI-07 and DI-08 integration without extending W07/W08's existing bounded GO
+to the whole Design phase. Research remains frozen; no phase transition is authorized.
+
 #### Scope
 
 - Review DI-05's concrete initial adapter contracts, native settings migration and
@@ -590,7 +597,7 @@ The earlier request below is retained as review scope/history; integration remai
 
 #### Open Work
 
-- Independent bounded W09 review requested. DI-06 must prove installed package and
+- Independent bounded W09 review is included in the forthcoming combined request. DI-06 must prove installed package and
   dependency delivery (including the commit adapter's shared header-reader dependency);
   DI-07 owns accurate guidance; DI-08 owns reusable conformance architecture.
 - Full role DTO integration and whole-Design cross-package consistency remain open.
@@ -685,6 +692,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.85 | 2026-09-11 | `@imp designer` | Record human-directed W10–W12 continuation and combined remaining-package QA timing; retain W09's unreviewed status and frozen Research. |
 | 1.84 | 2026-09-11 | `@imp designer` | Record human W09 closure and bounded independent QA hand-over; preserve open DI-05 and whole-Design integration. |
 | 1.83 | 2026-09-11 | `@imp designer` | Index concrete W09 adapter/configuration proposal separately from approved decisions; retain bounded open settings work. |
 | 1.82 | 2026-09-11 | `@imp designer` | Index W09 configuration-only starting-set decision; retain exact native migration and integration work. |
