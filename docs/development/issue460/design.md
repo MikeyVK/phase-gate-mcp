@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.88
+**Version:** 1.89
 **Last Updated:** 2026-09-12  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -233,8 +233,8 @@ test impacts have been reconciled in this hub.
 | [design-document-tracking-artifacts.md](design-document-tracking-artifacts.md) | DI-03 document and tracking artifacts | Decided | Ten families and nineteen workflow carriers; human-supplied independent QA GO without findings; profiles/workflow/assurance integration remains open |
 | [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 code and public test artifacts | Decided | Nine families and shared syntax/contracts; human-supplied independent QA GO without findings; profiles/distribution/assurance integration remains open |
 | [design-mutation-validation.md](design-mutation-validation.md) | DI-04 | Drafting | Location, no-overwrite, and scaffold enforce/report outcomes decided; full scaffold result and safe-edit mapping consume the separate DI-05 check boundary |
-| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Drafting | Package/check and W05 native-fix local contracts decided; W04 canonical integration, policy-loading/shared serialization, native migration values and independent conformance remain open |
-| `design-test-architecture.md` | DI-08 and XC-02 integration assurance | Not started | Await package proof seams |
+| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Drafting | Package/check and W05 native-fix local contracts decided; W04 canonical integration, policy-loading/shared serialization and independent conformance remain open; W09 native values are decided |
+| [design-test-architecture.md](design-test-architecture.md) | DI-08 and XC-02 integration assurance | Decided | Human-approved W12 narrow support, independent evidence and removal accounting; canonical whole-set audit and independent review remain open |
 | [design-distribution.md](design-distribution.md) | DI-06 | Decided | Component-aware renewal, trustworthy bootstrap, owner-intent CLI, immutable result/presenter split, recoverable same-filesystem activation, timestamped force backup, runtime/startup coexistence, and conditional restart hint decided |
 | [design-workflow-documentation.md](design-workflow-documentation.md) | DI-07 | Decided | Human-approved W11; phase/schema authority, nineteen semantic obligations, source-first instructions and reference dispositions consolidated; combined independent review pending |
 
@@ -272,9 +272,9 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
 | D-ADAPTER-01–D-ADAPTER-30 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04/W05 human-closed; D25/D26 align defaults/scope; D28/D29 close W09 configuration ownership and concrete native starting contracts; D30 fixes bundled/workspace adapter locations. W09 independent QA, remaining role integration, shared serialization and native conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-WORKFLOW-01–D-WORKFLOW-06 | [Workflow/documentation §4](design-workflow-documentation.md#4-owned-decisions) | W11 human-closed; independent review and implementation evidence pending | DI-03, phase/host instructions, active references, DI-08 |
-| D-TEST-* | `design-test-architecture.md` | W12 workshop in progress; no canonical approval yet | DI-01–DI-07 |
+| D-TEST-01–D-TEST-07 | [Test architecture §4](design-test-architecture.md#4-owned-decisions) | W12 human-closed; canonical audit and independent review pending | DI-01–DI-07 |
 | D-DIST-01–D-DIST-26 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | W10 human-closed: adapter delivery, effective configuration and admission decided; combined independent QA pending | CLI/init/upgrade, owner migration, DI-07, DI-08 |
-| D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
+
 
 W09's human-approved concrete adapter and native-settings contract is in
 [DI-05 §7.20](design-execution-adapters.md#720-w09--concrete-starting-adapters-and-migration-contract).
@@ -322,7 +322,7 @@ designed in the owning package documents. This hub must ultimately prove:
   preservation evidence;
 - clean-break decisions and current-owner deployment migration follow Approved Strategy.
 
-**Current integration state:** DI-01/DI-02, DI-06, and the shared schema-delivery seam have decided nuclei. Resolved package identity remains isolated to the selected package plus transitive shared support; suite-generation identity remains persisted source context, not complete installed-state equality evidence; both retain canonical version-1 SHA-256/96 Base64url semantics. Artifact provenance remains exactly `id`/`pv`/`pf`/`sf` on the first physical line with bounded ID/version types and no wrapping and no generic lifecycle timestamps. Package versions are SemVer-syntax-checked human labels, resolved fingerprints alone establish effective-content equality, and the four possible version/fingerprint relations remain observable without bump enforcement, warnings, or history. DI-06 owns separate 16-character operational component equality for `shared/` plus every concrete package, using distinct distribution domains and package keys copied only from `manifest.yaml:template_id`. `.pgmcp/installation.json` has an exact closed minimum contract: required `pgmcp_version` and one optional complete checkpoint whose present form requires `shared` plus the `template_id`-keyed `packages` map. Component selection constructs and validates one complete off-root proposal and changes runtime authority only through recoverable complete-tree activation. The first PGMCP v3 rollout has no predecessor v3 suite or checkpoint; neither legacy `.version` nor `template_registry.json` can fabricate one, so existing pre-v3 workspaces preserve actual content and require explicit migration before the first checkpoint becomes authoritative. `.pgmcp/upgrade/` remains the flat non-runtime candidate root. `pgmcp --upgrade` owns renewal and accepts exactly one optional owner-intent modifier: `--accept-template-baseline` derives the first complete checkpoint from the current candidate without copying content, component-bounded `--resolve-template` advances named conflicted `shared` or `template_id` entries after reconciliation, and `--force-template-upgrade` performs backed-up complete candidate replacement for a managed root. Callers never supply computed fingerprints. Renewal returns one immutable factual result to a dedicated CLI presenter; exit codes `0`, `2`, and `1` distinguish complete, safe action-required, and failed attempts, while this CLI-only path adds no MCP resource, JSON mode, or persisted result report. Complete activation uses cross-process exclusion, fixed same-filesystem next/previous roots, an immutable recovery record, deterministic rollback or forward completion, and a separately retained timestamped backup only for forced replacement. Running servers retain their old immutable catalog, concurrent startups cannot enter activation, and `actual_changed` alone derives the successful-operation hint to restart any running server. External retention/versioning remains workspace-owned without PGMCP lookup or control machinery. The human-approved F-03/F-07 correction removes the generic envelope `name`, manifest `naming`, and automatic name projection: exact `file_name`, optional directory-valued `target_path`, and `force_target` are operation controls, every caller-authored renderer value is explicit artifact context, and server-authored source provenance is separately namespaced. DI-02 now discovers concrete packages by deterministic shallow enumeration under `template_suite/`; `shared/` is the sole reserved child, every other direct child must contain a valid package, and no authored `templates.yaml` duplicates that inventory. DI-04 repurposes `.pgmcp/config/artifacts.yaml` as artifact-location policy keyed by manifest `template_id`, permits loaded packages to remain unmapped, rejects configured keys that do not resolve, and safely sends an unmapped call without `target_path` to the one global temporary root without force. An explicit workspace target outside configured roots—including one for an unmapped package—requires `force_target`; force without a target is rejected. DI-04 also fixes `.pgmcp/temp/artifacts` as the shipped temporary default, exact caller file names, canonical workspace-relative `target_path` and `output_path` values, relative operation fields and routine summaries with incidental absolute paths permitted in bounded on-demand cached diagnostics under D-MUT-20, and universal create-only scaffold semantics. The legacy `project_structure.yaml` retires only through a field-by-field and consumer-by-consumer migration; the current `EnforcementRunner` has no dependency on it, while bootstrap, `ArtifactManager`, the generic resolver, the uncomposed legacy `PolicyEngine`, tests, and active documentation receive explicit dispositions. Existing files remain safe-edit territory. The suite and mutation packages remain `Drafting` pending mutation result vocabulary and DI-05 profile/evidence topology; shared contracts retain the stable URI audit; remaining package targets are routed but undesigned.
+**Current integration state:** DI-01/DI-02, DI-06, and the shared schema-delivery seam have decided nuclei. Resolved package identity remains isolated to the selected package plus transitive shared support; suite-generation identity remains persisted source context, not complete installed-state equality evidence; both retain canonical version-1 SHA-256/96 Base64url semantics. Artifact provenance remains exactly `id`/`pv`/`pf`/`sf` on the first physical line with bounded ID/version types and no wrapping and no generic lifecycle timestamps. Package versions are SemVer-syntax-checked human labels, resolved fingerprints alone establish effective-content equality, and the four possible version/fingerprint relations remain observable without bump enforcement, warnings, or history. DI-06 owns separate 16-character operational component equality for `shared/` plus every concrete package, using distinct distribution domains and package keys copied only from `manifest.yaml:template_id`. `.pgmcp/installation.json` has an exact closed minimum contract: required `pgmcp_version` and one optional complete checkpoint whose present form requires `shared` plus the `template_id`-keyed `packages` map. Component selection constructs and validates one complete off-root proposal and changes runtime authority only through recoverable complete-tree activation. The first PGMCP v3 rollout has no predecessor v3 suite or checkpoint; neither legacy `.version` nor `template_registry.json` can fabricate one, so existing pre-v3 workspaces preserve actual content and require explicit migration before the first checkpoint becomes authoritative. `.pgmcp/upgrade/` remains the flat non-runtime candidate root. `pgmcp --upgrade` owns renewal and accepts exactly one optional owner-intent modifier: `--accept-template-baseline` derives the first complete checkpoint from the current candidate without copying content, component-bounded `--resolve-template` advances named conflicted `shared` or `template_id` entries after reconciliation, and `--force-template-upgrade` performs backed-up complete candidate replacement for a managed root. Callers never supply computed fingerprints. Renewal returns one immutable factual result to a dedicated CLI presenter; exit codes `0`, `2`, and `1` distinguish complete, safe action-required, and failed attempts, while this CLI-only path adds no MCP resource, JSON mode, or persisted result report. Complete activation uses cross-process exclusion, fixed same-filesystem next/previous roots, an immutable recovery record, deterministic rollback or forward completion, and a separately retained timestamped backup only for forced replacement. Running servers retain their old immutable catalog, concurrent startups cannot enter activation, and `actual_changed` alone derives the successful-operation hint to restart any running server. External retention/versioning remains workspace-owned without PGMCP lookup or control machinery. The human-approved F-03/F-07 correction removes the generic envelope `name`, manifest `naming`, and automatic name projection: exact `file_name`, optional directory-valued `target_path`, and `force_target` are operation controls, every caller-authored renderer value is explicit artifact context, and server-authored source provenance is separately namespaced. DI-02 now discovers concrete packages by deterministic shallow enumeration under `template_suite/`; `shared/` is the sole reserved child, every other direct child must contain a valid package, and no authored `templates.yaml` duplicates that inventory. DI-04 repurposes `.pgmcp/config/artifacts.yaml` as artifact-location policy keyed by manifest `template_id`, permits loaded packages to remain unmapped, rejects configured keys that do not resolve, and safely sends an unmapped call without `target_path` to the one global temporary root without force. An explicit workspace target outside configured roots—including one for an unmapped package—requires `force_target`; force without a target is rejected. DI-04 also fixes `.pgmcp/temp/artifacts` as the shipped temporary default, exact caller file names, canonical workspace-relative `target_path` and `output_path` values, relative operation fields and routine summaries with incidental absolute paths permitted in bounded on-demand cached diagnostics under D-MUT-20, and universal create-only scaffold semantics. The legacy `project_structure.yaml` retires only through a field-by-field and consumer-by-consumer migration; the current `EnforcementRunner` has no dependency on it, while bootstrap, `ArtifactManager`, the generic resolver, the uncomposed legacy `PolicyEngine`, tests, and active documentation receive explicit dispositions. Existing files remain safe-edit territory. The suite and mutation packages remain `Drafting` pending mutation result vocabulary and DI-05 profile/evidence topology; shared contracts retain the stable URI audit; all package documents now exist; shared schema identity/dialect, complete role DTO integration and whole-set evidence/disposition audit remain open.
 
 ---
 
@@ -438,11 +438,11 @@ DI-05's final capture declarations, required-field/null serialization and indepe
 evidence; W02 native provenance and W05's lightweight native-fix contract are approved.
 W05 introduces no recovery subsystem: DI-07 documents agent-controlled recovery, DI-08
 owns independent partial-write and stop-first evidence, and W09 owns native-settings
-migration. The next workshop is W06 suite/shared contract integration.
+migration. W06–W12 local decisions have since been consolidated; exact remaining shared-contract decisions and canonical integration are tracked in the closeout audit below.
 
 DI-02's conditional no-replacement boundary now admits this demonstrated V3-reader
 consumer. Legacy parsing, historical lookup and automatic provenance mutation stay removed.
-Package integration, exact full role schemas, native migration values and independent
+Package integration, exact full role schemas and independent
 conformance evidence remain open.
 
 The accepted [50-template discovery guardrail](deferred-work.md#design-escalation-threshold--50-template-ids)
@@ -464,7 +464,7 @@ This checkpoint does not mark any additional package Integrated or authorize Pla
 | R-HUB-03 | Coverage counts hide semantic omissions | Design hub | Coverage requires an owned target decision or proof obligation, not a bare link |
 | Q-HUB-03 | How do the adapter package/catalog/process and three role contracts fit together? | DI-05 | Bounded workshops complete the contracts, independent evidence, and public migration mapping |
 | Q-HUB-04 | Removing duplicate tool configuration could silently alter the quality standard | DI-05 | Q-ADAPTER-06 / §7.20 records human-approved native settings and intentional changes; independent QA/conformance must verify that distinction and preserve logical-target configuration for scratch checks |
-| Q-HUB-05 | Profile/binding placement must remain coherent with template provenance | DI-02/DI-05 | Resolve Q-ADAPTER-08 before integrating the check-binding proposal; preserve the distinction from adapter execution evidence |
+| Q-HUB-05 | Profile/binding placement must remain coherent with template provenance | DI-02/DI-05 | Q-ADAPTER-08 is resolved by DI-05 §7.19 and the generation-identity file split; verify downstream consistency, preserving the distinction from adapter execution evidence |
 | Q-HUB-06 | A correct core-tool schema can be lost through wrappers or stale exposure | DI-05/DI-08 | Q-ADAPTER-09 proves startup construction, registered exposure, matching validation/defaults/error feedback, and supported client refresh behavior |
 | Q-HUB-07 | On-use dependency failures could weaken profiles, obscure defaults, or bypass presentation policy | DI-04/DI-05/DI-08 | Q-ADAPTER-10 retains configured selections/defaults without startup probes; proves full-profile evidence, consumer policy and field-level projection under issues 456/459 |
 | Q-HUB-08 | Large template enums make agent selection unwieldy | DI-02/DI-04; separate F-18 follow-up | Apply the 50-template Design escalation threshold; preserve complete current enums and runtime membership validation without introducing a suite-size cap |
@@ -621,6 +621,47 @@ to the whole Design phase. Research remains frozen; no phase transition is autho
 
 ### Whole-Design Hand-over (still in progress)
 
+#### Canonical closeout audit — 2026-09-12
+
+All W01–W12 local workshop decisions are recorded; this does not close the following
+exact contracts or establish complete implementation/independent review evidence.
+Three bounded read-only producer audits informed this pass. The producer checked their
+sources and applied only corrections implied by already approved decisions. These are
+findings-only assistance, not an independent GO/NOGO.
+
+| Audit item | Disposition / owner |
+|---|---|
+| Old manifest/version names, unqualified directory/fingerprint exclusion and formatting-only pf claim | Corrected in DI-02 v1.26 against the approved file split and whole-source hashing |
+| Operational identity restricted to checkpoint only | Corrected to DI-06 checkpoint/recovery state/results, never artifact provenance |
+| Blanket ban on Jinja representation conversion | Corrected to preserve unchanged semantic caller values while allowing DI-03 faithful encoding/escaping |
+| Old gate-set/safe-edit/args/native-values open wording | Corrected to existing DI-04/05 approved authorities; conformance is still pending |
+| Conditional validation_api and config-derived naming disposition | Corrected in intake to W11 consolidation/removal and exact caller file_name |
+| Supplemental conftest/plugin dependency ownership | DI-08 §7.3 explicitly routes affected support and preserves unrelated fixtures; Research census unchanged |
+| Selected-context schema resource identity | OPEN DESIGN: Shared §7.6 / Q-SHARED-01 still requires a precise identity decision and compatibility proof; do not confuse it with whole-tool schema://validation |
+| JSON Schema dialect / keyword / format support and recursion | OPEN DESIGN: DI-01/02 must pin admitted semantics and rejection boundaries, preserving exposure/validation equality; concrete DI-03 contracts are not reopened |
+| Complete test request/result DTO and tests.yaml integration | OPEN CONSOLIDATION: DI-05 §7.15 still explicitly requires the full canonical graph; approved behavior/default_args does not substitute for exact declarations |
+| Registered wrappers, lazy exposure, cache/presentation and full per-path dispositions | OPEN INTEGRATION: audit exact cross-package seams and removal prerequisites; no full 151-test semantic re-audit or runtime proof claimed |
+| Shared canonical artifact review material | design-shared-contracts.md remains a pre-existing untracked working artifact; do not silently claim the committed branch is the complete review set |
+
+The routing matrices contain all 22 findings, 44 Approved Strategy rows, 19 invariants
+and 23 expected results. Routing counts are not semantic closure. The 126 consumers
+plus two governing sources and 151 test/helper paths remain the frozen inventory;
+supplemental support is accounted separately. Package statuses must not be marked
+Integrated merely because stale text was removed. The collective final Design QA
+request follows resolution/consolidation of these exact items, not this audit table.
+
+#### W12 input for the combined review — 2026-09-12
+
+- **Scope:** Human-approved DI-08 test support/evidence independence/removal accounting,
+  D-TEST-01–07. No production/test implementation, executed native proof or cycle plan.
+- **Deliverables:** [Test architecture](design-test-architecture.md), existing catalog,
+  package-owned evidence and supplemental support paths in DI-08 §7.3.
+- **Evidence:** Direct support/plugin/factory inspection, bounded producer audits and
+  document structure/link/count checks. These do not establish runtime preservation.
+- **Open work:** The explicit canonical closeout items above and independent review.
+- **Review request:** Review requested as part of the later combined review; verify
+  oracle independence, narrow support, owned removals and absence of unrelated cleanup.
+
 #### W10 input for the combined review — 2026-09-12
 
 - **Scope:** Human-approved DI-06 delivery/configuration integration, D-DIST-25/26;
@@ -725,6 +766,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.89 | 2026-09-12 | `@imp designer` | Consolidate W12 and producer audit corrections; distinguish local workshop closure from unresolved schema identity/dialect, role DTO consolidation and canonical coverage evidence. |
 | 1.88 | 2026-09-12 | `@imp designer` | Consolidate human-approved W11 and its bounded combined-review input; start W12 proposal and retain whole-set audit/evidence obligations. |
 | 1.87 | 2026-09-12 | `@imp designer` | Record human W10 closure and combined-review input; start W11 discussion without approving its proposed documentation decisions. |
 | 1.86 | 2026-09-11 | `@imp designer` | Index approved bundled_adapters/workspace_adapters source and delivery boundaries; keep W10 configuration integration and combined QA open. |

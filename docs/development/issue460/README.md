@@ -3,7 +3,7 @@
 # Issue 460 Pre-Implementation Documentation Contract
 
 **Status:** DEFINITIVE — DOCUMENTATION CONTRACT; DESIGN ACTIVE  
-**Version:** 1.22  
+**Version:** 1.23  
 **Last Updated:** 2026-09-12  
 
 ---
@@ -106,7 +106,7 @@ corresponding workshop has produced a stable decision nucleus.
 | [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 contracts and renderer semantics for production-code and public unit/integration-test artifact families | Decided; bounded QA GO reported; integration pending |
 | `design-distribution.md` | DI-06 package distribution, renewal, customization, adoption, and owner-deployment migration | Planned |
 | [design-workflow-documentation.md](design-workflow-documentation.md) | DI-07 workflow semantics, phase-document carriers, agent-instruction alignment, and active documentation authority | Human-approved; combined independent review pending |
-| `design-test-architecture.md` | DI-08 shared repository test fixtures/helpers and cross-package assurance; XC-02 removal-completeness integration | Planned |
+| [design-test-architecture.md](design-test-architecture.md) | DI-08 shared repository test fixtures/helpers and cross-package assurance; XC-02 removal-completeness integration | Human-approved; canonical audit and independent review pending |
 
 ### Binding Design and Planning Manageability Conditions
 
@@ -299,6 +299,7 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.23 | 2026-09-12 | `@imp designer` | Link approved DI-08 owner; retain canonical integration and independent review as separate completion conditions. |
 | 1.22 | 2026-09-12 | `@imp designer` | Link consolidated W11 owner without changing topology or treating local approval as whole-Design QA. |
 | 1.21 | 2026-09-11 | `@imp designer` | Record bounded independent concrete-template Design GO, without closing whole-Design integration. |
 | 1.20 | 2026-09-11 | `@imp designer` | Correct current-gate navigation; register coordinated W07/W08 drafts and the human-delegated source-led review process. |

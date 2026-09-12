@@ -3,8 +3,8 @@
 # Issue #460 Research-to-Design Intake Map
 
 **Status:** RESEARCH FROZEN — EXAMPLE-VALIDATION WITHDRAWAL QA GO REPORTED; DESIGN RESUMED  
-**Version:** 1.41  
-**Last Updated:** 2026-09-11  
+**Version:** 1.42  
+**Last Updated:** 2026-09-12  
 **Issue:** #460  
 **Workflow Boundary:** Refactor / Research → Design
 
@@ -353,7 +353,7 @@ Research has approved compatibility and migration per boundary, including the F-
 | F-08 | DI-05 | Output-profile applicability and factual validation states; DI-04 owns the resulting mutation policy |
 | F-09 | DI-07 | Active documentation authority |
 | F-10 | DI-06 | Renewal and customization safety |
-| F-11 | DI-02 | Isolated package semantic provenance plus compact persisted artifact source-suite provenance supplied by DI-06 |
+| F-11 | DI-02 | Isolated package generation provenance plus compact suite-generation identity; DI-06 separately owns operational installed-state comparison |
 | F-12 | DI-01 | Canonical issue references and checklist items |
 | F-13 | DI-04 | Objective success and failure semantics |
 | F-14 | DI-03 | Portable package artifact families |
@@ -407,7 +407,7 @@ All 44 strategy rows from [Research](research.md#approved-strategy-and-decision-
 | Primary destination | Expected results | Count |
 |---|---|---:|
 | DI-01 | E-04 stable optionality semantics; E-05 canonical links/issues/checklists; E-08 server does not own template content truth | 3 |
-| DI-02 | E-02 schema describes resolved renderer graph; E-07 preserves isolated automatic package identity and the existing complete source-suite evidence in persisted artifact provenance, conditional on owner-supplied historical sources and without a lookup guarantee | 2 |
+| DI-02 | E-02 schema describes resolved renderer graph; E-07 preserves isolated automatic package identity and the existing suite-generation source identity, not complete installed-state equality in persisted artifact provenance, conditional on owner-supplied historical sources and without a lookup guarantee | 2 |
 | DI-06 | E-21 current adopted component checkpoint, component-wise three-way selection, complete proposal validation, recoverable one-root activation, reconciliation without content overwrite, and external ownership; E-22 safe bootstrap for fresh and existing checkpoint-less workspaces through trustworthy equality evidence, explicit owner action, or content-preserving `checkpoint_required` refusal | 2 |
 | DI-03 | E-01 caller constructs every supported concrete shape; E-06 explicit role for every concrete field; E-10 generic names conceal no project assumptions | 3 |
 | DI-04 | E-03 accepted context reaches valid governed persistence; E-11 portable output without host paths; E-18 complete-result safe-edit validation and mutation policy | 3 |
@@ -443,8 +443,8 @@ These Research catalog rows entered Design as conditional questions. Their curre
 |---|---|---|
 | `.pgmcp/config/artifacts.yaml` — legacy empty registry shell | DI-02 → DI-04 | DI-02 removes the redundant index role in favor of strict shallow package discovery; DI-04 reuses the filename only as artifact-location policy keyed by manifest `template_id`. No phase may dual-read both meanings |
 | `docs/manuals/phase-workflows.md` — rewrite or reduce | DI-07 | Keep only a contracts-owned workflow overview that does not copy universal phase/TDD rules |
-| `docs/reference/validation_api.md` — replace or consolidate | DI-07 | Retain a separate API reference only if DI-02/DI-05 leave a stable developer-facing boundary worth documenting |
-| `mcp_server/scaffolding/utils.py` — remove or replace through owned boundaries | DI-04 | Naming must come from artifact configuration and persistence from the designed filesystem boundary; hidden PascalCase/CWD policy cannot survive |
+| `docs/reference/validation_api.md` — consolidate/remove, decided W11 | DI-07 | D-WORKFLOW-05 and §7.5 consolidate useful concepts into current template-usage/modular tool references, remove the obsolete standalone API and rewrite active inbound links |
+| `mcp_server/scaffolding/utils.py` — remove or replace through owned boundaries | DI-04 | Exact file_name is caller-supplied operation input and persistence uses the DI-04 filesystem boundary; no artifact-config naming or hidden PascalCase/CWD projection survives |
 
 ## Package Exit Evidence
 
@@ -514,6 +514,7 @@ The authoritative [Deferred Work](deferred-work.md) remains the complete deferre
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.42 | 2026-09-12 | `@imp designer` | Reconcile active filename/provenance shorthand and W11 conditional reference disposition with approved Design; frozen Research counts/strategy unchanged. |
 | 1.41 | 2026-09-11 | `@imp designer` | Route the human-approved bundled_adapters/workspace_adapters naming refinement without changing frozen Research ownership, trust, roles or gate authority. |
 | 1.39 | 2026-09-11 | `@imp researcher` | Withdraw semantic model-example validation on human instruction; preserve example authoring/rendering and request targeted QA. |
 | 1.38 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |

@@ -3,8 +3,8 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.87
-**Last Updated:** 2026-09-11  
+**Version:** 0.88
+**Last Updated:** 2026-09-12  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
 **Downstream Consumers:** DI-04 scaffold/safe-edit, public check/test/fix operations, DI-07 workflow/documentation, DI-08 assurance  
@@ -2479,15 +2479,15 @@ both passing and failing verdicts and proves consumer decisions remain unchanged
 This is an integration/proof inventory, not a reopening of the approved package and
 check decisions. W02/W03 approval is authoritative in §§7.4.1–7.4.3 and 7.14.
 
-| Surface | Exact design still required |
+| Surface | Approved authority and remaining integration |
 |---|---|
-| Package/catalog | Manifest fields, source discovery, admission/trust, capability references, dependency availability, restart behavior, and official asset packaging |
-| Process transport | Request/response schemas, protocol framing, limits, cancellation, execution failures, scratch lifecycle, and external stdout/stderr handling |
+| Package/catalog | §§7.4.1–7.4.3 and DI-06 §7.6 own approved package/trust/delivery; installed conformance remains required |
+| Process transport | Approved shared invocation/transport and scratch contracts in §7.13; independent protocol/process evidence remains required |
 | Check | Integrate approved content/selection contracts into concrete typed declarations; prove profile admission, factual outcomes and registered schemas independently |
-| Test | Suite selection, all-active-suites meaning, framework options, collection/no-tests outcomes, coverage, and detailed evidence |
-| Fix | Authorized paths, native execution outcomes, partial mutation and agent-controlled recovery |
-| Public operations | Preserve approved diagnostic boundaries and D-ADAPTER-23 native-argument ownership; complete test/fix contracts and separate check/fix args routing |
-| Native configuration | Per-tool project/configuration context, explicit invocation controls versus native settings, and canonical values for current conflicting configurations |
+| Test | §7.15/§7.16 own approved tests/scopes/native args/results; full canonical tests.yaml and typed DTO consolidation remains explicit below |
+| Fix | §7.18 owns approved explicit paths/order, native outcomes, partial mutation and stop-first; conformance remains required |
+| Public operations | §7.16 closes per-binding args/defaults and excludes public mutation args; preserve diagnostics and prove registered wrapper/schema/result integration |
+| Native configuration | §7.20 owns human-approved native settings and intentional deltas; native/installed evidence remains required |
 
 Human correction D-ADAPTER-23 supersedes generic verbose fields: native -v/-vv,
 traceback and reporter switches keep their own meanings and are never mapped from a
@@ -2497,8 +2497,9 @@ removed rather than preserved. Native configuration and explicit args own native
 Cache/presentation limits remain independent, with available requested detail retained
 within bounds and any truncation explicit. No replacement detail flag or presenter
 native-option parser. Native reporter options incompatible with an adapter's result
-contract must be rejected honestly, not silently overridden. Check/fix recipient
-routing and mutation-profile argument admission remain their own open design work.
+contract must be rejected honestly, not silently overridden. Section 7.16 owns the
+approved check/fix recipient routing and absence of public mutation-profile args;
+registered-schema and independent conformance evidence remain required.
 
 ### 7.14 Approved run_checks Contract — W03, 2026-09-10
 
@@ -3674,6 +3675,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.88 | 2026-09-12 | `@imp designer` | Replace stale open-decision routing with approved args, native settings, fix and delivery owners; keep actual test DTO/canonical integration and evidence gaps explicit. |
 | 0.87 | 2026-09-11 | `@imp designer` | Record approved bundled_adapters/workspace_adapters source names and direct official authoring outside assets; preserve manifest, trust and role contracts. |
 | 0.86 | 2026-09-11 | `@imp designer` | Record human W09 approval, D-ADAPTER-29 and local closure; retain independent QA, cross-package integration and native conformance obligations. |
 | 0.85 | 2026-09-11 | `@imp designer` | Propose concrete W09 adapter inventory, native request/result boundaries, configured startset, preservation and explicit unresolved settings decisions; no closure or runtime conformance claim. |
