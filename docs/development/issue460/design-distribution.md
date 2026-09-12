@@ -3,12 +3,12 @@
 # Issue 460 Template-Suite Distribution and Renewal Design
 
 **Status:** DRAFT  
-**Version:** 1.11  
-**Last Updated:** 2026-09-11  
+**Version:** 1.12  
+**Last Updated:** 2026-09-12  
 **Primary Package:** DI-06  
 **Upstream Dependencies:** Research Approved Strategy, DI-01/DI-02 suite validation and identities, final DI-03 package set, DI-05 adapter source contract  
 **Downstream Consumers:** DI-07, DI-08, CLI/init/upgrade, owner workspace migration  
-**Lifecycle Status:** Renewal decided; W10 adapter location/delivery boundary approved; W10 configuration integration open
+**Lifecycle Status:** Human-decided; W10 locally closed; combined independent Design review pending
 
 ---
 
@@ -112,7 +112,8 @@ provenance-history replacement registry, and no silent change to the Approved St
 | D-DIST-22 | Recovery derives the only safe action from recorded prior/target identities and the durable trees/checkpoint: restore the prior pair before checkpoint publication, finish a complete target pair after publication, and fail without guessing when neither state is proven | Decided |
 | D-DIST-23 | A running server keeps its already resolved immutable catalog; a new startup briefly takes the upgrade lock and rejects an unresolved recovery record; whenever actual changes, CLI presentation derives a restart hint from `actual_changed` without changing a successful exit code | Decided |
 | D-DIST-24 | Forced replacement retains the verified pre-force suite/checkpoint backup at `.pgmcp_template_backup_<UTC-timestamp>/`; the result exposes its path, while PGMCP creates no backup index, pruning policy, or checkpoint authority from it | Decided |
-| D-DIST-25 | Official adapters are authored and shipped directly in mcp_server/bundled_adapters, outside workspace assets; resolved_server_root/workspace_adapters remains owner-controlled. No separate adapter authoring-copy stage or adapter renewal mechanism | Human-approved W10 location boundary; remaining W10 configuration integration open |
+| D-DIST-25 | Official adapters are authored and shipped directly in mcp_server/bundled_adapters, outside workspace assets; resolved_server_root/workspace_adapters remains owner-controlled. No separate adapter authoring-copy stage or adapter renewal mechanism | Human-approved W10 location boundary |
+| D-DIST-26 | Fresh empty config roots receive V3 defaults; existing owner configuration is authoritative and explicitly migrated. Candidate/proposal profile references must resolve against effective config before activation; no silent fill, native dependency probe or force bypass | Human-approved W10 closure, 2026-09-12; §7.7; combined independent review pending |
 
 ## 5. Responsibilities and Boundaries
 
@@ -646,8 +647,67 @@ into the next startup catalog; workspace packages remain independently owner-con
 
 The older workspace `adapter_suite` label in frozen Research is concretized by this
 human-approved Design naming decision; no alias or dual discovery is supported.
-W10 configuration integration remains a separate open workshop item. No config merge,
-overwrite policy or whole-W10 approval is implied by this location decision.
+The separately approved configuration integration is specified in §7.7. Neither
+location nor configuration decisions create a config merge engine or adapter updater.
+
+### 7.7 Effective Configuration and Template Admission
+
+**Human-approved W10 closure, 2026-09-12.** Existing configuration and native dependency
+ownership remain separate from template-suite replacement authority.
+
+| Situation | Required behavior |
+|---|---|
+| Fresh managed workspace with no existing configuration at its resolved config root | Supply V3 PGMCP defaults, including an empty workspace adapter trust list; validate the initial suite against that effective configuration before activation |
+| Existing valid V3 configuration | Use actual workspace profiles, bindings, defaults and trust; do not replace or augment them from shipped defaults |
+| Existing V2 configuration requiring migration | Identify obsolete/missing contracts and direct the owner to shipped V3 defaults and DI-07 guidance; explicit owner/agent migration, no aliases or automatic native-rule translation |
+| Candidate template references an absent output profile | Reject admission before active suite/checkpoint mutation; identify template_id, missing profile ID and config-relative source through existing candidate-invalid outcome |
+| Selected complete proposal has an unresolved profile reference | Reject proposal admission through the existing proposal-invalid outcome and retain the candidate under §7.3; no alternative component search |
+| Profile/adapter declarations resolve but a native dependency is missing | No dependency probes or check/test/fix execution during renewal; DI-05's on-use unavailable/error behavior remains authoritative |
+
+The resolved config root is authoritative, including a configured external root. A new
+server root does not authorize overwriting already populated configuration elsewhere.
+Packaged defaults under `mcp_server/assets/config/` are initial-install material and
+inspectable migration references, never a second runtime fallback layer. The existing
+config loaders/read interfaces own parsing and reference resolution; DI-06 consumes
+suite admission with that explicit effective configuration, not an old running-server
+catalog or a second config parser.
+
+Complete candidate and proposal admission must precede activation under §§5.5/7.3.
+Report profile-reference failures as admission failures, not component conflicts or
+native-tool failures. Candidate-invalid and proposal-invalid retain their existing
+distinct staging dispositions; do not label an invalid candidate as validated or invent
+a new renewal state. Actual suite/checkpoint remain unchanged on either failure.
+
+Example: a supplied Python template declares `python_preflight`, absent from the owner's
+`checks.yaml`. PGMCP reports that exact reference and performs no active-tree mutation.
+The owner or cooperating agent explicitly reconciles config using the shipped examples,
+then reruns `--upgrade`; admission reads the updated configuration afresh. Neither
+ordinary upgrade nor `--force-template-upgrade` may inject profiles, overwrite config,
+install dependencies or bypass admission. Workspace-native config remains its tool's
+settings SSOT; W09 self-hosting settings are not imposed on other workspaces.
+
+No config candidate folder, fingerprint ledger, merge engine or wider transaction is
+added. `.pgmcp/upgrade` remains template-only. The running server retains its existing
+catalog; configuration changes require restart to enter that catalog. Existing
+`actual_changed` renewal hints do not claim that checkpoint-only or config-only work
+reloaded the running process. DI-07 owns the explicit configuration/restart guidance.
+
+Delivery/admission evidence must independently prove:
+
+- complete built and installed template/adapter packages, including dotfiles, policy,
+  schemas, scripts and declared dependencies; no source-checkout fallback;
+- fresh defaults resolve all supplied profiles without executing native tools;
+- existing config, trust and native settings remain byte-identical during renewal,
+  including failed and forced attempts;
+- effective config-root overrides are honored and populated external config is preserved;
+- missing profile diagnostics identify the real template/profile/source and preserve
+  active state; an explicit config correction permits a fresh admission attempt;
+- absent native dependencies do not become startup/renewal probes or fabricated check
+  success, and the existing on-use failure contract remains testable.
+
+These are DI-06-owned delivery/admission assertions over DI-01/02/05 interfaces.
+DI-08 supplies reusable fixtures, not a duplicate config or adapter implementation.
+Local workshop closure is not independent QA approval or execution evidence.
 
 ## 8. Control, Data, and State Flow
 
@@ -972,6 +1032,7 @@ active-tree writes.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.12 | 2026-09-12 | `@imp designer` | Close W10 on human approval: effective config ownership, explicit migration, no silent profile fill or force bypass, existing admission outcomes and installed-package evidence; combined QA pending. |
 | 1.11 | 2026-09-11 | `@imp designer` | Record approved bundled/workspace adapter delivery separation, direct authoring outside assets and installed-package evidence; leave W10 config integration open. |
 | 1.10 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |
 | 1.9 | 2026-09-11 | `@imp researcher` | Clarify operational fingerprint consumers, complete source coverage, bootstrap/recovery maps and generation-identity exclusion after QA; no new metadata or merge policy. |

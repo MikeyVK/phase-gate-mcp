@@ -3,8 +3,8 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.86
-**Last Updated:** 2026-09-11  
+**Version:** 1.87
+**Last Updated:** 2026-09-12  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
 **Role:** Design integration hub
@@ -236,7 +236,7 @@ test impacts have been reconciled in this hub.
 | [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Drafting | Package/check and W05 native-fix local contracts decided; W04 canonical integration, policy-loading/shared serialization, native migration values and independent conformance remain open |
 | `design-test-architecture.md` | DI-08 and XC-02 integration assurance | Not started | Await package proof seams |
 | [design-distribution.md](design-distribution.md) | DI-06 | Decided | Component-aware renewal, trustworthy bootstrap, owner-intent CLI, immutable result/presenter split, recoverable same-filesystem activation, timestamped force backup, runtime/startup coexistence, and conditional restart hint decided |
-| `design-workflow-documentation.md` | DI-07 | Not started | Await stable public decisions |
+| `design-workflow-documentation.md` | DI-07 | Workshop in progress | W11 temporary proposal under review; canonical consolidation follows human decisions |
 
 ---
 
@@ -272,7 +272,7 @@ This index points to authoritative decisions. It does not restate their exact co
 | D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
 | D-ADAPTER-01–D-ADAPTER-30 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04/W05 human-closed; D25/D26 align defaults/scope; D28/D29 close W09 configuration ownership and concrete native starting contracts; D30 fixes bundled/workspace adapter locations. W09 independent QA, remaining role integration, shared serialization and native conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
 | D-TEST-* | `design-test-architecture.md` | Not started | DI-01–DI-07 |
-| D-DIST-01–D-DIST-25 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Renewal decided; W10 adapter locations approved; configuration integration remains open | CLI/init/upgrade, owner migration, DI-07, DI-08 |
+| D-DIST-01–D-DIST-26 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | W10 human-closed: adapter delivery, effective configuration and admission decided; combined independent QA pending | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 | D-WORKFLOW-* | `design-workflow-documentation.md` | Not started | Phase, agent, and documentation consumers |
 
 W09's human-approved concrete adapter and native-settings contract is in
@@ -620,6 +620,23 @@ to the whole Design phase. Research remains frozen; no phase transition is autho
 
 ### Whole-Design Hand-over (still in progress)
 
+#### W10 input for the combined review — 2026-09-12
+
+- **Scope:** Human-approved DI-06 delivery/configuration integration, D-DIST-25/26;
+  local W10 closure, not independent approval. Research strategy and renewal state
+  machine are unchanged; no runtime/config implementation or workspace deployment.
+- **Deliverables:** [Distribution §§7.6–7.7](design-distribution.md#76-bundled-and-workspace-adapter-delivery),
+  [adapter source contract §7.4.1](design-execution-adapters.md),
+  [Research/intake](design-intake-map.md).
+- **Evidence:** Inspected CLI init, WorkspaceUpgrader, build script, release manifest,
+  package-data configuration and their existing tests. Documentation checks only;
+  built-wheel, admission, recovery and native-adapter behavior remain future evidence.
+- **Open work:** W11 workflow/documentation, W12 assurance and remaining cross-package
+  consistency. No native config installer, new merge engine, health gate or sandbox scope.
+- **Review request:** Review requested as part of the combined remaining-package review:
+  verify installed delivery, effective config ownership, profile-reference admission,
+  unchanged force authority and absence of native dependency probes during renewal.
+
 ### Scope
 
 - Designed target structure and exclusions: In progress.
@@ -692,6 +709,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.87 | 2026-09-12 | `@imp designer` | Record human W10 closure and combined-review input; start W11 discussion without approving its proposed documentation decisions. |
 | 1.86 | 2026-09-11 | `@imp designer` | Index approved bundled_adapters/workspace_adapters source and delivery boundaries; keep W10 configuration integration and combined QA open. |
 | 1.85 | 2026-09-11 | `@imp designer` | Record human-directed W10–W12 continuation and combined remaining-package QA timing; retain W09's unreviewed status and frozen Research. |
 | 1.84 | 2026-09-11 | `@imp designer` | Record human W09 closure and bounded independent QA hand-over; preserve open DI-05 and whole-Design integration. |
