@@ -2,8 +2,8 @@
 <!-- template=design version=5827e841 created=2026-09-12T14:51Z updated= -->
 # Issue 460 — Design Integration Review and Exact-Path Accounting
 
-**Status:** DRAFT  
-**Version:** 0.3
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 0.4
 **Last Updated:** 2026-09-12
 
 ---
@@ -311,7 +311,7 @@ role or Research compatibility strategy is introduced.
 | mcp_server/utils/schema_utils.py | DI-01 | Resolve supported references without dropping constraints; reject unsupported references, never fetch network schemas. |
 | mcp_server/server.py | Shared contracts | Existing enforcement, cache publication, configured text and MCP success mapping; transport attachments without treating them as operation data. |
 | mcp_server/presenters/text_presenter.py | Shared contracts | Generic declarative admission/rendering, bounded summaries and no native/error-class dispatch; concrete public records and Shared §11.1 generic type admission resolve the designed projection constraint; conformance remains required. |
-| mcp_server/presenters/collection_text_renderer.py | Shared contracts | Proposed generic Annotated/scalar recognition preserves existing supported collection/container shapes, ordering and text limits; no native/DTO-specific branches. |
+| mcp_server/presenters/collection_text_renderer.py | Shared contracts | Approved generic Annotated/scalar recognition preserves existing supported collection/container shapes, ordering and text limits; no native/DTO-specific branches. |
 | tests/mcp_server/unit/presenters/test_collection_text_renderer.py | Shared contracts | Preserve public classifier/renderer behavior and unsupported-shape rejection; add strict scalar/nullable-inline boundary cases without allowing model unions. DI-08 contributes architecture. |
 | tests/mcp_server/unit/presenters/test_text_presenter_composition.py | Shared contracts | Prove registered concrete rows and optional enum-case admission with actual configured text/cached evidence; preserve existing composition and byte-budget claims. |
 | pyrightconfig.json | DI-05 | Native Pyright configuration stays authoritative; no second generic representation of native rules. |
@@ -384,6 +384,116 @@ Independent whole-phase QA is now requested via the [joint hand-over](design.md#
 The earlier bounded DI-03 QA GO does not pre-approve these integration contracts.
 No production/test changes or Research amendment are included.
 
+## 4. Semantic Integration Closure
+
+**Producer reconciliation after the independent closure NOGO, 2026-09-12.**
+The positive technical assessment is not a Planning GO. This ledger records the
+actual cross-package decisions, consequences, removal conditions and proof owners;
+the hub derives its integration accounting from these rows. Integrated means Design
+reconciled, not implemented, independently approved or runtime-proven.
+
+### 4.1 Research Obligation Sets and Semantic Dispositions
+
+Primary ID sets follow the frozen intake exactly. The Strategy column names all
+44 existing rows by their Research subject; it introduces no replacement IDs.
+Each row's downstream and proof consequences are completed in §4.2, not inferred
+from a navigation link. F-18 and four deferred strategies are reconciled exclusions,
+not delivered functionality. Cross-cutting consumers do not acquire primary ownership.
+
+| Primary owner | Findings / invariants / expected results | Exact strategy subjects (count) | Selected contract and semantic disposition |
+|---|---|---|---|
+| DI-01 | F-02, F-06, F-12, F-17; I-05, I-06, I-08; E-04, E-05, E-08 | F-01/S-01 public context; F-01 client compatibility; F-02/S-03 optionality/nullability; F-06/S-04 links; F-12/S-05 issue references; F-12/S-06 checklists; F-17 qualified identity (7) | [Suite §§5.1–5.2/7.2](design-suite-resolution.md) and DI-03 shared records: literal JSON context, finite closed records, positive issue IDs, explicit checked state, qualified template IDs. No coercion/default materialization or primitive compatibility bridge; omitted/empty/null/false/zero retain distinct meaning. |
+| DI-02 | F-04, F-05, F-11, F-16; I-03; E-02, E-07 | F-04/S-08 DTO selection; F-05/S-09 resolved graph; F-11/S-16 provenance; F-16 purpose (4) | [Suite §§5.3–5.6/7.5](design-suite-resolution.md): one startup-resolved renderer/catalog, parser-supported contained edges, one package .version, generation pf/sf and first-line header. Remove override/registry/hash authority; purpose survives introspection. Historical reconstruction remains owner-dependent, never a PGMCP lookup promise. |
+| DI-03 | F-01, F-07, F-14, F-14A, F-14B; I-01, I-02, I-07; E-01, E-06, E-10 | F-01/S-02 nested collections; F-14/S-12 portability; DTO; Generic; integration-test; Resource; configuration-model; Service; Tool; TypeScript DTO; unit-test responsibilities; F-14A agent hints; F-14B unreachable patterns (13) | [Code §§7/9](design-code-test-artifacts.md) and [Documents §§7/9](design-document-tracking-artifacts.md) fix nine code/test and ten document/tracking families, structured fields/imports/fixtures/links and requiredness. Resource/Service/Tool templates, project assumptions, hints and dead patterns retire; existing runtime classes/generated files do not. DTO examples remain authored illustrations, not model-validated instances. |
+| DI-04 | F-03, F-13, F-15; I-04, I-09, I-13; E-03, E-11, E-18 | F-03 caller/operation/provenance ownership; F-07/S-07 consumption; F-13 success; F-15/S-13 target/file name; safe-edit validation (5) | [Mutation §§3–4/7.1](design-mutation-validation.md): exact file name, unchanged context, separate provenance, configured placement, create-only scaffold and complete-content safe edit. Enforce/report share factual checks; independent safety failures block both. Direct results distinguish validation, actual persistence and operational defects; no hidden name projection, preview alias or nested result duplicate. |
+| DI-05 | F-08, F-19, F-20; I-16, I-19; E-13, E-20, E-23 | F-08/S-14 output validation; F-19 shared check authority; F-20 check/test/fix suite (3) | [Adapters §§7.3–7.20/13.1](design-execution-adapters.md): one catalog/process base, distinct role contracts, native-owned settings/results, configured mutation checks and explicit execution scopes/args. Native fixes mutate only admitted explicit files, in caller order, stopping first non-success without rollback. Configured startup exposure performs no native availability survey. |
+| DI-06 | F-10; I-17, I-18; E-21, E-22 | F-10/S-10 distribution/customization; deployment compatibility (2) | [Distribution §§5/7–9](design-distribution.md): full operational component equality includes policy/version; adopted/actual/candidate selection builds one validated off-root proposal and recoverably activates one root. Checkpoint-less actual is preserved absent trustworthy equality or explicit owner action; no fabricated V2 checkpoint, implicit merge or external retention service. |
+| DI-07 | F-09; I-12, I-15; E-09, E-15, E-16, E-19 | F-09/S-15 documentation authority; workflow/template semantic alignment (2) | [Workflow §§5/7–9](design-workflow-documentation.md): canonical instruction sources, mapped host copies, nineteen carrier meanings, conditional schema discovery, no copied invocations or fake phase completion. Modular live tool/schema references replace obsolete API/inventory authority. |
+| DI-08 | I-14; E-17 | Test-suite architecture compliance (1) | [Test architecture §§7–10](design-test-architecture.md) and §3.2 here: each test has a durable behavior and architecture disposition; narrow fixtures and independent native/domain/public oracles replace global/private/fake-execute coupling. Planning, not DI-08, assigns cycles. |
+| XC-01 | I-11; E-14 | Runtime architecture compliance (1) | Package responsibility/option sections plus Shared §§5/11.1 require pure injected config, immutable catalogs, narrow read interfaces, separate mutation authority and declarative presentation. A new template/native tool extends assets/config rather than generic ID/language/parser dispatch; tests obey the same boundaries. |
+| XC-02 | No separate finding/invariant/result primary set | Legacy parallel scaffolding and validation surfaces (1) | Package §9 removals, DI-07 §7.5, DI-04 §3.3 and §3.2 here link replacement authority to retained claims. No shell/alias/dual read, unowned removed behavior or catch-all migration cycle; separate proof precedes removal. |
+| RC-01 | I-10; E-12 | F-12 original-issue coverage (1) | Frozen Research remains strategy authority. DI-01/03's structured checklist/issue/link contracts and DI-04 unchanged-context route cover the original PR defects within suite-wide boundaries; no PR-only special case or later strategy choice. New contradictory evidence stops the affected Design rather than becoming a Planning workaround. |
+| Explicit exclusions | F-18 | Deferred YAML subset; additional portable Python artifact coverage; F-18 runtime discovery; command/query service family (4) | [Deferred register](deferred-work.md), Suite §5.1/§9 and DI-03 inventory keep these out. YAML source is recoverable through Git; retained Generic does not absorb deferred service families. Existing complete template enums are not a new discovery tool. |
+
+Totals derived from these primary sets: 22 findings (21 designed + one excluded),
+44 strategies (40 designed + four excluded), 19 invariants and 23 expected results.
+This counts resolved dispositions, not executed acceptance tests.
+
+### 4.2 Cross-Package Consequence and Proof Reconciliation
+
+| Integrated dependency | Reconciled contract / consumer consequence | Migration or removal prerequisite and independently owned evidence |
+|---|---|---|
+| DI-01/02 → Shared → DI-04 and registered tools | Suite §7.2's immutable prepared tool contract is shared by registration, lazy exposure, admission and whole-tool error feedback. The selected context remains a separate reference-free schema; Shared §5.5 carries it only in the approved attachment cases. DI-04 never repairs or projects envelope values into context. | Suite §9 removes independent schema/default/override authorities. Suite §10, Shared §10, CODE-E01/09 and DOC-E01/02/04/05 require authored/resolved acceptance parity, unchanged values and actual decorated tool/resource reads; static model-only checks cannot certify wrappers. |
+| DI-02 → DI-03 → DI-04 | One resolved Jinja entry and permitted shared edges supply generation identity. DI-03 preserves tiered native framing; the same first-line four-field contract is read by DI-02's text-only reader. DI-04 uses original recognized current ID or explicit/extension selection; invalid/unknown metadata yields no template match. | Old registry, override, graph/hash and metadata-history paths retire only with Suite §10, CODE-E10, DOC-E11 and DI-04 §8 evidence. Test actual graph/framing, invalid recognition and lateral/shared identity impact; do not obtain expected protocol bytes from the producer itself. |
+| DI-02 ↔ DI-06 | Generation pf/sf excludes whole .version/policy files; operational component equality includes them. Manifest ID, not directory name, keys checkpoint packages. Policy-only or label-only edits therefore cannot become invisible overwrite authorization. | DI-06 §§5.2/7.2/8–10 proves all component-presence/equality cases, safe bootstrap, reconciliation and interruption recovery. Existing artifact provenance/history is neither rewritten nor a checkpoint. No F-10 activation and F-20 native-fix cycle is shared. |
+| DI-03/DI-05 → DI-06 admission | Template policy.yaml selects profiles; DI-05 §7.20 supplies a configurable startset, not hardcoded server dispatch. DI-06 §7.7 resolves candidate/proposal references against effective actual config, including an external config root; force cannot inject profiles or install dependencies. | CODE-E09/DOC-E11, DI-06 §7.7/§10 and TEST-E05/06 distinguish missing-reference refusal before activation from on-use native unavailability. Existing config/trust/native settings remain unchanged during renewal. |
+| DI-05 content checks → DI-04 persistence | Same typed check facts, distinct consumer policy. Complete proposed text is passed directly or materialized under unique temp/validation child; never temporarily overwrite the target. Runtime attempt/capture and housekeeping survive projection. Internal rejection blocks both policies; cleanup alone does not invalidate a verdict/write. | DI-04 §§4.9–4.10/7.1/8 and DI-05 §7.13/§10 require original/proposed consistency, no-write enforcement, create/replace safety, timeout/termination and nonblocking cleanup. Fake adapters prove policy only; separate native/process tests prove the execution seam. |
+| DI-05 explicit roles → Shared output | run_checks, run_tests and apply_fixes keep their own scopes, reducers and stop rules. §13.1 concrete rows transfer adapter facts without native parsing; Shared §§5.5–5.6/11.1 transports attachments, required nulls and bounded text. Native negative results remain operational success; internal request rejection is not a user CLI refusal. | Real registered tools/resources must preserve 14 mutation and 8 check error-detail shapes, test/fix matrices, native evidence/capture, nullability and success/isError. Generic Annotated/nullable admission replaces no DTO with presenter-specific branches or a second summary authority. |
+| DI-05/DI-06 → DI-07/DI-08 installed adapters | Bundled packages live outside copied assets; owner workspace packages are explicitly trusted, distinct, immutable during a server run. Native dependency/config ownership remains with its ecosystem/workspace. | DI-06 §§7.6–7.7/§10 owns manifests/scripts/schemas/dependency files in a built and separately installed distribution. DI-05 owns real adapter behavior, including commit header-reader dependency; DI-08 supplies installation/process support without source-checkout fallback. |
+| DI-03 documents ↔ DI-07 workflow | Document §7.8 and Workflow §7.2 match nineteen phase/workflow meanings. Planning identities use operational cycle_number/name/deliverables/validates/exit_criteria without turning narrative into hidden tool payload; scaffold content never grants phase approval. | DOC-E06/07/10 and DOCFLOW-E01/02/05 exercise real schema/render capacity and public workflow loading, not heading counts. Source-copy mappings and inbound links are independently checked before old invocation/API text retires. |
+| DI-01–DI-07 removals ↔ DI-08 support | Technical packages own retained behavior and specific removals; DI-08 owns reusable roots/process/filesystem/registered-tool fixtures and audits dependencies. The §3.2 151-row index retains each claim and removal prerequisite. | TEST-E07/08, package §9 and the frozen 126-consumer ledger prevent unowned removals. Preserve unrelated conftest/plugin/cache behavior, including FIFO claims and existing wrapper semantics. Planning maps exact paths to bounded cycles; no invented remaining-consumers/tests cycle. |
+
+### 4.3 Consumer Families and Conditional Dispositions
+
+The 126 active consumer/reference paths plus two governing sources remain in the
+frozen catalog; they are not duplicated or inflated here. Its ten primary consumer
+families now resolve as follows. These are Design handoff owners, not cycle names.
+
+| Frozen consumer family | Integrated authority, removal and proof consequence |
+|---|---|
+| Contract metamodel/schema/IDs | DI-01: Suite §§5.1–5.2/7.2/9/10, DI-03 finite definitions and Shared schema delivery replace YAML/independent schema authorities; preserve registered input parity. |
+| Graph/catalog/provenance | DI-02: Suite §§5.3–5.6/9/10 replaces override/registry/metadata inference; DI-04 selector consumes current ID and DI-06 consumes full admission, not generation hashes as checkpoint. |
+| Concrete artifacts/macros/examples | DI-03: both family §7 inventories and §9 dispositions preserve explicit content, remove rejected families/patterns and identify native preflight/evidence dependencies. |
+| Scaffold/safe edit/location policy | DI-04: §§3.3/4/7.1/8 replaces hidden naming/CWD helpers and old modes, keeps exact filenames and separate create/edit atomicity; no adapter-owned persistence. |
+| Adapter/quality/test/fix/config/state/presentation | DI-05: §§7.3–7.20/13.1/9/10 plus Shared transport replaces V2 runner/parser/config paths; native settings and check/test/fix migration prove separately before cutover. |
+| CLI/init/upgrade/assets/checkpoints | DI-06: §§5/7–10 replaces old copy/overwrite heuristics with full operational comparison, admission and recoverable activation; no runtime overlays or native probes. |
+| Contracts/instructions/references/host copies | DI-07: §§5/7–10 selects source authority and exact reference dispositions, retains workflow/approval behavior and verifies mapped copies without schema duplication. |
+| Cross-package legacy removal | XC-02: package-owned §9 dispositions plus §3.2 here and DI-08 TEST-E07/08 account for preserved claims before removal; neither a compatibility shell nor a removal subsystem. |
+| Shared test architecture/helpers | DI-08: §§7.1–7.4/9/10 replaces broad/private/global support; supplementary conftests remain separately listed and unrelated fixture behavior is preserved. |
+| Current-owner/external deployment | DI-06 §9 and DI-07 guidance: explicit owner migration/bootstrap/reconciliation, no silent actual adoption, retention lookup or automatic external rollout. |
+
+| Conditional catalog path | Selected disposition / authoritative contract | Downstream proof |
+|---|---|---|
+| .pgmcp/config/artifacts.yaml | DI-02 removes inventory use; DI-04 §3.3 uses only manifest-ID artifact placement. No dual read of the old meaning. | Discovery/placement and absence of legacy readers; DI-06 delivers defaults without overwriting owner config. |
+| docs/manuals/phase-workflows.md | DI-07 §7.5 retains only a contracts-owned navigation/authority overview. | DOCFLOW-E01/E04/E05: no universal copied phase/TDD rules or complete stale invocations. |
+| docs/reference/validation_api.md | DI-07 §7.5 removes standalone obsolete API, moves retained concepts to current modular references and rewrites active inbound links. | DOCFLOW-E04/E05; history stays historical, no obsolete active authority. |
+| mcp_server/scaffolding/utils.py | DI-04 exact file_name and filesystem boundaries replace hidden naming/PascalCase/CWD behavior; no alternative config-derived naming resolver. | DI-04 §8: same caller filename, independent content, resolved roots and no overwrite/escape. |
+
+### 4.4 Closure Boundary and Remaining Evidence
+
+All eight DI packages, XC-01/XC-02 and RC-01 have reconciled Design dispositions in
+§§4.1–4.3. Shared is a cross-package document, not a ninth DI package. The four
+conditional choices are selected; dependency and removal conditions are explicit.
+
+The independent review's two P1 findings remain subject to an independent recheck.
+The producer records Integrated in the hub only for this substantive Design
+reconciliation. Native/client/runtime conformance is not claimed; Planning still
+assigns bounded write sets, preserved behavior, rollback points and independent
+stop/go evidence for every 126/151 path plus separately accounted support dependencies.
+Research and its Approved Strategy remain frozen.
+
+### 4.5 Documentation-Only Verification — 2026-09-12
+
+- Primary obligation-set comparison against the frozen intake: 22 unique findings,
+  19 unique invariants and 23 unique expected results; no missing or extra IDs.
+  The twelve primary strategy groups total 44, with the four deferred strategies
+  and F-18 separately identified. Semantic treatment is the §4.1–4.3 review,
+  not a consequence of the numeric check.
+- Exact catalog/index comparison: 151 entries, 151 unique, identical ordering,
+  no missing/extra/duplicate or nonexistent test/helper paths. No change to the
+  frozen 126-consumer/two-governing-source catalog or Research/intake files.
+- Read-only local-document verification across the twelve changed Design/README
+  documents: 458 local inline file-link targets exist, 33 checked closure/index
+  fragment references resolve to their headings, and fenced blocks balance.
+  This is not an external-link, native-tool or complete Markdown-rendering test.
+- Targeted active-text search and owner review replaced obsolete Drafting/open
+  contract claims. Historical version entries and explicitly superseded review
+  requests remain history; implementation/conformance obligations remain open.
+- MCP Git status identifies only the twelve canonical Design/README documents as
+  modified. The 2,898 pre-existing untracked workshop/probe/vendor files remain
+  outside this correction. No production/test/config/Research write or phase
+  transition is part of the correction.
+
 ## Related Documentation
 
 - **[docs/development/issue460/design.md][related-1]**
@@ -400,6 +510,7 @@ No production/test changes or Research amendment are included.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 0.4 | 2026-09-12 | @imp designer | Address independent closure NOGO with semantic obligation, dependency, removal, consumer-family and conditional-disposition reconciliation; request independent recheck. |
 | 0.3 | 2026-09-12 | @imp designer | Record human-approved output closure, point to consolidated canonical contracts and request combined independent review without claiming runtime evidence. |
 | 0.2 | 2026-09-12 | @imp designer | Index the combined concrete-output/error-detail proposal, explicit approval boundary and source-based rationale. |
 | 0.1 | 2026-09-12 | Agent | Initial draft |

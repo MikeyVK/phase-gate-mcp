@@ -2,14 +2,14 @@
 <!-- template=design version=5827e841 created=2026-08-27T12:05Z updated=2026-08-27 -->
 # Issue 460 Shared Tool and Schema Contracts Design
 
-**Status:** DRAFT  
-**Version:** 1.11
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.12
 **Last Updated:** 2026-09-12  
 **Primary Package:** Shared contracts consumed by DI-01, DI-02, and DI-04  
 **Upstream Dependencies:** Issue 456 presentation contract, DI-01/DI-02 resolved catalog  
 **Downstream Consumers:** `scaffold_schema`, `scaffold_artifact`, cache publication,
 response presentation, DI-07 documentation  
-**Lifecycle Status:** Drafting
+**Lifecycle Status:** Integrated; dependency/removal/evidence reconciliation in [Integration §4](design-integration-review.md#4-semantic-integration-closure); independent closure recheck required
 
 ---
 
@@ -579,6 +579,7 @@ shortcut.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.12 | 2026-09-12 | @imp designer | Reconcile semantic integration, canonical status and proof ownership after independent QA; no phase approval or executable conformance claimed. |
 | 1.11 | 2026-09-12 | `@imp designer` | Consolidate approved generic strict/nullable admission and explicit null-case handling; retain concrete collection projection and no DTO-specific logic. |
 | 1.10 | 2026-09-12 | `@imp designer` | Propose presentation-compatible public projection and bounded strict/nullable type admission; keep human confirmation pending and preserve generic rendering/native evidence boundaries. |
 | 1.9 | 2026-09-12 | `@imp designer` | Specify internal operation/attachment transport and schema-driven required-null cache serialization against actual wrapper/presenter seams; retain public operation authority. |

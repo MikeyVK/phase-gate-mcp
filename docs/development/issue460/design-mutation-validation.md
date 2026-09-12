@@ -2,13 +2,13 @@
 <!-- template=design version=5827e841 created=2026-09-03T17:05Z updated= -->
 # Issue 460 Mutation and Persistence Design
 
-**Status:** DRAFT  
-**Version:** 1.35
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.36
 **Last Updated:** 2026-09-12
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
 **Downstream Consumers:** Scaffold and safe-edit callers; DI-07; DI-08  
-**Lifecycle Status:** Drafting
+**Lifecycle Status:** Integrated; dependency/removal/evidence reconciliation in [Integration §4](design-integration-review.md#4-semantic-integration-closure); independent closure recheck required
 
 ---
 
@@ -205,18 +205,14 @@ An existing file returns a collision result and leaves it byte-identical. The ca
 
 safe_edit_file owns intentional modification of an existing file. It constructs complete proposed content, consumes the applicable factual validation evidence, and replaces the target only when its validation policy and independent safety conditions permit. It does not masquerade as scaffolding and does not turn force_target into an overwrite control.
 
-How an existing artifact selects its output profile without hard-coded extension dispatch or parsing persisted provenance remains a joint DI-04/DI-05 decision.
+Existing-artifact selection is fixed by §§4.6/4.8, DI-02's text-only V3 reader and
+DI-05's shared extension lookup. Generic code contains no language-specific dispatch.
 
-The approved extension-based fallback reads the shared root-level
-`checks.yaml:profiles_by_extension` assignment owned by
-[DI-05](design-execution-adapters.md#shared-extension-to-profile-assignment), not a
-private `safe_edit_file` configuration section. This settles configuration ownership,
-not the complete selection contract: DI-05 now owns the approved
-[extension lookup](design-execution-adapters.md#extension-lookup-semantics); precedence
-between selection sources and the no-profile outcome are specified in §4.6; their complete typed integration remains open.
-Section 4.8 now admits a narrow V3 reader for this demonstrated consumer and reconciles
-DI-02's conditional no-replacement rule. It does not restore the legacy parser;
-exact header recognition and typed reader/writer interfaces remain integration work.
+The approved extension fallback reads shared checks.yaml:profiles_by_extension
+under [DI-05](design-execution-adapters.md#shared-extension-to-profile-assignment).
+Section 4.6 fixes precedence/no-profile outcomes; §4.8 consumes the integrated DI-02
+header-reader contract. Sections 4.9–4.10/7.1 complete read/check/write and typed-result
+integration. No private safe-edit config, legacy parser or weaker-profile retry remains.
 
 Research-approved scope, independent QA GO reported by the human on 2026-09-07:
 both mutation tools accept `validation: enforce|report`, default `enforce`, and return
@@ -255,13 +251,16 @@ The policy is an explicit per-call control, not a new manifest field or an inher
 
 #### 4.4.2 Factual outcomes and result-side mirror
 
-Serialization caveat from the 2026-09-07 audit (§4.5): the following `validation.*`
-notation records the agreed grouping and semantics, but its direct public-object
-projection has an evidenced presentation mismatch. Statuses, the policy mirror and
-persistence rules remain decided; the public nesting is not integration-ready and
-must not drive a presenter extension or duplicate flat/nested fields by assumption.
+**Superseded representation:** the early validation.* grouping was rejected after the
+§4.5 source audit. The active §4.6 contract uses direct validation_policy,
+validation_status, profile_id and checks. The factual status/reducer/persistence
+semantics below remain binding; no nested validation report or flat/nested duplication
+is supported.
 
-The scaffold result contains a `validation` report. Its `policy` is the effective request policy; its `status` summarizes evidence; its `checks` retain the individual selected-check identities, factual statuses, findings, and reasons. The selected profile identity is reported when known. Full check-record types and diagnostic encoding remain DI-05 work; no new public capability IDs are invented here.
+The scaffold result's validation_policy mirrors the effective request; validation_status
+summarizes evidence; checks preserves each selected check's facts. profile_id is reported
+when known. Sections 4.6/4.10/7.1 define its concrete fields and diagnostics; DI-05 owns
+the adapter/runtime facts being projected. No new capability IDs are invented here.
 
 | Factual status | Meaning | Must not mean |
 |---|---|---|
@@ -353,12 +352,11 @@ monitoring or automated recovery.
 
 ### 4.5 Public Mutation Response Nesting Audit
 
-**Status:** source-backed Design audit, 2026-09-07; corrections below are proposals,
-not an approved replacement wire contract. Scope is scaffold and safe-edit public
-operation results, with the shared schema-attachment seam inspected for exceptions.
-Internal adapter protocols, native payloads and check/test/fix-wide outputs were not
-broadened by this audit. The later Research amendment separately retires `verify_only`.
-No runtime tests were executed.
+**Historical source audit, 2026-09-07; dispositions subsequently approved.** Sections
+4.6/4.10/7.1 and Shared §11.1 are the active output/presentation contracts. The audit
+below records why singleton result nesting and DTO-specific rendering were rejected,
+not an alternative pending public model. Research's later safe-edit amendment retires
+verify_only. No runtime tests were executed by the audit.
 
 #### Evidence and supported shapes
 
@@ -385,16 +383,16 @@ Unrendered nested data can still be serialized into the complete cached DTO.
 
 #### Audited surfaces
 
-| Surface / authority | Consumer need and finding | Proposed disposition |
+| Historical surface / authority | Consumer need and finding | Approved disposition / active owner |
 |---|---|---|
 | Scaffold `validation.policy` / `validation.status` / `validation.checks`, §4.4 | Policy, verdict and actionable checks must be visible inline; the singleton object requires unsupported traversal | Direct `validation_policy`, `validation_status`, `profile_id` and `checks`; preserve input `validation` and existing outcome rules |
-| Proposed scaffold template/artifact grouping, Q-MUT-03 | Package identity/version/fingerprint and output location have consumers; singleton grouping has no demonstrated presentation benefit | Prefer direct named fields; exact inventory remains open, without adding source-suite fingerprint |
-| Safe-edit `validation.selection.source` and later `validation.selected_source`, workshop proposals | Removing `selection` alone leaves the unsupported `validation` singleton | Direct `selected_source`, `profile_id`, conditional `template_id`/`extension`, `validation_status` and `checks`; presence/selection rules remain open |
+| Proposed scaffold template/artifact grouping, Q-MUT-03 | Package identity/version/fingerprint and output location have consumers; singleton grouping has no demonstrated presentation benefit | Direct named inventory in §§4.6/4.10; no non-artifact source-suite fingerprint |
+| Safe-edit `validation.selection.source` and later `validation.selected_source`, workshop proposals | Removing `selection` alone leaves the unsupported `validation` singleton | Direct `selected_source`, `profile_id`, conditional `template_id`/`extension`, `validation_status` and `checks`; presence/selection rules fixed by §4.6 |
 | Write facts and operation errors | Existing direct `mode`/`written` and result envelope distinguish writing from validation | Keep direct operation facts; no new `result`/`output` singleton or duplicate `passed` beside validation status |
-| Per-check decision and process failures, DI-05 | Internal `decision.status` and `failure.reason` wrappers are not automatically inline-renderable public records | Define concrete public check records with direct identity/status/reason facts, preserving origin and meaning; no tool-side inference or presenter DTO dispatch |
+| Per-check decision and process failures, DI-05 | Internal `decision.status` and `failure.reason` wrappers are not automatically inline-renderable public records | Define concrete public check records with direct identity/status/reason facts, preserving factual ownership and meaning without an origin field; no tool-side inference or presenter DTO dispatch |
 | Check-owned findings/diagnostics collections | Nesting preserves which check owns an observation; typed child collections are supported | Retain meaningful ownership nesting where records exist; no unrelated root lists or invented findings parsed from native output |
-| Collections of closed variant DTOs | Internal union typing does not prove renderer admission of `tuple[VariantA \| VariantB, ...]` | Resolve the public concrete record and its constraints before integration; no generic union-renderer project |
-| Native JSON/text evidence and process details, DI-05 | Exhaustive evidence belongs in the cache; arbitrary JSON is not a declarative finding collection | Preserve native structure and cache-only detail; separately resolve minimum actionable inline feedback. JSON-only rejection does not yet prove native reasons can be shown inline |
+| Collections of closed variant DTOs | Internal union typing does not prove renderer admission of `tuple[VariantA \| VariantB, ...]` | Concrete record and constraints in §§4.6/7.1; no generic union-renderer project |
+| Native JSON/text evidence and process details, DI-05 | Exhaustive evidence belongs in the cache; arbitrary JSON is not a declarative finding collection | Preserve native cache-only detail and original factual messages; §§4.6/7.1 and Shared §11.1 define bounded scalar/collection projection |
 | Context failure diagnostics and schema attachments, shared contract §7.4 | Bounded location/error facts plus the complete recovery schema serve distinct consumers | Direct typed diagnostic collection where needed; retain the separate embedded schema and cache ownership, without flattening schema properties into operation fields |
 
 This inventories known Design structures, not implemented V3 DTOs. Current
@@ -404,7 +402,7 @@ not authority to retain old vocabulary, boolean-only validation or duplicated sc
 
 #### Correction boundary and remaining evidence
 
-Recommendation: direct summary fields plus meaningful typed collections. Do not keep
+Selected: direct summary fields plus meaningful typed collections (§§4.6/4.10/7.1). Do not keep
 the same fact in both a public nested graph and flat presentation-only aliases. Internal
 contracts may remain nested; narrow structural public projection preserves facts without
 recomputing outcomes or constructing competing diagnostic meanings. The cache continues
@@ -413,14 +411,15 @@ to store the complete public operation DTO before text projection.
 The audit itself did not approve adapter summary fields. The subsequent human decision
 requires a factual failed-decision message in DI-05; §4.6 applies that correction without
 an extra public `origin` field. The audit does not normalize arbitrary native JSON,
-introduce JSONPath/mapping DSLs, disguise singleton objects as one-item lists, or extend
-the presenter to accommodate proposed packaging. It does not settle safe-edit policy
+introduce JSONPath/mapping DSLs or disguise singleton objects as one-item lists.
+The later approved Shared §11.1 permits only generic strict/nullable type admission,
+not DTO-specific presenter logic or a competing public representation. It does not settle safe-edit policy
 combinations; the subsequent Research amendment and §4.6 own that decision.
 
 Sections 4.6 and 4.10 fix the public inventory and concrete check-record route. Later conformance
 must prove real-config alignment/rendering for success, rejection, missing profile,
-unavailable adapter, runtime failure and persistence failure; preserve origin/reason,
-ownership/order, cache completeness and text bounds. Adapt existing
+unavailable adapter, runtime failure and persistence failure; preserve factual ownership/reason without an origin property,
+ordering, cache completeness and text bounds. Adapt existing
 [collection tests](../../../tests/mcp_server/unit/presenters/test_collection_text_renderer.py)
 and [real-config rollout tests](../../../tests/mcp_server/unit/config/test_tool_presentation_rollout.py)
 for durable gaps. No passing runtime evidence is claimed by this source audit.
@@ -612,13 +611,10 @@ Context validation failures keep the existing separate embedded schema attachmen
 output-check failures do not acquire a context schema. No new response wrapper,
 presenter-specific class knowledge, NoteContext diagnostic route or origin field is added.
 
-The human accepted field necessity, explicit-null selection states, check-field
-combinations and the narrowly permitted non-blocking no-profile case. Research now also
-fixes the shared policy vocabulary and legacy-mode removal. Close the remaining
-structured operation-diagnostic/provenance carriers against real presentation alignment.
-Do not claim the complete mutation DTO integrated until those carriers, the V3 reader
-boundary and lossless cache/inline conformance are resolved. Future workshops should
-cover coherent contract surfaces rather than one field or one status per turn.
+The accepted fields, explicit nulls, selection/check combinations and mutation policy
+are consolidated in §§4.6/4.10/7.1. The DI-02 reader and Shared §§5.5–5.6/11.1 complete
+the designed carrier/serialization/presentation seams. Their implementation and real
+resource/presentation conformance remain required, not additional workshop choices.
 
 ### 4.7 Safe-Edit Operations, No-Change Results and Failure Boundaries
 
@@ -685,7 +681,7 @@ as other proposed text. No implicit skip-check or skip-write optimization is int
 
 The first five boundaries block both enforce and report. Report cannot repair an
 invalid editing command. Use closed typed domain reasons, reusing an existing equivalent
-failure contract where available; exact carrier/code integration remains Q-MUT-03.
+failure contract where available; §7.1 fixes the exact carrier/code mapping.
 Do not add these reasons to adapter enums or make the presenter classify exception text.
 Before checking begins, report not_executed rather than a fabricated failed check;
 retain an established profile selection if one already exists. Invalid outer tool input
@@ -842,8 +838,8 @@ no automatic retries and retained passed-check evidence on refused replacement.
 Do not write tests claiming arbitrary external-writer exclusion. Header utility design
 is closed by the integrated DI-02 contract; actual conformance evidence is still required.
 The integrated replacement contract below closes comparison representation and
-replacement responsibilities. Final mutation result/error carrier declarations remain open; the
-approved responsibilities and policy are not open for redesign. No runtime tests were run.
+replacement responsibilities. Sections 4.10/7.1 fix the final mutation result/error
+carriers; the approved responsibilities and policy are not open for redesign. No runtime tests were run.
 
 ### 4.9 Integrated Original-File and Controlled-Replacement Contract
 
@@ -895,8 +891,8 @@ possible, immediately before each actual replacement attempt. An observed mismat
 missing target refuses replacement. Do not recreate a disappeared target or its parent
 directories, copy staged content over the target as a fallback, or rebase the operation
 on newly observed contents. Return the observed outcome to the manager through typed
-facts; the manager owns its operation/validation meaning. Exact final result/error
-carriers remain part of Q-MUT-03/Q-MUT-06, not presenter-specific dispatch.
+facts; the manager owns its operation/validation meaning. Sections 4.10/7.1 supply
+exact result/error carriers, not presenter-specific dispatch.
 
 This conditional replacement is still a check followed by replacement, not an atomic
 filesystem compare-and-swap. The §4.8 race limitation remains explicit: non-cooperating
@@ -943,8 +939,8 @@ Manager-owned outcome facts follow the existing complete frozen DTO -> resource 
 declarative presentation route. presentation.yaml owns wording/projection; generic
 presenter code gains no knowledge of new error reasons, DTO classes or tool identities.
 Filesystem defects are not adapter check failures, and tools do not formulate domain
-problems detected by the manager. The final typed carriers are the next integrated
-result-contract task; no universal diagnostics collection is pre-authorized here.
+problems detected by the manager. Sections 4.10/7.1 own the final typed carriers;
+Shared §11.1 owns generic admission. No universal diagnostics collection is added.
 
 #### Preservation and integration evidence
 
@@ -1094,7 +1090,7 @@ The target and content paths meet only for output-profile evidence and final per
 | D-MUT-06 | force_target never permits overwrite or bypasses schema, render, output-validation, or workspace-containment checks | Decided |
 | D-MUT-07 | scaffold_artifact creates only an absent file; existing artifacts are changed through safe_edit_file | Decided |
 | D-MUT-08 | Caller content, operation controls, artifact-source provenance, and result evidence remain separate namespaces | Decided |
-| D-MUT-09 | Applicable output evidence is consumed before persistence; required validation that does not pass under enforce leaves prior filesystem state unchanged | Decided; shared factual integration remains required |
+| D-MUT-09 | Applicable output evidence is consumed before persistence; required validation that does not pass under enforce leaves prior filesystem state unchanged | Decided; §§4.6/7.1 and DI-05/Shared integrate the facts; executable conformance required |
 | D-MUT-10 | Mutation uses an authoritative create-if-absent boundary so a concurrent collision cannot cause overwrite | Decided |
 | D-MUT-11 | `project_structure.yaml` and its generic directory resolver retire only through the explicit consumer/field migration in §3.3; `EnforcementRunner` is unaffected | Decided |
 | D-MUT-12 | Artifact-location keys are exact references to `manifest.yaml:template_id`; no workspace config defines or aliases template identities | Decided |
@@ -1102,7 +1098,7 @@ The target and content paths meet only for output-profile evidence and final per
 | D-MUT-14 | An explicit target_path outside a package's configured roots—including every explicit workspace target for an unmapped package—requires force_target; force_target without target_path is rejected as meaningless | Decided |
 | D-MUT-15 | Configured roots, target_path, and output_path are canonical workspace-relative values; absolute input is rejected and routine operation summaries do not expand the physical workspace root; incidental diagnostic paths follow D-MUT-20 | Decided; disclosure boundary refined 2026-09-10 |
 | D-MUT-16 | Both mutation tools accept `validation` as default `enforce` or explicit `report`; direct result `validation_policy` mirrors it without changing profile/check execution; remove safe-edit mode and verify_only without replacement preview | Research-approved; §4.2 and §4.6 |
-| D-MUT-17 | Validation summaries preserve all per-check evidence and use deterministic failed, unavailable, not-executed, then all-passed reduction; empty evidence cannot prove validity | Decided; §4.4.2; DI-05 adapters remain open |
+| D-MUT-17 | Validation summaries preserve all per-check evidence and use deterministic failed, unavailable, not-executed, then all-passed reduction; empty evidence cannot prove validity | Decided; §4.4.2 and DI-05 §§7.13–7.20; executable conformance required |
 | D-MUT-18 | The eight policy/status combinations in §4.4.3 govern scaffold persistence; report permits failed/unavailable evidence, never skipped or aborted operations | Decided |
 | D-MUT-19 | Operation errors and committed creation remain independent of validation status; response delivery problems cannot turn a committed artifact into a claimed non-creation | Decided; §4.4.4 |
 | D-MUT-20 | Existing on-demand cached diagnostics may retain incidental absolute paths; routine summaries and typed operation paths stay relative; cache is agent-accessible, not private storage; no extra archive, flag or generic sanitizer | Human-approved 2026-09-10; §4.6; supersedes the earlier blanket cache-path prohibition |
@@ -1115,7 +1111,7 @@ The target and content paths meet only for output-profile evidence and final per
 |---|---|---|
 | Q-MUT-03 | Shared ProcessCapture and required-null serialization are now defined; actual consumer/resource-read conformance remains required | DI-04/DI-05/Shared Contracts; no new presenter framework |
 | Q-MUT-04 | Decision closed: DI-02 header recognition, §4.9 original bytes/text and checked replacement, and §4.10 operation facts. Independent evidence remains required | DI-02/DI-04/DI-05 |
-| Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
+| Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. DTO Design is closed; Q-MUT-03/Q-MUT-06 retain executable conformance obligations | DI-04 |
 | Q-MUT-06 | High-level choice closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and declarative presentation. Exact MutationErrorCode-to-details mapping is human-approved in §7.1; real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts; tracked in design-integration-review.md |
 
 ### 7.1 Exact Error Details and Rejected Adapter Requests
@@ -1236,7 +1232,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | Binding input | Owned treatment and proof |
 |---|---|
 | F-08/S-14; E-03/E-13 | §4.4 fixes blocking-by-default, explicit report opt-out, on-use unavailability, non-vacuous passing evidence, and all persistence combinations |
-| F-19; I-16; E-20 | §4.4 consumes truthful capability results without introducing a provider authority; preserves mixed and unexecuted evidence; DI-05 executor/config/result migration and independent proof remain open |
+| F-19; I-16; E-20 | §4.4 consumes truthful capability results without introducing a provider authority; preserves mixed and unexecuted evidence; DI-05 §§7.3–7.20/13.1 define executor/config/results; migration execution and independent proof remain outstanding |
 | F-03/F-07; D-MUT-08 | validation is operation-only and cannot modify caller context or enter rendering |
 | F-13; DI-04 | Operation success depends on successful creation under the effective policy; validation success and delivery success remain distinct facts |
 | XC-01/RC-01; issue 456 | One result report supplies cache/presentation; no status laundering, legacy policy bridge, schema duplication, or quality-operation takeover |
@@ -1268,6 +1264,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
 | 1.30 | 2026-09-10 | @imp designer | Record human-approved W01-A–E operation-result integration; close result-shape/ownership decisions, preserve explicit W02/W05 dependencies and route required-null serialization and independent evidence. |
+| 1.36 | 2026-09-12 | @imp designer | Resolve QA authority drift: supersede nested report and future-carrier claims with final concrete contracts, preserve policy and name residual executable evidence. |
 | 1.35 | 2026-09-12 | @imp designer | Consolidate approved exact error details and rejected-request projection into the active check contract; preserve mutation policy and generic presentation ownership. |
 | 1.34 | 2026-09-12 | @imp designer | Propose exact mutation error-detail matrix and not_executed/invalid_request combination with retained attempt evidence; pending human confirmation, existing persistence semantics unchanged. |
 | 1.33 | 2026-09-12 | @imp designer | Connect invocation evidence to the shared required ProcessCapture type; preserve required-null/resource round-trip obligations and existing result/persistence semantics. |

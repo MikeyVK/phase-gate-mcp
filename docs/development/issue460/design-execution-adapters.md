@@ -2,13 +2,13 @@
 <!-- template=design version=5827e841 created=2026-09-05T05:50Z updated= -->
 # Issue 460 Execution Adapter Design
 
-**Status:** DRAFT  
-**Version:** 0.92
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 0.93
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
 **Downstream Consumers:** DI-04 scaffold/safe-edit, public check/test/fix operations, DI-07 workflow/documentation, DI-08 assurance  
-**Lifecycle Status:** Drafting; W05 and W09 locally decided by the human; W09 independent QA, cross-package integration and adapter conformance remain open
+**Lifecycle Status:** Integrated; dependency/removal/evidence reconciliation in [Integration §4](design-integration-review.md#4-semantic-integration-closure); independent closure recheck required
 
 ## 1. Purpose and Authority
 
@@ -31,9 +31,10 @@ DI-05 owner required by the [documentation contract](README.md#design-documentat
 
 Frozen Research supplies the product and compatibility decisions. The human owner
 accepted implementation-based package grouping, the discovery/reference nucleus, and
-native tool configuration as the tool-settings authority on 2026-09-05. Proposed
-mechanisms remain explicitly open until discussed with the human owner. This document
-does not yet specify complete executable interfaces or final per-tool migration values.
+native tool configuration as the tool-settings authority on 2026-09-05. The subsequent
+approved contracts in §§7.3–7.20 and §13.1 replace the earlier workshop-open states.
+Package/role/request/result contracts and native migration values are now defined;
+method organization and executable conformance belong to Implementation, not new product choices.
 
 ## 2. Scope and Exclusions
 
@@ -60,7 +61,8 @@ records bounded current-source evidence and future scope. Package admission and 
 read-only check contract are not OS-enforced isolation. Issue 460 retains application
 authorization, without promising safe execution of untrusted adapters. Path spelling
 does not establish security. Continue Design without sandbox implementation or new
-security manifest fields; exact adapter input fields remain open.
+security manifest fields. Content, selection, test and fix input contracts are defined
+in §§7.13–7.18 without claiming OS isolation.
 
 ## 3. Binding Inputs
 
@@ -80,11 +82,11 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-01 | DI-05 has its own document; DI-04 retains scaffold/safe-edit mutation policy | Decided by the human topology condition |
 | D-ADAPTER-02 | One resolved catalog and generic process boundary serve separate `check/v1`, `test/v1`, and `fix/v1` contracts | Binding Research decision |
 | D-ADAPTER-03 | Group a package around a cohesive tool or implementation; allow several declared roles when they share that implementation | Decided; human agreement 2026-09-05 |
-| D-ADAPTER-04 | Discover manifest-owned adapter packages through shallow startup enumeration of official and workspace sources; consumer references use declared identity | Decided; human agreement 2026-09-05; exact admission/binding schemas open |
-| D-ADAPTER-05 | Native tool configuration owns tool settings; manifests describe packages and PGMCP configuration selects capabilities, scope, and execution policy without a second tool-settings layer | Decided; human direction 2026-09-05; concrete migration values open |
-| D-ADAPTER-06 | Organize manifest declarations by role, with an explicit role-contract version, entrypoint, and named capabilities under each role | Decided; human agreement 2026-09-05; not a complete manifest schema |
+| D-ADAPTER-04 | Discover manifest-owned adapter packages through shallow startup enumeration of official and workspace sources; consumer references use declared identity | Decided; human agreement 2026-09-05; admission/bindings defined in §§7.3–7.5/7.14–7.18 |
+| D-ADAPTER-05 | Native tool configuration owns tool settings; manifests describe packages and PGMCP configuration selects capabilities, scope, and execution policy without a second tool-settings layer | Decided; human direction 2026-09-05; native migration values defined in §7.20 |
+| D-ADAPTER-06 | Organize manifest declarations by role, with an explicit role-contract version, entrypoint, and named capabilities under each role | Decided; human agreement 2026-09-05; completed by typed entrypoint §7.3, manifest §7.4.1 and trust §7.4.2 |
 | D-ADAPTER-07 | Define named check bindings once in `checks.yaml`; output profiles select those check IDs and explicit check operations reuse them | Human-approved W03 consolidation, 2026-09-10; §§7.5 and 7.14 |
-| D-ADAPTER-08 | Construct configuration-derived public tool contracts during startup before publication; exposure, validation, defaults, and error-schema feedback use the same immutable startup contract | Decided lifecycle requirement; human direction 2026-09-05; exact interfaces and client evidence open |
+| D-ADAPTER-08 | Construct configuration-derived public tool contracts during startup before publication; exposure, validation, defaults, and error-schema feedback use the same immutable startup contract | Decided lifecycle requirement; human direction 2026-09-05; prepared input contract defined in DI-01/02 and Shared §5.5; client conformance remains required |
 | D-ADAPTER-09 | Startup validates declarations and builds configured check/test/fix selections without invoking adapters; dependency availability is reported on use and never silently weakens profiles | Human-approved correction 2026-09-07; supersedes 2026-09-05 preflight/filtering direction; sections 7.6–7.7 |
 | D-ADAPTER-10 | Defer agent-facing startup health, health-first guidance, and new health-driven tool blockades to a separate issue; preserve current health/admin behavior | Explicit human scope decision 2026-09-05; see the [deferred-work notice](deferred-work.md#deferred-work-notice-agent-facing-startup-health-and-recovery); not a prerequisite for issue 460 |
 | D-ADAPTER-11 | Separate requested check scope from supporting read context; wider check execution requires explicit configured-use or caller-native intent and truthful effective-scope reporting | Human-approved nucleus §7.8; W03 §7.14 completes selection transport and outcomes |
@@ -99,20 +101,21 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-20 | Consolidate run_checks selection, scope and result contracts; permit a positive per-invocation caller timeout override without changing the internal termination budget | Human-approved W03, 2026-09-10; §7.14; previous scope/profile decisions are not reopened |
 | D-ADAPTER-21 | run_tests exposes flat tests selection and addressed CLI args in one startup-built schema; adapters/native tools own switch interpretation; supersede test options_schema without extending other consumers | Human-approved W04, 2026-09-10; exact configuration/request/result graph consolidated in §7.15 on 2026-09-12; conformance remains required |
 | D-ADAPTER-22 | Public success is operational and inversely maps to MCP isError; correctly reported negative or unavailable domain results are not tool execution failures | Human-required correction, 2026-09-10; §7.14; applies across check/test/fix consumers, without deriving MCP errors from adapter exits |
-| D-ADAPTER-23 | Remove generic native verbose interpretation across check/test/fix consumers and adapter inputs; native switches retain their documented meaning through addressed args | Human-approved correction, 2026-09-10; §7.15; exact non-test argument routing remains separately owned |
+| D-ADAPTER-23 | Remove generic native verbose interpretation across check/test/fix consumers and adapter inputs; native switches retain their documented meaning through addressed args | Human-approved correction, 2026-09-10; §7.15; §7.16 fixes shared addressed-argument routing across explicit consumers |
 | D-ADAPTER-24 | run_tests requires configured, workspace or targets scope; configured preserves native selection, workspace explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status; explicit workspace correction supersedes the dot convention |
 | D-ADAPTER-26 | PGMCP resolves Git and public scopes; selection adapters receive only operation, targets and args; remove removed_targets, fresh and generic expansion controls | Human-approved 2026-09-10; §7.17 and the bounded Research amendment; default narrow |
 | D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
-| D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, unchanged role wire unions, concrete public rows (§13.1) and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; independent conformance and cross-package integration remain required |
+| D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, unchanged role wire unions, concrete public rows (§13.1) and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; cross-package Design consequences reconciled in Integration §4; independent closure review and conformance remain required |
 | D-ADAPTER-28 | Initial profile composition, template assignments and binding defaults are configuration, not a server-owned taxonomy; extending combinations of existing capabilities requires no code change | Human-approved W09 starting-set boundary, 2026-09-11; §7.19; D-ADAPTER-29 separately records concrete settings, with independent evidence still required |
 | D-ADAPTER-29 | Nine initial adapter packages, explicit content/selection capabilities, native mappings and configured defaults; preserve light Markdown and separate Lychee; accept visible Ruff/Mypy strictness and native target-selection changes | Human-approved W09, 2026-09-11; §7.20; local workshop closed, independent QA and implementation conformance pending |
 | D-ADAPTER-30 | Official packages are authored and shipped under mcp_server/bundled_adapters; owner extensions live under resolved_server_root/workspace_adapters. Same manifest/role contracts, distinct source ownership, no old-path fallback | Human-approved W10 naming/location refinement, 2026-09-11; §7.4.1; DI-06 owns delivery evidence |
 
-The decided rows establish ownership and approved contracts. W02/W03 close package
-and check behavior in §§7.4.1–7.4.3 and 7.14; W04 §7.15 amends test input/exposure.
-W05 §7.18 closes native-fix input, binding, response, sequencing and result contracts.
-Remaining W04 canonical integration, native-setting migration, shared serialization,
-external recovery documentation and independent conformance remain required.
+All decision rows have a selected or explicitly withdrawn disposition. §§7.3–7.20
+own package, process, role, configuration and native migration contracts; §13.1 owns
+public projections. Shared §§5.5–5.6/11.1 owns transport/serialization/presentation;
+DI-07 owns external-recovery guidance. The integration ledger reconciles consumers,
+removals and proof obligations. Independent closure recheck and executable evidence
+remain outstanding, not unresolved Design mechanisms.
 
 ## 5. Responsibilities and Boundaries
 
@@ -137,7 +140,7 @@ implementation does not make every consumer select the same checks or depth.
 |---|---|
 | Adapter package | Distributed implementation with a manifest-owned `adapter_id`, one authored version, role declarations, and executable assets |
 | Adapter | The package's executable implementation of one or more role contracts; it may call a library or an external tool |
-| Capability | A declared operation offered by an adapter, such as checking formatting, proposing formatting changes, or executing a test suite |
+| Capability | A declared operation offered by an adapter, such as checking formatting, applying authorized native formatting changes, or executing a test suite |
 | Role contract | The versioned request/result rules for `check`, `test`, or `fix`; shared process transport does not merge their results |
 | Resolved catalog | The immutable startup view of admitted packages and their declared roles/capabilities; runtime consumers read this view |
 | Consumer configuration | Selects capabilities, scope, suites, and policy; it contains no duplicate command builder, tool-output parser, or tool-specific exit rules |
@@ -151,7 +154,9 @@ route. Implementations in other languages use the same role contracts.
 PGMCP startup composes the catalog, process execution, and narrow role consumers through
 injection. Scaffold/safe-edit consumers receive a check boundary without fix application
 methods. The process runner receives no authority to decide persistence or workflow
-progression. Exact interface signatures remain open.
+progression. Typed role requests and invocation results are fixed in §§7.13–7.18;
+§7.4.1 fixes narrow catalog-reader and invoker responsibilities. Internal method/module
+names and method bodies remain Implementation-owned; they may not widen these contracts.
 
 ## 6. Options and Rationale
 
@@ -186,9 +191,9 @@ this trade-off; splitting identities per role is not part of the selected design
 
 ### W-ADAPTER-02 — Finding packages and referring to their capabilities
 
-**Status: Decided; human agreement 2026-09-05.** This workshop applies the package
-boundary to source discovery and consumer selection. Trust configuration and exact
-field schemas remain follow-up work.
+**Status: Decided; human agreement 2026-09-05, subsequently completed by W02/W10.**
+Sections 7.3–7.4.2 own package admission, field types and explicit trust; DI-06 §7.6
+owns installed delivery. The earlier follow-up status is superseded.
 
 | Option | Benefit | Cost or risk | Workshop position |
 |---|---|---|---|
@@ -205,8 +210,8 @@ Selected source and reference nucleus:
   folders are not scanned for additional packages.
 - An absent optional workspace suite means no workspace packages. A present suite is
   validated as a package store; incomplete package directories return startup diagnostics.
-  The exact treatment of non-package files, links, and packaged-resource access remains
-  part of the full discovery contract.
+  Package membership/contained file references follow §§7.3/7.4.1; installed resource
+  delivery follows DI-06 §7.6. Internal implementation folders never add catalog entries.
 - There is no implicit local-over-official override. Duplicate adapter identities fail
   before tool exposure, as required by F-20. A local alternative uses its own identity
   and explicit consumer selection.
@@ -216,8 +221,8 @@ Selected source and reference nucleus:
 - Consumer configuration selects a package by `adapter_id` and a declared capability
   in the required role. It does not contain the executable path, command, or parser.
   An output profile states its required checks; the binding chooses their implementation
-  without adding adapter commands to template packages. Exact check/profile IDs and the
-  placement of their binding fields remain open.
+  without adding adapter commands to template packages. Sections 7.5/7.14/7.20 own
+  exact binding/profile placement, references and the configured starting inventory.
 
 Illustrative reference, not final YAML or registered IDs: a formatting check selection
 can refer to the Ruff adapter's formatting-check capability, while a fix selection can
@@ -228,15 +233,14 @@ The official source decision deliberately uses the installed distribution as aut
 The existing [workspace asset renewal](../../../mcp_server/services/workspace_upgrader.py)
 recursively copies packaged assets; adapter distribution must explicitly account for that
 consumer instead of accidentally creating a second official copy in the workspace.
-The precise official asset path and migration treatment remain open. Template-suite
+Section 7.4.1 and DI-06 §7.6 select mcp_server/bundled_adapters outside copied assets. Template-suite
 activation/reconciliation rules do not automatically become adapter upgrade rules.
 
 ### W-ADAPTER-03 — Manifest fields and role entrypoints
 
-**Status: Decided; human agreement 2026-09-05.** The selected nucleus is the declaration
-structure and each field's consumer. It does not settle process-launch syntax or complete capability
-descriptors. Package versions/fingerprints and native tool-settings authority remain
-unchanged.
+**Status: Decided; human agreement 2026-09-05, completed by §§7.3–7.4.3.**
+The original declaration nucleus is retained as rationale. The later typed entrypoint,
+capability, trust and native-provenance contracts replace its former open boundaries.
 
 | Entrypoint boundary | Consumer consequence | Trade-off | Workshop position |
 |---|---|---|---|
@@ -249,29 +253,27 @@ command. A shared implementation may be referenced by several roles; those refer
 do not duplicate its code or native tool settings. One role can dispatch its declared
 capabilities internally while generic server infrastructure remains tool-neutral.
 
-Section 7.4 supplies the selected field/consumer nucleus. The following workshop should
-make a concrete consumer selection traceable from `checks.yaml` or an output profile to
-one catalog capability, including the boundary with `fixes.yaml`. Process/environment
-launching then supplies the exact entrypoint representation. These are Design workshops,
-not implementation cycles.
+Section 7.4 supplies declaration ownership; §§7.4.1–7.5/7.14–7.18 now complete
+capability admission, consumer selection and native execution. These sections supersede
+the earlier next-workshop instruction; they are not implementation cycle assignments.
 
 ### W-ADAPTER-04 — One check binding, different consumer selections
 
-**Status: Proposed.** Keep a workspace check identity separate from its selected adapter
-implementation. Define that binding once in `checks.yaml`, and let output profiles and
-explicit check requests select the same check identity. This is selection configuration,
-not a replacement for native tool settings.
+**Status: Human-approved, D-ADAPTER-07.** A workspace check identity is separate from
+its selected adapter implementation. Define that binding once in checks.yaml; profiles
+and explicit check requests select it. Sections 7.5/7.14/7.16/7.20 define the selected
+configuration, without replacing native tool settings.
 
 | Alternative | Consequence | Workshop position |
 |---|---|---|
 | Repeat adapter/capability references in every profile and operation selection | Fewer names, but changing an implementation requires finding every consumer and maintaining repeated bindings | Not recommended |
-| Bind a named check once; profiles and explicit operations reference it | Adds one meaningful check identity shared by different consumers; implementation selection has one owner | Recommended |
+| Bind a named check once; profiles and explicit operations reference it | Adds one meaningful check identity shared by different consumers; implementation selection has one owner | Selected: D-ADAPTER-07 |
 | Maintain a separate executable registry for scaffold profiles | Recreates the parallel execution authority rejected by F-19/F-20 | Rejected by binding Research |
 
-The proposal places check bindings and output-profile selections in distinct `checks`
-and `profiles` sections of `checks.yaml`. Section 7.5 illustrates the relation; exact
-profile applicability, default/full-operation selections, scope, and configuration
-schemas remain open. Profile placement also requires the DI-02 integration check below.
+Selected check bindings and profile selections live in checks and profiles sections of
+checks.yaml (§7.5). Sections 7.14/7.16/7.20 fix selection, scope, defaults and configured
+values. Template policy references these profiles through policy.yaml; no duplicate
+binding or template fingerprint input is introduced.
 
 ## 7. Detailed Design
 
@@ -313,13 +315,11 @@ also change results without changing the adapter package; its separately reporte
 identity/version remains relevant. Equal adapter fingerprints therefore do not prove
 equal inputs, configuration, environment, or run results.
 
-There is no approved automatic adapter-upgrade, result-reuse, trust, or compatibility
-decision based on this fingerprint. Check/test/fix execution does not require a hash
-comparison to perform its role. No role-level hash, new history registry, configuration
-hash, binary retention, or reproduction guarantee is introduced. Exact fingerprint
-inputs, encoding, and computation lifecycle remain to be designed; package content
-identity must not be presented as a complete execution-environment identity. The subsequent
-partial W02 approval in §7.4.1 fixes coverage, compact encoding and restart assumptions.
+There is no automatic adapter-upgrade, result-reuse, trust or compatibility decision
+based on this fingerprint. Section 7.4.1 fixes covered inputs, domain, byte framing,
+compact encoding and restart lifecycle. It does not certify the native environment.
+No role hash, history/configuration registry, binary retention or reproduction guarantee
+is introduced. Independent byte-record conformance remains an evidence obligation.
 
 ### 7.3 Manifest and native tool configuration authority
 
@@ -348,8 +348,8 @@ operation requests such as a selected test subset. Native verbosity switches are
 through args without a generic boolean interpretation (D-ADAPTER-23). Those
 options must not silently replace native rules or grant extra mutation authority.
 A native setting that enables writing cannot turn a `check` into a `fix`; the adapter
-must uphold its role contract. Exact request-option schemas remain open, not an arbitrary
-command-line override bag. The later W04 approval in §7.15 specifically permits
+must uphold its role contract. Native switches are not modeled as separate option
+schemas. The W04 approval in §7.15 specifically permits
 addressed native CLI arguments for run_tests without a native option schema or mandatory
 switch prevalidation. Section 7.16 extends that route to explicit check/fix calls and
 adds use-specific default_args without relaxing role boundaries. Native configuration
@@ -387,15 +387,12 @@ package-manager/version/lockfile choices and resolves dependency conflicts; PGMC
 not silently choose a different environment to evade them. Official adapter distribution
 obligations remain as defined by F-20; no runtime-bundling requirement is added here.
 
-Exact contribution format remains a Design decision. Named first-executable resolution
-follows the startup PATH contract below; package-file launch forms are specified below.
-Prefer native dependency mechanisms without a second authored dependency list in
-manifest.yaml or a PGMCP-owned resolver. Existing examples include this repository's
-requirements-dev.txt including requirements.txt, Python package dependency metadata and
-npm package metadata. These are alternatives appropriate to their ecosystems, not a
-requirement for every package to ship every format. An installed prerequisite must still
-be locatable by the selected start instruction; that launch boundary is not discharged
-by assigning installation ownership to the workspace.
+Dependency-contribution file format is deliberately adapter/native-ecosystem-owned,
+not an unresolved generic PGMCP schema. Use the applicable native requirements/package
+metadata without a second dependency list in manifest.yaml or a PGMCP resolver.
+Section 7.20 and DI-06 §7.6 require complete delivered contributions and workspace-owned
+installation. The declared entrypoint must locate installed prerequisites under the
+startup PATH/package-file rules; dependency ownership does not waive that contract.
 
 #### Named executable resolution from the startup environment
 
@@ -433,8 +430,8 @@ Primary reference: Python's [subprocess documentation](https://docs.python.org/3
 describes platform-dependent executable lookup and recommends a full path to avoid it;
 Windows [environment inheritance](https://learn.microsoft.com/en-us/windows/win32/procthread/environment-variables)
 establishes the parent-process boundary. The explicit launch-descriptor forms are
-defined below; package-file admission is defined below and platform executable-name/
-suffix handling remains detailed follow-up work. This does not claim sandbox isolation.
+defined below; package-file admission and the no-implicit-shell/direct-batch boundary
+complete the launch Design. Platform implementation and conformance remain required. This does not claim sandbox isolation.
 
 Conformance covers declared PATH ordering, no implicit cwd/server-Python fallback,
 different terminal versus server environments, reuse of the resolved location, missing
@@ -698,7 +695,8 @@ inferred from filenames, implementation language, or the package version.
 The qualified reference consists of package identity, role, and capability identity.
 The same local capability name may occur under different roles without ambiguity. A
 role-specific configuration already supplies the role context; it need not duplicate
-that field in every selection. Exact consumer-reference YAML remains the next workshop.
+that field in every selection. Sections 7.5/7.14/7.15.1/7.18 define consumer YAML;
+§7.20 supplies the configured starting inventory.
 
 Illustrative declarations, not final official IDs or a final capability inventory:
 
@@ -708,19 +706,16 @@ Illustrative declarations, not final official IDs or a final capability inventor
 | Ruff integration | `check` | `lint` | Report the selected content's native-configured lint findings |
 | Ruff integration | `fix` | `format` | Apply native formatting to explicitly authorized targets |
 
-Identical names do not create a check-to-fix relationship or grant mutation authority.
-F-20 still requires an explicit relation between fix capabilities and addressed checks;
-its representation must support a fix-only package and therefore cannot assume that a
-matching check lives in the same package. Capability applicability, proposed-content
-support, and file/context requirements also remain required detailed contract work.
-This nucleus must not be advertised as the final manifest before those consumers are
-covered.
+Identical names do not establish a check-to-fix relationship or grant mutation authority.
+Section 7.4.1 requires explicit addresses references, including cross-package checks,
+and defines inputs plus conditional requires_file. Sections 7.13/7.17 distinguish
+proposed content from existing-target selection. No capability-descriptor decision is
+left open by this earlier nucleus.
 
 Do not add authored fingerprint fields, per-file versions, language-dispatch switches,
 native tool-rule settings, parser recipes, `supports_autofix`, or a self-granted trust
-flag. Do not copy role/capability declarations into a second package index. Concrete
-identifier grammar, version syntax, and capability descriptor
-schemas remain open; no free-form extension bag is selected here.
+flag. Do not copy role/capability declarations into a second package index. Section 7.4.1 defines identifier grammar, version syntax and capability descriptors;
+no free-form extension bag is admitted.
 
 ### 7.4.1 W02 Package Contract — approved 2026-09-10
 
@@ -876,7 +871,7 @@ profiles:
 | `python_format` | Workspace check identity declared once in `checks`; reusable by explicit operations and profiles |
 | `ruff` | Reference to the adapter manifest's `adapter_id`, not a new adapter declaration or directory name |
 | `format` | Reference to a capability under that adapter's `check` role; the check configuration supplies the role context |
-| `python_formatted` | Output-profile identity selecting required checks; a template manifest can reference it through `output_profile` |
+| `python_formatted` | Output-profile identity selecting required checks; a template's `policy.yaml` can reference it through `output_profile` |
 
 A template declaring `output_profile: python_formatted` selects the profile, which
 selects `python_format`, which resolves to the catalog's `ruff` / `check` / `format`
@@ -890,7 +885,7 @@ approved public contract. Defining a check does not automatically add it to ever
 profile or a default/full run. A real scaffold profile can select only syntax/preflight
 checks; the formatting-only illustration is not a default profile or a claim of full
 Python validity. Safe edit shares the profile boundary, but how it selects a profile
-for an existing file remains DI-04/DI-05 work.
+for an existing file is fixed by DI-04 §§4.6/4.8 and this section's extension lookup.
 
 Selecting this check never selects `ruff` / `fix` / `format`. Fixes require a separate
 selection and authorization through the fix boundary. The explicit fix-to-check
@@ -932,7 +927,7 @@ duplicated in this map.
 | Consumer | Use of the shared assignment |
 |---|---|
 | `safe_edit_file` | Extension-based fallback in its profile-selection contract; DI-04 owns selection precedence and the consequence of no applicable profile |
-| `scaffold_artifact` | Continues to select the concrete template manifest's `output_profile`; the extension map does not override or supplement it |
+| `scaffold_artifact` | Continues to select the concrete template's `policy.yaml:output_profile`; the extension map does not override or supplement it |
 | `run_checks` | No automatic adoption; its explicit/default selection and required scope remain authoritative. Any later extension-based selection must be explicit in its own contract |
 | `run_tests` / `apply_fixes` | No selection is inferred from this check-profile map |
 
@@ -974,8 +969,12 @@ diagnostics and no claim of validation success (DI-04 §4.6). The human-reported
 Research QA GO on 2026-09-07 permits the shared validation=enforce/report contract,
 default enforce, and removal of safe-edit mode/verify_only without aliases or replacement
 preview. The earlier deferral is superseded; adapter check facts remain unchanged.
-The complete typed key grammar and rejection of ambiguous case-equivalent declarations
-remain configuration-schema follow-up, not permission to use dictionary-order precedence.
+The key type expresses the literal suffix rules above: a strict dot-prefixed string
+with a nonempty suffix, no directory separators and no wildcard pattern. Matching
+requires a nonempty filename stem. Reject case-equivalent duplicate declarations at
+configuration loading, even when they point to the same profile; dictionary order
+never resolves ambiguity. These are the typed consequences of the approved lookup,
+not a new extension allowlist, language classifier or selector family.
 
 Preservation evidence must exercise compound and ordinary suffixes, reordered mappings,
 mixed-case filenames, dotfiles/extensionless files and no-match outcomes. Prove that
@@ -983,10 +982,10 @@ parent-directory and temporary-materialization changes do not alter selection, t
 more specific selected profile is not weakened after check failure, and that consumers
 which do not request extension selection retain their own profile authority.
 
-These extension decisions do not complete Q-MUT-04 or authorize automatic weaker-profile
-fallback. DI-04 §4.8 separately records the human-approved narrow V3 reader and
-read/check/write consistency; neither responsibility belongs to adapters. DI-04 owns
-the approved mutation-policy change.
+Extension selection and DI-04 §§4.6/4.8–4.10 jointly close Q-MUT-04: explicit selection,
+recognized current template or extension fallback; no automatic weaker-profile fallback.
+The DI-02 text-only header reader and DI-04 read/check/write consistency retain their
+separate owners. Neither belongs to adapters.
 
 ### 7.6 Startup-bound tool schema lifecycle
 
@@ -1181,20 +1180,22 @@ that different operational failures render through unchanged generic mechanisms,
 diagnostics remain cached, invalid projections fail admission and text bounds hold.
 This selects an ownership/presentation route, not a universal adapter finding schema.
 Native evidence remains native; the earlier four-field sketch is not a complete approved
-public DTO. Exact scaffold fields and their inline/cache dispositions remain Design work.
+public DTO. DI-04 §§4.10/7.1 now fix the exact scaffold fields and inline/cache
+dispositions; Shared §11.1 fixes the bounded generic admission correction.
 
 The [DI-04 public mutation nesting audit](design-mutation-validation.md#45-public-mutation-response-nesting-audit)
 identifies concrete gaps: singleton validation/selection objects, internal decision/failure
 wrappers and discriminated-union collection elements are not established public inline
-shapes. Keep approved internal adapter/invocation contracts unchanged. DI-04/DI-05 must
-agree direct public fields preserving diagnostic authority and complete native evidence,
-without inferring findings from arbitrary JSON or extending the presenter by assumption.
+shapes. Keep approved internal adapter/invocation contracts unchanged. DI-04 §§4.10/7.1 and DI-05 §13.1 now define direct public fields preserving
+diagnostic authority and complete native evidence, without inferring findings from
+arbitrary JSON or extending the presenter beyond Shared §11.1's generic admission.
 The subsequent human-approved correction requires a factual `message` on failed
 adapter decisions, resolving the missing inline explanation without parsing native JSON.
 The public record adds no `origin` field: existing typed reason vocabularies distinguish
 adapter unavailability from runtime failure, while internal responsibility remains intact.
 See the [consolidated DI-04 workshop](design-mutation-validation.md#46-consolidated-public-result-workshop)
-for the remaining proposed public field combinations and presentation dispositions.
+for the approved public field combinations and presentation dispositions, completed
+by DI-04 §7.1's exact error details.
 
 ### 7.8 Requested scope and supporting context
 
@@ -1269,7 +1270,8 @@ Retire auto selection, baseline advancement, automatic failed-file replay, and t
 exclusive state DTO/repository, wiring, workflow registration, and recovery messages.
 The [catalog](template-suite-catalog.md#bounded-retesting-amendment--2026-09-05)
 owns exact file dispositions. Do not migrate old state into a new validity cache.
-Safe cleanup of existing inert state files remains a bounded Design question.
+Section 7.14 leaves existing history inert for explicit owner cleanup; there is no
+automatic deletion, migration or new state consumer.
 Unrelated workflow/test state, report caching and F-10 checkpoints remain. The later
 native-fix amendment withdraws the proposed fix recovery subsystem.
 
@@ -1306,7 +1308,7 @@ Required public-boundary evidence:
 Section 7.17 owns the amended transport. Native evidence remains native-owned;
 no generic dependency oracle, native-switch parser or per-file coverage census is added.
 
-### 7.13 Contract work to complete
+### 7.13 Approved Shared Invocation and Content Contracts
 
 #### Approved single-invocation responsibility split
 
@@ -1361,8 +1363,9 @@ input. It does not add named subprojects, a language filter, or expansion permis
 Startup schemas, runtime validation and scope resolution consume this contract;
 profiles continue to select checks independently. Public-boundary evidence must cover
 mixed file/directory input, recursive and overlapping selection, missing targets,
-empty lists, and forbidden targets with branch/workspace/configured. Interaction with exclusions,
-symlink containment, and concurrent filesystem changes remains explicit Design work.
+empty lists, and forbidden targets with branch/workspace/configured. The native exclusion
+boundary below and §7.14 ScopeResolver fix exclusion ownership and post-link containment;
+§7.9 preserves working-state evidence without claiming a concurrent filesystem snapshot.
 
 #### Approved native exclusion boundary
 
@@ -1399,7 +1402,7 @@ is not a default requirement for adapters.
 
 DI-04's small persistence-decision status contract remains binding for scaffold
 validation; it is not automatically the full result schema for run_checks, run_tests,
-or apply_fixes. Safe-edit profile-selection integration remains open in DI-04; its
+or apply_fixes. Safe-edit profile selection is defined in DI-04 §§4.6/4.8–4.10; its
 enforce/report policy is fixed in DI-04 §4.6. The rejected proposal to require participation proof for every explicit file
 is not an extension-conformance obligation.
 
@@ -1436,8 +1439,8 @@ are configuration errors, not runtime fallback choices. It belongs per check,
 not package-wide, and is not duplicated in `checks.yaml`, profiles or caller inputs.
 It does not choose a subprocess transport or describe existing-file, test or fix input.
 Do not add per-tool limitation booleans or an automatic fallback to target writes.
-Applicability to existing-file-only checks and complete conditional schema validation
-remain part of the capability-schema workshop. The earlier `content_input: text | file`
+Section 7.4.1 fixes inputs and requires_file presence for content-capable checks;
+selection-only checks do not receive this field. Section 7.14 enforces selection admission. The earlier `content_input: text | file`
 proposal is superseded: the executor needs one yes/no materialization decision, not
 an enum reserved for speculative future routes.
 
@@ -1495,9 +1498,9 @@ claim of never repeating a previously deleted random identifier is made.
 
 #### Scaffold consumer input nucleus
 
-The scaffold-specific input nucleus is recorded after human agreement to resume and
-complete this boundary (2026-09-06). It does not settle safe-edit or run_checks inputs,
-nor the complete check/v1 transport envelope, selection and provenance fields.
+The proposed-content contract below serves both scaffold and safe edit. This section
+completes its typed input, response and transport. Selection checks/tests use the
+separate §§7.14–7.17 route; fixes use §7.18. The earlier nucleus-only status is superseded.
 
 | Field | Scaffold meaning | Consumer |
 |---|---|---|
@@ -1517,7 +1520,7 @@ A separate workspace_root field is not justified by the current scaffold evidenc
 Its omission does not imply that workspace boundaries can be inferred from a filename;
 another concrete consumer may demonstrate that separate need later. PGMCP retains
 access/path ownership. These path fields are not a sandbox claim and do not require
-future sandbox paths to equal host paths. Exact role schemas remain open.
+future sandbox paths to equal host paths. Exact role schemas are defined in §§7.13–7.18.
 
 #### Typed scaffold content input
 
@@ -1695,17 +1698,16 @@ These are internal adapter paths, not new public absolute-path exposure. Neither
 falls back to the other after execution failure. Conformance proves complete field
 sets, inherited constraints, operation membership and manifest-selected input shape.
 
-The next open launch boundary is how the manifest identifies the adapter executable,
-arguments and execution environment. It must support the admitted role/version without
-coupling adapters to the server's Python interpreter or confusing native tool commands
-with adapter entrypoints.
+Section 7.3 fixes the manifest executable, argument and environment boundary: declared
+program/package file, no inferred server-Python runtime, no shell fallback. Native tool
+commands remain adapter-owned, distinct from these admitted entrypoints.
 
 #### Scaffold-facing adapter decision types
 
 Human-approved reason ownership (2026-09-06): adapter reasons describe observations
 inside the adapter's native integration, not failures of PGMCP's adapter invocation.
 This is the decision portion of a response; the native-evidence contract is defined
-below. General process framing remains open. Contract declarations use closed immutable models:
+below. This section's single-request, completion, output and exit-mapping contracts fix process framing. Contract declarations use closed immutable models:
 
 ```python
 class AdapterUnavailableReason(StrEnum):
@@ -2163,13 +2165,15 @@ On expiry, stop accepting a later verdict and terminate the owned invocation, in
 native subprocess work, then report the existing runtime timeout. Termination overhead
 means this is not an exact upper bound for the complete scaffold-tool response. Stopping
 must itself be bounded; the approved behavior and internal stop budget are defined
-below, while platform implementation remains open. Do not automatically retry,
+below; the platform-specific mechanism must satisfy the lifecycle contract and its
+independent real-process evidence before support is claimed. Do not automatically retry,
 raise the budget or rewrite the native tool's own timeouts. Independently executable
 checks and existing enforce/report policy retain their approved behavior.
 
 Conformance covers configuration typing, per-call timing (including response followed
 by a hanging adapter), late-output rejection and unchanged native timeout settings.
-Public run_checks/test/fix timeout controls are not settled by this scaffold slice.
+Public run_checks/test/fix timeout controls are defined separately in §§7.14–7.18;
+this scaffold slice does not add a mutation-tool override.
 
 #### Shared process diagnostics and consumer ownership
 
@@ -2356,8 +2360,9 @@ lifecycle evidence before claiming support.
 This is reliability-oriented lifecycle management, not safe execution of untrusted
 code. OS sandboxing, credential/network restrictions and containment of escaping work
 remain in the [security-isolation deferral](deferred-work.md#deferred-work-notice-server-and-subprocess-security-isolation).
-Execution-environment selection remains separate Design work; do not silently adopt
-the current pytest coupling to the server's Python interpreter as the V3 contract.
+Section 7.3 defines explicit launch/dependency ownership, including declared
+script interpreters. The current pytest coupling to server Python is not a V3
+fallback; §7.20 defines the selected native starting adapters.
 
 Conformance must exercise real child processes: normal parallel completion, timeout,
 cancellation, adapter exit with associated work still active, and termination that
@@ -2493,15 +2498,16 @@ text decoding; boundary decoding must not merge fragments or claim lossless byte
 
 The runtime returns capture on InvocationResultBase. Consumer managers transfer that
 same value without reparsing it: DI-04 InvocationEvidence has required capture:
-ProcessCapture; each attempted PublicTestResult and PublicFixResult variant has
-required capture: ProcessCapture beside adapter identity. Their not_started variant
-forbids capture, just as it forbids invented adapter identity. Native external_tools
+ProcessCapture; each concrete PublicTestResult and PublicFixResult record has
+required capture: ProcessCapture | None beside adapter identity. An attempted row has
+capture and identity; not_started has explicit null for both, never omitted fields.
+Section 13.1 supersedes the earlier public union representation. Native external_tools
 and NativeEvidence retain their separate approved ownership. run_checks selection
 records reuse the shared InvocationEvidence capture field, with their own selection
 facts; they do not introduce a fourth capture type or become mutation check records.
 
-Resource caching retains these fields; routine text excludes bodies. The unresolved
-consumer presentation projection must expose the existing omission/truncation notice
+Resource caching retains these fields; routine text excludes bodies. The approved
+consumer projection in §13.1 and Shared §11.1 exposes the existing omission/truncation notice
 without inspecting native reports or adding presenter knowledge of these DTO classes.
 No extra capture store, disk spill, cleanup job or new limit is introduced.
 
@@ -2532,7 +2538,7 @@ leftovers remain manual workspace maintenance. Cleanup never claims other invoca
 directories or persisted artifacts. Conformance covers detected deletion failure with
 both passing and failing verdicts and proves consumer decisions remain unchanged.
 
-#### Remaining surfaces
+#### Consumer Integration and Implementation Evidence
 
 This is an integration/proof inventory, not a reopening of the approved package and
 check decisions. W02/W03 approval is authoritative in §§7.4.1–7.4.3 and 7.14.
@@ -2541,7 +2547,7 @@ check decisions. W02/W03 approval is authoritative in §§7.4.1–7.4.3 and 7.14
 |---|---|
 | Package/catalog | §§7.4.1–7.4.3 and DI-06 §7.6 own approved package/trust/delivery; installed conformance remains required |
 | Process transport | Approved shared invocation/transport and scratch contracts in §7.13; independent protocol/process evidence remains required |
-| Check | Integrate approved content/selection contracts into concrete typed declarations; prove profile admission, factual outcomes and registered schemas independently |
+| Check | §§7.13–7.14/13.1 and DI-04 §§4.10/7.1 define content/selection inputs and concrete public records; independently prove profile admission, factual outcomes and registered schemas |
 | Test | §7.15 owns canonical tests.yaml/request/result DTO graph; §§7.16–7.17 own shared args/scope amendments; implementation and conformance remain required |
 | Fix | §7.18 owns approved explicit paths/order, native outcomes, partial mutation and stop-first; conformance remains required |
 | Public operations | §7.16 closes per-binding args/defaults and excludes public mutation args; preserve diagnostics and prove registered wrapper/schema/result integration |
@@ -2759,8 +2765,8 @@ implemented or authorized by this documentation checkpoint.
 ### 7.15 Approved run_tests Input and Exposure — W04, 2026-09-10
 
 Preserve the existing check architecture and shared adapter runtime. W04 is closed by
-the human; its detailed configuration/output integration follows the accepted workshop
-contract. The later §7.16 amendment is authoritative for argument defaults and consumers:
+the human; its detailed configuration/output integration is consolidated in §§7.15.1–7.15.5,
+with public projection in §13.1. The later §7.16 amendment is authoritative for argument defaults and consumers:
 explicit check/test/fix tools may override them; scaffold/safe-edit never expose args.
 The agent may use native tool knowledge instead of requiring PGMCP to hide every native
 possibility behind a profile, capability or option schema.
@@ -3516,7 +3522,7 @@ and included in operational upgrade comparison under the existing suite contract
 
 ### 7.20 W09 — Concrete starting adapters and migration contract
 
-**Status: HUMAN-APPROVED; LOCAL WORKSHOP CLOSED; INDEPENDENT QA PENDING, 2026-09-11.**
+**Status: HUMAN-APPROVED; DESIGN INTEGRATED; INDEPENDENT CLOSURE RECHECK REQUIRED, 2026-09-12.**
 The human accepted the concrete adapter-boundary design, start configuration and the
 explicit native-settings trade-offs presented from this section. This includes visible
 Ruff strictness, removal of the Mypy blanket missing-import suppression, native selection
@@ -3765,13 +3771,11 @@ Primary references inspected on 2026-09-11:
 - [Lychee usage](https://github.com/lycheeverse/lychee/blob/master/README.md): version-sensitive native options; §7.13 remains the executed evidence.
 - [Node module resolution](https://nodejs.org/api/module.html#modulecreaterequirefilename): workspace-anchored native dependency loading.
 
-The human has closed W09's local workshop decisions. Independent QA must still review
-the concrete inventory, native mappings, admitted input capabilities, configuration
-SSOT and preservation/intentional-change boundary. No W09 QA verdict has been supplied.
-DI-06 package/dependency delivery, DI-07 guidance, DI-08 test architecture and complete
-DI-05 role DTO integration retain their existing owners; local closure does not mark
-them Integrated. Native adapter conformance is required before legacy removal, not a
-requirement to implement every adapter during Design. No complete Design GO is claimed.
+W09's local choices and the cross-package integration are recorded. The subsequent
+independent review assessed the technical direction positively but withheld Planning
+GO for closure/traceability inconsistencies. This revision requests that bounded
+recheck. Native conformance, installed delivery and migration execution remain future
+evidence under DI-05/06/07/08, not absent Design choices or producer approval.
 
 ## 8. Control, Data, and State Flow
 
@@ -3870,23 +3874,23 @@ proposed conformance evidence is claimed as completed.
 
 ## 11. Integration Risks and Open Questions
 
-| ID | Open Design question | Decision needed |
+| ID | Decided boundary / residual risk | Contract authority and outstanding evidence |
 |---|---|---|
-| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check/test contracts; W04's exact configuration and DTO graph is consolidated on 2026-09-12; §7.18 closes W05; cross-package implementation/conformance is still required |
+| Q-ADAPTER-02 | Role-specific binding schema and DTO graph are decided | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check/test contracts; W04's exact configuration and DTO graph is consolidated on 2026-09-12; §7.18 closes W05; cross-package implementation/conformance is still required |
 | Q-ADAPTER-03 | Scratch input and appropriate native configuration | Designed in §§7.3/7.13/7.20; DI-04 owns no-authoritative-write preparation. Native logical-target configuration requires independent conformance |
 | Q-ADAPTER-04 | Three role schemas and shared transport | Designed in §§7.3/7.13–7.18; §13.1 separately owns public projection. Independent review/conformance must preserve that distinction |
 | Q-ADAPTER-05 | Closed by W05: native fix admission, sequencing and results | §7.18 is authoritative; independent conformance, native-settings migration and external recovery documentation remain integration obligations, not reopened policy |
 | Q-ADAPTER-06 | Native starting values and intentional changes are locally decided in W09 | §7.20 owns the human-approved adapter inventory, native settings/defaults and explicit preservation deltas; independent QA and separate check/test/fix conformance remain required |
-| Q-ADAPTER-07 | Capability declarations and consumer bindings | Designed in §§7.4.1/7.5/7.14–7.18, including addresses references; discovery relations do not authorize automatic checks or infer same-name/package relationships |
+| Q-ADAPTER-07 | Capability declarations and consumer bindings | Designed in §§7.4.1/7.5/7.14–7.18, including `addresses` references; discovery relations do not authorize automatic checks or infer same-name/package relationships |
 | Q-ADAPTER-08 | Resolved by human generation-identity amendment | No profile/binding projection enters template pf/sf. Preserve startup reference coherence and runtime validation evidence independently; policy.yaml owns the selector |
-| Q-ADAPTER-09 | How do startup-built public contracts survive registration wrappers and lazy client exposure? | DI-01/02 prepared IToolInputContract and Shared §5.5 now define holder/transport. Actual registered-boundary and host reconnect/cache conformance remain required; no hot reload |
-| Q-ADAPTER-10 | How does each real consumer expose configured choices and handle on-use unavailability without weakening its contract? | Complete check/test/fix inputs, defaults, no-configured-choice behavior, no startup probes/filtering, full profile obligations, preserved scaffold report mode, and ordinary response projections under issues 456/459; startup health diagnostics and general blockades remain separately deferred |
+| Q-ADAPTER-09 | One immutable prepared contract crosses registration and lazy exposure | DI-01/02 prepared IToolInputContract and Shared §5.5 now define holder/transport. Actual registered-boundary and host reconnect/cache conformance remain required; no hot reload |
+| Q-ADAPTER-10 | Configured exposure and on-use availability remain separate | Complete check/test/fix inputs, defaults, no-configured-choice behavior, no startup probes/filtering, full profile obligations, preserved scaffold report mode, and ordinary response projections under issues 456/459; startup health diagnostics and general blockades remain separately deferred |
 
 ## 12. Planning Consequences
 
 Planning consumes the [nine manageability conditions](README.md#binding-design-and-planning-manageability-conditions).
 This package supplies independently provable contract/catalog, check, test, fix,
-distribution, and cutover boundaries as they are designed. Check/test/fix migration
+distribution, and cutover boundaries defined above. Check/test/fix migration
 need separate proof; F-10 renewal activation and F-20 fix application require different
 implementation cycles. Every cycle needs a bounded write set, preserved behavior,
 rollback point, and independent stop/go evidence. Every catalog row needs a concrete
@@ -3896,16 +3900,16 @@ Exact cycle names and scheduling remain Planning-owned.
 
 ## 13. Traceability Matrix
 
-| Input | Current treatment | Completion state |
+| Input | Integrated contract and consumer consequence | Remaining proof owner |
 |---|---|---|
-| DI-05; human dedicated-document condition | Sections 1–5 define exclusive ownership and consumer purposes | Nucleus recorded |
-| F-08/S-14; E-13 | Sections 5, 8, and 10 preserve appropriate profile checks and honest on-use unavailability | Exact profiles/check types open |
-| F-19; I-16; E-20 | Sections 5 and 10 require one check implementation authority with separate policy consumers and independent evidence | Exact interfaces/harness open |
-| F-20; I-19; E-23 | Sections 5–9 retain shared catalog/process infrastructure, separate check/test/fix contracts, and bounded package-provenance consumers | D-ADAPTER-03/04/06 decided; D-ADAPTER-07 proposed; complete capability and launch contracts open |
-| Human native-configuration direction; XC-01; existing DI-05 configuration consumers | Sections 7, 9, and 10 assign tool settings to native configuration and separate package/integration/consumer authority | D-ADAPTER-05 decided; concrete migration values and context mechanics open; Research unchanged |
-| XC-01 | Section 5 requires injected narrow boundaries; section 10 requires public behavioral tests | Component/test architecture open |
-| XC-02; 126/151 catalog | Sections 9–12 preserve per-row removal ownership and independent migration proof | Complete removal mapping remains open |
-| RC-01; manageability conditions | Sections 2, 9, and 12 preserve scope freeze, clean break, cutover order, and cycle constraints | Binding throughout Design |
+| DI-05; dedicated-document condition | §§1–7 retain this package's catalog/process base and separate role consumers; Shared owns transport/presentation, DI-04 persistence | DI-05 implements its narrow injected boundaries; no merged mutation manager |
+| F-08/S-14; E-13 | §§7.13–7.14/7.20 fix concrete content checks, profiles and honest on-use unavailability; DI-04 applies enforce/report independently | DI-05 native conformance and DI-04 persistence evidence |
+| F-19; I-16; E-20 | §§5/7.13/13.1 fix one factual check authority, concrete result projection and consumer-specific decisions | DI-05 process/role evidence, Shared real wrapper/cache/presenter tests and DI-08 narrow harness |
+| F-20; I-19; E-23 | §§7.3–7.4/7.13–7.18 fix manifest/admission, launch/framing, separate roles, selection/default_args and stop-first native fixes | Separate check/test/fix migration evidence; no rollback or native parser in generic code |
+| Native configuration; XC-01 | §§7.3/7.16/7.20 fix native settings SSOT, exact starting adapters and intentional migration deltas; DI-06 §7.7 owns effective-config admission | Native and installed-package conformance; settings are not a second PGMCP rule language |
+| XC-01 | §§5/7/10 and Shared §11.1 retain narrow injected runtime boundaries and generic strict/nullable presentation | DI-08 reusable support plus independent public behavioral oracles |
+| XC-02; 126/151 catalog | §§9–12 and [semantic integration §4](design-integration-review.md#4-semantic-integration-closure) reconcile replacement/removal prerequisites and exact test dispositions | Planning assigns exact paths to bounded cycles; proof precedes each legacy removal |
+| RC-01; manageability | §12 and integration §4.4 retain frozen strategy, internal-before-public cutover, no aliases and separate F-10/F-20 cycles | Independent closure recheck; no producer authorization to enter Planning |
 
 ### 13.1 Public Result Projection and Exact Check Error Details
 
@@ -4036,6 +4040,7 @@ wire unions or native conformance fixtures. No implementation or native runs per
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.93 | 2026-09-12 | `@imp designer` | Reconcile QA closure findings against final role, configuration, process and public contracts; separate superseded workshop questions from executable conformance. |
 | 0.92 | 2026-09-12 | `@imp designer` | Consolidate human-approved concrete public rows and exact check error details; replace old public unions while preserving role wire contracts and operational success. |
 | 0.91 | 2026-09-12 | `@imp designer` | Propose concrete public test/fix rows, honest internal-rejection facts and exact run_checks error details; human confirmation pending, native wire contracts unchanged. |
 | 0.90 | 2026-09-12 | `@imp designer` | Define bounded process-capture transfer on attempted invocation/consumer records and cross-reference prepared schema holder; public presentation and exact run_checks error-detail completion remain open. |

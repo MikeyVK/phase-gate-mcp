@@ -2,13 +2,13 @@
 <!-- template=design version=5827e841 created=2026-08-31T18:55Z updated= -->
 # Issue 460 Template-Suite Distribution and Renewal Design
 
-**Status:** DRAFT  
-**Version:** 1.12  
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.13  
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-06  
 **Upstream Dependencies:** Research Approved Strategy, DI-01/DI-02 suite validation and identities, final DI-03 package set, DI-05 adapter source contract  
 **Downstream Consumers:** DI-07, DI-08, CLI/init/upgrade, owner workspace migration  
-**Lifecycle Status:** Human-decided; W10 locally closed; combined independent Design review pending
+**Lifecycle Status:** Integrated; dependency/removal/evidence reconciliation in [Integration §4](design-integration-review.md#4-semantic-integration-closure); independent closure recheck required
 
 ---
 
@@ -1005,7 +1005,7 @@ active-tree writes.
 | I-14 shared test architecture | DI-08 supplies infrastructure; DI-06 owns renewal behavior |
 | I-17 component-aware one-root renewal | D-DIST-01/D-DIST-04–D-DIST-07 and §§5.3–5.5 |
 | I-18 trustworthy checkpoint bootstrap | D-DIST-08/D-DIST-16 and §5.6 |
-| E-10 coherent renewal | Complete proposal validation plus the exclusion, activation, and recovery protocol in §§7.5 and 8 |
+| E-21 coherent component renewal; E-22 trustworthy renewal activation | Complete proposal validation plus the exclusion, activation, and recovery protocol in §§7.5 and 8 |
 | E-17 durable test architecture | Public-boundary evidence in §10 |
 | E-21 component-aware renewal result | §§5.3–5.7 and 7.3 |
 | E-22 safe checkpoint bootstrap | §§5.6, 8, and 10 |
@@ -1032,6 +1032,7 @@ active-tree writes.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.13 | 2026-09-12 | @imp designer | Reconcile semantic integration, canonical status and proof ownership after independent QA; no phase approval or executable conformance claimed. |
 | 1.12 | 2026-09-12 | `@imp designer` | Close W10 on human approval: effective config ownership, explicit migration, no silent profile fill or force bypass, existing admission outcomes and installed-package evidence; combined QA pending. |
 | 1.11 | 2026-09-11 | `@imp designer` | Record approved bundled/workspace adapter delivery separation, direct authoring outside assets and installed-package evidence; leave W10 config integration open. |
 | 1.10 | 2026-09-11 | `@imp designer` | Record human-reported independent generation-identity QA GO and Design resumption; preserve remaining workshop decisions. |

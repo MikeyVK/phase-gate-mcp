@@ -2,13 +2,13 @@
 <!-- template=design version=5827e841 created=2026-09-12T08:02Z updated= -->
 # Issue 460 Test Architecture and Cross-Package Assurance Design
 
-**Status:** DRAFT  
-**Version:** 1.1
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.2
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-08; XC-02 cross-package assurance  
 **Upstream Dependencies:** Frozen Research I-14/E-17 and catalog; all DI-01–DI-07 public contracts  
 **Downstream Consumers:** Package-owned tests, shared support, canonical Design audit and Planning ownership  
-**Lifecycle Status:** Human-approved W12; locally closed; canonical integration and independent review pending
+**Lifecycle Status:** Integrated; dependency/removal/evidence reconciliation in [Integration §4](design-integration-review.md#4-semantic-integration-closure); independent closure recheck required
 
 ## 1. Purpose and Authority
 
@@ -234,9 +234,10 @@ wheel build, deployment or complete 151-test semantic re-audit is claimed.
 
 ## 11. Integration Risks and Open Questions
 
-No remaining W12 product choice. Canonical integration, exact per-path disposition
-completion and independent review remain open. Existing status prose or TODOs must not
-be treated as proof that an exact DTO/URI/removal boundary is complete.
+No remaining W12 product choice. [Integration §§3.2/4](design-integration-review.md)
+records all 151 exact test/helper dispositions and the cross-package dependencies,
+removal prerequisites and proof owners. Independent closure review and executable
+evidence remain required; path coverage is not proof that every assertion is preserved.
 
 Risks: a new tool certifies itself; shared fixtures hardcode product knowledge; removed
 legacy tests lose retained behavior; broad support cleanup touches unrelated domains;
@@ -278,5 +279,6 @@ internal routes. This Design specifies constraints, not cycles or execution perm
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.2 | 2026-09-12 | @imp designer | Reconcile semantic integration, canonical status and proof ownership after independent QA; no phase approval or executable conformance claimed. |
 | 1.1 | 2026-09-12 | @imp designer | Link the complete Design-only test/helper disposition index and supplemental integration seams; retain separate Planning ownership and independent evidence requirements. |
 | 1.0 | 2026-09-12 | @imp designer | Consolidate human-approved W12 support, evidence independence, dispositions and canonical closeout criteria; no implementation or independent verdict. |

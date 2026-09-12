@@ -2,9 +2,9 @@
 <!-- template=design version=5827e841 created=2026-09-11T10:31Z updated= -->
 # Document and Tracking Artifact Contracts
 
-**Status:** DECIDED — bounded independent QA GO reported; integration pending  
-**Version:** 1.1  
-**Last Updated:** 2026-09-11  
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.2  
+**Last Updated:** 2026-09-12  
 **Primary package:** DI-03 (document and tracking artifacts)  
 **Dependencies:** DI-01/DI-02; approved Research; active workflow content obligations  
 **Downstream:** DI-04/DI-05 validation; DI-06 distribution; DI-07 instructions; DI-08 assurance
@@ -404,9 +404,10 @@ No additional family product choice awaits a human field workshop. The supplied 
 QA verdict assessed preservation mappings, initial-scaffold requiredness and nineteen-variant coverage
 without findings; subsequent integration still requires its own evidence.
 
-Pending integration work: DI-05/W09 binds exact profiles/checks (including saved tracking framing);
-DI-07 aligns instructions and operational planning references; DI-08 realizes independent evidence.
-No claim of fully integrated Design precedes those checks. If an existing operational planning
+Design integration is recorded in [the semantic ledger §4](design-integration-review.md#4-semantic-integration-closure):
+DI-05 §7.20 fixes profiles/checks including saved tracking framing; DI-07 §§7.1–7.5
+aligns nineteen workflow meanings, instructions and references. DI-08 supplies independent
+proof support. Those executable tests and the independent closure recheck remain required. If an existing operational planning
 constraint cannot be represented without contradicting DI-01, resolve that shared boundary explicitly,
 not with a template-specific server repair.
 
@@ -444,5 +445,6 @@ operational plan are distinct verification surfaces.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.2 | 2026-09-12 | Reconcile canonical dependencies, closure status and proof ownership after independent QA; technical contracts unchanged, independent closure recheck required. |
 | 1.1 | 2026-09-11 | Record human-supplied independent bounded QA GO; contract unchanged and integration remains open. |
 | 1.0 | 2026-09-11 | Consolidate delegated W08 with preservation dispositions, finite records, nineteen-variant coverage and proof obligations. |

@@ -2,9 +2,9 @@
 <!-- template=design version=5827e841 created=2026-09-11T10:31Z updated= -->
 # Code and Test Artifact Contracts
 
-**Status:** DECIDED — bounded independent QA GO reported; integration pending  
-**Version:** 1.1  
-**Last Updated:** 2026-09-11  
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.2  
+**Last Updated:** 2026-09-12  
 **Primary package:** DI-03 (code and public test artifacts)  
 **Dependencies:** DI-01/DI-02 schema, graph and provenance contracts; approved Research  
 **Downstream:** DI-04/DI-05 output validation; DI-06 distribution; DI-07 references; DI-08 assurance
@@ -356,7 +356,7 @@ remain subject to the already-designed selection fallback, not retroactive templ
 
 ## 10. Test and Validation Design
 
-DI-08 must allocate these obligations to bounded cycles; this is not a new production fixture registry.
+Planning allocates these obligations to bounded cycles; DI-08 supplies reusable test support and audits coverage, not cycle ownership. This is not a new production fixture registry.
 
 | Evidence ID | Required independent observable proof |
 |---|---|
@@ -433,5 +433,6 @@ schedule them or grant cutover before independent evidence exists.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.2 | 2026-09-12 | Reconcile canonical dependencies, closure status and proof ownership after independent QA; technical contracts unchanged, independent closure recheck required. |
 | 1.1 | 2026-09-11 | Record human-supplied independent bounded QA GO; contract unchanged and integration remains open. |
 | 1.0 | 2026-09-11 | Consolidate delegated W07 with source-based preservation, shared records, family contracts and independent proof obligations. |

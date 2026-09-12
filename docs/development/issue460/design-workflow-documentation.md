@@ -2,13 +2,13 @@
 <!-- template=design version=5827e841 created=2026-09-12T07:43Z updated= -->
 # Issue 460 Workflow and Documentation Alignment Design
 
-**Status:** DRAFT  
-**Version:** 1.0  
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.1  
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-07  
 **Upstream Dependencies:** Frozen Research F-09/F-20; DI-01/02 exposure; DI-03 document contracts; DI-04/05 operations; DI-06 delivery  
 **Downstream Consumers:** Phase instructions, host instruction sources/copies, active references, DI-08 assurance  
-**Lifecycle Status:** Human-approved W11; locally closed; combined independent review pending
+**Lifecycle Status:** Integrated; dependency/removal/evidence reconciliation in [Integration §4](design-integration-review.md#4-semantic-integration-closure); independent closure recheck required
 
 ## 1. Purpose and Authority
 
@@ -243,7 +243,9 @@ remain open. Risks: active docs advertise unavailable V3 behavior too early; sta
 direction overwrites the wrong host file; examples drift; configuration guidance implies
 automatic installation or recovery. Sections 7–10 define their prevention and proof.
 
-Whole-Design closure still requires W12 and the cross-package audit. Refer to
+W12 and the cross-package reconciliation are recorded in DI-08 and
+[the semantic ledger §4](design-integration-review.md#4-semantic-integration-closure).
+Independent closure review, not another product workshop, remains required. Refer to
 [deferred work](deferred-work.md) for health, sandbox and unrelated expansion exclusions.
 
 ## 12. Planning Consequences
@@ -278,4 +280,5 @@ allocates no cycles and does not authorize a phase transition.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.1 | 2026-09-12 | @imp designer | Reconcile semantic integration, canonical status and proof ownership after independent QA; no phase approval or executable conformance claimed. |
 | 1.0 | 2026-09-12 | @imp designer | Consolidate human-approved W11, nineteen semantic obligations, source-first synchronization, reference dispositions and independent evidence; combined QA pending. |

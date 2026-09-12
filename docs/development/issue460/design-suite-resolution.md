@@ -2,13 +2,13 @@
 <!-- template=design version=5827e841 created=2026-08-27T12:05Z updated=2026-08-27 -->
 # Issue 460 Suite Contract and Resolution Design
 
-**Status:** DRAFT  
-**Version:** 1.28  
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.29  
 **Last Updated:** 2026-09-12  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
 **Downstream Consumers:** DI-03, DI-04, DI-06, DI-07, DI-08  
-**Lifecycle Status:** Drafting
+**Lifecycle Status:** Integrated; dependency/removal/evidence reconciliation in [Integration §4](design-integration-review.md#4-semantic-integration-closure); independent closure recheck required
 
 ---
 
@@ -121,7 +121,7 @@ scan, archive, or provenance-lookup service is retained or introduced.
 | D-SUITE-11 | `manifest.yaml` is the semantic template-package SSOT; its physical directory name is non-semantic | Decided |
 | D-SUITE-12 | `context.schema.json` and `template.jinja2` are fixed template-package member names | Decided |
 | D-SUITE-13 | Each package requires one SemVer-syntax `version` as a human release label, while its computed resolved fingerprint alone establishes effective-content equality; PGMCP infers no bump, ordering, severity, or compatibility policy from either fact | Decided |
-| D-SUITE-14 | `output_profile` identifies a resolved evidence selector, not a validator/provider or persistence/quality policy | Decided nucleus; DI-04/DI-05 details open |
+| D-SUITE-14 | `output_profile` identifies a resolved evidence selector, not a validator/provider or persistence/quality policy | Integrated: package policy in §7.3; DI-05 §§7.14/7.20 owns profiles/checks; DI-04 §§4.6/4.10 owns persistence |
 | D-SUITE-15 | The minimum authored manifest consists only of `template_id` and `purpose`; `.version` owns the release label and `policy.yaml` owns `output_profile`/`persistence` | Decided; identifier clarified 2026-09-03 |
 | D-SUITE-16 | The suite performs no caller-name projection: exact `file_name` is an operation control, while every caller-authored rendered name is an explicit artifact-context field validated in its final representation and rendered unchanged | Decided; supersedes the naming resolver on 2026-09-03 |
 | D-SUITE-17 | `policy.yaml` owns `persistence: workspace\|temporary`, replacing misleading `output_type`; DI-04 owns exact target and explicit-path policy | Decided nucleus; policy file ownership amended 2026-09-10 |
@@ -1254,6 +1254,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.29 | 2026-09-12 | @imp designer | Reconcile semantic integration, canonical status and proof ownership after independent QA; no phase approval or executable conformance claimed. |
 | 1.28 | 2026-09-12 | `@imp designer` | Pin the injected prepared tool-input interface shared by registration, wrappers and validation feedback without changing the selected-context contract. |
 | 1.27 | 2026-09-12 | `@imp designer` | Consolidate W06 2020-12 semantics, bounded references, annotation behavior and preservation evidence; link fingerprint-free selected-context URI. |
 | 1.26 | 2026-09-12 | `@imp designer` | Correct active stale manifest/version, fingerprint-kind, profile and source-encoding wording against approved contracts; retain unresolved schema identity/dialect integration. |

@@ -2,8 +2,8 @@
 <!-- template=design version=5827e841 created=2026-08-27T09:19Z updated=2026-08-27 -->
 # Issue 460 Scaffolding Contract Refactor Design
 
-**Status:** DRAFT  
-**Version:** 1.93
+**Status:** DESIGN INTEGRATED — INDEPENDENT CLOSURE RECHECK REQUIRED  
+**Version:** 1.94
 **Last Updated:** 2026-09-12  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -25,7 +25,12 @@ The [Design Intake Map](design-intake-map.md) remains authoritative for package 
 
 ## Scope
 
-Current override: [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11)
+**Current Design gate:** the independent review accepts the technical direction but
+withholds Planning GO for closure/traceability. This revision reconciles those two P1
+findings; the [current hand-over](#11-refactor--design-hand-over) requests independent
+recheck. Research remains frozen and the workflow remains in Design.
+
+Current Research override: [example-validation withdrawal](research.md#example-validation-withdrawal--2026-09-11)
 is human-approved; the human reported independent QA clean GO on 2026-09-11 and
 authorized Design resumption. Example
 authoring/rendering and context-schema checks remain; semantic model-example validation
@@ -72,7 +77,8 @@ scope=workspace; the intermediate targets=["."] convention is rejected. configur
 remains distinct and passes an empty adapter target list. The human supplied independent
 QA GO for this delta and authorized Design continuation. The nonblocking P2 authority
 paragraph in Research Findings is corrected. W05 is now human-approved and consolidated;
-its local closure does not mark DI-05 Integrated.
+its local closure alone did not mark DI-05 Integrated. The subsequent substantive
+reconciliation is recorded in Integration §4 and the current hub registers.
 
 **In Scope:**
 
@@ -112,23 +118,26 @@ later Planning extraction difficult.
 
 ### 1.2 Requirements
 
+Producer completion against §§4–11 and Integration §4; subject to independent closure
+recheck. These checks concern Design deliverables, not executable acceptance evidence.
+
 **Functional:**
 
-- [ ] Provide one navigable Design entry point for DI-01–DI-08, XC-01–XC-02, and RC-01.
-- [ ] Point every integrated decision to exactly one authoritative document and section.
-- [ ] Account for every Research obligation without copying its evidence ledger.
-- [ ] Expose package dependencies, contract consumers, transition obligations, and
+- [x] Provide one navigable Design entry point for DI-01–DI-08, XC-01–XC-02, and RC-01.
+- [x] Point every integrated decision to exactly one authoritative document and section.
+- [x] Account for every Research obligation without copying its evidence ledger.
+- [x] Expose package dependencies, contract consumers, transition obligations, and
       concrete removal ownership.
-- [ ] Separate public test artifact design from repository fixture/helper architecture.
-- [ ] Produce an outcome-neutral Design hand-over for independent QA.
+- [x] Separate public test artifact design from repository fixture/helper architecture.
+- [x] Produce an outcome-neutral Design hand-over for independent QA.
 
 **Non-functional:**
 
-- [ ] Remain a thin integration hub rather than a monolithic detailed design.
-- [ ] Preserve Approved Strategy without silent reinterpretation.
-- [ ] Prevent duplicated contract authority across documents.
-- [ ] Expose contradictions and unowned obligations before Planning.
-- [ ] Support bounded, hands-on design workshops.
+- [x] Remain a thin integration hub rather than a monolithic detailed design.
+- [x] Preserve Approved Strategy without silent reinterpretation.
+- [x] Prevent duplicated contract authority across documents.
+- [x] Expose contradictions and unowned obligations before Planning.
+- [x] Support bounded, hands-on design workshops.
 
 ### 1.3 Constraints
 
@@ -225,20 +234,23 @@ contradictions, and incomplete migration or removal coverage.
 Package status uses `Not started`, `Drafting`, `Decided`, or `Integrated`.
 `Decided` means the owning document contains a complete local decision.
 `Integrated` additionally means all dependency, coverage, migration, removal, and
-test impacts have been reconciled in this hub.
+test impacts have been reconciled in this hub. The current reconciliation is
+[Integration §4](design-integration-review.md#4-semantic-integration-closure): exact
+obligation sets, consumer consequences, removal conditions and proof owners. This is a
+producer Design status, not independent approval or executed evidence.
 
 | Document | Primary Ownership | Status | Current Focus |
 |---|---|---|---|
-| `design.md` | Design integration, indexes, risks, and hand-over | Decided | Canonical consolidation and joint independent review request; no phase approval |
-| [design-shared-contracts.md](design-shared-contracts.md) | Genuinely cross-package interfaces, DTOs, configuration shapes, and status vocabulary | Decided | Local contracts consolidated; exact output/input integration indexed; independent combined review and executable conformance required |
-| [design-suite-resolution.md](design-suite-resolution.md) | DI-01 and DI-02 | Decided | Local contracts consolidated; exact output/input integration indexed; independent combined review and executable conformance required |
-| [design-document-tracking-artifacts.md](design-document-tracking-artifacts.md) | DI-03 document and tracking artifacts | Decided | Ten families and nineteen workflow carriers; human-supplied independent QA GO without findings; profiles/workflow/assurance integration is submitted for combined review |
-| [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 code and public test artifacts | Decided | Nine families and shared syntax/contracts; human-supplied independent QA GO without findings; profiles/distribution/assurance integration is submitted for combined review |
-| [design-mutation-validation.md](design-mutation-validation.md) | DI-04 | Decided | Local contracts consolidated; exact output/input integration indexed; independent combined review and executable conformance required |
-| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Decided | Local contracts consolidated; exact output/input integration indexed; independent combined review and executable conformance required |
-| [design-test-architecture.md](design-test-architecture.md) | DI-08 and XC-02 integration assurance | Decided | Human-approved W12 narrow support, independent evidence and removal accounting; canonical whole-set audit indexed; independent review requested |
-| [design-distribution.md](design-distribution.md) | DI-06 | Decided | Component-aware renewal, trustworthy bootstrap, owner-intent CLI, immutable result/presenter split, recoverable same-filesystem activation, timestamped force backup, runtime/startup coexistence, and conditional restart hint decided |
-| [design-workflow-documentation.md](design-workflow-documentation.md) | DI-07 | Decided | Human-approved W11; phase/schema authority, nineteen semantic obligations, source-first instructions and reference dispositions consolidated; combined independent review pending |
+| `design.md` | Design integration, indexes, risks, and hand-over | Integrated | Canonical consolidation and joint independent review request; no phase approval |
+| [design-shared-contracts.md](design-shared-contracts.md) | Genuinely cross-package interfaces, DTOs, configuration shapes, and status vocabulary | Integrated | Canonical contracts reconciled with dependencies/removals/proof owners in Integration §4; independent closure recheck and executable conformance remain required |
+| [design-suite-resolution.md](design-suite-resolution.md) | DI-01 and DI-02 | Integrated | Canonical contracts reconciled with dependencies/removals/proof owners in Integration §4; independent closure recheck and executable conformance remain required |
+| [design-document-tracking-artifacts.md](design-document-tracking-artifacts.md) | DI-03 document and tracking artifacts | Integrated | Ten families and nineteen workflow carriers; human-supplied independent QA GO without findings; profiles/workflow/assurance integration is submitted for combined review |
+| [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 code and public test artifacts | Integrated | Nine families and shared syntax/contracts; human-supplied independent QA GO without findings; profiles/distribution/assurance integration is submitted for combined review |
+| [design-mutation-validation.md](design-mutation-validation.md) | DI-04 | Integrated | Canonical contracts reconciled with dependencies/removals/proof owners in Integration §4; independent closure recheck and executable conformance remain required |
+| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 | Integrated | Canonical contracts reconciled with dependencies/removals/proof owners in Integration §4; independent closure recheck and executable conformance remain required |
+| [design-test-architecture.md](design-test-architecture.md) | DI-08 and XC-02 integration assurance | Integrated | Human-approved W12 narrow support, independent evidence and removal accounting; canonical whole-set audit indexed; independent review requested |
+| [design-distribution.md](design-distribution.md) | DI-06 | Integrated | Component-aware renewal, trustworthy bootstrap, owner-intent CLI, immutable result/presenter split, recoverable same-filesystem activation, timestamped force backup, runtime/startup coexistence, and conditional restart hint decided |
+| [design-workflow-documentation.md](design-workflow-documentation.md) | DI-07 | Integrated | Human-approved W11; phase/schema authority, nineteen semantic obligations, source-first instructions and reference dispositions consolidated; combined independent review pending |
 
 ---
 
@@ -250,13 +262,19 @@ test impacts have been reconciled in this hub.
 | DI-02 | Resolved graph, selected renderer/profile identities, introspection, and provenance | DI-03, DI-04, DI-06 |
 | DI-03 | Concrete artifact contracts, renderer semantics, retained identities, and removals | DI-06, DI-07, DI-08 |
 | DI-05 | Check evidence for output profiles; separate check/test/fix operation contracts and execution evidence | DI-04, DI-07, DI-08; public check/test/fix consumers |
-| DI-08 | Shared test infrastructure and cross-package assurance | DI-01–DI-07 |
+| Shared | Prepared input/attachment transport, concrete public projection, required nulls and generic presentation | DI-01/02/04/05 and registered tools; Integration §4.2 fixes wrapper/cache proof |
+| DI-04 | Exact placement, recognition fallback and consumer-specific mutation policy | DI-05 factual checks remain unchanged; DI-06 config delivery and DI-07 guidance follow those boundaries |
+| DI-06 | Operational component equality, effective-config admission and installed assets | DI-02 generation identity is not overwrite evidence; DI-05 native dependencies remain owner-managed |
+| DI-07 | Nineteen workflow meanings, instruction-source authority and reference dispositions | DI-03 carriers and DI-08 source/parity/link oracles |
+| DI-08 | Shared test infrastructure and cross-package assurance | DI-01–DI-07; exact preservation/removal dispositions in Integration §3.2 |
 | XC-01 | Binding architecture constraints | DI-01–DI-08 |
 | XC-02 | Cross-package legacy-removal integration | DI-01–DI-08 |
 | RC-01 | Approved Strategy fidelity | Entire Design set |
 
 Dependency arrows describe consumption, not ownership transfer. Each consumer records
-its local consequence and links to the upstream contract.
+its local consequence and links to the upstream contract. The nine chains in
+[Integration §4.2](design-integration-review.md#42-cross-package-consequence-and-proof-reconciliation)
+record the actual consumer effect and prerequisite evidence, not only these arrows.
 
 ---
 
@@ -266,53 +284,67 @@ This index points to authoritative decisions. It does not restate their exact co
 
 | Decision Range | Owner | Status | Consumers |
 |---|---|---|---|
-| D-HUB-01–D-HUB-06 | [Design hub §3.1](#31-key-design-decisions) | Decided | Entire Design set |
-| D-SHARED-01–D-SHARED-12 | [Shared Contracts Design §4](design-shared-contracts.md#4-owned-decisions) | Drafting | DI-01/DI-02, DI-04, DI-06, DI-07 |
-| D-SUITE-01–D-SUITE-33 | [Suite Resolution Design §4](design-suite-resolution.md#4-owned-decisions) | Drafting | DI-03, DI-04, DI-05, DI-06, DI-07, DI-08 |
-| D-ART-DOC-01–D-ART-DOC-09 | [Document/tracking §4](design-document-tracking-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
-| D-ART-CODE-01–D-ART-CODE-10 | [Code/test §4](design-code-test-artifacts.md#4-owned-decisions) | Decided; bounded external QA GO reported | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
-| D-MUT-01–D-MUT-19 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Drafting | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
-| D-ADAPTER-01–D-ADAPTER-30 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | W04/W05 human-closed; D25/D26 align defaults/scope; D28/D29 close W09 configuration ownership and concrete native starting contracts; D30 fixes bundled/workspace adapter locations. W09 independent QA, remaining role integration, shared serialization and native conformance stay tracked | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
-| D-WORKFLOW-01–D-WORKFLOW-06 | [Workflow/documentation §4](design-workflow-documentation.md#4-owned-decisions) | W11 human-closed; independent review and implementation evidence pending | DI-03, phase/host instructions, active references, DI-08 |
-| D-TEST-01–D-TEST-07 | [Test architecture §4](design-test-architecture.md#4-owned-decisions) | W12 human-closed; canonical audit and independent review pending | DI-01–DI-07 |
-| D-DIST-01–D-DIST-26 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | W10 human-closed: adapter delivery, effective configuration and admission decided; combined independent QA pending | CLI/init/upgrade, owner migration, DI-07, DI-08 |
+| D-HUB-01–D-HUB-06 | [Design hub §3.1](#31-key-design-decisions) | Integrated; closure recheck required | Entire Design set |
+| D-SHARED-01–D-SHARED-13 | [Shared Contracts Design §4](design-shared-contracts.md#4-owned-decisions) | Integrated; closure recheck required | DI-01/DI-02, DI-04, DI-06, DI-07 |
+| D-SUITE-01–D-SUITE-33 | [Suite Resolution Design §4](design-suite-resolution.md#4-owned-decisions) | Integrated; closure recheck required | DI-03, DI-04, DI-05, DI-06, DI-07, DI-08 |
+| D-ART-DOC-01–D-ART-DOC-09 | [Document/tracking §4](design-document-tracking-artifacts.md#4-owned-decisions) | Integrated; closure recheck required | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
+| D-ART-CODE-01–D-ART-CODE-10 | [Code/test §4](design-code-test-artifacts.md#4-owned-decisions) | Integrated; closure recheck required | DI-01/02, DI-04/05, DI-06, DI-07, DI-08 |
+| D-MUT-01–D-MUT-22 | [Mutation and Persistence Design §6](design-mutation-validation.md#6-owned-decisions) | Integrated; closure recheck required | Scaffold and safe-edit consumers; DI-05 check-evidence integration |
+| D-ADAPTER-01–D-ADAPTER-30 | [Execution Adapter Design §4](design-execution-adapters.md#4-owned-decisions) | Integrated; closure recheck required | DI-02, DI-04, public check/test/fix operations, DI-07, DI-08 |
+| D-WORKFLOW-01–D-WORKFLOW-06 | [Workflow/documentation §4](design-workflow-documentation.md#4-owned-decisions) | Integrated; closure recheck required | DI-03, phase/host instructions, active references, DI-08 |
+| D-TEST-01–D-TEST-07 | [Test architecture §4](design-test-architecture.md#4-owned-decisions) | Integrated; closure recheck required | DI-01–DI-07 |
+| D-DIST-01–D-DIST-26 | [Distribution Design §4](design-distribution.md#4-owned-decisions) | Integrated; closure recheck required | CLI/init/upgrade, owner migration, DI-07, DI-08 |
 
 
 W09's human-approved concrete adapter and native-settings contract is in
 [DI-05 §7.20](design-execution-adapters.md#720-w09--concrete-starting-adapters-and-migration-contract).
-The local workshop is closed; independent QA is requested in §11. This does not close
-DI-05 integration or the full Design phase.
+The local workshop and cross-package Design reconciliation are complete. Independent
+closure recheck remains required; neither this index nor the latest technical GO
+permits phase transition.
 
 ---
 
 ## 7. Coverage Accounting
 
-Research routing is complete; Design integration is not. A routed obligation becomes
-integrated only when its owner defines the target and this hub verifies its dependency
-and proof consequences.
+Research routing and producer Design reconciliation are complete. The counted units
+are **resolved Design dispositions**, not implemented features or passed tests.
+[Integration §4.1](design-integration-review.md#41-research-obligation-sets-and-semantic-dispositions)
+enumerates the exact primary finding/invariant/result sets and all 44 strategy subjects.
+Sections 4.2–4.3 reconcile downstream consequences, removal prerequisites, proof owners,
+ten consumer families and four conditional dispositions.
 
-| Coverage Set | Research Total | Routed | Integrated |
+| Coverage Set | Research Total | Routed | Integrated dispositions |
 |---|---:|---:|---:|
-| Findings | 22 | 22 | 0 |
-| Approved Strategy rows | 44 | 44 | 0 |
-| Core invariants | 19 | 19 | 0 |
-| Expected results | 23 | 23 | 0 |
-| Consumer families | 10 | 10 | 0 |
-| Conditional catalog dispositions | 4 | 4 | 0 |
-| Design packages | 8 | 8 | 0 |
-| Cross-cutting obligations | 2 | 2 | 0 |
-| Resolved constraints | 1 | 1 | 0 |
+| Findings | 22 | 22 | 22 |
+| Approved Strategy rows | 44 | 44 | 44 |
+| Core invariants | 19 | 19 | 19 |
+| Expected results | 23 | 23 | 23 |
+| Consumer families | 10 | 10 | 10 |
+| Conditional catalog dispositions | 4 | 4 | 4 |
+| Design packages | 8 | 8 | 8 |
+| Cross-cutting obligations | 2 | 2 | 2 |
+| Resolved constraints | 1 | 1 | 1 |
 
-The detailed matrices remain in the
-[Design Intake Map](design-intake-map.md). Package documents will supply decision-level
-coverage; this table tracks only integration completion.
+Findings comprise 21 designed outcomes plus F-18's explicit exclusion. Strategies
+comprise 40 designed outcomes plus four approved deferred dispositions. Exclusion
+coverage is not a promise to implement deferred work. Shared is not a ninth DI package.
+
+The frozen [intake matrices](design-intake-map.md) remain the obligation inventory;
+[Integration §4](design-integration-review.md#4-semantic-integration-closure) is the
+semantic reconciliation behind these totals. The catalog's 126 consumers plus two
+governing sources and 151 tests/helpers retain exact-path ownership. Planning assigns
+bounded cycles; Design supplies the contracts, preserved behavior and removal/evidence
+conditions. No runtime/native/client/installed-package conformance is claimed.
+The independent technical GO remains accompanied by a Planning NOGO until closure
+is independently rechecked.
 
 ---
 
 ## 8. Transition, Cleanup, and Test Integration
 
 The exact cutover, compatibility behavior, legacy removals, and package-owned tests are
-designed in the owning package documents. This hub must ultimately prove:
+designed in the owning package documents. Integration §4 reconciles these Design
+conditions; subsequent implementation must supply their executable proof:
 
 - every legacy production, configuration, template, export, instruction, documentation,
   and test surface has one removal or retention owner;
@@ -324,7 +356,7 @@ designed in the owning package documents. This hub must ultimately prove:
   preservation evidence;
 - clean-break decisions and current-owner deployment migration follow Approved Strategy.
 
-**Current integration state:** DI-01/DI-02, DI-06, and the shared schema-delivery seam have decided nuclei. Resolved package identity remains isolated to the selected package plus transitive shared support; suite-generation identity remains persisted source context, not complete installed-state equality evidence; both retain canonical version-1 SHA-256/96 Base64url semantics. Artifact provenance remains exactly `id`/`pv`/`pf`/`sf` on the first physical line with bounded ID/version types and no wrapping and no generic lifecycle timestamps. Package versions are SemVer-syntax-checked human labels, resolved fingerprints alone establish effective-content equality, and the four possible version/fingerprint relations remain observable without bump enforcement, warnings, or history. DI-06 owns separate 16-character operational component equality for `shared/` plus every concrete package, using distinct distribution domains and package keys copied only from `manifest.yaml:template_id`. `.pgmcp/installation.json` has an exact closed minimum contract: required `pgmcp_version` and one optional complete checkpoint whose present form requires `shared` plus the `template_id`-keyed `packages` map. Component selection constructs and validates one complete off-root proposal and changes runtime authority only through recoverable complete-tree activation. The first PGMCP v3 rollout has no predecessor v3 suite or checkpoint; neither legacy `.version` nor `template_registry.json` can fabricate one, so existing pre-v3 workspaces preserve actual content and require explicit migration before the first checkpoint becomes authoritative. `.pgmcp/upgrade/` remains the flat non-runtime candidate root. `pgmcp --upgrade` owns renewal and accepts exactly one optional owner-intent modifier: `--accept-template-baseline` derives the first complete checkpoint from the current candidate without copying content, component-bounded `--resolve-template` advances named conflicted `shared` or `template_id` entries after reconciliation, and `--force-template-upgrade` performs backed-up complete candidate replacement for a managed root. Callers never supply computed fingerprints. Renewal returns one immutable factual result to a dedicated CLI presenter; exit codes `0`, `2`, and `1` distinguish complete, safe action-required, and failed attempts, while this CLI-only path adds no MCP resource, JSON mode, or persisted result report. Complete activation uses cross-process exclusion, fixed same-filesystem next/previous roots, an immutable recovery record, deterministic rollback or forward completion, and a separately retained timestamped backup only for forced replacement. Running servers retain their old immutable catalog, concurrent startups cannot enter activation, and `actual_changed` alone derives the successful-operation hint to restart any running server. External retention/versioning remains workspace-owned without PGMCP lookup or control machinery. The human-approved F-03/F-07 correction removes the generic envelope `name`, manifest `naming`, and automatic name projection: exact `file_name`, optional directory-valued `target_path`, and `force_target` are operation controls, every caller-authored renderer value is explicit artifact context, and server-authored source provenance is separately namespaced. DI-02 now discovers concrete packages by deterministic shallow enumeration under `template_suite/`; `shared/` is the sole reserved child, every other direct child must contain a valid package, and no authored `templates.yaml` duplicates that inventory. DI-04 repurposes `.pgmcp/config/artifacts.yaml` as artifact-location policy keyed by manifest `template_id`, permits loaded packages to remain unmapped, rejects configured keys that do not resolve, and safely sends an unmapped call without `target_path` to the one global temporary root without force. An explicit workspace target outside configured roots—including one for an unmapped package—requires `force_target`; force without a target is rejected. DI-04 also fixes `.pgmcp/temp/artifacts` as the shipped temporary default, exact caller file names, canonical workspace-relative `target_path` and `output_path` values, relative operation fields and routine summaries with incidental absolute paths permitted in bounded on-demand cached diagnostics under D-MUT-20, and universal create-only scaffold semantics. The legacy `project_structure.yaml` retires only through a field-by-field and consumer-by-consumer migration; the current `EnforcementRunner` has no dependency on it, while bootstrap, `ArtifactManager`, the generic resolver, the uncomposed legacy `PolicyEngine`, tests, and active documentation receive explicit dispositions. Existing files remain safe-edit territory. All local package decisions, shared schema URI/dialect boundaries and the output/error workshop are consolidated. The integration index accounts for the designed input/wrapper/cache/capture seams and test/helper dispositions. Independent whole-Design review and later executable conformance remain required; neither is inferred from document completeness.
+**Current integration state:** all eight packages and shared seams have reconciled Design dispositions in Integration §4. Resolved package identity remains isolated to the selected package plus transitive shared support; suite-generation identity remains persisted source context, not complete installed-state equality evidence; both retain canonical version-1 SHA-256/96 Base64url semantics. Artifact provenance remains exactly `id`/`pv`/`pf`/`sf` on the first physical line with bounded ID/version types and no wrapping and no generic lifecycle timestamps. Package versions are SemVer-syntax-checked human labels, resolved fingerprints alone establish effective-content equality, and the four possible version/fingerprint relations remain observable without bump enforcement, warnings, or history. DI-06 owns separate 16-character operational component equality for `shared/` plus every concrete package, using distinct distribution domains and package keys copied only from `manifest.yaml:template_id`. `.pgmcp/installation.json` has an exact closed minimum contract: required `pgmcp_version` and one optional complete checkpoint whose present form requires `shared` plus the `template_id`-keyed `packages` map. Component selection constructs and validates one complete off-root proposal and changes runtime authority only through recoverable complete-tree activation. The first PGMCP v3 rollout has no predecessor v3 suite or checkpoint; neither legacy `.version` nor `template_registry.json` can fabricate one, so existing pre-v3 workspaces preserve actual content and require explicit migration before the first checkpoint becomes authoritative. `.pgmcp/upgrade/` remains the flat non-runtime candidate root. `pgmcp --upgrade` owns renewal and accepts exactly one optional owner-intent modifier: `--accept-template-baseline` derives the first complete checkpoint from the current candidate without copying content, component-bounded `--resolve-template` advances named conflicted `shared` or `template_id` entries after reconciliation, and `--force-template-upgrade` performs backed-up complete candidate replacement for a managed root. Callers never supply computed fingerprints. Renewal returns one immutable factual result to a dedicated CLI presenter; exit codes `0`, `2`, and `1` distinguish complete, safe action-required, and failed attempts, while this CLI-only path adds no MCP resource, JSON mode, or persisted result report. Complete activation uses cross-process exclusion, fixed same-filesystem next/previous roots, an immutable recovery record, deterministic rollback or forward completion, and a separately retained timestamped backup only for forced replacement. Running servers retain their old immutable catalog, concurrent startups cannot enter activation, and `actual_changed` alone derives the successful-operation hint to restart any running server. External retention/versioning remains workspace-owned without PGMCP lookup or control machinery. The human-approved F-03/F-07 correction removes the generic envelope `name`, manifest `naming`, and automatic name projection: exact `file_name`, optional directory-valued `target_path`, and `force_target` are operation controls, every caller-authored renderer value is explicit artifact context, and server-authored source provenance is separately namespaced. DI-02 now discovers concrete packages by deterministic shallow enumeration under `template_suite/`; `shared/` is the sole reserved child, every other direct child must contain a valid package, and no authored `templates.yaml` duplicates that inventory. DI-04 repurposes `.pgmcp/config/artifacts.yaml` as artifact-location policy keyed by manifest `template_id`, permits loaded packages to remain unmapped, rejects configured keys that do not resolve, and safely sends an unmapped call without `target_path` to the one global temporary root without force. An explicit workspace target outside configured roots—including one for an unmapped package—requires `force_target`; force without a target is rejected. DI-04 also fixes `.pgmcp/temp/artifacts` as the shipped temporary default, exact caller file names, canonical workspace-relative `target_path` and `output_path` values, relative operation fields and routine summaries with incidental absolute paths permitted in bounded on-demand cached diagnostics under D-MUT-20, and universal create-only scaffold semantics. The legacy `project_structure.yaml` retires only through a field-by-field and consumer-by-consumer migration; the current `EnforcementRunner` has no dependency on it, while bootstrap, `ArtifactManager`, the generic resolver, the uncomposed legacy `PolicyEngine`, tests, and active documentation receive explicit dispositions. Existing files remain safe-edit territory. All local package decisions, shared schema URI/dialect boundaries and the output/error workshop are consolidated. The integration index accounts for the designed input/wrapper/cache/capture seams and test/helper dispositions. Independent whole-Design review and later executable conformance remain required; neither is inferred from document completeness.
 
 ---
 
@@ -346,113 +378,25 @@ references; §§7.5/7.14–7.18 own bindings and consumers. No new field or rela
 inferred from naming. The current generation-identity amendment removes profile/binding fingerprint
 projection; DI-02/DI-05 retain policy loading and validation independently.
 
-### Historical Workshop Checkpoint — 2026-09-07
+### Superseded Workshop Checkpoints
 
-**Design resumed after independent QA GO reported by the human on 2026-09-07:**
-[full safe-edit validation-policy alignment](research.md#narrow-safe-edit-policy-amendment--2026-09-07),
-including retirement of mode/verify_only, is now integrated in DI-04 and its DI-05
-consumer references. Both mutation tools use validation=enforce/report, default enforce,
-and validation_policy output, without a temporary compatibility field or replacement
-preview. Research correction commit b5fc881a is the reviewed handover basis. Other decisions
-remain unchanged; historical version entries do not reinstate the superseded deferral.
+The 2026-09-07 scaffold-only and subsequent safe-edit/header checkpoints are
+historical, not competing active contracts. Their decisions are consolidated in
+Suite §§5.6/7, DI-04 §§4.6–4.10/7.1 and DI-05 §§7.13–7.20/13.1. Shared §11.1
+permits only the approved generic strict/nullable presentation admission correction;
+it never authorizes DTO-specific presentation branches.
 
-DI-05 remains Drafting. Its active slice is scaffolding's consumption of check/v1,
-not completion of safe-edit, run_checks, test or fix contracts. The
-[scaffold input nucleus](design-execution-adapters.md#scaffold-consumer-input-nucleus)
-records the intended file location and exactly one text/file input, selected by the
-required requires_file boolean. No separate workspace_root is justified for this slice.
+The [semantic integration ledger](design-integration-review.md#4-semantic-integration-closure)
+now reconciles those boundaries, native configuration, installed assets, workflow
+meanings and test/removal obligations. Independent closure recheck and later
+implementation/client/native conformance remain required. Historical Research GO
+permits Design, not Planning; earlier workshop status language cannot reopen these
+consolidated choices.
 
-Central path resolution derives temp/artifacts and temp/validation from the configured
-server root. The former artifacts.yaml temporary_root field is superseded in DI-04.
-Each file-requiring check receives a fresh isolated ID directory; cleanup is separately
-reported housekeeping and never overrides a valid check or its persistence policy.
-There is no temp monitoring or automated sweep. Native Markdown probes establish a
-bounded file-route need without authoritative target pre-writes.
-
-Server/subprocess sandboxing is explicitly [deferred](deferred-work.md#deferred-work-notice-server-and-subprocess-security-isolation),
-not silently promised by application-level permissions or internal path representation.
-DI-05 now records the scaffold-facing typed request/response, DI-04 failure mapping,
-shared process lifecycle and explicit executable/args launch nucleus. These remain
-Design specifications, not executed conformance evidence or completion of all consumers.
-
-The human-approved [exposure correction](design-execution-adapters.md#77-configuration-based-exposure-and-on-use-availability)
-replaces the earlier startup dependency preflight/filtering promise: schemas expose
-valid configured choices; missing dependencies use the existing on-use failure path.
-No adapters run at startup, defaults/profiles are not silently weakened, and the health
-deferral cannot assume readiness evidence from issue 460. Frozen Research is unchanged.
-
-The active consumer workshop is safe edit: assess reuse of complete proposed-content
-checks while keeping edit policy and authoritative replacement in DI-04. The approved
-[shared extension assignment](design-execution-adapters.md#shared-extension-to-profile-assignment)
-lives at the root of `checks.yaml`, not under `safe_edit_file`. Shared ownership does not
-change scaffold manifest selection or automatically extend `run_checks` selection.
-The approved [extension lookup](design-execution-adapters.md#extension-lookup-semantics)
-selects the longest configured suffix of the intended basename, case-insensitively,
-without globs or implicit profiles for extensionless files. Missing-assignment
-behavior and selection-result facts are decided in DI-04 §4.6; governing profile-selection
-integration remains Q-MUT-04. The previous verify_only deferral is superseded by the
-approved clean break: remove the mode without a replacement proposed-edit preview.
-
-The [public mutation nesting audit](design-mutation-validation.md#45-public-mutation-response-nesting-audit)
-now qualifies earlier serialization sketches: singleton validation/selection wrappers
-cannot be assumed to render through the existing presenter. Direct summary fields and
-meaningful collections are now approved through §§4.6/4.10 of DI-04. Q-MUT-06's shape
-decision is closed; real presentation/resource conformance remains required. No presenter
-extension, duplicated field graph or Research amendment is authorized.
-
-The [consolidated public result workshop](design-mutation-validation.md#46-consolidated-public-result-workshop)
-records human agreement on direct fields, selection outcomes, check-record combinations,
-write policies and channel dispositions, now including the Research-approved common policy names.
-DI-05 integrates the required failed-decision message; the public record adds no origin
-field. Legacy safe-edit mode/strict/interactive/verify_only inputs are rejected without writes.
-Naming alignment is closed. The [safe-edit-specific workshop](design-mutation-validation.md#47-safe-edit-operations-no-change-results-and-failure-boundaries)
-now fixes the four preserved operation behaviors, explicit content_changed/write combinations,
-construction-failure versus check-failure meaning and truthful complete-content validation claims.
-Do not reopen the general scaffold outcome contract to cover these consumer differences.
-The [V3 reader and read/check/write slice](design-mutation-validation.md#48-v3-metadata-selection-and-readcheckwrite-consistency)
-is human-approved on 2026-09-08: admit a narrow reader, preserve one original/proposed
-content pair, and refuse observed intervening changes without claiming universal
-external-writer exclusion. Human clarification on 2026-09-10 fixes a jointly designed
-[internal header reader/writer](design-suite-resolution.md#joint-internal-header-utility),
-not MCP tools; header formatting is separate from file persistence. The subsequent
-human refinement fixes 24-character template IDs, 11-character package SemVer labels
-and a single native-comment record on the first physical line; it supersedes overflow
-wrapping. Absent/invalid headers and invalid/unknown metadata template IDs are equivalent
-for applicable-profile selection: all take the explicit extension/no-profile route
-without weakening validation policy or swallowing independent failures. Research
-remains unchanged: exact metadata representation and this selection realization are
-Design-owned. The human-approved
-[integrated header contract](design-suite-resolution.md#integrated-header-production-reading-and-selection-contract)
-now closes shared-tier production, text-only recognized/absent/invalid reader results,
-protocol framing and recognition-only BOM handling, together with real-render and
-independent conformance obligations. Q-SUITE-03 is closed at Design level, not claimed
-implemented. DI-04's approved
-[controlled replacement contract](design-mutation-validation.md#49-integrated-original-file-and-controlled-replacement-contract)
-now fixes one original bytes/text value, manager-owned orchestration, late comparison
-before every replacement attempt, lock-wait/adapter-timeout separation and independent
-check/write/cleanup facts over the existing atomic writer mechanics. It retains the
-external-writer race limitation without adding a general transaction or history layer.
-The [approved W01 integration](design-mutation-validation.md#410-complete-mutation-operation-result--approved-2026-09-10)
-fixes the normal operation-result route for expected failures, typed error/detail fields,
-separate housekeeping and selection explanation. Remaining integration is explicitly
-DI-05's final capture declarations, required-field/null serialization and independent
-evidence; W02 native provenance and W05's lightweight native-fix contract are approved.
-W05 introduces no recovery subsystem: DI-07 documents agent-controlled recovery, DI-08
-owns independent partial-write and stop-first evidence, and W09 owns native-settings
-migration. W06–W12 local decisions have since been consolidated; exact remaining shared-contract decisions and canonical integration are tracked in the closeout audit below.
-
-DI-02's conditional no-replacement boundary now admits this demonstrated V3-reader
-consumer. Legacy parsing, historical lookup and automatic provenance mutation stay removed.
-The subsequent canonical consolidation and final review request below supersede this
-checkpoint's then-open Design items. Independent conformance remains outstanding.
-
-The accepted [50-template discovery guardrail](deferred-work.md#design-escalation-threshold--50-template-ids)
-keeps enum-only ID discovery bounded as a product-design assumption. A concrete need
-above that count, or earlier usability evidence, triggers the separate F-18 follow-up.
-It does not cap suite size, truncate enums, add startup behavior, or bring a discovery
-tool into issue 460. The future route must reduce invocation-schema size as well as
-provide bounded discovery results; the detailed authority remains in the notice.
-This checkpoint does not mark any additional package Integrated or authorize Planning.
+The [50-template discovery guardrail](deferred-work.md#design-escalation-threshold--50-template-ids)
+and [security isolation deferral](deferred-work.md#deferred-work-notice-server-and-subprocess-security-isolation)
+remain explicit exclusions. They introduce neither a truncated inventory nor a
+sandbox/health guarantee.
 
 ## 9. Open Questions and Risks
 
@@ -461,7 +405,7 @@ This checkpoint does not mark any additional package Integrated or authorize Pla
 | Q-HUB-01 | Shared vocabulary and transport ownership | Shared Contracts | Designed in Shared §§5/11.1 and the consumer owners; independent review checks that sharing is consumer-backed, not a second universal DTO |
 | Q-HUB-02 | Modeling versus resolution ownership | DI-01/02 | Designed in suite resolution; independent review checks pure contract values, catalog-owned resolution and narrow injected consumers |
 | R-HUB-01 | Shared-contract scope grows into a second monolith | Design hub | Every shared item must name multiple consumers and exclude package-local detail |
-| R-HUB-02 | Package documents become locally correct but mutually inconsistent | Design hub | Dependency impact pass required before `Integrated` |
+| R-HUB-02 | Package documents become locally correct but mutually inconsistent | Design hub | Integration §4.2 records the reconciled consumer consequences and proof prerequisites; independent closure recheck challenges this reconciliation |
 | R-HUB-03 | Coverage counts hide semantic omissions | Design hub | Coverage requires an owned target decision or proof obligation, not a bare link |
 | Q-HUB-03 | Adapter package/catalog/process and separate role contracts | DI-05 | Designed in §§7.3–7.20/13.1; independent review checks composition and migration, with native conformance required before legacy removal |
 | Q-HUB-04 | Removing duplicate tool configuration could silently alter the quality standard | DI-05 | Q-ADAPTER-06 / §7.20 records human-approved native settings and intentional changes; independent QA/conformance must verify that distinction and preserve logical-target configuration for scratch checks |
@@ -493,6 +437,72 @@ No cycles or estimates are defined during Design.
 
 ## 11. Refactor / Design Hand-over
 
+### Current Refactor / Design Hand-over — Closure Recheck, 2026-09-12
+
+#### Scope
+
+- Address the latest independent review's two P1 blockers: semantic hub integration
+  and contradictory active package lifecycle/decision/risk/traceability claims.
+- Preserve the positively reviewed technical direction. No Research amendment,
+  runtime/test code, new product role or transition to Planning.
+
+#### Deliverables
+
+- [Integration §4](design-integration-review.md#4-semantic-integration-closure):
+  exact obligation sets, downstream consequences, removal/proof prerequisites,
+  ten consumer families and four resolved conditional dispositions.
+- [Hub §§4–9](#4-design-package-register): reconciled package/decision statuses,
+  derived coverage including explicit exclusions, dependencies and residual risks.
+- [Execution adapters](design-execution-adapters.md), especially §§7/11/13:
+  obsolete open claims replaced by final role/launch/config/public-record authorities.
+- [Mutation](design-mutation-validation.md), especially §§4.5/6/7.1:
+  current direct public fields, typed details and factual ownership; no origin field
+  or nested public duplication. [Shared](design-shared-contracts.md) owns transport
+  and generic presentation, not concrete error interpretation.
+- [Suite](design-suite-resolution.md), [distribution](design-distribution.md),
+  [code/test](design-code-test-artifacts.md), [document/tracking](design-document-tracking-artifacts.md),
+  [workflow](design-workflow-documentation.md) and [test architecture](design-test-architecture.md):
+  synchronized lifecycle and resolved dependency/proof ownership. Distribution's
+  renewal trace points to E-21/E-22, not portable-artifact E-10.
+- Material inputs remain the frozen [Research](research.md), [intake](design-intake-map.md),
+  [catalog](template-suite-catalog.md) and the user's independent closure verdict.
+
+#### Evidence
+
+- Semantic reconciliation is recorded in Integration §4, separate from the existing
+  exact 151-path test/helper index in §3.2. Routed links alone are not counted.
+- Mechanical checks and exact outcomes for this revision are recorded in Integration
+  §4.5. They check document consistency and inventory equality, not executable behavior.
+- Producer assistance supplied bounded findings only. No independent verdict was
+  delegated; no runtime/native/client/build/test/quality-gate execution is claimed.
+
+#### Open Work
+
+- Independent recheck of the two closure blockers remains required. The latest
+  Planning NOGO is not overridden by producer Integrated labels.
+- Later Planning assigns all 126 consumers and 151 tests/helpers plus supplemental
+  dependencies to bounded cycles, with preserved behavior, rollback points and
+  independent stop/go evidence. No catch-all cycle.
+- Adapter contracts/catalog/conformance precede legacy removal; check/test/fix are
+  proved separately; F-10 activation and F-20 fix application are separate cycles;
+  internal routes precede public V3 cutover without supported aliases or dual reads.
+- Native, wrapper/cache/presenter, installed-package and recovery conformance remain
+  implementation obligations. Research reopens only on a genuine strategy contradiction.
+
+#### Review Request
+
+- Review requested from independently invoked `pgmcp-qa` / `@qa design-reviewer`.
+- Recheck authoritative closure and semantic traceability against the previous two
+  P1 findings. Challenge whether counted integration is substantive and whether any
+  active competing open/decided contracts remain. Report the independent phase verdict;
+  this hand-over grants no approval.
+
+### Historical Review Requests
+
+The requests below preserve earlier review scope and evidence only. Their open-work
+and status statements are superseded by the current hand-over and §§4–9 above;
+they are not instructions to repeat workshops or move Design decisions into Planning.
+
 ### W07/W08 Bounded Design Review — 2026-09-11
 
 **Review outcome supplied by the human:** independent QA reported no P0–P3 findings and
@@ -501,7 +511,8 @@ GO for the two concrete-template contract documents at commit
 The reviewer independently checked family coverage, contract precision, architecture,
 honest validation guarantees, operational planning parity and nineteen workflow variants,
 including worker logging/export and pytest fixture counterexamples. No tests were run.
-The earlier request below is retained as review scope/history; integration remains open.
+The earlier request below is retained as review scope/history; its then-open integration
+items are superseded by the current closure reconciliation and recheck request.
 
 #### Scope
 
@@ -876,6 +887,7 @@ template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.94 | 2026-09-12 | @imp designer | Reconcile semantic integration, canonical status and proof ownership after independent QA; no phase approval or executable conformance claimed. |
 | 1.93 | 2026-09-12 | `@imp designer` | Consolidate approved output/error integration, replace active pending contracts and publish the outcome-neutral joint independent Design review hand-over. |
 | 1.92 | 2026-09-12 | `@imp designer` | Index the complete pending output/error workshop proposal; retain human confirmation before replacing approved public result shapes and requesting combined QA. |
 | 1.91 | 2026-09-12 | `@imp designer` | Record real integration gaps, typed internal schema/attachment/capture seams, complete test/helper dispositions and supplemental ownership; preserve remaining public output/error Design work before combined QA. |
