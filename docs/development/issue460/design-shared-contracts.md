@@ -3,7 +3,7 @@
 # Issue 460 Shared Tool and Schema Contracts Design
 
 **Status:** DRAFT  
-**Version:** 1.9  
+**Version:** 1.10
 **Last Updated:** 2026-09-12  
 **Primary Package:** Shared contracts consumed by DI-01, DI-02, and DI-04  
 **Upstream Dependencies:** Issue 456 presentation contract, DI-01/DI-02 resolved catalog  
@@ -446,6 +446,89 @@ parsing prose to recover facts are rejected.
 | R-SHARED-02 | Schema is flattened differently for validation and exposure | DI-01/DI-02 | One catalog-owned resolved schema view with structural equality tests |
 | R-SHARED-03 | Embedded schemas make routine scaffold calls token-heavy | DI-04 | Attach only for explicit schema retrieval or selected artifact-context failure |
 
+### 11.1 Pending workshop proposal — output presentation integration, 2026-09-12
+
+**Human confirmation pending.** This proposal belongs with the DI-04/DI-05 pending
+output-contract proposals. It does not silently supersede their approved models.
+
+Use existing presentation.yaml scalar templates, concrete model collections, enum
+cases, byte/item budgets and operation-cache separation. Do not add a union renderer,
+per-error DTO dispatcher, native report parser, a second result-summary DTO, or a
+domain-output channel through NoteContext. DI-05 proposes concrete public result rows;
+the adapter wire response unions stay unchanged.
+
+There is a small generic type-admission gap, not a need for new rendering behavior:
+[classify_sequence_annotation](../../../mcp_server/presenters/collection_text_renderer.py)
+accepts plain scalar/model item classes; nested strict annotations such as
+tuple[StrictStr,...] retain Annotated metadata. The
+[presentation alignment validator](../../../mcp_server/presenters/text_presenter.py)
+also requires a nonnullable enum for enum_cases. Its runtime lookup stringifies null
+as "None", which matches none of the current operation-error enum values. Required
+nullable error_code is therefore not admitted as designed despite needing no new
+case-selection feature.
+Do not bypass validation or claim that absolutely no presentation code must change.
+
+Proposed bounded admission rules:
+
+| Surface | Admitted type shape | Preserve / reject |
+|---|---|---|
+| Scalar placeholder | Supported primitive/enum/Literal scalar, optionally nullable; a finite union must contain only supported scalar alternatives | Annotated validation metadata does not change the display shape; do not change DTO validation or coerce values |
+| Inline scalar sequence | Existing list[T] or variadic tuple[T,...], with supported scalar T; the entire field may be nullable | Keep max_items, ordering, separators and existing null/empty placeholder; reject nested model/sequence or mapping elements |
+| Configured collection | Nonnullable list[T] or variadic tuple[T,...], T a supported scalar or one concrete model | Recognize Annotated item types; continue rejecting unions of models, nullable containers, mappings, arbitrary iterables and dotted paths |
+| enum_cases | One direct enum, optionally nullable and Annotated | Case keys must belong to that enum; null has no case/block. No predicates, nested paths, fallback expressions or new case syntax |
+
+This is generic annotation recognition plus faithful validation of already-renderable
+values. Nullable enum handling must explicitly mean no block for null, not depend on
+the accidental lack of an enum value spelled "None"; a generic null guard is permitted,
+not a DTO-specific case. A new result/error DTO using these shapes requires only its normal contract
+registration and presentation.yaml entry, not another admission or rendering branch.
+Do not rely on the current validator accidentally skipping a union annotation.
+
+Illustrative configuration projection, not native policy or a shipped binding inventory:
+
+```yaml
+run_tests:
+  category: testing
+  max_items: 5
+  template_success: "Test request handled; scope={requested_scope}."
+  template_failure: "Test request could not be handled correctly; error={error_code}."
+  collections:
+    - field: results
+      heading: "Requested tests:"
+      item_template: "- {test_id}: {status}; reason={reason}; {message}; args_source={args_source}; args={effective_args}"
+  enum_cases:
+    - field: error_code
+      cases:
+        scope_resolution_failed: "Requested targets could not be resolved. See the structured details."
+        adapter_request_rejected: "An adapter rejected an internally constructed request; subsequent work was stopped."
+```
+
+Equivalent configuration uses check_id/fix_id for their concrete records; it does not
+give the presenter a role discriminator. Each operation-error enum value must have
+an explicit configured explanation, including correctly reported success=true
+selection refusals. Configured enum blocks are independent of template_success/failure;
+do not rely on the global success=false fallback for expected domain outcomes.
+
+| Consumer | Routine factual header | Result detail |
+|---|---|---|
+| scaffold_artifact | output_path, written, validation_policy/status, selected profile | Existing concrete checks; context schema attachment only for its already-approved cases |
+| safe_edit_file | path, written, content_changed, validation_policy/status and selection | Existing concrete checks and housekeeping; no claim of changed text when content_changed=false |
+| run_checks | requested scope, existing run_status and selected profile/checks | Concrete selection records with their own coverage/refusal facts |
+| run_tests | Requested scope and handled-call outcome, never a new aggregate test verdict | Concrete test rows; preserve the adapter's passed message, including collection/no-tests explanations |
+| apply_fixes | Requested concrete targets and handled-call outcome | Concrete fix rows; passed is not a changed-file census or a guarantee that checks now pass |
+
+Native evidence, request issues, typed operation details and ProcessCapture remain in
+the complete operation cache. Routine templates never interpolate those structures.
+The cache link/publication-failure handling and text omission notices remain the
+existing framework responsibility. Capture truncation facts stay in capture; no
+duplicated diagnostics_truncated summary flag or full-log promise is introduced.
+
+Required evidence: real registration alignment for strict/nullable supported shapes;
+rejection of structured unions and unsafe interpolation; every code's configured
+explanation; real decorated invocation plus resources/read; unchanged non-native
+tool presentation; source checks that no new DTO/tool/native-name branch exists in
+the presenter. These are future conformance obligations, not tests executed here.
+
 ## 12. Planning Consequences
 
 Planning must separate:
@@ -495,6 +578,7 @@ shortcut.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.10 | 2026-09-12 | `@imp designer` | Propose presentation-compatible public projection and bounded strict/nullable type admission; keep human confirmation pending and preserve generic rendering/native evidence boundaries. |
 | 1.9 | 2026-09-12 | `@imp designer` | Specify internal operation/attachment transport and schema-driven required-null cache serialization against actual wrapper/presenter seams; retain public operation authority. |
 | 1.8 | 2026-09-12 | `@imp designer` | Consolidate approved active-catalog schema URI without pf; preserve whole-tool validation URI and operation/attachment cache ownership; define restart and identity evidence. |
 | 1.7 | 2026-09-05 | `@imp designer` | Link the exclusive DI-04 and DI-05 owners after F-20; keep existing artifact-schema delivery semantics unchanged. |

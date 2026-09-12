@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.91
+**Version:** 1.92
 **Last Updated:** 2026-09-12  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -625,6 +625,13 @@ to the whole Design phase. Research remains frozen; no phase transition is autho
 
 #### Cross-package integration inspection — 2026-09-12
 
+**Current workshop:** [the combined output proposal](design-integration-review.md#combined-output-workshop-proposal--2026-09-12)
+now specifies the two remaining Design details described below. DI-05 proposes concrete
+public test/fix records; DI-04/05 define exact code/detail matrices and an honest public
+not_executed/invalid_request combination; Shared §11.1 bounds annotation admission for
+existing presentation mechanisms. These replacements await human confirmation, not
+Research reopening or implicit approval. No runtime tests or whole-Design QA GO claimed.
+
 The [integration review](design-integration-review.md) is the current source-based
 audit/disposition index. It does not replace any primary contract or Research gate.
 Three bounded producer-assisted inspections covered the 151 catalogued test/helper
@@ -811,6 +818,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.92 | 2026-09-12 | `@imp designer` | Index the complete pending output/error workshop proposal; retain human confirmation before replacing approved public result shapes and requesting combined QA. |
 | 1.91 | 2026-09-12 | `@imp designer` | Record real integration gaps, typed internal schema/attachment/capture seams, complete test/helper dispositions and supplemental ownership; preserve remaining public output/error Design work before combined QA. |
 | 1.90 | 2026-09-12 | `@imp designer` | Consolidate approved W06 schema dialect/reference boundaries and fingerprint-free URI; include Shared Contracts and accepted W04 config/request/result declarations as canonical review material; cross-package closeout remains open. |
 | 1.89 | 2026-09-12 | `@imp designer` | Consolidate W12 and producer audit corrections; distinguish local workshop closure from unresolved schema identity/dialect, role DTO consolidation and canonical coverage evidence. |

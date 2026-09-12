@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.33
+**Version:** 1.34
 **Last Updated:** 2026-09-12
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -1117,6 +1117,86 @@ The target and content paths meet only for output-profile evidence and final per
 | Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
 | Q-MUT-06 | High-level choice closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and declarative presentation. Exact MutationErrorCode-to-details mapping still requires Design completion; real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts; tracked in design-integration-review.md |
 
+### 7.1 Pending workshop proposal — exact error details and rejected adapter requests
+
+**Human confirmation pending, 2026-09-12.** This concretizes §4.10 and proposes one
+explicit extension to §4.6. Existing error codes, mutation success/persistence policy,
+edit operations, summary precedence and all adapter wire contracts remain unchanged.
+Do not treat this proposal as already superseding an approved combination table.
+
+Add invalid_request to the public consumer not-executed reason set and add required
+request_rejection: nonempty tuple[RequestValidationIssue,...] or null to the concrete
+check record. Its only non-null combination is status=not_executed,
+reason=invalid_request, message=null and evidence=null. The adapter explicitly rejected
+the internally constructed request before native work; its process was nevertheless
+attempted, so invocation identity/capture and any check housekeeping remain present.
+No native tool provenance is invented. This is a consumer projection of the existing
+minimal rejection, not a new adapter-authored check verdict. Other combinations keep
+request_rejection=null and existing message rules.
+
+The manager sets adapter_request_rejected with success=false, stops subsequent
+invocations, records later obligations as not_started and writes nothing under either
+policy. Existing reducers already handle not_executed; earlier failed/unavailable
+results remain unchanged, and no incomplete obligation set can summarize as passed.
+This avoids omitting the rejected attempt, duplicating it in operation details, adding
+a nullable-status exception or changing the summary algorithm. Native CLI rejection
+is still the distinct unavailable/unsupported_input result, not this internal defect.
+
+All details below are inward-owned frozen, strict, extra-forbid values. Every field
+is required; nullable values serialize explicitly. Reuse equivalent existing narrow
+types rather than repeating DTO definitions per tool. Messages are factual diagnostics,
+not formatted user-facing explanations or exception repr/whole-input dumps.
+
+| MutationErrorCode | Exact proposed details | Boundary fact retained |
+|---|---|---|
+| context_invalid | ContextDetails(issues: nonempty tuple[ContextIssue,...]) | ContextIssue has pointer: JsonPointer, keyword: NonBlankText, message: NonBlankText; observed schema keyword, not a generic native-rule code |
+| target_invalid | TargetDetails(path: WorkspaceRelativePath, reason: enum outside_workspace/force_required/not_file/unresolvable, message: NonBlankText) | Original lexical relative target, never a resolved host escape |
+| target_exists | AffectedPathDetails(path: WorkspaceRelativePath) | Existing target refused, including late create-only collision |
+| original_unreadable | OriginalReadDetails(path: WorkspaceRelativePath, reason: enum permission_denied/invalid_encoding/io_error, message: NonBlankText) | Observed read/decode problem, not a fabricated missing file |
+| edit_invalid | EditDetails(reason: enum missing_match/missing_anchor/invalid_pattern/invalid_replacement, message: NonBlankText, suggestions: tuple[NonBlankText,...], context: tuple[SourceLine,...]) | Retain accepted useful mismatch feedback as structured source excerpts |
+| render_failed | RenderDetails(message: NonBlankText) | Existing render failure; no invented cause classification or new automatic repair |
+| preparation_failed | LockWaitDetails or InputPreparationDetails, as specified below | Distinguish lock wait from validation-input allocation/write, not an adapter timeout |
+| validation_blocked | null | validation_policy/status, selected profile and checks already explain refusal; do not copy them |
+| original_changed | AffectedPathDetails(path: WorkspaceRelativePath) | Observed source change blocks replacement; no invented hash/timestamp evidence |
+| original_missing | AffectedPathDetails(path: WorkspaceRelativePath) | Initial absence or later observed disappearance; retained check facts show reached work |
+| persistence_failed | PersistenceDetails(path: WorkspaceRelativePath, stage: enum write_staging/create/replace, reason: enum permission_denied/io_error, message: NonBlankText) | Actual failed stage without claiming partial proposed bytes reached the target |
+| adapter_request_rejected | RejectedRequestDetails(check_id: CheckId) | Points to the one check row owning rejection issues, invocation and cleanup facts |
+| termination_unconfirmed | TerminationDetails(check_ids: nonempty unique tuple[CheckId,...], interrupted: StrictBool) | Original runtime failure/extra stop facts remain with checks |
+| operation_interrupted | null | Already retained attempt/results/cleanup facts; do not fabricate delivery to a cancelled client |
+
+PreparationDetails is a closed reason-discriminated union:
+
+- LockWaitDetails(path: WorkspaceRelativePath, reason: Literal["lock_wait_timeout"]).
+- InputPreparationDetails(path: WorkspaceRelativePath, reason: enum
+  validation_input_allocation_failed/validation_input_write_failed, message: NonBlankText).
+
+Here path identifies the logical affected target when no temporary file was allocated;
+never invent a scratch path. Filesystem classifications come from typed observations,
+not exception-message parsing. io_error is a filesystem category, not a catch-all for
+programming defects. Startup config errors and public shape rejection retain their
+existing earlier boundaries and need not construct a mutation output.
+
+SourceLine has line_number: positive StrictInt and text: StrictStr (empty text is valid).
+Preserve the current safe-edit diagnostic bounds: at most three similar-line suggestions
+and the first ten source lines for mismatch/anchor feedback. Invalid pattern/replacement
+does not invent suggestions or context. Those line bounds are not a byte ceiling;
+the existing presenter limits inline text without altering the cached excerpts. Do not
+add a second complete original/proposed-content field or a new fuzzy-matching policy.
+
+Null error_code requires null details. Every non-null code requires exactly its listed
+detail except validation_blocked/operation_interrupted. The first authoritative blocker
+remains primary; later lifecycle/housekeeping facts stay in their existing records.
+Completed report-policy writes can retain failed/unavailable checks with success=true;
+blocked or failed mutations retain this document's existing operation-success rule.
+This proposal does not transplant the explicit execution tools' handling-success rule
+onto mutations or reinterpret check failures as server defects.
+
+Required evidence: one permitted details shape per code; rejection of missing/extra/
+mismatched fields; no-write under both policies for internal request rejection;
+earlier results and cleanup preserved; typed scope/IO/lock distinctions; useful bounded
+edit feedback; real configured presentation plus cached-resource reads. No tests or
+production changes were performed for this pending Design proposal.
+
 ## 8. Acceptance Evidence
 
 Design-owned behavioral evidence must later prove:
@@ -1187,6 +1267,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
 | 1.30 | 2026-09-10 | @imp designer | Record human-approved W01-A–E operation-result integration; close result-shape/ownership decisions, preserve explicit W02/W05 dependencies and route required-null serialization and independent evidence. |
+| 1.34 | 2026-09-12 | @imp designer | Propose exact mutation error-detail matrix and not_executed/invalid_request combination with retained attempt evidence; pending human confirmation, existing persistence semantics unchanged. |
 | 1.33 | 2026-09-12 | @imp designer | Connect invocation evidence to the shared required ProcessCapture type; preserve required-null/resource round-trip obligations and existing result/persistence semantics. |
 | 1.32 | 2026-09-10 | @imp designer | Fix mutation consumer argument ownership: configured binding defaults only, no public native tuning, direct per-check source/effective-list evidence through existing presentation. |
 | 1.31 | 2026-09-10 | @imp designer | Consume the approved W02 native provenance return field while retaining existing result placement and shared capture/resource conformance obligations. |

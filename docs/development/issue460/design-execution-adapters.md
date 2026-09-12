@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.90
+**Version:** 0.91
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -3907,6 +3907,122 @@ Exact cycle names and scheduling remain Planning-owned.
 | XC-02; 126/151 catalog | Sections 9–12 preserve per-row removal ownership and independent migration proof | Complete removal mapping remains open |
 | RC-01; manageability conditions | Sections 2, 9, and 12 preserve scope freeze, clean break, cutover order, and cycle constraints | Binding throughout Design |
 
+## Pending Workshop Proposal — Concrete Public Results and Check Error Details
+
+**Human confirmation pending, 2026-09-12.** This proposes the precise replacement of
+W04/W05 public result unions, not their adapter wire unions, scope, native semantics,
+argument routing, execution order or success/isError meaning. It also closes the
+public internal-request-rejection gap shared with DI-04. Until confirmed, this is a
+reviewable proposal rather than a second active contract.
+
+#### One concrete record per consumer, not one universal result DTO
+
+PublicTestResult and PublicFixResult each become a frozen, strict, extra-forbid
+concrete model. SelectionCheckResult keeps its own coverage/required_targets and
+invocation fields; DI-04 keeps mutation housekeeping and selection. Reuse scalar
+value types and shared capture/identity, not one over-generalized output object.
+
+| Test/fix row field | Required type | Owner / constraint |
+|---|---|---|
+| test_id or fix_id | Respective lexical ID | Manager associates the selected binding; only the appropriate ID field exists |
+| status | Closed enum passed/failed/unavailable/not_executed | Consumer result, not proof that an adapter supplied that same status |
+| reason | AdapterUnavailableReason, AdapterCallFailureReason, ConsumerNotExecutedReason or null | Preserve existing owner-specific codes; ConsumerNotExecutedReason is not_started/interrupted/invalid_request |
+| message | NonBlankText or null | Preserve the existing factual message if the source contract defines one; never parse native evidence to invent one |
+| evidence | NativeEvidence or null | Accepted native evidence only; failed requires substantive evidence |
+| external_tools | tuple[ExternalToolIdentity,...] or null | Accepted role response has its actual tuple, including known empty; absence of a role response is null |
+| adapter | AdapterRunIdentity or null | Present for every attempt, absent only when not_started |
+| capture | ProcessCapture or null | Same attempt rule; preserve existing bounded shared capture |
+| termination_problem | TerminationProblem or null | Preserve invocation failure's runtime-owned extra stop fact; existing interrupted-operation ownership remains at operation level |
+| request_rejection | nonempty tuple[RequestValidationIssue,...] or null | Only the invalid_request combination; no repeated complete request |
+| args_source | Existing configured/caller enum or null | Known after resolution, not evidence of launch |
+| effective_args | tuple[StrictStr,...] or null | Known after resolution; explicit empty remains empty, not unknown |
+
+The existing nested public decision, invocation_failure and not_executed fields are
+replaced by their direct facts above, not retained as duplicate authority. Internal
+AdapterCallFailure and role decision unions remain unchanged. A pure manager-owned
+projection transfers their known fields; tools and presenters do not interpret outcomes.
+
+| Observation | status | reason | message / extra constraints |
+|---|---|---|---|
+| Accepted passed test | passed | null | Original required TestPassed message; preserve collection/no-tests explanation |
+| Accepted passed fix | passed | null | null; FixPassed does not define a message or a changed-file claim |
+| Accepted native negative result | failed | null | Required original message and native evidence |
+| Accepted adapter unavailability | unavailable | Original AdapterUnavailableReason | Required original message; accepted role provenance/evidence retained |
+| Shared invocation failure | unavailable | Original AdapterCallFailureReason | Required original runtime message; native evidence/external_tools null; attempt/capture retained |
+| Remaining binding never invoked | not_executed | not_started | message null for test/fix; adapter/capture/native evidence/external_tools null |
+| Interrupted attempt | not_executed | interrupted | message null for test/fix; known adapter/capture retained, no fabricated native evidence |
+| Adapter rejects internal request before native work | not_executed | invalid_request | message null; nonempty request_rejection and known attempt/capture; no native evidence/external_tools |
+
+All other combinations reject. Ordinary rows have request_rejection=null. These
+combinations are enforced by the DTO contract, not by display templates. No fifth
+status, nullable-status special case, generic completed state, duplicate public
+summary collection, counts, origin field or new adapter capability is added.
+
+Selection checks retain their additional adapter-owned not_executed reasons
+scope_restricted/not_applicable, coverage and required_targets. They are not added
+to test/fix vocabulary. Mutation check passed messages remain absent; DI-04's existing
+orchestration messages remain required. Shared form does not erase role differences.
+
+The new invalid_request consumer combination explicitly extends DI-04's existing
+not_started/interrupted set. It means no native operation ran, not that no adapter
+process launched. It keeps adapter_request_rejected as a genuine PGMCP operation
+defect with success=false; stop subsequent work and preserve remaining not_started
+rows. Native CLI usage rejection remains unavailable/unsupported_input with
+success=true when correctly reported. Never confuse those two boundaries.
+
+Existing reducers require no new branch: mutation failed > unavailable > not_executed
+and complete-pass rules stay intact; run_checks is incomplete if any not_executed
+obligation exists; test/fix have no aggregate verdict. Internal rejection blocks both
+mutation policies and does not erase earlier native results or partial native fixes.
+
+#### Exact proposed run_checks error matrix
+
+All detail models are frozen, strict and extra-forbid. Sequences are immutable;
+required nullable fields serialize explicitly. Operation problems do not absorb
+native findings, unavailable results or ordinary captured invocation failures.
+
+| RunChecksErrorCode | Exact details | success when correctly reported |
+|---|---|---|
+| no_configured_checks | null | true |
+| default_profile_missing | null | true |
+| selection_invalid | CheckSelectionDetails(issues: nonempty tuple[CheckSelectionIssue,...]) | true |
+| branch_basis_unavailable | BranchBasisDetails(reason: enum parent_unavailable/merge_base_unavailable, message: NonBlankText) | true |
+| scope_resolution_failed | W04 ScopeDetails: nonempty ScopeIssue tuple; target is the original lexical workspace-relative target, reason enum missing/outside_workspace/unresolvable, message NonBlankText | true |
+| adapter_request_rejected | RejectedRequestDetails(check_id: CheckId), pointing to that row's nonempty request_rejection | false |
+| operation_interrupted | null | true only if lifecycle permits a factual response |
+| termination_unconfirmed | TerminationDetails(check_ids: nonempty unique tuple[CheckId,...], interrupted: StrictBool) | true for correctly reported safety stop; an independently retained internal defect still establishes false |
+
+CheckSelectionIssue is a closed reason-discriminated union:
+
+- UnknownProfileIssue(reason: Literal["unknown_profile"], profile_id: ProfileId).
+- UnknownCheckIssue(reason: Literal["unknown_check"], check_id: CheckId).
+- UnselectedCheckArgsIssue(reason: Literal["unselected_args"], check_id: CheckId).
+- UnsupportedSelectionIssue(reason: Literal["selection_unsupported"], check_id: CheckId),
+  for the already-specified refusal of a content-only capability as a selection check.
+
+Diagnostic IDs have lexical typing, not membership constraints that would prevent
+reporting an unknown supplied ID. Static invalid references remain startup errors;
+public schema rejection may occur before an operation DTO exists. Other Git failures
+retain their actual operational route; never forge a missing target or native result.
+Null error_code requires null details. A non-null code requires exactly its listed
+detail, except the three explicitly detail-free codes. Termination evidence survives
+interruption; error_code never determines success independently of its actual cause.
+
+W04/W05 error matrices remain unchanged except their rejection references now point
+into the concrete row. Their selection, lifecycle and success rules are not reopened.
+Shared Contracts owns the narrowly required generic presentation type-admission work.
+
+#### Preservation and removal evidence
+
+Test every permitted row combination and reject cross-combinations; check actual
+resources/read includes explicit nulls, native evidence and capture. Prove failed
+tests/fixes and native unavailability retain success=true; internal request rejection
+retains success=false and stops later work. Exercise passed test messages and absent
+passed fix messages separately. Preserve scopes, native args/default reporting, mixed
+profiles, no-call empty branch behavior and native partial mutation. Remove the old
+public union projection only with those facts accounted for; do not delete adapter
+wire unions or native conformance fixtures. No implementation or native runs performed.
+
 ## 14. Related Documentation and Version History
 
 - [Design hub](design.md)
@@ -3919,6 +4035,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.91 | 2026-09-12 | `@imp designer` | Propose concrete public test/fix rows, honest internal-rejection facts and exact run_checks error details; human confirmation pending, native wire contracts unchanged. |
 | 0.90 | 2026-09-12 | `@imp designer` | Define bounded process-capture transfer on attempted invocation/consumer records and cross-reference prepared schema holder; public presentation and exact run_checks error-detail completion remain open. |
 | 0.89 | 2026-09-12 | `@imp designer` | Consolidate accepted W04 tests.yaml, test/v1 request/response, public result/error DTOs and sequencing; preserve later args/scopes, pure config ownership and truthful interrupted-attempt evidence. |
 | 0.88 | 2026-09-12 | `@imp designer` | Replace stale open-decision routing with approved args, native settings, fix and delivery owners; keep actual test DTO/canonical integration and evidence gaps explicit. |
