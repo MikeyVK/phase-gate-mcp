@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.88
+**Version:** 0.89
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -97,7 +97,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-18 | Required adapters.yaml under resolved_config_root owns trusted_adapter_ids; ship empty, load centrally and inject into catalog admission; no second settings source or self-trust | Human-approved W02-B, 2026-09-10; §7.4.2 |
 | D-ADAPTER-19 | Role results carry typed external_tools as ordinary invoked-run evidence; invalid_request stays minimal; no new query tool, startup survey or result-decision consumer | Human-approved W02-F, 2026-09-10; §7.4.3 and amended scaffold response |
 | D-ADAPTER-20 | Consolidate run_checks selection, scope and result contracts; permit a positive per-invocation caller timeout override without changing the internal termination budget | Human-approved W03, 2026-09-10; §7.14; previous scope/profile decisions are not reopened |
-| D-ADAPTER-21 | run_tests exposes flat tests selection and addressed CLI args in one startup-built schema; adapters/native tools own switch interpretation; supersede test options_schema without extending other consumers | Human-approved W04 input/exposure, 2026-09-10; §7.15; test results and exact remaining integration stay open |
+| D-ADAPTER-21 | run_tests exposes flat tests selection and addressed CLI args in one startup-built schema; adapters/native tools own switch interpretation; supersede test options_schema without extending other consumers | Human-approved W04, 2026-09-10; exact configuration/request/result graph consolidated in §7.15 on 2026-09-12; conformance remains required |
 | D-ADAPTER-22 | Public success is operational and inversely maps to MCP isError; correctly reported negative or unavailable domain results are not tool execution failures | Human-required correction, 2026-09-10; §7.14; applies across check/test/fix consumers, without deriving MCP errors from adapter exits |
 | D-ADAPTER-23 | Remove generic native verbose interpretation across check/test/fix consumers and adapter inputs; native switches retain their documented meaning through addressed args | Human-approved correction, 2026-09-10; §7.15; exact non-test argument routing remains separately owned |
 | D-ADAPTER-24 | run_tests requires configured, workspace or targets scope; configured preserves native selection, workspace explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status; explicit workspace correction supersedes the dot convention |
@@ -2484,7 +2484,7 @@ check decisions. W02/W03 approval is authoritative in §§7.4.1–7.4.3 and 7.14
 | Package/catalog | §§7.4.1–7.4.3 and DI-06 §7.6 own approved package/trust/delivery; installed conformance remains required |
 | Process transport | Approved shared invocation/transport and scratch contracts in §7.13; independent protocol/process evidence remains required |
 | Check | Integrate approved content/selection contracts into concrete typed declarations; prove profile admission, factual outcomes and registered schemas independently |
-| Test | §7.15/§7.16 own approved tests/scopes/native args/results; full canonical tests.yaml and typed DTO consolidation remains explicit below |
+| Test | §7.15 owns canonical tests.yaml/request/result DTO graph; §§7.16–7.17 own shared args/scope amendments; implementation and conformance remain required |
 | Fix | §7.18 owns approved explicit paths/order, native outcomes, partial mutation and stop-first; conformance remains required |
 | Public operations | §7.16 closes per-binding args/defaults and excludes public mutation args; preserve diagnostics and prove registered wrapper/schema/result integration |
 | Native configuration | §7.20 owns human-approved native settings and intentional deltas; native/installed evidence remains required |
@@ -2812,7 +2812,7 @@ Structural adapter-request validation remains required at the process boundary. 
 switch/combinations prevalidation is not mandatory: the adapter may invoke the native
 tool and report its rejection, or detect the problem earlier. A native usage error is
 not automatically malformed protocol JSON or evidence of a PGMCP construction defect.
-Its exact typed test result/exit classification belongs to the next result workshop.
+Its exact typed test result/exit classification is defined in §7.15.3 below.
 
 Regardless of when native option validity is established, adapters must retain their
 role, authorized scope and result-reporting obligations. Native arguments cannot grant
@@ -2824,9 +2824,9 @@ explicit replacement arguments describe the execution use, not a duplicate nativ
 #### Remaining integration and independent evidence
 
 The former test options_schema/SuiteRequest/options/test_ids design is superseded for
-public test invocation. Do not preserve it as an alias alongside args. Exact tests.yaml
-records and the full test/v1 request/result DTO graph accepted at W04 closure still
-require detailed canonical integration; apply §7.16's later default_args amendment,
+public test invocation. Do not preserve it as an alias alongside args. Sections
+7.15.1–7.15.5 consolidate the exact tests.yaml records and full test/v1 request/result
+DTO graph accepted at W04 closure, including §7.16's later default_args amendment,
 not the superseded temporary suite/options configuration.
 The existing all-configured-active meaning from Research remains binding.
 
@@ -2839,6 +2839,190 @@ consumers follow D-ADAPTER-23 and §7.16's explicit mutation-versus-interactive 
 The schema fragment is documentation, not executed conformance evidence. Shared native
 evidence, cache/presentation and process errors retain their existing owners; do not
 introduce generic native-output parsing to support this addition.
+
+#### W04 detailed contract consolidation — 2026-09-12
+
+The following contracts consolidate the human-closed W04 working design with the later
+§§7.16–7.17 amendments. These are canonical declarations, not a new product decision or
+runtime conformance claim. Shared value types retain their existing owners. ConfigLoader
+remains the only file reader; interrupted attempts retain known package identity; public
+requested_targets echoes caller targets and is empty for configured/workspace. These
+precisions align existing ownership and evidence rules without adding options or modes.
+
+#### 7.15.1 tests.yaml — execution bindings, not native settings
+
+Configuration file: resolved_config_root/tests.yaml. Example IDs are illustrative; this does not promise a shipped browser adapter.
+
+```yaml
+tests:
+  python_tests:
+    adapter_id: pytest
+    capability: tests
+    timeout_seconds: 300
+    default_args: []
+    active: true
+  browser_tests:
+    adapter_id: playwright
+    capability: tests
+    timeout_seconds: 600
+    default_args: []
+    active: true
+```
+
+| Field | Exact type / presence | Consumer |
+|---|---|---|
+| tests | Required immutable mapping TestId -> TestBinding; empty allowed | ConfigLoader constructs pure TestsConfig; resolved catalog, startup schema projection and TestRunManager consume it |
+| adapter_id | Required AdapterId | Admitted TestCatalogReader |
+| capability | Required CapabilityId, under the referenced adapter's test role | Catalog validation; copied to adapter request operation |
+| timeout_seconds | Required positive StrictInt | Shared invocation budget unless caller overrides |
+| default_args | Required tuple[StrictStr,...]; [] allowed | Manager selects defaults unless caller supplies this recipient |
+| active | Required StrictBool | Default selection only; not trust, installation or exposure |
+
+TestId uses the existing case-sensitive ID grammar [a-z][a-z0-9_]{0,63}. All records are closed, strict and frozen; reject unknown/legacy fields, duplicate YAML keys, unknown/untrusted adapters, missing test roles and unknown capabilities at startup. Native availability is not probed. The distribution supplies tests.yaml; a missing required file is not silently replaced with defaults.
+
+Omitted public tests selects every active binding in declaration order. Explicit tests selects exactly the requested IDs in caller order, including a configured inactive binding. All configured bindings appear in the one startup schema; active=false means only “not part of the default run.” An empty mapping and a mapping with no active bindings remain distinguishable and yield no_configured_tests / no_active_tests when appropriate. Never launch an arbitrary discovered adapter as a fallback.
+
+No separate active-ID list, profile tree, test root, native command, parser settings or duplicated native rule settings. This avoids duplicate membership/configuration authorities. A workspace owner adds languages by installing/trusting an adapter and adding bindings. Configured scope with omitted tests means all active native test selections, not all installed tools.
+
+#### 7.15.2 Exact test/v1 request
+
+The later human-approved §7.17 alignment replaces the presence-based union.
+One strict, frozen, extra-forbid TestRequest has exactly these required fields:
+operation: CapabilityId; targets: tuple[AbsolutePath,...]; args: tuple[StrictStr,...].
+
+targets=[] selects native configured discovery. Nonempty targets are resolved existing
+files/directories. Missing/null targets is invalid. Public scope remains required;
+empty public targets is still invalid. PGMCP rejects "." workspace shorthand and
+resolves scope=workspace into one absolute root target; adapters have no scope or
+Git fields. The effective args tuple follows §7.16, not the public recipient mapping.
+
+Configured example sent to one adapter:
+
+```json
+{
+  "operation": "tests",
+  "targets": [],
+  "args": ["-vv", "--tb=long"]
+}
+```
+
+Targeted public example:
+
+```json
+{
+  "scope": "targets",
+  "targets": ["tests/mcp_server/unit"],
+  "tests": ["python_tests"],
+  "args": {"python_tests": ["-v"]}
+}
+```
+
+Corresponding adapter request:
+
+```json
+{
+  "operation": "tests",
+  "targets": ["C:/temp/pgmcp/tests/mcp_server/unit"],
+  "args": ["-v"]
+}
+```
+
+The example absolute path is internal request data, not public operation output. scope=workspace resolves to the workspace root and uses TestRequest. Public "." targets (including equivalent root-only spellings) are rejected rather than silently converted. Native configured discovery and explicit root discovery are not equivalent: in this workspace native Pytest defaults use testpaths=["tests/mcp_server"], whereas an explicit directory target supplies its own start location. Do not reimplement or merge these rules.
+
+The adapter translates filesystem targets into native selectors: Pytest accepts positional files/directories; Playwright uses path regex filters and requires literal-path escaping and directory-boundary handling. This native translation belongs to the adapter, never generic command construction. Exact cross-platform conformance remains required.
+
+Working directory is the resolved workspace root. The selected manifest entrypoint supplies test/v1; operation is the configured capability. No workspace_root, timeout, test_id, adapter_id, role or public multi-recipient mapping is duplicated in the adapter payload. The shared invoker owns the budget. Args are JSON request data, not arguments appended to the adapter launcher.
+
+Native option validation can happen in the tool; early adapter validation is optional. Role/scope safety is not optional. Native selectors may narrow or refine the request within the authorized boundary, not silently widen explicit targets or authorize source writes. An unhonorable combination is a directed unavailable result. This is not an OS sandbox, and test execution may read imported production dependencies and create normal native outputs/caches.
+
+#### 7.15.3 Exact test/v1 response
+
+Use a test-specific result contract with shared NativeEvidence, ExternalToolIdentity and AdapterUnavailableReason value types. Do not inherit the scaffold DTO and do not change the check status vocabulary.
+
+All decision variants are closed, strict and frozen:
+
+| Decision variant | Required fields | Adapter exit |
+|---|---|---|
+| TestPassed | status: Literal["passed"]; message: NonBlankText | 0 |
+| TestFailed | status: Literal["failed"]; message: NonBlankText | 1 |
+| TestUnavailable | status: Literal["unavailable"]; reason: AdapterUnavailableReason; message: NonBlankText | 3 |
+
+TestDecision is their status-discriminated union. Passed means the requested native operation succeeded; it does not assert an unrequested behavioral run or certify a workflow gate. A successful collection-only request is passed without a special status. Failed means a trustworthy negative native result. Unavailable means the requested result could not be established. Every variant supplies a concise factual message so native JSON does not require a PGMCP parser to generate a meaningful explanation.
+
+TestRoleResponse has exactly decision: TestDecision, external_tools: tuple[ExternalToolIdentity,...], and optional evidence: NativeEvidence. Evidence is mandatory and substantive for failed, optional otherwise; absence is omission, not null. Messages must agree with evidence. Native counts, IDs, failure details, duration, coverage, last-failed observations and native exit codes retain their native meanings in evidence; unknown values are never fabricated as zero. No generic mode, collection state, coverage model or per-test-case taxonomy.
+
+TestResponse is TestRoleResponse or the existing minimal invalid_request response (reason plus typed RequestValidationIssue list), with adapter exit 2 and no native work. A native usage rejection after a structurally valid request is not invalid_request.
+
+| Situation observed by adapter | Decision / reason | Evidence |
+|---|---|---|
+| Ordinary native success, including requested collection | passed | Explain actual work; collection is not a generic mode |
+| Tests fail or native negative result such as configured threshold rejection | failed | Native explanation and details required |
+| Pytest native exit 5: no tests found | passed | Explicit no-tests message; preserve native exit/count evidence, no passing-test claim |
+| Well-shaped args rejected by the native tool | unavailable / unsupported_input | Native usage explanation |
+| Native dependency missing | unavailable / dependency_unavailable | Explain observed missing dependency |
+| Native configuration prevents the request | unavailable / invalid_configuration | Native configuration explanation |
+| Native execution fails without a usable result | unavailable / execution_error | Native diagnostics where available |
+| Native output cannot be interpreted truthfully | unavailable / invalid_result | Explain inability; do not guess |
+| Requested targets cannot be honored | unavailable / unsupported_input | Explain scope/selector limitation, no silent expansion |
+
+Successful native requests use passed/exit 0, not a new completed domain status. The listed Pytest no-tests mapping is the accepted W04 native adapter policy, not an automatic inference from tool success or a completed process. Adapter exit codes are not native exit-code identity. Native exit 5 need not become adapter exit 5. Pytest-specific policy lives in the official adapter and its conformance cases; generic PGMCP never learns Pytest exit numbers. A native tool whose own semantics make absence a negative result need not be forced into Pytest's policy.
+
+#### 7.15.4 Exact run_tests operation output
+
+Accepted RunTestsOutput is closed/frozen and contains these required fields:
+
+| Field | Type | Consumer |
+|---|---|---|
+| success | StrictBool | Existing wrapper maps to inverse MCP isError; never a domain verdict |
+| requested_scope | Literal["configured","workspace","targets"] | Human/agent interpretation of request |
+| requested_targets | tuple[WorkspaceRelativePath,...], empty for configured/workspace, whose requests contain no targets field | Scope evidence; no routine absolute paths |
+| selected_tests | unique ordered tuple[TestId,...] | Resolved selection, including defaults; empty if unresolved |
+| results | ordered tuple[PublicTestResult,...] | Addressed results and retained partial evidence |
+| error_code | RunTestsErrorCode or null | Expected selection/operation problem, not a derivation of success |
+| error_details | matching typed detail or null | Existing generic presentation/cache path |
+
+No root run_status, tests_passed boolean or generic count total. The ordered result list is enough; combining different framework meanings into a second verdict adds no required behavior here. The root success is not that missing aggregate.
+
+Every addressed result also carries direct args_source: Literal["configured","caller"]|null and effective_args: tuple[StrictStr,...]|null under §7.16. Both are present once resolved; explicit caller [] is source caller and a known empty list. Before resolution both are null. These manager fields do not imply native execution or reconstruct native configuration.
+
+PublicTestResult is a closed union of the following record shapes. The variant-specific required fields define an unambiguous union without an extra kind/origin/source envelope:
+
+- Role result: test_id: TestId; decision: TestDecision; evidence: NativeEvidence|null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity.
+- Invocation failure: test_id: TestId; invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem|null; adapter: AdapterRunIdentity.
+- Internal request rejection: test_id: TestId; request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity. This retains the actual typed internal-contract failure, not a native result.
+- Not started: test_id: TestId; not_executed: Literal["not_started"]. No adapter/native provenance is invented for work never invoked.
+- Interrupted invocation: test_id: TestId; not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity. Preserve the known attempt identity consistently with the shared runtime and §7.18; no native verdict is invented.
+
+AdapterRunIdentity contains exactly adapter_id: AdapterId, version: SemVer, fingerprint: AdapterFingerprint and contract_version: Literal[1], populated by the generic runtime from the admitted package. It records an actual invocation attempt, including a launch attempt that fails; it does not claim native work happened. Reuse this package identity shape across consumers rather than defining test-only fingerprint logic. Keep it grouped because its four values describe one package snapshot, not a generic source hierarchy.
+
+Only one of decision, invocation_failure, request_rejection or not_executed may occur. A valid adapter role response projects into the role-result shape; shared InvocationFailed into the invocation-failure shape. A shared cancellation that still permits reporting uses not_executed for interrupted work, with any termination problem retained at operation level. Shared invalid_request indicates the server constructed an invalid internal request: retain its typed details in the rejection row, reference that test_id at operation level, stop and use the genuine operational-fault route. It is not a native failed-test row.
+
+Results follow selected_tests order and have one row per known obligation after resolution, including work not started because a safety stop occurred. No fabricated rows before selection resolves. Successfully returned evidence is never discarded because another binding fails. Adapter evidence omission projects to explicit null in the cached public role-result record; the established null-preserving cache obligation applies.
+
+RunTestsErrorCode and matching details:
+
+| Code | Details | Tool success when correctly reported |
+|---|---|---|
+| no_configured_tests | null; no further fact needed | true |
+| no_active_tests | null; configured bindings remain explicitly selectable | true |
+| selection_invalid | SelectionDetails(issues: nonempty tuple of SelectionIssue(field: Literal["tests","args"], test_id: TestId, reason: Literal["unknown_test","unselected_args"])) | true |
+| scope_resolution_failed | ScopeDetails(issues: nonempty tuple of ScopeIssue(target: WorkspaceRelativePath, reason: Literal["missing","outside_workspace","unresolvable"], message: NonBlankText)) | true |
+| adapter_request_rejected | RejectedRequestDetails(test_id: TestId), referencing the request_rejection row without duplicating its issues | false: internally constructed request violates our contract |
+| operation_interrupted | null; row facts retain known work | true if cancellation permits a factual response; do not manufacture a response to a disconnected caller |
+| termination_unconfirmed | TerminationDetails(test_ids: nonempty unique tuple[TestId,...], interrupted: StrictBool) | true for correctly reported safety stop |
+
+Types above are strict, immutable and extra-forbid; path/error presentation follows DI-04's approved disclosure boundary. For scope errors involving an unresolvable/escaping target, target is the original lexically workspace-relative supplied path, not an absolute resolved escape. Input rejected by the public schema stays in the existing public validation route and may have no RunTestsOutput. Do not invent a second transport-error DTO for it.
+
+error_code is null iff error_details is null except the three explicitly detail-free codes above (no_configured_tests, no_active_tests, operation_interrupted). A null error_code forbids non-null details. For concurrent stop facts, termination_unconfirmed takes precedence over operation_interrupted and retains interrupted in its typed details. No catch-all domain conversion of PGMCP programming exceptions: those follow the existing wrapper's operational error route, success=false/isError=true where a response can be produced.
+
+Important distinction: an expected adapter launch/timeout/crash/protocol failure successfully captured as invocation_failure is not itself evidence that PGMCP malfunctioned. It remains success=true/isError=false with the precise shared failure, rather than a forged adapter verdict. Native domain rejection also remains success=true. A genuine PGMCP internal defect remains a tool failure. No native or adapter exit code maps directly to MCP isError.
+
+#### 7.15.5 Execution ownership and stop behavior
+
+Resolve and structurally validate the entire selection/args routing/target scope before launch. Execute selected bindings sequentially in resolved order. Continue after passed, failed, unavailable and bounded InvocationFailed when the shared runtime confirms process cleanup. There is no automatic retry or fallback adapter. An unconfirmed termination stops subsequent launches; retain its original failure and mark remaining rows not_started. Native tool failures do not gain source-write permission. Cancellation follows the established lifecycle contract.
+
+RunTestsTool is a thin public DTO/delegation surface. TestRunManager owns resolved selection, result projection and bounded stop behavior. ConfigLoader is the sole file reader; TestsConfig is a pure immutable config value injected into resolution/management. ScopeResolver owns path preparation. The shared invoker owns process framing, timeout, capture and termination. The adapter owns native selection/options, invocation and interpretation. The wrapper/cache/presenter handles serialization and presentation without learning native output semantics.
+
 
 ### 7.16 Configured Arguments and Consumer Ownership — approved 2026-09-10
 
@@ -2952,7 +3136,9 @@ Default checking stays narrow; deliberately configured binding args selected by 
 profile/use, or explicit replacement args on another call, may request broader native
 behavior. No automatic expansion/fallback or generic parsing of native flags is added.
 Existing coverage/required_targets remain factual native evidence, not an authorization
-handshake. An adapter unable to honor a narrow request reports scope_restricted.
+handshake. A check/v1 selection adapter unable to honor a narrow request reports
+not_executed/scope_restricted under §7.14; test/v1 reports unavailable/unsupported_input
+under §7.15.3. Shared request shape does not merge the role-specific result vocabularies.
 Scaffold/safe-edit remain fixed configured-content consumers with no public args/scope.
 
 Preservation evidence must independently prove configured [] versus branch no-call,
@@ -3628,7 +3814,7 @@ proposed conformance evidence is claimed as completed.
 
 | ID | Open Design question | Decision needed |
 |---|---|---|
-| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check and public test-input behavior; remaining W04 canonical integration stays open; §7.18 closes W05 fix operations; shared DTO integration/conformance is still required |
+| Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check/test contracts; W04's exact configuration and DTO graph is consolidated on 2026-09-12; §7.18 closes W05; cross-package implementation/conformance is still required |
 | Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
 | Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, native-argument transport, and independent conformance |
 | Q-ADAPTER-05 | Closed by W05: native fix admission, sequencing and results | §7.18 is authoritative; independent conformance, native-settings migration and external recovery documentation remain integration obligations, not reopened policy |
@@ -3675,6 +3861,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.89 | 2026-09-12 | `@imp designer` | Consolidate accepted W04 tests.yaml, test/v1 request/response, public result/error DTOs and sequencing; preserve later args/scopes, pure config ownership and truthful interrupted-attempt evidence. |
 | 0.88 | 2026-09-12 | `@imp designer` | Replace stale open-decision routing with approved args, native settings, fix and delivery owners; keep actual test DTO/canonical integration and evidence gaps explicit. |
 | 0.87 | 2026-09-11 | `@imp designer` | Record approved bundled_adapters/workspace_adapters source names and direct official authoring outside assets; preserve manifest, trust and role contracts. |
 | 0.86 | 2026-09-11 | `@imp designer` | Record human W09 approval, D-ADAPTER-29 and local closure; retain independent QA, cross-package integration and native conformance obligations. |

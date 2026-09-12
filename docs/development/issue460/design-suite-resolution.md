@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.26  
+**Version:** 1.27  
 **Last Updated:** 2026-09-12  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -852,11 +852,82 @@ decorated tool rather than only its core property; compare exposed and accepted 
 compare retrieval/error schema content; cover shared nested definitions, sibling
 constraints, missing references and unchanged caller values. Verify delayed exposure
 uses the admitted snapshot. Preserve existing whole-tool error tests. No runtime tests
-were executed for this Design decision. Concrete package cases, exact resolver keyword/
-format support and client integration evidence remain open; this is not full W06 closure.
+were executed for this Design decision. Concrete contracts subsequently received W07/W08
+independent QA GO. Section 7.2.3 now fixes dialect/reference/format support; Shared §7.6
+fixes schema URI identity. Implementation and client integration evidence remain required.
 
 Rejected: separate exposure/validation schema authorities, summarized shared definitions,
 all-template context expansion in the scaffold tool schema, and implicit context repair.
+
+#### 7.2.3 Schema dialect and reference admission — approved W06 closeout
+
+Human-approved 2026-09-12, including the subsequent removal of pf from the selected
+schema URI. This closes the remaining schema Design choices, not runtime conformance
+or whole-Design review. Shared Contracts §7.6 owns `schema://template/<encoded-template-id>/context`;
+this URI identifies the active context contract, not an immutable historical version.
+
+Require `"$schema": "https://json-schema.org/draft/2020-12/schema"` on authored schema
+documents. No inferred library-default dialect, silent alternate draft or subschema
+dialect switch. Use a standards-compliant validator as an explicit runtime dependency;
+do not implement JSON Schema assertions in PGMCP or generate template-specific Python
+validation models. The authored schema is the maintenance SSOT; validate and expose
+the one immutable resolved view prepared from it under §§7.2.1–7.2.2.
+
+| Standard constructs | Admitted meaning |
+|---|---|
+| type, enum/const, numeric bounds/multipleOf, string length/pattern | Standard 2020-12 assertions; no type coercion |
+| properties, required, additionalProperties, patternProperties, propertyNames, property counts | Standard object assertions/applicators; DI-03 records retain their declared closure |
+| items, prefixItems, contains/minContains/maxContains, uniqueItems, item counts | Standard array assertions/applicators |
+| allOf, anyOf, oneOf, not, if/then/else, dependentRequired/dependentSchemas | Standard combined/conditional constraints, not template knowledge in PGMCP |
+| unevaluatedProperties/unevaluatedItems | Preserve evaluated-member semantics across reference resolution; do not substitute additionalProperties/items |
+| Boolean subschemas | Standard accept/reject meaning; false is not an absent schema |
+| title, description, $comment, examples, default, deprecated, readOnly/writeOnly | Metadata, not data insertion, example execution or mutation authority |
+| format | Standard annotation-only behavior; no hidden format assertion checker or custom template-specific format validation |
+| contentEncoding/contentMediaType/contentSchema | No decoding or embedded-content validation promise |
+
+Unknown extension keywords supply no executable constraint; custom vocabularies are
+not admitted. Schema shape validation is not proof that an author expressed an intended
+constraint. Numeric integer semantics follow JSON Schema: an integral JSON number can
+qualify as integer, without rewriting caller values. `format: date` alone does not reject
+`"tomorrow"`; a regex can constrain spelling without certifying calendar validity. Do
+not add a generic calendar or URI validator. DI-03's nonempty Link target does not
+silently acquire URI/existence/anchor validation. Defaults remain non-materializing.
+
+Allow static `$ref` to the current schema, package-local schemas and admitted
+shared/definitions documents, as whole documents or JSON Pointer fragments such as
+`#/$defs/Link`. Resolve relative to the referring document, not the working directory.
+Enforce existing dependency direction and resolved filesystem containment: no traversal/
+symlink escape, cross-package/shared-to-package edge, absolute file reference or network
+retrieval. Local `$defs` remains an authoring facility, not a second maintained schema.
+
+This package format does not admit authored `$id` rebasing, named `$anchor` fragments,
+`$dynamicRef`/`$dynamicAnchor`, or custom `$vocabulary`. Document locations and JSON
+Pointers suffice for the approved definitions. These are explicit authoring restrictions,
+not claims that the standard lacks these features. Reject unresolved pointers and cycles
+during preparation; finite nested records remain supported, arbitrary self-reference
+cannot satisfy the approved finite reference-free exposure promise. Never truncate or
+substitute an empty schema. Traverse schema positions, not literal example/default data
+or property names that merely contain `$ref` text.
+
+Referenced and adjacent constraints both apply. Referenced minLength=5 plus adjacent
+minLength=2 still rejects a two-character input. Keep complete constraints, descriptions,
+combinators and evaluated-member behavior; no overwrite-based dictionary merge, caller
+object flattening or generic runtime equivalence prover. The existing resolver's missing
+definition-to-empty fallback and sibling overwrite are replacement obligations.
+
+Required evidence: authored/resolved acceptance for nested shared definitions, sibling
+constraints, existing allOf with unevaluated members, boolean schemas, missing/cyclic/
+forbidden references, and literal data containing schema-looking keys. Reuse approved
+DI-03 presence/null/empty/false/zero/closed-record cases, without reopening their fields.
+Registered wrapper/lazy exposure and both selected-schema response paths must consume
+the same prepared contract. No executable native dependency probe or template sample
+rendering at startup is added. These are proof obligations, not executed tests.
+
+Primary sources: [JSON Schema core](https://json-schema.org/draft/2020-12/json-schema-core),
+[validation](https://json-schema.org/draft/2020-12/json-schema-validation),
+[MCP tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools).
+The standard explicitly warns that reference removal is not arbitrary dictionary
+substitution; library support and admitted transformations must be proven independently.
 
 ### 7.3 Output Profile Reference
 
@@ -1085,7 +1156,7 @@ Suite Resolution choices.
 |---|---|---|---|
 | Q-SUITE-03 | Shared V3 header-recognition contract | DI-02/DI-04 | Closed by the human-approved integrated header contract, 2026-09-10; implementation/conformance evidence remains required, profile configuration/selection stays with DI-04/DI-05 |
 | R-SUITE-01 | Fingerprint input accidentally includes machine-specific state | DI-02 | Canonicalization tests across independent roots and machines |
-| R-SUITE-02 | Flattening changes JSON Schema semantics | DI-01 | Reference-resolution tests cover nested, recursive, and shared definitions |
+| R-SUITE-02 | Flattening changes JSON Schema semantics | DI-01 | §7.2.3: prove nested/shared and combined constraints; reject cyclic references rather than truncate recursive schemas |
 | R-SUITE-03 | `shared/` recreates an unowned global authority | DI-01/DI-02 | Admit only resolved bases, patterns, and definitions with named consumers and graph edges |
 | R-SUITE-04 | Consumers confuse source-suite evidence with package semantic identity | DI-02/DI-06 | Give the two fingerprints distinct names and consumers; retain suite identity in persisted artifacts while keeping non-artifact DTO exposure YAGNI-bound |
 | R-SUITE-05 | Historical provenance wording creates retention or lookup infrastructure | DI-02/DI-06 | Limit PGMCP to supplied current content and already available managed snapshots; external owners retain their own history |
@@ -1148,6 +1219,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.27 | 2026-09-12 | `@imp designer` | Consolidate W06 2020-12 semantics, bounded references, annotation behavior and preservation evidence; link fingerprint-free selected-context URI. |
 | 1.26 | 2026-09-12 | `@imp designer` | Correct active stale manifest/version, fingerprint-kind, profile and source-encoding wording against approved contracts; retain unresolved schema identity/dialect integration. |
 | 1.15 | 2026-09-03 | `@imp designer` | Reference the DI-04 scaffold validation policy/outcome authority and include validation in the operation-only boundary without copying its enumeration or changing the manifest. |
 | 1.14 | 2026-09-03 | `@imp designer` | Clarify the authored identifier as `template_id`, keep compact persisted `id` only as provenance syntax, and fix strict shallow direct-child package discovery without an authored `templates.yaml` inventory. |

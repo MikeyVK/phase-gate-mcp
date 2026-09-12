@@ -3,7 +3,7 @@
 # Issue 460 Pre-Implementation Documentation Contract
 
 **Status:** DEFINITIVE — DOCUMENTATION CONTRACT; DESIGN ACTIVE  
-**Version:** 1.23  
+**Version:** 1.24  
 **Last Updated:** 2026-09-12  
 
 ---
@@ -23,6 +23,14 @@ remains frozen. The human supplied independent QA GO without P0–P3 findings fo
 W07/W08 concrete-template contracts on 2026-09-11; this does not imply whole-Design
 completion or finished integration. The [Design hub](design.md)
 owns current package status; earlier amendment statuses are historical, not active stops.
+
+W06 schema closeout was human-approved on 2026-09-12: DI-01/02 §7.2.3 owns JSON Schema
+2020-12 semantics and contained static reference resolution; Shared §7.6 owns the
+active-catalog schema URI without fingerprint. The Shared Contracts document is
+included intentionally in this canonical consolidation, not left as temporary review
+material. The accepted W04 test configuration/request/result graph is now consolidated
+in DI-05 §§7.15.1–7.15.5. Cross-package wrapper/serialization, disposition coverage and
+review remain open. No runtime/client conformance or whole-Design QA GO is implied.
 
 ## Scope
 
@@ -299,6 +307,7 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.24 | 2026-09-12 | `@imp designer` | Index approved W06 schema dialect/URI and accepted W04 exact contracts; include Shared Contracts in canonical consolidation without claiming whole-Design conformance. |
 | 1.23 | 2026-09-12 | `@imp designer` | Link approved DI-08 owner; retain canonical integration and independent review as separate completion conditions. |
 | 1.22 | 2026-09-12 | `@imp designer` | Link consolidated W11 owner without changing topology or treating local approval as whole-Design QA. |
 | 1.21 | 2026-09-11 | `@imp designer` | Record bounded independent concrete-template Design GO, without closing whole-Design integration. |
