@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.91
+**Version:** 0.92
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -103,7 +103,7 @@ security manifest fields; exact adapter input fields remain open.
 | D-ADAPTER-24 | run_tests requires configured, workspace or targets scope; configured preserves native selection, workspace explicitly selects the workspace directory; retain passed for a successful requested operation | Human-approved W04 corrections, 2026-09-10; §7.15; no special collection status; explicit workspace correction supersedes the dot convention |
 | D-ADAPTER-26 | PGMCP resolves Git and public scopes; selection adapters receive only operation, targets and args; remove removed_targets, fresh and generic expansion controls | Human-approved 2026-09-10; §7.17 and the bounded Research amendment; default narrow |
 | D-ADAPTER-25 | Execution bindings own default_args; mutation checks are configured-only, while explicit check/test/fix calls may replace arguments per selected binding; report args_source and effective_args | Human-approved consumer/default correction, 2026-09-10; §7.16; omission uses defaults, explicit [] clears them, no merging or public mutation args |
-| D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, role/public result unions and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; independent conformance and cross-package integration remain required |
+| D-ADAPTER-27 | apply_fixes uses explicit files/order, native direct mutation and stop-first; consolidate bindings, unchanged role wire unions, concrete public rows (§13.1) and operational success without aggregate verdict or rollback | Human-approved W05, 2026-09-10; §7.18; independent conformance and cross-package integration remain required |
 | D-ADAPTER-28 | Initial profile composition, template assignments and binding defaults are configuration, not a server-owned taxonomy; extending combinations of existing capabilities requires no code change | Human-approved W09 starting-set boundary, 2026-09-11; §7.19; D-ADAPTER-29 separately records concrete settings, with independent evidence still required |
 | D-ADAPTER-29 | Nine initial adapter packages, explicit content/selection capabilities, native mappings and configured defaults; preserve light Markdown and separate Lychee; accept visible Ruff/Mypy strictness and native target-selection changes | Human-approved W09, 2026-09-11; §7.20; local workshop closed, independent QA and implementation conformance pending |
 | D-ADAPTER-30 | Official packages are authored and shipped under mcp_server/bundled_adapters; owner extensions live under resolved_server_root/workspace_adapters. Same manifest/role contracts, distinct source ownership, no old-path fallback | Human-approved W10 naming/location refinement, 2026-09-11; §7.4.1; DI-06 owns delivery evidence |
@@ -894,7 +894,7 @@ for an existing file remains DI-04/DI-05 work.
 
 Selecting this check never selects `ruff` / `fix` / `format`. Fixes require a separate
 selection and authorization through the fix boundary. The explicit fix-to-check
-relation remains Q-ADAPTER-07; no same-name relationship is inferred. Test suites retain
+addresses relation is owned by §7.4.1 and Q-ADAPTER-07; no same-name relationship is inferred. Test suites retain
 their own test contract rather than becoming check profiles.
 
 Startup validates configured check/profile references against the admitted catalog,
@@ -2690,7 +2690,7 @@ and preserves the factual outcome, coverage/required_targets and shared invocati
 RunChecksErrorCode is closed: no_configured_checks, selection_invalid,
 default_profile_missing, branch_basis_unavailable, scope_resolution_failed,
 adapter_request_rejected, operation_interrupted, termination_unconfirmed. Detail records
-are code-matched frozen closed types, never free dictionaries. Native negative verdicts
+are exactly the code-matched frozen closed types in §13.1, never free dictionaries. Native negative verdicts
 and ordinary unavailability remain check facts, not invented operation errors.
 
 Run status is passed|failed|incomplete|empty_selection when a selection-derived summary
@@ -2727,7 +2727,11 @@ Consumers must not treat success=true as a quality verdict or a completed workfl
 Initially invoke sequentially in selected binding order; independent checks continue
 after ordinary failure/unavailability. Interruption or an independent blocker stops work;
 remaining known obligations get consumer-owned not_executed with not_started|interrupted,
-message, null native evidence and invocation only if attempted. These are not adapter
+message, null native evidence and invocation only if attempted. An internally rejected
+request itself instead uses not_executed/invalid_request, message=null and nonempty
+request_rejection, with attempted invocation/capture and no native evidence/provenance;
+coverage=null and required_targets=[] do not invent coverage or an expansion request.
+Ordinary SelectionCheckResult rows require request_rejection=null. These are not adapter
 reasons. Retain original causes and termination problems under the shared runtime rules.
 
 This is a selection view and observed native run, not an immutable filesystem snapshot.
@@ -2737,9 +2741,9 @@ registration; leave old history inert for owner cleanup, without touching other 
 
 #### Integration and evidence still required
 
-DI-05 owns concrete frozen DTO declarations and all code-matched detail variants;
-shared capture/null-preserving serialization and registered schema proof remain integration
-obligations. Prove defaults/exclusivity/role-input admission, empty versus not_applicable,
+DI-05 §13.1 owns the concrete frozen public records and exact code-matched details;
+DI-04 keeps its own consumer record. Shared capture/null-preserving serialization and
+registered schema contracts are defined; their execution proof remains required. Prove defaults/exclusivity/role-input admission, empty versus not_applicable,
 every response/exit pair, Git working state, narrow refusal/explicit native arguments,
 zero-target branch guarding, repeated execution and cached evidence independently
 from run_checks itself.
@@ -3043,17 +3047,21 @@ No root run_status, tests_passed boolean or generic count total. The ordered res
 
 Every addressed result also carries direct args_source: Literal["configured","caller"]|null and effective_args: tuple[StrictStr,...]|null under §7.16. Both are present once resolved; explicit caller [] is source caller and a known empty list. Before resolution both are null. These manager fields do not imply native execution or reconstruct native configuration.
 
-PublicTestResult is a closed union of the following record shapes. The variant-specific required fields define an unambiguous union without an extra kind/origin/source envelope:
-
-- Role result: test_id: TestId; decision: TestDecision; evidence: NativeEvidence|null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity; capture: ProcessCapture.
-- Invocation failure: test_id: TestId; invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem|null; adapter: AdapterRunIdentity; capture: ProcessCapture.
-- Internal request rejection: test_id: TestId; request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity; capture: ProcessCapture. This retains the actual typed internal-contract failure, not a native result.
-- Not started: test_id: TestId; not_executed: Literal["not_started"]. No adapter/native provenance is invented for work never invoked.
-- Interrupted invocation: test_id: TestId; not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity; capture: ProcessCapture. Preserve the known attempt identity consistently with the shared runtime and §7.18; no native verdict is invented.
+PublicTestResult is one concrete frozen, strict, extra-forbid record. The exact fields
+and allowed observation combinations are defined once in §13.1. It exposes direct
+status/reason/message and retains native evidence, attempt identity, capture and
+request rejection separately; it has no nested public decision/invocation_failure/
+not_executed alternatives. TestDecision and shared invocation unions remain internal
+wire/runtime contracts, unchanged by this public projection.
 
 AdapterRunIdentity contains exactly adapter_id: AdapterId, version: SemVer, fingerprint: AdapterFingerprint and contract_version: Literal[1], populated by the generic runtime from the admitted package. It records an actual invocation attempt, including a launch attempt that fails; it does not claim native work happened. Reuse this package identity shape across consumers rather than defining test-only fingerprint logic. Keep it grouped because its four values describe one package snapshot, not a generic source hierarchy.
 
-Only one of decision, invocation_failure, request_rejection or not_executed may occur. A valid adapter role response projects into the role-result shape; shared InvocationFailed into the invocation-failure shape. A shared cancellation that still permits reporting uses not_executed for interrupted work, with any termination problem retained at operation level. Shared invalid_request indicates the server constructed an invalid internal request: retain its typed details in the rejection row, reference that test_id at operation level, stop and use the genuine operational-fault route. It is not a native failed-test row.
+The manager projects accepted TestDecision or shared invocation facts into §13.1's
+concrete record. Cancellation uses not_executed/interrupted with known attempt facts
+and any termination problem at operation level. A rejected internal request uses
+not_executed/invalid_request with nonempty request_rejection, references that test_id
+at operation level, stops subsequent work and retains success=false. It is not a
+native failed-test row or a failure of user-supplied native CLI options.
 
 Results follow selected_tests order and have one row per known obligation after resolution, including work not started because a safety stop occurred. No fabricated rows before selection resolves. Successfully returned evidence is never discarded because another binding fails. Adapter evidence omission projects to explicit null in the cached public role-result record; the established null-preserving cache obligation applies.
 
@@ -3073,7 +3081,7 @@ Types above are strict, immutable and extra-forbid; path/error presentation foll
 
 error_code is null iff error_details is null except the three explicitly detail-free codes above (no_configured_tests, no_active_tests, operation_interrupted). A null error_code forbids non-null details. For concurrent stop facts, termination_unconfirmed takes precedence over operation_interrupted and retains interrupted in its typed details. No catch-all domain conversion of PGMCP programming exceptions: those follow the existing wrapper's operational error route, success=false/isError=true where a response can be produced.
 
-Important distinction: an expected adapter launch/timeout/crash/protocol failure successfully captured as invocation_failure is not itself evidence that PGMCP malfunctioned. It remains success=true/isError=false with the precise shared failure, rather than a forged adapter verdict. Native domain rejection also remains success=true. A genuine PGMCP internal defect remains a tool failure. No native or adapter exit code maps directly to MCP isError.
+Important distinction: an expected adapter launch/timeout/crash/protocol failure successfully captured by the runtime and projected as unavailable is not itself evidence that PGMCP malfunctioned. It remains success=true/isError=false with the precise shared failure, rather than a forged adapter verdict. Native domain rejection also remains success=true. A genuine PGMCP internal defect remains a tool failure. No native or adapter exit code maps directly to MCP isError.
 
 #### 7.15.5 Execution ownership and stop behavior
 
@@ -3365,23 +3373,14 @@ The argument fields are both known after resolution, otherwise both null. Explic
 caller [] is known and has source caller. Known defaults on an unstarted row do not
 claim those arguments were executed.
 
-The closed union adds exactly one of these mutually exclusive shapes:
-
-| Shape | Required additional fields | Owner |
-|---|---|---|
-| Role result | decision: FixDecision; evidence: NativeEvidence or null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity; capture: ProcessCapture | Adapter supplies role facts; manager associates binding and shared invocation identity |
-| Invocation failure | invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem or null; adapter: AdapterRunIdentity; capture: ProcessCapture | Generic process runtime supplies failure facts |
-| Internal request rejection | request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity; capture: ProcessCapture | Adapter supplies typed rejection; manager classifies internal contract defect |
-| Not started | not_executed: Literal["not_started"] | Manager; no adapter invocation identity invented |
-| Interrupted invocation | not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity; capture: ProcessCapture | Shared cancellation projected by manager; an attempt occurred, mutation is possible |
-
-No extra kind, origin or source envelope. FixDecision is the closed passed/failed/
-unavailable union from this section, not a free status string. AdapterRunIdentity is
-the existing admitted package identity (adapter_id, version, fingerprint,
-contract_version), not native-tool provenance. Native identity stays external_tools.
-The interrupted shape deliberately retains attempted adapter identity: unlike a never
-started fix it may already have mutated source. Any termination problem is retained
-at operation level. This is not a new adapter response or cancellation protocol.
+PublicFixResult is one concrete frozen, strict, extra-forbid record with the exact
+fields and allowed combinations in §13.1. FixDecision remains the unchanged adapter
+wire passed/failed/unavailable union, not the public result shape. Public direct
+status/reason/message preserve those facts alongside evidence and external_tools;
+AdapterRunIdentity retains admitted package identity, separately from native tools.
+Interrupted attempts use not_executed/interrupted and retain adapter/capture because
+source mutation may already have occurred. A never-started row has no invented
+attempt. Termination problems on interrupted execution remain at operation level.
 
 Once selection resolves, return one row per selected fix in caller order when a
 response can be delivered. Before selection resolves, results is empty. Preserve all
@@ -3864,7 +3863,8 @@ cutover follows proven internal routes.
 
 DI-05 owns role behavior and conformance tests; DI-08 owns reusable fixtures/helpers.
 Legacy private-parser tests are candidates for public-boundary adaptation, not a
-requirement to preserve those methods. Concrete harness and fixture APIs remain open.
+requirement to preserve those methods. DI-08 owns the concrete shared harness and fixture contracts; implementation must
+prove them through public boundaries without erasing role-owned conformance.
 No production tests have run for this documentation-only workshop, and none of the
 proposed conformance evidence is claimed as completed.
 
@@ -3873,11 +3873,11 @@ proposed conformance evidence is claimed as completed.
 | ID | Open Design question | Decision needed |
 |---|---|---|
 | Q-ADAPTER-02 | What completes role-specific bindings after W02/W03 and W04 input approval? | §§7.4.1–7.4.3, 7.14 and 7.15 fix package/check/test contracts; W04's exact configuration and DTO graph is consolidated on 2026-09-12; §7.18 closes W05; cross-package implementation/conformance is still required |
-| Q-ADAPTER-03 | How does a tool that needs disk input observe proposed content and appropriate project configuration? | Define scratch, logical-path mapping, and context without authoritative source writes |
-| Q-ADAPTER-04 | What are the exact three role schemas and transport rules? | Cover each role's outcomes, native-argument transport, and independent conformance |
+| Q-ADAPTER-03 | Scratch input and appropriate native configuration | Designed in §§7.3/7.13/7.20; DI-04 owns no-authoritative-write preparation. Native logical-target configuration requires independent conformance |
+| Q-ADAPTER-04 | Three role schemas and shared transport | Designed in §§7.3/7.13–7.18; §13.1 separately owns public projection. Independent review/conformance must preserve that distinction |
 | Q-ADAPTER-05 | Closed by W05: native fix admission, sequencing and results | §7.18 is authoritative; independent conformance, native-settings migration and external recovery documentation remain integration obligations, not reopened policy |
 | Q-ADAPTER-06 | Native starting values and intentional changes are locally decided in W09 | §7.20 owns the human-approved adapter inventory, native settings/defaults and explicit preservation deltas; independent QA and separate check/test/fix conformance remain required |
-| Q-ADAPTER-07 | What completes each capability declaration and its consumer binding? | Define profile/check selection, applicability and input requirements, and explicit fix-to-check references without same-package or same-name assumptions |
+| Q-ADAPTER-07 | Capability declarations and consumer bindings | Designed in §§7.4.1/7.5/7.14–7.18, including addresses references; discovery relations do not authorize automatic checks or infer same-name/package relationships |
 | Q-ADAPTER-08 | Resolved by human generation-identity amendment | No profile/binding projection enters template pf/sf. Preserve startup reference coherence and runtime validation evidence independently; policy.yaml owns the selector |
 | Q-ADAPTER-09 | How do startup-built public contracts survive registration wrappers and lazy client exposure? | DI-01/02 prepared IToolInputContract and Shared §5.5 now define holder/transport. Actual registered-boundary and host reconnect/cache conformance remain required; no hot reload |
 | Q-ADAPTER-10 | How does each real consumer expose configured choices and handle on-use unavailability without weakening its contract? | Complete check/test/fix inputs, defaults, no-configured-choice behavior, no startup probes/filtering, full profile obligations, preserved scaffold report mode, and ordinary response projections under issues 456/459; startup health diagnostics and general blockades remain separately deferred |
@@ -3907,13 +3907,14 @@ Exact cycle names and scheduling remain Planning-owned.
 | XC-02; 126/151 catalog | Sections 9–12 preserve per-row removal ownership and independent migration proof | Complete removal mapping remains open |
 | RC-01; manageability conditions | Sections 2, 9, and 12 preserve scope freeze, clean break, cutover order, and cycle constraints | Binding throughout Design |
 
-## Pending Workshop Proposal — Concrete Public Results and Check Error Details
+### 13.1 Public Result Projection and Exact Check Error Details
 
-**Human confirmation pending, 2026-09-12.** This proposes the precise replacement of
-W04/W05 public result unions, not their adapter wire unions, scope, native semantics,
-argument routing, execution order or success/isError meaning. It also closes the
-public internal-request-rejection gap shared with DI-04. Until confirmed, this is a
-reviewable proposal rather than a second active contract.
+**Human-approved, 2026-09-12.** This is the authoritative public projection for
+W04/W05 and the exact run_checks error-detail contract. The old public result unions
+are replaced, not retained as alternatives. Adapter wire unions, scopes, native
+semantics, argument routing, execution order and success/isError meaning are unchanged.
+DI-04 §7.1 owns the corresponding mutation-check rejection and error-detail contract.
+Independent combined Design review remains required.
 
 #### One concrete record per consumer, not one universal result DTO
 
@@ -3975,7 +3976,7 @@ and complete-pass rules stay intact; run_checks is incomplete if any not_execute
 obligation exists; test/fix have no aggregate verdict. Internal rejection blocks both
 mutation policies and does not erase earlier native results or partial native fixes.
 
-#### Exact proposed run_checks error matrix
+#### Exact run_checks error matrix
 
 All detail models are frozen, strict and extra-forbid. Sequences are immutable;
 required nullable fields serialize explicitly. Operation problems do not absorb
@@ -4035,6 +4036,7 @@ wire unions or native conformance fixtures. No implementation or native runs per
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.92 | 2026-09-12 | `@imp designer` | Consolidate human-approved concrete public rows and exact check error details; replace old public unions while preserving role wire contracts and operational success. |
 | 0.91 | 2026-09-12 | `@imp designer` | Propose concrete public test/fix rows, honest internal-rejection facts and exact run_checks error details; human confirmation pending, native wire contracts unchanged. |
 | 0.90 | 2026-09-12 | `@imp designer` | Define bounded process-capture transfer on attempted invocation/consumer records and cross-reference prepared schema holder; public presentation and exact run_checks error-detail completion remain open. |
 | 0.89 | 2026-09-12 | `@imp designer` | Consolidate accepted W04 tests.yaml, test/v1 request/response, public result/error DTOs and sequencing; preserve later args/scopes, pure config ownership and truthful interrupted-attempt evidence. |

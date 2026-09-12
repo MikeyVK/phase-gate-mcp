@@ -3,7 +3,7 @@
 # Issue 460 Pre-Implementation Documentation Contract
 
 **Status:** DEFINITIVE — DOCUMENTATION CONTRACT; DESIGN ACTIVE  
-**Version:** 1.25
+**Version:** 1.26
 **Last Updated:** 2026-09-12  
 
 ---
@@ -29,14 +29,16 @@ W06 schema closeout was human-approved on 2026-09-12: DI-01/02 §7.2.3 owns JSON
 active-catalog schema URI without fingerprint. The Shared Contracts document is
 included intentionally in this canonical consolidation, not left as temporary review
 material. The accepted W04 test configuration/request/result graph is now consolidated
-in DI-05 §§7.15.1–7.15.5. Cross-package wrapper/serialization, disposition coverage and
-review remain open. No runtime/client conformance or whole-Design QA GO is implied.
+in DI-05 §§7.15.1–7.15.5, with its public projection refined in §13.1. Cross-package
+wrapper/serialization and output contracts are consolidated for independent review.
+No runtime/client conformance or whole-Design QA GO is implied.
 
 The [integration review](design-integration-review.md) records the source-based
-151-test/helper dispositions, supplemental seams and remaining output-contract gaps.
-Prepared input/attachment/capture transport is now specified in its canonical owners;
-declarative consumer result presentation and exact mutation/check error-detail matrices
-still require Design completion before the combined whole-phase review.
+151-test/helper dispositions and supplemental seams. Prepared input/attachment/capture
+transport, concrete public result records, exact mutation/check error details and bounded
+generic strict/nullable presentation admission are human-approved and consolidated.
+The [joint whole-Design hand-over](design.md#whole-design-hand-over--combined-review-request)
+now requests independent review; local workshop agreement is not a phase-level QA GO.
 
 ## Scope
 
@@ -109,18 +111,18 @@ Design uses a hub-and-spoke structure. The hub integrates the phase; the package
 documents own the detailed decisions. Files marked **planned** are created only when the
 corresponding workshop has produced a stable decision nucleus.
 
-| Document | Design Ownership | Initial Status |
+| Document | Design Ownership | Current Review Status |
 |---|---|---|
-| `design.md` | Thin Design hub: rationale, package register, dependency and decision indexes, whole-set coverage, integration risks, and Design hand-over | Planned |
-| `design-shared-contracts.md` | Exact interfaces, DTOs, configuration shapes, status vocabularies, and interaction rules genuinely shared by multiple package documents | Planned |
-| `design-suite-resolution.md` | DI-01 suite contract metamodel and public schema exposure; DI-02 resolved graph, runtime selection, introspection, and provenance | Planned |
-| `design-mutation-validation.md` | DI-04 scaffold/safe-edit mutation, persistence policy, atomicity, recovery, and consumption of unchanged DI-05 factual check evidence | Existing draft; resume in Design |
-| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 adapter package/catalog/process architecture; separate check, test, and fix contracts and operations; fix authorization; V3 cutover; conformance and migration evidence | Drafting; manifest nucleus decided; shared check binding/profile workshop open; complete launch contracts and migration open |
+| `design.md` | Thin Design hub: rationale, package register, dependency and decision indexes, whole-set coverage, integration risks, and Design hand-over | Consolidated; combined independent review requested |
+| `design-shared-contracts.md` | Exact interfaces, DTOs, configuration shapes, status vocabularies, and interaction rules genuinely shared by multiple package documents | Human-approved; combined independent review requested |
+| `design-suite-resolution.md` | DI-01 suite contract metamodel and public schema exposure; DI-02 resolved graph, runtime selection, introspection, and provenance | Human-approved; combined independent review requested |
+| `design-mutation-validation.md` | DI-04 scaffold/safe-edit mutation, persistence policy, atomicity, recovery, and consumption of unchanged DI-05 factual check evidence | Human-approved; exact output/error contracts consolidated for review |
+| [design-execution-adapters.md](design-execution-adapters.md) | DI-05 adapter package/catalog/process architecture; separate check, test, and fix contracts and operations; fix authorization; V3 cutover; conformance and migration evidence | Human-approved; role/config/runtime and concrete public contracts consolidated for review |
 | [design-document-tracking-artifacts.md](design-document-tracking-artifacts.md) | DI-03 contracts and renderer semantics for documentation, issue, PR, commit, planning, validation-report, and related tracking artifacts | Decided; bounded QA GO reported; integration pending |
 | [design-code-test-artifacts.md](design-code-test-artifacts.md) | DI-03 contracts and renderer semantics for production-code and public unit/integration-test artifact families | Decided; bounded QA GO reported; integration pending |
-| `design-distribution.md` | DI-06 package distribution, renewal, customization, adoption, and owner-deployment migration | Planned |
+| `design-distribution.md` | DI-06 package distribution, renewal, customization, adoption, and owner-deployment migration | Human-approved; combined independent review requested |
 | [design-workflow-documentation.md](design-workflow-documentation.md) | DI-07 workflow semantics, phase-document carriers, agent-instruction alignment, and active documentation authority | Human-approved; combined independent review pending |
-| [design-test-architecture.md](design-test-architecture.md) | DI-08 shared repository test fixtures/helpers and cross-package assurance; XC-02 removal-completeness integration | Human-approved; canonical audit and independent review pending |
+| [design-test-architecture.md](design-test-architecture.md) | DI-08 shared repository test fixtures/helpers and cross-package assurance; XC-02 removal-completeness integration | Human-approved; canonical audit indexed, independent review requested |
 
 ### Binding Design and Planning Manageability Conditions
 
@@ -313,6 +315,7 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.26 | 2026-09-12 | `@imp designer` | Index consolidated output/error contracts and joint independent review; refresh package navigation without claiming phase approval. |
 | 1.25 | 2026-09-12 | `@imp designer` | Index the cross-package integration audit, exact test dispositions and remaining public output/error contracts; no whole-phase approval claim. |
 | 1.24 | 2026-09-12 | `@imp designer` | Index approved W06 schema dialect/URI and accepted W04 exact contracts; include Shared Contracts in canonical consolidation without claiming whole-Design conformance. |
 | 1.23 | 2026-09-12 | `@imp designer` | Link approved DI-08 owner; retain canonical integration and independent review as separate completion conditions. |

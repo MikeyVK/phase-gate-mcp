@@ -3,7 +3,7 @@
 # Issue 460 Shared Tool and Schema Contracts Design
 
 **Status:** DRAFT  
-**Version:** 1.10
+**Version:** 1.11
 **Last Updated:** 2026-09-12  
 **Primary Package:** Shared contracts consumed by DI-01, DI-02, and DI-04  
 **Upstream Dependencies:** Issue 456 presentation contract, DI-01/DI-02 resolved catalog  
@@ -446,15 +446,16 @@ parsing prose to recover facts are rejected.
 | R-SHARED-02 | Schema is flattened differently for validation and exposure | DI-01/DI-02 | One catalog-owned resolved schema view with structural equality tests |
 | R-SHARED-03 | Embedded schemas make routine scaffold calls token-heavy | DI-04 | Attach only for explicit schema retrieval or selected artifact-context failure |
 
-### 11.1 Pending workshop proposal — output presentation integration, 2026-09-12
+### 11.1 Output Presentation Integration
 
-**Human confirmation pending.** This proposal belongs with the DI-04/DI-05 pending
-output-contract proposals. It does not silently supersede their approved models.
+**Human-approved, 2026-09-12.** This defines the presentation integration for the
+concrete DI-04 §7.1 and DI-05 §13.1 output contracts. Independent combined Design
+review and implementation conformance remain required.
 
 Use existing presentation.yaml scalar templates, concrete model collections, enum
 cases, byte/item budgets and operation-cache separation. Do not add a union renderer,
 per-error DTO dispatcher, native report parser, a second result-summary DTO, or a
-domain-output channel through NoteContext. DI-05 proposes concrete public result rows;
+domain-output channel through NoteContext. DI-05 defines concrete public result rows;
 the adapter wire response unions stay unchanged.
 
 There is a small generic type-admission gap, not a need for new rendering behavior:
@@ -468,7 +469,7 @@ nullable error_code is therefore not admitted as designed despite needing no new
 case-selection feature.
 Do not bypass validation or claim that absolutely no presentation code must change.
 
-Proposed bounded admission rules:
+Approved bounded admission rules:
 
 | Surface | Admitted type shape | Preserve / reject |
 |---|---|---|
@@ -578,6 +579,7 @@ shortcut.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.11 | 2026-09-12 | `@imp designer` | Consolidate approved generic strict/nullable admission and explicit null-case handling; retain concrete collection projection and no DTO-specific logic. |
 | 1.10 | 2026-09-12 | `@imp designer` | Propose presentation-compatible public projection and bounded strict/nullable type admission; keep human confirmation pending and preserve generic rendering/native evidence boundaries. |
 | 1.9 | 2026-09-12 | `@imp designer` | Specify internal operation/attachment transport and schema-driven required-null cache serialization against actual wrapper/presenter seams; retain public operation authority. |
 | 1.8 | 2026-09-12 | `@imp designer` | Consolidate approved active-catalog schema URI without pf; preserve whole-tool validation URI and operation/attachment cache ownership; define restart and identity evidence. |

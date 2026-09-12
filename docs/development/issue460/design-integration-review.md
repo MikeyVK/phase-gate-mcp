@@ -3,7 +3,7 @@
 # Issue 460 — Design Integration Review and Exact-Path Accounting
 
 **Status:** DRAFT  
-**Version:** 0.2
+**Version:** 0.3
 **Last Updated:** 2026-09-12
 
 ---
@@ -75,12 +75,13 @@ input, but does not replace a source-based disposition or Planning cycle assignm
 | Schema attachments | Operation DTOs and MCP attachments need an explicit typed transport without teaching the presenter error DTO classes. | [Shared contracts](design-shared-contracts.md) §5.5 defines normalization and attachment ownership. |
 | Required nulls | Current cache serialization excludes nulls indiscriminately; this loses required-null facts from closed output contracts. | Shared contracts §5.6 requires schema-aware serialization; implementation/resource-read evidence remains outstanding. |
 | Process capture | Existing bounded-capture prose does not itself establish a field carried by every attempted invocation into the cache. | DI-05 now defines ProcessCapture on shared invocation results and attempted public records; DI-04 consumes that same type. Resource-read proof remains required. |
-| Public result presentation | Current presenter collection admission accepts a concrete model, not the test/fix discriminated result unions. Domain failure cannot rely on the global success=false fallback. | PROPOSED, human confirmation pending: DI-05 concrete public records; Shared §11.1 declarative projection and generic strict/nullable annotation admission. |
-| Exact operation error details | DI-04 mutation and DI-05 run_checks enumerate error codes but did not map every code to an exact closed details type/null. | PROPOSED, human confirmation pending: DI-04 §7.1 and DI-05 pending output proposal; preserve manager ownership and existing success/isError semantics. |
+| Public result presentation | Current presenter collection admission accepts a concrete model, not the test/fix discriminated result unions. Domain failure cannot rely on the global success=false fallback. | Human-approved and consolidated: DI-05 §13.1 concrete public records; Shared §11.1 declarative projection and generic strict/nullable annotation admission. Implementation conformance remains required. |
+| Exact operation error details | DI-04 mutation and DI-05 run_checks enumerate error codes but did not map every code to an exact closed details type/null. | Human-approved and consolidated: DI-04 §7.1 and DI-05 §13.1 exact matrices; preserve manager ownership and existing success/isError semantics. Independent review requested. |
 
-The two pending rows are real Design completion work. This review does not silently
-approve a public DTO reshaping, duplicate summary fields, or a presenter framework
-extension to close them. No combined full-Design approval is claimed.
+The two former output-contract gaps were closed by explicit human approval on
+2026-09-12 and consolidated into the canonical owners above. No duplicate summary
+fields, native parsers or DTO-specific presenter framework were added. Producer
+consolidation is not independent full-Design approval.
 
 ### 3.2. Exact Test/Helper Dispositions
 
@@ -309,7 +310,7 @@ role or Research compatibility strategy is introduced.
 | mcp_server/core/decorators/input_validation_decorator.py | DI-01 | Existing typed admission and actionable invalid-input response; use the same prepared contract as registration. Normalize optional internal attachments once. |
 | mcp_server/utils/schema_utils.py | DI-01 | Resolve supported references without dropping constraints; reject unsupported references, never fetch network schemas. |
 | mcp_server/server.py | Shared contracts | Existing enforcement, cache publication, configured text and MCP success mapping; transport attachments without treating them as operation data. |
-| mcp_server/presenters/text_presenter.py | Shared contracts | Generic declarative admission/rendering, bounded summaries and no native/error-class dispatch; current union limitation remains an open consumer-projection constraint. |
+| mcp_server/presenters/text_presenter.py | Shared contracts | Generic declarative admission/rendering, bounded summaries and no native/error-class dispatch; concrete public records and Shared §11.1 generic type admission resolve the designed projection constraint; conformance remains required. |
 | mcp_server/presenters/collection_text_renderer.py | Shared contracts | Proposed generic Annotated/scalar recognition preserves existing supported collection/container shapes, ordering and text limits; no native/DTO-specific branches. |
 | tests/mcp_server/unit/presenters/test_collection_text_renderer.py | Shared contracts | Preserve public classifier/renderer behavior and unsupported-shape rejection; add strict scalar/nullable-inline boundary cases without allowing model unions. DI-08 contributes architecture. |
 | tests/mcp_server/unit/presenters/test_text_presenter_composition.py | Shared contracts | Prove registered concrete rows and optional enum-case admission with actual configured text/cached evidence; preserve existing composition and byte-budget claims. |
@@ -339,27 +340,33 @@ tests are recorded only after their exact paths are verified, not guessed.
   Eight edited Design documents contain 320 checked inline local link targets with
   no missing files and balanced code fences. This check does not validate anchor
   fragments, external URLs or runtime semantics.
-- Independent QA may inspect the integration corrections and dispositions, but the
-  remaining open Design rows must close before requesting full-phase approval.
+- Final output consolidation verification (2026-09-12): six edited documents, 295
+  inline local file targets, no missing files and balanced code fences. All five new
+  consolidation/navigation heading anchors match their targets. The exact error tables
+  contain 14 mutation and 8 run_checks codes. Repeated ledger comparison confirms 151
+  unique existing test/helper paths in identical frozen-catalog order; no omissions or
+  extras. These are mechanical documentation checks, not runtime or native proof.
+- Independent combined Design review is requested through the Design hub. Runtime
+  preservation and client/native conformance remain implementation evidence obligations.
 
-## Combined Output Workshop Proposal — 2026-09-12
+## Combined Output Workshop Consolidation — 2026-09-12
 
-The next reviewable proposal is now complete, but not recorded as human approval:
+The human approved this complete workshop; the active contracts now reside in:
 
-- [DI-05](design-execution-adapters.md#pending-workshop-proposal--concrete-public-results-and-check-error-details):
+- [DI-05](design-execution-adapters.md#131-public-result-projection-and-exact-check-error-details):
   exact concrete test/fix row fields, valid observation combinations, preserved role
   differences and the run_checks code/details matrix.
-- [DI-04 §7.1](design-mutation-validation.md#71-pending-workshop-proposal--exact-error-details-and-rejected-adapter-requests):
+- [DI-04 §7.1](design-mutation-validation.md#71-exact-error-details-and-rejected-adapter-requests):
   mutation code/details matrix, retained edit feedback and the explicit public
   not_executed/invalid_request combination for rejected internal adapter requests.
-- [Shared §11.1](design-shared-contracts.md#111-pending-workshop-proposal--output-presentation-integration-2026-09-12):
+- [Shared §11.1](design-shared-contracts.md#111-output-presentation-integration):
   existing declarative projection and the limited strict/nullable type-admission
   correction. No new native parser, DTO-specific presenter logic, summary DTO or
   conditional-expression language.
 
 One concrete model per consumer follows the already-approved mutation design.
-Adapter wire unions remain unchanged. The public representation amendment awaits
-human confirmation before superseding W04/W05 union rows and DI-04's closed reason set.
+Adapter wire unions remain unchanged. W04/W05 now reference concrete public rows,
+and DI-04's active closed reason set includes the approved internal-request rejection.
 The rejected null-status alternative would require special aggregation rules;
 not_executed/invalid_request instead fits the existing reducers and preserves the
 actual attempted process without pretending native work occurred.
@@ -373,8 +380,9 @@ Producer-assisted critique found the non-null not_executed representation smalle
 consistent with the minimal before-native invalid_request protocol. No approval or
 executed conformance is inferred from that critique. Research and code remain unchanged.
 
-Independent whole-phase QA remains after human confirmation and consolidation of
-these proposed replacements, not before their approval.
+Independent whole-phase QA is now requested via the [joint hand-over](design.md#whole-design-hand-over--combined-review-request).
+The earlier bounded DI-03 QA GO does not pre-approve these integration contracts.
+No production/test changes or Research amendment are included.
 
 ## Related Documentation
 
@@ -392,5 +400,6 @@ these proposed replacements, not before their approval.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 0.3 | 2026-09-12 | @imp designer | Record human-approved output closure, point to consolidated canonical contracts and request combined independent review without claiming runtime evidence. |
 | 0.2 | 2026-09-12 | @imp designer | Index the combined concrete-output/error-detail proposal, explicit approval boundary and source-based rationale. |
 | 0.1 | 2026-09-12 | Agent | Initial draft |

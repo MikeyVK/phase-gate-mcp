@@ -3,7 +3,7 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.34
+**Version:** 1.35
 **Last Updated:** 2026-09-12
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
@@ -496,11 +496,12 @@ any operation DTO exists. Later selection failure retains its separate operation
 
 #### One public check record with closed combinations
 
-Required verdict fields are `check_id`, `status`, `reason`, `message`, and `evidence`;
+Required verdict fields are `check_id`, `status`, `reason`, `message`, `evidence`,
+and `request_rejection`;
 nullable fields below are explicit null, not omitted accidental defaults. The record
 is frozen/strict/extra-forbid. Status is a closed enum; reason is a union of the existing
 AdapterUnavailableReason and AdapterCallFailureReason enums plus a closed
-CheckNotExecutedReason with `not_started` and `interrupted`. These codes preserve their
+ConsumerNotExecutedReason with `not_started`, `interrupted` and `invalid_request`. These codes preserve their
 owners; no free strings, overlapping reason aliases, or public `origin` are introduced.
 
 | Status | reason | message | evidence |
@@ -510,6 +511,7 @@ owners; no free strings, overlapping reason aliases, or public `origin` are intr
 | unavailable, adapter response | Existing adapter-owned enum value | Required original adapter message | NativeEvidence or null |
 | unavailable, runtime failure | Existing runtime-owned enum value | Required original runtime message | null; captured bytes are process diagnostics, not accepted adapter evidence |
 | not_executed | not_started or interrupted | Required factual consumer-orchestration explanation | null; any partial output remains process diagnostics |
+| not_executed | invalid_request | null | null; nonempty request_rejection and known attempt/capture, as specified in §7.1 |
 
 Failed `message` is now part of the approved adapter decision; no extra generic reason
 code replaces native diagnostic codes. Do not manufacture a check row when no check
@@ -518,11 +520,11 @@ operation defect, not a failed-content or permissive-unavailability conversion.
 The record is concrete to satisfy existing collection admission; cross-field validation
 retains the strict combinations rather than adding a union-renderer framework.
 
-This is the complete verdict-field proposal, not a deletion of other required evidence:
+Section 7.1 defines request_rejection's exclusive non-null combination. This is the
+complete verdict-field contract, not a deletion of other required evidence:
 invoked adapter/tool identity and version, adapter fingerprint/contract version, bounded
 process capture, input-rejection details and additional lifecycle/cleanup diagnostics
-remain in the full cached operation result under their existing owners. Their final
-public carrier types must be audited with this record, not silently dropped or copied
+remain in the full cached operation result under their existing owners. The §4.10 carrier types must be verified with this record, not silently dropped or copied
 into parallel authoritative result graphs. This workshop adds no alternative retention
 system and does not relocate native settings into PGMCP config.
 
@@ -993,13 +995,11 @@ authoritative operation blocker in the actual flow. Additional process/cleanup f
 retain their own records rather than replacing it. A successful completed mutation has
 error_code/error_details null. Operation errors never become fabricated check verdicts.
 
-Closed detail alternatives retain context issues (JSON Pointer, schema keyword and
-factual message), target/write facts (relative affected path and the owning boundary's
-typed cause), edit problems (missing_match/missing_anchor/invalid_pattern/invalid_replacement),
-and adapter request issues (existing RequestValidationIssue records and check ID).
-Reuse equivalent inward-owned types, not arbitrary dictionaries, free-string reason
-categories, whole inputs, proposed file contents or duplicate complete results.
-The selected detail type must match the primary code.
+Section 7.1 is the exact MutationErrorCode-to-details authority. Reuse its equivalent
+inward-owned factual types, not arbitrary dictionaries, whole inputs, proposed file
+contents or duplicate complete results. RejectedRequestDetails points to the check
+row owning RequestValidationIssue records; it does not repeat them. The selected
+detail type must match the primary code.
 
 HousekeepingIssue has required purpose enum validation_input or write_staging,
 workspace-relative path and factual message. It never changes a verdict or completed
@@ -1042,9 +1042,9 @@ problems. Native diagnostic messages remain factual source data.
 
 Use existing declarative error-code fallback with constant configured explanations
 and normal scalar/collection projections. Remove static per-tool failure templates that
-would hide the chosen code. Optional-enum enum_cases admission and global placeholder
-inventories cannot be assumed to support new shapes; do not extend presenter logic to
-accommodate these errors. New reasons require typed data, YAML and conformance, not
+would hide the chosen code. Shared Contracts §11.1 defines the bounded generic
+strict/nullable type-admission correction required by these concrete records; do not
+add error-specific presenter logic, union rendering or a new expression language. New reasons require typed data, YAML and conformance, not
 concrete error-class dispatch. No NoteContext or parallel diagnostic authority.
 
 Preservation evidence exercises real decorated tools, actual presentation declarations
@@ -1053,10 +1053,11 @@ and nullable combinations, retained check order, both cleanup owners, context-on
 schema attachments and post-write publication failure. Reuse existing safe-edit,
 scaffold and issue-459 collection/config tests. No runtime proof is claimed here.
 
-W01's decision nucleus is closed and W02's native provenance amendment is approved.
-W05's recovery store, overlap reader and recovery_pending/recovery_state_invalid codes
-remain unapproved and absent from the accepted enum. Final DI-05 carrier declarations,
-shared serialization and independent conformance remain explicit integration obligations,
+W01's decision nucleus, W02's native provenance amendment and §7.1's exact error
+contract are human-approved. W05's former recovery store, overlap reader and
+recovery_pending/recovery_state_invalid codes were rejected by the lightweight native-fix
+strategy and remain absent. DI-05 carrier declarations and shared serialization are
+designed; their implementation and independent conformance remain explicit obligations,
 not renewed W01 product decisions. No implementation cycles or Research changes here.
 
 ## 5. Consumer Flow
@@ -1108,25 +1109,25 @@ The target and content paths meet only for output-profile evidence and final per
 | D-MUT-21 | Expected operation failures retain the normal result, earlier checks and actual write facts; typed error_code/error_details, separately owned housekeeping and selection_reason; declarative presentation without error-specific renderer logic | Human-approved W01-A–E, 2026-09-10; §4.10; W02/W05 dependencies remain separate |
 | D-MUT-22 | Mutation checks use configured default_args only; no public args/verbose, direct configured source/effective-list evidence per check | Human-approved 2026-09-10; DI-05 §7.16 owns shared argument semantics |
 
-## 7. Open Questions
+## 7. Exact Error Contracts and Outstanding Evidence
 
 | ID | Question | Owner |
 |---|---|---|
 | Q-MUT-03 | Shared ProcessCapture and required-null serialization are now defined; actual consumer/resource-read conformance remains required | DI-04/DI-05/Shared Contracts; no new presenter framework |
 | Q-MUT-04 | Decision closed: DI-02 header recognition, §4.9 original bytes/text and checked replacement, and §4.10 operation facts. Independent evidence remains required | DI-02/DI-04/DI-05 |
 | Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
-| Q-MUT-06 | High-level choice closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and declarative presentation. Exact MutationErrorCode-to-details mapping still requires Design completion; real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts; tracked in design-integration-review.md |
+| Q-MUT-06 | High-level choice closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and declarative presentation. Exact MutationErrorCode-to-details mapping is human-approved in §7.1; real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts; tracked in design-integration-review.md |
 
-### 7.1 Pending workshop proposal — exact error details and rejected adapter requests
+### 7.1 Exact Error Details and Rejected Adapter Requests
 
-**Human confirmation pending, 2026-09-12.** This concretizes §4.10 and proposes one
-explicit extension to §4.6. Existing error codes, mutation success/persistence policy,
-edit operations, summary precedence and all adapter wire contracts remain unchanged.
-Do not treat this proposal as already superseding an approved combination table.
+**Human-approved, 2026-09-12.** This is the exact detail contract for §4.10 and the
+explicit rejection combination incorporated into §4.6. Existing error codes, mutation
+success/persistence policy, edit operations, summary precedence and all adapter wire
+contracts remain unchanged. Independent combined Design review remains required.
 
-Add invalid_request to the public consumer not-executed reason set and add required
-request_rejection: nonempty tuple[RequestValidationIssue,...] or null to the concrete
-check record. Its only non-null combination is status=not_executed,
+The concrete check record requires request_rejection:
+nonempty tuple[RequestValidationIssue,...] or null. ConsumerNotExecutedReason includes
+invalid_request. Its only non-null combination is status=not_executed,
 reason=invalid_request, message=null and evidence=null. The adapter explicitly rejected
 the internally constructed request before native work; its process was nevertheless
 attempted, so invocation identity/capture and any check housekeeping remain present.
@@ -1147,7 +1148,7 @@ is required; nullable values serialize explicitly. Reuse equivalent existing nar
 types rather than repeating DTO definitions per tool. Messages are factual diagnostics,
 not formatted user-facing explanations or exception repr/whole-input dumps.
 
-| MutationErrorCode | Exact proposed details | Boundary fact retained |
+| MutationErrorCode | Exact details | Boundary fact retained |
 |---|---|---|
 | context_invalid | ContextDetails(issues: nonempty tuple[ContextIssue,...]) | ContextIssue has pointer: JsonPointer, keyword: NonBlankText, message: NonBlankText; observed schema keyword, not a generic native-rule code |
 | target_invalid | TargetDetails(path: WorkspaceRelativePath, reason: enum outside_workspace/force_required/not_file/unresolvable, message: NonBlankText) | Original lexical relative target, never a resolved host escape |
@@ -1188,14 +1189,14 @@ detail except validation_blocked/operation_interrupted. The first authoritative 
 remains primary; later lifecycle/housekeeping facts stay in their existing records.
 Completed report-policy writes can retain failed/unavailable checks with success=true;
 blocked or failed mutations retain this document's existing operation-success rule.
-This proposal does not transplant the explicit execution tools' handling-success rule
+This contract does not transplant the explicit execution tools' handling-success rule
 onto mutations or reinterpret check failures as server defects.
 
 Required evidence: one permitted details shape per code; rejection of missing/extra/
 mismatched fields; no-write under both policies for internal request rejection;
 earlier results and cleanup preserved; typed scope/IO/lock distinctions; useful bounded
 edit feedback; real configured presentation plus cached-resource reads. No tests or
-production changes were performed for this pending Design proposal.
+production changes were performed for this Design consolidation.
 
 ## 8. Acceptance Evidence
 
@@ -1267,6 +1268,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
 | 1.30 | 2026-09-10 | @imp designer | Record human-approved W01-A–E operation-result integration; close result-shape/ownership decisions, preserve explicit W02/W05 dependencies and route required-null serialization and independent evidence. |
+| 1.35 | 2026-09-12 | @imp designer | Consolidate approved exact error details and rejected-request projection into the active check contract; preserve mutation policy and generic presentation ownership. |
 | 1.34 | 2026-09-12 | @imp designer | Propose exact mutation error-detail matrix and not_executed/invalid_request combination with retained attempt evidence; pending human confirmation, existing persistence semantics unchanged. |
 | 1.33 | 2026-09-12 | @imp designer | Connect invocation evidence to the shared required ProcessCapture type; preserve required-null/resource round-trip obligations and existing result/persistence semantics. |
 | 1.32 | 2026-09-10 | @imp designer | Fix mutation consumer argument ownership: configured binding defaults only, no public native tuning, direct per-check source/effective-list evidence through existing presentation. |
