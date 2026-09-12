@@ -3,7 +3,7 @@
 # Issue 460 Shared Tool and Schema Contracts Design
 
 **Status:** DRAFT  
-**Version:** 1.8  
+**Version:** 1.9  
 **Last Updated:** 2026-09-12  
 **Primary Package:** Shared contracts consumed by DI-01, DI-02, and DI-04  
 **Upstream Dependencies:** Issue 456 presentation contract, DI-01/DI-02 resolved catalog  
@@ -140,9 +140,91 @@ This separation prevents both undesirable alternatives:
 - putting large diagnostic attachments into every complete cached operation record;
 - asking presenters to rediscover schemas through filesystem, catalog, or tool calls.
 
-The exact implementation type names remain open. Any implementation must use narrow
-interfaces and constructor injection and must not add generic fields to unrelated DTOs
-without consumers.
+Section 5.5 fixes the transport types and narrow dependencies. This is internal
+composition, not an additional public result envelope or error taxonomy.
+
+### 5.5 Typed execution and attachment transport — integration definition
+
+This concretizes D-SHARED-01–09. All shown models are frozen, strict, extra-forbid;
+schema contents use the existing deeply immutable JSON value contract, not Any or
+a mutable dictionary hidden inside a frozen model. Generic TOutput is bound to the
+actual operation model, not an untyped arbitrary payload.
+
+```python
+class WholeToolSchemaIdentity(BaseModel):
+    kind: Literal["whole_tool"]
+
+class TemplateContextSchemaIdentity(BaseModel):
+    kind: Literal["template_context"]
+    template_id: TemplateId
+
+SchemaIdentity = Annotated[
+    WholeToolSchemaIdentity | TemplateContextSchemaIdentity,
+    Field(discriminator="kind"),
+]
+
+class SchemaAttachment(BaseModel):
+    identity: SchemaIdentity
+    schema: FrozenJsonObject
+
+class ToolExecution(BaseModel, Generic[TOutput]):
+    operation: TOutput
+    attachments: tuple[SchemaAttachment, ...]
+```
+
+Both ToolExecution fields are required; no attachment means (). There is no envelope
+success field: the existing operation DTO remains the sole operational-success source.
+SchemaAttachment carries identity facts, not URI, MIME or serialized text. The resource
+presentation boundary applies §7.6 for template_context and preserves the existing
+whole-tool schema://validation route/media type. It switches on attachment identity,
+never on operation DTO class, tool name or domain error reason. A new error DTO using
+an existing attachment identity requires no resource-presenter change.
+
+| Boundary | Target signature / action |
+|---|---|
+| Typed core tool | execute(params: TInput, context: NoteContext) -> TOutput or ToolExecution[TOutput] |
+| Input/application decorator | Normalize a core DTO to ToolExecution(operation=dto, attachments=()) once; preserve a supplied ToolExecution unchanged |
+| Outer ITool | execute(params: JsonObject, context: NoteContext) -> ToolExecution[OperationOutput] |
+| Cache publisher | Existing put(tool_name, output) receives execution.operation only |
+| Text presenter | Existing present_text receives operation, notes and publication facts only |
+| Resource presenter | present_resources(attachments: tuple[SchemaAttachment,...]) -> tuple[PresentationResource,...] |
+| Final assembly | Combine presented text/resources; derive MCP isError solely from operation.success under the existing framework rule |
+
+OperationOutput denotes the registered tool's operation/error output union, not the
+transport wrapper or a dictionary alternative. Existing unaffected core tools may keep
+returning their typed DTO; normalizing that in-process value is not a public alias,
+dual-read configuration strategy or second runtime authority. No all-tool rewrite or
+new per-tool response registry is required. Output-schema derivation unwraps this
+one known transport carrier and exposes only the operation model, not attachments.
+
+Input rejection uses the existing ValidationErrorOutput and a WholeToolSchemaIdentity
+attachment from the same prepared input contract. Preserve unrelated whole-tool cache
+semantics; do not remove their existing input_schema field as collateral cleanup.
+Selected scaffold-context rejection uses the already approved operation facts plus
+TemplateContextSchemaIdentity attachment, without duplicating schema in its operation.
+Successful scaffold_schema supplies its schema in both primary operation and attachment.
+
+Enforcement and exception wrappers transport ToolExecution. Existing post-enforcement
+skip behavior inspects operation for ToolErrorOutput; wrapper-produced enforcement,
+config and unexpected execution errors carry their existing DTO and empty attachments
+unless that specific boundary already owns a schema attachment. Unexpected exceptions
+do not manufacture template identity or reuse a stale attachment. Do not put these
+facts into NoteContext: that argument remains only for existing unrelated note uses.
+
+### 5.6 Required-null cache serialization
+
+The existing cache resource provider uses exclude_none=True. That cannot serialize
+the new closed V3 mutation/check/test/fix DTOs faithfully. The canonical DTO schema's
+requiredness is the serialization authority: retain a required nullable field as null;
+omit only optional fields actually absent under their DTO contract. Apply the same
+schema-driven rule recursively and to the selected union variant, including operation
+error_details and process capture. Do not special-case tool names or field-name lists,
+duplicate result models for the cache, or repair schema data while presenting it.
+
+The response transport never enters the operation cache. Cache lookup remains bounded
+and in-memory; a cache miss does not replay the tool or reconstruct historical schemas.
+Prove real resources/read round-trips, not only model_dump or in-memory DTO inspection.
+No change to legacy DTO requiredness is implied by this generic serialization rule.
 
 ## 6. Options and Rationale
 
@@ -413,6 +495,7 @@ shortcut.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.9 | 2026-09-12 | `@imp designer` | Specify internal operation/attachment transport and schema-driven required-null cache serialization against actual wrapper/presenter seams; retain public operation authority. |
 | 1.8 | 2026-09-12 | `@imp designer` | Consolidate approved active-catalog schema URI without pf; preserve whole-tool validation URI and operation/attachment cache ownership; define restart and identity evidence. |
 | 1.7 | 2026-09-05 | `@imp designer` | Link the exclusive DI-04 and DI-05 owners after F-20; keep existing artifact-schema delivery semantics unchanged. |
 | 1.6 | 2026-09-03 | `@imp designer` | Link the DI-04 validation outcome authority and require truthful success-with-validation-findings presentation without changing schema attachment/cache ownership. |

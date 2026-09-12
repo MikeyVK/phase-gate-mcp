@@ -3,7 +3,7 @@
 # Issue 460 Execution Adapter Design
 
 **Status:** DRAFT  
-**Version:** 0.89
+**Version:** 0.90
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-05  
 **Upstream Dependencies:** Frozen F-08/F-19/F-20 strategy; DI-01/DI-02 template profile references  
@@ -2257,6 +2257,7 @@ class TerminationProblem(StrEnum):
 
 class InvocationResultBase(BaseModel):
     model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    capture: ProcessCapture
 
 
 class InvocationCompleted(InvocationResultBase, Generic[TResponse]):
@@ -2294,7 +2295,8 @@ lifecycle outcome and does not guarantee a response can still reach a cancelled 
 client. Cancellation propagation must not silently become ordinary successful execution.
 These variants introduce no check identity, temporary-input ownership, persistence
 decision, recovery instruction or presentation text. Those remain at their established
-boundaries. Existing raw diagnostic transport is not redefined by these result fields.
+boundaries. ProcessCapture below carries the existing bounded diagnostic facts through
+all three variants; it does not change the role response or introduce a verdict.
 
 Conformance exercises all three variants and permitted termination combinations,
 role-specific response typing, nested contract immutability, extra/unknown/coerced
@@ -2450,6 +2452,62 @@ streams, unchanged short output, head/tail and multibyte boundaries, visible tru
 valid responses with excessive error diagnostics on stderr, and oversized responses with confirmed and
 unconfirmed stopping. Measurements are not a prerequisite for these pragmatic limits;
 later evidence may motivate an explicit revision.
+
+#### Typed process-capture transport — integration definition, 2026-09-12
+
+The shared runtime creates one ProcessCapture for each attempted invocation, including
+failed launch. All fields below are required; models are strict, frozen, extra-forbid
+and deeply immutable. Nullable fields are serialized explicitly under Shared Contracts
+§5.6. The byte counts concern bytes actually observed before the runtime stopped
+reading, not a claim about all bytes the child might have emitted.
+
+```python
+class StreamCapture(BaseModel):
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    observed_bytes: Annotated[StrictInt, Field(ge=0)]
+    head: StrictStr | None
+    tail: StrictStr | None
+    truncated: StrictBool
+
+
+class ProcessCapture(BaseModel):
+    model_config = ConfigDict(frozen=True, strict=True, extra="forbid")
+    exit_code: StrictInt | None
+    stdout: StreamCapture
+    stderr: StreamCapture
+```
+
+exit_code is the observed adapter-process exit code, or null if unavailable; it is
+never a native-tool result or an MCP error flag. A launch that never starts has null
+exit_code, zero observed bytes and empty non-null fragments. Unconfirmed termination
+and cancellation retain available facts, including null exit_code when appropriate.
+
+For accepted formal stdout, retain observed_bytes but set head and tail to null and
+truncated=false: the decoded role response is retained separately, without a duplicate
+raw JSON copy. For rejected/partial stdout, head retains the bounded prefix up to
+the existing 8 MiB ceiling, tail is empty, and truncated records discarded observed
+bytes. No truncated formal response is accepted. For stderr, head/tail are non-null:
+short output is entirely in head with an empty tail; oversized output uses the
+existing first/last 128 KiB rule and truncated=true. Byte limits apply before safe
+text decoding; boundary decoding must not merge fragments or claim lossless bytes.
+
+The runtime returns capture on InvocationResultBase. Consumer managers transfer that
+same value without reparsing it: DI-04 InvocationEvidence has required capture:
+ProcessCapture; each attempted PublicTestResult and PublicFixResult variant has
+required capture: ProcessCapture beside adapter identity. Their not_started variant
+forbids capture, just as it forbids invented adapter identity. Native external_tools
+and NativeEvidence retain their separate approved ownership. run_checks selection
+records reuse the shared InvocationEvidence capture field, with their own selection
+facts; they do not introduce a fourth capture type or become mutation check records.
+
+Resource caching retains these fields; routine text excludes bodies. The unresolved
+consumer presentation projection must expose the existing omission/truncation notice
+without inspecting native reports or adding presenter knowledge of these DTO classes.
+No extra capture store, disk spill, cleanup job or new limit is introduced.
+
+Conformance must prove exact byte boundaries, accepted stdout non-duplication,
+launch-failure and interrupted facts, and complete consumer-to-resource round-trips
+for every attempted variant. These are future tests, not evidence executed in Design.
 
 #### Non-blocking cleanup
 
@@ -2987,11 +3045,11 @@ Every addressed result also carries direct args_source: Literal["configured","ca
 
 PublicTestResult is a closed union of the following record shapes. The variant-specific required fields define an unambiguous union without an extra kind/origin/source envelope:
 
-- Role result: test_id: TestId; decision: TestDecision; evidence: NativeEvidence|null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity.
-- Invocation failure: test_id: TestId; invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem|null; adapter: AdapterRunIdentity.
-- Internal request rejection: test_id: TestId; request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity. This retains the actual typed internal-contract failure, not a native result.
+- Role result: test_id: TestId; decision: TestDecision; evidence: NativeEvidence|null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity; capture: ProcessCapture.
+- Invocation failure: test_id: TestId; invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem|null; adapter: AdapterRunIdentity; capture: ProcessCapture.
+- Internal request rejection: test_id: TestId; request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity; capture: ProcessCapture. This retains the actual typed internal-contract failure, not a native result.
 - Not started: test_id: TestId; not_executed: Literal["not_started"]. No adapter/native provenance is invented for work never invoked.
-- Interrupted invocation: test_id: TestId; not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity. Preserve the known attempt identity consistently with the shared runtime and §7.18; no native verdict is invented.
+- Interrupted invocation: test_id: TestId; not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity; capture: ProcessCapture. Preserve the known attempt identity consistently with the shared runtime and §7.18; no native verdict is invented.
 
 AdapterRunIdentity contains exactly adapter_id: AdapterId, version: SemVer, fingerprint: AdapterFingerprint and contract_version: Literal[1], populated by the generic runtime from the admitted package. It records an actual invocation attempt, including a launch attempt that fails; it does not claim native work happened. Reuse this package identity shape across consumers rather than defining test-only fingerprint logic. Keep it grouped because its four values describe one package snapshot, not a generic source hierarchy.
 
@@ -3311,11 +3369,11 @@ The closed union adds exactly one of these mutually exclusive shapes:
 
 | Shape | Required additional fields | Owner |
 |---|---|---|
-| Role result | decision: FixDecision; evidence: NativeEvidence or null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity | Adapter supplies role facts; manager associates binding and shared invocation identity |
-| Invocation failure | invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem or null; adapter: AdapterRunIdentity | Generic process runtime supplies failure facts |
-| Internal request rejection | request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity | Adapter supplies typed rejection; manager classifies internal contract defect |
+| Role result | decision: FixDecision; evidence: NativeEvidence or null; external_tools: tuple[ExternalToolIdentity,...]; adapter: AdapterRunIdentity; capture: ProcessCapture | Adapter supplies role facts; manager associates binding and shared invocation identity |
+| Invocation failure | invocation_failure: AdapterCallFailure; termination_problem: TerminationProblem or null; adapter: AdapterRunIdentity; capture: ProcessCapture | Generic process runtime supplies failure facts |
+| Internal request rejection | request_rejection: nonempty tuple[RequestValidationIssue,...]; adapter: AdapterRunIdentity; capture: ProcessCapture | Adapter supplies typed rejection; manager classifies internal contract defect |
 | Not started | not_executed: Literal["not_started"] | Manager; no adapter invocation identity invented |
-| Interrupted invocation | not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity | Shared cancellation projected by manager; an attempt occurred, mutation is possible |
+| Interrupted invocation | not_executed: Literal["interrupted"]; adapter: AdapterRunIdentity; capture: ProcessCapture | Shared cancellation projected by manager; an attempt occurred, mutation is possible |
 
 No extra kind, origin or source envelope. FixDecision is the closed passed/failed/
 unavailable union from this section, not a free status string. AdapterRunIdentity is
@@ -3821,7 +3879,7 @@ proposed conformance evidence is claimed as completed.
 | Q-ADAPTER-06 | Native starting values and intentional changes are locally decided in W09 | §7.20 owns the human-approved adapter inventory, native settings/defaults and explicit preservation deltas; independent QA and separate check/test/fix conformance remain required |
 | Q-ADAPTER-07 | What completes each capability declaration and its consumer binding? | Define profile/check selection, applicability and input requirements, and explicit fix-to-check references without same-package or same-name assumptions |
 | Q-ADAPTER-08 | Resolved by human generation-identity amendment | No profile/binding projection enters template pf/sf. Preserve startup reference coherence and runtime validation evidence independently; policy.yaml owns the selector |
-| Q-ADAPTER-09 | How do startup-built public contracts survive registration wrappers and lazy client exposure? | Define the contract holder and validation/presentation interfaces; prove the registered boundary and supported host reconnect/cache behavior without adding hot reload |
+| Q-ADAPTER-09 | How do startup-built public contracts survive registration wrappers and lazy client exposure? | DI-01/02 prepared IToolInputContract and Shared §5.5 now define holder/transport. Actual registered-boundary and host reconnect/cache conformance remain required; no hot reload |
 | Q-ADAPTER-10 | How does each real consumer expose configured choices and handle on-use unavailability without weakening its contract? | Complete check/test/fix inputs, defaults, no-configured-choice behavior, no startup probes/filtering, full profile obligations, preserved scaffold report mode, and ordinary response projections under issues 456/459; startup health diagnostics and general blockades remain separately deferred |
 
 ## 12. Planning Consequences
@@ -3861,6 +3919,7 @@ Exact cycle names and scheduling remain Planning-owned.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 0.90 | 2026-09-12 | `@imp designer` | Define bounded process-capture transfer on attempted invocation/consumer records and cross-reference prepared schema holder; public presentation and exact run_checks error-detail completion remain open. |
 | 0.89 | 2026-09-12 | `@imp designer` | Consolidate accepted W04 tests.yaml, test/v1 request/response, public result/error DTOs and sequencing; preserve later args/scopes, pure config ownership and truthful interrupted-attempt evidence. |
 | 0.88 | 2026-09-12 | `@imp designer` | Replace stale open-decision routing with approved args, native settings, fix and delivery owners; keep actual test DTO/canonical integration and evidence gaps explicit. |
 | 0.87 | 2026-09-11 | `@imp designer` | Record approved bundled_adapters/workspace_adapters source names and direct official authoring outside assets; preserve manifest, trust and role contracts. |

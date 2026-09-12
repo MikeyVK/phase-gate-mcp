@@ -3,7 +3,7 @@
 # Issue 460 Scaffolding Contract Refactor Design
 
 **Status:** DRAFT  
-**Version:** 1.90
+**Version:** 1.91
 **Last Updated:** 2026-09-12  
 **Issue:** #460  
 **Workflow:** Refactor / Design  
@@ -623,6 +623,29 @@ to the whole Design phase. Research remains frozen; no phase transition is autho
 
 ### Whole-Design Hand-over (still in progress)
 
+#### Cross-package integration inspection — 2026-09-12
+
+The [integration review](design-integration-review.md) is the current source-based
+audit/disposition index. It does not replace any primary contract or Research gate.
+Three bounded producer-assisted inspections covered the 151 catalogued test/helper
+paths and real wrapper/presenter/catalog seams. This is not independent QA or executed
+conformance; the 126-consumer/two-governing-source/151-test census is unchanged.
+
+Canonical integration definitions now specify the immutable prepared input holder
+(DI-01/02), typed operation/attachment transport and required-null serialization
+(Shared Contracts), and bounded process-capture transfer (DI-05, consumed by DI-04).
+They implement the approved ownership boundaries without new product roles or native
+result interpretation. The test index records durable claims and removal prerequisites;
+Planning still assigns concrete cycles, bounded write sets and stop/go evidence.
+
+Two Design gaps remain, and are the next joint workshop rather than hidden
+implementation decisions: presentation-compatible public check/test/fix result records,
+and exact mutation/run_checks error-code-to-details contracts. The existing presenter
+does not accept result-union collections; its global success=false fallback cannot
+present domain failures that correctly retain success=true. Do not fix this by teaching
+the presenter individual error DTOs or parsing native reports. No public result reshaping
+is silently approved by this audit. Combined full-Design QA follows their closure.
+
 #### W06 and W04 canonical consolidation — 2026-09-12
 
 Human approval closes the remaining W06 schema choices: DI-01/02 §7.2.3 and Shared
@@ -662,7 +685,7 @@ findings-only assistance, not an independent GO/NOGO.
 | Selected-context schema resource identity | CLOSED DESIGN 2026-09-12: Shared §7.6 / D-SHARED-10 uses schema://template/<encoded-template-id>/context without pf; preserve whole-tool schema://validation; runtime/client conformance remains required |
 | JSON Schema dialect / keyword / format support and recursion | CLOSED DESIGN 2026-09-12: DI-01/02 §7.2.3 pins 2020-12, annotation-only format, contained static references and cyclic/dynamic rejection; conformance remains required, concrete DI-03 contracts unchanged |
 | Complete test request/result DTO and tests.yaml integration | CONSOLIDATED 2026-09-12: DI-05 §§7.15.1–7.15.5 carry the accepted W04 config/wire/public output graph and sequencing with later args/scope amendments; actual implementation/native/client conformance remains required |
-| Registered wrappers, lazy exposure, cache/presentation and full per-path dispositions | OPEN INTEGRATION: audit exact cross-package seams and removal prerequisites; no full 151-test semantic re-audit or runtime proof claimed |
+| Registered wrappers, lazy exposure, cache/presentation and full per-path dispositions | Source-based 151-test/helper index now in design-integration-review.md; input/attachment/capture seams specified. Public presentation and mutation/check error-detail matrices remain open; no runtime proof or assertion-by-assertion semantic certification claimed |
 | Shared canonical artifact review material | design-shared-contracts.md v1.8 is intentionally included in the bounded W06 consolidation commit; temporary workshops/probes remain excluded; complete cross-package review is still pending |
 
 The routing matrices contain all 22 findings, 44 Approved Strategy rows, 19 invariants
@@ -788,6 +811,7 @@ review remain open; Research and template/artifact authority are unchanged.
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.91 | 2026-09-12 | `@imp designer` | Record real integration gaps, typed internal schema/attachment/capture seams, complete test/helper dispositions and supplemental ownership; preserve remaining public output/error Design work before combined QA. |
 | 1.90 | 2026-09-12 | `@imp designer` | Consolidate approved W06 schema dialect/reference boundaries and fingerprint-free URI; include Shared Contracts and accepted W04 config/request/result declarations as canonical review material; cross-package closeout remains open. |
 | 1.89 | 2026-09-12 | `@imp designer` | Consolidate W12 and producer audit corrections; distinguish local workshop closure from unresolved schema identity/dialect, role DTO consolidation and canonical coverage evidence. |
 | 1.88 | 2026-09-12 | `@imp designer` | Consolidate human-approved W11 and its bounded combined-review input; start W12 proposal and retain whole-set audit/evidence obligations. |

@@ -3,7 +3,7 @@
 # Issue 460 Suite Contract and Resolution Design
 
 **Status:** DRAFT  
-**Version:** 1.27  
+**Version:** 1.28  
 **Last Updated:** 2026-09-12  
 **Primary Packages:** DI-01, DI-02  
 **Upstream Dependencies:** Research Approved Strategy, XC-01, RC-01  
@@ -859,6 +859,41 @@ fixes schema URI identity. Implementation and client integration evidence remain
 Rejected: separate exposure/validation schema authorities, summarized shared definitions,
 all-template context expansion in the scaffold tool schema, and implicit context repair.
 
+#### Prepared tool input contract — integration definition
+
+The existing typed input definition plus startup catalog/config projections constructs
+one immutable IToolInputContract[TInput] at composition time. It supplies:
+
+```python
+class IToolInputContract(Protocol[TInput]):
+    @property
+    def schema(self) -> FrozenJsonObject: ...
+
+    def validate(self, raw: JsonObject) -> TInput: ...
+```
+
+TInput is the tool's actual typed input (or its existing no-argument None contract),
+not Any. Invalid raw input raises the existing Pydantic ValidationError used
+by InputValidationDecorator; it becomes the existing ValidationErrorOutput. The holder
+adapts schema-based selection rejections to that route, not a new public error taxonomy.
+There is no second authored schema/constraint list in the holder. It combines the
+existing typed input rules and admitted catalog projections into one acceptance
+contract; conversion cannot accept values forbidden by its exposed schema. Conversely,
+schema-admitted values must not fail because an independently rebuilt model diverged.
+
+Registered tool metadata, delayed listing, input validation and whole-tool error-schema
+feedback use the exact same injected contract instance. args_model remains a static
+typing source where applicable, not permission for wrappers to regenerate a schema or
+drop catalog constraints. Tool name/description remain existing registered metadata;
+do not duplicate them inside the input holder. Consumers receive no schema mutation,
+catalog reload or config-reading methods. New startup produces a new contract instance.
+
+Selected template-context validation remains the separate prepared schema boundary
+above. Typed tool conversion must not coerce/default/filter that nested caller JSON.
+Invalid/stale public selections never reach native execution; context-specific errors
+still supply the selected-context attachment through Shared §5.5. This exact interface
+closes the holder question, not the implementation/lazy-client conformance obligation.
+
 #### 7.2.3 Schema dialect and reference admission — approved W06 closeout
 
 Human-approved 2026-09-12, including the subsequent removal of pf from the selected
@@ -1219,6 +1254,7 @@ package semantic identity, or turn external provenance retention into PGMCP beha
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.28 | 2026-09-12 | `@imp designer` | Pin the injected prepared tool-input interface shared by registration, wrappers and validation feedback without changing the selected-context contract. |
 | 1.27 | 2026-09-12 | `@imp designer` | Consolidate W06 2020-12 semantics, bounded references, annotation behavior and preservation evidence; link fingerprint-free selected-context URI. |
 | 1.26 | 2026-09-12 | `@imp designer` | Correct active stale manifest/version, fingerprint-kind, profile and source-encoding wording against approved contracts; retain unresolved schema identity/dialect integration. |
 | 1.15 | 2026-09-03 | `@imp designer` | Reference the DI-04 scaffold validation policy/outcome authority and include validation in the operation-only boundary without copying its enumeration or changing the manifest. |

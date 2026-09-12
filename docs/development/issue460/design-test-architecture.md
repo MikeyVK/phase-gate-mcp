@@ -3,7 +3,7 @@
 # Issue 460 Test Architecture and Cross-Package Assurance Design
 
 **Status:** DRAFT  
-**Version:** 1.0  
+**Version:** 1.1
 **Last Updated:** 2026-09-12  
 **Primary Package:** DI-08; XC-02 cross-package assurance  
 **Upstream Dependencies:** Frozen Research I-14/E-17 and catalog; all DI-01–DI-07 public contracts  
@@ -127,7 +127,9 @@ harness; a well-written test for a deliberately removed registry may be removed.
 Reuse the existing ledger and package-owned dispositions; do not copy 151 inventories
 into every document. The canonical integration audit must resolve ambiguous or unowned
 cases. Planning later maps every exact 126/151 path and affected supplemental dependency
-to a bounded cycle. This document does not claim that per-path audit has already finished.
+to a bounded cycle. The [integration review](design-integration-review.md) now records
+source-based dispositions for all 151 test/helper rows and supplemental seams. That
+inspection does not replace executed evidence or certify every assertion in mixed files.
 
 ### 7.3 Concrete Support Dispositions
 
@@ -276,4 +278,5 @@ internal routes. This Design specifies constraints, not cycles or execution perm
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.1 | 2026-09-12 | @imp designer | Link the complete Design-only test/helper disposition index and supplemental integration seams; retain separate Planning ownership and independent evidence requirements. |
 | 1.0 | 2026-09-12 | @imp designer | Consolidate human-approved W12 support, evidence independence, dispositions and canonical closeout criteria; no implementation or independent verdict. |

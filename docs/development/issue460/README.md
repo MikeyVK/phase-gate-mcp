@@ -3,7 +3,7 @@
 # Issue 460 Pre-Implementation Documentation Contract
 
 **Status:** DEFINITIVE — DOCUMENTATION CONTRACT; DESIGN ACTIVE  
-**Version:** 1.24  
+**Version:** 1.25
 **Last Updated:** 2026-09-12  
 
 ---
@@ -31,6 +31,12 @@ included intentionally in this canonical consolidation, not left as temporary re
 material. The accepted W04 test configuration/request/result graph is now consolidated
 in DI-05 §§7.15.1–7.15.5. Cross-package wrapper/serialization, disposition coverage and
 review remain open. No runtime/client conformance or whole-Design QA GO is implied.
+
+The [integration review](design-integration-review.md) records the source-based
+151-test/helper dispositions, supplemental seams and remaining output-contract gaps.
+Prepared input/attachment/capture transport is now specified in its canonical owners;
+declarative consumer result presentation and exact mutation/check error-detail matrices
+still require Design completion before the combined whole-phase review.
 
 ## Scope
 
@@ -307,6 +313,7 @@ The pre-implementation documentation contract is satisfied when:
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
+| 1.25 | 2026-09-12 | `@imp designer` | Index the cross-package integration audit, exact test dispositions and remaining public output/error contracts; no whole-phase approval claim. |
 | 1.24 | 2026-09-12 | `@imp designer` | Index approved W06 schema dialect/URI and accepted W04 exact contracts; include Shared Contracts in canonical consolidation without claiming whole-Design conformance. |
 | 1.23 | 2026-09-12 | `@imp designer` | Link approved DI-08 owner; retain canonical integration and independent review as separate completion conditions. |
 | 1.22 | 2026-09-12 | `@imp designer` | Link consolidated W11 owner without changing topology or treating local approval as whole-Design QA. |

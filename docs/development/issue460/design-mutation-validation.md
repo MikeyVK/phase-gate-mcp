@@ -3,8 +3,8 @@
 # Issue 460 Mutation and Persistence Design
 
 **Status:** DRAFT  
-**Version:** 1.32  
-**Last Updated:** 2026-09-10  
+**Version:** 1.33
+**Last Updated:** 2026-09-12
 **Primary Package:** DI-04  
 **Upstream Dependencies:** DI-01/DI-02 resolved templates; DI-05 check evidence  
 **Downstream Consumers:** Scaffold and safe-edit callers; DI-07; DI-08  
@@ -1015,7 +1015,9 @@ an attempted invocation, including failed launch, never a not-started check. Cap
 retains observed exit code or null, stream byte-count/truncation facts and bounded raw
 diagnostics under the existing DI-05 ceilings. Do not duplicate accepted response bytes.
 W02-F now approves the native-tool external_tools return field under DI-05 §7.4.3;
-retain it in invocation evidence. Final shared capture declarations preserve ownership.
+retain it in invocation evidence. Its required capture: ProcessCapture field uses
+DI-05's typed process-capture transport, including observed byte counts and explicit
+nulls. No capture or adapter identity is invented for a check never attempted.
 
 All records are frozen, strict and extra-forbid, using closed enums and immutable
 sequences. Required nullable fields remain present as null in the complete serialized
@@ -1110,10 +1112,10 @@ The target and content paths meet only for output-profile evidence and final per
 
 | ID | Question | Owner |
 |---|---|---|
-| Q-MUT-03 | Shape/ownership and W02 native provenance return are decided. Remaining integration: final shared capture declarations and preservation of required fields/nulls through actual resource reads | DI-04/DI-05/Shared Contracts; no new presenter framework |
+| Q-MUT-03 | Shared ProcessCapture and required-null serialization are now defined; actual consumer/resource-read conformance remains required | DI-04/DI-05/Shared Contracts; no new presenter framework |
 | Q-MUT-04 | Decision closed: DI-02 header recognition, §4.9 original bytes/text and checked replacement, and §4.10 operation facts. Independent evidence remains required | DI-02/DI-04/DI-05 |
 | Q-MUT-05 | Closed: enforce/report persistence outcomes and default enforce are fixed by Research and §4.6; legacy mode/verify_only removal is required. Remaining DTO integration is Q-MUT-03/Q-MUT-06 | DI-04 |
-| Q-MUT-06 | Decision closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and existing declarative failure route. Real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts |
+| Q-MUT-06 | High-level choice closed by §§4.6/4.10: direct fields, concrete check record, typed cached detail and declarative presentation. Exact MutationErrorCode-to-details mapping still requires Design completion; real presentation/resource conformance remains required | DI-04/DI-05/Shared Contracts; tracked in design-integration-review.md |
 
 ## 8. Acceptance Evidence
 
@@ -1185,6 +1187,7 @@ The policy table is a Design-owned behavioral specification, not production code
 | 1.28 | 2026-09-10 | @imp designer | Record approved original bytes/text snapshot, manager-owned edit orchestration and narrow checked replacement over existing writer mechanics; distinguish lock waiting, adapter deadlines, per-retry guards and non-blocking cleanup while retaining bounded external-writer guarantees. |
 | 1.29 | 2026-09-10 | @imp designer | Record human-approved diagnostic disclosure: operation fields remain workspace-relative, bounded on-demand cache may retain incidental host paths, no private archive or generic sanitizer; keep remaining W01 decisions open and Research frozen. |
 | 1.30 | 2026-09-10 | @imp designer | Record human-approved W01-A–E operation-result integration; close result-shape/ownership decisions, preserve explicit W02/W05 dependencies and route required-null serialization and independent evidence. |
+| 1.33 | 2026-09-12 | @imp designer | Connect invocation evidence to the shared required ProcessCapture type; preserve required-null/resource round-trip obligations and existing result/persistence semantics. |
 | 1.32 | 2026-09-10 | @imp designer | Fix mutation consumer argument ownership: configured binding defaults only, no public native tuning, direct per-check source/effective-list evidence through existing presentation. |
 | 1.31 | 2026-09-10 | @imp designer | Consume the approved W02 native provenance return field while retaining existing result placement and shared capture/resource conformance obligations. |
 | 1.19 | 2026-09-07 | @imp designer | Consolidate flat result fields, selection states, concrete check records, persistence combinations and channel ownership into one proposed workshop; integrate failed-message/public-origin decisions without claiming complete DTO integration. |
