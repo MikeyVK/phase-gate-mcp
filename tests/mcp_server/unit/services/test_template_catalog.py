@@ -10,7 +10,7 @@ from functools import partial
 from types import MappingProxyType
 
 import pytest
-from jinja2 import DictLoader, Environment, StrictUndefined
+from jinja2 import DictLoader, Environment, StrictUndefined, UndefinedError
 from jsonschema.exceptions import ValidationError as ContextError
 from pydantic import ValidationError
 
@@ -411,3 +411,16 @@ class TestTemplateCatalog:
         write_package_tree(suite_roots.templates, files)
         catalog = catalog_loader(suite_roots).load()
         assert catalog_renderer(catalog).render("custom", context, FrozenJsonObject(())) == expected
+
+
+    def test_later_assignment_cannot_hide_an_earlier_external_read(
+        self, suite_roots: SuiteRoots
+    ) -> None:
+        source = "{{ file_name }}{% set file_name = 'local' %}"
+        with pytest.raises(UndefinedError):
+            Environment(undefined=StrictUndefined).from_string(source).render()
+        files = package_files("pkg", "custom")
+        files["pkg/template.jinja2"] = source.encode()
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
