@@ -8,9 +8,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Generic, Protocol, TypeAlias, TypeVar
 
-from pydantic import BaseModel, JsonValue
+from jsonschema import Draft202012Validator
+from pydantic import BaseModel, JsonValue, ValidationError
+from pydantic_core import InitErrorDetails
 
-from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
 JsonObject: TypeAlias = dict[str, JsonValue]
@@ -48,4 +50,20 @@ def prepare_model_input(model: type[TModel]) -> PreparedToolInputContract[TModel
     schema = freeze_json(resolve_schema_refs(model.model_json_schema()))
     if not isinstance(schema, FrozenJsonObject):
         raise TypeError("tool_input_schema_must_be_object")
-    return PreparedToolInputContract(schema=schema, admit=model.model_validate)
+    validator = Draft202012Validator(thaw_json(schema))
+
+    def admit(raw: JsonObject) -> TModel:
+        errors: list[InitErrorDetails] = [
+            {
+                "type": "value_error",
+                "loc": tuple(error.absolute_path),
+                "input": error.instance,
+                "ctx": {"error": ValueError(error.message)},
+            }
+            for error in validator.iter_errors(raw)
+        ]
+        if errors:
+            raise ValidationError.from_exception_data(model.__name__, errors)
+        return model.model_validate(raw)
+
+    return PreparedToolInputContract(schema=schema, admit=admit)

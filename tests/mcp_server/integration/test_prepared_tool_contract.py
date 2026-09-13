@@ -19,7 +19,7 @@ def test_prepared_schema_is_a_detached_immutable_snapshot() -> None:
     exposed.clear()
     assert "properties" in contract.schema
     with pytest.raises(FrozenInstanceError):
-        setattr(contract, "schema", freeze_json({}))
+        contract.schema = freeze_json({})
 
 
 def test_prepared_existing_model_enforces_its_exposed_input_type() -> None:

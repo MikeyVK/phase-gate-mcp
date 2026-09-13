@@ -24,33 +24,33 @@ import pytest
 from mcp.types import ListToolsRequest, ListToolsResult
 from pydantic import BaseModel, ConfigDict, JsonValue, create_model
 
+from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.decorators import (
     EnforcementDecorator,
     InputValidationDecorator,
     ToolErrorHandlerDecorator,
 )
-from mcp_server.config.settings import ServerSettings, Settings
+from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.exceptions import ValidationError as EnforcementValidationError
+from mcp_server.core.interfaces.icore_tool import ICoreTool
+from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.core.interfaces.tool_input_contract import (
     PreparedToolInputContract,
     prepare_model_input,
 )
-from mcp_server.presenters.validation_resource_presenter import ValidationResourcePresenter
-from mcp_server.server import MCPServer
-from mcp_server.core.exceptions import ConfigError
-from mcp_server.core.exceptions import ValidationError as EnforcementValidationError
-from mcp_server.core.interfaces.icore_tool import ICoreTool
-from mcp_server.core.interfaces.itool import ITool
 
 # Project modules
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.managers.enforcement_runner import EnforcementRunner
+from mcp_server.presenters.validation_resource_presenter import ValidationResourcePresenter
 from mcp_server.schemas.error_outputs import (
     ConfigErrorOutput,
     EnforcementErrorOutput,
     ExecutionErrorOutput,
     ValidationErrorOutput,
 )
+from mcp_server.server import MCPServer
 
 
 # Dummy models for testing
@@ -399,4 +399,3 @@ async def test_explicit_no_argument_contract_keeps_none_execution() -> None:
     assert isinstance(result, EchoOutput)
     assert core.inputs == [None]
     assert wrapped.input_schema == thaw_json(schema)
-
