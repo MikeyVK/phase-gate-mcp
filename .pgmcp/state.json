@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 7,
-  "last_cycle": 6,
+  "current_cycle": 8,
+  "last_cycle": 7,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -42,6 +42,12 @@
       "name": "First-line provenance writer and reader",
       "forced": false,
       "entered": "2026-09-13T17:18:31.970980+00:00"
+    },
+    {
+      "cycle_number": 8,
+      "name": "Prepared tool input contract",
+      "forced": false,
+      "entered": "2026-09-13T17:44:47.443406+00:00"
     }
   ],
   "required_phases": [
@@ -197,5 +203,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": "red"
 }
