@@ -17,11 +17,12 @@ from pydantic import ValidationError
 from mcp_server.config.loader import ConfigLoader
 from mcp_server.config.validator import ConfigValidator
 from mcp_server.core.exceptions import MCPError
-from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, thaw_json
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.services.template_catalog import (
     TemplateCatalog,
     TemplateCatalogLoader,
     TemplateCatalogRenderer,
+    TemplateInputValidator,
 )
 from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
 from mcp_server.services.template_engine import TemplateEngine
@@ -63,7 +64,13 @@ def catalog_loader(roots: SuiteRoots) -> TemplateCatalogLoader:
         roots.config, roots.templates, context_schema_reader=reader.load_context_schema
     )
     validator = ConfigValidator()
-    graph = TemplateGraphResolver(roots.templates, Environment().parse)
+    environment = Environment()
+    graph = TemplateGraphResolver(roots.templates, environment.parse)
+    provenance = freeze_json(
+        {"type": "object", "properties": {"id": {"type": "string"}}, "additionalProperties": False}
+    )
+    assert isinstance(provenance, FrozenJsonObject)
+    inputs = TemplateInputValidator(environment.parse, provenance)
     return TemplateCatalogLoader(
         roots.templates,
         read_manifest=config.load_template_manifest,
@@ -72,6 +79,7 @@ def catalog_loader(roots: SuiteRoots) -> TemplateCatalogLoader:
         read_schema=config.load_template_context_schema,
         validate_policy=partial(validator.validate_template_policy, profiles=frozenset({"text"})),
         resolve_graph=graph.resolve,
+        validate_inputs=inputs.validate,
     )
 
 
@@ -219,7 +227,6 @@ class TestTemplateCatalog:
         with pytest.raises(MCPError, match="template_package_directory_required"):
             catalog_loader(suite_roots).load()
 
-
     @pytest.mark.parametrize(
         "source",
         [
@@ -227,6 +234,8 @@ class TestTemplateCatalog:
             b"{{ content['undeclared'] }}",
             b"{{ file_name }}",
             b"{{ provenance.undeclared }}",
+            b"{{ content.get('undeclared') }}",
+            b"{% set alias = content %}{{ alias.undeclared }}",
         ],
     )
     def test_undeclared_renderer_inputs_prevent_publication(
@@ -234,6 +243,63 @@ class TestTemplateCatalog:
     ) -> None:
         files = package_files("pkg", "custom")
         files["shared/templates/base.jinja2"] = source
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
+
+    @pytest.mark.parametrize("composition", ["allOf", "anyOf", "oneOf"])
+    def test_composed_schema_nested_reads_and_local_scopes_remain_valid(
+        self, suite_roots: SuiteRoots, composition: str
+    ) -> None:
+        """Schema declarations coexist with Jinja methods, aliases, loops and macros."""
+        files = package_files("pkg", "custom")
+        schema = json.loads(files["pkg/context.schema.json"])
+        schema[composition] = [{"properties": schema.pop("properties")}]
+        schema.pop("additionalProperties")
+        schema["unevaluatedProperties"] = False
+        schema[composition][0]["properties"]["rows"] = {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"label": {"type": "string"}},
+                "additionalProperties": False,
+            },
+        }
+        files["pkg/context.schema.json"] = json.dumps(schema).encode()
+        files["pkg/template.jinja2"] = (
+            b'{% import "shared/templates/macros.jinja2" as helpers %}'
+            b"{% set alias = content %}{{ alias.get('value') }}|"
+            b"{% for row in content.rows %}{{ row.label }}{% endfor %}|"
+            b"{% with content = {'local': 'scoped'} %}{{ content.local }}{% endwith %}|"
+            b"{{ helpers.label({'local': 'macro'}) }}|{{ provenance.id }}"
+        )
+        files["shared/templates/macros.jinja2"] = (
+            b"{% macro label(content) %}{{ content.local }}{% endmacro %}"
+        )
+        write_package_tree(suite_roots.templates, files)
+        catalog = catalog_loader(suite_roots).load()
+        provenance = freeze_json({"id": "custom"})
+        assert isinstance(provenance, FrozenJsonObject)
+        assert (
+            catalog_renderer(catalog).render(
+                "custom", {"value": 0, "flag": False, "rows": [{"label": "row"}]}, provenance
+            )
+            == "0|row|scoped|macro|custom"
+        )
+        files["pkg/template.jinja2"] = b"{% for row in content.rows %}{{ row.missing }}{% endfor %}"
+        write_package_tree(
+            suite_roots.templates, {"pkg/template.jinja2": files["pkg/template.jinja2"]}
+        )
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
+
+    def test_shared_inputs_are_checked_for_each_selectable_package(
+        self, suite_roots: SuiteRoots
+    ) -> None:
+        files = {**package_files("one", "one"), **package_files("two", "two")}
+        schema = json.loads(files["two/context.schema.json"])
+        schema["properties"].pop("empty")
+        files["two/context.schema.json"] = json.dumps(schema).encode()
         write_package_tree(suite_roots.templates, files)
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()

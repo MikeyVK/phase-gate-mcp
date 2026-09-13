@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from jinja2 import meta, nodes
 from pydantic import JsonValue
 
 from mcp_server.config.schemas.template_suite import TemplateManifest, TemplatePolicy
@@ -57,6 +59,7 @@ class TemplateCatalogLoader:
         read_schema: Callable[[Path], FrozenJsonObject],
         validate_policy: Callable[[TemplatePolicy], None],
         resolve_graph: Callable[[Iterable[tuple[str, str]]], TemplateGraph],
+        validate_inputs: Callable[[TemplatePackage, TemplateGraph], None],
     ) -> None:
         if not suite_root.is_absolute():
             raise MCPError("absolute_suite_root_required", code="ERR_CONFIG")
@@ -67,6 +70,7 @@ class TemplateCatalogLoader:
         self._read_schema = read_schema
         self._validate_policy = validate_policy
         self._resolve_graph = resolve_graph
+        self._validate_inputs = validate_inputs
 
     def load(self) -> TemplateCatalog:
         """Prepare every direct package before returning any catalog to consumers."""
@@ -101,6 +105,8 @@ class TemplateCatalogLoader:
         graph = self._resolve_graph(entries)
         if {(root.template_id, root.template_name) for root in graph.roots} != set(entries):
             raise MCPError("template_renderer_selection_mismatch", code="ERR_CONFIG")
+        for package in packages:
+            self._validate_inputs(package, graph)
         return TemplateCatalog(
             tuple(sorted(packages, key=lambda item: item.manifest.template_id)), graph
         )
@@ -157,3 +163,203 @@ class TemplateCatalogRenderer:
         return self._render_context(
             package.renderer, {"content": thaw_json(content), "provenance": thaw_json(provenance)}
         )
+
+
+# Paths contain literal member names/indices; None denotes a computed item selection.
+InputPath = tuple[str | int | None, ...]
+
+
+class TemplateInputValidator:
+    """Check static input declarations against prepared schemas without rendering.
+
+    This is declaration linkage, not a proof of all control-flow/optional-value behavior.
+    Computed accesses and macro arguments retain their containing schema; concrete
+    renderer conformance tests own their value-dependent behavior.
+    """
+
+    def __init__(
+        self,
+        parse: Callable[[str, str], nodes.Template],
+        provenance_schema: FrozenJsonObject,
+    ) -> None:
+        self._parse = parse
+        self._provenance_schema = provenance_schema
+
+    def validate(self, package: TemplatePackage, graph: TemplateGraph) -> None:
+        """Check each reachable source against the selected package's input contract."""
+        root = next(
+            item for item in graph.roots if item.template_id == package.manifest.template_id
+        )
+        trees = {
+            source.name: self._parse(source.content.decode("utf-8-sig"), source.name)
+            for source in graph.sources
+            if source.name in root.closure
+        }
+        schemas = {
+            "content": thaw_json(package.schema),
+            "provenance": thaw_json(self._provenance_schema),
+        }
+        # Included/inherited sources can consume names bound by another source.
+        bound_names = {
+            item.name
+            for tree in trees.values()
+            for item in tree.find_all(nodes.Name)
+            if item.ctx == "store"
+        }
+        for name, tree in trees.items():
+            undeclared = meta.find_undeclared_variables(tree) - schemas.keys() - bound_names
+            if undeclared:
+                raise _input_error(package, name, sorted(undeclared)[0], 1)
+            bindings: dict[str, InputPath | None] = {key: (key,) for key in schemas}
+            for path, line in _input_reads(tree, bindings):
+                namespace, *members = path
+                if isinstance(namespace, str) and not _declares_path(
+                    schemas[namespace], tuple(members)
+                ):
+                    display = ".".join("*" if part is None else str(part) for part in path)
+                    raise _input_error(package, name, display, line)
+
+
+def _input_error(package: TemplatePackage, source: str, field: str, line: int) -> MCPError:
+    return MCPError(
+        "template_input_undeclared",
+        code="ERR_CONFIG",
+        params={
+            "template_id": package.manifest.template_id,
+            "template": source,
+            "field": field,
+            "line": line,
+        },
+    )
+
+
+def _reference(node: nodes.Node, bindings: Mapping[str, InputPath | None]) -> InputPath | None:
+    if isinstance(node, nodes.Name):
+        return bindings.get(node.name)
+    if isinstance(node, (nodes.Getattr, nodes.Getitem)):
+        parent = _reference(node.node, bindings)
+        if parent is None:
+            return None
+        if isinstance(node, nodes.Getattr):
+            return (*parent, node.attr)
+        key = node.arg.value if isinstance(node.arg, nodes.Const) else None
+        return (*parent, key if isinstance(key, (str, int)) else None)
+    return None
+
+
+def _bind(
+    target: nodes.Node, value: InputPath | None, bindings: dict[str, InputPath | None]
+) -> None:
+    if isinstance(target, nodes.Name):
+        bindings[target.name] = value
+    else:
+        for child in target.iter_child_nodes():
+            _bind(child, None, bindings)
+
+
+def _input_reads(
+    node: nodes.Node, bindings: dict[str, InputPath | None]
+) -> Iterable[tuple[InputPath, int]]:
+    """Follow static namespace/alias reads while respecting Jinja lexical bindings."""
+    reference = _reference(node, bindings)
+    if reference is not None:
+        yield reference, node.lineno
+    if isinstance(node, nodes.Macro):
+        for value in node.defaults:
+            yield from _input_reads(value, bindings)
+        local = dict(bindings)
+        for argument in node.args:
+            _bind(argument, None, local)
+        for child in node.body:
+            yield from _input_reads(child, local)
+        return
+    if isinstance(node, nodes.For):
+        yield from _input_reads(node.iter, bindings)
+        local = dict(bindings)
+        iterable = _reference(node.iter, bindings)
+        _bind(node.target, (*iterable, None) if iterable is not None else None, local)
+        for child in node.body:
+            yield from _input_reads(child, local)
+        if node.test is not None:
+            yield from _input_reads(node.test, local)
+        for child in node.else_:
+            yield from _input_reads(child, dict(bindings))
+        return
+    if isinstance(node, nodes.With):
+        local = dict(bindings)
+        for target, value in zip(node.targets, node.values, strict=True):
+            yield from _input_reads(value, bindings)
+            _bind(target, _reference(value, bindings), local)
+        for child in node.body:
+            yield from _input_reads(child, local)
+        return
+    if isinstance(node, nodes.Assign):
+        yield from _input_reads(node.node, bindings)
+        _bind(node.target, _reference(node.node, bindings), bindings)
+        return
+    if isinstance(node, nodes.Call) and isinstance(node.node, nodes.Getattr):
+        # A mapping method is not a schema property. Literal get() keys are reads.
+        receiver = node.node.node
+        parent = _reference(receiver, bindings)
+        if parent is not None and node.node.attr == "get" and node.args:
+            key = node.args[0]
+            if isinstance(key, nodes.Const) and isinstance(key.value, str):
+                yield (*parent, key.value), node.lineno
+        yield from _input_reads(receiver, bindings)
+        for child in node.iter_child_nodes(exclude=("node",)):
+            yield from _input_reads(child, bindings)
+        return
+    local = dict(bindings) if isinstance(node, (nodes.Block, nodes.Scope)) else bindings
+    for child in node.iter_child_nodes():
+        yield from _input_reads(child, local)
+
+
+def _declares_path(schema: JsonValue, path: InputPath) -> bool:
+    """Find declarations in schema positions, retaining composed object boundaries.
+
+    This does not evaluate assertions, flatten schemas or materialize defaults.
+    """
+    if not path:
+        return True
+    if isinstance(schema, bool):
+        return schema
+    if not isinstance(schema, dict):
+        return False
+    key, *rest = path
+    candidates: list[JsonValue] = []
+    properties = schema.get("properties", {})
+    if isinstance(properties, dict):
+        candidates.extend(value for name, value in properties.items() if key is None or name == key)
+    patterns = schema.get("patternProperties", {})
+    if isinstance(patterns, dict):
+        candidates.extend(
+            value
+            for pattern, value in patterns.items()
+            if key is None or isinstance(key, str) and re.search(pattern, key)
+        )
+    if (key is None or not candidates) and "additionalProperties" in schema:
+        candidates.append(schema["additionalProperties"])
+    if isinstance(key, int) or key is None:
+        prefix = schema.get("prefixItems", [])
+        if isinstance(prefix, list):
+            candidates.extend(
+                value for index, value in enumerate(prefix) if key is None or index == key
+            )
+            if "items" in schema and (key is None or key >= len(prefix)):
+                candidates.append(schema["items"])
+    if any(
+        _declares_path(candidate, tuple(rest)) for candidate in candidates if candidate is not False
+    ):
+        return True
+    for keyword in ("allOf", "anyOf", "oneOf"):
+        branches = schema.get(keyword)
+        if isinstance(branches, list) and any(_declares_path(branch, path) for branch in branches):
+            return True
+    for keyword in ("then", "else", "dependentSchemas"):
+        branch = schema.get(keyword)
+        if keyword == "dependentSchemas" and isinstance(branch, dict):
+            if any(_declares_path(value, path) for value in branch.values()):
+                return True
+        elif isinstance(branch, (dict, bool)) and _declares_path(branch, path):
+            return True
+    return not schema
