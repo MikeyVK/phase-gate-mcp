@@ -1,0 +1,17 @@
+adapter_id: typescript_syntax
+version: 1.0.0
+files:
+  - check.cjs
+  - package.json
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: node
+      args:
+        - package_file: check.cjs
+    capabilities:
+      syntax:
+        inputs:
+          - content
+        requires_file: false

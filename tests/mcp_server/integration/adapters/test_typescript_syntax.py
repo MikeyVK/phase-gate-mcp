@@ -1,4 +1,4 @@
-"""CY023 native TypeScript syntax and adapter RED evidence."""
+"""Native TypeScript single-snapshot syntax and check/v1 conformance."""
 
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ class TypeScriptRuntime:
 class TypeScriptPackage:
     runtime: TypeScriptRuntime
     root: Path
+    workspace: Path
     launch: AdapterLaunch
     schema: Draft202012Validator
 
@@ -77,7 +78,7 @@ const host = {
     return ts.ScriptSnapshot.fromString(source);
   },
   getCurrentDirectory: () => process.cwd(),
-  getCompilationSettings: () => ({ allowJs: true }),
+  getCompilationSettings: () => ({}),
   getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
   useCaseSensitiveFileNames: () => ts.sys.useCaseSensitiveFileNames,
   fileExists: (file) => ts.sys.resolvePath(file) === normalizedTarget,
@@ -86,6 +87,11 @@ const host = {
 };
 const service = ts.createLanguageService(host);
 const diagnostics = service.getSyntacticDiagnostics(normalizedTarget);
+const formatted = ts.formatDiagnostics(diagnostics, {
+  getCanonicalFileName: (fileName) => fileName,
+  getCurrentDirectory: () => process.cwd(),
+  getNewLine: () => ts.sys.newLine,
+});
 const facts = diagnostics.map((diagnostic) => ({
   code: diagnostic.code,
   start: diagnostic.start ?? null,
@@ -93,14 +99,10 @@ const facts = diagnostics.map((diagnostic) => ({
   message: ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
   file: diagnostic.file?.fileName ?? null,
 }));
-const formatHost = {
-  getCanonicalFileName: (fileName) => fileName,
-  getCurrentDirectory: () => process.cwd(),
-  getNewLine: () => '\n',
-};
+service.dispose();
 process.stdout.write(JSON.stringify({
   diagnostics: facts,
-  text: ts.formatDiagnostics(diagnostics, formatHost),
+  text: formatted,
 }));
 """
     result = subprocess.run(
@@ -146,62 +148,10 @@ def typescript_package(tmp_path: Path, pytestconfig: pytest.Config) -> TypeScrip
     return TypeScriptPackage(
         runtime,
         root,
+        workspace,
         binding.launch,
         Draft202012Validator(json.loads(schema_path.read_text(encoding="utf-8"))),
     )
-
-
-def test_native_language_service_checks_syntax_only_and_allows_absent_target(
-    tmp_path: Path, pytestconfig: pytest.Config
-) -> None:
-    runtime = _runtime(pytestconfig.rootpath)
-    workspace = tmp_path / "native workspace"
-    workspace.mkdir()
-    node_modules = workspace / "node_modules" / "typescript"
-    node_modules.parent.mkdir()
-    copytree(runtime.package, node_modules)
-    before = {
-        path.relative_to(workspace)
-        for path in workspace.rglob("*")
-        if path.is_file() and "node_modules" not in path.parts
-    }
-    target = workspace / "missing" / "source.ts"
-    valid = "import missing_package from 'missing_package';\nconst value: number = 1;\n"
-    invalid = "const value: number = ;\n"
-    valid_result = _native(runtime, workspace, target, valid)
-    assert valid_result["diagnostics"] == []
-    invalid_result = _native(runtime, workspace, target, invalid)
-    diagnostics = invalid_result["diagnostics"]
-    assert isinstance(diagnostics, list) and diagnostics
-    assert isinstance(invalid_result["text"], str) and invalid_result["text"]
-    after = {
-        path.relative_to(workspace)
-        for path in workspace.rglob("*")
-        if path.is_file() and "node_modules" not in path.parts
-    }
-    assert before == after
-    assert not target.exists()
-
-
-def test_adapter_preserves_native_syntax_result(
-    tmp_path: Path, pytestconfig: pytest.Config,
-) -> None:
-    runtime = _runtime(pytestconfig.rootpath)
-    workspace = tmp_path / "workspace"
-    native_package = workspace / "node_modules" / "typescript"
-    native_package.parent.mkdir(parents=True)
-    copytree(runtime.package, native_package)
-    target = workspace / "absent.ts"
-    request = {"operation": "syntax", "target_path": str(target),
-               "content": "const value: number = 1;\n", "args": []}
-    entrypoint = pytestconfig.rootpath / "mcp_server/bundled_adapters/typescript_syntax/check.cjs"
-    result = subprocess.run(
-        [str(runtime.node), str(entrypoint)], input=json.dumps(request).encode(),
-        cwd=workspace, capture_output=True, timeout=15,
-    )
-    assert result.returncode == 0
-    assert json.loads(result.stdout)["decision"]["status"] == "passed"
-    assert not target.exists()
 
 
 def invoke(
@@ -221,3 +171,186 @@ def invoke(
     package.schema.validate(response)
     return result.returncode, response
 
+
+def _content_request(target: Path, content: str, args: tuple[str, ...] = ()) -> dict[str, object]:
+    return {
+        "operation": "syntax",
+        "target_path": str(target),
+        "content": content,
+        "args": list(args),
+    }
+
+
+def _decision(response: dict[str, JsonValue]) -> dict[str, JsonValue]:
+    value = response["decision"]
+    assert isinstance(value, dict)
+    return value
+
+
+@pytest.mark.parametrize(
+    ("filename", "content", "existing", "status"),
+    [
+        (
+            "source.ts",
+            "import { missing } from 'missing-package';\nconst value: number = 'semantic error';\n",
+            True,
+            "passed",
+        ),
+        ("component.tsx", 'const view = <MissingWidget title="hello" />;\n', False, "passed"),
+        (
+            "negative.ts",
+            "import { missing } from 'missing-package';\nconst value: number = ;\n",
+            False,
+            "failed",
+        ),
+    ],
+    ids=["semantic-errors-ignored", "tsx", "syntax-error"],
+)
+def test_native_snapshot_results_and_no_writes(
+    typescript_package: TypeScriptPackage,
+    filename: str,
+    content: str,
+    existing: bool,
+    status: str,
+) -> None:
+    package = typescript_package
+    target = package.workspace / filename
+    stale = b"const stale = ;\n"
+    if existing:
+        target.write_bytes(stale)
+    before = {path.relative_to(package.workspace) for path in package.workspace.rglob("*")}
+    direct = _native(package.runtime, package.workspace, target, content)
+    code, response = invoke(package, package.workspace, _content_request(target, content))
+    assert code == (0 if status == "passed" else 1)
+    assert _decision(response)["status"] == status
+    assert response["external_tools"] == [{"tool_id": "typescript", "version": "6.0.3"}]
+    diagnostics = direct["diagnostics"]
+    assert isinstance(diagnostics, list)
+    if status == "passed":
+        assert diagnostics == []
+    else:
+        assert diagnostics
+        first = diagnostics[0]
+        assert isinstance(first, dict)
+        assert isinstance(first["code"], int) and isinstance(first["start"], int)
+        assert isinstance(first["length"], int)
+        assert Path(str(first["file"])) == target
+        assert _decision(response)["message"] == first["message"]
+        assert response["evidence"] == {"format": "text", "data": direct["text"]}
+    assert before == {path.relative_to(package.workspace) for path in package.workspace.rglob("*")}
+    if existing:
+        assert target.read_bytes() == stale
+    else:
+        assert not target.exists()
+    dependency = json.loads((package.root / "package.json").read_text())
+    assert dependency["dependencies"] == {"typescript": "6.0.3"}
+
+
+@pytest.mark.parametrize(
+    ("configuration", "status"),
+    [
+        ("{}", "passed"),
+        ('{"files": []}', "passed"),
+        ("{", "unavailable"),
+        ('{"compilerOptions":{"target":"invalid-target"}}', "unavailable"),
+        ('{"extends":"./missing-base.json"}', "unavailable"),
+    ],
+    ids=["no-project-inputs", "empty-files", "invalid-json", "invalid-option", "missing-extends"],
+)
+def test_native_configuration_and_snapshot_selection(
+    typescript_package: TypeScriptPackage,
+    configuration: str,
+    status: str,
+) -> None:
+    package = typescript_package
+    config = package.workspace / "tsconfig.json"
+    config.write_text(configuration, encoding="utf-8")
+    target = package.workspace / "not-created" / "source.ts"
+    code, response = invoke(
+        package, package.workspace, _content_request(target, "const value = 1;\n")
+    )
+    assert code == (0 if status == "passed" else 3)
+    assert _decision(response)["status"] == status
+    if status == "unavailable":
+        assert _decision(response)["reason"] == "invalid_configuration"
+        assert _decision(response)["message"]
+        assert response["evidence"]
+    assert config.read_text(encoding="utf-8") == configuration
+    assert not target.exists()
+
+
+def test_native_extends_is_read_and_validated(typescript_package: TypeScriptPackage) -> None:
+    package = typescript_package
+    base = package.workspace / "base.json"
+    config = package.workspace / "tsconfig.json"
+    config.write_text('{"extends":"./base.json","files":[]}', encoding="utf-8")
+    target = package.workspace / "absent.ts"
+    request = _content_request(target, "const value: number = 'semantic';\n")
+    base.write_text('{"compilerOptions":{"target":"invalid-target"}}', encoding="utf-8")
+    code, rejected = invoke(package, package.workspace, request)
+    assert code == 3 and _decision(rejected)["reason"] == "invalid_configuration"
+    base.write_text('{"compilerOptions":{"strict":true}}', encoding="utf-8")
+    code, accepted = invoke(package, package.workspace, request)
+    assert code == 0 and _decision(accepted)["status"] == "passed"
+    assert not target.exists()
+
+
+def test_dependency_absence_is_distinct_from_missing_node(
+    typescript_package: TypeScriptPackage,
+    tmp_path: Path,
+) -> None:
+    package = typescript_package
+    empty = tmp_path / "empty lookup and workspace"
+    empty.mkdir()
+    assert which("node", path=str(empty)) is None
+    loader = ConfigLoader(tmp_path / "config", tmp_path / "templates")
+
+    def resolve_missing(name: str) -> Path | None:
+        result = which(name, path=str(empty))
+        return Path(result) if result is not None else None
+
+    catalog = AdapterCatalogLoader(
+        package.root.parent,
+        tmp_path / "workspace adapters",
+        AdapterTrustConfig(trusted_adapter_ids=()),
+        read_manifest=loader.load_adapter_manifest,
+        files=FileAdapterPackageReader(),
+        resolve_program=resolve_missing,
+        windows=os.name == "nt",
+    ).load()
+    assert catalog.get_check("typescript_syntax", "syntax").launch.executable is None
+    # An adapter-adjacent dependency must not satisfy workspace provisioning.
+    copytree(package.runtime.package, package.root / "node_modules" / "typescript")
+    target = empty / "absent.ts"
+    code, response = invoke(package, empty, _content_request(target, "const value = 1;\n"))
+    assert code == 3 and _decision(response)["reason"] == "dependency_unavailable"
+    assert response["external_tools"] == [{"tool_id": "typescript", "version": None}]
+    assert not target.exists()
+
+
+def test_unsupported_arguments(typescript_package: TypeScriptPackage) -> None:
+    package = typescript_package
+    target = package.workspace / "absent.ts"
+    code, response = invoke(
+        package,
+        package.workspace,
+        _content_request(target, "const value = 1;\n", ("--strict",)),
+    )
+    assert code == 3 and _decision(response)["reason"] == "unsupported_input"
+    assert not target.exists()
+
+
+def test_protocol_rejects_invalid_target(typescript_package: TypeScriptPackage) -> None:
+    package = typescript_package
+    code, response = invoke(
+        package,
+        package.workspace,
+        _content_request(Path("relative.ts"), "const value = 1;\n"),
+    )
+    assert code == 2
+    assert response == {
+        "reason": "invalid_request",
+        "details": [
+            {"location": ["target_path"], "code": "invalid_value"},
+        ],
+    }
