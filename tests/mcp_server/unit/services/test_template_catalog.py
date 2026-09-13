@@ -441,14 +441,14 @@ class TestTemplateCatalog:
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
 
-
     @pytest.mark.parametrize("scoped", [True, False], ids=["scoped", "unscoped"])
     def test_block_visibility_matches_native_scope(
         self, suite_roots: SuiteRoots, scoped: bool
     ) -> None:
         modifier = " scoped" if scoped else ""
         source = (
-            "{% for label in ['ok'] %}{% block body" + modifier
+            "{% for label in ['ok'] %}{% block body"
+            + modifier
             + " %}{{ label }}{% endblock %}{% endfor %}"
         )
         native = Environment(undefined=StrictUndefined).from_string(source)
@@ -458,9 +458,12 @@ class TestTemplateCatalog:
         if scoped:
             assert native.render() == "ok"
             catalog = catalog_loader(suite_roots).load()
-            assert catalog_renderer(catalog).render(
-                "custom", {"value": 0, "flag": False}, FrozenJsonObject(())
-            ) == "ok"
+            assert (
+                catalog_renderer(catalog).render(
+                    "custom", {"value": 0, "flag": False}, FrozenJsonObject(())
+                )
+                == "ok"
+            )
         else:
             with pytest.raises(UndefinedError):
                 native.render()

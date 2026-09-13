@@ -169,6 +169,13 @@ class TemplateCatalogRenderer:
 InputPath = tuple[str | int | None, ...]
 
 
+@dataclass(frozen=True)
+class _InputRead:
+    path: InputPath
+    line: int
+    unbound: bool = False
+
+
 class TemplateInputValidator:
     """Check static input declarations against prepared schemas without rendering.
 
@@ -215,9 +222,6 @@ class TemplateInputValidator:
             module_bindings = inherited(name, incoming)
             _export_bindings(tree.body, module_bindings)
             external_names = meta.find_undeclared_variables(tree)
-            undeclared = external_names - module_bindings.keys()
-            if undeclared:
-                raise _input_error(package, name, sorted(undeclared)[0], 1)
 
             parents: list[tuple[str, Mapping[str, InputPath | None]]] = []
 
@@ -235,17 +239,17 @@ class TemplateInputValidator:
                 else:
                     visit(target.value, visible if node.with_context else {})
 
-            for path, line in _input_reads(tree, dict(incoming), dependency, module_bindings):
-                namespace, *members = path
+            for read in _input_reads(tree, dict(incoming), dependency, module_bindings):
+                namespace, *members = read.path
                 if not isinstance(namespace, str):
                     continue
-                if namespace not in schemas:
+                if read.unbound:
                     if namespace in external_names:
-                        raise _input_error(package, name, namespace, line)
+                        raise _input_error(package, name, namespace, read.line)
                     continue
                 if not _declares_path(schemas[namespace], tuple(members)):
-                    display = ".".join("*" if part is None else str(part) for part in path)
-                    raise _input_error(package, name, display, line)
+                    display = ".".join("*" if part is None else str(part) for part in read.path)
+                    raise _input_error(package, name, display, read.line)
             for parent_name, visible in parents:
                 visit(parent_name, visible)
 
@@ -314,13 +318,13 @@ def _input_reads(
     bindings: dict[str, InputPath | None],
     visit_dependency: Callable[[nodes.Node, Mapping[str, InputPath | None]], None],
     module_bindings: Mapping[str, InputPath | None],
-) -> Iterable[tuple[InputPath, int]]:
+) -> Iterable[_InputRead]:
     """Follow static namespace/alias reads while respecting Jinja lexical bindings."""
     reference = _reference(node, bindings)
     if reference is not None:
-        yield reference, node.lineno
+        yield _InputRead(reference, node.lineno)
     elif isinstance(node, nodes.Name) and node.ctx == "load" and node.name not in bindings:
-        yield (node.name,), node.lineno
+        yield _InputRead((node.name,), node.lineno, unbound=True)
     if isinstance(node, (nodes.Extends, nodes.Include, nodes.Import, nodes.FromImport)):
         visit_dependency(node, bindings)
         if isinstance(node, nodes.Import):
@@ -363,6 +367,15 @@ def _input_reads(
         for child in node.body:
             yield from _input_reads(child, local, visit_dependency, module_bindings)
         return
+    if isinstance(node, (nodes.AssignBlock, nodes.FilterBlock)):
+        local = dict(bindings)
+        for child in node.body:
+            yield from _input_reads(child, local, visit_dependency, module_bindings)
+        if node.filter is not None:
+            yield from _input_reads(node.filter, local, visit_dependency, module_bindings)
+        if isinstance(node, nodes.AssignBlock):
+            _bind(node.target, None, bindings)
+        return
     if isinstance(node, nodes.Assign):
         yield from _input_reads(node.node, bindings, visit_dependency, module_bindings)
         _bind(node.target, _reference(node.node, bindings), bindings)
@@ -374,13 +387,13 @@ def _input_reads(
         if parent is not None and node.node.attr == "get" and node.args:
             key = node.args[0]
             if isinstance(key, nodes.Const) and isinstance(key.value, str):
-                yield (*parent, key.value), node.lineno
+                yield _InputRead((*parent, key.value), node.lineno)
         yield from _input_reads(receiver, bindings, visit_dependency, module_bindings)
         for child in node.iter_child_nodes(exclude=("node",)):
             yield from _input_reads(child, bindings, visit_dependency, module_bindings)
         return
     if isinstance(node, nodes.Block):
-        local = {**module_bindings, **bindings}
+        local = {**module_bindings, **bindings} if node.scoped else dict(module_bindings)
     else:
         local = dict(bindings) if isinstance(node, nodes.Scope) else bindings
     for child in node.iter_child_nodes():
