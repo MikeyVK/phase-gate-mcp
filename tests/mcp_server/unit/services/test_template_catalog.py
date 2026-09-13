@@ -304,7 +304,6 @@ class TestTemplateCatalog:
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
 
-
     def test_loop_local_cannot_hide_an_undefined_external_input(
         self, suite_roots: SuiteRoots
     ) -> None:
@@ -316,7 +315,9 @@ class TestTemplateCatalog:
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
 
-    def test_include_receives_only_its_visible_local_bindings(self, suite_roots: SuiteRoots) -> None:
+    def test_include_receives_only_its_visible_local_bindings(
+        self, suite_roots: SuiteRoots
+    ) -> None:
         files = package_files("pkg", "custom")
         files["pkg/template.jinja2"] = (
             b"{% for label in ['local'] %}"
@@ -325,6 +326,44 @@ class TestTemplateCatalog:
         files["shared/templates/label.jinja2"] = b"{{ label }}"
         write_package_tree(suite_roots.templates, files)
         catalog = catalog_loader(suite_roots).load()
+        assert (
+            catalog_renderer(catalog).render(
+                "custom", {"value": 0, "flag": False}, FrozenJsonObject(())
+            )
+            == "local"
+        )
+
+        write_package_tree(
+            suite_roots.templates,
+            {
+                "pkg/template.jinja2": b"{% set label = 'local' %}"
+                b'{% include "shared/templates/label.jinja2" without context %}',
+            },
+        )
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
+
+
+    def test_inherited_macro_is_an_internal_binding(self, suite_roots: SuiteRoots) -> None:
+        files = package_files("pkg", "custom")
+        files["pkg/template.jinja2"] = (
+            b'{% extends "shared/templates/base.jinja2" %}'
+            b"{% block body %}{{ label(content.value) }}{% endblock %}"
+        )
+        files["shared/templates/base.jinja2"] = (
+            b"{% macro label(value) %}prefix{{ value }}{% endmacro %}"
+            b"{% block body %}{% endblock %}"
+        )
+        native = Environment(
+            loader=DictLoader(
+                {name: value.decode() for name, value in files.items() if name.endswith(".jinja2")}
+            ),
+            undefined=StrictUndefined,
+        )
+        context = {"value": 0, "flag": False}
+        assert native.get_template("pkg/template.jinja2").render(content=context) == "prefix0"
+        write_package_tree(suite_roots.templates, files)
+        catalog = catalog_loader(suite_roots).load()
         assert catalog_renderer(catalog).render(
-            "custom", {"value": 0, "flag": False}, FrozenJsonObject(())
-        ) == "local"
+            "custom", context, FrozenJsonObject(())
+        ) == "prefix0"
