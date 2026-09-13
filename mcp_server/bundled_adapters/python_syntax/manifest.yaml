@@ -1,0 +1,17 @@
+adapter_id: python_syntax
+version: 1.0.0
+files:
+  - check.py
+  - requirements.txt
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: check.py
+    capabilities:
+      syntax:
+        inputs:
+          - content
+        requires_file: false
