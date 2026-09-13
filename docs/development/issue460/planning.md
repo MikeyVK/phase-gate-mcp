@@ -222,7 +222,7 @@ Documentation does not postpone live-cutover guidance or the enumerated implemen
 
 ## Review record and current evidence
 
-Independent QA returned **NOGO for Implementation** on the preceding Planning commit. Its latest targeted recheck closed the Pyright finding and retained the missing readback finding. Research and Design remain closed; the following producer evidence does not infer a new independent QA verdict.
+Independent QA has closed the earlier Pyright and stored-payload findings. The latest user-supplied verdict independently confirms all 105 cycles and 218 deliverables, 27 contiguous windows, 161522 Unicode codepoints and the computed SHA-256 `026fd5ddeb902a9f657c8d3aec7205208d38605064bbb3804263d4bb588da49c`. Its targeted NOGO concerns only this discovery amendment: incorrect C004 hint ownership and a stale hand-over. The corrections below await targeted independent recheck; Research and Design remain closed.
 
 ### P1 — Pyright removal ownership
 
@@ -267,7 +267,7 @@ Run receipts are transient evidence pointers, not durable snapshot storage. The 
 2. Read that URI with `?offset=0&limit=6000`. Follow returned `next_offset` on the same URI until null. Require the same run ID, hash and total length on every window, and contiguous offsets. Offsets count Unicode codepoints; do not advance by JavaScript `string.length`.
 3. Join all `text`, verify total codepoint length and SHA-256 of the UTF-8 bytes, then parse JSON. If a window is client-truncated, retry with a smaller limit. Cache loss or a changed hash requires a new public query and complete reconstruction from zero; never mix runs.
 4. Compare every ordered cycle to the three card documents. D1 description is the card's bounded result, then `Preserved behavior:`, `Semantic predecessors:`, `Shared-file predecessors:`, and `Exact scope, write-set and rollback: <repository card path>#cyNNN.` D2 description is its independent-evidence line followed by `Named proof set and V1–V6: <repository card path>#cyNNN.` Compare exact names, IDs, descriptions and stop/go text; compare all phase deliverables above. Inspect each linked write/review scope, including R001–R008.
-5. Independently decide whether the actual payload and correction close the finding. The last independent verdict remains NOGO until that recheck is returned.
+5. Record the independent comparison outcome. The payload finding is already independently closed; retain this procedure for future payload changes rather than reopening that finding for documentation-only corrections.
 
 The generic window contract and limits are documented in [get_project_plan reference](../../reference/tools/project.md#reading-large-cached-plans).
 
@@ -280,7 +280,7 @@ This amendment plans delivery; it does not implement guidance, restart the serve
 - **CY090:** reconcile generic resource and project references with the delivered behavior; it cannot postpone first discovery delivery.
 - Each amended card retains its explicit write-set, R-CYnnn recovery point, preserved behavior and independent stop/go boundary. A missing or budget-truncated hint, startup mapping mismatch, incomplete reconstruction or reliance on producer coaching fails the owning proof. Recovery guidance must never replay mutating/non-repeatable producers merely to recreate a cache; use an existing result/status query or report unavailable details. Only safe read-only queries may be repeated. Existing full-read behavior, cache lifetime and window limits remain unchanged; no fixed Codex/client truncation limit is assumed.
 
-Fresh amendment readback: `pgmcp://cache/runs/7bf793b9a9cf4688afcda0b0b1d423af`, 27 contiguous windows, 161522 Unicode codepoints, consistent server-reported SHA-256 `026fd5ddeb902a9f657c8d3aec7205208d38605064bbb3804263d4bb588da49c`. Actual reconstructed JSON exactly matches all 105 ordered cards, 210 D1/D2 descriptions and exit criteria, plus all eight phase deliverables (218 total). The graph has 504 forward edges. This amendment check verified page metadata, total length and parsed content parity; it did not independently recompute the content hash. Earlier runtime evidence above belongs to the retained quickfix and was not rerun for this planning-only amendment. Internal findings-only review identified unsafe producer replay; CY011 now prohibits mutation replay and its recipe is binding input to CY069/CY071/CY072. Independent QA remains outstanding.
+Fresh amendment readback: `pgmcp://cache/runs/7bf793b9a9cf4688afcda0b0b1d423af`, 27 contiguous windows, 161522 Unicode codepoints, consistent server-reported SHA-256 `026fd5ddeb902a9f657c8d3aec7205208d38605064bbb3804263d4bb588da49c`. Actual reconstructed JSON exactly matches all 105 ordered cards, 210 D1/D2 descriptions and exit criteria, plus all eight phase deliverables (218 total). The graph has 504 forward edges. This amendment check verified page metadata, total length and parsed content parity; it did not independently recompute the content hash. Earlier runtime evidence above belongs to the retained quickfix and was not rerun for this planning-only amendment. Internal findings-only review identified unsafe producer replay; CY011 now prohibits mutation replay and its recipe is binding input to CY069/CY071/CY072. Independent QA has since confirmed the discovery split and exact payload parity, including an independently computed matching hash. Only its two targeted amendment-text findings require correction and recheck.
 
 ## Refactor / Planning Hand-over
 
@@ -298,8 +298,8 @@ This hub; [execution](planning-execution.md), [artifacts/mutation](planning-arti
 
 ### Open Work
 
-Independent QA must repeat full public readback and compare the actual structured payload, the bounded tooling correction and its preservation amendment. The last independent NOGO remains in force. The known pre-existing state.json error-path backup is outside this deliverables-read correction; no general state-purity claim is made.
+Targeted independent recheck of the two discovery-amendment text corrections remains open: C004 no longer claims CY011 cache-hint ownership (C106 remains the sole configuration owner), and this hand-over now records the already-closed payload finding accurately. The latest targeted amendment NOGO is not lifted by these producer corrections. Cycle cards and the operational payload are unchanged; no full Planning re-review or repeated payload proof is requested. The known pre-existing state.json error-path backup remains outside scope.
 
 ### Review Request
 
-Review requested from independently invoked `@qa plan-verifier`. Confirm or reject closure of the remaining payload finding using a fresh query; do not treat producer tests, parity or internal review as workflow GO.
+Review requested from independently invoked `@qa plan-verifier`: confirm or reject closure of the C004/C106 ownership contradiction and stale hand-over findings only. The earlier payload finding is independently closed. No new workflow GO or Implementation transition is inferred.
