@@ -12,6 +12,7 @@ import pytest
 pytest_plugins = [
     "tests.mcp_server.fixtures.artifact_test_harness",
     "tests.mcp_server.fixtures.workflow_fixtures",
+    "tests.mcp_server.fixtures.suite_roots",
 ]
 
 
@@ -19,6 +20,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     """Set PGMCP_TEMPLATE_ROOT dynamically before running tests."""
     import os  # noqa: PLC0415
     from pathlib import Path  # noqa: PLC0415
+
     from mcp_server.config.settings import Settings  # noqa: PLC0415
 
     _project_root = Path(session.config.rootdir)

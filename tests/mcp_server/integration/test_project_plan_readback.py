@@ -8,7 +8,6 @@
 import hashlib
 import json
 import re
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -27,6 +26,7 @@ from pydantic import AnyUrl
 from mcp_server.bootstrap import ServerBootstrapper
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.server import MCPServer
+from tests.mcp_server.fixtures.suite_roots import SuiteRoots
 from tests.mcp_server.test_support import make_project_manager
 
 
@@ -158,18 +158,18 @@ async def _read_windowed_plan(server: MCPServer, uri: str) -> dict[str, Any]:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cycle_count", [3, 117])
 async def test_stored_planning_survives_fresh_bootstrap_cache(
-    tmp_path: Path, cycle_count: int
+    legacy_suite_roots: SuiteRoots, cycle_count: int
 ) -> None:
     """A fresh bootstrap cache regenerates full saved and updated planning."""
-    repo = Path(__file__).resolve().parents[3]
     settings = Settings(
         server=ServerSettings(
-            workspace_root=str(tmp_path),
-            config_root=str(repo / ".pgmcp" / "config"),
-            template_root=str(repo / ".pgmcp" / "templates"),
+            workspace_root=str(legacy_suite_roots.workspace),
+            server_root_dir=legacy_suite_roots.server.name,
+            config_root=str(legacy_suite_roots.config),
+            template_root=str(legacy_suite_roots.templates),
         )
     )
-    manager = make_project_manager(tmp_path)
+    manager = make_project_manager(legacy_suite_roots.workspace)
     manager.initialize_project(53, "Planning readback", "feature")
     expected = _planning_payload(cycle_count)
     manager.save_planning_deliverables(53, expected)
