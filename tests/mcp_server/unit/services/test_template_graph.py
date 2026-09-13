@@ -7,7 +7,6 @@ from __future__ import annotations
 import os
 import subprocess
 from dataclasses import FrozenInstanceError
-from pathlib import Path
 
 import pytest
 from jinja2 import DictLoader, Environment, StrictUndefined
@@ -25,11 +24,15 @@ class TestTemplateGraph:
             "opaque/template.jinja2": b'{% extends "shared/templates/bases/leaf.jinja2" %}'
             b'{% import "shared/templates/patterns/macros.jinja2" as m %}'
             b'{% from "shared/templates/patterns/macros.jinja2" import word %}'
-            b'{% block body %}{{ m.word(value) }}|{{ word(value) }}'
+            b"{% block body %}{{ m.word(value) }}|{{ word(value) }}"
             b'{% include "shared/templates/patterns/tail.jinja2" %}{% endblock %}',
-            "shared/templates/bases/leaf.jinja2": b'{% extends "shared/templates/bases/root.jinja2" %}',
+            "shared/templates/bases/leaf.jinja2": (
+                b'{% extends "shared/templates/bases/root.jinja2" %}'
+            ),
             "shared/templates/bases/root.jinja2": b"BEGIN[{% block body %}{% endblock %}]END",
-            "shared/templates/patterns/macros.jinja2": b"{% macro word(x) %}<{{ x }}>{% endmacro %}",
+            "shared/templates/patterns/macros.jinja2": (
+                b"{% macro word(x) %}<{{ x }}>{% endmacro %}"
+            ),
             "shared/templates/patterns/tail.jinja2": b"!",
             "shared/templates/unused.jinja2": b"Unused",
             "another/template.jinja2": b"Independent",
@@ -38,49 +41,76 @@ class TestTemplateGraph:
         parser = Environment(undefined=StrictUndefined)
         resolver = TemplateGraphResolver(suite_roots.templates, parser.parse)
         monkeypatch.chdir(suite_roots.temp)
-        graph = resolver.resolve([
-            ("unrelated.public-id", "opaque/template.jinja2"),
-            ("other.id", "another/template.jinja2"),
-        ])
-        assert {edge.kind for edge in graph.edges} == {"extends", "include", "import", "from_import"}
-        assert {source.name for source in graph.sources} == set(files) - {"shared/templates/unused.jinja2"}
+        graph = resolver.resolve(
+            [
+                ("unrelated.public-id", "opaque/template.jinja2"),
+                ("other.id", "another/template.jinja2"),
+            ]
+        )
+        assert {edge.kind for edge in graph.edges} == {
+            "extends",
+            "include",
+            "import",
+            "from_import",
+        }
+        assert {source.name for source in graph.sources} == set(files) - {
+            "shared/templates/unused.jinja2"
+        }
         assert {root.template_id for root in graph.roots} == {"unrelated.public-id", "other.id"}
         root = next(item for item in graph.roots if item.template_id == "unrelated.public-id")
         assert root.template_name == "opaque/template.jinja2"
-        assert set(root.closure) == set(files) - {"shared/templates/unused.jinja2", "another/template.jinja2"}
+        assert set(root.closure) == set(files) - {
+            "shared/templates/unused.jinja2",
+            "another/template.jinja2",
+        }
         source_map = {source.name: source.content.decode("utf-8-sig") for source in graph.sources}
         snapshot_renderer = Environment(loader=DictLoader(source_map), undefined=StrictUndefined)
-        assert snapshot_renderer.get_template(root.template_name).render(value="ok") == "BEGIN[<ok>|<ok>!]END"
+        assert (
+            snapshot_renderer.get_template(root.template_name).render(value="ok")
+            == "BEGIN[<ok>|<ok>!]END"
+        )
         write_package_tree(suite_roots.templates, {"opaque/template.jinja2": b"Changed"})
-        assert snapshot_renderer.get_template(root.template_name).render(value="ok") == "BEGIN[<ok>|<ok>!]END"
+        assert (
+            snapshot_renderer.get_template(root.template_name).render(value="ok")
+            == "BEGIN[<ok>|<ok>!]END"
+        )
         with pytest.raises(FrozenInstanceError):
             graph.roots = ()
 
     @pytest.mark.parametrize(
         ("source", "code"),
         [
-            ('{% include variable %}', "template_dependency_dynamic"),
-            ('{% extends parent %}', "template_dependency_dynamic"),
-            ('{% import module as m %}', "template_dependency_dynamic"),
-            ('{% from module import word %}', "template_dependency_dynamic"),
+            ("{% include variable %}", "template_dependency_dynamic"),
+            ("{% extends parent %}", "template_dependency_dynamic"),
+            ("{% import module as m %}", "template_dependency_dynamic"),
+            ("{% from module import word %}", "template_dependency_dynamic"),
             ('{% include ["one.jinja2", "two.jinja2"] %}', "template_dependency_ambiguous"),
-            ('{% include "shared/templates/missing.jinja2" ignore missing %}', "template_dependency_optional"),
-            ('{% extends "shared/templates/one.jinja2" %}{% extends "shared/templates/two.jinja2" %}',
-             "template_renderer_ambiguous"),
+            (
+                '{% include "shared/templates/missing.jinja2" ignore missing %}',
+                "template_dependency_optional",
+            ),
+            (
+                '{% extends "shared/templates/one.jinja2" %}'
+                '{% extends "shared/templates/two.jinja2" %}',
+                "template_renderer_ambiguous",
+            ),
             ('{% include "shared/templates/missing.jinja2" %}', "template_source_unavailable"),
             ('{% include "../escape.jinja2" %}', "template_path_invalid"),
             ('{% include "/absolute.jinja2" %}', "template_path_invalid"),
             ('{% include "other/template.jinja2" %}', "template_dependency_direction"),
-            ('{% if %}', "template_syntax_invalid"),
+            ("{% if %}", "template_syntax_invalid"),
         ],
     )
     def test_invalid_graphs_fail_with_logical_diagnostics(
         self, suite_roots: SuiteRoots, source: str, code: str
     ) -> None:
-        write_package_tree(suite_roots.templates, {
-            "pkg/template.jinja2": source.encode(),
-            "other/template.jinja2": b"Other",
-        })
+        write_package_tree(
+            suite_roots.templates,
+            {
+                "pkg/template.jinja2": source.encode(),
+                "other/template.jinja2": b"Other",
+            },
+        )
         resolver = TemplateGraphResolver(suite_roots.templates, Environment().parse)
         with pytest.raises(MCPError) as caught:
             resolver.resolve([("arbitrary-id", "pkg/template.jinja2")])
@@ -97,10 +127,13 @@ class TestTemplateGraph:
         resolver = TemplateGraphResolver(suite_roots.templates, Environment().parse)
         with pytest.raises(MCPError, match="template_dependency_direction"):
             resolver.resolve([("any-id", "pkg/template.jinja2")])
-        write_package_tree(suite_roots.templates, {
-            "shared/templates/part.jinja2": b'{% include "shared/templates/loop.jinja2" %}',
-            "shared/templates/loop.jinja2": b'{% include "shared/templates/part.jinja2" %}',
-        })
+        write_package_tree(
+            suite_roots.templates,
+            {
+                "shared/templates/part.jinja2": b'{% include "shared/templates/loop.jinja2" %}',
+                "shared/templates/loop.jinja2": b'{% include "shared/templates/part.jinja2" %}',
+            },
+        )
         with pytest.raises(MCPError, match="template_dependency_cycle"):
             resolver.resolve([("any-id", "pkg/template.jinja2")])
 
@@ -116,22 +149,33 @@ class TestTemplateGraph:
     def test_duplicate_and_invalid_entrypoints_fail(
         self, suite_roots: SuiteRoots, roots: list[tuple[str, str]]
     ) -> None:
-        write_package_tree(suite_roots.templates, {
-            "pkg/template.jinja2": b"One", "other/template.jinja2": b"Two",
-            "shared/templates/base.jinja2": b"Shared", "pkg/other.jinja2": b"Private",
-        })
+        write_package_tree(
+            suite_roots.templates,
+            {
+                "pkg/template.jinja2": b"One",
+                "other/template.jinja2": b"Two",
+                "shared/templates/base.jinja2": b"Shared",
+                "pkg/other.jinja2": b"Private",
+            },
+        )
         with pytest.raises(MCPError):
             TemplateGraphResolver(suite_roots.templates, Environment().parse).resolve(roots)
 
     def test_escaping_directory_alias_is_rejected(self, suite_roots: SuiteRoots) -> None:
-        write_package_tree(suite_roots.templates, {
-            "pkg/template.jinja2": b'{% include "pkg/linked/hidden.jinja2" %}',
-        })
+        write_package_tree(
+            suite_roots.templates,
+            {
+                "pkg/template.jinja2": b'{% include "pkg/linked/hidden.jinja2" %}',
+            },
+        )
         write_package_tree(suite_roots.temp, {"hidden.jinja2": b"Must not be read"})
         link = suite_roots.templates / "pkg/linked"
         if os.name == "nt":
-            subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(suite_roots.temp)],
-                           check=True, capture_output=True)
+            subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(link), str(suite_roots.temp)],
+                check=True,
+                capture_output=True,
+            )
         else:
             link.symlink_to(suite_roots.temp, target_is_directory=True)
         with pytest.raises(MCPError, match="template_path_escape"):
@@ -139,7 +183,9 @@ class TestTemplateGraph:
                 [("any-id", "pkg/template.jinja2")]
             )
 
-    def test_comments_and_raw_blocks_do_not_declare_dependencies(self, suite_roots: SuiteRoots) -> None:
+    def test_comments_and_raw_blocks_do_not_declare_dependencies(
+        self, suite_roots: SuiteRoots
+    ) -> None:
         source = b'{# {% include "missing1" %} #}{% raw %}{% include "missing2" %}{% endraw %}'
         write_package_tree(suite_roots.templates, {"pkg/template.jinja2": source})
         graph = TemplateGraphResolver(suite_roots.templates, Environment().parse).resolve(
