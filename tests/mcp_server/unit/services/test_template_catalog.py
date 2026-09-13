@@ -343,7 +343,6 @@ class TestTemplateCatalog:
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
 
-
     def test_inherited_macro_is_an_internal_binding(self, suite_roots: SuiteRoots) -> None:
         files = package_files("pkg", "custom")
         files["pkg/template.jinja2"] = (
@@ -351,8 +350,7 @@ class TestTemplateCatalog:
             b"{% block body %}{{ label(content.value) }}{% endblock %}"
         )
         files["shared/templates/base.jinja2"] = (
-            b"{% macro label(value) %}prefix{{ value }}{% endmacro %}"
-            b"{% block body %}{% endblock %}"
+            b"{% macro label(value) %}prefix{{ value }}{% endmacro %}{% block body %}{% endblock %}"
         )
         native = Environment(
             loader=DictLoader(
@@ -364,6 +362,6 @@ class TestTemplateCatalog:
         assert native.get_template("pkg/template.jinja2").render(content=context) == "prefix0"
         write_package_tree(suite_roots.templates, files)
         catalog = catalog_loader(suite_roots).load()
-        assert catalog_renderer(catalog).render(
-            "custom", context, FrozenJsonObject(())
-        ) == "prefix0"
+        assert (
+            catalog_renderer(catalog).render("custom", context, FrozenJsonObject(())) == "prefix0"
+        )

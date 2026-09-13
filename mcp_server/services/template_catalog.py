@@ -199,25 +199,44 @@ class TemplateInputValidator:
             "content": thaw_json(package.schema),
             "provenance": thaw_json(self._provenance_schema),
         }
-        # Included/inherited sources can consume names bound by another source.
-        bound_names = {
-            item.name
-            for tree in trees.values()
-            for item in tree.find_all(nodes.Name)
-            if item.ctx == "store"
-        }
-        for name, tree in trees.items():
-            undeclared = meta.find_undeclared_variables(tree) - schemas.keys() - bound_names
+
+        def inherited(
+            name: str, incoming: Mapping[str, InputPath | None]
+        ) -> dict[str, InputPath | None]:
+            available = dict(incoming)
+            for edge in graph.edges:
+                if edge.source == name and edge.kind == "extends":
+                    available = inherited(edge.target, available)
+                    _export_bindings(trees[edge.target].body, available)
+            return available
+
+        def visit(name: str, incoming: Mapping[str, InputPath | None]) -> None:
+            tree = trees[name]
+            incoming = inherited(name, incoming)
+            undeclared = meta.find_undeclared_variables(tree) - incoming.keys()
             if undeclared:
                 raise _input_error(package, name, sorted(undeclared)[0], 1)
-            bindings: dict[str, InputPath | None] = {key: (key,) for key in schemas}
-            for path, line in _input_reads(tree, bindings):
+
+            def dependency(node: nodes.Node, visible: Mapping[str, InputPath | None]) -> None:
+                if not isinstance(
+                    node, (nodes.Extends, nodes.Include, nodes.Import, nodes.FromImport)
+                ):
+                    return
+                target = node.template
+                if not isinstance(target, nodes.Const) or not isinstance(target.value, str):
+                    raise MCPError("template_dependency_dynamic", code="ERR_CONFIG")
+                with_context = isinstance(node, nodes.Extends) or node.with_context
+                visit(target.value, visible if with_context else {})
+
+            for path, line in _input_reads(tree, dict(incoming), dependency):
                 namespace, *members = path
                 if isinstance(namespace, str) and not _declares_path(
                     schemas[namespace], tuple(members)
                 ):
                     display = ".".join("*" if part is None else str(part) for part in path)
                     raise _input_error(package, name, display, line)
+
+        visit(root.template_name, {key: (key,) for key in schemas})
 
 
 def _input_error(package: TemplatePackage, source: str, field: str, line: int) -> MCPError:
@@ -257,44 +276,76 @@ def _bind(
             _bind(child, None, bindings)
 
 
+def _export_bindings(
+    statements: Iterable[nodes.Node], bindings: dict[str, InputPath | None]
+) -> None:
+    """Collect ancestor module bindings, excluding block/loop/with/macro-local stores."""
+    for node in statements:
+        if isinstance(node, nodes.Macro):
+            bindings[node.name] = None
+        elif isinstance(node, nodes.Assign):
+            _bind(node.target, _reference(node.node, bindings), bindings)
+        elif isinstance(node, nodes.AssignBlock):
+            _bind(node.target, None, bindings)
+        elif isinstance(node, nodes.Import):
+            bindings[node.target] = None
+        elif isinstance(node, nodes.FromImport):
+            for name in node.names:
+                bindings[name[1] if isinstance(name, tuple) else name] = None
+        elif isinstance(node, nodes.If):
+            _export_bindings((*node.body, *node.elif_, *node.else_), bindings)
+
+
 def _input_reads(
-    node: nodes.Node, bindings: dict[str, InputPath | None]
+    node: nodes.Node,
+    bindings: dict[str, InputPath | None],
+    visit_dependency: Callable[[nodes.Node, Mapping[str, InputPath | None]], None],
 ) -> Iterable[tuple[InputPath, int]]:
     """Follow static namespace/alias reads while respecting Jinja lexical bindings."""
     reference = _reference(node, bindings)
     if reference is not None:
         yield reference, node.lineno
+    if isinstance(node, (nodes.Extends, nodes.Include, nodes.Import, nodes.FromImport)):
+        visit_dependency(node, bindings)
+        if isinstance(node, nodes.Import):
+            bindings[node.target] = None
+        elif isinstance(node, nodes.FromImport):
+            for name in node.names:
+                bindings[name[1] if isinstance(name, tuple) else name] = None
+        return
     if isinstance(node, nodes.Macro):
+        bindings[node.name] = None
         for value in node.defaults:
-            yield from _input_reads(value, bindings)
-        local = dict(bindings)
+            yield from _input_reads(value, bindings, visit_dependency)
+        local = {**bindings, "caller": None, "varargs": None, "kwargs": None}
         for argument in node.args:
             _bind(argument, None, local)
         for child in node.body:
-            yield from _input_reads(child, local)
+            yield from _input_reads(child, local, visit_dependency)
         return
     if isinstance(node, nodes.For):
-        yield from _input_reads(node.iter, bindings)
+        yield from _input_reads(node.iter, bindings, visit_dependency)
         local = dict(bindings)
+        local["loop"] = None
         iterable = _reference(node.iter, bindings)
         _bind(node.target, (*iterable, None) if iterable is not None else None, local)
         for child in node.body:
-            yield from _input_reads(child, local)
+            yield from _input_reads(child, local, visit_dependency)
         if node.test is not None:
-            yield from _input_reads(node.test, local)
+            yield from _input_reads(node.test, local, visit_dependency)
         for child in node.else_:
-            yield from _input_reads(child, dict(bindings))
+            yield from _input_reads(child, dict(bindings), visit_dependency)
         return
     if isinstance(node, nodes.With):
         local = dict(bindings)
         for target, value in zip(node.targets, node.values, strict=True):
-            yield from _input_reads(value, bindings)
+            yield from _input_reads(value, bindings, visit_dependency)
             _bind(target, _reference(value, bindings), local)
         for child in node.body:
-            yield from _input_reads(child, local)
+            yield from _input_reads(child, local, visit_dependency)
         return
     if isinstance(node, nodes.Assign):
-        yield from _input_reads(node.node, bindings)
+        yield from _input_reads(node.node, bindings, visit_dependency)
         _bind(node.target, _reference(node.node, bindings), bindings)
         return
     if isinstance(node, nodes.Call) and isinstance(node.node, nodes.Getattr):
@@ -305,13 +356,13 @@ def _input_reads(
             key = node.args[0]
             if isinstance(key, nodes.Const) and isinstance(key.value, str):
                 yield (*parent, key.value), node.lineno
-        yield from _input_reads(receiver, bindings)
+        yield from _input_reads(receiver, bindings, visit_dependency)
         for child in node.iter_child_nodes(exclude=("node",)):
-            yield from _input_reads(child, bindings)
+            yield from _input_reads(child, bindings, visit_dependency)
         return
     local = dict(bindings) if isinstance(node, (nodes.Block, nodes.Scope)) else bindings
     for child in node.iter_child_nodes():
-        yield from _input_reads(child, local)
+        yield from _input_reads(child, local, visit_dependency)
 
 
 def _declares_path(schema: JsonValue, path: InputPath) -> bool:
