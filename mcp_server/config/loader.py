@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -28,6 +28,7 @@ from mcp_server.config.schemas import (
     WorkphasesConfig,
 )
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
@@ -93,7 +94,14 @@ def resolve_config_root(
 class ConfigLoader:
     """Single YAML reader for migrated config schemas."""
 
-    def __init__(self, config_root: Path, template_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        config_root: Path,
+        template_root: Path | None = None,
+        *,
+        context_schema_reader: Callable[[Path], FrozenJsonObject] | None = None,
+    ) -> None:
+        self._context_schema_reader = context_schema_reader
         self.config_root = normalize_config_root(config_root)
         if template_root is not None:
             self.template_root = Path(template_root).resolve()
@@ -105,6 +113,12 @@ class ConfigLoader:
                 self.template_root = Path(settings.server.resolved_template_root)
             except Exception:  # noqa: BLE001
                 self.template_root = (self.config_root.parent / "templates").resolve()
+
+    def load_template_context_schema(self, schema_path: Path) -> FrozenJsonObject:
+        """Read an explicit prepared contract through the composition-supplied reader."""
+        if self._context_schema_reader is None:
+            raise ConfigError("template_context_reader_required")
+        return self._context_schema_reader(schema_path)
 
     def load_git_config(self, config_path: Path | None = None) -> GitConfig:
         data, resolved_path = self._load_yaml("git.yaml", config_path=config_path)

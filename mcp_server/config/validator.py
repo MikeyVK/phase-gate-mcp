@@ -14,8 +14,11 @@ before the MCP server starts accepting requests.
 
 from __future__ import annotations
 
+from jsonschema import Draft202012Validator
+
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
     ArtifactRegistryConfig,
     OperationPoliciesConfig,
@@ -27,6 +30,16 @@ from mcp_server.schemas import (
 
 class ConfigValidator:
     """Validate cross-config relationships after ConfigLoader has loaded schemas."""
+
+    def validate_template_context(
+        self, schema: FrozenJsonObject, context: object
+    ) -> FrozenJsonObject:
+        """Validate the exposed snapshot and preserve caller presence and JSON types."""
+        frozen = freeze_json(context)
+        if not isinstance(frozen, FrozenJsonObject):
+            raise ValueError("template_context_object_required")
+        Draft202012Validator(thaw_json(schema)).validate(thaw_json(frozen))
+        return frozen
 
     def validate_startup(
         self,

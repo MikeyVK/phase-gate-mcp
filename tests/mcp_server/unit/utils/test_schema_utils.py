@@ -76,7 +76,6 @@ class TestResolveSchemaRefs:
         assert "$defs" not in result
         assert "$ref" not in json.dumps(result)
 
-
     def test_referenced_and_adjacent_constraints_both_apply(self) -> None:
         """A sibling cannot weaken an assertion from the referenced schema."""
         schema = {
@@ -119,8 +118,11 @@ class TestResolveSchemaRefs:
 
     def test_false_reference_is_not_missing(self) -> None:
         """Boolean false subschemas retain rejection semantics."""
-        schema = {"type": "object", "properties": {"forbidden": {"$ref": "#/$defs/Never"}},
-                  "$defs": {"Never": False}}
+        schema = {
+            "type": "object",
+            "properties": {"forbidden": {"$ref": "#/$defs/Never"}},
+            "$defs": {"Never": False},
+        }
         resolved = resolve_schema_refs(schema)
         assert Draft202012Validator(resolved).is_valid({})
         assert not Draft202012Validator(resolved).is_valid({"forbidden": None})
