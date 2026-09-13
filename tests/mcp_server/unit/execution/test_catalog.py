@@ -290,6 +290,41 @@ def test_delivered_role_contracts_keep_distinct_request_and_result_shapes(
     }
     assert validator.is_valid(text_request) == (role == "check")
     if role == "check":
+        selection = {
+            "decision": {"status": "passed"},
+            "external_tools": [],
+            "coverage": {"targets": ["src"], "expanded": False},
+            "required_targets": [],
+        }
+        assert validator.is_valid(selection)
+        assert validator.is_valid({**selection, "coverage": None})
+        assert not validator.is_valid(
+            {key: value for key, value in selection.items() if key != "coverage"}
+        )
+        refusal = {
+            "decision": {
+                "status": "not_executed",
+                "reason": "scope_restricted",
+                "message": "requires src",
+            },
+            "external_tools": [],
+            "coverage": None,
+            "required_targets": ["src"],
+        }
+        assert validator.is_valid(refusal)
+        assert not validator.is_valid({**refusal, "coverage": selection["coverage"]})
+        assert not validator.is_valid({**refusal, "required_targets": []})
+        assert validator.is_valid(
+            {
+                **refusal,
+                "required_targets": [],
+                "decision": {
+                    "status": "not_executed",
+                    "reason": "not_applicable",
+                    "message": "no relevant input",
+                },
+            }
+        )
         assert not validator.is_valid({**text_request, "input_path": "C:/work/input.py"})
         assert not validator.is_valid({**text_request, "target_path": "relative.py"})
         assert validator.is_valid(

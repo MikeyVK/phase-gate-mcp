@@ -99,71 +99,10 @@
     "response": {
       "oneOf": [
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "decision",
-            "external_tools"
-          ],
-          "properties": {
-            "decision": {
-              "$ref": "#/$defs/passed"
-            },
-            "external_tools": {
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/external_tool_identity"
-              }
-            },
-            "evidence": {
-              "$ref": "#/$defs/native_evidence"
-            }
-          }
+          "$ref": "#/$defs/scaffold_response"
         },
         {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "decision",
-            "external_tools",
-            "evidence"
-          ],
-          "properties": {
-            "decision": {
-              "$ref": "#/$defs/failed"
-            },
-            "external_tools": {
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/external_tool_identity"
-              }
-            },
-            "evidence": {
-              "$ref": "#/$defs/native_evidence"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "decision",
-            "external_tools"
-          ],
-          "properties": {
-            "decision": {
-              "$ref": "#/$defs/unavailable"
-            },
-            "external_tools": {
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/external_tool_identity"
-              }
-            },
-            "evidence": {
-              "$ref": "#/$defs/native_evidence"
-            }
-          }
+          "$ref": "#/$defs/selection_response"
         },
         {
           "$ref": "#/$defs/invalid_request"
@@ -366,6 +305,334 @@
     "capability_id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]{0,63}$(?![\\s\\S])"
+    },
+    "scaffold_response": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/passed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "evidence"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/failed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/unavailable"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            }
+          }
+        }
+      ]
+    },
+    "workspace_relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "\\S"
+        },
+        {
+          "not": {
+            "pattern": "\u0000"
+          }
+        },
+        {
+          "not": {
+            "pattern": "^(?:[\\\\/]|[A-Za-z]:)"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)"
+          }
+        }
+      ]
+    },
+    "checked_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targets",
+        "expanded"
+      ],
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workspace_relative_path"
+          }
+        },
+        "expanded": {
+          "type": "boolean"
+        }
+      }
+    },
+    "not_executed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "message"
+      ],
+      "properties": {
+        "status": {
+          "const": "not_executed"
+        },
+        "reason": {
+          "enum": [
+            "scope_restricted",
+            "not_applicable"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "selection_response": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/passed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/checked_coverage"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required_targets": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "evidence",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/failed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/checked_coverage"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required_targets": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/unavailable"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/checked_coverage"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required_targets": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "external_tools",
+            "coverage",
+            "required_targets"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "#/$defs/not_executed"
+            },
+            "external_tools": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/external_tool_identity"
+              }
+            },
+            "evidence": {
+              "$ref": "#/$defs/native_evidence"
+            },
+            "coverage": {
+              "type": "null"
+            },
+            "required_targets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/workspace_relative_path"
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "decision": {
+                    "properties": {
+                      "reason": {
+                        "const": "scope_restricted"
+                      }
+                    }
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "required_targets": {
+                    "minItems": 1
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "required_targets": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }
