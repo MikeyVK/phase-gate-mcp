@@ -162,31 +162,57 @@ def test_syntax_error_keeps_complete_content_location_and_logical_filename(
 
 
 @pytest.mark.parametrize(
-    "changed_fields",
+    ("changed_fields", "field", "reason"),
     [
-        {"args": ["--ignore-errors"]},
-        {"operation": "unknown"},
-        {"content": 42},
-        {"targets": []},
+        ({"operation": "unknown"}, "operation", "invalid_value"),
+        ({"operation": []}, "operation", "wrong_type"),
+        ({"content": 42}, "content", "wrong_type"),
+        ({"target_path": 42}, "target_path", "wrong_type"),
+        ({"targets": []}, "targets", "unknown_field"),
     ],
 )
-def test_invalid_or_unsupported_request_is_not_a_passing_check(
+def test_invalid_request_preserves_exact_validation_details(
     tmp_path: Path,
     syntax_package: SyntaxPackage,
     changed_fields: dict[str, object],
+    field: str,
+    reason: str,
 ) -> None:
-    payload = {**request(tmp_path / "proposed.py", "x = 1\n"), **changed_fields}
+    payload = {**request(tmp_path / "proposed.py", "content"), **changed_fields}
     code, response = invoke(syntax_package, tmp_path, payload)
     assert code == 2
-    assert response["reason"] == "invalid_request"
-    assert response["details"]
-    assert "decision" not in response
+    assert response == {
+        "reason": "invalid_request",
+        "details": [{"location": [field], "code": reason}],
+    }
 
 
-def test_malformed_transport_receives_closed_invalid_request_response(
+def test_valid_but_unsupported_options_report_inability(
     tmp_path: Path,
     syntax_package: SyntaxPackage,
 ) -> None:
-    code, response = invoke(syntax_package, tmp_path, b'{"operation":')
-    assert code == 2
-    assert response["reason"] == "invalid_request"
+    payload = {**request(tmp_path / "proposed.py", "invalid content"), "args": ["--strict"]}
+    code, response = invoke(syntax_package, tmp_path, payload)
+    assert code == 3
+    decision = response["decision"]
+    assert isinstance(decision, dict)
+    assert decision["status"] == "unavailable"
+    assert decision["reason"] == "unsupported_input"
+    assert response["external_tools"]
+
+
+def test_malformed_transport_and_nonobject_root_have_distinct_root_details(
+    tmp_path: Path,
+    syntax_package: SyntaxPackage,
+) -> None:
+    for payload, reason in (
+        (b'{"operation":', "invalid_value"),
+        (bytes([255]), "invalid_value"),
+        (b"[]", "wrong_type"),
+    ):
+        code, response = invoke(syntax_package, tmp_path, payload)
+        assert code == 2
+        assert response == {
+            "reason": "invalid_request",
+            "details": [{"location": [], "code": reason}],
+        }
