@@ -26,9 +26,7 @@ ROOT_NAME = "shared/templates/bases/tier0_root.jinja2"
 
 def provenance() -> ArtifactIdentity:
     """Use independently authored values, unrelated to any catalog or filename."""
-    return ArtifactIdentity(
-        id="example", pv="1.2.3", pf="AbCdEfGhIjKlMn_-", sf="0123456789abcdef"
-    )
+    return ArtifactIdentity(id="example", pv="1.2.3", pf="AbCdEfGhIjKlMn_-", sf="0123456789abcdef")
 
 
 @pytest.mark.parametrize("line", [f"# {RECORD}", f"// {RECORD}", f"<!-- {RECORD} -->"])
@@ -46,8 +44,14 @@ def test_complete_native_frames(line: str, ending: str, bom: str) -> None:
 
 @pytest.mark.parametrize(
     "text",
-    ["", "ordinary text", f"\n# {RECORD}", f"#!/bin/sh\n# {RECORD}",
-     f"body\r\n<!-- {RECORD} -->", f"x" * 100_000 + f"\n# {RECORD}"],
+    [
+        "",
+        "ordinary text",
+        f"\n# {RECORD}",
+        f"#!/bin/sh\n# {RECORD}",
+        f"body\r\n<!-- {RECORD} -->",
+        pytest.param("x" * 100_000 + f"\n# {RECORD}", id="long-ordinary-line"),
+    ],
 )
 def test_absence_never_searches_later_lines(text: str) -> None:
     assert ArtifactHeaderReader().read(text) == HeaderReadResult(
@@ -79,10 +83,10 @@ def test_absence_never_searches_later_lines(text: str) -> None:
         f"# {RECORD}".replace("sf=0123456789abcdef", "sf=0123456789abcde"),
         f"# {RECORD}".replace("sf=0123456789abcdef", "sf=0123456789abcdefg"),
         f"# {RECORD}".replace("id=example", "id=" + "a" * 25),
-        f"# {RECORD}".replace("pv=1.2.3", "pv=1.2.3-alpha1"),
+        f"# {RECORD}".replace("pv=1.2.3", "pv=1.2.3-beta12"),
         f"# {RECORD}".replace("id=example", "id=example\t"),
         f"# {RECORD}".replace("id=example", "id=bad\x00id"),
-        f"# {RECORD}" + "x" * 100_000,
+        pytest.param(f"# {RECORD}" + "x" * 100_000, id="long-header-overflow"),
     ],
 )
 def test_rejected_headers_never_expose_partial_provenance(line: str) -> None:
@@ -94,8 +98,8 @@ def test_rejected_headers_never_expose_partial_provenance(line: str) -> None:
 @pytest.mark.parametrize("ending", ["", "\n", "\r\n"])
 def test_exact_maximum_character_budget_with_bom(ending: str) -> None:
     # SemVer at the full eleven-character boundary.
-    record = ArtifactIdentity(id="a" * 24, pv="10.2.3-beta1", pf="A" * 16, sf="B" * 16)
-    line = "<!-- pgmcp:v1 id=" + "a" * 24 + " pv=10.2.3-beta1 pf=" + "A" * 16
+    record = ArtifactIdentity(id="a" * 24, pv="1.2.3-beta1", pf="A" * 16, sf="B" * 16)
+    line = "<!-- pgmcp:v1 id=" + "a" * 24 + " pv=1.2.3-beta1 pf=" + "A" * 16
     line += " sf=" + "B" * 16 + " -->"
     assert len(line) == 100
     assert ArtifactHeaderReader().read("\ufeff" + line + ending).provenance == record
@@ -151,8 +155,9 @@ def test_result_rejects_defaults_coercion_extras_and_partial_records(
     ("frame_start", "frame_end"),
     [("#", ""), ("//", ""), ("<!--", " -->")],
 )
+@pytest.mark.parametrize("maximum", [False, True])
 def test_selected_graph_renders_retained_root_and_round_trips(
-    suite_roots: SuiteRoots, frame_start: str, frame_end: str
+    suite_roots: SuiteRoots, frame_start: str, frame_end: str, maximum: bool
 ) -> None:
     root_path = Path(__file__).resolve().parents[4] / ".pgmcp/template_suite" / ROOT_NAME
     native_base = (
@@ -175,7 +180,9 @@ def test_selected_graph_renders_retained_root_and_round_trips(
         [("example", "opaque/template.jinja2")]
     )
     assert set(graph.roots[0].closure) == {
-        ROOT_NAME, "shared/templates/bases/native.jinja2", "opaque/template.jinja2"
+        ROOT_NAME,
+        "shared/templates/bases/native.jinja2",
+        "opaque/template.jinja2",
     }
     renderer = Environment(
         loader=DictLoader(
@@ -184,8 +191,21 @@ def test_selected_graph_renders_retained_root_and_round_trips(
         undefined=StrictUndefined,
         keep_trailing_newline=True,
     )
-    rendered = renderer.get_template(graph.roots[0].template_name).render(
-        provenance=provenance(), content={"body": "original body\n"}
+    identity = (
+        ArtifactIdentity(id="a" * 24, pv="1.2.3-beta1", pf="A" * 16, sf="B" * 16)
+        if maximum
+        else provenance()
     )
-    assert rendered == frame_start + " " + RECORD + frame_end + "\noriginal body\n"
-    assert ArtifactHeaderReader().read(rendered).provenance == provenance()
+    expected = (
+        "pgmcp:v1 id=" + "a" * 24 + " pv=1.2.3-beta1 pf=" + "A" * 16 + " sf=" + "B" * 16
+        if maximum
+        else RECORD
+    )
+    rendered = renderer.get_template(graph.roots[0].template_name).render(
+        provenance=identity, content={"body": "original body\n"}
+    )
+    assert rendered == frame_start + " " + expected + frame_end + "\noriginal body\n"
+    assert len(rendered.split("\n", 1)[0]) <= 100
+    if maximum and frame_start == "<!--":
+        assert len(rendered.split("\n", 1)[0]) == 100
+    assert ArtifactHeaderReader().read(rendered).provenance == identity
