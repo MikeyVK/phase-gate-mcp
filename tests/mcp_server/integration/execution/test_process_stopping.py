@@ -13,7 +13,11 @@ from shutil import which
 
 import pytest
 
-from mcp_server.core.interfaces.execution import AdapterLaunch, AdapterProcess, AdapterProcessBackend
+from mcp_server.core.interfaces.execution import (
+    AdapterLaunch,
+    AdapterProcess,
+    AdapterProcessBackend,
+)
 from mcp_server.execution.models import (
     AdapterCallFailureReason,
     InvocationCancelled,
@@ -21,7 +25,11 @@ from mcp_server.execution.models import (
     InvocationFailed,
     TerminationProblem,
 )
-from mcp_server.execution.process_runtime import AdapterProcessRuntime, AsyncioProcessBackend
+from mcp_server.execution.process_runtime import (
+    AdapterProcessRuntime,
+    AsyncioProcessBackend,
+    WindowsJob,
+)
 from mcp_server.execution.protocol import STDERR_LIMIT, STDOUT_LIMIT
 from tests.mcp_server.fixtures.adapter_process import ProcessRequest, response_contract
 from tests.mcp_server.fixtures.suite_roots import write_package_tree
@@ -49,7 +57,7 @@ async function main() {
   const duration = mode === 'normal' ? '350' : '15000';
   for (const name of ['first', 'second']) {
     const child = spawn(process.execPath, [__filename, 'child', root, name, duration],
-                        {stdio: 'ignore'});
+                        {stdio: 'ignore', detached: true});
     child.unref();
   }
   while (!fs.existsSync(root + '/first.pid') || !fs.existsSync(root + '/second.pid'))
@@ -80,7 +88,9 @@ class LifecycleCase:
 def lifecycle_case(tmp_path: Path) -> LifecycleCase:
     node = which("node")
     assert node is not None, "Node is required for real lifecycle evidence"
-    write_package_tree(tmp_path, {"lifecycle.cjs": LIFECYCLE_SCRIPT.encode(), "target.txt": b"keep"})
+    write_package_tree(
+        tmp_path, {"lifecycle.cjs": LIFECYCLE_SCRIPT.encode(), "target.txt": b"keep"}
+    )
     return LifecycleCase(
         AdapterLaunch(Path(node).resolve(), (str(tmp_path / "lifecycle.cjs"),)),
         tmp_path,
@@ -127,7 +137,9 @@ def is_alive(pid: int) -> bool:
         kernel.CloseHandle(handle)
 
 
-async def test_response_and_parent_exit_wait_for_parallel_work(lifecycle_case: LifecycleCase) -> None:
+async def test_response_and_parent_exit_wait_for_parallel_work(
+    lifecycle_case: LifecycleCase,
+) -> None:
     result = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
         launch=launch_for(lifecycle_case, "normal"),
         workspace_root=lifecycle_case.root,
@@ -160,7 +172,7 @@ async def test_failure_stops_live_children_and_keeps_primary_cause(
         workspace_root=lifecycle_case.root,
         request=lifecycle_case.request,
         response_contract=response_contract(),
-        timeout_seconds=1,
+        timeout_seconds=1 if mode == "late" else 5,
     )
     assert isinstance(result, InvocationFailed)
     assert result.failure.reason is reason
@@ -175,7 +187,9 @@ async def test_failure_stops_live_children_and_keeps_primary_cause(
         assert result.capture.stdout.truncated
 
 
-async def test_cancellation_is_typed_and_confirmed_before_return(lifecycle_case: LifecycleCase) -> None:
+async def test_cancellation_is_typed_and_confirmed_before_return(
+    lifecycle_case: LifecycleCase,
+) -> None:
     task = asyncio.create_task(
         AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
             launch=launch_for(lifecycle_case, "late"),
@@ -281,3 +295,28 @@ async def test_unconfirmed_stop_preserves_cause_and_shared_five_second_budget(
         if not task.done():
             task.cancel()
             await task
+
+
+async def test_setup_failure_retains_created_process_and_confirms_its_stop(
+    lifecycle_case: LifecycleCase, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    observed_pids: list[int] = []
+
+    def fail_assignment(_job: WindowsJob, pid: int) -> None:
+        observed_pids.append(pid)
+        raise OSError("injected job assignment failure")
+
+    monkeypatch.setattr(WindowsJob, "attach_and_resume", fail_assignment)
+    result = await AdapterProcessRuntime(AsyncioProcessBackend()).invoke(
+        launch=launch_for(lifecycle_case, "normal"),
+        workspace_root=lifecycle_case.root,
+        request=lifecycle_case.request,
+        response_contract=response_contract(),
+        timeout_seconds=5,
+    )
+    assert isinstance(result, InvocationFailed)
+    assert result.failure.reason is AdapterCallFailureReason.PROCESS_FAILED
+    assert result.capture.exit_code is not None
+    assert result.termination_problem is None
+    assert len(observed_pids) == 1
+    assert not is_alive(observed_pids[0])

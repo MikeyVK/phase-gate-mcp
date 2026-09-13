@@ -121,21 +121,18 @@ class AdapterResponseContract(Generic[TResponse]):
     completed_type: type[InvocationCompleted[TResponse]]
     expected_exit: Callable[[TResponse], AdapterExitCode]
 
-    def decode(
-        self,
-        raw: bytes,
-        exit_code: int,
-        capture: ProcessCapture,
-    ) -> InvocationCompleted[TResponse]:
-        """Decode one strict role response and enforce its exit mapping."""
+    def decode(self, raw: bytes, exit_code: int) -> TResponse:
+        """Validate response bytes without certifying process completion."""
         response = self.response_type.model_validate_json(raw, strict=True)
         expected = self.expected_exit(response)
         if exit_code != int(expected):
             raise InvalidAdapterResponseError(
                 f"exit_code_mismatch: observed={exit_code}, expected={int(expected)}"
             )
-        return self.completed_type(
-            outcome="completed",
-            response=response,
-            capture=capture,
-        )
+        return response
+
+    def complete(
+        self, response: TResponse, capture: ProcessCapture
+    ) -> InvocationCompleted[TResponse]:
+        """Build the concrete result after the runtime confirms managed completion."""
+        return self.completed_type(outcome="completed", response=response, capture=capture)

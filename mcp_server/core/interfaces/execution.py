@@ -78,11 +78,37 @@ class AdapterProcess(Protocol):
     async def write_input(self, payload: bytes) -> None: ...
     async def read_stdout(self, maximum: int) -> bytes: ...
     async def read_stderr(self, maximum: int) -> bytes: ...
-    async def wait(self) -> int: ...
-    def kill(self) -> None: ...
+    @property
+    def returncode(self) -> int | None:
+        """Observed adapter exit only; not a certificate for associated work."""
+        ...
+
+    async def wait(self) -> int:
+        """Wait for the adapter exit, independently of descendant completion."""
+        ...
+
+    async def wait_finished(self) -> None:
+        """Confirm completion of the adapter and its associated managed work."""
+        ...
+
+    def kill(self) -> None:
+        """Request termination of all managed work; confirmation is separate."""
+        ...
+
+    def close(self) -> None:
+        """Release owned resources; closing is not termination confirmation."""
+        ...
 
 
 class AdapterProcessBackend(Protocol):
     """Launch one startup-selected command in an explicit workspace."""
 
     async def start(self, launch: AdapterLaunch, workspace_root: Path) -> AdapterProcess: ...
+
+
+class AdapterProcessSetupError(RuntimeError):
+    """A process exists, but setup failed; the caller retains cleanup ownership."""
+
+    def __init__(self, process: AdapterProcess, cause: OSError) -> None:
+        super().__init__(str(cause))
+        self.process = process
