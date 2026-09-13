@@ -452,6 +452,24 @@ class TestTemplateContractLoader:
         assert actual.is_valid("text")
         assert not actual.is_valid(1)
 
+    def test_prefix_inserting_alias_chain_fails_closed(self, suite_roots: SuiteRoots) -> None:
+        """Native alias-resolution failure is also valid admission rejection, not exposure."""
+        root = suite_roots.templates
+        write_schemas(
+            root,
+            {
+                "pkg/context.schema.json": {"$schema": DRAFT_2020_12, "$ref": "a/node.json"},
+                "pkg/a/node.json": {
+                    "$schema": DRAFT_2020_12,
+                    "$ref": "../../pkg/a/alias/node.json",
+                },
+            },
+        )
+        link_directory(root / "pkg/a/alias", root / "pkg/a")
+        link_directory(root / "pkg/pkg", root / "pkg")
+        with pytest.raises((ValueError, OSError)):
+            TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
+
 
 def link_directory(link: Path, target: Path) -> None:
     """Exercise real directory aliases on both Windows and POSIX."""
