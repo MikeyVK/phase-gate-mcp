@@ -128,3 +128,20 @@ class ContentScratchFiles(Protocol):
     def create(self, basename: str, content: bytes) -> OwnedScratchFile: ...
 
     def remove(self, allocation: OwnedScratchFile) -> None: ...
+
+
+@dataclass(frozen=True)
+class ResolvedScopePath:
+    """A contained absolute path and its observed existence at scope resolution."""
+
+    path: Path
+    exists: bool
+
+
+class ScopePaths(Protocol):
+    """Read-only resolution of caller or Git paths inside one workspace."""
+
+    @property
+    def workspace_root(self) -> Path: ...
+
+    def resolve(self, relative: str) -> ResolvedScopePath: ...

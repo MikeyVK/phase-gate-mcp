@@ -9,7 +9,27 @@ Read-only git context for the current branch.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
+
+
+@dataclass(frozen=True)
+class BranchChanges:
+    """Tracked and untracked paths introduced relative to a branch parent."""
+
+    current_paths: tuple[str, ...]
+    removed_paths: tuple[str, ...]
+
+
+@runtime_checkable
+class IBranchChangeReader(Protocol):
+    """Read branch changes without exposing broader Git context operations."""
+
+    def get_current_branch(self) -> str:
+        raise NotImplementedError
+
+    def get_branch_changes(self, parent: str) -> BranchChanges:
+        raise NotImplementedError
 
 
 @runtime_checkable
