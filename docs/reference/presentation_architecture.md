@@ -74,7 +74,8 @@ never remove fields or items from the cached representation.
 |---|---|
 | Tool result semantics and complete data | Frozen tool-output DTO |
 | Complete operation payload | MCP Resource cache |
-| Attachment identity, URI, media type and schema serialization | `SchemaResourcePresenter` |
+| Attachment identity and schema facts | Producer of `SchemaAttachment` |
+| Attachment URI, media type and schema serialization | `SchemaResourcePresenter` |
 | Per-tool wording, scalar selection, collection declarations, headings, order, and item limits | `presentation.yaml` |
 | Configuration shape | `PresentationConfig` and its nested frozen schemas |
 | Supported tool identity and output model | Runtime-derived `SupportedToolContract` catalog |
