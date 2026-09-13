@@ -410,6 +410,28 @@ class TestTemplateContractLoader:
             TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
 
 
+
+    def test_finite_alias_chain_can_revisit_one_physical_document(self, suite_roots: SuiteRoots) -> None:
+        """A physical repeat is not a cycle when URI resolution climbs to a terminal schema."""
+        root = suite_roots.templates
+        documents: dict[str, dict[str, JsonValue]] = {
+            "pkg/context.schema.json": {"$schema": DRAFT_2020_12, "$ref": "a/b/c/node.json"},
+            "pkg/real/node.json": {"$schema": DRAFT_2020_12, "$ref": "../../next/node.json"},
+            "pkg/next/node.json": {"$schema": DRAFT_2020_12, "type": "string"},
+        }
+        write_schemas(root, documents)
+        (root / "pkg/a/b").mkdir(parents=True)
+        link_directory(root / "pkg/a/b/c", root / "pkg/real")
+        link_directory(root / "pkg/a/next", root / "pkg/real")
+        documents["pkg/a/b/c/node.json"] = documents["pkg/real/node.json"]
+        documents["pkg/a/next/node.json"] = documents["pkg/real/node.json"]
+        expected = oracle(root, documents, "pkg/context.schema.json")
+        assert expected.is_valid("text")
+        snapshot = TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
+        actual = Draft202012Validator(thaw_json(snapshot))
+        assert actual.is_valid("text")
+        assert not actual.is_valid(1)
+
 def link_directory(link: Path, target: Path) -> None:
     """Exercise real directory aliases on both Windows and POSIX."""
     if os.name == "nt":
