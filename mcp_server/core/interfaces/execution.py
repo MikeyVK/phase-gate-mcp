@@ -112,3 +112,19 @@ class AdapterProcessSetupError(RuntimeError):
     def __init__(self, process: AdapterProcess, cause: OSError) -> None:
         super().__init__(str(cause))
         self.process = process
+
+
+@dataclass(frozen=True)
+class OwnedScratchFile:
+    """One validation file and the directory owned by its invocation."""
+
+    directory: Path
+    input_path: Path
+
+
+class ContentScratchFiles(Protocol):
+    """Narrow provider for per-invocation validation scratch files."""
+
+    def create(self, basename: str, content: bytes) -> OwnedScratchFile: ...
+
+    def remove(self, allocation: OwnedScratchFile) -> None: ...

@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -50,3 +51,24 @@ def resolve_input_paths(
             logger.warning("resolve_input_paths: path not found: %r", raw)
 
     return sorted(resolved), warnings
+
+
+@dataclass(frozen=True)
+class ResolvedTemporaryPaths:
+    """Lexically derived roots for validation and artifact temporary data."""
+
+    temp_root: Path
+    validation_root: Path
+    artifacts_root: Path
+
+
+def resolve_temporary_paths(resolved_server_root: Path) -> ResolvedTemporaryPaths:
+    """Derive temporary roots without filesystem access or path resolution."""
+    if not resolved_server_root.is_absolute():
+        raise ValueError("resolved_server_root_must_be_absolute")
+    temp_root = resolved_server_root / "temp"
+    return ResolvedTemporaryPaths(
+        temp_root=temp_root,
+        validation_root=temp_root / "validation",
+        artifacts_root=temp_root / "artifacts",
+    )
