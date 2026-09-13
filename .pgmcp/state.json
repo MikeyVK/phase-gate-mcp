@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 17,
-  "last_cycle": 16,
+  "current_cycle": 18,
+  "last_cycle": 17,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -102,6 +102,12 @@
       "name": "Explicit check selection and branch scopes",
       "forced": false,
       "entered": "2026-09-13T21:02:20.542571+00:00"
+    },
+    {
+      "cycle_number": 18,
+      "name": "Python syntax check adapter",
+      "forced": false,
+      "entered": "2026-09-13T21:36:55.928106+00:00"
     }
   ],
   "required_phases": [
@@ -257,5 +263,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": "red"
 }
