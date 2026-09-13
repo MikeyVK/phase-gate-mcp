@@ -424,7 +424,6 @@ class TestTemplateCatalog:
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
 
-
     def test_parent_binding_cannot_supply_an_earlier_child_root_read(
         self, suite_roots: SuiteRoots
     ) -> None:
@@ -433,9 +432,9 @@ class TestTemplateCatalog:
             "shared/templates/base.jinja2": "{% set file_name = 'local' %}body",
         }
         with pytest.raises(UndefinedError):
-            Environment(
-                loader=DictLoader(sources), undefined=StrictUndefined
-            ).get_template("pkg/template.jinja2").render()
+            Environment(loader=DictLoader(sources), undefined=StrictUndefined).get_template(
+                "pkg/template.jinja2"
+            ).render()
         files = package_files("pkg", "custom")
         files.update({name: source.encode() for name, source in sources.items()})
         write_package_tree(suite_roots.templates, files)

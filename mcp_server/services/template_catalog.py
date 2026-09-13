@@ -212,10 +212,10 @@ class TemplateInputValidator:
 
         def visit(name: str, incoming: Mapping[str, InputPath | None]) -> None:
             tree = trees[name]
-            incoming = inherited(name, incoming)
-            module_bindings = dict(incoming)
+            module_bindings = inherited(name, incoming)
             _export_bindings(tree.body, module_bindings)
-            undeclared = meta.find_undeclared_variables(tree) - module_bindings.keys()
+            external_names = meta.find_undeclared_variables(tree)
+            undeclared = external_names - module_bindings.keys()
             if undeclared:
                 raise _input_error(package, name, sorted(undeclared)[0], 1)
 
@@ -235,11 +235,15 @@ class TemplateInputValidator:
                 else:
                     visit(target.value, visible if node.with_context else {})
 
-            for path, line in _input_reads(tree, dict(incoming), dependency):
+            for path, line in _input_reads(tree, dict(incoming), dependency, module_bindings):
                 namespace, *members = path
-                if isinstance(namespace, str) and not _declares_path(
-                    schemas[namespace], tuple(members)
-                ):
+                if not isinstance(namespace, str):
+                    continue
+                if namespace not in schemas:
+                    if namespace in external_names:
+                        raise _input_error(package, name, namespace, line)
+                    continue
+                if not _declares_path(schemas[namespace], tuple(members)):
                     display = ".".join("*" if part is None else str(part) for part in path)
                     raise _input_error(package, name, display, line)
             for parent_name, visible in parents:
@@ -309,11 +313,14 @@ def _input_reads(
     node: nodes.Node,
     bindings: dict[str, InputPath | None],
     visit_dependency: Callable[[nodes.Node, Mapping[str, InputPath | None]], None],
+    module_bindings: Mapping[str, InputPath | None],
 ) -> Iterable[tuple[InputPath, int]]:
     """Follow static namespace/alias reads while respecting Jinja lexical bindings."""
     reference = _reference(node, bindings)
     if reference is not None:
         yield reference, node.lineno
+    elif isinstance(node, nodes.Name) and node.ctx == "load" and node.name not in bindings:
+        yield (node.name,), node.lineno
     if isinstance(node, (nodes.Extends, nodes.Include, nodes.Import, nodes.FromImport)):
         visit_dependency(node, bindings)
         if isinstance(node, nodes.Import):
@@ -326,38 +333,38 @@ def _input_reads(
         if isinstance(node, nodes.Macro):
             bindings[node.name] = None
         else:
-            yield from _input_reads(node.call, bindings, visit_dependency)
+            yield from _input_reads(node.call, bindings, visit_dependency, module_bindings)
         local = {**bindings, "caller": None, "varargs": None, "kwargs": None}
         for argument in node.args:
             _bind(argument, None, local)
         for value in node.defaults:
-            yield from _input_reads(value, local, visit_dependency)
+            yield from _input_reads(value, local, visit_dependency, module_bindings)
         for child in node.body:
-            yield from _input_reads(child, local, visit_dependency)
+            yield from _input_reads(child, local, visit_dependency, module_bindings)
         return
     if isinstance(node, nodes.For):
-        yield from _input_reads(node.iter, bindings, visit_dependency)
+        yield from _input_reads(node.iter, bindings, visit_dependency, module_bindings)
         local = dict(bindings)
         local["loop"] = None
         iterable = _reference(node.iter, bindings)
         _bind(node.target, (*iterable, None) if iterable is not None else None, local)
         for child in node.body:
-            yield from _input_reads(child, local, visit_dependency)
+            yield from _input_reads(child, local, visit_dependency, module_bindings)
         if node.test is not None:
-            yield from _input_reads(node.test, local, visit_dependency)
+            yield from _input_reads(node.test, local, visit_dependency, module_bindings)
         for child in node.else_:
-            yield from _input_reads(child, dict(bindings), visit_dependency)
+            yield from _input_reads(child, dict(bindings), visit_dependency, module_bindings)
         return
     if isinstance(node, nodes.With):
         local = dict(bindings)
         for target, value in zip(node.targets, node.values, strict=True):
-            yield from _input_reads(value, bindings, visit_dependency)
+            yield from _input_reads(value, bindings, visit_dependency, module_bindings)
             _bind(target, _reference(value, bindings), local)
         for child in node.body:
-            yield from _input_reads(child, local, visit_dependency)
+            yield from _input_reads(child, local, visit_dependency, module_bindings)
         return
     if isinstance(node, nodes.Assign):
-        yield from _input_reads(node.node, bindings, visit_dependency)
+        yield from _input_reads(node.node, bindings, visit_dependency, module_bindings)
         _bind(node.target, _reference(node.node, bindings), bindings)
         return
     if isinstance(node, nodes.Call) and isinstance(node.node, nodes.Getattr):
@@ -368,13 +375,16 @@ def _input_reads(
             key = node.args[0]
             if isinstance(key, nodes.Const) and isinstance(key.value, str):
                 yield (*parent, key.value), node.lineno
-        yield from _input_reads(receiver, bindings, visit_dependency)
+        yield from _input_reads(receiver, bindings, visit_dependency, module_bindings)
         for child in node.iter_child_nodes(exclude=("node",)):
-            yield from _input_reads(child, bindings, visit_dependency)
+            yield from _input_reads(child, bindings, visit_dependency, module_bindings)
         return
-    local = dict(bindings) if isinstance(node, (nodes.Block, nodes.Scope)) else bindings
+    if isinstance(node, nodes.Block):
+        local = {**module_bindings, **bindings}
+    else:
+        local = dict(bindings) if isinstance(node, nodes.Scope) else bindings
     for child in node.iter_child_nodes():
-        yield from _input_reads(child, local, visit_dependency)
+        yield from _input_reads(child, local, visit_dependency, module_bindings)
 
 
 def _declares_path(schema: JsonValue, path: InputPath) -> bool:
