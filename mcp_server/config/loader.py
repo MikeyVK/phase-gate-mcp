@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Hashable, Iterable
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -27,6 +27,7 @@ from mcp_server.config.schemas import (
     WorkflowConfig,
     WorkphasesConfig,
 )
+from mcp_server.config.schemas.adapter_manifest import AdapterManifest, AdapterTrustConfig
 from mcp_server.config.schemas.template_suite import (
     TemplateManifest,
     TemplatePackageVersion,
@@ -36,6 +37,22 @@ from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
+
+
+class _AdapterYamlLoader(yaml.SafeLoader):
+    """Reject duplicate or non-string keys before immutable declaration admission."""
+
+    def construct_mapping(self, node: yaml.Node, deep: bool = False) -> dict[Hashable, object]:
+        if not isinstance(node, yaml.MappingNode):
+            raise yaml.YAMLError("adapter_mapping_required")
+        construct: Callable[[yaml.Node, bool], object] = self.construct_object
+        result: dict[Hashable, object] = {}
+        for key_node, value_node in node.value:
+            key = construct(key_node, deep)
+            if not isinstance(key, str) or key in result:
+                raise yaml.YAMLError("duplicate_or_invalid_adapter_key")
+            result[key] = construct(value_node, deep)
+        return result
 
 
 def normalize_config_root(config_root: Path | str) -> Path:
@@ -118,6 +135,24 @@ class ConfigLoader:
                 self.template_root = Path(settings.server.resolved_template_root)
             except Exception:  # noqa: BLE001
                 self.template_root = (self.config_root.parent / "templates").resolve()
+
+    def load_adapter_manifest(self, path: Path) -> AdapterManifest:
+        """Read one package declaration without legacy configuration-version rules."""
+        return self._load_adapter_declaration(AdapterManifest, path)
+
+    def load_adapter_trust(self) -> AdapterTrustConfig:
+        """Read the required owner policy from the explicitly selected config root."""
+        return self._load_adapter_declaration(
+            AdapterTrustConfig, self.config_root / "adapters.yaml"
+        )
+
+    def _load_adapter_declaration(self, schema: type[SchemaT], path: Path) -> SchemaT:
+        try:
+            with path.open(encoding="utf-8") as stream:
+                data = yaml.load(stream, Loader=_AdapterYamlLoader)
+            return schema.model_validate(data)
+        except (OSError, yaml.YAMLError, ValidationError) as exc:
+            raise ConfigError(f"Invalid adapter declaration: {exc}", str(path)) from exc
 
     def load_template_context_schema(self, schema_path: Path) -> FrozenJsonObject:
         """Read an explicit prepared contract through the composition-supplied reader."""
