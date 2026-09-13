@@ -256,7 +256,7 @@ Recovery baseline for this prerequisite is `f3b1af35c3c79b4bbb6c675767953b7ffdcc
 - Updated shared-file predecessor payloads for CY009/CY010/CY071 and CY072/CY105: accepted, 105 cycles / 218 deliverables. Receipts `pgmcp://cache/runs/dda9928a3f56494faa6b449e470c3153` and `pgmcp://cache/runs/0aec8c65147a46988ec64b5345d0f776` prove update acceptance/counts only.
 - Fresh public query snapshot: `pgmcp://cache/runs/6b75c234d0b94755b95f4159d4bc79b8`, reconstructed through **27 windows** into **158663 Unicode codepoints**. Full-content SHA-256: `e3da60d65603ab771b911f9f182d3295d143247192ce5e5f6f5c7b02cad2eea2`.
 - Producer comparison against the actual reconstructed payload: **105/105 ordered cycle numbers and names, 210/210 ordered D1/D2 IDs and full descriptions, 105/105 exact exit criteria, 5/5 Validation and 3/3 Documentation deliverables match**. Descriptions include preserved behavior, semantic/shared-file predecessors and exact card links. No manual deliverables-file read, request echo or substitute mirror was used.
-- The frozen 126/151/79/57 source index and 279 proposed paths remain intact. Eight supplemental dependencies have exact cards; the final graph has **503 unique forward semantic/shared-file edges**. No new cycle or catch-all migration was added.
+- The frozen 126/151/79/57 source index and 279 proposed paths remain intact. Eight supplemental dependencies have exact cards; the final graph has **504 unique forward semantic/shared-file edges**. No new cycle or catch-all migration was added.
 - Internal review is findings-only. It examined implementation limits, bootstrap safety, window/hash semantics and preservation sequencing; it cannot lift independent NOGO. No full suite, branch-wide gates, native adapter conformance, F-10/F-20 execution or public refactor cutover is claimed.
 
 ### Reproducible independent QA readback
@@ -271,6 +271,17 @@ Run receipts are transient evidence pointers, not durable snapshot storage. The 
 
 The generic window contract and limits are documented in [get_project_plan reference](../../reference/tools/project.md#reading-large-cached-plans).
 
+## Fresh-chat cache discovery amendment
+
+This amendment plans delivery; it does not implement guidance, restart the server or authorize Implementation. The retained window API alone does not teach a new agent how to use it. Until CY011 lands, the generic discovery gap remains open and Planning QA must use the explicit readback procedure above.
+
+- **CY011:** own the self-contained generic hint beside every ordinary cache URI, within existing C106 presentation configuration and mapped presenter proofs. This small guidance slice describes the already-live API and is proved against the retained live assembly; it activates no V3 contract. Fresh-chat reconstruction without prior conversation or issue-document coaching is required before this cycle closes.
+- **CY069 → CY071 → CY072:** prepare the general startup instruction procedure in existing authoritative source/copy mappings, rehearse it, then apply the exact reviewed patch at cutover. CY069 depends explicitly on CY011. CY072 repeats discovery using actual installed instructions after real client rediscovery. No persistent parallel server, new resource family or second instruction authority is introduced.
+- **CY090:** reconcile generic resource and project references with the delivered behavior; it cannot postpone first discovery delivery.
+- Each amended card retains its explicit write-set, R-CYnnn recovery point, preserved behavior and independent stop/go boundary. A missing or budget-truncated hint, startup mapping mismatch, incomplete reconstruction or reliance on producer coaching fails the owning proof. Recovery guidance must never replay mutating/non-repeatable producers merely to recreate a cache; use an existing result/status query or report unavailable details. Only safe read-only queries may be repeated. Existing full-read behavior, cache lifetime and window limits remain unchanged; no fixed Codex/client truncation limit is assumed.
+
+Fresh amendment readback: `pgmcp://cache/runs/7bf793b9a9cf4688afcda0b0b1d423af`, 27 contiguous windows, 161522 Unicode codepoints, consistent server-reported SHA-256 `026fd5ddeb902a9f657c8d3aec7205208d38605064bbb3804263d4bb588da49c`. Actual reconstructed JSON exactly matches all 105 ordered cards, 210 D1/D2 descriptions and exit criteria, plus all eight phase deliverables (218 total). The graph has 504 forward edges. This amendment check verified page metadata, total length and parsed content parity; it did not independently recompute the content hash. Earlier runtime evidence above belongs to the retained quickfix and was not rerun for this planning-only amendment. Internal findings-only review identified unsafe producer replay; CY011 now prohibits mutation replay and its recipe is binding input to CY069/CY071/CY072. Independent QA remains outstanding.
+
 ## Refactor / Planning Hand-over
 
 ### Scope
@@ -283,7 +294,7 @@ This hub; [execution](planning-execution.md), [artifacts/mutation](planning-arti
 
 ### Evidence
 
-114 scoped tests and all applicable scoped gates passed. Healthy live server after controlled reloads. The actual publicly reconstructed Planning payload matches all 105 cards and 218 deliverables; 503 forward dependencies and the eight supplemental paths are mapped. Exact calls, current snapshot hash and repeatable verification procedure are above.
+114 scoped tests and all applicable scoped gates passed. Healthy live server after controlled reloads. The actual publicly reconstructed Planning payload matches all 105 cards and 218 deliverables; 504 forward dependencies and the eight supplemental paths are mapped. Exact calls, current snapshot hash and repeatable verification procedure are above.
 
 ### Open Work
 
