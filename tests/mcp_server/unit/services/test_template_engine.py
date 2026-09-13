@@ -260,3 +260,24 @@ class TestTemplateEngineDiscovery:
             engine = TemplateEngine(template_root=tmpdir)
             templates = engine.list_templates()
             assert templates == []
+
+
+def test_injected_environment_renders_explicit_content_without_file_roots() -> None:
+    """The catalog supplies its captured templates and a separate content namespace."""
+    from jinja2 import DictLoader, Environment, StrictUndefined
+
+    environment = Environment(
+        loader=DictLoader({"selected": "{{ content.flag }}|{{ content.count }}"}),
+        undefined=StrictUndefined,
+    )
+    engine = TemplateEngine(environment=environment)
+    assert engine.render_context("selected", {"content": {"flag": False, "count": 0}}) == "False|0"
+    assert engine.list_templates() == ["selected"]
+
+
+def test_injected_environment_cannot_be_combined_with_a_filesystem_root() -> None:
+    """One engine has one explicit source authority."""
+    from jinja2 import Environment
+
+    with pytest.raises(ValueError):
+        TemplateEngine(template_root=get_template_root(), environment=Environment())
