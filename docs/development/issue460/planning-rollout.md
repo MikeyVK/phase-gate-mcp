@@ -379,7 +379,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Target startup composition and launch rehearsal**
 
 - **Semantic predecessors:** [CY070](planning-rollout.md#cy070), [CY068](planning-rollout.md#cy068), [CY069](planning-rollout.md#cy069), [CY062](planning-rollout.md#cy062), [CY066](planning-rollout.md#cy066), [CY067](planning-rollout.md#cy067).
-- **Shared-file predecessors:** [CY009](planning-execution.md#cy009), [CY064](planning-rollout.md#cy064), [CY052](planning-artifacts-mutation.md#cy052), [CY011](planning-execution.md#cy011), [CY001](planning-execution.md#cy001), [CY056](planning-artifacts-mutation.md#cy056), [CY005](planning-execution.md#cy005), [CY061](planning-artifacts-mutation.md#cy061), [CY030](planning-execution.md#cy030).
+- **Shared-file predecessors:** [CY009](planning-execution.md#cy009), [CY064](planning-rollout.md#cy064), [CY052](planning-artifacts-mutation.md#cy052), [CY011](planning-execution.md#cy011), [CY001](planning-execution.md#cy001), [CY056](planning-artifacts-mutation.md#cy056), [CY005](planning-execution.md#cy005), [CY061](planning-artifacts-mutation.md#cy061), [CY030](planning-execution.md#cy030), [CY010](planning-execution.md#cy010).
 - **Authority:** [DI-05 §7.6, DI-06 §7.5 and DI-08 §7.4](design-integration-review.md).
 - **CY071.D1 — bounded result:** Add the final explicit runtime composition at bootstrap without changing its normal entrypoint yet. Compose one target ToolAssembly with the six target schema/mutation/check/test/fix tools, unchanged unrelated tools, explicit root/config/installation readers and the DI-06 startup lock. Never union V2 and V3 same-name tools.
 - **Preserved behavior:** The current normal entrypoint still constructs only its working legacy assembly. New startup takes the activation lock, rejects unresolved recovery without mutation, preserves unrelated enforcement/Git/GitHub behavior and probes no native availability.
@@ -389,9 +389,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). R004/R005/R006 are read-only live inputs. Prepare their exact fixture/config/template acquisition hunks and preimages, apply them only to the isolated candidate alongside the exact dispatch diff, and run the candidate's normal bootstrap/readback tests there. The active legacy checkout retains its unchanged passing tests. Preserve save/update/full readback, invalid-query source bytes and command recovery. Only CY072 may apply these prepared test hunks to live source; neither a new product mode nor a second registered server is introduced. D1/D2 and this cycle's R-CY071, preserved behavior and independent stop/go apply to these exact additional seams.
+
 Existing source IDs: C055, C057, C058, C060, C085, C107, S012, S013, S016, S037, S049, S050, T048, T060, T064, T067, T068, T069, T073, T074, T075, T091, T095, T097, T098, T099, T109, T110, T134.
 
-Read-only review/preservation IDs: C063, C064, C066, C086, C087, C093, C094, C096, C097, C098, S008, S017, S018. For a previously deleted source this means absence/import-closure review, never recreation.
+Read-only review/preservation IDs: C063, C064, C066, C086, C087, C093, C094, C096, C097, C098, S008, S017, S018, R001, R002, R003, R007, R008, R004, R005, R006. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -413,6 +415,9 @@ Scope is limited to D1 and these enumerated paths. All unrelated behavior, all o
 
 Named durable proof files:
 
+- `tests/mcp_server/unit/tools/test_project_tools.py`
+- `tests/mcp_server/unit/managers/test_project_manager.py`
+- `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/integration/test_target_startup.py`
 
 Existing affected test/helper sources: S012, S013, S016, S050, T048, T060, T064, T067, T068, T069, T073, T074, T075, T091, T095, T097, T098, T099, T109, T110, T134. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
@@ -424,7 +429,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Public V3 cutover**
 
 - **Semantic predecessors:** [CY071](planning-rollout.md#cy071).
-- **Shared-file predecessors:** [CY052](planning-artifacts-mutation.md#cy052), [CY062](planning-rollout.md#cy062), [CY061](planning-artifacts-mutation.md#cy061), [CY067](planning-rollout.md#cy067), [CY026](planning-execution.md#cy026), [CY028](planning-execution.md#cy028), [CY030](planning-execution.md#cy030), [CY012](planning-execution.md#cy012).
+- **Shared-file predecessors:** [CY052](planning-artifacts-mutation.md#cy052), [CY062](planning-rollout.md#cy062), [CY061](planning-artifacts-mutation.md#cy061), [CY067](planning-rollout.md#cy067), [CY026](planning-execution.md#cy026), [CY028](planning-execution.md#cy028), [CY030](planning-execution.md#cy030), [CY012](planning-execution.md#cy012), [CY001](planning-execution.md#cy001), [CY009](planning-execution.md#cy009), [CY010](planning-execution.md#cy010).
 - **Authority:** [DI-01/04/05 cutover; DI-06 §9; DI-07 §7.3](design-suite-resolution.md).
 - **CY072.D1 — bounded result:** Apply only the previously rehearsed activation diff: normal bootstrap/CLI dispatch, owned config/root/version selection, removal of quality.yaml from active config, and prepared workflow/host source-copy changes. No new execution, migration, schema, presenter or test-helper algorithm is introduced here. This cycle is the sole owner of removing duplicate [tool.pyright] from live pyproject.toml: apply only CY070's recorded hunk already rehearsed by CY071.
 - **Preserved behavior:** Unrelated tools/enforcement/cache/state; new names only, run_tests new contract, actionable V2 config rejection, no aliases/dual reads.
@@ -434,9 +439,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C003, C004, C005, C006, C008, C009, C010, C011, C012, C013, C014, C015, C016, C017, C019, C020, C021, C022, C023, C024, C025, C055, C056, C063, C106, C121, C122, C123, S051, T006, T091, T096.
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). R004/R005/R006 have one live cutover owner: CY072. Check their recorded preimages, apply only the exact test hunks rehearsed with the candidate in CY071, and run those same assertions against the landed normal bootstrap, including public full-response/window reconstruction. R002/R003 remain read-only. A new hunk, changed fixture policy or mismatched preimage stops the cycle and returns preparation to CY071; no new migration decision belongs here. D1/D2 and this cycle's R-CY072, preserved behavior and independent stop/go apply to these exact additional seams.
 
-Read-only review/preservation IDs: S008, S049, S050. For a previously deleted source this means absence/import-closure review, never recreation.
+Existing source IDs: C003, C004, C005, C006, C008, C009, C010, C011, C012, C013, C014, C015, C016, C017, C019, C020, C021, C022, C023, C024, C025, C055, C056, C063, C106, C121, C122, C123, S051, T006, T091, T096, R004, R005, R006.
+
+Read-only review/preservation IDs: S008, S049, S050, R002, R003. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -458,6 +465,9 @@ Scope is limited to D1 and these enumerated paths. All unrelated behavior, all o
 
 Named durable proof files:
 
+- `tests/mcp_server/unit/tools/test_project_tools.py`
+- `tests/mcp_server/unit/managers/test_project_manager.py`
+- `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/integration/test_v3_cutover.py`
 
 Existing affected test/helper sources: T006, T091, T096. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
@@ -479,9 +489,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). Include R004/R005/R006 in test_support import/fixture closure before the first scaffold dependency is deleted. Keep project-manager support that still has callers; these rows authorize review only. D1/D2 and this cycle's R-CY073, preserved behavior and independent stop/go apply to these exact additional seams.
+
 Existing source IDs: S012, S013, S016, T004, T014, T048, T075, T099.
 
-Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
+Read-only review/preservation IDs: R004, R005, R006. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -499,6 +511,9 @@ Scope is limited to D1 and these enumerated paths. All unrelated behavior, all o
 
 Named durable proof files:
 
+- `tests/mcp_server/unit/tools/test_project_tools.py`
+- `tests/mcp_server/unit/managers/test_project_manager.py`
+- `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/integration/test_scaffold_public_v3.py`
 - `tests/mcp_server/integration/test_edit_public_v3.py`
 - `tests/mcp_server/integration/test_pr_status_lockdown.py`
@@ -1829,7 +1844,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Retire exhausted legacy test harness**
 
 - **Semantic predecessors:** [CY077](planning-rollout.md#cy077), [CY078](planning-rollout.md#cy078), [CY079](planning-rollout.md#cy079), [CY080](planning-rollout.md#cy080), [CY081](planning-rollout.md#cy081), [CY082](planning-rollout.md#cy082), [CY083](planning-rollout.md#cy083), [CY086](planning-rollout.md#cy086), [CY087](planning-rollout.md#cy087), [CY088](planning-rollout.md#cy088), [CY094](planning-rollout.md#cy094), [CY095](planning-rollout.md#cy095), [CY096](planning-rollout.md#cy096), [CY097](planning-rollout.md#cy097), [CY098](planning-rollout.md#cy098), [CY099](planning-rollout.md#cy099), [CY100](planning-rollout.md#cy100), [CY104](planning-rollout.md#cy104), [CY101](planning-rollout.md#cy101), [CY102](planning-rollout.md#cy102), [CY103](planning-rollout.md#cy103).
-- **Shared-file predecessors:** [CY073](planning-rollout.md#cy073), [CY071](planning-rollout.md#cy071).
+- **Shared-file predecessors:** [CY073](planning-rollout.md#cy073), [CY071](planning-rollout.md#cy071), [CY072](planning-rollout.md#cy072).
 - **Authority:** [DI-08 §§7.3,9–10](design-test-architecture.md).
 - **CY105.D1 — bounded result:** Remove only the remaining exhausted legacy test-helper files/functions and obsolete plugin registration left after the earlier explicitly bounded import migrations; preserve the retained narrow support and unrelated workflow fixtures.
 - **Preserved behavior:** Unrelated workflow plugin, GitHub mocking, server/cycle/PR behavior, cache/atomic helpers and scoped env fixtures.
@@ -1839,9 +1854,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: S012, S013, S016, T004, T014, T048, T074, T095, T097, T098, T106.
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). Remove only residual exhausted helper acquisition in R004/R005/R006 after the earlier root/transport migrations. Preserve direct project lifecycle/readback assertions; no late bootstrap-root or transport migration belongs here. D1/D2 and this cycle's R-CY105, preserved behavior and independent stop/go apply to these exact additional seams.
 
-Read-only review/preservation IDs: S014, S015. For a previously deleted source this means absence/import-closure review, never recreation.
+Existing source IDs: S012, S013, S016, T004, T014, T048, T074, T095, T097, T098, T106, R004, R005, R006.
+
+Read-only review/preservation IDs: S014, S015, R002. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -1859,6 +1876,9 @@ Scope is limited to D1 and these enumerated paths. All unrelated behavior, all o
 
 Named durable proof files:
 
+- `tests/mcp_server/unit/tools/test_project_tools.py`
+- `tests/mcp_server/unit/managers/test_project_manager.py`
+- `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/integration/test_tool_attachment_transport.py`
 - `tests/mcp_server/unit/decorators/test_pipeline_decorators.py`
 - `tests/mcp_server/integration/test_pipeline_e2e.py`

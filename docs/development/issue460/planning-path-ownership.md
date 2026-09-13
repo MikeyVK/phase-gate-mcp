@@ -449,6 +449,25 @@ New exact paths have a creation owner and every planned revisit below. Generated
 | S056 | `mcp_server/presenters/__init__.py` | [CY009](planning-execution.md#cy009) | CY009 | None | Switch/remove the obsolete ValidationResourcePresenter eager export with the generic attachment presenter, preserving unrelated exports. |
 | S057 | `mcp_server/validation/__init__.py` | [CY081](planning-rollout.md#cy081) | CY081 | None | Remove obsolete eager base/registry exports in the same cycle as their modules; fresh server imports must still work. |
 
+## Readback prerequisite supplement
+
+R001–R008 are additional dependencies of the bounded Planning QA tooling prerequisite. They do not replace or renumber the frozen 126 C / 151 T / 79 A / 57 S rows or the 279 proposed implementation paths. R001/R006/R007 were created by the prerequisite; the other five paths already existed outside that census. Their baseline for cycle recovery is the completed prerequisite commit, never ea48558c. No implementation cycle is already completed by this repair.
+
+C086 (output models), S030 (cache resource), S010 (cache-resource tests) and C050 (project reference) already have exact rows and retain their existing owners. Those owners must preserve complete planning readback and the bounded-window protocol. The supplement's recorded write episodes grant only the stated seam. Review-only episodes grant no edits. Each corresponding card includes these IDs, proof paths, immediate previous writers and the existing independent recovery/stop-go rules.
+
+| ID | Exact path | Accountable owner | Ordered write episodes | Review/preservation episodes | Bounded preservation obligation |
+|---|---|---|---|---|---|
+| R001 | `mcp_server/core/interfaces/project_plan.py` | [CY009](planning-execution.md#cy009) | None | CY009, CY071 | Retain narrow planning read contract and structural manager binding; no project-command exposure. |
+| R002 | `mcp_server/managers/project_manager.py` | [CY071](planning-rollout.md#cy071) | None | CY009, CY071, CY072, CY105 | Preserve stored query, save/update schema and command-only deliverables backup; no project lifecycle refactor. |
+| R003 | `mcp_server/tools/project_tools.py` | [CY009](planning-execution.md#cy009) | CY009 | CY010, CY071, CY072 | Adapt only the shared transport seam when required; preserve complete planning output, existing commands and phase behavior. |
+| R004 | `tests/mcp_server/unit/tools/test_project_tools.py` | [CY105](planning-rollout.md#cy105) | CY001, CY009, CY072, CY105 | CY010, CY071, CY073 | Migrate only explicit-root, transport and surviving helper acquisition; retain absent/invalid/full planning and unrelated command assertions. |
+| R005 | `tests/mcp_server/unit/managers/test_project_manager.py` | [CY105](planning-rollout.md#cy105) | CY001, CY072, CY105 | CY071, CY073 | Migrate only explicit-root and surviving helper acquisition; retain query byte preservation and all three command-backup observations. |
+| R006 | `tests/mcp_server/integration/test_project_plan_readback.py` | [CY072](planning-rollout.md#cy072) | CY001, CY009, CY010, CY072, CY105 | CY071, CY073 | CY001 isolates fixture roots; CY009 adapts only transport; CY010 preserves full-response/window fidelity. CY071 prepares and tests exact config/template/bootstrap test hunks solely in isolated candidate copies; CY072 alone applies those preimage-checked live hunks. CY105 removes only residual exhausted helper acquisition. Retain save/update, fresh-cache and full MCP readback assertions. |
+| R007 | `mcp_server/schemas/cache_chunk.py` | [CY010](planning-execution.md#cy010) | None | CY009, CY010, CY071 | Preserve frozen read-window/chunk values, full-content hash, Unicode offsets and explicit EOF; no secondary planning storage. |
+| R008 | `mcp_server/schemas/deliverables.py` | [CY044](planning-artifacts-mutation.md#cy044) | None | CY009, CY010, CY044, CY071 | Retain existing strict frozen planning schema and cycle order validation used by save/update/read; no new planning-schema authority. |
+
+The supplement does not authorize general project/state management cleanup. The existing state.json backup path in FileStateRepository is outside the prerequisite's deliverables-query correction. CY071 rehearses every necessary root/bootstrap test change in isolated copies and leaves the live R004/R005/R006 bytes unchanged. CY072 alone applies their exact preimage-checked test hunks with the rehearsed public cutover, then verifies the landed result; it makes no new migration decision. CY073 closes actual legacy import dependencies before production removal; CY105 may remove only the remaining exhausted helper acquisition.
+
 ## Proposed new source register
 
 279 exact proposed paths. Files do not yet exist unless explicitly recorded as subsequent implementation progress. Creation and revisits are separately scoped by their cards.

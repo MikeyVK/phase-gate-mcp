@@ -274,6 +274,46 @@ class TestGetProjectPlanTool:
         assert result.error_message == "bad plan state"
         assert len(context.entries) == 0
 
+    @pytest.mark.asyncio
+    async def test_get_plan_returns_complete_stored_planning(self) -> None:
+        """The read-only dependency preserves D1/D2, order and exit criteria."""
+        payload = _minimal_deliverables()
+        manager = _GetProjectPlanManagerStub(
+            plan={"workflow_name": "feature", "planning_deliverables": payload}
+        )
+        result = await GetProjectPlanTool(manager=manager).execute(
+            GetProjectPlanInput(issue_number=253), NoteContext()
+        )
+
+        assert result.success
+        assert result.planning_deliverables is not None
+        assert result.planning_deliverables.model_dump(exclude_none=True) == payload
+        assert manager.issue_numbers == [253]
+
+    @pytest.mark.asyncio
+    async def test_get_plan_without_planning_remains_supported(self) -> None:
+        """An initialized project need not have planning deliverables yet."""
+        manager = _GetProjectPlanManagerStub(plan={"workflow_name": "feature"})
+        result = await GetProjectPlanTool(manager=manager).execute(
+            GetProjectPlanInput(issue_number=253), NoteContext()
+        )
+        assert result.success
+        assert result.planning_deliverables is None
+
+    @pytest.mark.asyncio
+    async def test_get_plan_rejects_invalid_stored_planning(self) -> None:
+        """A corrupt payload must not become a successful partial plan."""
+        manager = _GetProjectPlanManagerStub(
+            plan={"workflow_name": "feature", "planning_deliverables": {"unexpected": []}}
+        )
+        result = await GetProjectPlanTool(manager=manager).execute(
+            GetProjectPlanInput(issue_number=253), NoteContext()
+        )
+        assert not result.success
+        assert result.error_message is not None
+        assert "unexpected" in result.error_message
+        assert result.planning_deliverables is None
+
 
 def _minimal_deliverables(validates: dict | None = None) -> dict:
     """Return a minimal valid planning_deliverables dict with one cycle.

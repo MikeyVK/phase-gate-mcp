@@ -2,8 +2,8 @@
 <!-- template=planning version=130ac5ea created=2026-09-13T09:32Z updated=2026-09-13 -->
 # Issue 460 Refactor Planning
 
-**Status:** DRAFT — independent Planning NOGO; targeted corrections in progress  
-**Version:** 0.3  
+**Status:** DRAFT — independent Planning NOGO; targeted corrections submitted for independent recheck  
+**Version:** 0.4  
 **Last Updated:** 2026-09-13  
 **Baseline:** ea48558cf8034e9ab695fff675db7732c2ded660  
 **Workflow:** refactor / planning
@@ -14,7 +14,7 @@ Translate frozen [Research](research.md), its boundary-specific Approved Strateg
 
 ## Scope
 
-Planning owns sequence, dependencies, exact paths, preserved behavior, cleanup and stop/go evidence. It does not redesign contracts or implement them. External workspace migration, publishing, new startup-health/recovery features and permanent compatibility bridges are excluded. Producer-delegated review returns findings only; independent `pgmcp-qa` owns the Planning verdict.
+Planning owns sequence, dependencies, exact paths, preserved behavior, cleanup and stop/go evidence. It does not redesign contracts or implement the 105 refactor cycles. The requested QA correction includes the bounded readback tooling prerequisite recorded below; the active phase remains Planning. External workspace migration, publishing, new startup-health/recovery features and permanent compatibility bridges are excluded. Producer-delegated review returns findings only; independent `pgmcp-qa` owns the Planning verdict.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ Planning owns sequence, dependencies, exact paths, preserved behavior, cleanup a
 
 ## Summary
 
-105 bounded cycles, in a valid serial order. The exact index assigns **126 consumers, 151 tests/helpers, 79 legacy suite sources and 57 additional existing dependencies**, plus **279 exact proposed new source paths**. C/T/A/S identifiers are source IDs; CY identifiers are implementation cycles.
+105 bounded cycles, in a valid serial order. The exact index assigns **126 consumers, 151 tests/helpers, 79 legacy suite sources and 57 additional existing dependencies**, plus **279 exact proposed new source paths**. C/T/A/S identifiers are source IDs; CY identifiers are implementation cycles. The [R001–R008 supplement](planning-path-ownership.md#readback-prerequisite-supplement) assigns eight additional dependencies introduced or exposed by the readback prerequisite without renumbering the frozen census or creating new cycles.
 
 - [Execution foundations](planning-execution.md): [CY001](planning-execution.md#cy001)–[CY030](planning-execution.md#cy030).
 - [Artifacts and mutation](planning-artifacts-mutation.md): [CY031](planning-artifacts-mutation.md#cy031)–[CY061](planning-artifacts-mutation.md#cy061).
@@ -222,7 +222,7 @@ Documentation does not postpone live-cutover guidance or the enumerated implemen
 
 ## Review record and current evidence
 
-Independent QA returned **NOGO for Implementation** on the preceding Planning commit, with two targeted blockers. Research and Design remain closed; this record does not infer a new QA verdict.
+Independent QA returned **NOGO for Implementation** on the preceding Planning commit. Its latest targeted recheck closed the Pyright finding and retained the missing readback finding. Research and Design remain closed; the following producer evidence does not infer a new independent QA verdict.
 
 ### P1 — Pyright removal ownership
 
@@ -230,51 +230,65 @@ The corrected cards assign one live-removal owner: **CY072**. CY022 owns the ada
 
 The operational delta for CY022/CY027/CY070/CY071/CY072 was submitted with the final card D1/D2, preservation, predecessors and exit text through update_planning_deliverables. Receipt `pgmcp://cache/runs/c52b190e41f1405b8b0fd006f4374661` reports success, 105 cycles and 218 deliverables. This receipt proves update acceptance/counts only; it does not prove full stored-state parity.
 
-### P2 — Independent stored-payload readback remains blocked
+### P2 — Complete public stored-payload readback
 
-Live get_project_plan(460) and its full resource `pgmcp://cache/runs/ca538f549df844f4b26f27c339abb8b5` expose only issue/workflow/phase status. The registered resources expose standards, phase status, run cache and GitHub issues; none exposes the stored cycle payload. Save/update outputs contain counts only. Run-cache URIs are transient and must not be treated as durable Planning evidence.
+The requested bounded tooling prerequisite now returns `planning_deliverables` from the existing persisted project query in the existing frozen `CyclePlanningModel`. It retains the input contract, phase status and compact presentation. The tool depends on a narrow read protocol. Invalid planning fails explicitly; absent planning remains supported.
 
-Source inspection locates the omission at [GetProjectPlanTool](../../../mcp_server/tools/project_tools.py): [ProjectManager.get_project_plan](../../../mcp_server/managers/project_manager.py) already returns the stored planning_deliverables, but [ProjectPlanOutput](../../../mcp_server/schemas/tool_outputs.py) does not carry it. The previous card-to-submitted-payload comparison is producer evidence only. **Full independent equality with the actually stored payload has not been established.** No manual .pgmcp read, echoed request, test-output workaround or reconstructed mirror substitutes for that proof.
+A live full read exposed a second, independently observed limit: the client truncated the 158-kilobyte resource in the middle, making its JSON unusable. The same cache-resource family therefore supports optional bounded character windows. Each window contains the run ID, offset, total codepoints, full-content SHA-256, text and next offset. Full reads without query parameters remain unchanged. Cache windows apply generically to all tools, not only issue 460.
 
-The smallest durable tooling correction is to expose the stored value through the existing get_project_plan output and its normal cache resource, using the existing [CyclePlanningModel](../../../mcp_server/schemas/deliverables.py). It must include every cycle number/name, deliverable ID/description/validates and exit criterion, plus phase deliverables. A fresh call must regenerate the complete resource whenever an older cache entry expires.
+This is a prerequisite to reviewing Planning, outside the 105 implementation cycles. No phase/cycle transition, storage-format migration, new public tool, secondary planning store or refactor cutover was performed.
 
-This correction requires an explicitly authorized exception to the active Planning instruction, which says “do not redesign or implement.” It is not silently added to the 105 implementation cycles, because QA needs the readback before those cycles may begin.
-
-Bounded proposed exception, not implemented:
-
-| Boundary | Proposed work |
+| Boundary | Exact correction and preservation |
 |---|---|
-| Stored-plan output | Add typed optional planning_deliverables to ProjectPlanOutput and populate only from the manager's persisted-data query; retain existing input, phase status and compact presentation. |
-| Read contract | Narrow the GetProjectPlanTool dependency to a read interface under core/interfaces; no second reader or storage authority. |
-| Query error path | Assess and correct only the existing get_project_plan corruption/version-mismatch backup side effect needed for CQS. Preserve command-side recovery intentionally; no general ProjectManager refactor. |
-| Proof | Focused public tool tests for complete/absent/invalid Planning; actual save/read on isolated roots and real wrapper/cache-resource fidelity; preserve normal text and unrelated phase behavior. |
-| Runtime availability | Run scoped tests/gates and normal startup smoke before one controlled server reload; afterward call get_project_plan(460), read its fresh full resource and compare all 105 stored cycles and 218 deliverables to the cards. |
-| Exclusions | No write path, storage migration, phase progression, new public tool/resource family, manual .pgmcp inspection or alteration of the approved refactor strategy. |
+| Output and read interface | [ProjectPlanOutput](../../../mcp_server/schemas/tool_outputs.py), [GetProjectPlanTool](../../../mcp_server/tools/project_tools.py), [IProjectPlanReader](../../../mcp_server/core/interfaces/project_plan.py). Preserve unrelated project commands and phases. |
+| Deliverables query failure | [ProjectManager](../../../mcp_server/managers/project_manager.py): retain source and prior backup bytes on query corruption/version failure; retain the existing backup behavior in all three commands. This claim is limited to deliverables reads. The pre-existing state.json backup path through phase enrichment is outside scope. |
+| Bounded resource reads | [CachedResponseResource](../../../mcp_server/resources/cache.py), [window/chunk values](../../../mcp_server/schemas/cache_chunk.py). Strict URI parameters, Unicode-codepoint offsets, content hash, explicit EOF and stale-cache failure. No cache-storage or publisher change. |
+| Durable regression proof | [project tool tests](../../../tests/mcp_server/unit/tools/test_project_tools.py), [manager tests](../../../tests/mcp_server/unit/managers/test_project_manager.py), [cache tests](../../../tests/mcp_server/unit/resources/test_cache_resource.py), [real MCP readback](../../../tests/mcp_server/integration/test_project_plan_readback.py). The latter uses normal bootstrap and actual tool/resource handlers on isolated roots; a second assembly proves a new empty cache, not an OS process restart. |
+| Clean-break preservation | [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement) and CY001/CY009/CY010/CY044/CY071/CY072/CY073/CY105 assign exact write/review seams. CY071 rehearses root/test changes solely in isolated candidate copies; CY072 alone applies those exact preimage-checked live test hunks without new migration decisions. Import closure precedes removal; CY105 owns only residual exhausted helper acquisition. |
 
-### Retained Planning checks
+Recovery baseline for this prerequisite is `f3b1af35c3c79b4bbb6c675767953b7ffdccc729`. The repair uses six production files, four test files and their scaffolding registry records; its inverse must remain limited to those changes and the documented Planning amendment. No configuration/package/entrypoint migration was applied. All runtime imports and normal bootstrap were checked in fresh pytest workers before controlled reloads. Two sequential reloads were needed: first for the output omission, then for the newly observed client truncation. The one active server remained healthy: PID 112400 → 132356 → 7332. Current health receipt: `pgmcp://cache/runs/b7003e49381e4220a931685fe573c041`; current context confirms Planning with no active cycle.
 
-The census remains 126 consumers, 151 tests/helpers, 79 legacy sources and 57 additional existing dependencies; 279 proposed new paths retain their owners. There are 105 cycles and 497 forward semantic/shared-file edges after the targeted correction. Source-ID membership, unique cycle IDs, exact write/review episodes, cycle links and card-to-submitted-delta equality are checked separately from the still-missing stored-payload proof.
+### Executed evidence
 
-Strict document edits are the applicable executed checks. The legacy validate_template tool does not admit Planning. No production/test implementation, native conformance, build or server restart has occurred for this correction. Internal review is findings-only and cannot lift the independent NOGO.
+- Baseline: 65 existing project tests passed. Added regression cases first reproduced missing/invalid payload handling and destructive deliverables-query errors (70 passed, 5 failed).
+- Final scoped tests: **114 passed, zero failures/errors/skips**, using `run_tests(path="tests/mcp_server/unit/tools/test_project_tools.py tests/mcp_server/unit/managers/test_project_manager.py tests/mcp_server/integration/test_project_plan_readback.py tests/mcp_server/unit/server/test_bootstrap.py tests/mcp_server/unit/resources/test_cache_resource.py", timeout=120, verbose=true)`. Receipt: `pgmcp://cache/runs/39b83eca94af4512a1804b5230632398`.
+- Final `run_quality_gates(scope="files", files=[the ten production/test paths above], verbose=true)`: all applicable Ruff, imports, line-length, Pyright and MCP typing gates passed. Generic non-MCP Types had no matching files. Receipt: `pgmcp://cache/runs/674107b2c3be41408f7ef3fe1ad757d9`.
+- Updated shared-file predecessor payloads for CY009/CY010/CY071 and CY072/CY105: accepted, 105 cycles / 218 deliverables. Receipts `pgmcp://cache/runs/dda9928a3f56494faa6b449e470c3153` and `pgmcp://cache/runs/0aec8c65147a46988ec64b5345d0f776` prove update acceptance/counts only.
+- Fresh public query snapshot: `pgmcp://cache/runs/6b75c234d0b94755b95f4159d4bc79b8`, reconstructed through **27 windows** into **158663 Unicode codepoints**. Full-content SHA-256: `e3da60d65603ab771b911f9f182d3295d143247192ce5e5f6f5c7b02cad2eea2`.
+- Producer comparison against the actual reconstructed payload: **105/105 ordered cycle numbers and names, 210/210 ordered D1/D2 IDs and full descriptions, 105/105 exact exit criteria, 5/5 Validation and 3/3 Documentation deliverables match**. Descriptions include preserved behavior, semantic/shared-file predecessors and exact card links. No manual deliverables-file read, request echo or substitute mirror was used.
+- The frozen 126/151/79/57 source index and 279 proposed paths remain intact. Eight supplemental dependencies have exact cards; the final graph has **503 unique forward semantic/shared-file edges**. No new cycle or catch-all migration was added.
+- Internal review is findings-only. It examined implementation limits, bootstrap safety, window/hash semantics and preservation sequencing; it cannot lift independent NOGO. No full suite, branch-wide gates, native adapter conformance, F-10/F-20 execution or public refactor cutover is claimed.
+
+### Reproducible independent QA readback
+
+Run receipts are transient evidence pointers, not durable snapshot storage. The durable verification path is the public query plus its readable resource:
+
+1. Call `get_project_plan(issue_number=460)` afresh and use the returned resource URI. The text phase summary is not the Planning payload.
+2. Read that URI with `?offset=0&limit=6000`. Follow returned `next_offset` on the same URI until null. Require the same run ID, hash and total length on every window, and contiguous offsets. Offsets count Unicode codepoints; do not advance by JavaScript `string.length`.
+3. Join all `text`, verify total codepoint length and SHA-256 of the UTF-8 bytes, then parse JSON. If a window is client-truncated, retry with a smaller limit. Cache loss or a changed hash requires a new public query and complete reconstruction from zero; never mix runs.
+4. Compare every ordered cycle to the three card documents. D1 description is the card's bounded result, then `Preserved behavior:`, `Semantic predecessors:`, `Shared-file predecessors:`, and `Exact scope, write-set and rollback: <repository card path>#cyNNN.` D2 description is its independent-evidence line followed by `Named proof set and V1–V6: <repository card path>#cyNNN.` Compare exact names, IDs, descriptions and stop/go text; compare all phase deliverables above. Inspect each linked write/review scope, including R001–R008.
+5. Independently decide whether the actual payload and correction close the finding. The last independent verdict remains NOGO until that recheck is returned.
+
+The generic window contract and limits are documented in [get_project_plan reference](../../reference/tools/project.md#reading-large-cached-plans).
 
 ## Refactor / Planning Hand-over
 
 ### Scope
 
-Bounded sequencing, exhaustive ownership, preservation, recovery and independent evidence for issue 460; no production/test implementation or external rollout.
+The 105-cycle refactor plan, closed Pyright ownership correction and bounded complete-readback prerequisite. Research/Design and refactor strategy remain unchanged. No Implementation progression or refactor rollout.
 
 ### Deliverables
 
-This hub, its three cycle-card documents and exact path index. Research, Design and integration/package documents remain binding. The structured operational plan is saved in [deliverables.json](../../../.pgmcp/deliverables.json); the Planning commit is identified in the final task hand-over.
+This hub; [execution](planning-execution.md), [artifacts/mutation](planning-artifacts-mutation.md), [rollout](planning-rollout.md), [path ownership and readback supplement](planning-path-ownership.md); [public readback reference](../../reference/tools/project.md#reading-large-cached-plans); production/test entry points and frozen Research/Design inputs linked above. The branch diff is the complete change inventory.
 
 ### Evidence
 
-Targeted Pyright ownership/predecessor and submitted-delta checks are recorded above. The receipt confirms update acceptance/counts only. Full stored-payload parity remains unverified and is an independent QA blocker.
+114 scoped tests and all applicable scoped gates passed. Healthy live server after controlled reloads. The actual publicly reconstructed Planning payload matches all 105 cards and 218 deliverables; 503 forward dependencies and the eight supplemental paths are mapped. Exact calls, current snapshot hash and repeatable verification procedure are above.
 
 ### Open Work
 
-P2 needs an authorized bounded tooling correction or a separately prepared issue before a complete PGMCP readback can be produced. Independent Planning NOGO remains in force. After both corrections, request only the targeted Pyright-boundary and actual stored-payload QA recheck.
+Independent QA must repeat full public readback and compare the actual structured payload, the bounded tooling correction and its preservation amendment. The last independent NOGO remains in force. The known pre-existing state.json error-path backup is outside this deliverables-read correction; no general state-purity claim is made.
 
 ### Review Request
 
-Review requested. Open or resume the independent interactive `pgmcp-qa` task as `@qa plan-verifier`.
+Review requested from independently invoked `@qa plan-verifier`. Confirm or reject closure of the remaining payload finding using a fresh query; do not treat producer tests, parity or internal review as workflow GO.

@@ -17,7 +17,9 @@ Status: DRAFT, producer planning. [Hub](planning.md) defines the binding verific
 
 ### Explicit write-set
 
-Existing source IDs: S012, S037, T004, T048, T095.
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). Bind R004/R005/R006 to the explicit test-root fixture seam while preserving their legacy assembly until the scheduled cutover. D1/D2 and this cycle's R-CY001, preserved behavior and independent stop/go apply to these exact additional seams.
+
+Existing source IDs: S012, S037, T004, T048, T095, R004, R005, R006.
 
 Read-only review/preservation IDs: C063. For a previously deleted source this means absence/import-closure review, never recreation.
 
@@ -38,6 +40,9 @@ Scope is limited to D1 and these enumerated paths. All unrelated behavior, all o
 
 Named durable proof files:
 
+- `tests/mcp_server/unit/tools/test_project_tools.py`
+- `tests/mcp_server/unit/managers/test_project_manager.py`
+- `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/unit/fixtures/test_suite_roots.py`
 
 Existing affected test/helper sources: S012, T004, T048, T095. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
@@ -333,7 +338,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Operation and attachment transport**
 
 - **Semantic predecessors:** [CY008](planning-execution.md#cy008).
-- **Shared-file predecessors:** None.
+- **Shared-file predecessors:** [CY001](planning-execution.md#cy001).
 - **Authority:** [Shared §§5.4–5.5; DI-01/02 §7.2](design-shared-contracts.md).
 - **CY009.D1 — bounded result:** Normalize existing operation-only returns once into the designed internal carrier; add attachments and real wrapper/server transport without changing existing public tool input vocabulary. Switch only the resource-presenter injection in the normal bootstrap alongside the carrier; replace obsolete ValidationResourcePresenter and all its imports in this same coherent cycle.
 - **Preserved behavior:** Unaffected typed tools, enforcement skip/error behavior and whole-tool schema identity. Whole-tool ValidationErrorOutput.input_schema stays unchanged in its operation/cache. New attachment presentation is generic and does not dispatch on DTO/error type.
@@ -343,9 +348,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C055, C085, C086, S001, S003, S007, S009, S013, S025, S026, S027, S028, S029, S043, S044, S045, S046, S047, S053, S054, S055, S056, T091, T097, T098.
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). Adapt R003/R004/R006 only at the shared transport boundary. Preserve complete planning reads and all unrelated project command semantics; review R001/R002/R007/R008 without edits. D1/D2 and this cycle's R-CY009, preserved behavior and independent stop/go apply to these exact additional seams.
 
-Read-only review/preservation IDs: S052. For a previously deleted source this means absence/import-closure review, never recreation.
+Existing source IDs: C055, C085, C086, S001, S003, S007, S009, S013, S025, S026, S027, S028, S029, S043, S044, S045, S046, S047, S053, S054, S055, S056, T091, T097, T098, R003, R004, R006.
+
+Read-only review/preservation IDs: S052, R001, R002, R007, R008. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -366,6 +373,9 @@ Scope is limited to D1 and these enumerated paths. All unrelated behavior, all o
 
 Named durable proof files:
 
+- `tests/mcp_server/unit/tools/test_project_tools.py`
+- `tests/mcp_server/unit/managers/test_project_manager.py`
+- `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/integration/test_tool_attachment_transport.py`
 - `tests/mcp_server/unit/decorators/test_pipeline_decorators.py`
 - `tests/mcp_server/integration/test_pipeline_e2e.py`
@@ -380,7 +390,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Required-null cache fidelity**
 
 - **Semantic predecessors:** [CY008](planning-execution.md#cy008), [CY009](planning-execution.md#cy009).
-- **Shared-file predecessors:** None.
+- **Shared-file predecessors:** [CY009](planning-execution.md#cy009).
 - **Authority:** [Shared §§5.6,10,12](design-shared-contracts.md).
 - **CY010.D1 — bounded result:** Schema-aware operation cache serialization and resource delivery; no presentation changes.
 - **Preserved behavior:** Required-null/variant facts, unrelated cached error DTOs, cache FIFO and publisher/read separation; attachments remain separate.
@@ -390,9 +400,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
-Existing source IDs: C041, C086, S010, S030, S031, S032, S043, S044, T134, T136, T141, T149.
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). Adapt R006 only to the cache serialization boundary; preserve full/default reads, bounded Unicode windows, hash consistency, explicit EOF and cache-miss rejection in S010/S030/R007/R008. D1/D2 and this cycle's R-CY010, preserved behavior and independent stop/go apply to these exact additional seams.
 
-Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
+Existing source IDs: C041, C086, S010, S030, S031, S032, S043, S044, T134, T136, T141, T149, R006.
+
+Read-only review/preservation IDs: R003, R004, R007, R008. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -408,6 +420,7 @@ Scope is limited to D1 and these enumerated paths. All unrelated behavior, all o
 
 Named durable proof files:
 
+- `tests/mcp_server/integration/test_project_plan_readback.py`
 - `tests/mcp_server/integration/test_cache_fidelity_v3.py`
 
 Existing affected test/helper sources: S010, S032, S044, T134, T136, T141, T149. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.

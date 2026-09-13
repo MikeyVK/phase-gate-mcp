@@ -10,6 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from mcp_server.schemas.deliverables import CyclePlanningModel
 from mcp_server.validation.base import ValidationIssue
 
 
@@ -135,6 +136,7 @@ class ProjectPlanOutput(BaseToolOutput):
     issue_number: int
     workflow_name: str
     phases: list[PhaseDTO] = Field(default_factory=list)
+    planning_deliverables: CyclePlanningModel | None = None
 
 
 class PlannedCycleSummary(BaseModel):

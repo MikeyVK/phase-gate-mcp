@@ -226,7 +226,11 @@ class ProjectManager:
             raise ValueError(msg)
 
         # Load existing projects
-        projects = self._read_projects()
+        try:
+            projects = self._read_projects()
+        except (PlanningVersionMismatchError, StateCorruptedError):
+            self._state_version_validator.backup_file(self.deliverables_file)
+            raise
 
         # Check project exists
         if str(issue_number) not in projects:
@@ -282,7 +286,11 @@ class ProjectManager:
             msg = f"Project {issue_number} not found - initialize_project must be called first"
             raise ValueError(msg)
 
-        projects = self._read_projects()
+        try:
+            projects = self._read_projects()
+        except (PlanningVersionMismatchError, StateCorruptedError):
+            self._state_version_validator.backup_file(self.deliverables_file)
+            raise
 
         if str(issue_number) not in projects:
             msg = f"Project {issue_number} not found - initialize_project must be called first"
@@ -419,13 +427,9 @@ class ProjectManager:
         if not self.deliverables_file.exists():
             return {}
 
-        try:
-            self._state_version_validator.validate_file(
-                self.deliverables_file, expected_version="1.0.0", is_planning=True
-            )
-        except (PlanningVersionMismatchError, StateCorruptedError):
-            self._state_version_validator.backup_file(self.deliverables_file)
-            raise
+        self._state_version_validator.validate_file(
+            self.deliverables_file, expected_version="1.0.0", is_planning=True
+        )
 
         content = self.deliverables_file.read_text(encoding="utf-8-sig")
         data = json.loads(content)
@@ -456,7 +460,11 @@ class ProjectManager:
         self.deliverables_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load existing projects
-        projects = self._read_projects()
+        try:
+            projects = self._read_projects()
+        except (PlanningVersionMismatchError, StateCorruptedError):
+            self._state_version_validator.backup_file(self.deliverables_file)
+            raise
 
         # Store plan (convert tuple to list for JSON)
         projects[str(plan.issue_number)] = {

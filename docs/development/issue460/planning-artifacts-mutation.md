@@ -597,9 +597,11 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 ### Explicit write-set
 
+Readback prerequisite supplement: [R001–R008](planning-path-ownership.md#readback-prerequisite-supplement). R008 remains the planning-schema authority; verify operational projection and public readback retain its ordered cycles and phase deliverables without changing it. D1/D2 and this cycle's R-CY044, preserved behavior and independent stop/go apply to these exact additional seams.
+
 Existing source IDs: T011, T017, T027, T054.
 
-Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
+Read-only review/preservation IDs: R008. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -1352,4 +1354,3 @@ Named durable proof files:
 Existing affected test/helper sources: S007, S009, S010, T006, T048, T072, T075, T099, T112, T134, T136. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY061, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
-

@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from mcp_server.core.exceptions import PlanningVersionMismatchError
+from mcp_server.core.exceptions import PlanningVersionMismatchError, StateCorruptedError
 from mcp_server.managers.project_manager import ProjectInitOptions, ProjectManager
 from mcp_server.managers.state_repository import StateBranchMismatchError, StateNotFoundError
 from mcp_server.state.workflow_status import WorkflowStatusDTO
@@ -862,28 +862,59 @@ class TestGetProjectPlanGracefulDegradation:
 class TestProjectManagerVersioning:
     """Tests for deliverables.json envelope versioning and validation."""
 
-    def test_project_manager_read_projects_validates_envelope(self, tmp_path: Path) -> None:
-        """Verify that _read_projects validates the envelope and backs up on mismatch."""
-
+    @pytest.mark.parametrize(
+        ("source", "error_type"),
+        [
+            ('{"schema_version": "0.9.0", "projects": {}}', PlanningVersionMismatchError),
+            ("{invalid-json", StateCorruptedError),
+        ],
+    )
+    def test_query_preserves_invalid_planning_and_existing_backup(
+        self, tmp_path: Path, source: str, error_type: type[Exception]
+    ) -> None:
+        """Reading invalid planning must retain both source and prior recovery bytes."""
         manager = make_project_manager(tmp_path)
-
-        # Write valid projects but version mismatch (expected: 1.0.0, actual: 0.9.0)
-        deliverables_file = tmp_path / get_default_server_root() / "deliverables.json"
+        deliverables_file = manager.deliverables_file
         deliverables_file.parent.mkdir(parents=True, exist_ok=True)
-        deliverables_file.write_text(
-            json.dumps({"schema_version": "0.9.0", "projects": {}}),
-            encoding="utf-8",
-        )
+        deliverables_file.write_text(source, encoding="utf-8")
+        backup_file = deliverables_file.with_suffix(".json.bak")
+        backup_file.write_bytes(b"prior recovery point")
 
-        # Calling get_project_plan should raise PlanningVersionMismatchError
-        # because validation mismatch bubbles
-        with pytest.raises(PlanningVersionMismatchError):
+        with pytest.raises(error_type):
             manager.get_project_plan(42)
 
-        # The mismatched file must have been backed up to deliverables.json.bak
-        backup_file = deliverables_file.with_suffix(deliverables_file.suffix + ".bak")
+        assert deliverables_file.read_bytes() == source.encode("utf-8")
+        assert backup_file.read_bytes() == b"prior recovery point"
+
+    @pytest.mark.parametrize("command", ["initialize", "save", "update"])
+    @pytest.mark.parametrize(
+        ("source", "error_type"),
+        [
+            ('{"schema_version": "0.9.0", "projects": {}}', PlanningVersionMismatchError),
+            ("{invalid-json", StateCorruptedError),
+        ],
+    )
+    def test_commands_preserve_invalid_planning_backup_behavior(
+        self, tmp_path: Path, command: str, source: str, error_type: type[Exception]
+    ) -> None:
+        """All existing write entry points still back up an invalid envelope."""
+        manager = make_project_manager(tmp_path)
+        deliverables_file = manager.deliverables_file
+        deliverables_file.parent.mkdir(parents=True, exist_ok=True)
+        deliverables_file.write_text(source, encoding="utf-8")
+        backup_file = deliverables_file.with_suffix(".json.bak")
+        backup_file.write_bytes(b"prior recovery point")
+
+        with pytest.raises(error_type):
+            if command == "initialize":
+                manager.initialize_project(42, "Readback recovery", "feature")
+            elif command == "save":
+                manager.save_planning_deliverables(42, {})
+            else:
+                manager.update_planning_deliverables(42, {})
+
         assert not deliverables_file.exists()
-        assert backup_file.exists()
+        assert backup_file.read_bytes() == source.encode("utf-8")
 
     def test_project_manager_write_deliverables_saves_envelope(self, tmp_path: Path) -> None:
         """Verify that ProjectManager saves deliverables nested in a version envelope."""

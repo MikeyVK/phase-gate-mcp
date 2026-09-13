@@ -3,8 +3,8 @@
 # Project & Phase Management Tools
 
 **Status:** DEFINITIVE  
-**Version:** 3.1  
-**Last Updated:** 2026-08-22  
+**Version:** 3.2  
+**Last Updated:** 2026-09-13  
 
 **Source:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py), [phase_tools.py](../../../mcp_server/tools/phase_tools.py)  
 **Tests:** [tests/mcp_server/unit/tools/test_project_tools.py](../../../tests/mcp_server/unit/tools/test_project_tools.py), [tests/mcp_server/unit/tools/test_transition_phase_tool.py](../../../tests/mcp_server/unit/tools/test_transition_phase_tool.py), [tests/mcp_server/unit/tools/test_force_phase_transition_tool.py](../../../tests/mcp_server/unit/tools/test_force_phase_transition_tool.py)  
@@ -125,7 +125,7 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 **Class:** `GetProjectPlanTool`  
 **File:** [mcp_server/tools/project_tools.py](../../../mcp_server/tools/project_tools.py)
 
-Get project phase plan for issue number.
+Get project phases and complete stored planning deliverables for an issue.
 
 #### Parameters
 
@@ -149,6 +149,19 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
   - `name`: `string`
   - `status`: `string`
   - `tasks`: `list[PhaseTaskDTO]` with `id`, `title`, and `status`
+- `planning_deliverables`: optional existing `CyclePlanningModel`, containing every stored cycle number/name, ordered deliverable ID/description/validates and exit criterion, plus design/validation/documentation deliverables. It is absent from the compact cache JSON when planning has not yet been saved. Invalid stored planning returns a failed result; it is never silently omitted from a successful partial plan.
+
+#### Reading large cached plans
+
+The normal text presentation stays compact. Read the referenced resource for full planning data. When a client truncates large resource results, use the same URI with `?offset=0&limit=6000`. This optional read-window protocol applies to cached outputs of every tool; it does not introduce a second planning store.
+
+The JSON window contains `run_id`, `offset`, `total_chars`, `sha256`, `text` and `next_offset`. Both parameters are required: offset is nonnegative, limit is 1–12000; unknown/duplicate parameters and URI fragments are rejected. Offsets count Unicode codepoints, not bytes or JavaScript UTF-16 code units.
+
+1. Follow the returned `next_offset` on the same base URI. Require matching run ID, full-content SHA-256 and total length on every page, and contiguous offsets.
+2. Join each `text` in order until `next_offset=null`. Verify complete codepoint length and SHA-256 of the joined UTF-8 bytes; then parse the joined JSON. Compare its actual `planning_deliverables` with the authoritative plan.
+3. EOF permits an empty page; an offset beyond EOF fails. If a page is truncated, retry with a smaller limit. On cache loss or changed hash, stop: call `get_project_plan` again and reconstruct from zero using its new URI. Never mix runs.
+
+The cache is transient. Durability comes from a fresh public query of persisted planning, not from keeping an old run URI alive. Reads without window parameters retain the complete JSON response.
 
 #### Example Usage
 
@@ -160,8 +173,8 @@ The DTO is stored in the MCP Resource cache at `pgmcp://cache/runs/{run_id}` and
 
 #### Behavior Notes
 
-- **Read-Only:** Does not modify state
-- **Plan Access:** Reads the configured project plan and returns every phase with its current status and planned tasks.
+- **Planning Read:** Does not rewrite or back up the deliverables source during queries, including invalid-envelope failures. Current-phase enrichment retains the existing workflow-state resolver behavior.
+- **Plan Access:** Reads the configured project plan and returns phases plus the complete stored planning payload; existing phase/task presentation remains unchanged.
 - **Not Found:** Returns error if project not initialized
 
 ---
