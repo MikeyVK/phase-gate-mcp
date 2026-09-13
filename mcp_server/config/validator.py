@@ -16,9 +16,11 @@ from __future__ import annotations
 
 from jsonschema import Draft202012Validator
 
+from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.contracts_config import ContractsConfig
 from mcp_server.config.schemas.template_suite import TemplatePolicy
 from mcp_server.core.exceptions import ConfigError
+from mcp_server.core.interfaces.execution import CheckCatalogReader
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
     ArtifactRegistryConfig,
@@ -46,6 +48,39 @@ class ConfigValidator:
         """Require a known output profile from the composition-supplied capability authority."""
         if policy.output_profile not in profiles:
             raise ConfigError("template_output_profile_unknown")
+
+    def validate_checks_config(
+        self,
+        config: ChecksConfig,
+        catalog: CheckCatalogReader,
+        *,
+        template_profiles: frozenset[str],
+    ) -> None:
+        """Validate declared references and consumer input support without execution."""
+        checks = {
+            check_id: catalog.get_check(binding.adapter_id, binding.capability)
+            for check_id, binding in config.checks
+        }
+        profiles = dict(config.profiles)
+        content_profiles = template_profiles | frozenset(
+            profile_id for _, profile_id in config.profiles_by_extension
+        )
+        default_profile = config.run_checks.default_profile
+        selection_profiles = (
+            frozenset({default_profile}) if default_profile is not None else frozenset()
+        )
+        for input_kind, required_profiles in (
+            ("content", content_profiles),
+            ("selection", selection_profiles),
+        ):
+            for profile_id in sorted(required_profiles):
+                if profile_id not in profiles:
+                    raise ConfigError(f"check_profile_unknown: {profile_id}")
+                for check_id in profiles[profile_id].checks:
+                    if input_kind not in checks[check_id].capability.inputs:
+                        raise ConfigError(
+                            f"check_profile_input_unsupported: {profile_id}/{check_id}/{input_kind}"
+                        )
 
     def validate_startup(
         self,

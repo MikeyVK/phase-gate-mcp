@@ -11,6 +11,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
+    ChecksConfig,
     ContractsConfig,
     ContributorConfig,
     EnforcementConfig,
@@ -138,21 +139,27 @@ class ConfigLoader:
 
     def load_adapter_manifest(self, path: Path) -> AdapterManifest:
         """Read one package declaration without legacy configuration-version rules."""
-        return self._load_adapter_declaration(AdapterManifest, path)
+        return self._load_declaration(AdapterManifest, path)
 
     def load_adapter_trust(self) -> AdapterTrustConfig:
         """Read the required owner policy from the explicitly selected config root."""
-        return self._load_adapter_declaration(
-            AdapterTrustConfig, self.config_root / "adapters.yaml"
+        return self._load_declaration(AdapterTrustConfig, self.config_root / "adapters.yaml")
+
+    def load_checks_config(self) -> ChecksConfig:
+        """Read required checks.yaml without activating or reading legacy quality config."""
+        return self._load_declaration(
+            ChecksConfig, self.config_root / "checks.yaml", description="checks configuration"
         )
 
-    def _load_adapter_declaration(self, schema: type[SchemaT], path: Path) -> SchemaT:
+    def _load_declaration(
+        self, schema: type[SchemaT], path: Path, *, description: str = "adapter declaration"
+    ) -> SchemaT:
         try:
             with path.open(encoding="utf-8") as stream:
                 data = yaml.load(stream, Loader=_AdapterYamlLoader)
             return schema.model_validate(data)
         except (OSError, yaml.YAMLError, ValidationError) as exc:
-            raise ConfigError(f"Invalid adapter declaration: {exc}", str(path)) from exc
+            raise ConfigError(f"Invalid {description}: {exc}", str(path)) from exc
 
     def load_template_context_schema(self, schema_path: Path) -> FrozenJsonObject:
         """Read an explicit prepared contract through the composition-supplied reader."""

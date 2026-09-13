@@ -7,6 +7,7 @@ from mcp_server.config.schemas.artifact_registry_config import (
     StateMachine,
     StateMachineTransition,
 )
+from mcp_server.config.schemas.checks_config import ChecksConfig
 from mcp_server.config.schemas.contracts_config import (
     BranchLocalArtifact,
     CheckSpec,
@@ -63,6 +64,7 @@ __all__ = [
     "ArtifactType",
     "BranchLocalArtifact",
     "CapabilitiesMetadata",
+    "ChecksConfig",
     "CheckSpec",
     "CommentPattern",
     "ContractsConfig",
