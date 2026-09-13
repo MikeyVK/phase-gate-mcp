@@ -44,7 +44,15 @@ global:
 
   next_instruction_texts:
 
-    uri_reference: "*(Full details available in the structured JSON payload. View resource: pgmcp://cache/runs/{run_id})*"
+    uri_reference: >-
+      Full operation: pgmcp://cache/runs/{run_id}. For large results read
+      pgmcp://cache/runs/{run_id}?offset=0&limit=6000, then follow next_offset until null.
+      Keep run_id, sha256 and total_chars identical across contiguous windows; offsets count
+      Unicode codepoints. Join text, verify total_chars and UTF-8 SHA-256 against sha256,
+      then parse JSON. If truncated, retry that offset with a smaller limit.
+      On cache loss or hash change, discard partial data and repeat only a safe read-only query.
+      Never replay a mutating or non-repeatable producer to recover its cache:
+      use an existing result/status query or report details unavailable.
 
     context_reset: "🚀 REQUIRED NEXT STEP: Call get_work_context now before any other tool call to load the current phase context for this branch."
 

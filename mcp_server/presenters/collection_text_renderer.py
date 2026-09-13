@@ -15,7 +15,8 @@ import string
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import Any, TypeGuard, get_args, get_origin
+from types import UnionType
+from typing import Annotated, Any, Literal, TypeGuard, Union, get_args, get_origin
 
 from pydantic import BaseModel
 
@@ -38,17 +39,48 @@ class SequenceShape:
     """Resolved category and item type for a supported annotation."""
 
     kind: SequenceKind
-    item_type: type[object]
+    item_type: object
 
 
 def _is_model_type(annotation: object) -> TypeGuard[type[BaseModel]]:
     return isinstance(annotation, type) and issubclass(annotation, BaseModel)
 
 
-def _is_scalar_type(annotation: object) -> TypeGuard[type[object]]:
-    if not isinstance(annotation, type):
-        return False
-    return annotation in {str, int, float, bool} or issubclass(annotation, Enum)
+def unwrap_annotated(annotation: object) -> object:
+    """Ignore validation metadata when determining presentation shape."""
+    while get_origin(annotation) is Annotated:
+        annotation = get_args(annotation)[0]
+    return annotation
+
+
+def unwrap_nullable_annotation(annotation: object) -> object:
+    """Unwrap a single nullable shape, retaining other unions for explicit validation."""
+    annotation = unwrap_annotated(annotation)
+    if get_origin(annotation) in {Union, UnionType}:
+        alternatives = tuple(item for item in get_args(annotation) if item is not type(None))
+        if len(alternatives) == 1:
+            return unwrap_annotated(alternatives[0])
+    return annotation
+
+
+def is_scalar_annotation(annotation: object, *, allow_none: bool = False) -> bool:
+    """Admit only supported scalar alternatives without changing DTO validation."""
+    annotation = unwrap_annotated(annotation)
+    if annotation is type(None):
+        return allow_none
+    origin = get_origin(annotation)
+    if origin in {Union, UnionType}:
+        return all(
+            is_scalar_annotation(item, allow_none=allow_none) for item in get_args(annotation)
+        )
+    if origin is Literal:
+        return all(
+            (item is None and allow_none) or _is_runtime_scalar(item)
+            for item in get_args(annotation)
+        )
+    return isinstance(annotation, type) and (
+        annotation in {str, int, float, bool} or issubclass(annotation, Enum)
+    )
 
 
 def classify_sequence_annotation(
@@ -57,6 +89,7 @@ def classify_sequence_annotation(
     path: str,
 ) -> SequenceShape:
     """Classify an exact list[T] or variadic tuple[T, ...] annotation."""
+    annotation = unwrap_annotated(annotation)
     origin = get_origin(annotation)
     args = get_args(annotation)
     if (
@@ -66,13 +99,13 @@ def classify_sequence_annotation(
         and len(args) == 2
         and args[1] is Ellipsis
     ):
-        item_type = args[0]
+        item_type = unwrap_annotated(args[0])
     else:
         raise ConfigError(
             f"Presentation field '{path}' must be annotated as list[T] or tuple[T, ...]"
         )
 
-    if _is_scalar_type(item_type):
+    if is_scalar_annotation(item_type):
         return SequenceShape(SequenceKind.SCALAR, item_type)
     if _is_model_type(item_type):
         return SequenceShape(SequenceKind.MODEL, item_type)

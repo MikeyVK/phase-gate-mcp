@@ -14,9 +14,14 @@ from unittest.mock import MagicMock
 
 import pytest
 from mcp.types import (
-    CallToolRequest, CallToolRequestParams, CallToolResult,
-    ReadResourceRequest, ReadResourceRequestParams, ReadResourceResult,
-    TextContent, TextResourceContents,
+    CallToolRequest,
+    CallToolRequestParams,
+    CallToolResult,
+    ReadResourceRequest,
+    ReadResourceRequestParams,
+    ReadResourceResult,
+    TextContent,
+    TextResourceContents,
 )
 from pydantic import AnyUrl, BaseModel, ConfigDict, StrictInt, StrictStr
 
@@ -75,32 +80,55 @@ class ProjectionCore:
 @pytest.fixture
 def config(pytestconfig: pytest.Config) -> PresentationConfig:
     root = pytestconfig.rootpath / ServerSettings().server_root_dir
-    return ConfigLoader(config_root=root / "config", template_root=root / "templates").load_presentation_config()
+    return ConfigLoader(
+        config_root=root / "config", template_root=root / "templates"
+    ).load_presentation_config()
 
 
 def _presenter(config: PresentationConfig, tool: ToolPresentationConfig) -> TextPresenter:
-    return TextPresenter(config=PresentationConfig.model_validate({
-        "global": config.global_settings, "tools": {"projection": tool},
-    }))
+    return TextPresenter(
+        config=PresentationConfig.model_validate(
+            {
+                "global": config.global_settings,
+                "tools": {"projection": tool},
+            }
+        )
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("nullable", [False, True], ids=["values", "nulls"])
 async def test_strict_nullable_rows_survive_presentation_and_cache(
-    config: PresentationConfig, tmp_path: Path, nullable: bool,
+    config: PresentationConfig,
+    tmp_path: Path,
+    nullable: bool,
 ) -> None:
-    presenter = _presenter(config, ToolPresentationConfig.model_validate({
-        "template_success": "{title}: {count}; {labels}", "max_items": 1,
-        "collections": [{"field": "rows", "item_template": "{label}: {args}"}],
-        "enum_cases": [{"field": "status", "cases": {
-            "complete": "COMPLETE", "None": "UNKNOWN",
-        }}],
-    }))
+    presenter = _presenter(
+        config,
+        ToolPresentationConfig.model_validate(
+            {
+                "template_success": "{title}: {count}; {labels}",
+                "max_items": 1,
+                "collections": [{"field": "rows", "item_template": "{label}: {args}"}],
+                "enum_cases": [
+                    {
+                        "field": "status",
+                        "cases": {
+                            "complete": "COMPLETE",
+                            "None": "UNKNOWN",
+                        },
+                    }
+                ],
+            }
+        ),
+    )
     validate_presentation_alignment(
         presenter, [SupportedToolContract(name="projection", output_model=Projection)]
     )
     operation = Projection(
-        success=True, title="Result", count=None if nullable else 0,
+        success=True,
+        title="Result",
+        count=None if nullable else 0,
         labels=None if nullable else ("first", "second"),
         status=None if nullable else Status.COMPLETE,
         rows=(Row(label="row-one", args=None if nullable else ("a", "b")),),
@@ -111,8 +139,10 @@ async def test_strict_nullable_rows_survive_presentation_and_cache(
         ProjectionCore(operation)
     )
     server = MCPServer(
-        Settings(server=ServerSettings(workspace_root=str(tmp_path))), tools=[wrapped],
-        resources=[CachedResponseResource(cache)], publisher=cache,
+        Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[wrapped],
+        resources=[CachedResponseResource(cache)],
+        publisher=cache,
         presenter=ResponsePresenter(presenter, SchemaResourcePresenter()),
     )
     response = await server.server.request_handlers[CallToolRequest](
@@ -146,13 +176,15 @@ def test_alignment_rejects_structured_union(config: PresentationConfig) -> None:
 
 @pytest.mark.parametrize("length", [8, 20_000], ids=["short", "truncated"])
 def test_shipped_cache_hint_stays_complete_within_budget(
-    config: PresentationConfig, length: int,
+    config: PresentationConfig,
+    length: int,
 ) -> None:
     presenter = _presenter(config, ToolPresentationConfig(template_success="{title}"))
     run_id = "c" * 32
     hint = config.global_settings.next_instruction_texts["uri_reference"].format(run_id=run_id)
     text = presenter.present_text(
-        "projection", {"success": True, "title": "x" * length},
+        "projection",
+        {"success": True, "title": "x" * length},
         cache_pub=CachePublication(run_id=run_id),
     )
     assert hint in text

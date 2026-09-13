@@ -28,6 +28,8 @@ from mcp_server.core.operation_notes import NoteEntry
 from mcp_server.presenters.collection_text_renderer import (
     CollectionTextRenderer,
     classify_sequence_annotation,
+    is_scalar_annotation,
+    unwrap_nullable_annotation,
 )
 from mcp_server.presenters.collection_text_renderer import (
     SafeNoneFormatter as SequenceSafeNoneFormatter,
@@ -261,6 +263,8 @@ class TextPresenter(ITextPresenter):
         if tool_cfg is not None:
             for enum_case in tool_cfg.enum_cases:
                 raw_value = data_dict.get(enum_case.field)
+                if raw_value is None:
+                    continue
                 serialized_value = (
                     str(raw_value.value) if isinstance(raw_value, Enum) else str(raw_value)
                 )
@@ -558,11 +562,6 @@ def validate_presentation_alignment(
     ) -> TypeGuard[type[BaseModel]]:
         return isinstance(annotation, type) and issubclass(annotation, BaseModel)
 
-    def is_scalar_type(annotation: object) -> bool:
-        if not isinstance(annotation, type):
-            return False
-        return annotation in {str, int, float, bool} or issubclass(annotation, Enum)
-
     def get_sequence_item(annotation: object, path: str) -> object:
         return classify_sequence_annotation(annotation, path=path).item_type
 
@@ -590,21 +589,21 @@ def validate_presentation_alignment(
             if model_field is None:
                 continue
 
-            annotation = model_field.annotation
+            annotation = unwrap_nullable_annotation(model_field.annotation)
             origin = get_origin(annotation)
             if origin in {list, tuple}:
                 item_type = get_sequence_item(
                     annotation,
                     f"{tool_name}.{placeholder}",
                 )
-                if not is_scalar_type(item_type):
+                if not is_scalar_annotation(item_type):
                     raise ConfigError(
                         f"Template '{template_key}' for tool '{tool_name}' "
                         "cannot inline model-valued or nested sequence "
                         f"field '{placeholder}'"
                     )
                 uses_sequence = True
-            elif is_model_type(annotation) or origin in {dict, set}:
+            elif not is_scalar_annotation(annotation, allow_none=True):
                 raise ConfigError(
                     f"Template '{template_key}' for tool '{tool_name}' "
                     f"cannot inline structured field '{placeholder}'"
@@ -638,7 +637,7 @@ def validate_presentation_alignment(
         )
         placeholders = get_placeholders(declaration.item_template)
 
-        if is_scalar_type(item_type):
+        if is_scalar_annotation(item_type):
             if set(placeholders) - {"item"}:
                 raise ConfigError(
                     f"Scalar collection '{path}.{declaration.field}' item_template "
@@ -663,19 +662,19 @@ def validate_presentation_alignment(
                     f"on DTO '{item_model.__name__}' at "
                     f"'{path}.{declaration.field}'"
                 )
-            annotation = item_field.annotation
+            annotation = unwrap_nullable_annotation(item_field.annotation)
             origin = get_origin(annotation)
             if origin in {list, tuple}:
                 nested_item = get_sequence_item(
                     annotation,
                     f"{path}.{declaration.field}.{placeholder}",
                 )
-                if not is_scalar_type(nested_item):
+                if not is_scalar_annotation(nested_item):
                     raise ConfigError(
                         f"Collection item template at '{path}.{declaration.field}' "
                         f"cannot inline nested model sequence '{placeholder}'"
                     )
-            elif is_model_type(annotation) or origin in {dict, set}:
+            elif not is_scalar_annotation(annotation, allow_none=True):
                 raise ConfigError(
                     f"Collection item template at '{path}.{declaration.field}' "
                     f"cannot inline structured field '{placeholder}'"
@@ -705,7 +704,7 @@ def validate_presentation_alignment(
                 f"Enum-case field '{declaration.field}' is not present "
                 f"on DTO '{model.__name__}' for tool '{tool_name}'"
             )
-        enum_type = model_field.annotation
+        enum_type = unwrap_nullable_annotation(model_field.annotation)
         if not (isinstance(enum_type, type) and issubclass(enum_type, Enum)):
             raise ConfigError(
                 f"Enum-case field '{tool_name}.{declaration.field}' must be enum-valued"
