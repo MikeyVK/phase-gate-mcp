@@ -12,7 +12,7 @@
   "ignore": [],
   "defineConstant": {},
   "stubPath": "",
-  "pythonVersion": "3.13",
+  "pythonVersion": "3.11",
   "pythonPlatform": "Windows",
   "typeCheckingMode": "strict",
   "executionEnvironments": [
