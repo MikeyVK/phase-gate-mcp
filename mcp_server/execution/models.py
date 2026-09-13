@@ -102,7 +102,7 @@ class InvocationCompleted(InvocationResultBase, Generic[TResponse]):
 
     @model_validator(mode="after")
     def validate_capture(self) -> InvocationCompleted[TResponse]:
-        if self.capture.exit_code not in {0, 1, 2, 3}:
+        if self.capture.exit_code not in tuple(AdapterExitCode):
             raise ValueError("completed_exit_code_invalid")
         if (
             self.capture.stdout.head is not None
