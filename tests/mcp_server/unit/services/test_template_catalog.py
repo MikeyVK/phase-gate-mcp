@@ -440,3 +440,48 @@ class TestTemplateCatalog:
         write_package_tree(suite_roots.templates, files)
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
+
+
+    @pytest.mark.parametrize("scoped", [True, False], ids=["scoped", "unscoped"])
+    def test_block_visibility_matches_native_scope(
+        self, suite_roots: SuiteRoots, scoped: bool
+    ) -> None:
+        modifier = " scoped" if scoped else ""
+        source = (
+            "{% for label in ['ok'] %}{% block body" + modifier
+            + " %}{{ label }}{% endblock %}{% endfor %}"
+        )
+        native = Environment(undefined=StrictUndefined).from_string(source)
+        files = package_files("pkg", "custom")
+        files["pkg/template.jinja2"] = source.encode()
+        write_package_tree(suite_roots.templates, files)
+        if scoped:
+            assert native.render() == "ok"
+            catalog = catalog_loader(suite_roots).load()
+            assert catalog_renderer(catalog).render(
+                "custom", {"value": 0, "flag": False}, FrozenJsonObject(())
+            ) == "ok"
+        else:
+            with pytest.raises(UndefinedError):
+                native.render()
+            with pytest.raises(MCPError, match="template_input_undeclared"):
+                catalog_loader(suite_roots).load()
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "{% filter upper %}{% set file_name = 'local' %}{% endfilter %}{{ file_name }}",
+            "{% set captured %}{% set file_name = 'local' %}{% endset %}{{ file_name }}",
+        ],
+        ids=["filter", "capture"],
+    )
+    def test_local_output_scope_cannot_export_an_input_binding(
+        self, suite_roots: SuiteRoots, source: str
+    ) -> None:
+        with pytest.raises(UndefinedError):
+            Environment(undefined=StrictUndefined).from_string(source).render()
+        files = package_files("pkg", "custom")
+        files["pkg/template.jinja2"] = source.encode()
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
