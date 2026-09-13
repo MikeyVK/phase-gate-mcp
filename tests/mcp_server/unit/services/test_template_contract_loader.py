@@ -371,3 +371,44 @@ class TestTemplateContractLoader:
             TemplateContractLoader(suite_roots.templates).load_context_schema(
                 Path("pkg/context.schema.json")
             )
+
+
+    def test_contained_symlink_preserves_referring_document_uri(self, suite_roots: SuiteRoots) -> None:
+        """Containment canonicalization must not rebase a document's relative references."""
+        root = suite_roots.templates
+        documents: dict[str, dict[str, JsonValue]] = {
+            "pkg/context.schema.json": {"$schema": DRAFT_2020_12, "$ref": "alias/object.json"},
+            "pkg/deep/real/object.json": {"$schema": DRAFT_2020_12, "$ref": "../value.json"},
+            "pkg/value.json": {"$schema": DRAFT_2020_12, "type": "string"},
+            "pkg/deep/value.json": {"$schema": DRAFT_2020_12, "type": "integer"},
+        }
+        write_schemas(root, documents)
+        link_directory(root / "pkg/alias", root / "pkg/deep/real")
+        documents["pkg/alias/object.json"] = documents["pkg/deep/real/object.json"]
+        snapshot = TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
+        expected = oracle(root, documents, "pkg/context.schema.json")
+        actual = Draft202012Validator(thaw_json(snapshot))
+        assert expected.is_valid("text")
+        assert actual.is_valid("text")
+        assert not actual.is_valid(1)
+
+    def test_alias_expanding_cycle_fails_before_path_growth(self, suite_roots: SuiteRoots) -> None:
+        """Physical cycle identity stays bounded even when logical URIs keep changing."""
+        root = suite_roots.templates
+        write_schemas(root, {"pkg/context.schema.json": {
+            "$schema": DRAFT_2020_12, "$ref": "alias/context.schema.json",
+        }})
+        link_directory(root / "pkg/alias", root / "pkg")
+        with pytest.raises(ValueError, match="cyclic_schema_reference"):
+            TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
+
+
+def link_directory(link: Path, target: Path) -> None:
+    """Exercise real directory aliases on both Windows and POSIX."""
+    if os.name == "nt":
+        subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+            check=True, capture_output=True,
+        )
+    else:
+        link.symlink_to(target, target_is_directory=True)
