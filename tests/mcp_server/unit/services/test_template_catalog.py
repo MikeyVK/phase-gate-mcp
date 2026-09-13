@@ -365,3 +365,40 @@ class TestTemplateCatalog:
         assert (
             catalog_renderer(catalog).render("custom", context, FrozenJsonObject(())) == "prefix0"
         )
+
+
+    @pytest.mark.parametrize(
+        ("source", "base", "expected"),
+        [
+            (
+                b'{% extends "shared/templates/base.jinja2" %}{% set title = content.value %}',
+                b"{{ title }}",
+                "0",
+            ),
+            (
+                b"{% macro label(content, value=content.local) %}{{ value }}{% endmacro %}"
+                b"{{ label({'local':'ok'}) }}",
+                b"",
+                "ok",
+            ),
+        ],
+    )
+    def test_native_scope_order_is_preserved(
+        self, suite_roots: SuiteRoots, source: bytes, base: bytes, expected: str
+    ) -> None:
+        files = package_files("pkg", "custom")
+        files["pkg/template.jinja2"] = source
+        files["shared/templates/base.jinja2"] = base
+        native = Environment(
+            loader=DictLoader(
+                {name: value.decode() for name, value in files.items() if name.endswith(".jinja2")}
+            ),
+            undefined=StrictUndefined,
+        )
+        context = {"value": 0, "flag": False}
+        assert native.get_template("pkg/template.jinja2").render(content=context) == expected
+        write_package_tree(suite_roots.templates, files)
+        catalog = catalog_loader(suite_roots).load()
+        assert catalog_renderer(catalog).render(
+            "custom", context, FrozenJsonObject(())
+        ) == expected
