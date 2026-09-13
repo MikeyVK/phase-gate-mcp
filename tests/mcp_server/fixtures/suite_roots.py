@@ -59,8 +59,15 @@ def create_suite_roots(parent: Path, server_root_name: str) -> SuiteRoots:
         roots.workspace_adapters,
         roots.temp,
     )
-    if any(not path.resolve().is_relative_to(workspace) for path in directories):
+    resolved_directories = tuple(path.resolve() for path in directories)
+    if any(not path.is_relative_to(workspace) for path in resolved_directories):
         raise ValueError("Suite directories must remain inside the selected workspace")
+    if any(
+        left.is_relative_to(right) or right.is_relative_to(left)
+        for index, left in enumerate(resolved_directories)
+        for right in resolved_directories[index + 1 :]
+    ):
+        raise ValueError("Suite directories must be distinct and non-overlapping")
     for path in directories:
         path.mkdir(parents=True, exist_ok=True)
     return roots
