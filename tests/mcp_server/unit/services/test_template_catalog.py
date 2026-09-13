@@ -218,3 +218,22 @@ class TestTemplateCatalog:
         )
         with pytest.raises(MCPError, match="template_package_directory_required"):
             catalog_loader(suite_roots).load()
+
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            b"{{ content.undeclared }}",
+            b"{{ content['undeclared'] }}",
+            b"{{ file_name }}",
+            b"{{ provenance.undeclared }}",
+        ],
+    )
+    def test_undeclared_renderer_inputs_prevent_publication(
+        self, suite_roots: SuiteRoots, source: bytes
+    ) -> None:
+        files = package_files("pkg", "custom")
+        files["shared/templates/base.jinja2"] = source
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
