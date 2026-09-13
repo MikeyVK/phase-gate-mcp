@@ -149,3 +149,11 @@ def test_existing_directory_link_cannot_escape_before_any_creation(tmp_path: Pat
         create_suite_roots(workspace, "server")
     assert not list(outside.iterdir())
     assert list(workspace.iterdir()) == [link]
+
+
+@pytest.mark.parametrize("server_root_name", ["temp", "adapters"])
+def test_suite_roles_cannot_overlap(tmp_path: Path, server_root_name: str) -> None:
+    """A caller-selected server name cannot merge scratch or adapter roots with config."""
+    with pytest.raises(ValueError, match="distinct"):
+        create_suite_roots(tmp_path, server_root_name)
+    assert not list(tmp_path.iterdir())
