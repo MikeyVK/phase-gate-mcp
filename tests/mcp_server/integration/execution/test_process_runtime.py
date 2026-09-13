@@ -65,7 +65,9 @@ async def invoke(
     )
 
 
-@pytest.mark.parametrize("mode, code", [("passed", 0), ("failed", 1), ("invalid_request", 2), ("unavailable", 3)])
+@pytest.mark.parametrize(
+    "mode, code", [("passed", 0), ("failed", 1), ("invalid_request", 2), ("unavailable", 3)]
+)
 async def test_domain_outcomes_are_completed_and_keep_concrete_resource_payload(
     process_fixture: ProcessFixture, pytestconfig: pytest.Config, mode: str, code: int
 ) -> None:
