@@ -372,8 +372,9 @@ class TestTemplateContractLoader:
                 Path("pkg/context.schema.json")
             )
 
-
-    def test_contained_symlink_preserves_referring_document_uri(self, suite_roots: SuiteRoots) -> None:
+    def test_contained_symlink_preserves_referring_document_uri(
+        self, suite_roots: SuiteRoots
+    ) -> None:
         """Containment canonicalization must not rebase a document's relative references."""
         root = suite_roots.templates
         documents: dict[str, dict[str, JsonValue]] = {
@@ -395,9 +396,15 @@ class TestTemplateContractLoader:
     def test_alias_expanding_cycle_fails_before_path_growth(self, suite_roots: SuiteRoots) -> None:
         """Physical cycle identity stays bounded even when logical URIs keep changing."""
         root = suite_roots.templates
-        write_schemas(root, {"pkg/context.schema.json": {
-            "$schema": DRAFT_2020_12, "$ref": "alias/context.schema.json",
-        }})
+        write_schemas(
+            root,
+            {
+                "pkg/context.schema.json": {
+                    "$schema": DRAFT_2020_12,
+                    "$ref": "alias/context.schema.json",
+                }
+            },
+        )
         link_directory(root / "pkg/alias", root / "pkg")
         with pytest.raises(ValueError, match="cyclic_schema_reference"):
             TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
@@ -408,7 +415,8 @@ def link_directory(link: Path, target: Path) -> None:
     if os.name == "nt":
         subprocess.run(
             ["cmd", "/c", "mklink", "/J", str(link), str(target)],
-            check=True, capture_output=True,
+            check=True,
+            capture_output=True,
         )
     else:
         link.symlink_to(target, target_is_directory=True)

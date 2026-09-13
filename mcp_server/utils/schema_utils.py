@@ -47,6 +47,7 @@ def resolve_json_schema(
     *,
     document_id: str = "",
     read_document: SchemaDocumentReader | None = None,
+    identify_document: Callable[[str], str] | None = None,
 ) -> JsonSchema:
     """Prepare finite static references; the injected reader owns document admission.
 
@@ -54,7 +55,7 @@ def resolve_json_schema(
     values remain data. Referenced assertions occupy their own allOf branch so siblings
     cannot overwrite them or change the scope of unevaluated-member constraints.
     """
-    resolver = _SchemaResolver(document_id, copy.deepcopy(schema), read_document)
+    resolver = _SchemaResolver(document_id, copy.deepcopy(schema), read_document, identify_document)
     return resolver.resolve(document_id)
 
 
@@ -70,34 +71,41 @@ class _SchemaResolver:
     """One preparation's document cache and active expansion stack."""
 
     def __init__(
-        self, document_id: str, schema: JsonSchema, reader: SchemaDocumentReader | None
+        self,
+        document_id: str,
+        schema: JsonSchema,
+        reader: SchemaDocumentReader | None,
+        identify_document: Callable[[str], str] | None,
     ) -> None:
         self._documents = {document_id: schema}
         self._reader = reader
-        self._active: set[tuple[str, int]] = set()
+        self._identify_document = identify_document or (lambda name: name)
+        self._active: set[tuple[str, tuple[str, ...]]] = set()
 
     def resolve(self, document_id: str) -> JsonSchema:
-        result = self._walk(self._documents[document_id], document_id, is_root=True)
+        result = self._walk(self._documents[document_id], document_id)
         checked = {document_id}
         while pending := self._documents.keys() - checked:
             for pending_id in pending:
-                self._walk(self._documents[pending_id], pending_id, is_root=True)
+                self._walk(self._documents[pending_id], pending_id)
                 checked.add(pending_id)
         return result
 
-    def _walk(self, node: JsonSchema, document_id: str, *, is_root: bool = False) -> JsonSchema:
+    def _walk(
+        self, node: JsonSchema, document_id: str, pointer: tuple[str, ...] = ()
+    ) -> JsonSchema:
         if isinstance(node, bool):
             return node
-        location = (document_id, id(node))
+        location = (self._identify_document(document_id), pointer)
         if location in self._active:
             raise ValueError("cyclic_schema_reference")
         if _FORBIDDEN.intersection(node):
             raise ValueError("unsupported_schema_keyword")
-        if "$schema" in node and not is_root:
+        if "$schema" in node and pointer:
             raise ValueError("subschema_dialect")
         self._active.add(location)
         try:
-            result = self._children(node, document_id)
+            result = self._children(node, document_id, pointer)
             if "$ref" not in node:
                 return result
             reference = node["$ref"]
@@ -114,7 +122,9 @@ class _SchemaResolver:
         finally:
             self._active.remove(location)
 
-    def _children(self, node: dict[str, JsonValue], document_id: str) -> dict[str, JsonValue]:
+    def _children(
+        self, node: dict[str, JsonValue], document_id: str, pointer: tuple[str, ...]
+    ) -> dict[str, JsonValue]:
         result: dict[str, JsonValue] = {}
         for key, value in node.items():
             if key == "$ref":
@@ -123,7 +133,7 @@ class _SchemaResolver:
                 if not isinstance(value, dict):
                     raise ValueError("invalid_schema_position")
                 prepared: JsonValue = {
-                    name: self._walk(schema_object(child), document_id)
+                    name: self._walk(schema_object(child), document_id, (*pointer, key, name))
                     for name, child in value.items()
                 }
                 if key in {"$defs", "definitions"}:
@@ -131,9 +141,12 @@ class _SchemaResolver:
             elif key in _SCHEMA_LISTS:
                 if not isinstance(value, list):
                     raise ValueError("invalid_schema_position")
-                prepared = [self._walk(schema_object(child), document_id) for child in value]
+                prepared = [
+                    self._walk(schema_object(child), document_id, (*pointer, key, str(index)))
+                    for index, child in enumerate(value)
+                ]
             elif key in _SCHEMA_VALUES:
-                prepared = self._walk(schema_object(value), document_id)
+                prepared = self._walk(schema_object(value), document_id, (*pointer, key))
             else:
                 prepared = copy.deepcopy(value)
             result[key] = prepared
@@ -148,25 +161,27 @@ class _SchemaResolver:
             if document_id not in self._documents:
                 self._documents[document_id] = copy.deepcopy(document)
         document = self._documents[document_id]
-        target = _pointer(document, fragment)
-        resolved = self._walk(target, document_id, is_root=not fragment)
+        target, pointer = _pointer(document, fragment)
+        resolved = self._walk(target, document_id, pointer)
         if isinstance(resolved, dict):
             resolved.pop("$schema", None)
         return resolved
 
 
-def _pointer(document: JsonSchema, fragment: str) -> JsonSchema:
+def _pointer(document: JsonSchema, fragment: str) -> tuple[JsonSchema, tuple[str, ...]]:
     """Interpret a URI-fragment JSON Pointer, including escaped and array tokens."""
     fragment = unquote(fragment, errors="strict")
     if not fragment:
-        return document
+        return document, ()
     if not fragment.startswith("/"):
         raise ValueError("unsupported_schema_fragment")
     value: JsonValue = document
+    tokens: list[str] = []
     for token in fragment[1:].split("/"):
         if re.search(r"~(?![01])", token):
             raise ValueError("invalid_schema_pointer")
         token = token.replace("~1", "/").replace("~0", "~")
+        tokens.append(token)
         if isinstance(value, dict) and token in value:
             value = value[token]
         elif isinstance(value, list) and re.fullmatch(r"0|[1-9][0-9]*", token):
@@ -176,4 +191,4 @@ def _pointer(document: JsonSchema, fragment: str) -> JsonSchema:
             value = value[index]
         else:
             raise ValueError("unresolved_schema_pointer")
-    return schema_object(value)
+    return schema_object(value), tuple(tokens)

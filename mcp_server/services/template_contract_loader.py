@@ -41,7 +41,10 @@ class TemplateContractLoader:
             return str(target), documents[target]
 
         resolved = resolve_json_schema(
-            documents[path], document_id=str(path), read_document=read_reference
+            documents[path],
+            document_id=str(path),
+            read_document=read_reference,
+            identify_document=lambda name: str(Path(name).resolve(strict=True)),
         )
         Draft202012Validator.check_schema(resolved)
         frozen = freeze_json(resolved)
@@ -58,7 +61,8 @@ class TemplateContractLoader:
             raise ValueError("schema_symlink_boundary")
         if not resolved.is_file():
             raise ValueError("schema_file_required")
-        return resolved, lexical_owner
+        # URI bases retain lexical location; only containment and cycle identity use real paths.
+        return lexical, lexical_owner
 
     def _owner(self, path: Path) -> str:
         if not path.is_relative_to(self._suite_root):
