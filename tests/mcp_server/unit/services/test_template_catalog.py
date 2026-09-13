@@ -303,3 +303,28 @@ class TestTemplateCatalog:
         write_package_tree(suite_roots.templates, files)
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
+
+
+    def test_loop_local_cannot_hide_an_undefined_external_input(
+        self, suite_roots: SuiteRoots
+    ) -> None:
+        files = package_files("pkg", "custom")
+        files["pkg/template.jinja2"] = (
+            b"{% for file_name in ['local'] %}{{ file_name }}{% endfor %}{{ file_name }}"
+        )
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
+
+    def test_include_receives_only_its_visible_local_bindings(self, suite_roots: SuiteRoots) -> None:
+        files = package_files("pkg", "custom")
+        files["pkg/template.jinja2"] = (
+            b"{% for label in ['local'] %}"
+            b'{% include "shared/templates/label.jinja2" %}{% endfor %}'
+        )
+        files["shared/templates/label.jinja2"] = b"{{ label }}"
+        write_package_tree(suite_roots.templates, files)
+        catalog = catalog_loader(suite_roots).load()
+        assert catalog_renderer(catalog).render(
+            "custom", {"value": 0, "flag": False}, FrozenJsonObject(())
+        ) == "local"
