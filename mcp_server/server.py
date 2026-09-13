@@ -27,11 +27,13 @@ from mcp_server.config.settings import Settings
 # Resources
 # Resources
 # Scaffolding infrastructure (Issue #72)
+from mcp_server.core.decorators import InputValidationDecorator, ToolErrorHandlerDecorator
 from mcp_server.core.interfaces.ipresenter import IPresenter
 from mcp_server.core.interfaces.itool import ITool
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 from mcp_server.core.logging import get_logger
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.resources.base import BaseResource
 from mcp_server.schemas.presentation_output import PresentedOutput
 
@@ -101,7 +103,7 @@ class MCPServer:
             for t in self.tools:
                 output_schema = None
                 if hasattr(t, "output_model") and getattr(t, "output_model", None) is not None:
-                    output_schema = t.output_model.model_json_schema()
+                    output_schema = operation_output_model(t.output_model).model_json_schema()
                 tools_list.append(
                     Tool(
                         name=t.name,
@@ -136,8 +138,9 @@ class MCPServer:
                     try:
                         note_context = NoteContext()
 
-                        # 1. Execute target tool (guaranteed to return a BaseModel DTO)
-                        result_dto = await tool.execute(arguments or {}, note_context)
+                        # 1. Execute the normalized pipeline; cache only the operation.
+                        execution = await tool.execute(arguments or {}, note_context)
+                        result_dto = execution.operation
 
                         # 2. Publish result to cache (resilient; returns None on failure)
                         cache_pub = None
@@ -151,6 +154,7 @@ class MCPServer:
                                 data=result_dto,
                                 notes=note_context.entries,
                                 cache_pub=cache_pub,
+                                attachments=execution.attachments,
                             )
                         else:
                             presented = PresentedOutput(text=str(result_dto), resources=[])
@@ -259,7 +263,7 @@ class DegradedMCPServer(MCPServer):
 
         super().__init__(
             settings=settings,
-            tools=[health_tool],
+            tools=[ToolErrorHandlerDecorator(InputValidationDecorator(health_tool))],
             resources=[],
             presenter=None,
             publisher=None,

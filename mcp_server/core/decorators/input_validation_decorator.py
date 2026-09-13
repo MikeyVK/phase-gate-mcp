@@ -13,26 +13,29 @@ Decorator that validates incoming raw parameters dictionary into Pydantic models
 """
 
 # Standard library
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 # Third-party
 from pydantic import BaseModel, ValidationError
 
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.itool import ITool
-from mcp_server.core.interfaces.template_catalog import thaw_json
-from mcp_server.core.interfaces.tool_input_contract import IToolInputContract
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
+from mcp_server.core.interfaces.tool_input_contract import IToolInputContract, JsonObject
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import SchemaAttachment, ToolExecution, WholeToolSchemaIdentity
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
 from mcp_server.utils.schema_utils import resolve_schema_refs
 
+TOutput = TypeVar("TOutput", bound=BaseModel)
 
-class InputValidationDecorator(ITool):
+
+class InputValidationDecorator(ITool[TOutput | ValidationErrorOutput], Generic[TOutput]):
     """Bridges the untyped transport layer with the typed core execution layer."""
 
     def __init__(
         self,
-        inner_tool: ICoreTool[BaseModel, BaseModel],
+        inner_tool: ICoreTool[BaseModel, TOutput],
         *,
         input_contract: IToolInputContract[BaseModel | None] | None = None,
     ) -> None:
@@ -70,7 +73,9 @@ class InputValidationDecorator(ITool):
             "properties": {},
         }
 
-    async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
+    async def execute(
+        self, params: JsonObject, context: NoteContext
+    ) -> ToolExecution[TOutput | ValidationErrorOutput]:
         try:
             if self._input_contract is not None:
                 validated = self._input_contract.validate(params)
@@ -79,17 +84,38 @@ class InputValidationDecorator(ITool):
             else:
                 validated = None
         except ValidationError as e:
-            return ValidationErrorOutput(
+            schema = self.input_schema
+            operation = ValidationErrorOutput(
                 error_message=f"Invalid input for {self.name}",
                 validation_errors=[
                     {"field": ".".join(map(str, err["loc"])), "error": err["msg"]}
                     for err in e.errors()
                 ],
-                input_schema=self.input_schema,
+                input_schema=schema,
                 params=params,
+            )
+            attachment_schema = (
+                self._input_contract.schema
+                if self._input_contract is not None
+                else freeze_json(schema)
+            )
+            if not isinstance(attachment_schema, FrozenJsonObject):
+                raise TypeError("Tool input schema must be an object") from e
+            return ToolExecution(
+                operation=operation,
+                attachments=(
+                    SchemaAttachment(
+                        identity=WholeToolSchemaIdentity(kind="whole_tool"),
+                        schema=attachment_schema,
+                    ),
+                ),
             )
 
         if validated is None:
             # Preserve the existing no-argument core contract.
-            return await self._inner_tool.execute(None, context)  # type: ignore[arg-type]
-        return await self._inner_tool.execute(validated, context)
+            result = await self._inner_tool.execute(None, context)  # type: ignore[arg-type]
+        else:
+            result = await self._inner_tool.execute(validated, context)
+        if isinstance(result, ToolExecution):
+            return result
+        return ToolExecution(operation=result, attachments=())

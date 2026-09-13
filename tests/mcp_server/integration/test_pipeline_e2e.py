@@ -30,10 +30,10 @@ from mcp_server.core.operation_notes import NoteContext
 from mcp_server.core.tool_factory import ToolFactory
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.text_presenter import TextPresenter
-from mcp_server.presenters.validation_resource_presenter import (
-    ValidationResourcePresenter,
+from mcp_server.presenters.schema_resource_presenter import (
+    SchemaResourcePresenter,
 )
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import EnforcementErrorOutput
 from mcp_server.state.response_cache import ResponseCacheManager
@@ -123,7 +123,7 @@ class TestPipelineE2E:
         text_presenter = TextPresenter(config_data=config_data)
         server.presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
         server.tools = [decorated_tool]
 
@@ -185,7 +185,7 @@ class TestPipelineE2E:
         text_presenter = TextPresenter(config_data=config_data)
         server.presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
         server.tools = [decorated_tool]
 
@@ -235,7 +235,7 @@ class TestPipelineE2E:
         text_presenter = TextPresenter(config_data=config_data)
         server.presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
         server.tools = [decorated_tool]
 

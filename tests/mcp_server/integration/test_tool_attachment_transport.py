@@ -7,15 +7,27 @@
 """
 
 import json
+import shutil
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import anyio
 import pytest
-from mcp.types import CallToolRequest, CallToolRequestParams, CallToolResult, EmbeddedResource
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from mcp.types import (
+    CallToolRequest,
+    CallToolRequestParams,
+    CallToolResult,
+    EmbeddedResource,
+    ListToolsRequest,
+    ListToolsResult,
+    TextResourceContents,
+)
 from pydantic import BaseModel, ConfigDict
 
 from mcp_server.config.settings import ServerSettings, Settings
-from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.ipresenter import ITextPresenter
 from mcp_server.core.interfaces.itool_response_cache import IToolResponsePublisher
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
@@ -40,7 +52,7 @@ class Operation(BaseModel):
     value: int
 
 
-class AttachedCore(ICoreTool[BaseModel, BaseModel]):
+class AttachedCore:
     """Return a supplied execution so preservation can be checked by identity."""
 
     name = "attached"
@@ -50,9 +62,7 @@ class AttachedCore(ICoreTool[BaseModel, BaseModel]):
     def __init__(self, execution: ToolExecution[BaseModel]) -> None:
         self.execution = execution
 
-    async def execute(
-        self, params: BaseModel, context: NoteContext
-    ) -> ToolExecution[BaseModel]:
+    async def execute(self, params: BaseModel, context: NoteContext) -> ToolExecution[BaseModel]:
         del params, context
         return self.execution
 
@@ -66,14 +76,19 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
     assert isinstance(schema, FrozenJsonObject)
     operation = (
         ToolErrorOutput(error_message="Rejected", error_type="DomainError")
-        if error else Operation(success=True, value=0)
+        if error
+        else Operation(success=True, value=0)
     )
     execution: ToolExecution[BaseModel] = ToolExecution(
         operation=operation,
-        attachments=(SchemaAttachment(
-            identity=TemplateContextSchemaIdentity(kind="template_context", template_id="order/book"),
-            schema=schema,
-        ),),
+        attachments=(
+            SchemaAttachment(
+                identity=TemplateContextSchemaIdentity(
+                    kind="template_context", template_id="order/book"
+                ),
+                schema=schema,
+            ),
+        ),
     )
     runner = MagicMock(spec=EnforcementRunner)
     wrapped = ToolFactory(runner, tmp_path).create_tool(AttachedCore(execution))
@@ -112,6 +127,53 @@ async def test_carrier_survives_wrappers_and_keeps_schema_out_of_cache_and_text(
     assert isinstance(resource, EmbeddedResource)
     assert str(resource.resource.uri) == "schema://template/order%2Fbook/context"
     assert resource.resource.mimeType == "application/schema+json"
+    assert isinstance(resource.resource, TextResourceContents)
     assert json.loads(resource.resource.text) == {
-        "type": "object", "properties": {"value": {"type": "integer"}}
+        "type": "object",
+        "properties": {"value": {"type": "integer"}},
     }
+
+
+@pytest.mark.asyncio
+async def test_listing_exposes_operation_schema_only(tmp_path: Path) -> None:
+    execution: ToolExecution[BaseModel] = ToolExecution(
+        operation=Operation(success=True, value=1), attachments=()
+    )
+    wrapped = ToolFactory(MagicMock(spec=EnforcementRunner), tmp_path).create_tool(
+        AttachedCore(execution)
+    )
+    wrapped.output_model = ToolExecution[Operation]
+    server = MCPServer(
+        settings=Settings(server=ServerSettings(workspace_root=str(tmp_path))),
+        tools=[wrapped],
+        resources=[],
+    )
+    listing = await server.server.request_handlers[ListToolsRequest](ListToolsRequest())
+    assert isinstance(listing.root, ListToolsResult)
+    assert listing.root.tools[0].outputSchema == Operation.model_json_schema()
+
+
+@pytest.mark.asyncio
+async def test_legacy_stdio_startup_and_handshake(
+    legacy_suite_workspace: Path, pytestconfig: pytest.Config
+) -> None:
+    """Use the normal entry point and version check with isolated actual legacy assets."""
+    server_directory = ServerSettings().server_root_dir
+    shutil.copyfile(
+        pytestconfig.rootpath / server_directory / ".version",
+        legacy_suite_workspace / server_directory / ".version",
+    )
+    parameters = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "mcp_server"],
+        cwd=pytestconfig.rootpath,
+        env={"PGMCP_WORKSPACE_ROOT": str(legacy_suite_workspace)},
+    )
+    with anyio.fail_after(30):
+        async with stdio_client(parameters) as (read, write), ClientSession(read, write) as client:
+            initialized = await client.initialize()
+            assert initialized.serverInfo.name
+            listing = await client.list_tools()
+            names = {tool.name for tool in listing.tools}
+            # Degraded startup exposes health_check alone; these require full legacy assembly.
+            assert {"health_check", "scaffold_artifact", "get_project_plan"} <= names

@@ -710,10 +710,10 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
     from pydantic import BaseModel  # noqa: PLC0415
 
     from mcp_server.presenters.response_presenter import ResponsePresenter  # noqa: PLC0415
-    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
-    from mcp_server.presenters.validation_resource_presenter import (  # noqa: PLC0415
-        ValidationResourcePresenter,
+    from mcp_server.presenters.schema_resource_presenter import (  # noqa: PLC0415
+        SchemaResourcePresenter,
     )
+    from mcp_server.presenters.text_presenter import TextPresenter  # noqa: PLC0415
     from mcp_server.state.response_cache import ResponseCacheManager  # noqa: PLC0415
 
     class DummyTool(ICoreTool[BaseModel, ToolResult]):
@@ -753,7 +753,7 @@ async def test_handle_call_tool_cache_error_intercept() -> None:
         text_presenter = TextPresenter(config_data=config_data)
         presenter = ResponsePresenter(
             text_presenter=text_presenter,
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
 
         managers, workspace_root = _get_test_bootstrap_context(
@@ -815,3 +815,20 @@ def test_server_constructor_clean() -> None:
             publisher=None,
         )
         assert server is not None
+
+
+@pytest.mark.asyncio
+async def test_degraded_health_tool_uses_normalized_pipeline(tmp_path: Path) -> None:
+    """The config-error fallback remains callable through the outer tool contract."""
+    from mcp_server.config.settings import ServerSettings, Settings  # noqa: PLC0415
+    from mcp_server.schemas.tool_outputs import HealthCheckOutput  # noqa: PLC0415
+    from mcp_server.server import DegradedMCPServer  # noqa: PLC0415
+
+    server = DegradedMCPServer(
+        Settings(server=ServerSettings(workspace_root=str(tmp_path))), "Invalid configuration"
+    )
+    assert [tool.name for tool in server.tools] == ["health_check"]
+    execution = await server.tools[0].execute({}, NoteContext())
+    assert isinstance(execution.operation, HealthCheckOutput)
+    assert execution.attachments == ()
+    assert "Invalid configuration" in str(execution.operation)

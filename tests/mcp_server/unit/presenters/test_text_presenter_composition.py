@@ -15,12 +15,14 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
 from mcp_server.core.operation_notes import Note
+from mcp_server.core.tool_execution import SchemaAttachment, WholeToolSchemaIdentity
 from mcp_server.presenters.response_presenter import ResponsePresenter
-from mcp_server.presenters.text_presenter import TextPresenter
-from mcp_server.presenters.validation_resource_presenter import (
-    ValidationResourcePresenter,
+from mcp_server.presenters.schema_resource_presenter import (
+    SchemaResourcePresenter,
 )
+from mcp_server.presenters.text_presenter import TextPresenter
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
 
@@ -212,7 +214,7 @@ class TestTextPresenterComposition:
         config["tools"][tool_name]["max_items"] = None
         presenter = ResponsePresenter(
             text_presenter=TextPresenter(config_data=config),
-            resource_presenter=ValidationResourcePresenter(),
+            resource_presenter=SchemaResourcePresenter(),
         )
         schema = {
             "type": "object",
@@ -224,7 +226,14 @@ class TestTextPresenterComposition:
             input_schema=schema,
         )
 
+        frozen_schema = freeze_json(schema)
+        assert isinstance(frozen_schema, FrozenJsonObject)
         output = presenter.present(
+            attachments=(
+                SchemaAttachment(
+                    identity=WholeToolSchemaIdentity(kind="whole_tool"), schema=frozen_schema
+                ),
+            ),
             tool_name=tool_name,
             data=data,
             success=False,

@@ -12,6 +12,7 @@ from typing import Any, Protocol, runtime_checkable
 from pydantic import BaseModel
 
 from mcp_server.core.operation_notes import NoteEntry
+from mcp_server.core.tool_execution import SchemaAttachment
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.presentation_output import PresentationResource, PresentedOutput
 
@@ -46,10 +47,9 @@ class IResourcePresenter(Protocol):
 
     def present_resources(
         self,
-        tool_name: str,
-        data: BaseModel | dict[str, Any],
-    ) -> list[PresentationResource]:
-        """Extract and format presentation resources from the execution data."""
+        attachments: tuple[SchemaAttachment, ...],
+    ) -> tuple[PresentationResource, ...]:
+        """Format the supplied schema attachments."""
         ...
 
 
@@ -64,6 +64,8 @@ class IPresenter(Protocol):
         notes: list[NoteEntry] | None = None,
         cache_pub: CachePublication | None = None,
         success: bool | None = None,
+        *,
+        attachments: tuple[SchemaAttachment, ...] = (),
     ) -> PresentedOutput:
         """Present data, notes, and resources as a complete PresentedOutput."""
         ...

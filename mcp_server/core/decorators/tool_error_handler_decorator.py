@@ -14,7 +14,7 @@ Outermost decorator that traps unhandled exceptions and converts them to error D
 # Standard library
 import logging
 import traceback
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 # Third-party
 from pydantic import BaseModel
@@ -22,16 +22,23 @@ from pydantic import BaseModel
 # Project modules
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.interfaces.tool_input_contract import JsonObject
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import ToolExecution
 from mcp_server.schemas.error_outputs import ConfigErrorOutput, ExecutionErrorOutput
 
 logger = logging.getLogger(__name__)
 
 
-class ToolErrorHandlerDecorator(ITool):
+TOutput = TypeVar("TOutput", bound=BaseModel)
+
+
+class ToolErrorHandlerDecorator(
+    ITool[TOutput | ConfigErrorOutput | ExecutionErrorOutput], Generic[TOutput]
+):
     """Outermost decorator that traps unhandled exceptions and converts them to error DTOs."""
 
-    def __init__(self, inner_tool: ITool) -> None:
+    def __init__(self, inner_tool: ITool[TOutput]) -> None:
         self._inner_tool = inner_tool
 
     @property
@@ -55,7 +62,7 @@ class ToolErrorHandlerDecorator(ITool):
         return getattr(self._inner_tool, "enforcement_event", self.name)
 
     @property
-    def _tool(self) -> Any:
+    def _tool(self) -> object:
         inner = self._inner_tool
         while hasattr(inner, "_inner_tool"):
             inner = inner._inner_tool
@@ -65,14 +72,19 @@ class ToolErrorHandlerDecorator(ITool):
     def input_schema(self) -> dict[str, Any]:
         return self._inner_tool.input_schema
 
-    async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
+    async def execute(
+        self, params: JsonObject, context: NoteContext
+    ) -> ToolExecution[TOutput | ConfigErrorOutput | ExecutionErrorOutput]:
         try:
             return await self._inner_tool.execute(params, context)
         except ConfigError as exc:
-            return ConfigErrorOutput(
-                error_message=exc.message,
-                file_path=exc.file_path,
-                params={"code": exc.code},
+            return ToolExecution(
+                operation=ConfigErrorOutput(
+                    error_message=exc.message,
+                    file_path=exc.file_path,
+                    params={"code": exc.code},
+                ),
+                attachments=(),
             )
         except Exception as exc:
             # Log traceback to stderr
@@ -82,8 +94,11 @@ class ToolErrorHandlerDecorator(ITool):
                 str(exc),
                 exc_info=True,
             )
-            return ExecutionErrorOutput(
-                error_message=f"{exc.__class__.__name__}: {str(exc)}",
-                traceback=traceback.format_exc(),
-                params=params,
+            return ToolExecution(
+                operation=ExecutionErrorOutput(
+                    error_message=f"{exc.__class__.__name__}: {str(exc)}",
+                    traceback=traceback.format_exc(),
+                    params=params,
+                ),
+                attachments=(),
             )

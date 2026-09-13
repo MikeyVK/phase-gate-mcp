@@ -44,6 +44,7 @@ from mcp_server.config.schemas import (
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces import ICoreTool, IToolResponsePublisher
 from mcp_server.core.operation_notes import NoteContext
+from mcp_server.core.tool_execution import ToolExecution
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.enforcement_runner import EnforcementRunner
 from mcp_server.managers.git_manager import GitManager
@@ -114,8 +115,13 @@ class _UnresolvedAssemblyTool:
 class TestToolAssembly:
     """Durable public-contract tests for supported and active tool assembly."""
 
-    def test_derives_frozen_supported_contracts_from_generic_specialization(self) -> None:
+    @pytest.mark.parametrize("attached_metadata", [False, True])
+    def test_derives_frozen_supported_contracts_from_generic_specialization(
+        self, attached_metadata: bool
+    ) -> None:
         tool = _GenericAssemblyTool()
+        if attached_metadata:
+            tool.output_model = ToolExecution[_AssemblyOutput]
 
         assembly = ToolAssembly.create(
             supported_tools=(tool,),

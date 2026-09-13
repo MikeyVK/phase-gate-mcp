@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from mcp_server.core.interfaces.ipresenter import IPresenter, IResourcePresenter, ITextPresenter
 from mcp_server.core.operation_notes import NoteEntry
+from mcp_server.core.tool_execution import SchemaAttachment
 from mcp_server.schemas.cache_publication import CachePublication
 from mcp_server.schemas.presentation_output import PresentedOutput
 
@@ -38,6 +39,8 @@ class ResponsePresenter(IPresenter):
         notes: list[NoteEntry] | None = None,
         cache_pub: CachePublication | None = None,
         success: bool | None = None,
+        *,
+        attachments: tuple[SchemaAttachment, ...] = (),
     ) -> PresentedOutput:
         """Coordinate delegates to produce a unified PresentedOutput."""
         text = self._text_presenter.present_text(
@@ -47,8 +50,5 @@ class ResponsePresenter(IPresenter):
             cache_pub=cache_pub,
             success=success,
         )
-        resources = self._resource_presenter.present_resources(
-            tool_name=tool_name,
-            data=data,
-        )
-        return PresentedOutput(text=text, resources=resources)
+        resources = self._resource_presenter.present_resources(attachments)
+        return PresentedOutput(text=text, resources=list(resources))

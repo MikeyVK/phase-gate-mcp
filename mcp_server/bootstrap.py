@@ -58,6 +58,7 @@ from mcp_server.core.interfaces import (
 )
 from mcp_server.core.logging import get_logger, setup_logging
 from mcp_server.core.phase_detection import ScopeDecoder
+from mcp_server.core.tool_execution import operation_output_model
 from mcp_server.core.tool_factory import ToolFactory as CoreToolFactory
 from mcp_server.managers.artifact_manager import ArtifactManager
 from mcp_server.managers.branch_parent_reader import BranchStateParentReader
@@ -82,13 +83,13 @@ from mcp_server.managers.workflow_status_resolver import WorkflowStatusResolver
 from mcp_server.managers.workspace_version_validator import WorkspaceVersionValidator
 from mcp_server.presenters.collection_text_renderer import CollectionTextRenderer
 from mcp_server.presenters.response_presenter import ResponsePresenter
+from mcp_server.presenters.schema_resource_presenter import (
+    SchemaResourcePresenter,
+)
 from mcp_server.presenters.text_budget_limiter import TextBudgetLimiter
 from mcp_server.presenters.text_presenter import (
     TextPresenter,
     validate_presentation_alignment,
-)
-from mcp_server.presenters.validation_resource_presenter import (
-    ValidationResourcePresenter,
 )
 from mcp_server.resources.base import BaseResource
 from mcp_server.resources.cache import CachedResponseResource
@@ -238,12 +239,10 @@ def _resolve_generic_output_models(tool_type: type[Any]) -> tuple[type[BaseModel
                 if len(arguments) != 2:
                     continue
                 output_candidate = arguments[1]
-                if (
-                    isinstance(output_candidate, type)
-                    and issubclass(output_candidate, BaseModel)
-                    and output_candidate not in resolved
-                ):
-                    resolved.append(output_candidate)
+                if isinstance(output_candidate, type) and issubclass(output_candidate, BaseModel):
+                    operation_model = operation_output_model(output_candidate)
+                    if operation_model not in resolved:
+                        resolved.append(operation_model)
                 continue
             if not isinstance(origin, type) or origin is object:
                 continue
@@ -266,6 +265,9 @@ def _resolve_supported_tool_contract(tool: object) -> SupportedToolContract:
         not isinstance(explicit_model, type) or not issubclass(explicit_model, BaseModel)
     ):
         raise ConfigError(f"Invalid explicit output model for supported tool '{name}'")
+
+    if explicit_model is not None:
+        explicit_model = operation_output_model(explicit_model)
 
     generic_models = _resolve_generic_output_models(type(tool))
     if len(generic_models) > 1:
@@ -384,7 +386,7 @@ class ServerBootstrapper:
             text_presenter,
             tool_assembly.supported_contracts,
         )
-        resource_presenter = ValidationResourcePresenter()
+        resource_presenter = SchemaResourcePresenter()
         presenter = ResponsePresenter(
             text_presenter=text_presenter,
             resource_presenter=resource_presenter,
