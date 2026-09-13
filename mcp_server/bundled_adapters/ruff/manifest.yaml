@@ -1,0 +1,19 @@
+adapter_id: ruff
+version: 1.0.0
+files:
+  - check.py
+  - requirements.txt
+roles:
+  check:
+    contract_version: 1
+    entrypoint:
+      executable: python
+      args:
+        - package_file: check.py
+    capabilities:
+      format:
+        inputs:
+          - selection
+      lint:
+        inputs:
+          - selection
