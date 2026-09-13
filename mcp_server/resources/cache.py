@@ -22,6 +22,8 @@ from mcp_server.resources.base import BaseResource
 from mcp_server.schemas.cache_chunk import CachedResponseChunk, CacheReadWindow
 
 if TYPE_CHECKING:
+    from pydantic.main import IncEx
+
     from mcp_server.core.interfaces import IToolResponseReader
 
 
@@ -41,6 +43,36 @@ def _parse_read_uri(uri: str) -> tuple[str, CacheReadWindow | None]:
     return match.group(1), CacheReadWindow.model_validate(
         {key: int(value) for key, value in pairs}, strict=True
     )
+
+
+def _absent_optional_nulls(value: object) -> IncEx:
+    """Derive omissions from the actual DTO fields, including the selected variant."""
+    if isinstance(value, BaseModel):
+        fields: dict[str, IncEx | bool] = {}
+        for name, field in type(value).model_fields.items():
+            item = getattr(value, name)
+            if item is None and not field.is_required() and name not in value.model_fields_set:
+                fields[name] = True
+            else:
+                nested = _absent_optional_nulls(item)
+                if nested:
+                    fields[name] = nested
+        return fields
+    if isinstance(value, (list, tuple)):
+        elements: dict[int, IncEx | bool] = {}
+        for index, item in enumerate(value):
+            nested = _absent_optional_nulls(item)
+            if nested:
+                elements[index] = nested
+        return elements
+    if isinstance(value, dict):
+        members: dict[str, IncEx | bool] = {}
+        for key, item in value.items():
+            nested = _absent_optional_nulls(item)
+            if nested:
+                members[key] = nested
+        return members
+    return {}
 
 
 class CachedResponseResource(BaseResource):
@@ -69,9 +101,9 @@ class CachedResponseResource(BaseResource):
         if not dto:
             raise ValueError("No cached data found")
 
-        # Returns whitespace-stripped compact JSON with None values excluded
+        # Required null and explicitly supplied null are operation facts.
         try:
-            content = dto.model_dump_json(exclude_none=True)
+            content = dto.model_dump_json(exclude=_absent_optional_nulls(dto))
         except Exception as e:
             fallback = {
                 "success": False,

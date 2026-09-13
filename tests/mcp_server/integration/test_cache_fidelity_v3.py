@@ -12,7 +12,10 @@ from typing import Annotated, Literal
 
 import pytest
 from mcp.types import (
-    ReadResourceRequest, ReadResourceRequestParams, ReadResourceResult, TextResourceContents,
+    ReadResourceRequest,
+    ReadResourceRequestParams,
+    ReadResourceResult,
+    TextResourceContents,
 )
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, JsonValue
 
@@ -68,16 +71,22 @@ class OperationSnapshot(BaseModel):
     ids=["nested-capture", "unavailable-variant"],
 )
 async def test_operation_roundtrip_retains_required_null_and_presence(
-    tmp_path: Path, outcome: Completed | Unavailable, expected: dict[str, JsonValue],
+    tmp_path: Path,
+    outcome: Completed | Unavailable,
+    expected: dict[str, JsonValue],
 ) -> None:
     operation = OperationSnapshot(
-        success=False, outcome=outcome, error_details=None,
+        success=False,
+        outcome=outcome,
+        error_details=None,
         values={"null": None, "false": False, "zero": 0, "empty": []},
         explicit_null=None,
     )
     text = await _read_cached_operation(tmp_path, operation)
     assert json.loads(text) == {
-        "success": False, "outcome": expected, "error_details": None,
+        "success": False,
+        "outcome": expected,
+        "error_details": None,
         "values": {"null": None, "false": False, "zero": 0, "empty": []},
         "explicit_null": None,
     }
@@ -88,7 +97,10 @@ async def test_operation_roundtrip_retains_required_null_and_presence(
 async def test_legacy_error_cache_keeps_defaults_and_omits_absent_null(tmp_path: Path) -> None:
     text = await _read_cached_operation(tmp_path, ExecutionErrorOutput(error_message="Failed"))
     assert json.loads(text) == {
-        "success": False, "error_type": "ExecutionError", "error_message": "Failed", "params": {},
+        "success": False,
+        "error_type": "ExecutionError",
+        "error_message": "Failed",
+        "params": {},
     }
 
 
@@ -98,12 +110,13 @@ async def _read_cached_operation(tmp_path: Path, operation: BaseModel) -> str:
     assert publication.run_id is not None
     server = MCPServer(
         Settings(server=ServerSettings(workspace_root=str(tmp_path))),
-        tools=[], resources=[CachedResponseResource(cache)],
+        tools=[],
+        resources=[CachedResponseResource(cache)],
     )
     response = await server.server.request_handlers[ReadResourceRequest](
-        ReadResourceRequest(params=ReadResourceRequestParams(
-            uri=AnyUrl(f"pgmcp://cache/runs/{publication.run_id}")
-        ))
+        ReadResourceRequest(
+            params=ReadResourceRequestParams(uri=AnyUrl(f"pgmcp://cache/runs/{publication.run_id}"))
+        )
     )
     assert isinstance(response.root, ReadResourceResult)
     assert len(response.root.contents) == 1

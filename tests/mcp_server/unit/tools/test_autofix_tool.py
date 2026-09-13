@@ -73,8 +73,8 @@ class TestAutoFixTool:
         cache = ResponseCacheManager(max_size=5)
         resource = CachedResponseResource(cache=cache)
 
-        # Put DTO with None field
-        dto = DummyDTO(success=True, message=None)
+        # Put DTO with an absent optional null field
+        dto = DummyDTO(success=True)
         pub = cache.put("test_tool", dto)
         assert pub is not None
         assert pub.run_id is not None
@@ -86,7 +86,7 @@ class TestAutoFixTool:
         assert resource.matches(uri_bad) is False
         assert resource.matches(uri_wrong) is False
 
-        # Read -> should return compact whitespace-stripped JSON with None field excluded
+        # Read -> omit the absent optional null while preserving compact JSON
         json_data = await resource.read(uri_ok)
         assert json_data == '{"success":true}'
 
