@@ -209,3 +209,19 @@ def test_selected_graph_renders_retained_root_and_round_trips(
     if maximum and frame_start == "<!--":
         assert len(rendered.split("\n", 1)[0]) == 100
     assert ArtifactHeaderReader().read(rendered).provenance == identity
+
+
+@pytest.mark.parametrize("template_id", ["a--!>b", "--!>", "a---!>b"])
+def test_html_comment_terminators_are_rejected_at_canonical_admission(template_id: str) -> None:
+    # WHATWG comment-end-bang state closes the comment on --!> as well as -->.
+    # Admission must reject it before the shared writer receives provenance.
+    with pytest.raises(ValidationError):
+        ArtifactIdentity(id=template_id, pv="1.2.3", pf="A" * 16, sf="B" * 16)
+
+
+@pytest.mark.parametrize("frame", ["# {record}", "// {record}", "<!-- {record} -->"])
+def test_unsafe_comment_delimiter_never_produces_recognized_provenance(frame: str) -> None:
+    record = RECORD.replace("id=example", "id=a--!>b")
+    result = ArtifactHeaderReader().read(frame.format(record=record))
+    assert result.status is HeaderReadStatus.INVALID
+    assert result.provenance is None
