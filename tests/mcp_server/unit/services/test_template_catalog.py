@@ -412,7 +412,6 @@ class TestTemplateCatalog:
         catalog = catalog_loader(suite_roots).load()
         assert catalog_renderer(catalog).render("custom", context, FrozenJsonObject(())) == expected
 
-
     def test_later_assignment_cannot_hide_an_earlier_external_read(
         self, suite_roots: SuiteRoots
     ) -> None:
@@ -421,6 +420,24 @@ class TestTemplateCatalog:
             Environment(undefined=StrictUndefined).from_string(source).render()
         files = package_files("pkg", "custom")
         files["pkg/template.jinja2"] = source.encode()
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises(MCPError, match="template_input_undeclared"):
+            catalog_loader(suite_roots).load()
+
+
+    def test_parent_binding_cannot_supply_an_earlier_child_root_read(
+        self, suite_roots: SuiteRoots
+    ) -> None:
+        sources = {
+            "pkg/template.jinja2": '{{ file_name }}{% extends "shared/templates/base.jinja2" %}',
+            "shared/templates/base.jinja2": "{% set file_name = 'local' %}body",
+        }
+        with pytest.raises(UndefinedError):
+            Environment(
+                loader=DictLoader(sources), undefined=StrictUndefined
+            ).get_template("pkg/template.jinja2").render()
+        files = package_files("pkg", "custom")
+        files.update({name: source.encode() for name, source in sources.items()})
         write_package_tree(suite_roots.templates, files)
         with pytest.raises(MCPError, match="template_input_undeclared"):
             catalog_loader(suite_roots).load()
