@@ -7,14 +7,15 @@ from __future__ import annotations
 import json
 import os
 import re
-from pathlib import Path
+from itertools import pairwise
+from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 from jsonschema import Draft202012Validator
 from pydantic import JsonValue
 
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
-from mcp_server.utils.schema_utils import JsonSchema, resolve_json_schema
+from mcp_server.utils.schema_utils import JsonSchema, SchemaLocation, resolve_json_schema
 
 DRAFT_2020_12 = "https://json-schema.org/draft/2020-12/schema"
 
@@ -33,9 +34,14 @@ class TemplateContractLoader:
         if owner == "shared":
             raise ValueError("package_context_required")
         documents = {path: _read_document(path)}
+        reference_floors: dict[tuple[str, str], Path] = {}
 
         def read_reference(referrer: str, reference: str) -> tuple[str, JsonSchema]:
-            target = self._reference_path(Path(referrer), reference)
+            target, floor = self._reference_path(Path(referrer), reference)
+            previous = reference_floors.get((referrer, str(target)), floor)
+            while not previous.is_relative_to(floor):
+                floor = floor.parent
+            reference_floors[(referrer, str(target))] = floor
             if target not in documents:
                 documents[target] = _read_document(target)
             return str(target), documents[target]
@@ -44,7 +50,9 @@ class TemplateContractLoader:
             documents[path],
             document_id=str(path),
             read_document=read_reference,
-            identify_document=lambda name: str(Path(name).resolve(strict=True)),
+            expansion_guard=lambda location, ancestors: _expanding_alias_cycle(
+                location, ancestors, reference_floors
+            ),
         )
         Draft202012Validator.check_schema(resolved)
         frozen = freeze_json(resolved)
@@ -74,7 +82,7 @@ class TemplateContractLoader:
             raise ValueError("schema_shared_definitions_required")
         return parts[0]
 
-    def _reference_path(self, referrer: Path, reference: str) -> Path:
+    def _reference_path(self, referrer: Path, reference: str) -> tuple[Path, Path]:
         uri = urlsplit(reference)
         if uri.scheme or uri.netloc or uri.query or uri.fragment:
             raise ValueError("external_schema_reference")
@@ -87,7 +95,14 @@ class TemplateContractLoader:
         source_owner = self._owner(referrer)
         if owner != source_owner and owner != "shared":
             raise ValueError("schema_dependency_direction")
-        return target
+        # Track the lowest lexical directory visited before dot-segment normalization.
+        cursor = referrer.parent
+        floor = cursor
+        for part in PurePosixPath(decoded).parts:
+            cursor = cursor.parent if part == ".." else cursor / part
+            if len(cursor.parts) < len(floor.parts):
+                floor = cursor
+        return target, floor
 
 
 def _read_document(path: Path) -> dict[str, JsonValue]:
@@ -107,3 +122,38 @@ def _unique_object(pairs: list[tuple[str, JsonValue]]) -> dict[str, JsonValue]:
             raise ValueError("duplicate_schema_key")
         result[key] = value
     return result
+
+
+def _expanding_alias_cycle(
+    location: SchemaLocation,
+    ancestors: tuple[SchemaLocation, ...],
+    reference_floors: dict[tuple[str, str], Path],
+) -> bool:
+    """Reject repeatable directory-alias growth, not terminating physical revisits.
+
+    A repeated physical schema and pointer with the same physical base can repeat
+    indefinitely when its logical base grew below the previous base and the intervening
+    walk never climbed outside that base. A walk that consumes ancestor segments can
+    instead terminate and must remain governed by ordinary logical URI cycle detection.
+    """
+    current = Path(location[0])
+    physical = current.resolve(strict=True)
+    physical_base = current.parent.resolve(strict=True)
+    for index, (document_id, pointer) in enumerate(ancestors):
+        previous = Path(document_id)
+        base = previous.parent
+        walk = (*ancestors[index:], location)
+        if (
+            pointer == location[1]
+            and current.parent != base
+            and current.parent.is_relative_to(base)
+            and previous.resolve(strict=True) == physical
+            and base.resolve(strict=True) == physical_base
+            and all(
+                reference_floors[(source[0], target[0])].is_relative_to(base)
+                for source, target in pairwise(walk)
+                if source[0] != target[0]
+            )
+        ):
+            return True
+    return False

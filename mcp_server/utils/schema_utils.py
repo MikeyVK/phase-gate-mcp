@@ -12,6 +12,8 @@ from pydantic import JsonValue
 
 JsonSchema: TypeAlias = dict[str, JsonValue] | bool
 SchemaDocumentReader: TypeAlias = Callable[[str, str], tuple[str, JsonSchema]]
+SchemaLocation: TypeAlias = tuple[str, tuple[str, ...]]
+ExpansionGuard: TypeAlias = Callable[[SchemaLocation, tuple[SchemaLocation, ...]], bool]
 
 _SCHEMA_MAPS = frozenset(
     {"$defs", "definitions", "properties", "patternProperties", "dependentSchemas"}
@@ -47,7 +49,7 @@ def resolve_json_schema(
     *,
     document_id: str = "",
     read_document: SchemaDocumentReader | None = None,
-    identify_document: Callable[[str], str] | None = None,
+    expansion_guard: ExpansionGuard | None = None,
 ) -> JsonSchema:
     """Prepare finite static references; the injected reader owns document admission.
 
@@ -55,7 +57,7 @@ def resolve_json_schema(
     values remain data. Referenced assertions occupy their own allOf branch so siblings
     cannot overwrite them or change the scope of unevaluated-member constraints.
     """
-    resolver = _SchemaResolver(document_id, copy.deepcopy(schema), read_document, identify_document)
+    resolver = _SchemaResolver(document_id, copy.deepcopy(schema), read_document, expansion_guard)
     return resolver.resolve(document_id)
 
 
@@ -75,12 +77,13 @@ class _SchemaResolver:
         document_id: str,
         schema: JsonSchema,
         reader: SchemaDocumentReader | None,
-        identify_document: Callable[[str], str] | None,
+        expansion_guard: ExpansionGuard | None,
     ) -> None:
         self._documents = {document_id: schema}
         self._reader = reader
-        self._identify_document = identify_document or (lambda name: name)
-        self._active: set[tuple[str, tuple[str, ...]]] = set()
+        self._expansion_guard = expansion_guard
+        self._active: set[SchemaLocation] = set()
+        self._stack: list[SchemaLocation] = []
 
     def resolve(self, document_id: str) -> JsonSchema:
         result = self._walk(self._documents[document_id], document_id)
@@ -96,14 +99,18 @@ class _SchemaResolver:
     ) -> JsonSchema:
         if isinstance(node, bool):
             return node
-        location = (self._identify_document(document_id), pointer)
-        if location in self._active:
+        location = (document_id, pointer)
+        if location in self._active or (
+            self._expansion_guard is not None
+            and self._expansion_guard(location, tuple(self._stack))
+        ):
             raise ValueError("cyclic_schema_reference")
         if _FORBIDDEN.intersection(node):
             raise ValueError("unsupported_schema_keyword")
         if "$schema" in node and pointer:
             raise ValueError("subschema_dialect")
         self._active.add(location)
+        self._stack.append(location)
         try:
             result = self._children(node, document_id, pointer)
             if "$ref" not in node:
@@ -121,6 +128,7 @@ class _SchemaResolver:
             return result
         finally:
             self._active.remove(location)
+            self._stack.pop()
 
     def _children(
         self, node: dict[str, JsonValue], document_id: str, pointer: tuple[str, ...]

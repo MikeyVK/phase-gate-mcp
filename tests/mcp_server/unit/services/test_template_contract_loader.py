@@ -409,9 +409,9 @@ class TestTemplateContractLoader:
         with pytest.raises(ValueError, match="cyclic_schema_reference"):
             TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
 
-
-
-    def test_finite_alias_chain_can_revisit_one_physical_document(self, suite_roots: SuiteRoots) -> None:
+    def test_finite_alias_chain_can_revisit_one_physical_document(
+        self, suite_roots: SuiteRoots
+    ) -> None:
         """A physical repeat is not a cycle when URI resolution climbs to a terminal schema."""
         root = suite_roots.templates
         documents: dict[str, dict[str, JsonValue]] = {
@@ -431,6 +431,27 @@ class TestTemplateContractLoader:
         actual = Draft202012Validator(thaw_json(snapshot))
         assert actual.is_valid("text")
         assert not actual.is_valid(1)
+
+    def test_alias_chain_that_leaves_and_reenters_base_can_terminate(
+        self, suite_roots: SuiteRoots
+    ) -> None:
+        """Final path nesting does not prove that the reference walk stayed below its base."""
+        root = suite_roots.templates
+        documents: dict[str, dict[str, JsonValue]] = {
+            "pkg/context.schema.json": {"$schema": DRAFT_2020_12, "$ref": "a/node.json"},
+            "pkg/a/node.json": {"$schema": DRAFT_2020_12, "$ref": "../../pkg/a/alias/node.json"},
+            "pkg/pkg/a/alias/node.json": {"$schema": DRAFT_2020_12, "type": "string"},
+        }
+        write_schemas(root, documents)
+        link_directory(root / "pkg/a/alias", root / "pkg/a")
+        documents["pkg/a/alias/node.json"] = documents["pkg/a/node.json"]
+        expected = oracle(root, documents, "pkg/context.schema.json")
+        assert expected.is_valid("text")
+        snapshot = TemplateContractLoader(root).load_context_schema(Path("pkg/context.schema.json"))
+        actual = Draft202012Validator(thaw_json(snapshot))
+        assert actual.is_valid("text")
+        assert not actual.is_valid(1)
+
 
 def link_directory(link: Path, target: Path) -> None:
     """Exercise real directory aliases on both Windows and POSIX."""
