@@ -14,10 +14,12 @@ Extracted from mcp_server/scaffolding/renderer.py for reusability (Issue #108).
 """
 
 import re
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, Template
+from pydantic import JsonValue
 
 
 class TemplateEngine:
@@ -32,6 +34,7 @@ class TemplateEngine:
         template_root: Path | str | None = None,
         *,
         template_dir: Path | str | None = None,
+        environment: Environment | None = None,
     ) -> None:
         """Initialize the template engine.
 
@@ -42,6 +45,13 @@ class TemplateEngine:
         Raises:
             ValueError: If template_root does not exist or both/neither parameters provided
         """
+        if environment is not None:
+            if template_root is not None or template_dir is not None:
+                raise ValueError("Conflicting template source authorities")
+            self.template_root: Path | None = None
+            self._env: Environment | None = environment
+            return
+
         # Support both parameter names for backwards compatibility
         if template_root is not None and template_dir is not None:
             raise ValueError("Cannot specify both template_root and template_dir")
@@ -49,12 +59,14 @@ class TemplateEngine:
             raise ValueError("Must specify either template_root or template_dir")
 
         root = template_root if template_root is not None else template_dir
-        self.template_root = Path(root)  # type: ignore[arg-type]
+        if root is None:
+            raise ValueError("Template root is required")
+        self.template_root = Path(root)
 
         if not self.template_root.exists():
             raise ValueError(f"Template root does not exist: {self.template_root}")
 
-        self._env: Environment | None = None
+        self._env = None
 
     @property
     def env(self) -> Environment:
@@ -67,6 +79,8 @@ class TemplateEngine:
             Configured Jinja2 Environment
         """
         if self._env is None:
+            if self.template_root is None:
+                raise ValueError("Template environment is required")
             self._env = Environment(
                 loader=FileSystemLoader(str(self.template_root)),
                 trim_blocks=True,
@@ -117,6 +131,10 @@ class TemplateEngine:
         template = self.get_template(template_name)
         return str(template.render(**kwargs))
 
+    def render_context(self, template_name: str, context: Mapping[str, JsonValue]) -> str:
+        """Render an explicit content/provenance envelope without transforming its values."""
+        return str(self.get_template(template_name).render(context))
+
     def list_templates(self) -> list[str]:
         """List all available templates.
 
@@ -129,6 +147,8 @@ class TemplateEngine:
             >>> print(templates)
             ['concrete/dto.py.jinja2', 'tier0_base_artifact.jinja2', ...]
         """
+        if self.template_root is None:
+            return self.env.list_templates()
         templates: list[str] = []
         if self.template_root.exists():
             for path in self.template_root.rglob("*.jinja2"):

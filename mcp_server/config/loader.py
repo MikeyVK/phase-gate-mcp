@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 import yaml
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from mcp_server.config.schemas import (
     ArtifactRegistryConfig,
@@ -26,6 +26,11 @@ from mcp_server.config.schemas import (
     ScopeConfig,
     WorkflowConfig,
     WorkphasesConfig,
+)
+from mcp_server.config.schemas.template_suite import (
+    TemplateManifest,
+    TemplatePackageVersion,
+    TemplatePolicy,
 )
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
@@ -119,6 +124,21 @@ class ConfigLoader:
         if self._context_schema_reader is None:
             raise ConfigError("template_context_reader_required")
         return self._context_schema_reader(schema_path)
+
+    def load_template_manifest(self, path: Path) -> TemplateManifest:
+        """Read the closed package manifest without legacy registry/version fields."""
+        data, _ = self._load_yaml("manifest.yaml", config_path=path)
+        return TemplateManifest.model_validate(data)
+
+    def load_template_policy(self, path: Path) -> TemplatePolicy:
+        """Read package-owned evidence selection and persistence policy."""
+        data, _ = self._load_yaml("policy.yaml", config_path=path)
+        return TemplatePolicy.model_validate(data)
+
+    def load_template_version(self, path: Path) -> str:
+        """Read one canonical SemVer label, permitting one ordinary final newline."""
+        value = path.read_text(encoding="utf-8").removesuffix("\r\n").removesuffix("\n")
+        return TypeAdapter(TemplatePackageVersion).validate_python(value)
 
     def load_git_config(self, config_path: Path | None = None) -> GitConfig:
         data, resolved_path = self._load_yaml("git.yaml", config_path=config_path)

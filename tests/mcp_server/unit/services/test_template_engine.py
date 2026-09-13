@@ -10,7 +10,7 @@ to backend/services/template_engine.py for reusability.
 import tempfile
 
 import pytest
-from jinja2 import TemplateNotFound, UndefinedError
+from jinja2 import DictLoader, Environment, StrictUndefined, TemplateNotFound, UndefinedError
 
 from mcp_server.services.template_engine import TemplateEngine
 from tests.mcp_server.test_support import get_template_root
@@ -264,8 +264,6 @@ class TestTemplateEngineDiscovery:
 
 def test_injected_environment_renders_explicit_content_without_file_roots() -> None:
     """The catalog supplies its captured templates and a separate content namespace."""
-    from jinja2 import DictLoader, Environment, StrictUndefined
-
     environment = Environment(
         loader=DictLoader({"selected": "{{ content.flag }}|{{ content.count }}"}),
         undefined=StrictUndefined,
@@ -277,7 +275,5 @@ def test_injected_environment_renders_explicit_content_without_file_roots() -> N
 
 def test_injected_environment_cannot_be_combined_with_a_filesystem_root() -> None:
     """One engine has one explicit source authority."""
-    from jinja2 import Environment
-
     with pytest.raises(ValueError):
         TemplateEngine(template_root=get_template_root(), environment=Environment())

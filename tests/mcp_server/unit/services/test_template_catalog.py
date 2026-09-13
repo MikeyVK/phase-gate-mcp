@@ -1,0 +1,220 @@
+# tests/mcp_server/unit/services/test_template_catalog.py
+# template=unit_test version=8825c0bb created=2026-09-13T16:00Z updated=
+"""Admit real package files and exercise shared catalog/schema/renderer selections."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import FrozenInstanceError
+from functools import partial
+from types import MappingProxyType
+
+import pytest
+from jinja2 import DictLoader, Environment, StrictUndefined
+from jsonschema.exceptions import ValidationError as ContextError
+from pydantic import ValidationError
+
+from mcp_server.config.loader import ConfigLoader
+from mcp_server.config.validator import ConfigValidator
+from mcp_server.core.exceptions import MCPError
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, thaw_json
+from mcp_server.services.template_catalog import (
+    TemplateCatalog,
+    TemplateCatalogLoader,
+    TemplateCatalogRenderer,
+)
+from mcp_server.services.template_contract_loader import DRAFT_2020_12, TemplateContractLoader
+from mcp_server.services.template_engine import TemplateEngine
+from mcp_server.services.template_graph import TemplateGraphResolver
+from tests.mcp_server.fixtures.suite_roots import SuiteRoots, write_package_tree
+
+
+def package_files(directory: str, template_id: str) -> dict[str, bytes]:
+    """Return explicitly authored test contracts, without fixture-level config fallback."""
+    schema = {
+        "$schema": DRAFT_2020_12,
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "value": {"type": "integer"},
+            "flag": {"type": "boolean"},
+            "empty": {"type": ["string", "null"]},
+        },
+        "required": ["value", "flag"],
+    }
+    return {
+        f"{directory}/manifest.yaml": (
+            f"template_id: {template_id}\npurpose: Test artifact\n".encode()
+        ),
+        f"{directory}/.version": b"1.2.3\n",
+        f"{directory}/policy.yaml": b"output_profile: text\npersistence: workspace\n",
+        f"{directory}/context.schema.json": json.dumps(schema).encode(),
+        f"{directory}/template.jinja2": b'{% extends "shared/templates/base.jinja2" %}'
+        b"{% block body %}{{ content.value }}|{{ content.flag }}|"
+        b"{% if content.empty is not defined %}absent{% elif content.empty is none %}null"
+        b"{% else %}present:{{ content.empty }}{% endif %}{% endblock %}",
+        "shared/templates/base.jinja2": b"BEGIN[{% block body %}{% endblock %}]END",
+    }
+
+
+def catalog_loader(roots: SuiteRoots) -> TemplateCatalogLoader:
+    reader = TemplateContractLoader(roots.templates)
+    config = ConfigLoader(
+        roots.config, roots.templates, context_schema_reader=reader.load_context_schema
+    )
+    validator = ConfigValidator()
+    graph = TemplateGraphResolver(roots.templates, Environment().parse)
+    return TemplateCatalogLoader(
+        roots.templates,
+        read_manifest=config.load_template_manifest,
+        read_version=config.load_template_version,
+        read_policy=config.load_template_policy,
+        read_schema=config.load_template_context_schema,
+        validate_policy=partial(validator.validate_template_policy, profiles=frozenset({"text"})),
+        resolve_graph=graph.resolve,
+    )
+
+
+def catalog_renderer(catalog: TemplateCatalog) -> TemplateCatalogRenderer:
+    sources = MappingProxyType(
+        {source.name: source.content.decode("utf-8-sig") for source in catalog.graph.sources}
+    )
+    engine = TemplateEngine(
+        environment=Environment(
+            loader=DictLoader(sources),
+            undefined=StrictUndefined,
+        )
+    )
+    return TemplateCatalogRenderer(
+        catalog,
+        validate_context=ConfigValidator().validate_template_context,
+        render_context=engine.render_context,
+    )
+
+
+class TestTemplateCatalog:
+    @pytest.mark.parametrize(
+        ("extra", "suffix"),
+        [({}, "absent"), ({"empty": ""}, "present:"), ({"empty": None}, "null")],
+    )
+    def test_one_snapshot_drives_selection_schema_and_rendering(
+        self,
+        suite_roots: SuiteRoots,
+        extra: dict[str, str | None],
+        suffix: str,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        write_package_tree(
+            suite_roots.templates, package_files("opaque-location", "custom.artifact")
+        )
+        loader = catalog_loader(suite_roots)
+        monkeypatch.chdir(suite_roots.temp)
+        catalog = loader.load()
+        selected = catalog.get("custom.artifact")
+        assert selected.renderer == "opaque-location/template.jinja2"
+        assert selected.manifest.purpose == "Test artifact"
+        assert selected.version == "1.2.3"
+        assert selected.policy.output_profile == "text"
+        assert isinstance(thaw_json(selected.schema), dict)
+        renderer = catalog_renderer(catalog)
+        context = {"value": 0, "flag": False, **extra}
+        before = dict(context)
+        assert (
+            renderer.render("custom.artifact", context, FrozenJsonObject(()))
+            == f"BEGIN[0|False|{suffix}]END"
+        )
+        assert context == before
+        with pytest.raises(ContextError):
+            renderer.render(
+                "custom.artifact", {**context, "file_name": "hidden"}, FrozenJsonObject(())
+            )
+        with pytest.raises(MCPError, match="template_selection_unknown"):
+            catalog.get("opaque-location")
+        with pytest.raises(FrozenInstanceError):
+            catalog.packages = ()
+        write_package_tree(suite_roots.templates, {"opaque-location/template.jinja2": b"Updated"})
+        assert (
+            renderer.render("custom.artifact", context, FrozenJsonObject(()))
+            == f"BEGIN[0|False|{suffix}]END"
+        )
+        assert (
+            catalog_renderer(loader.load()).render("custom.artifact", context, FrozenJsonObject(()))
+            == "Updated"
+        )
+
+    @pytest.mark.parametrize(
+        "missing",
+        ["manifest.yaml", ".version", "policy.yaml", "context.schema.json", "template.jinja2"],
+    )
+    def test_missing_package_members_prevent_publication(
+        self, suite_roots: SuiteRoots, missing: str
+    ) -> None:
+        files = package_files("pkg", "custom")
+        del files[f"pkg/{missing}"]
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises(MCPError, match="template_package_member_invalid"):
+            catalog_loader(suite_roots).load()
+
+    @pytest.mark.parametrize(
+        ("member", "payload"),
+        [
+            ("manifest.yaml", b"template_id: custom\npurpose: Artifact\ntype_id: legacy"),
+            ("policy.yaml", b"output_profile: text\npersistence: inline"),
+            (".version", b"01.2.3"),
+            (".version", b" 1.2.3\n"),
+            ("context.schema.json", b"{}"),
+        ],
+    )
+    def test_invalid_authored_contracts_fail(
+        self, suite_roots: SuiteRoots, member: str, payload: bytes
+    ) -> None:
+        files = package_files("pkg", "custom")
+        files[f"pkg/{member}"] = payload
+        write_package_tree(suite_roots.templates, files)
+        with pytest.raises((ValueError, ValidationError)):
+            catalog_loader(suite_roots).load()
+
+    def test_duplicate_identity_and_unknown_profile_fail(self, suite_roots: SuiteRoots) -> None:
+        write_package_tree(
+            suite_roots.templates,
+            {
+                **package_files("one", "same-id"),
+                **package_files("two", "same-id"),
+            },
+        )
+        with pytest.raises(MCPError, match="template_identity_duplicate"):
+            catalog_loader(suite_roots).load()
+        write_package_tree(
+            suite_roots.templates,
+            {
+                "two/manifest.yaml": b"template_id: second-id\npurpose: Artifact",
+                "two/policy.yaml": b"output_profile: missing\npersistence: workspace",
+            },
+        )
+        with pytest.raises(MCPError, match="template_output_profile_unknown"):
+            catalog_loader(suite_roots).load()
+
+    def test_undeclared_direct_directory_and_parallel_inventory_fail(
+        self, suite_roots: SuiteRoots
+    ) -> None:
+        write_package_tree(suite_roots.templates, package_files("pkg", "custom"))
+        (suite_roots.templates / "unregistered").mkdir()
+        with pytest.raises(MCPError, match="template_package_member_invalid"):
+            catalog_loader(suite_roots).load()
+        write_package_tree(suite_roots.templates, {"templates.yaml": b"templates: []"})
+        with pytest.raises(MCPError, match="duplicate_template_inventory"):
+            catalog_loader(suite_roots).load()
+
+    def test_direct_files_cannot_be_silently_omitted_from_inventory(
+        self, suite_roots: SuiteRoots
+    ) -> None:
+        """Every non-shared direct child must be a complete concrete package."""
+        write_package_tree(
+            suite_roots.templates,
+            {
+                **package_files("pkg", "custom"),
+                "incomplete-package.txt": b"not a package",
+            },
+        )
+        with pytest.raises(MCPError, match="template_package_directory_required"):
+            catalog_loader(suite_roots).load()

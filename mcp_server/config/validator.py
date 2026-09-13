@@ -17,6 +17,7 @@ from __future__ import annotations
 from jsonschema import Draft202012Validator
 
 from mcp_server.config.schemas.contracts_config import ContractsConfig
+from mcp_server.config.schemas.template_suite import TemplatePolicy
 from mcp_server.core.exceptions import ConfigError
 from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json, thaw_json
 from mcp_server.schemas import (
@@ -40,6 +41,11 @@ class ConfigValidator:
             raise ValueError("template_context_object_required")
         Draft202012Validator(thaw_json(schema)).validate(thaw_json(frozen))
         return frozen
+
+    def validate_template_policy(self, policy: TemplatePolicy, profiles: frozenset[str]) -> None:
+        """Require a known output profile from the composition-supplied capability authority."""
+        if policy.output_profile not in profiles:
+            raise ConfigError("template_output_profile_unknown")
 
     def validate_startup(
         self,
