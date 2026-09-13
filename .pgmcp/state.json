@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 3,
-  "last_cycle": 2,
+  "current_cycle": 4,
+  "last_cycle": 3,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -18,6 +18,12 @@
       "name": "Contained JSON Schema preparation",
       "forced": false,
       "entered": "2026-09-13T15:14:25.450824+00:00"
+    },
+    {
+      "cycle_number": 4,
+      "name": "Parser-supported template dependency graph",
+      "forced": false,
+      "entered": "2026-09-13T15:48:50.952501+00:00"
     }
   ],
   "required_phases": [
@@ -173,5 +179,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "refactor"
+  "current_sub_phase": "red"
 }
