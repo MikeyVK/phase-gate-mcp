@@ -882,17 +882,17 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 - **Semantic predecessors:** [CY013](planning-execution.md#cy013), [CY016](planning-execution.md#cy016), [CY017](planning-execution.md#cy017).
 - **Shared-file predecessors:** [CY021](planning-execution.md#cy021), [CY020](planning-execution.md#cy020).
 - **Authority:** [DI-05 §7.20 B/E/F](design-execution-adapters.md).
-- **CY022.D1 — bounded result:** Node Pyright adapter, workspace module resolution and target py311/Windows settings. Edit pyrightconfig.json and remove only duplicate tool.pyright after value proof in this cycle.
-- **Preserved behavior:** Native JSON/text severity/location facts and explicit --warnings; remove duplicate TOML authority only at cutover.
-- **CY022.D2 — independent evidence:** Direct native/adapter output modes, exits and missing dependencies; no synthetic findings or severity remapping.
+- **CY022.D1 — bounded result:** Implement the Node Pyright adapter and workspace module resolution. Apply only the DI-05-approved Python 3.11/Windows settings in pyrightconfig.json, retaining diagnostic toggles/execution environments. Prove the preserved values with and without the duplicate [tool.pyright] section on isolated configuration copies. Do not edit pyproject.toml here; CY072 alone owns deletion of [tool.pyright].
+- **Preserved behavior:** Native JSON/text severity/location facts, explicit --warnings and the effective legacy MCP target remain unchanged. The approved editor Python-target change belongs to this cycle; the live duplicate TOML section remains byte-for-byte intact until CY072.
+- **CY022.D2 — independent evidence:** Direct native/adapter output modes, exits and missing dependencies; no synthetic findings or severity remapping. Compare actual effective native settings before/after duplicate removal on isolated copies, including reportFunctionMemberAccess=false, Python 3.11/Windows, diagnostic toggles and warning handling. Prove the working legacy call still resolves its approved settings; record the source/config/native-version evidence for CY070.
 - **Rollback:** R-CY022: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY022.D1 and CY022.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
 ### Explicit write-set
 
-Existing source IDs: C006, S008, T115, T116, T120, T121, T122, T125, T128, T143.
+Existing source IDs: S008, T115, T116, T120, T121, T122, T125, T128, T143.
 
-Read-only review/preservation IDs: None. For a previously deleted source this means absence/import-closure review, never recreation.
+Read-only review/preservation IDs: C006. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -1096,7 +1096,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 **Pytest adapter and native settings**
 
 - **Semantic predecessors:** [CY013](planning-execution.md#cy013), [CY014](planning-execution.md#cy014), [CY015](planning-execution.md#cy015).
-- **Shared-file predecessors:** [CY022](planning-execution.md#cy022), [CY026](planning-execution.md#cy026).
+- **Shared-file predecessors:** [CY021](planning-execution.md#cy021), [CY026](planning-execution.md#cy026).
 - **Authority:** [DI-05 §§7.15,7.20 B/E/F](design-execution-adapters.md).
 - **CY027.D1 — bounded result:** test/v1 Pytest package, scoped recording double and declared native test/coverage defaults. Edit only native Pytest/coverage sections of pyproject.toml; no default coverage binding.
 - **Preserved behavior:** Collection/failure/skip/no-tests=passed, LF/CRLF, --lf, verbosity, xdist; source=mcp_server and coverage 90 only on request.
@@ -1265,4 +1265,3 @@ Named durable proof files:
 Existing affected test/helper sources: T048, T064, T109, T110, T112, T136. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY030, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
-

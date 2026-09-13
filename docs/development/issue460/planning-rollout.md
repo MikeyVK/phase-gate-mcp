@@ -338,12 +338,12 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 **Prepared placement and rollout configuration**
 
-- **Semantic predecessors:** [CY052](planning-artifacts-mutation.md#cy052), [CY057](planning-artifacts-mutation.md#cy057), [CY058](planning-artifacts-mutation.md#cy058), [CY059](planning-artifacts-mutation.md#cy059), [CY060](planning-artifacts-mutation.md#cy060), [CY061](planning-artifacts-mutation.md#cy061), [CY062](planning-rollout.md#cy062), [CY067](planning-rollout.md#cy067).
+- **Semantic predecessors:** [CY052](planning-artifacts-mutation.md#cy052), [CY057](planning-artifacts-mutation.md#cy057), [CY058](planning-artifacts-mutation.md#cy058), [CY059](planning-artifacts-mutation.md#cy059), [CY060](planning-artifacts-mutation.md#cy060), [CY061](planning-artifacts-mutation.md#cy061), [CY062](planning-rollout.md#cy062), [CY067](planning-rollout.md#cy067), [CY022](planning-execution.md#cy022).
 - **Shared-file predecessors:** None.
 - **Authority:** [DI-04 §3.3, DI-05 §7.20 and DI-06 §§7.7/9](design-integration-review.md).
-- **CY070.D1 — bounded result:** Prepare the exact replacement artifacts.yaml and presentation/root/version compatibility changes against actual owner configuration; reconcile every target profile and installed-source declaration. Keep incompatible live config bytes unchanged until activation.
+- **CY070.D1 — bounded result:** Prepare the exact replacement artifacts.yaml and presentation/root/version compatibility changes against actual owner configuration; reconcile every target profile and installed-source declaration. Keep incompatible live config bytes unchanged until activation. Include the exact [tool.pyright]-only deletion hunk in rollout-config-input.md using CY022 preserved-value evidence; no other TOML settings may be removed. Capture the current section's preimage and resulting native-value checks for CY071 rehearsal and CY072 application.
 - **Preserved behavior:** Actual configuration/customization remains owner-controlled; first-v3 actual is not a fresh install, and no native dependency or missing profile is silently filled.
-- **CY070.D2 — independent evidence:** Apply the exact prospective config diff on isolated copies of actual config; public target loaders accept every reference and reject obsolete inputs. Record exact preimage/postimage hashes and mismatch refusal; no whole-file overwrite of concurrent edits.
+- **CY070.D2 — independent evidence:** Apply the exact prospective config diff on isolated copies of actual config; public target loaders accept every reference and reject obsolete inputs. Record exact preimage/postimage hashes and mismatch refusal; no whole-file overwrite of concurrent edits. Verify Pyright preserved-value evidence against the current pyproject.toml/pyrightconfig.json pair; drift requires fresh CY022-scoped value proof before rehearsal.
 - **Rollback:** R-CY070: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY070.D1 and CY070.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
@@ -351,7 +351,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 Existing source IDs: None.
 
-Read-only review/preservation IDs: C004, C005, C006, C063, C106, S017, S051. For a previously deleted source this means absence/import-closure review, never recreation.
+Read-only review/preservation IDs: C004, C005, C006, C063, C106, S008, S017, S051. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -383,7 +383,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 - **Authority:** [DI-05 §7.6, DI-06 §7.5 and DI-08 §7.4](design-integration-review.md).
 - **CY071.D1 — bounded result:** Add the final explicit runtime composition at bootstrap without changing its normal entrypoint yet. Compose one target ToolAssembly with the six target schema/mutation/check/test/fix tools, unchanged unrelated tools, explicit root/config/installation readers and the DI-06 startup lock. Never union V2 and V3 same-name tools.
 - **Preserved behavior:** The current normal entrypoint still constructs only its working legacy assembly. New startup takes the activation lock, rejects unresolved recovery without mutation, preserves unrelated enforcement/Git/GitHub behavior and probes no native availability.
-- **CY071.D2 — independent evidence:** Short-lived real process/MCP handshake on explicit roots and a separately installed candidate; final planned dispatch diff applied only to an isolated source copy. Match interpreter/import/CWD/roots/relevant launch environment to the active launcher rather than inheriting PytestRunner PATH blindly. Prove current normal startup remains usable, target no duplicate names, init/startup and upgrade/owner-migration/startup, concurrent startup exclusion, unresolved recovery refusal and old immutable catalog stability. Record exact rehearsed input hashes.
+- **CY071.D2 — independent evidence:** Short-lived real process/MCP handshake on explicit roots and a separately installed candidate; final planned dispatch diff applied only to an isolated source copy. Match interpreter/import/CWD/roots/relevant launch environment to the active launcher rather than inheriting PytestRunner PATH blindly. Prove current normal startup remains usable, target no duplicate names, init/startup and upgrade/owner-migration/startup, concurrent startup exclusion, unresolved recovery refusal and old immutable catalog stability. Record exact rehearsed input hashes. Rehearse the exact [tool.pyright] deletion prepared by CY070 and recheck the native values already proved by CY022; the live TOML section is still retained.
 - **Rollback:** R-CY071: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY071.D1 and CY071.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
@@ -391,7 +391,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 Existing source IDs: C055, C057, C058, C060, C085, C107, S012, S013, S016, S037, S049, S050, T048, T060, T064, T067, T068, T069, T073, T074, T075, T091, T095, T097, T098, T099, T109, T110, T134.
 
-Read-only review/preservation IDs: C063, C064, C066, C086, C087, C093, C094, C096, C097, C098, S017, S018. For a previously deleted source this means absence/import-closure review, never recreation.
+Read-only review/preservation IDs: C063, C064, C066, C086, C087, C093, C094, C096, C097, C098, S008, S017, S018. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -426,9 +426,9 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 - **Semantic predecessors:** [CY071](planning-rollout.md#cy071).
 - **Shared-file predecessors:** [CY052](planning-artifacts-mutation.md#cy052), [CY062](planning-rollout.md#cy062), [CY061](planning-artifacts-mutation.md#cy061), [CY067](planning-rollout.md#cy067), [CY026](planning-execution.md#cy026), [CY028](planning-execution.md#cy028), [CY030](planning-execution.md#cy030), [CY012](planning-execution.md#cy012).
 - **Authority:** [DI-01/04/05 cutover; DI-06 §9; DI-07 §7.3](design-suite-resolution.md).
-- **CY072.D1 — bounded result:** Apply only the previously rehearsed activation diff: normal bootstrap/CLI dispatch, owned config/root/version selection, removal of quality.yaml from active config, and prepared workflow/host source-copy changes. No new execution, migration, schema, presenter or test-helper algorithm is introduced here.
+- **CY072.D1 — bounded result:** Apply only the previously rehearsed activation diff: normal bootstrap/CLI dispatch, owned config/root/version selection, removal of quality.yaml from active config, and prepared workflow/host source-copy changes. No new execution, migration, schema, presenter or test-helper algorithm is introduced here. This cycle is the sole owner of removing duplicate [tool.pyright] from live pyproject.toml: apply only CY070's recorded hunk already rehearsed by CY071.
 - **Preserved behavior:** Unrelated tools/enforcement/cache/state; new names only, run_tests new contract, actionable V2 config rejection, no aliases/dual reads.
-- **CY072.D2 — independent evidence:** Preimage hashes match the rehearsed set; otherwise stop and refresh only invalidated preparation evidence. Migrate only this repository's owned root by the approved explicit DI-06 route with captured code/config/suite/installation recovery basis. Run the real target entrypoint against the landed bytes before restart. While the existing MCP route remains available correct any failures; then one deliberate restart_server boundary, client rediscovery and real V3 schema/scaffold/edit/check/test/fix calls with separately identified evidence. Verify fresh init/startup and owner-migration/startup. If MCP is absent/degraded after restart, stop mutations and use the pre-recorded existing host/client recovery action; no automatic rollback claim.
+- **CY072.D2 — independent evidence:** Preimage hashes match the rehearsed set; otherwise stop and refresh only invalidated preparation evidence. Migrate only this repository's owned root by the approved explicit DI-06 route with captured code/config/suite/installation recovery basis. Run the real target entrypoint against the landed bytes before restart. While the existing MCP route remains available correct any failures; then one deliberate restart_server boundary, client rediscovery and real V3 schema/scaffold/edit/check/test/fix calls with separately identified evidence. Verify fresh init/startup and owner-migration/startup. If MCP is absent/degraded after restart, stop mutations and use the pre-recorded existing host/client recovery action; no automatic rollback claim. Verify the duplicate TOML section is absent and Pyright still uses the preserved pyrightconfig.json values; drift from the rehearsed hunk stops activation.
 - **Rollback:** R-CY072: record the exact pre-cycle SHA, listed dirty-file preimages and cycle-owned inverse diff; apply the hub's scoped recovery procedure. Revert newly introduced files only if still cycle-owned. F-10 activation recovery and F-20 partial-write behavior remain separate.
 - **Stop/go boundary:** CY072.D1 and CY072.D2 satisfy the card's exact scope, preserved behavior and Design authority; all semantic/shared-file predecessors are complete and still valid. Stop on any missing/failed observation, unresolved caller/import, unavailable native/startup prerequisite, out-of-set write, unusable recorded recovery route or Strategy/Design contradiction. Independent QA determines progression; file presence is not behavioral proof.
 
@@ -436,7 +436,7 @@ Apply hub V1–V6. Run focused surviving tests and gates on the surviving produc
 
 Existing source IDs: C003, C004, C005, C006, C008, C009, C010, C011, C012, C013, C014, C015, C016, C017, C019, C020, C021, C022, C023, C024, C025, C055, C056, C063, C106, C121, C122, C123, S051, T006, T091, T096.
 
-Read-only review/preservation IDs: S049, S050. For a previously deleted source this means absence/import-closure review, never recreation.
+Read-only review/preservation IDs: S008, S049, S050. For a previously deleted source this means absence/import-closure review, never recreation.
 
 New exact paths:
 
@@ -1869,4 +1869,3 @@ Named durable proof files:
 Existing affected test/helper sources: S012, S013, S016, T004, T014, T048, T074, T095, T097, T098, T106. Adapt or retire only their mapped Design claims. A removed test is not executable evidence: run its named successor, retain unrelated assertions, and record the removal/import-closure observation separately.
 
 Apply hub V1–V6. Run focused surviving tests and gates on the surviving production/test write-set; docs-only slices use semantic/link/source-copy checks. Capture exact calls, native/interpreter versions, cached result resources, per-claim outcomes, R-CY105, invalidated prior evidence and an outcome-neutral independent review request. No full-suite or branch-wide run belongs to this cycle.
-

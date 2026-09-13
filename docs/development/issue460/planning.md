@@ -2,8 +2,8 @@
 <!-- template=planning version=130ac5ea created=2026-09-13T09:32Z updated=2026-09-13 -->
 # Issue 460 Refactor Planning
 
-**Status:** DRAFT — producer planning; independent review requested  
-**Version:** 0.2  
+**Status:** DRAFT — independent Planning NOGO; targeted corrections in progress  
+**Version:** 0.3  
 **Last Updated:** 2026-09-13  
 **Baseline:** ea48558cf8034e9ab695fff675db7732c2ded660  
 **Workflow:** refactor / planning
@@ -110,7 +110,7 @@ The table shows semantic dependencies. Cards additionally enumerate immediate sh
 | [CY067](planning-rollout.md#cy067) | Prepared renewal CLI composition | CY066 |
 | [CY068](planning-rollout.md#cy068) | Workflow carriers and phase semantics | CY042, CY043, CY044, CY045, CY056, CY057, CY058, CY059, CY060, CY061 |
 | [CY069](planning-rollout.md#cy069) | Host instruction source parity | CY068 |
-| [CY070](planning-rollout.md#cy070) | Prepared placement and rollout configuration | CY052, CY057, CY058, CY059, CY060, CY061, CY062, CY067 |
+| [CY070](planning-rollout.md#cy070) | Prepared placement and rollout configuration | CY052, CY057, CY058, CY059, CY060, CY061, CY062, CY067, CY022 |
 | [CY071](planning-rollout.md#cy071) | Target startup composition and launch rehearsal | CY070, CY068, CY069, CY062, CY066, CY067 |
 | [CY072](planning-rollout.md#cy072) | Public V3 cutover | CY071 |
 | [CY073](planning-rollout.md#cy073) | Close legacy scaffold harness imports | CY072 |
@@ -222,16 +222,40 @@ Documentation does not postpone live-cutover guidance or the enumerated implemen
 
 ## Review record and current evidence
 
-- Frozen catalog reconciliation: exactly 126 consumers (the two governing standards are separately scoped), 151 tests/helpers and 79 suite sources; zero omissions, extras or duplicate existing paths. All 413 enumerated existing sources were found on disk. Every source has an accountable owner; all 279 proposed new paths have a unique creation owner and ordered revisits.
-- Dependency/ID check: 105 unique ordered cycle cards, 210 cycle deliverables plus 8 phase deliverables, 496 semantic/shared-file predecessor edges, zero forward/cyclic edges, unknown source IDs or broken cycle links. All named proof paths are existing sources or explicitly planned creations. Old cycle-number shorthand is absent.
-- Readback: all four cycle/index files match the authored text after newline normalization. Hub readback is recorded with the final write; only Planning documents and tooling-owned state/deliverables are committed.
-- Scaffold receipt: `pgmcp://cache/runs/8335d113013b444b8aaf161640e13225`. Strict safe-edit checks returned passed=true and written=true; final rollout/index receipts are `pgmcp://cache/runs/077032cdefd04df38e22eb74e6abcd0d` and `pgmcp://cache/runs/e832a8e8b132449fa0637a9e44ce7630`.
-- Operational projection: built directly from the final cards' number/name/D1/D2/preservation/dependencies/exit text and saved through save_planning_deliverables; the final merge-update receipt `pgmcp://cache/runs/37107206b0f74e9eb751b9b2aa10a210` confirms success, 105 cycles and 218 deliverables. The current retrieval DTO exposes counts/phases rather than full descriptions; projection equality was checked against the submitted structured payload.
-- The current validate_template tool rejects template_type=planning at input admission (it admits only worker/tool/dto/adapter/base). No Planning-template validation result is claimed. Scaffold and strict document-write validation succeeded; no tool change or artificial test was introduced to bypass this legacy limitation.
-- Internal findings-only reviewer confirmed closure of the final ArtifactManager-import episodes and corrected semantic proof references. This is a scoped producer preflight, not independent QA or workflow GO.
-- No implementation/native test, build, server restart or executable conformance was performed during Planning.
+Independent QA returned **NOGO for Implementation** on the preceding Planning commit, with two targeted blockers. Research and Design remain closed; this record does not infer a new QA verdict.
 
-The plan incorporates internal findings on single-server launch parity/recovery limits, late disk reads, first-deletion import/plugin closure, manager-dependent parser tests, validator DTO/eager exports, separate renderer stacks and truthful instruction activation. The original Design consolidation is unchanged.
+### P1 — Pyright removal ownership
+
+The corrected cards assign one live-removal owner: **CY072**. CY022 owns the adapter, the approved native/editor Python-target migration in pyrightconfig.json, and native preserved-value proof on isolated before/after configuration copies. It is read-only for pyproject.toml. CY070 records the exact [tool.pyright]-only deletion hunk; CY071 rehearses it; CY072 applies it and checks the retained values. C006/S008 write/review episodes and the affected shared-file predecessor CY027 are synchronized. The internal findings-only reviewer rechecked these exact boundaries and found no remaining textual contradiction; this does not provide runtime evidence or independent workflow GO. There is no new cycle, source path, runtime implementation or Research/Design decision.
+
+The operational delta for CY022/CY027/CY070/CY071/CY072 was submitted with the final card D1/D2, preservation, predecessors and exit text through update_planning_deliverables. Receipt `pgmcp://cache/runs/c52b190e41f1405b8b0fd006f4374661` reports success, 105 cycles and 218 deliverables. This receipt proves update acceptance/counts only; it does not prove full stored-state parity.
+
+### P2 — Independent stored-payload readback remains blocked
+
+Live get_project_plan(460) and its full resource `pgmcp://cache/runs/ca538f549df844f4b26f27c339abb8b5` expose only issue/workflow/phase status. The registered resources expose standards, phase status, run cache and GitHub issues; none exposes the stored cycle payload. Save/update outputs contain counts only. Run-cache URIs are transient and must not be treated as durable Planning evidence.
+
+Source inspection locates the omission at [GetProjectPlanTool](../../../mcp_server/tools/project_tools.py): [ProjectManager.get_project_plan](../../../mcp_server/managers/project_manager.py) already returns the stored planning_deliverables, but [ProjectPlanOutput](../../../mcp_server/schemas/tool_outputs.py) does not carry it. The previous card-to-submitted-payload comparison is producer evidence only. **Full independent equality with the actually stored payload has not been established.** No manual .pgmcp read, echoed request, test-output workaround or reconstructed mirror substitutes for that proof.
+
+The smallest durable tooling correction is to expose the stored value through the existing get_project_plan output and its normal cache resource, using the existing [CyclePlanningModel](../../../mcp_server/schemas/deliverables.py). It must include every cycle number/name, deliverable ID/description/validates and exit criterion, plus phase deliverables. A fresh call must regenerate the complete resource whenever an older cache entry expires.
+
+This correction requires an explicitly authorized exception to the active Planning instruction, which says “do not redesign or implement.” It is not silently added to the 105 implementation cycles, because QA needs the readback before those cycles may begin.
+
+Bounded proposed exception, not implemented:
+
+| Boundary | Proposed work |
+|---|---|
+| Stored-plan output | Add typed optional planning_deliverables to ProjectPlanOutput and populate only from the manager's persisted-data query; retain existing input, phase status and compact presentation. |
+| Read contract | Narrow the GetProjectPlanTool dependency to a read interface under core/interfaces; no second reader or storage authority. |
+| Query error path | Assess and correct only the existing get_project_plan corruption/version-mismatch backup side effect needed for CQS. Preserve command-side recovery intentionally; no general ProjectManager refactor. |
+| Proof | Focused public tool tests for complete/absent/invalid Planning; actual save/read on isolated roots and real wrapper/cache-resource fidelity; preserve normal text and unrelated phase behavior. |
+| Runtime availability | Run scoped tests/gates and normal startup smoke before one controlled server reload; afterward call get_project_plan(460), read its fresh full resource and compare all 105 stored cycles and 218 deliverables to the cards. |
+| Exclusions | No write path, storage migration, phase progression, new public tool/resource family, manual .pgmcp inspection or alteration of the approved refactor strategy. |
+
+### Retained Planning checks
+
+The census remains 126 consumers, 151 tests/helpers, 79 legacy sources and 57 additional existing dependencies; 279 proposed new paths retain their owners. There are 105 cycles and 497 forward semantic/shared-file edges after the targeted correction. Source-ID membership, unique cycle IDs, exact write/review episodes, cycle links and card-to-submitted-delta equality are checked separately from the still-missing stored-payload proof.
+
+Strict document edits are the applicable executed checks. The legacy validate_template tool does not admit Planning. No production/test implementation, native conformance, build or server restart has occurred for this correction. Internal review is findings-only and cannot lift the independent NOGO.
 
 ## Refactor / Planning Hand-over
 
@@ -245,11 +269,11 @@ This hub, its three cycle-card documents and exact path index. Research, Design 
 
 ### Evidence
 
-Exact census/dependency/path checks and card-to-submitted-payload parity are recorded above. Save/update receipts confirm 105 cycles and 218 deliverables; strict document edits succeeded. The legacy template validator does not admit Planning. No executed implementation conformance is claimed.
+Targeted Pyright ownership/predecessor and submitted-delta checks are recorded above. The receipt confirms update acceptance/counts only. Full stored-payload parity remains unverified and is an independent QA blocker.
 
 ### Open Work
 
-Independent Planning review; then implementation's explicitly owned native, launch/client and emergency-recovery prerequisites. No unresolved product-strategy choice is identified.
+P2 needs an authorized bounded tooling correction or a separately prepared issue before a complete PGMCP readback can be produced. Independent Planning NOGO remains in force. After both corrections, request only the targeted Pyright-boundary and actual stored-payload QA recheck.
 
 ### Review Request
 
