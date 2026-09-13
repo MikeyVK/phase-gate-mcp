@@ -20,6 +20,8 @@ from pydantic import BaseModel, ValidationError
 
 from mcp_server.core.interfaces.icore_tool import ICoreTool
 from mcp_server.core.interfaces.itool import ITool
+from mcp_server.core.interfaces.template_catalog import thaw_json
+from mcp_server.core.interfaces.tool_input_contract import IToolInputContract
 from mcp_server.core.operation_notes import NoteContext
 from mcp_server.schemas.error_outputs import ValidationErrorOutput
 from mcp_server.utils.schema_utils import resolve_schema_refs
@@ -28,8 +30,14 @@ from mcp_server.utils.schema_utils import resolve_schema_refs
 class InputValidationDecorator(ITool):
     """Bridges the untyped transport layer with the typed core execution layer."""
 
-    def __init__(self, inner_tool: ICoreTool[BaseModel, BaseModel]) -> None:
+    def __init__(
+        self,
+        inner_tool: ICoreTool[BaseModel, BaseModel],
+        *,
+        input_contract: IToolInputContract[BaseModel | None] | None = None,
+    ) -> None:
         self._inner_tool = inner_tool
+        self._input_contract = input_contract
 
     @property
     def name(self) -> str:
@@ -53,6 +61,8 @@ class InputValidationDecorator(ITool):
 
     @property
     def input_schema(self) -> dict[str, Any]:
+        if self._input_contract is not None:
+            return {key: thaw_json(value) for key, value in self._input_contract.schema.items()}
         if self.args_model:
             return resolve_schema_refs(self.args_model.model_json_schema())
         return {
@@ -61,21 +71,25 @@ class InputValidationDecorator(ITool):
         }
 
     async def execute(self, params: dict[str, Any], context: NoteContext) -> BaseModel:
-        if not self.args_model:
-            # Bypass validation if no input arguments model is defined
-            return await self._inner_tool.execute(None, context)  # type: ignore[arg-type]
         try:
-            validated = self.args_model.model_validate(params)
+            if self._input_contract is not None:
+                validated = self._input_contract.validate(params)
+            elif self.args_model is not None:
+                validated = self.args_model.model_validate(params)
+            else:
+                validated = None
         except ValidationError as e:
-            schema = resolve_schema_refs(self.args_model.model_json_schema())
             return ValidationErrorOutput(
                 error_message=f"Invalid input for {self.name}",
                 validation_errors=[
                     {"field": ".".join(map(str, err["loc"])), "error": err["msg"]}
                     for err in e.errors()
                 ],
-                input_schema=schema,
+                input_schema=self.input_schema,
                 params=params,
             )
 
+        if validated is None:
+            # Preserve the existing no-argument core contract.
+            return await self._inner_tool.execute(None, context)  # type: ignore[arg-type]
         return await self._inner_tool.execute(validated, context)

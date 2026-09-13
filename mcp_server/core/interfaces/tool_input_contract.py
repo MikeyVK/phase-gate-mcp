@@ -10,14 +10,15 @@ from typing import Generic, Protocol, TypeAlias, TypeVar
 
 from pydantic import BaseModel, JsonValue
 
-from mcp_server.core.interfaces.template_catalog import FrozenJsonObject
+from mcp_server.core.interfaces.template_catalog import FrozenJsonObject, freeze_json
+from mcp_server.utils.schema_utils import resolve_schema_refs
 
 JsonObject: TypeAlias = dict[str, JsonValue]
-TInput = TypeVar("TInput", bound=BaseModel | None, covariant=True)
+TInput_co = TypeVar("TInput_co", bound=BaseModel | None, covariant=True)
 TModel = TypeVar("TModel", bound=BaseModel)
 
 
-class IToolInputContract(Protocol[TInput]):
+class IToolInputContract(Protocol[TInput_co]):
     """Expose a schema snapshot and its matching typed admission operation."""
 
     @property
@@ -25,23 +26,26 @@ class IToolInputContract(Protocol[TInput]):
         """Return the immutable prepared schema."""
         ...
 
-    def validate(self, raw: JsonObject) -> TInput:
+    def validate(self, raw: JsonObject) -> TInput_co:
         """Admit input or raise the existing Pydantic ValidationError."""
         ...
 
 
 @dataclass(frozen=True)
-class PreparedToolInputContract(Generic[TInput]):
+class PreparedToolInputContract(Generic[TInput_co]):
     """Hold the composition root's schema and admission without reload capability."""
 
     schema: FrozenJsonObject
-    admit: Callable[[JsonObject], TInput]
+    admit: Callable[[JsonObject], TInput_co]
 
-    def validate(self, raw: JsonObject) -> TInput:
+    def validate(self, raw: JsonObject) -> TInput_co:
         """Delegate to the same admission authority paired with the schema."""
         return self.admit(raw)
 
 
 def prepare_model_input(model: type[TModel]) -> PreparedToolInputContract[TModel]:
     """Prepare exposure and admission from one typed tool definition or projection."""
-    raise NotImplementedError
+    schema = freeze_json(resolve_schema_refs(model.model_json_schema()))
+    if not isinstance(schema, FrozenJsonObject):
+        raise TypeError("tool_input_schema_must_be_object")
+    return PreparedToolInputContract(schema=schema, admit=model.model_validate)

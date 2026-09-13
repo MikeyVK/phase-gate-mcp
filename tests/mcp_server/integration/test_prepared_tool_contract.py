@@ -11,7 +11,7 @@ from typing import Literal
 
 import pytest
 from mcp.types import ListToolsRequest, ListToolsResult
-from pydantic import BaseModel, ConfigDict, JsonValue
+from pydantic import BaseModel, ConfigDict, JsonValue, create_model
 
 from mcp_server.config.settings import ServerSettings, Settings
 from mcp_server.core.decorators import InputValidationDecorator, ToolErrorHandlerDecorator
@@ -35,10 +35,10 @@ class StaticInput(BaseModel):
     content: dict[str, JsonValue]
 
 
-class AdmittedInput(StaticInput):
-    """One admitted selection represented by the same typed input authority."""
-
-    selected: Literal["package-a"]
+# Startup can project admitted selections while retaining the typed envelope.
+AdmittedInput = create_model(
+    "AdmittedInput", __base__=StaticInput, selected=(Literal["package-a"], ...)
+)
 
 
 class EchoOutput(BaseModel):
@@ -67,13 +67,13 @@ class RecordingCore:
 
 
 def test_prepared_schema_is_a_detached_immutable_snapshot() -> None:
-    contract: IToolInputContract[AdmittedInput] = prepare_model_input(AdmittedInput)
+    contract: IToolInputContract[StaticInput] = prepare_model_input(AdmittedInput)
     exposed = thaw_json(contract.schema)
     assert isinstance(exposed, dict)
     exposed.clear()
     assert "properties" in contract.schema
     with pytest.raises(FrozenInstanceError):
-        setattr(contract, "schema", freeze_json({}))
+        contract.schema = freeze_json({})
 
 
 @pytest.mark.asyncio
