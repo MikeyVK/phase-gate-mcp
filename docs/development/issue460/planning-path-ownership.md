@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 36518)
-Total output lines: 756
-
 # Issue 460 Planning — Exact Path Ownership
 
 Status: DRAFT. Baseline: ea48558c. [Planning](planning.md) owns sequencing; [frozen catalog](template-suite-catalog.md) owns the original census; [integration §3.2](design-integration-review.md#32-exact-testhelper-dispositions) owns each test's durable claim, architecture disposition and removal prerequisite.
@@ -285,7 +282,34 @@ New exact paths have a creation owner and every planned revisit below. Generated
 | T133 | `tests/mcp_server/unit/managers/test_violation_path_normalization.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY026, CY059, CY085 | None | Truthful check/public resource projection, relative operation paths vs unmodified bounded native diagnostics; no old summary/default DTO policy. |
 | T134 | `tests/mcp_server/unit/schemas/test_structured_tool_output_migration.py` | [CY011](planning-execution.md#cy011) | CY010, CY011, CY057, CY058, CY059, CY060, CY061, CY071 | None | Actual wrapper/cache/presenter proof; retain unrelated tools and limits; remove test-produced response oracles. |
 | T135 | `tests/mcp_server/unit/state/test_quality_state.py` | [CY088](planning-rollout.md#cy088) | CY088 | None | Retire only auto-state registration/repository/value model claims; preserve PR transaction, atomic writer and cache under existing owners. |
-| T136 | `tests/mcp_server/unit…1518 tokens truncated… Git checkpoint. |
+| T136 | `tests/mcp_server/unit/tools/test_autofix_tool.py` | [CY061](planning-artifacts-mutation.md#cy061) | CY010, CY011, CY029, CY030, CY061, CY086 | None | Fix public effects plus independent FIFO/resource claim owned by CY011; no cache-claim loss at old tool removal. |
+| T137 | `tests/mcp_server/unit/tools/test_dev_tools.py` | [CY060](planning-artifacts-mutation.md#cy060) | CY028, CY060, CY083 | None | Framework-neutral test public response; real decorators/cache replace substituted execute wrapper. |
+| T138 | `tests/mcp_server/unit/tools/test_discovery_tools.py` | [CY068](planning-rollout.md#cy068) | CY068 | None | Preserve loaded workflow ordering/instructions and get_work_context behavior; use actual public loaders/explicit composition. |
+| T139 | `tests/mcp_server/unit/tools/test_quality_tools.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059 | None | Truthful check/public resource projection, relative operation paths vs unmodified bounded native diagnostics; no old summary/default DTO policy. |
+| T140 | `tests/mcp_server/unit/tools/test_test_tools.py` | [CY060](planning-artifacts-mutation.md#cy060) | CY027, CY028, CY060, CY083 | None | Framework-neutral test public response; real decorators/cache replace substituted execute wrapper. |
+| T141 | `tests/mcp_server/unit/tools/test_tool_result_contract.py` | [CY011](planning-execution.md#cy011) | CY010, CY011 | None | Actual wrapper/cache/presenter proof; retain unrelated tools and limits; remove test-produced response oracles. |
+| T142 | `tests/mcp_server/unit/validation/test_python_validator.py` | [CY081](planning-rollout.md#cy081) | CY018, CY026, CY053, CY055, CY081 | None | Remove obsolete validation-language/tool claims only after relevant native and mutation/public proof. |
+| T143 | `tests/mcp_server/validation_fixtures/violations.py` | [CY020](planning-execution.md#cy020) | CY018, CY020, CY021, CY022, CY086 | None | Assign negative snippets to Python syntax CY018, Markdown CY019, Ruff CY020 and Mypy CY021 native proofs. Remove only exhausted misleading examples after their effects are independently established. |
+| T144 | `tests/mcp_server/unit/config/test_json_violations_parsing.py` | [CY087](planning-rollout.md#cy087) | CY087 | None | Consolidate bounded absence checks with native/role/public evidence; no per-private-symbol tombstone tests. |
+| T145 | `tests/mcp_server/unit/config/test_quality_config_scope.py` | [CY017](planning-execution.md#cy017) | CY017 | None | Early scope episodes must replace obsolete auto/parser expectations and close every legacy manager import through explicit scope CY017; preserve public scope selection through CY059. No old-runtime dependency is deferred beyond manager removal. |
+| T146 | `tests/mcp_server/unit/config/test_text_violations_parsing_defaults_validator.py` | [CY087](planning-rollout.md#cy087) | CY087 | None | Consolidate bounded absence checks with native/role/public evidence; no per-private-symbol tombstone tests. |
+| T147 | `tests/mcp_server/unit/config/test_text_violations_parsing.py` | [CY087](planning-rollout.md#cy087) | CY087 | None | Consolidate bounded absence checks with native/role/public evidence; no per-private-symbol tombstone tests. |
+| T148 | `tests/mcp_server/unit/config/test_violation_dto.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059, CY087 | None | Truthful check/public resource projection, relative operation paths vs unmodified bounded native diagnostics; no old summary/default DTO policy. |
+| T149 | `tests/mcp_server/unit/managers/test_compact_payload_builder.py` | [CY011](planning-execution.md#cy011) | CY010, CY011 | None | Actual wrapper/cache/presenter proof; retain unrelated tools and limits; remove test-produced response oracles. |
+| T150 | `tests/mcp_server/unit/managers/test_scope_resolution.py` | [CY017](planning-execution.md#cy017) | CY017 | None | Early scope episodes must replace obsolete auto/parser expectations and close every legacy manager import through explicit scope CY017; preserve public scope selection through CY059. No old-runtime dependency is deferred beyond manager removal. |
+| T151 | `tests/mcp_server/unit/resources/test_standards.py` | [CY059](planning-artifacts-mutation.md#cy059) | CY059, CY090 | None | Truthful check/public resource projection, relative operation paths vs unmodified bounded native diagnostics; no old summary/default DTO policy. |
+
+## a source register
+
+79 legacy suite sources.
+
+| ID | Exact path | Primary owner | Ordered write episodes | Ordered review episodes | Bounded disposition |
+|---|---|---|---|---|---|
+| A001 | `.pgmcp/templates/concrete/adapter.py.jinja2` | [CY095](planning-rollout.md#cy095) | CY095 | None | Remove after CY036/CY037/CY038/CY039/CY040: portable operation/test/TS package evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |
+| A002 | `.pgmcp/templates/concrete/architecture.md.jinja2` | [CY097](planning-rollout.md#cy097) | CY097 | None | Remove after CY042, CY043, CY044, CY045, CY046, CY047, CY048, CY049, CY050, CY051: document/tracking semantic evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |
+| A003 | `.pgmcp/templates/concrete/commit.txt.jinja2` | [CY098](planning-rollout.md#cy098) | CY098 | None | Remove after CY042, CY043, CY044, CY045, CY046, CY047, CY048, CY049, CY050, CY051: document/tracking semantic evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |
+| A004 | `.pgmcp/templates/concrete/config_schema.py.jinja2` | [CY094](planning-rollout.md#cy094) | CY094 | None | Remove after CY032/CY033/CY034/CY035: Pydantic and class/Protocol public package evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |
+| A005 | `.pgmcp/templates/concrete/design.md.jinja2` | [CY096](planning-rollout.md#cy096) | CY096 | None | Remove after CY042, CY043, CY044, CY045, CY046, CY047, CY048, CY049, CY050, CY051: document/tracking semantic evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |
 | A006 | `.pgmcp/templates/concrete/dto.py.jinja2` | [CY094](planning-rollout.md#cy094) | CY094 | None | Remove after CY032/CY033/CY034/CY035: Pydantic and class/Protocol public package evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |
 | A007 | `.pgmcp/templates/concrete/dto_v2.py.jinja2` | [CY094](planning-rollout.md#cy094) | CY094 | None | Remove after CY032/CY033/CY034/CY035: Pydantic and class/Protocol public package evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |
 | A008 | `.pgmcp/templates/concrete/generic.md.jinja2` | [CY097](planning-rollout.md#cy097) | CY097 | None | Remove after CY042, CY043, CY044, CY045, CY046, CY047, CY048, CY049, CY050, CY051: document/tracking semantic evidence. The original source stays recoverable at the captured pre-cycle Git checkpoint. |

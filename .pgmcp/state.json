@@ -4,8 +4,8 @@
   "issue_number": 460,
   "workflow_name": "refactor",
   "current_phase": "implementation",
-  "current_cycle": 16,
-  "last_cycle": 15,
+  "current_cycle": 17,
+  "last_cycle": 16,
   "cycle_history": [
     {
       "cycle_number": 2,
@@ -96,6 +96,12 @@
       "name": "Check bindings and output profiles",
       "forced": false,
       "entered": "2026-09-13T20:51:39.731563+00:00"
+    },
+    {
+      "cycle_number": 17,
+      "name": "Explicit check selection and branch scopes",
+      "forced": false,
+      "entered": "2026-09-13T21:02:20.542571+00:00"
     }
   ],
   "required_phases": [
@@ -251,5 +257,5 @@
     }
   ],
   "reconstructed": false,
-  "current_sub_phase": "green"
+  "current_sub_phase": "red"
 }
